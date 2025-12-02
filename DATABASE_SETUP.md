@@ -1,6 +1,6 @@
 # Database Setup Guide
 
-This guide explains how to set up the Letho database with Docker.
+This guide explains how to set up the Name Tag database with Docker.
 
 ## Initial Setup
 
@@ -35,7 +35,7 @@ npx prisma db seed
 ```
 
 This will create:
-- A demo user account (demo@letho.app / password123)
+- A demo user account (demo@nametag.one / password123)
 - 3 groups (Family, Friends, Work)
 - 7 people with various relationships
 - Multiple relationships demonstrating the network graph
@@ -114,7 +114,7 @@ npx prisma generate
 
 After seeding, you'll have:
 
-- **Demo User**: demo@letho.app
+- **Demo User**: demo@nametag.one
 - **Password**: password123
 
 The demo data includes a small family network:

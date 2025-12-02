@@ -23,14 +23,14 @@ async function main() {
   const hashedPassword = await bcrypt.hash('password123', 10);
   const user = await prisma.user.create({
     data: {
-      email: 'demo@letho.app',
+      email: 'demo@nametag.one',
       password: hashedPassword,
       name: 'Demo User',
       theme: 'LIGHT',
     },
   });
 
-  console.log('✓ Created demo user: demo@letho.app');
+  console.log('✓ Created demo user: demo@nametag.one');
 
   // Create default relationship types
   const parentType = await prisma.relationshipType.create({
@@ -400,7 +400,7 @@ async function main() {
 
   console.log('\n🎉 Seed completed successfully!');
   console.log('\nDemo credentials:');
-  console.log('Email: demo@letho.app');
+  console.log('Email: demo@nametag.one');
   console.log('Password: password123');
 }
 

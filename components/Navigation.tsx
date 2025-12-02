@@ -26,7 +26,7 @@ export default function Navigation({ userEmail, userName, currentPath }: Navigat
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
             <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white">
-              Letho
+              Name Tag
             </Link>
             <div className="flex space-x-4">
               {navItems.map((item) => (

@@ -13,7 +13,7 @@ export default async function Home() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
       <div className="max-w-4xl w-full text-center">
         <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-6">
-          Letho
+          Name Tag
         </h1>
         <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
           Never forget a name again

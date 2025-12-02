@@ -18,7 +18,8 @@
       "Bash(docker-compose up:*)",
       "Bash(openssl rand:*)",
       "Bash(cat:*)",
-      "Bash(sudo chown:*)"
+      "Bash(sudo chown:*)",
+      "Bash(docker volume:*)"
     ],
     "deny": [],
     "ask": []

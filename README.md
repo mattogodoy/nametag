@@ -1,8 +1,6 @@
-# Letho
+# Name Tag
 
 A personal relationships manager to help you remember the people in your life, their connections, and important details.
-
-**Letho** comes from "lethonomia" - the inability to remember someone's name. It's for those "tip of the tongue" moments when you know the person but can't recall their name or details.
 
 ## Features
 
@@ -55,7 +53,7 @@ A personal relationships manager to help you remember the people in your life, t
 5. The app will be available at [http://localhost:3000](http://localhost:3000)
 
 6. Demo login credentials:
-   - Email: `demo@letho.app`
+   - Email: `demo@nametag.one`
    - Password: `password123`
 
 For detailed database setup instructions, see [DATABASE_SETUP.md](DATABASE_SETUP.md)

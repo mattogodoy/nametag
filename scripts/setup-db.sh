@@ -2,7 +2,7 @@
 
 # Script to set up the database (run this after docker-compose up)
 
-echo "🚀 Setting up Letho database..."
+echo "🚀 Setting up Name Tag database..."
 echo ""
 
 # Wait for database to be ready
@@ -25,5 +25,5 @@ echo ""
 echo "✅ Database setup complete!"
 echo ""
 echo "Demo credentials:"
-echo "Email: demo@letho.app"
+echo "Email: demo@nametag.one"
 echo "Password: password123"

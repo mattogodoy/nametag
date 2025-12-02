@@ -22,7 +22,7 @@ export default async function DashboardPage() {
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Welcome to Letho, {session.user.name || 'User'}!
+              Welcome to Name Tag, {session.user.name || 'User'}!
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
               Your personal relationships manager dashboard. More features coming soon!
