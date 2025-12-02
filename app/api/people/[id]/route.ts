@@ -22,6 +22,7 @@ export async function GET(
         userId: session.user.id,
       },
       include: {
+        relationshipToUser: true,
         groups: {
           include: {
             group: true,
@@ -64,7 +65,7 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { fullName, birthDate, phone, address, lastContact, notes, groupIds } =
+    const { fullName, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds } =
       body;
 
     // Check if person exists and belongs to user
@@ -86,6 +87,13 @@ export async function PUT(
       );
     }
 
+    if (!relationshipToUserId) {
+      return NextResponse.json(
+        { error: 'Relationship to user is required' },
+        { status: 400 }
+      );
+    }
+
     // Update person and handle group associations
     const person = await prisma.person.update({
       where: {
@@ -98,6 +106,7 @@ export async function PUT(
         address: address || null,
         lastContact: lastContact ? new Date(lastContact) : null,
         notes: notes || null,
+        relationshipToUserId,
         groups: groupIds
           ? {
               deleteMany: {},

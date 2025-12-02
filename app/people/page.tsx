@@ -16,6 +16,7 @@ export default async function PeoplePage() {
       userId: session.user.id,
     },
     include: {
+      relationshipToUser: true,
       groups: {
         include: {
           group: true,
@@ -70,6 +71,9 @@ export default async function PeoplePage() {
                       Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Relationship
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Groups
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -90,6 +94,19 @@ export default async function PeoplePage() {
                         >
                           {person.fullName}
                         </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                          style={{
+                            backgroundColor: person.relationshipToUser.color
+                              ? `${person.relationshipToUser.color}20`
+                              : '#E5E7EB',
+                            color: person.relationshipToUser.color || '#374151',
+                          }}
+                        >
+                          {person.relationshipToUser.label}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">

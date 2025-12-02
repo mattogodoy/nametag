@@ -12,14 +12,24 @@ export default async function NewPersonPage() {
     redirect('/login');
   }
 
-  const groups = await prisma.group.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  });
+  const [groups, relationshipTypes] = await Promise.all([
+    prisma.group.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    }),
+    prisma.relationshipType.findMany({
+      where: {
+        OR: [{ userId: session.user.id }, { isDefault: true }],
+      },
+      orderBy: {
+        label: 'asc',
+      },
+    }),
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -36,7 +46,7 @@ export default async function NewPersonPage() {
           </h1>
 
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <PersonForm groups={groups} mode="create" />
+            <PersonForm groups={groups} relationshipTypes={relationshipTypes} mode="create" />
           </div>
         </div>
       </main>

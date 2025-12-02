@@ -18,7 +18,7 @@ export default async function EditPersonPage({
 
   const { id } = await params;
 
-  const [person, groups] = await Promise.all([
+  const [person, groups, relationshipTypes] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -34,6 +34,14 @@ export default async function EditPersonPage({
       },
       orderBy: {
         name: 'asc',
+      },
+    }),
+    prisma.relationshipType.findMany({
+      where: {
+        OR: [{ userId: session.user.id }, { isDefault: true }],
+      },
+      orderBy: {
+        label: 'asc',
       },
     }),
   ]);
@@ -66,7 +74,7 @@ export default async function EditPersonPage({
           </h1>
 
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <PersonForm person={person} groups={groups} mode="edit" />
+            <PersonForm person={person} groups={groups} relationshipTypes={relationshipTypes} mode="edit" />
           </div>
         </div>
       </main>

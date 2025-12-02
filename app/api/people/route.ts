@@ -16,6 +16,7 @@ export async function GET() {
         userId: session.user.id,
       },
       include: {
+        relationshipToUser: true,
         groups: {
           include: {
             group: true,
@@ -47,12 +48,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { fullName, birthDate, phone, address, lastContact, notes, groupIds } =
+    const { fullName, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds } =
       body;
 
     if (!fullName) {
       return NextResponse.json(
         { error: 'Full name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!relationshipToUserId) {
+      return NextResponse.json(
+        { error: 'Relationship to user is required' },
         { status: 400 }
       );
     }
@@ -66,6 +74,7 @@ export async function POST(request: Request) {
         address: address || null,
         lastContact: lastContact ? new Date(lastContact) : null,
         notes: notes || null,
+        relationshipToUserId,
         groups: groupIds
           ? {
               create: groupIds.map((groupId: string) => ({

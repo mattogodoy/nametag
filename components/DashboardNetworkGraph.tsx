@@ -19,50 +19,29 @@ interface GraphEdge {
   color: string;
 }
 
-interface NetworkGraphProps {
-  personId: string;
+interface DashboardNetworkGraphProps {
   refreshKey?: number;
 }
 
-export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps) {
+export default function DashboardNetworkGraph({ refreshKey }: DashboardNetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
-  const previousNodeIdsRef = useRef<Set<string> | null>(null);
-  const isInitialRenderRef = useRef(true);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
     // Fetch graph data
-    fetch(`/api/people/${personId}/graph`)
+    fetch('/api/dashboard/graph')
       .then((res) => res.json())
       .then((data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
-        // Identify new nodes
-        const currentNodeIds = new Set(data.nodes.map(n => n.id));
-        const newNodeIds = new Set<string>();
-
-        // Only check for new nodes if not initial render and we have previous data
-        if (!isInitialRenderRef.current && previousNodeIdsRef.current) {
-          data.nodes.forEach(node => {
-            if (!previousNodeIdsRef.current!.has(node.id)) {
-              newNodeIds.add(node.id);
-            }
-          });
-        }
-
-        // Render graph with new node information
-        renderGraph(data.nodes, data.edges, newNodeIds);
-
-        // Update refs for next render
-        previousNodeIdsRef.current = currentNodeIds;
-        isInitialRenderRef.current = false;
+        renderGraph(data.nodes, data.edges);
       })
       .catch((error) => {
         console.error('Failed to load graph data:', error);
       });
-  }, [personId, refreshKey]);
+  }, [refreshKey]);
 
-  const renderGraph = (nodes: GraphNode[], edges: GraphEdge[], newNodeIds: Set<string>) => {
+  const renderGraph = (nodes: GraphNode[], edges: GraphEdge[]) => {
     if (!svgRef.current) return;
 
     const svg = d3.select(svgRef.current);
@@ -91,7 +70,7 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
       defs.append('marker')
         .attr('id', `arrow-${color.replace('#', '')}`)
         .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 18)
+        .attr('refX', 20)
         .attr('refY', 0)
         .attr('markerWidth', 4)
         .attr('markerHeight', 4)
@@ -108,11 +87,11 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
         'link',
         d3.forceLink(edges)
           .id((d: any) => d.id)
-          .distance(100)
+          .distance(120)
       )
-      .force('charge', d3.forceManyBody().strength(-300))
+      .force('charge', d3.forceManyBody().strength(-400))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(25));
+      .force('collision', d3.forceCollide().radius(30));
 
     // Create edges with arrows
     const link = g
@@ -122,24 +101,9 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
       .enter()
       .append('line')
       .attr('stroke', (d: any) => d.color || '#999')
-      .attr('stroke-opacity', (d: any) => {
-        // Fade in only edges connected to new nodes
-        const targetNode = typeof d.target === 'string' ? d.target : (d.target as GraphNode).id;
-        return newNodeIds.has(targetNode) ? 0 : 0.15;
-      })
+      .attr('stroke-opacity', 0.15)
       .attr('stroke-width', 2)
       .attr('marker-end', (d: any) => `url(#arrow-${(d.color || '#999').replace('#', '')})`);
-
-    // Animate edges connected to new nodes
-    link
-      .filter((d: any) => {
-        const targetNode = typeof d.target === 'string' ? d.target : (d.target as GraphNode).id;
-        return newNodeIds.has(targetNode);
-      })
-      .transition()
-      .duration(400)
-      .delay(100)
-      .attr('stroke-opacity', 0.15);
 
     // Create edge labels (hidden by default)
     const edgeLabels = g
@@ -151,10 +115,8 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
       .attr('font-size', 10)
       .attr('fill', (d: any) => d.color || '#666')
       .attr('text-anchor', 'middle')
-      .text((d) => d.type.toLowerCase())
-      .style('opacity', 0);
-
-    // Don't show labels for new nodes either (keep them hidden)
+      .attr('opacity', 0)
+      .text((d) => d.type.toLowerCase());
 
     // Create nodes
     const node = g
@@ -163,7 +125,7 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
       .data(nodes)
       .enter()
       .append('g')
-      .style('cursor', 'pointer')
+      .style('cursor', (d) => d.isCenter ? 'default' : 'pointer')
       .call(
         d3
           .drag<SVGGElement, GraphNode>()
@@ -172,7 +134,10 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
           .on('end', dragended)
       )
       .on('click', (_event, d) => {
-        router.push(`/people/${d.id}`);
+        // Don't navigate if clicking the center user node
+        if (!d.isCenter) {
+          router.push(`/people/${d.id}`);
+        }
       })
       .on('mouseenter', function(_event, d) {
         // Highlight connected edges
@@ -189,7 +154,7 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
         edgeLabels
           .transition()
           .duration(200)
-          .style('opacity', (edge: any) => {
+          .attr('opacity', (edge: any) => {
             const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
             const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
             return (sourceId === d.id || targetId === d.id) ? 1 : 0;
@@ -206,29 +171,19 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
         edgeLabels
           .transition()
           .duration(200)
-          .style('opacity', 0);
+          .attr('opacity', 0);
       });
 
     // Add circles to nodes
-    const circles = node
+    node
       .append('circle')
       .attr('r', (d) => (d.isCenter ? 9 : 7))
       .attr('fill', (d) => (d.isCenter ? '#3B82F6' : '#6B7280'))
       .attr('stroke', (d) => (d.isCenter ? '#1E40AF' : '#fff'))
       .attr('stroke-width', (d) => (d.isCenter ? 3 : 2));
 
-    // Animate only new nodes with bounce effect
-    circles
-      .filter((d) => newNodeIds.has(d.id))
-      .style('transform', 'scale(0)')
-      .style('transform-origin', 'center')
-      .transition()
-      .duration(600)
-      .ease(d3.easeElasticOut.amplitude(1).period(0.4))
-      .style('transform', 'scale(1)');
-
     // Add labels to nodes
-    const labels = node
+    node
       .append('text')
       .text((d) => d.label)
       .attr('x', 0)
@@ -237,33 +192,20 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
       .attr('font-size', 11)
       .attr('font-weight', (d) => (d.isCenter ? 'bold' : 'normal'))
       .attr('fill', '#9CA3AF')
-      .style('pointer-events', 'none')
-      .style('opacity', (d) => newNodeIds.has(d.id) ? 0 : 1);
-
-    // Animate only new node labels with fade-in
-    labels
-      .filter((d) => newNodeIds.has(d.id))
-      .transition()
-      .duration(400)
-      .delay(200)
-      .style('opacity', 1);
+      .style('pointer-events', 'none');
 
     // Update positions on each tick
     simulation.on('tick', () => {
-      // Use selection.each to avoid interrupting transitions
-      link.each(function (d: any) {
-        d3.select(this)
-          .attr('x1', d.source.x)
-          .attr('y1', d.source.y)
-          .attr('x2', d.target.x)
-          .attr('y2', d.target.y);
-      });
+      link
+        .attr('x1', (d: any) => d.source.x)
+        .attr('y1', (d: any) => d.source.y)
+        .attr('x2', (d: any) => d.target.x)
+        .attr('y2', (d: any) => d.target.y);
 
-      edgeLabels.each(function (d: any) {
-        d3.select(this)
-          .attr('x', (d.source.x + d.target.x) / 2)
-          .attr('y', (d.source.y + d.target.y) / 2);
-      });
+      // Position labels at the center of the edge
+      edgeLabels
+        .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
+        .attr('y', (d: any) => (d.source.y + d.target.y) / 2);
 
       node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
     });

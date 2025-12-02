@@ -13,6 +13,7 @@ interface PersonFormProps {
     address: string | null;
     lastContact: Date | null;
     notes: string | null;
+    relationshipToUserId: string;
     groups: Array<{ groupId: string }>;
   };
   groups: Array<{
@@ -20,10 +21,15 @@ interface PersonFormProps {
     name: string;
     color: string | null;
   }>;
+  relationshipTypes: Array<{
+    id: string;
+    label: string;
+    color: string | null;
+  }>;
   mode: 'create' | 'edit';
 }
 
-export default function PersonForm({ person, groups, mode }: PersonFormProps) {
+export default function PersonForm({ person, groups, relationshipTypes, mode }: PersonFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +45,7 @@ export default function PersonForm({ person, groups, mode }: PersonFormProps) {
       ? new Date(person.lastContact).toISOString().split('T')[0]
       : '',
     notes: person?.notes || '',
+    relationshipToUserId: person?.relationshipToUserId || '',
     groupIds: person?.groups.map((g) => g.groupId) || [],
   });
 
@@ -119,6 +126,31 @@ export default function PersonForm({ person, groups, mode }: PersonFormProps) {
           }
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+      </div>
+
+      <div>
+        <label
+          htmlFor="relationshipToUserId"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Relationship to You *
+        </label>
+        <select
+          id="relationshipToUserId"
+          required
+          value={formData.relationshipToUserId}
+          onChange={(e) =>
+            setFormData({ ...formData, relationshipToUserId: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Select a relationship...</option>
+          {relationshipTypes.map((type) => (
+            <option key={type.id} value={type.id}>
+              {type.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

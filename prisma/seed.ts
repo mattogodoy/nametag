@@ -206,6 +206,7 @@ async function main() {
       address: '123 Main St, Springfield, IL',
       lastContact: new Date('2024-11-25'),
       notes: 'My brother. Works as a software engineer.',
+      relationshipToUserId: siblingType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
       },
@@ -221,6 +222,7 @@ async function main() {
       address: '123 Main St, Springfield, IL',
       lastContact: new Date('2024-11-20'),
       notes: "John's wife. Teacher at elementary school.",
+      relationshipToUserId: relativeType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
       },
@@ -233,6 +235,7 @@ async function main() {
       fullName: 'Emma Smith',
       birthDate: new Date('2015-05-10'),
       notes: "John and Sarah's daughter. Loves reading and drawing.",
+      relationshipToUserId: relativeType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
       },
@@ -245,6 +248,7 @@ async function main() {
       fullName: 'Lucas Smith',
       birthDate: new Date('2018-09-03'),
       notes: "John and Sarah's son. Plays soccer.",
+      relationshipToUserId: relativeType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
       },
@@ -259,6 +263,7 @@ async function main() {
       phone: '+1 (555) 345-6789',
       lastContact: new Date('2024-11-28'),
       notes: 'Best friend from college. Software developer at TechCorp.',
+      relationshipToUserId: friendType.id,
       groups: {
         create: [{ groupId: friendsGroup.id }],
       },
@@ -273,6 +278,7 @@ async function main() {
       phone: '+1 (555) 456-7890',
       lastContact: new Date('2024-11-15'),
       notes: 'Colleague from work. Project manager. Email: jessica@example.com',
+      relationshipToUserId: colleagueType.id,
       groups: {
         create: [{ groupId: workGroup.id }],
       },
@@ -287,6 +293,7 @@ async function main() {
       phone: '+1 (555) 567-8901',
       lastContact: new Date('2024-10-20'),
       notes: 'Neighbor and friend. Architect.',
+      relationshipToUserId: friendType.id,
       groups: {
         create: [{ groupId: friendsGroup.id }],
       },

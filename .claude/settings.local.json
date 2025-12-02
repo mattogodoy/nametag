@@ -19,7 +19,8 @@
       "Bash(openssl rand:*)",
       "Bash(cat:*)",
       "Bash(sudo chown:*)",
-      "Bash(docker volume:*)"
+      "Bash(docker volume:*)",
+      "Bash(docker restart:*)"
     ],
     "deny": [],
     "ask": []

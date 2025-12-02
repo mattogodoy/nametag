@@ -29,24 +29,27 @@ model User {
 
 // Person Model - Core entity representing people in the user's network
 model Person {
-  id          String    @id @default(cuid())
-  userId      String
-  fullName    String
-  birthDate   DateTime?
-  phone       String?
-  address     String?
-  lastContact DateTime?
-  notes       String?   @db.Text
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  userId               String
+  fullName             String
+  birthDate            DateTime?
+  phone                String?
+  address              String?
+  lastContact          DateTime?
+  notes                String?   @db.Text
+  relationshipToUserId String    // Relationship from user to this person
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   // Relations
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relationshipToUser RelationshipType  @relation("UserRelationship", fields: [relationshipToUserId], references: [id])
   groups             PersonGroup[]
-  relationshipsFrom  Relationship[]     @relation("PersonRelationships")
-  relationshipsTo    Relationship[]     @relation("RelatedPersonRelationships")
+  relationshipsFrom  Relationship[]    @relation("PersonRelationships")
+  relationshipsTo    Relationship[]    @relation("RelatedPersonRelationships")
 
   @@index([userId])
+  @@index([relationshipToUserId])
   @@map("people")
 }
 
@@ -118,10 +121,11 @@ model RelationshipType {
   updatedAt   DateTime       @updatedAt
 
   // Relations
-  user          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inverse       RelationshipType? @relation("InverseRelationship", fields: [inverseId], references: [id], onDelete: SetNull)
-  inverseOf     RelationshipType[] @relation("InverseRelationship")
-  relationships Relationship[]
+  user                User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inverse             RelationshipType?  @relation("InverseRelationship", fields: [inverseId], references: [id], onDelete: SetNull)
+  inverseOf           RelationshipType[] @relation("InverseRelationship")
+  relationships       Relationship[]
+  peopleWithRelation  Person[]           @relation("UserRelationship")
 
   @@index([userId])
   @@map("relationship_types")
