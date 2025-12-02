@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User Model - Authentication and preferences
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  theme     Theme    @default(LIGHT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  people            Person[]
+  groups            Group[]
+  relationshipTypes RelationshipType[]
+
+  @@map("users")
+}
+
+// Person Model - Core entity representing people in the user's network
+model Person {
+  id          String    @id @default(cuid())
+  userId      String
+  fullName    String
+  birthDate   DateTime?
+  phone       String?
+  address     String?
+  lastContact DateTime?
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups             PersonGroup[]
+  relationshipsFrom  Relationship[]     @relation("PersonRelationships")
+  relationshipsTo    Relationship[]     @relation("RelatedPersonRelationships")
+
+  @@index([userId])
+  @@map("people")
+}
+
+// Group Model - User-defined categories for organizing people
+model Group {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  color       String?  // Hex color for UI visualization
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  people PersonGroup[]
+
+  @@index([userId])
+  @@map("groups")
+}
+
+// PersonGroup - Many-to-many join table between Person and Group
+model PersonGroup {
+  personId String
+  groupId  String
+  addedAt  DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([personId, groupId])
+  @@index([personId])
+  @@index([groupId])
+  @@map("person_groups")
+}
+
+// Relationship Model - Connections between people
+model Relationship {
+  id                 String            @id @default(cuid())
+  personId           String
+  relatedPersonId    String
+  relationshipTypeId String?
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  // Relations
+  person           Person            @relation("PersonRelationships", fields: [personId], references: [id], onDelete: Cascade)
+  relatedPerson    Person            @relation("RelatedPersonRelationships", fields: [relatedPersonId], references: [id], onDelete: Cascade)
+  relationshipType RelationshipType? @relation(fields: [relationshipTypeId], references: [id])
+
+  @@index([personId])
+  @@index([relatedPersonId])
+  @@index([relationshipTypeId])
+  @@map("relationships")
+}
+
+// RelationshipType Model - User-defined or default relationship types
+model RelationshipType {
+  id          String         @id @default(cuid())
+  userId      String?        // NULL for system defaults
+  name        String         // Unique identifier (PARENT, CHILD, etc.)
+  label       String         // Display name
+  color       String?        // Hex color for UI
+  inverseId   String?        // ID of the inverse relationship type
+  isDefault   Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  user          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inverse       RelationshipType? @relation("InverseRelationship", fields: [inverseId], references: [id], onDelete: SetNull)
+  inverseOf     RelationshipType[] @relation("InverseRelationship")
+  relationships Relationship[]
+
+  @@index([userId])
+  @@map("relationship_types")
+}
+
+// Enums
+enum Theme {
+  LIGHT
+  DARK
+}

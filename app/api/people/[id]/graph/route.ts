@@ -1,0 +1,102 @@
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+interface GraphNode {
+  id: string;
+  label: string;
+  groups: string[];
+  colors: string[];
+  isCenter: boolean;
+}
+
+interface GraphEdge {
+  source: string;
+  target: string;
+  type: string;
+  color: string;
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  // Fetch the person with all their relationships
+  const person = await prisma.person.findUnique({
+    where: {
+      id,
+      userId: session.user.id,
+    },
+    include: {
+      groups: {
+        include: {
+          group: true,
+        },
+      },
+      relationshipsFrom: {
+        include: {
+          relatedPerson: {
+            include: {
+              groups: {
+                include: {
+                  group: true,
+                },
+              },
+            },
+          },
+          relationshipType: true,
+        },
+      },
+    },
+  });
+
+  if (!person) {
+    return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+  }
+
+  // Build graph data
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  const nodeIds = new Set<string>();
+
+  // Add center node (the person we're viewing)
+  nodes.push({
+    id: person.id,
+    label: person.fullName,
+    groups: person.groups.map((pg) => pg.group.name),
+    colors: person.groups.map((pg) => pg.group.color || '#3B82F6'),
+    isCenter: true,
+  });
+  nodeIds.add(person.id);
+
+  // Add related people as nodes and create edges
+  person.relationshipsFrom.forEach((rel) => {
+    if (!nodeIds.has(rel.relatedPersonId)) {
+      nodes.push({
+        id: rel.relatedPersonId,
+        label: rel.relatedPerson.fullName,
+        groups: rel.relatedPerson.groups.map((pg) => pg.group.name),
+        colors: rel.relatedPerson.groups.map((pg) => pg.group.color || '#3B82F6'),
+        isCenter: false,
+      });
+      nodeIds.add(rel.relatedPersonId);
+    }
+
+    edges.push({
+      source: person.id,
+      target: rel.relatedPersonId,
+      type: rel.relationshipType?.label || 'Unknown',
+      color: rel.relationshipType?.color || '#999999',
+    });
+  });
+
+  return NextResponse.json({ nodes, edges });
+}

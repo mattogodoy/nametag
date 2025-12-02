@@ -1,36 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Letho
+
+A personal relationships manager to help you remember the people in your life, their connections, and important details.
+
+**Letho** comes from "lethonomia" - the inability to remember someone's name. It's for those "tip of the tongue" moments when you know the person but can't recall their name or details.
+
+## Features
+
+- Manage contacts with detailed information (name, birthday, phone, address, notes)
+- Track relationships between people (family, friends, colleagues)
+- Visualize your network with interactive graphs
+- Organize contacts into custom groups
+- Dashboard with statistics and overview
+
+## Tech Stack
+
+- **Frontend & Backend**: Next.js 15 with TypeScript
+- **UI**: Tailwind CSS
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Graph Visualization**: D3.js (planned)
+- **Deployment**: Docker with docker-compose
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Docker and Docker Compose
+- Node.js 20+ (for local development without Docker)
+
+### Development with Docker (Recommended)
+
+1. Clone the repository
+2. Copy the environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Start the application:
+   ```bash
+   docker-compose up
+   ```
+
+4. Set up the database (first time only):
+   ```bash
+   npx prisma migrate dev --name init
+   npx prisma db seed
+   ```
+
+   Or use the setup script:
+   ```bash
+   ./scripts/setup-db.sh
+   ```
+
+5. The app will be available at [http://localhost:3000](http://localhost:3000)
+
+6. Demo login credentials:
+   - Email: `demo@letho.app`
+   - Password: `password123`
+
+For detailed database setup instructions, see [DATABASE_SETUP.md](DATABASE_SETUP.md)
+
+### Local Development (Without Docker)
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Set up your database and update `.env` with your DATABASE_URL
+
+3. Run Prisma migrations:
+   ```bash
+   npx prisma migrate dev
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Database Commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Generate Prisma Client
+npx prisma generate
+
+# Create a migration
+npx prisma migrate dev --name migration_name
+
+# Open Prisma Studio (database GUI)
+npx prisma studio
+
+# Reset database
+npx prisma migrate reset
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Docker Commands
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Start services
+docker-compose up
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Start in detached mode
+docker-compose up -d
 
-## Learn More
+# Stop services
+docker-compose down
 
-To learn more about Next.js, take a look at the following resources:
+# Rebuild containers
+docker-compose build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# View logs
+docker-compose logs -f app
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+/app                    # Next.js app directory
+  /api                 # API routes
+/components            # React components
+  /ui                  # Reusable UI components
+  /graphs              # Network graph components
+/lib                   # Utility functions
+  /prisma              # Prisma client
+  /auth                # Authentication utilities
+/prisma                # Prisma schema and migrations
+/public                # Static assets
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Development Stages
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is being built in stages:
+
+1. ✅ **Project Setup & Infrastructure** - Docker, Next.js, Tailwind, Prisma
+2. ✅ **Database Schema** - Core data models
+3. ⏳ **Authentication** - User registration and login
+4. ⏳ **Person Management** - CRUD operations
+5. ⏳ **Groups** - Category management
+6. ⏳ **Relationships** - Connection system
+7. ⏳ **Graph Visualization** - D3.js components
+8. ⏳ **Person Details Graph** - Individual network view
+9. ⏳ **Dashboard** - Overview and statistics
+10. ⏳ **Settings** - User preferences
+11. ⏳ **Polish** - UX refinement
+
+## License
+
+Private project - All rights reserved

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma init:*)",
+      "Bash(mkdir:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(chmod:*)",
+      "WebSearch",
+      "Bash(npx prisma db seed:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(openssl rand:*)",
+      "Bash(cat:*)",
+      "Bash(sudo chown:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
