@@ -36,6 +36,7 @@ export async function GET(
       userId: session.user.id,
     },
     include: {
+      relationshipToUser: true, // Include the relationship to the user
       groups: {
         include: {
           group: true,
@@ -76,6 +77,25 @@ export async function GET(
     isCenter: true,
   });
   nodeIds.add(person.id);
+
+  // Add user as a node
+  const userId = `user-${session.user.id}`;
+  nodes.push({
+    id: userId,
+    label: session.user.name || session.user.email || 'You',
+    groups: [],
+    colors: [],
+    isCenter: false,
+  });
+  nodeIds.add(userId);
+
+  // Add edge from person to user (their relationship to you)
+  edges.push({
+    source: person.id,
+    target: userId,
+    type: person.relationshipToUser.label,
+    color: person.relationshipToUser.color || '#9CA3AF',
+  });
 
   // Add related people as nodes and create edges
   person.relationshipsFrom.forEach((rel) => {

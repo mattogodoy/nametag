@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface GroupFormProps {
   group?: {
@@ -59,6 +60,13 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
         setError(data.error || 'Something went wrong');
         return;
       }
+
+      // Show success toast
+      toast.success(
+        mode === 'create'
+          ? `Group "${formData.name}" has been created`
+          : `Group "${formData.name}" has been updated`
+      );
 
       // Redirect to detail page after edit, list page after create
       if (mode === 'edit' && group?.id) {

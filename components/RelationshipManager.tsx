@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
 
 interface Person {
@@ -80,6 +81,9 @@ export default function RelationshipManager({
         return;
       }
 
+      const relatedPerson = availablePeople.find(p => p.id === formData.relatedPersonId);
+      toast.success(`Relationship with ${relatedPerson?.fullName} has been added`);
+
       setShowAddModal(false);
       setFormData({ relatedPersonId: '', relationshipTypeId: defaultTypeId, notes: '' });
       router.refresh();
@@ -114,6 +118,8 @@ export default function RelationshipManager({
         setIsLoading(false);
         return;
       }
+
+      toast.success(`Relationship with ${selectedRelationship.relatedPerson.fullName} has been updated`);
 
       setShowEditModal(false);
       setSelectedRelationship(null);

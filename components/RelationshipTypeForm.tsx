@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import RelationshipTypeAutocomplete from './RelationshipTypeAutocomplete';
 
 interface RelationshipType {
@@ -111,6 +112,13 @@ export default function RelationshipTypeForm({
         setError(data.error || 'Something went wrong');
         return;
       }
+
+      // Show success toast
+      toast.success(
+        mode === 'create'
+          ? `Relationship type "${formData.label}" has been created`
+          : `Relationship type "${formData.label}" has been updated`
+      );
 
       router.push('/relationship-types');
       router.refresh();

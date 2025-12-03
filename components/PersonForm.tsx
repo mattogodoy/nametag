@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface PersonFormProps {
   person?: {
@@ -52,6 +53,24 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+
+    // Client-side validation
+    if (formData.birthDate) {
+      const birthDate = new Date(formData.birthDate);
+      if (birthDate > new Date()) {
+        setError('Birth date cannot be in the future');
+        return;
+      }
+    }
+
+    if (formData.lastContact) {
+      const lastContactDate = new Date(formData.lastContact);
+      if (lastContactDate > new Date()) {
+        setError('Last contact date cannot be in the future');
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -72,6 +91,13 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
         setError(data.error || 'Something went wrong');
         return;
       }
+
+      // Show success toast
+      toast.success(
+        mode === 'create'
+          ? `${formData.fullName} has been added to your network`
+          : `${formData.fullName}'s information has been updated`
+      );
 
       // Redirect to detail page after edit, list page after create
       if (mode === 'edit' && person?.id) {
@@ -165,6 +191,7 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
             type="date"
             id="birthDate"
             value={formData.birthDate}
+            max={new Date().toISOString().split('T')[0]}
             onChange={(e) =>
               setFormData({ ...formData, birthDate: e.target.value })
             }
@@ -185,7 +212,11 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="(555) 123-4567"
           />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Enter in any format (e.g., +1-555-123-4567)
+          </p>
         </div>
       </div>
 
@@ -219,6 +250,7 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
             type="date"
             id="lastContact"
             value={formData.lastContact}
+            max={new Date().toISOString().split('T')[0]}
             onChange={(e) =>
               setFormData({ ...formData, lastContact: e.target.value })
             }

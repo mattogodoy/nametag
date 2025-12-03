@@ -21,6 +21,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // Prevent self-relationships
+    if (personId === relatedPersonId) {
+      return NextResponse.json(
+        { error: 'Cannot create a relationship with the same person' },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate relationship
+    const existingRelationship = await prisma.relationship.findFirst({
+      where: {
+        personId,
+        relatedPersonId,
+        relationshipTypeId,
+      },
+    });
+
+    if (existingRelationship) {
+      return NextResponse.json(
+        { error: 'This relationship already exists' },
+        { status: 400 }
+      );
+    }
+
     // Verify both people belong to the user
     const [person, relatedPerson, relationshipType] = await Promise.all([
       prisma.person.findUnique({
