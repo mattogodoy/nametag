@@ -46,6 +46,7 @@ export async function GET(
         include: {
           relatedPerson: {
             include: {
+              relationshipToUser: true, // Include the related person's relationship to user
               groups: {
                 include: {
                   group: true,
@@ -112,12 +113,23 @@ export async function GET(
       nodeIds.add(rel.relatedPersonId);
     }
 
+    // Add edge from person to related person
     edges.push({
       source: person.id,
       target: rel.relatedPersonId,
       type: rel.relationshipType?.label || 'Unknown',
       color: rel.relationshipType?.color || '#999999',
     });
+
+    // If the related person has a direct relationship to the user, add that edge too
+    if (rel.relatedPerson.relationshipToUser) {
+      edges.push({
+        source: rel.relatedPersonId,
+        target: userId,
+        type: rel.relatedPerson.relationshipToUser.label,
+        color: rel.relatedPerson.relationshipToUser.color || '#9CA3AF',
+      });
+    }
   });
 
   return NextResponse.json({ nodes, edges });
