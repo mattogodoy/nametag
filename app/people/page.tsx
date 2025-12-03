@@ -138,17 +138,23 @@ export default async function PeoplePage({
                         </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          style={{
-                            backgroundColor: person.relationshipToUser.color
-                              ? `${person.relationshipToUser.color}20`
-                              : '#E5E7EB',
-                            color: person.relationshipToUser.color || '#374151',
-                          }}
-                        >
-                          {person.relationshipToUser.label}
-                        </span>
+                        {person.relationshipToUser ? (
+                          <span
+                            className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                            style={{
+                              backgroundColor: person.relationshipToUser.color
+                                ? `${person.relationshipToUser.color}20`
+                                : '#E5E7EB',
+                              color: person.relationshipToUser.color || '#374151',
+                            }}
+                          >
+                            {person.relationshipToUser.label}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700">
+                            Indirect
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">

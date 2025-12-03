@@ -110,13 +110,15 @@ export async function GET(request: Request) {
     });
     nodeIds.add(person.id);
 
-    // Connect each person to the user with their specific relationship
-    edges.push({
-      source: userId,
-      target: person.id,
-      type: person.relationshipToUser.label,
-      color: person.relationshipToUser.color || '#9CA3AF',
-    });
+    // Connect each person to the user with their specific relationship (if they have a direct one)
+    if (person.relationshipToUser) {
+      edges.push({
+        source: userId,
+        target: person.id,
+        type: person.relationshipToUser.label,
+        color: person.relationshipToUser.color || '#9CA3AF',
+      });
+    }
   });
 
   // Add all relationships between people as edges (deduplicated)

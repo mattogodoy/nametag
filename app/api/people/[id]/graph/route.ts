@@ -89,13 +89,15 @@ export async function GET(
   });
   nodeIds.add(userId);
 
-  // Add edge from person to user (their relationship to you)
-  edges.push({
-    source: person.id,
-    target: userId,
-    type: person.relationshipToUser.label,
-    color: person.relationshipToUser.color || '#9CA3AF',
-  });
+  // Add edge from person to user (their relationship to you) if direct relationship exists
+  if (person.relationshipToUser) {
+    edges.push({
+      source: person.id,
+      target: userId,
+      type: person.relationshipToUser.label,
+      color: person.relationshipToUser.color || '#9CA3AF',
+    });
+  }
 
   // Add related people as nodes and create edges
   person.relationshipsFrom.forEach((rel) => {

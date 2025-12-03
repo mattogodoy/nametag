@@ -26,6 +26,7 @@ export default async function EditPersonPage({
       },
       include: {
         groups: true,
+        relationshipToUser: true,
       },
     }),
     prisma.group.findMany({

@@ -55,6 +55,7 @@ export default async function PersonDetailsPage({
         userId: session.user.id,
       },
       include: {
+        relationshipToUser: true,
         groups: {
           include: {
             group: true,

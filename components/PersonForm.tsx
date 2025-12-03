@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import PersonAutocomplete from './PersonAutocomplete';
 
 interface PersonFormProps {
   person?: {
@@ -14,7 +15,10 @@ interface PersonFormProps {
     address: string | null;
     lastContact: Date | null;
     notes: string | null;
-    relationshipToUserId: string;
+    relationshipToUserId: string | null;
+    relationshipToUser?: {
+      label: string;
+    } | null;
     groups: Array<{ groupId: string }>;
   };
   groups: Array<{
@@ -27,13 +31,29 @@ interface PersonFormProps {
     label: string;
     color: string | null;
   }>;
+  availablePeople?: Array<{
+    id: string;
+    fullName: string;
+    groups: Array<{ groupId: string }>;
+  }>;
+  userName?: string;
   mode: 'create' | 'edit';
 }
 
-export default function PersonForm({ person, groups, relationshipTypes, mode }: PersonFormProps) {
+export default function PersonForm({
+  person,
+  groups,
+  relationshipTypes,
+  availablePeople = [],
+  userName = 'You',
+  mode
+}: PersonFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [knownThroughId, setKnownThroughId] = useState<string>('user');
+  const [knownThroughName, setKnownThroughName] = useState<string>(userName);
+  const [inheritGroups, setInheritGroups] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: person?.fullName || '',
@@ -49,6 +69,45 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
     relationshipToUserId: person?.relationshipToUserId || '',
     groupIds: person?.groups.map((g) => g.groupId) || [],
   });
+
+  // Get the selected base person's groups for inheritance
+  const selectedBasePerson = knownThroughId !== 'user'
+    ? availablePeople.find(p => p.id === knownThroughId)
+    : null;
+
+  // Auto-inherit groups when checkbox is checked or base person changes
+  const handleInheritGroupsChange = (checked: boolean) => {
+    setInheritGroups(checked);
+    if (checked && selectedBasePerson) {
+      const inheritedGroupIds = selectedBasePerson.groups.map(g => g.groupId);
+      setFormData(prev => ({
+        ...prev,
+        groupIds: Array.from(new Set([...prev.groupIds, ...inheritedGroupIds]))
+      }));
+    }
+  };
+
+  // Update groups when base person changes if inherit is enabled
+  const handleKnownThroughChange = (newPersonId: string, newPersonName: string) => {
+    setKnownThroughId(newPersonId);
+    setKnownThroughName(newPersonName);
+    if (inheritGroups && newPersonId !== 'user') {
+      const newBasePerson = availablePeople.find(p => p.id === newPersonId);
+      if (newBasePerson) {
+        const inheritedGroupIds = newBasePerson.groups.map(g => g.groupId);
+        setFormData(prev => ({
+          ...prev,
+          groupIds: Array.from(new Set([...prev.groupIds, ...inheritedGroupIds]))
+        }));
+      }
+    }
+  };
+
+  // Create list of people including the user for autocomplete
+  const peopleWithUser = [
+    { id: 'user', fullName: userName, groups: [] },
+    ...availablePeople
+  ];
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -82,7 +141,10 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          ...(mode === 'create' && knownThroughId !== 'user' ? { connectedThroughId: knownThroughId } : {})
+        }),
       });
 
       const data = await response.json();
@@ -154,30 +216,129 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="relationshipToUserId"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Relationship to You *
-        </label>
-        <select
-          id="relationshipToUserId"
-          required
-          value={formData.relationshipToUserId}
-          onChange={(e) =>
-            setFormData({ ...formData, relationshipToUserId: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Select a relationship...</option>
-          {relationshipTypes.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {mode === 'create' && (
+        <div>
+          <label
+            htmlFor="knownThrough"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Known Through
+          </label>
+          <PersonAutocomplete
+            people={peopleWithUser}
+            value={knownThroughId}
+            onChange={handleKnownThroughChange}
+            placeholder="Search for a person..."
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Select who connects you to this person. For example, if adding your friend&apos;s child, select your friend.
+          </p>
+          {knownThroughId !== 'user' && selectedBasePerson && selectedBasePerson.groups.length > 0 && (
+            <div className="mt-3 flex items-center">
+              <input
+                type="checkbox"
+                id="inheritGroups"
+                checked={inheritGroups}
+                onChange={(e) => handleInheritGroupsChange(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Inherit groups from {selectedBasePerson.fullName}
+              </label>
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === 'edit' && person?.relationshipToUserId && (
+        <div>
+          <label
+            htmlFor="relationshipToUserId"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Relationship to You *
+          </label>
+          <select
+            id="relationshipToUserId"
+            required
+            value={formData.relationshipToUserId}
+            onChange={(e) =>
+              setFormData({ ...formData, relationshipToUserId: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select a relationship...</option>
+            {relationshipTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {mode === 'edit' && !person?.relationshipToUserId && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 px-4 py-3 rounded">
+          This person is connected to you through other people in your network, not directly.
+        </div>
+      )}
+
+      {mode === 'create' && knownThroughId === 'user' && (
+        <div>
+          <label
+            htmlFor="relationshipToUserId"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Relationship to {knownThroughName} *
+          </label>
+          <select
+            id="relationshipToUserId"
+            required
+            value={formData.relationshipToUserId}
+            onChange={(e) =>
+              setFormData({ ...formData, relationshipToUserId: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select a relationship...</option>
+            {relationshipTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {mode === 'create' && knownThroughId !== 'user' && (
+        <div>
+          <label
+            htmlFor="relationshipToKnownThrough"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Relationship to {knownThroughName} *
+          </label>
+          <select
+            id="relationshipToKnownThrough"
+            required
+            value={formData.relationshipToUserId}
+            onChange={(e) =>
+              setFormData({ ...formData, relationshipToUserId: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select a relationship...</option>
+            {relationshipTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            This person will be connected to {knownThroughName}, not directly to you.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>

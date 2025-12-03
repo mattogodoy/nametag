@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { fullName, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds } =
+    const { fullName, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds, connectedThroughId } =
       body;
 
     if (!fullName) {
@@ -58,31 +58,57 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!relationshipToUserId) {
+    // Relationship is only required for direct connections (not when connected through another person)
+    if (!connectedThroughId && !relationshipToUserId) {
       return NextResponse.json(
         { error: 'Relationship to user is required' },
         { status: 400 }
       );
     }
 
-    const person = await prisma.person.create({
-      data: {
-        userId: session.user.id,
-        fullName,
-        birthDate: birthDate ? new Date(birthDate) : null,
-        phone: phone || null,
-        address: address || null,
-        lastContact: lastContact ? new Date(lastContact) : null,
-        notes: notes || null,
-        relationshipToUserId,
-        groups: groupIds
-          ? {
-              create: groupIds.map((groupId: string) => ({
-                groupId,
-              })),
-            }
-          : undefined,
+    // If connectedThroughId is provided, verify the person exists and belongs to user
+    if (connectedThroughId) {
+      const basePerson = await prisma.person.findUnique({
+        where: { id: connectedThroughId, userId: session.user.id },
+      });
+
+      if (!basePerson) {
+        return NextResponse.json(
+          { error: 'Base connection person not found' },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Create person data based on whether it's a direct or indirect connection
+    const personData: any = {
+      user: {
+        connect: { id: session.user.id },
       },
+      fullName,
+      birthDate: birthDate ? new Date(birthDate) : null,
+      phone: phone || null,
+      address: address || null,
+      lastContact: lastContact ? new Date(lastContact) : null,
+      notes: notes || null,
+      groups: groupIds
+        ? {
+            create: groupIds.map((groupId: string) => ({
+              groupId,
+            })),
+          }
+        : undefined,
+    };
+
+    // Only add relationshipToUser if NOT connected through another person
+    if (!connectedThroughId && relationshipToUserId) {
+      personData.relationshipToUser = {
+        connect: { id: relationshipToUserId }
+      };
+    }
+
+    const person = await prisma.person.create({
+      data: personData,
       include: {
         groups: {
           include: {
@@ -91,6 +117,35 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    // If connected through another person, create bidirectional relationship
+    if (connectedThroughId) {
+      // Find the relationshipType and its inverse
+      const relationshipType = await prisma.relationshipType.findUnique({
+        where: { id: relationshipToUserId },
+        select: { inverseId: true },
+      });
+
+      // Create primary relationship (new person -> base person)
+      await prisma.relationship.create({
+        data: {
+          personId: person.id,
+          relatedPersonId: connectedThroughId,
+          relationshipTypeId: relationshipToUserId,
+        },
+      });
+
+      // Create inverse relationship if it exists (base person -> new person)
+      if (relationshipType?.inverseId) {
+        await prisma.relationship.create({
+          data: {
+            personId: connectedThroughId,
+            relatedPersonId: person.id,
+            relationshipTypeId: relationshipType.inverseId,
+          },
+        });
+      }
+    }
 
     return NextResponse.json({ person }, { status: 201 });
   } catch (error) {
