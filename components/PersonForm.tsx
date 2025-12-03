@@ -71,6 +71,8 @@ export default function PersonForm({
   );
   const [inheritGroups, setInheritGroups] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [createAnother, setCreateAnother] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: person?.fullName || initialFullName || '',
@@ -126,9 +128,12 @@ export default function PersonForm({
     ...availablePeople
   ];
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>, addAnother = false) => {
     e.preventDefault();
     setError('');
+
+    // Set createAnother based on the parameter
+    setCreateAnother(addAnother);
 
     // Client-side validation
     if (formData.birthDate) {
@@ -180,18 +185,34 @@ export default function PersonForm({
 
       // Redirect logic:
       // - Edit mode: Go to the edited person's detail page
+      // - Create mode with "create another": Reload the create page
       // - Create mode with "Known Through" another person: Go to that person's detail page (to see the new relationship)
       // - Create mode direct to user: Go to the newly created person's detail page
       if (mode === 'edit' && person?.id) {
         router.push(`/people/${person.id}`);
+        router.refresh();
+      } else if (mode === 'create' && addAnother) {
+        // Reload the create page to reset the form
+        // Preserve query params for knownThrough and relationshipType if they exist
+        const params = new URLSearchParams();
+        if (initialKnownThrough) {
+          params.set('knownThrough', initialKnownThrough);
+        }
+        if (initialRelationshipType) {
+          params.set('relationshipType', initialRelationshipType);
+        }
+        const queryString = params.toString();
+        window.location.href = queryString ? `/people/new?${queryString}` : '/people/new';
       } else if (mode === 'create' && knownThroughId !== 'user') {
         router.push(`/people/${knownThroughId}`);
+        router.refresh();
       } else if (mode === 'create' && data.person?.id) {
         router.push(`/people/${data.person.id}`);
+        router.refresh();
       } else {
         router.push('/people');
+        router.refresh();
       }
-      router.refresh();
     } catch (error) {
       setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
@@ -534,17 +555,66 @@ export default function PersonForm({
         >
           Cancel
         </Link>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading
-            ? 'Saving...'
-            : mode === 'create'
-            ? 'Create Person'
-            : 'Update Person'}
-        </button>
+
+        {mode === 'create' ? (
+          <div className="relative">
+            <div className="flex">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-l-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Saving...' : 'Create'}
+              </button>
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="px-2 py-2 bg-blue-600 text-white border-l border-blue-500 rounded-r-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-10">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    setShowDropdown(false);
+                    // Trigger form submission with validation
+                    const form = e.currentTarget.closest('form');
+                    if (form) {
+                      // Check if form is valid using HTML5 validation
+                      if (form.checkValidity()) {
+                        // Manually create and dispatch submit event
+                        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                        Object.defineProperty(submitEvent, 'target', { value: form, enumerable: true });
+                        handleSubmit(submitEvent as any, true);
+                      } else {
+                        // Trigger browser's built-in validation UI
+                        form.reportValidity();
+                      }
+                    }
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Create and add another
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Saving...' : 'Update Person'}
+          </button>
+        )}
       </div>
     </form>
   );
