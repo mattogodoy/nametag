@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { signOut } from '@/lib/auth';
+import Image from 'next/image';
 import NavigationSearch from './NavigationSearch';
+import UserMenu from './UserMenu';
 
 interface NavigationProps {
   userEmail?: string;
@@ -25,8 +26,15 @@ export default function Navigation({ userEmail, userName, currentPath }: Navigat
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white">
-              Name Tag
+            <Link href="/dashboard" className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
+              <Image
+                src="/logo.svg"
+                alt="Name Tag Logo"
+                width={32}
+                height={32}
+                className="text-gray-900 dark:text-white"
+              />
+              <span>Name Tag</span>
             </Link>
             <div className="flex space-x-4">
               {navItems.map((item) => (
@@ -47,23 +55,8 @@ export default function Navigation({ userEmail, userName, currentPath }: Navigat
           <div className="flex items-center space-x-4">
             <NavigationSearch />
             {userEmail && (
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {userName || userEmail}
-              </span>
+              <UserMenu userEmail={userEmail} userName={userName} />
             )}
-            <form
-              action={async () => {
-                'use server';
-                await signOut({ redirectTo: '/login' });
-              }}
-            >
-              <button
-                type="submit"
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              >
-                Sign out
-              </button>
-            </form>
           </div>
         </div>
       </div>
