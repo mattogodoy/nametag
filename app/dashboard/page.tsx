@@ -5,6 +5,26 @@ import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import DashboardNetworkGraph from '@/components/DashboardNetworkGraph';
 
+function getRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return 'today';
+  } else if (diffDays === 1) {
+    return '1 day ago';
+  } else if (diffDays < 30) {
+    return `${diffDays} days ago`;
+  } else if (diffDays < 365) {
+    const months = Math.floor(diffDays / 30);
+    return months === 1 ? '1 month ago' : `${months} months ago`;
+  } else {
+    const years = Math.floor(diffDays / 365);
+    return years === 1 ? '1 year ago' : `${years} years ago`;
+  }
+}
+
 export default async function DashboardPage() {
   const session = await auth();
 
@@ -12,8 +32,8 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  // Fetch statistics
-  const [peopleCount, groupsCount, relationshipsCount, recentPeople] = await Promise.all([
+  // Fetch statistics and groups
+  const [peopleCount, groupsCount, relationshipsCount, recentPeople, groups] = await Promise.all([
     prisma.person.count({
       where: { userId: session.user.id },
     }),
@@ -26,7 +46,10 @@ export default async function DashboardPage() {
       },
     }),
     prisma.person.findMany({
-      where: { userId: session.user.id },
+      where: {
+        userId: session.user.id,
+        lastContact: { not: null },
+      },
       orderBy: { lastContact: 'desc' },
       take: 5,
       select: {
@@ -34,6 +57,10 @@ export default async function DashboardPage() {
         fullName: true,
         lastContact: true,
       },
+    }),
+    prisma.group.findMany({
+      where: { userId: session.user.id },
+      orderBy: { name: 'asc' },
     }),
   ]);
 
@@ -104,7 +131,10 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
-            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <Link
+              href="/relationship-types"
+              className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
+            >
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -122,7 +152,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Network Graph */}
@@ -131,7 +161,7 @@ export default async function DashboardPage() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                 Your Network
               </h2>
-              <DashboardNetworkGraph />
+              <DashboardNetworkGraph groups={groups} />
             </div>
           )}
 
@@ -152,8 +182,16 @@ export default async function DashboardPage() {
                       {person.fullName}
                     </span>
                     {person.lastContact && (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(person.lastContact).toLocaleDateString()}
+                      <span
+                        className="text-sm text-gray-500 dark:text-gray-400 cursor-help"
+                        title={new Date(person.lastContact).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      >
+                        {getRelativeTime(new Date(person.lastContact))}
                       </span>
                     )}
                   </Link>
@@ -161,42 +199,6 @@ export default async function DashboardPage() {
               </div>
             </div>
           )}
-
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Quick Actions
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Link
-                href="/people/new"
-                className="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-              >
-                <span className="text-2xl mr-3">➕</span>
-                <span className="text-blue-900 dark:text-blue-100 font-medium">
-                  Add Person
-                </span>
-              </Link>
-              <Link
-                href="/groups/new"
-                className="flex items-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-              >
-                <span className="text-2xl mr-3">📁</span>
-                <span className="text-green-900 dark:text-green-100 font-medium">
-                  Create Group
-                </span>
-              </Link>
-              <Link
-                href="/relationship-types/new"
-                className="flex items-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-              >
-                <span className="text-2xl mr-3">🔗</span>
-                <span className="text-purple-900 dark:text-purple-100 font-medium">
-                  New Relationship Type
-                </span>
-              </Link>
-            </div>
-          </div>
         </div>
       </main>
     </div>

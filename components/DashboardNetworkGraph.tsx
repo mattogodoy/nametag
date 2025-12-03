@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useRouter } from 'next/navigation';
 
@@ -19,13 +19,21 @@ interface GraphEdge {
   color: string;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 interface DashboardNetworkGraphProps {
+  groups: Group[];
   refreshKey?: number;
 }
 
-export default function DashboardNetworkGraph({ refreshKey }: DashboardNetworkGraphProps) {
+export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardNetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -34,12 +42,35 @@ export default function DashboardNetworkGraph({ refreshKey }: DashboardNetworkGr
     fetch('/api/dashboard/graph')
       .then((res) => res.json())
       .then((data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
-        renderGraph(data.nodes, data.edges);
+        // Filter nodes and edges based on selected group
+        let filteredNodes = data.nodes;
+        let filteredEdges = data.edges;
+
+        if (selectedGroupId) {
+          // Filter nodes: keep user node and nodes that belong to the selected group
+          filteredNodes = data.nodes.filter((node) => {
+            if (node.isCenter) return true; // Always show user
+            return node.groups.some((groupName) => {
+              const group = groups.find(g => g.name === groupName);
+              return group?.id === selectedGroupId;
+            });
+          });
+
+          // Filter edges: only keep edges where both nodes are in filtered set
+          const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+          filteredEdges = data.edges.filter((edge) => {
+            const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
+            const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
+            return filteredNodeIds.has(sourceId) && filteredNodeIds.has(targetId);
+          });
+        }
+
+        renderGraph(filteredNodes, filteredEdges);
       })
       .catch((error) => {
         console.error('Failed to load graph data:', error);
       });
-  }, [refreshKey]);
+  }, [refreshKey, selectedGroupId, groups]);
 
   const renderGraph = (nodes: GraphNode[], edges: GraphEdge[]) => {
     if (!svgRef.current) return;
@@ -230,8 +261,33 @@ export default function DashboardNetworkGraph({ refreshKey }: DashboardNetworkGr
   };
 
   return (
-    <div className="w-full h-96 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700">
-      <svg ref={svgRef} className="w-full h-full" />
+    <div className="w-full">
+      {/* Group Filter */}
+      {groups.length > 0 && (
+        <div className="mb-4">
+          <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Filter by Group
+          </label>
+          <select
+            id="group-filter"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Groups</option>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Graph */}
+      <div className="w-full h-96 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700">
+        <svg ref={svgRef} className="w-full h-full" />
+      </div>
     </div>
   );
 }
