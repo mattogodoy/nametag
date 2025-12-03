@@ -29,6 +29,7 @@ interface Relationship {
 
 interface RelationshipManagerProps {
   personId: string;
+  personName: string;
   relationships: Relationship[];
   availablePeople: Person[];
   relationshipTypes: RelationshipType[];
@@ -36,6 +37,7 @@ interface RelationshipManagerProps {
 
 export default function RelationshipManager({
   personId,
+  personName,
   relationships,
   availablePeople,
   relationshipTypes,
@@ -173,6 +175,16 @@ export default function RelationshipManager({
     setShowDeleteModal(true);
   };
 
+  const handleCreateNewPerson = (searchTerm: string) => {
+    // Navigate to create person page with pre-filled data
+    const params = new URLSearchParams({
+      fullName: searchTerm,
+      knownThrough: personId,
+      relationshipType: formData.relationshipTypeId,
+    });
+    router.push(`/people/new?${params.toString()}`);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
@@ -248,20 +260,6 @@ export default function RelationshipManager({
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Person *
-                </label>
-                <PersonAutocomplete
-                  people={availablePeople}
-                  value={formData.relatedPersonId}
-                  onChange={(personId) =>
-                    setFormData({ ...formData, relatedPersonId: personId })
-                  }
-                  placeholder="Search for a person..."
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Relationship Type *
                 </label>
                 <select
@@ -278,6 +276,21 @@ export default function RelationshipManager({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Person *
+                </label>
+                <PersonAutocomplete
+                  people={availablePeople}
+                  value={formData.relatedPersonId}
+                  onChange={(personId) =>
+                    setFormData({ ...formData, relatedPersonId: personId })
+                  }
+                  placeholder="Search for a person..."
+                  required
+                  onCreateNew={handleCreateNewPerson}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

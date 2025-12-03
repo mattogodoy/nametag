@@ -5,12 +5,18 @@ import { prisma } from '@/lib/prisma';
 import PersonForm from '@/components/PersonForm';
 import Navigation from '@/components/Navigation';
 
-export default async function NewPersonPage() {
+export default async function NewPersonPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ fullName?: string; knownThrough?: string; relationshipType?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
     redirect('/login');
   }
+
+  const params = await searchParams;
 
   const [groups, relationshipTypes, people] = await Promise.all([
     prisma.group.findMany({
@@ -69,6 +75,9 @@ export default async function NewPersonPage() {
               availablePeople={people}
               userName={session.user.name || session.user.email || 'You'}
               mode="create"
+              initialFullName={params.fullName}
+              initialKnownThrough={params.knownThrough}
+              initialRelationshipType={params.relationshipType}
             />
           </div>
         </div>

@@ -246,6 +246,7 @@ export default async function PersonDetailsPage({
               <div>
                 <RelationshipManager
                   personId={person.id}
+                  personName={person.fullName}
                   relationships={person.relationshipsFrom}
                   availablePeople={availablePeople}
                   relationshipTypes={relationshipTypes}

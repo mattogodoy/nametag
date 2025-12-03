@@ -38,6 +38,9 @@ interface PersonFormProps {
   }>;
   userName?: string;
   mode: 'create' | 'edit';
+  initialFullName?: string;
+  initialKnownThrough?: string;
+  initialRelationshipType?: string;
 }
 
 export default function PersonForm({
@@ -46,17 +49,30 @@ export default function PersonForm({
   relationshipTypes,
   availablePeople = [],
   userName = 'You',
-  mode
+  mode,
+  initialFullName,
+  initialKnownThrough,
+  initialRelationshipType,
 }: PersonFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [knownThroughId, setKnownThroughId] = useState<string>('user');
-  const [knownThroughName, setKnownThroughName] = useState<string>(userName);
+
+  // Initialize knownThrough from URL params if provided
+  const initialKnownThroughPerson = initialKnownThrough
+    ? availablePeople.find(p => p.id === initialKnownThrough)
+    : null;
+
+  const [knownThroughId, setKnownThroughId] = useState<string>(
+    initialKnownThrough || 'user'
+  );
+  const [knownThroughName, setKnownThroughName] = useState<string>(
+    initialKnownThroughPerson?.fullName || userName
+  );
   const [inheritGroups, setInheritGroups] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: person?.fullName || '',
+    fullName: person?.fullName || initialFullName || '',
     birthDate: person?.birthDate
       ? new Date(person.birthDate).toISOString().split('T')[0]
       : '',
@@ -66,7 +82,7 @@ export default function PersonForm({
       ? new Date(person.lastContact).toISOString().split('T')[0]
       : '',
     notes: person?.notes || '',
-    relationshipToUserId: person?.relationshipToUserId || '',
+    relationshipToUserId: person?.relationshipToUserId || initialRelationshipType || '',
     groupIds: person?.groups.map((g) => g.groupId) || [],
   });
 
@@ -161,9 +177,14 @@ export default function PersonForm({
           : `${formData.fullName}'s information has been updated`
       );
 
-      // Redirect to detail page after edit, list page after create
+      // Redirect logic:
+      // - Edit mode: Go to the edited person's detail page
+      // - Create mode with "Known Through" another person: Go to that person's detail page
+      // - Create mode direct to user: Go to people list
       if (mode === 'edit' && person?.id) {
         router.push(`/people/${person.id}`);
+      } else if (mode === 'create' && knownThroughId !== 'user') {
+        router.push(`/people/${knownThroughId}`);
       } else {
         router.push('/people');
       }

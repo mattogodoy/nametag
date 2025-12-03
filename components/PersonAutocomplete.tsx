@@ -13,6 +13,7 @@ interface PersonAutocompleteProps {
   onChange: (personId: string, personName: string) => void;
   placeholder?: string;
   required?: boolean;
+  onCreateNew?: (searchTerm: string) => void;
 }
 
 export default function PersonAutocomplete({
@@ -21,6 +22,7 @@ export default function PersonAutocomplete({
   onChange,
   placeholder = 'Search for a person...',
   required = false,
+  onCreateNew,
 }: PersonAutocompleteProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -97,8 +99,11 @@ export default function PersonAutocomplete({
         break;
       case 'Enter':
         e.preventDefault();
-        if (filteredPeople[highlightedIndex]) {
+        if (filteredPeople.length > 0 && filteredPeople[highlightedIndex]) {
           handleSelect(filteredPeople[highlightedIndex]);
+        } else if (filteredPeople.length === 0 && searchTerm && onCreateNew) {
+          // No results - trigger create new
+          onCreateNew(searchTerm);
         }
         break;
       case 'Escape':
@@ -159,9 +164,20 @@ export default function PersonAutocomplete({
 
       {isOpen && searchTerm && filteredPeople.length === 0 && (
         <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No people found matching &quot;{searchTerm}&quot;
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No people found matching &quot;{searchTerm}&quot;
+            </p>
+            {onCreateNew && (
+              <button
+                type="button"
+                onClick={() => onCreateNew(searchTerm)}
+                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Create
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
