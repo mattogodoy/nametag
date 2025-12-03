@@ -83,22 +83,30 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
     // Main group for zooming/panning
     const g = svg.append('g');
 
-    // Define arrow markers for directed edges (one for each unique color)
+    // Define arrow markers for directed edges (one for each unique color and opacity)
     const defs = svg.append('defs');
     const uniqueColors = Array.from(new Set(edges.map((e: any) => e.color || '#999')));
+    const opacityLevels = [
+      { value: 0.05, id: 'dim' },
+      { value: 0.15, id: 'normal' },
+      { value: 0.8, id: 'highlight' }
+    ];
 
     uniqueColors.forEach((color) => {
-      defs.append('marker')
-        .attr('id', `arrow-${color.replace('#', '')}`)
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 18)
-        .attr('refY', 0)
-        .attr('markerWidth', 4)
-        .attr('markerHeight', 4)
-        .attr('orient', 'auto')
-        .append('path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', color);
+      opacityLevels.forEach((level) => {
+        defs.append('marker')
+          .attr('id', `arrow-${color.replace('#', '')}-${level.id}`)
+          .attr('viewBox', '0 -5 10 10')
+          .attr('refX', 18)
+          .attr('refY', 0)
+          .attr('markerWidth', 4)
+          .attr('markerHeight', 4)
+          .attr('orient', 'auto')
+          .append('path')
+          .attr('d', 'M0,-5L10,0L0,5')
+          .attr('fill', color)
+          .attr('fill-opacity', level.value);
+      });
     });
 
     // Create force simulation
@@ -128,7 +136,7 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
         return newNodeIds.has(targetNode) ? 0 : 0.15;
       })
       .attr('stroke-width', 2)
-      .attr('marker-end', (d: any) => `url(#arrow-${(d.color || '#999').replace('#', '')})`);
+      .attr('marker-end', (d: any) => `url(#arrow-${(d.color || '#999').replace('#', '')}-normal)`);
 
     // Animate edges connected to new nodes
     link
@@ -175,7 +183,7 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
         router.push(`/people/${d.id}`);
       })
       .on('mouseenter', function(_event, d) {
-        // Highlight connected edges
+        // Highlight connected edges and update their arrow markers
         link
           .transition()
           .duration(200)
@@ -183,6 +191,12 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
             const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
             const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
             return (sourceId === d.id || targetId === d.id) ? 0.8 : 0.05;
+          })
+          .attr('marker-end', (edge: any) => {
+            const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
+            const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
+            const opacityId = (sourceId === d.id || targetId === d.id) ? 'highlight' : 'dim';
+            return `url(#arrow-${(edge.color || '#999').replace('#', '')}-${opacityId})`;
           });
 
         // Show labels for connected edges
@@ -196,11 +210,12 @@ export default function NetworkGraph({ personId, refreshKey }: NetworkGraphProps
           });
       })
       .on('mouseleave', function() {
-        // Reset edge opacity
+        // Reset edge opacity and arrow markers
         link
           .transition()
           .duration(200)
-          .attr('stroke-opacity', 0.15);
+          .attr('stroke-opacity', 0.15)
+          .attr('marker-end', (d: any) => `url(#arrow-${(d.color || '#999').replace('#', '')}-normal)`);
 
         // Hide all labels
         edgeLabels

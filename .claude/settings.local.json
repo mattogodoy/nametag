@@ -21,7 +21,8 @@
       "Bash(sudo chown:*)",
       "Bash(docker volume:*)",
       "Bash(docker restart:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(node -e \"console.log(''0.05:'', (0.05).toString().replace(''.'', '''')); console.log(''0.15:'', (0.15).toString().replace(''.'', '''')); console.log(''0.8:'', (0.8).toString().replace(''.'', ''''));\")"
     ],
     "deny": [],
     "ask": []

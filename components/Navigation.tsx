@@ -13,7 +13,7 @@ export default function Navigation({ userEmail, userName, currentPath }: Navigat
   const navItems = [
     { href: '/people', label: 'People' },
     { href: '/groups', label: 'Groups' },
-    { href: '/relationship-types', label: 'Relationship Types' },
+    { href: '/relationship-types', label: 'Relationships' },
   ];
 
   const isActive = (href: string) => {
@@ -29,12 +29,12 @@ export default function Navigation({ userEmail, userName, currentPath }: Navigat
             <Link href="/dashboard" className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
               <Image
                 src="/logo.svg"
-                alt="Name Tag Logo"
+                alt="NameTag Logo"
                 width={32}
                 height={32}
                 className="text-gray-900 dark:text-white"
               />
-              <span>Name Tag</span>
+              <span>NameTag</span>
             </Link>
             <div className="flex space-x-4">
               {navItems.map((item) => (
