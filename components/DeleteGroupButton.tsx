@@ -55,9 +55,11 @@ export default function DeleteGroupButton({
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Delete Group
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-1">
               Are you sure you want to delete{' '}
               <strong className="text-gray-900 dark:text-white">{groupName}</strong>?
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               This will remove all people from this group but will not delete the
               people themselves.
             </p>

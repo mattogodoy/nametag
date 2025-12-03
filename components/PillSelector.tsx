@@ -1,0 +1,242 @@
+'use client';
+
+import { useState, useRef, KeyboardEvent, ReactNode } from 'react';
+
+interface PillItem {
+  id: string;
+  label: string;
+  color?: string | null;
+}
+
+interface PillSelectorProps<T extends PillItem> {
+  label?: string;
+  selectedItems: T[];
+  availableItems: T[];
+  onAdd: (item: T) => void;
+  onRemove: (itemId: string) => void;
+  placeholder?: string;
+  emptyMessage?: string;
+  helpText?: string;
+  renderPill?: (item: T, onRemove: () => void) => ReactNode;
+  renderSuggestion?: (item: T) => ReactNode;
+  showAllOnFocus?: boolean;
+  isLoading?: boolean;
+}
+
+export default function PillSelector<T extends PillItem>({
+  label,
+  selectedItems,
+  availableItems,
+  onAdd,
+  onRemove,
+  placeholder = 'Type to search...',
+  emptyMessage = 'No items found',
+  helpText,
+  renderPill,
+  renderSuggestion,
+  showAllOnFocus = false,
+  isLoading = false,
+}: PillSelectorProps<T>) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+
+  // Get selected item IDs for quick lookup
+  const selectedIds = new Set(selectedItems.map((item) => item.id));
+
+  // Filter available items to exclude already selected ones
+  const unselectedItems = availableItems.filter(
+    (item) => !selectedIds.has(item.id)
+  );
+
+  // Filter suggestions based on search term
+  const filteredSuggestions = searchTerm
+    ? unselectedItems.filter((item) =>
+        item.label.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : showAllOnFocus
+    ? unselectedItems
+    : [];
+
+  const handleAdd = (item: T) => {
+    onAdd(item);
+    setSearchTerm('');
+    setShowSuggestions(showAllOnFocus);
+    setHighlightedIndex(0);
+    inputRef.current?.focus();
+  };
+
+  const handleRemove = (itemId: string) => {
+    onRemove(itemId);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredSuggestions.length > 0 && filteredSuggestions[highlightedIndex]) {
+        handleAdd(filteredSuggestions[highlightedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setSearchTerm('');
+    } else if (e.key === 'Backspace' && !searchTerm && selectedItems.length > 0) {
+      // Remove last item when backspace is pressed on empty input
+      handleRemove(selectedItems[selectedItems.length - 1].id);
+    }
+  };
+
+  // Default pill renderer
+  const defaultRenderPill = (item: T, onRemoveClick: () => void) => (
+    <div
+      key={item.id}
+      className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium"
+    >
+      {item.color && (
+        <div
+          className="w-3 h-3 rounded-full flex-shrink-0"
+          style={{ backgroundColor: item.color }}
+        />
+      )}
+      <span>{item.label}</span>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemoveClick();
+        }}
+        disabled={isLoading}
+        className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors disabled:opacity-50"
+        aria-label={`Remove ${item.label}`}
+      >
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+
+  // Default suggestion renderer
+  const defaultRenderSuggestion = (item: T) => (
+    <>
+      {item.color && (
+        <div
+          className="w-3 h-3 rounded-full flex-shrink-0"
+          style={{ backgroundColor: item.color }}
+        />
+      )}
+      <span className="text-gray-900 dark:text-white">{item.label}</span>
+    </>
+  );
+
+  const pillRenderer = renderPill || defaultRenderPill;
+  const suggestionRenderer = renderSuggestion || defaultRenderSuggestion;
+
+  return (
+    <div className="relative">
+      {label && (
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {label}
+        </label>
+      )}
+
+      {/* Input box with pills */}
+      <div
+        className="min-h-[60px] p-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus-within:border-blue-500 dark:focus-within:border-blue-400 transition-colors cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Selected items as pills */}
+          {selectedItems.map((item) =>
+            pillRenderer(item, () => handleRemove(item.id))
+          )}
+
+          {/* Input field */}
+          <div className="flex-1 min-w-[150px]">
+            <input
+              ref={inputRef}
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowSuggestions(true);
+                setHighlightedIndex(0);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                // Delay to allow clicking on suggestions
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                selectedItems.length === 0
+                  ? placeholder
+                  : placeholder.replace('Type to search', 'Add more')
+              }
+              disabled={isLoading}
+              className="w-full px-2 py-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none disabled:opacity-50"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Suggestions dropdown */}
+      {showSuggestions && (searchTerm || showAllOnFocus) && (
+        <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+          {filteredSuggestions.length > 0 ? (
+            <ul>
+              {filteredSuggestions.map((item, index) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleAdd(item)}
+                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 ${
+                      index === highlightedIndex
+                        ? 'bg-gray-100 dark:bg-gray-600'
+                        : ''
+                    }`}
+                  >
+                    {suggestionRenderer(item)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : searchTerm ? (
+            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+              {emptyMessage} &quot;{searchTerm}&quot;
+            </div>
+          ) : (
+            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+              All items are already selected
+            </div>
+          )}
+        </div>
+      )}
+
+      {helpText && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {helpText}
+        </p>
+      )}
+    </div>
+  );
+}

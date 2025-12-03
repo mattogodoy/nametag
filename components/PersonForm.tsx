@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
+import GroupsSelector from './GroupsSelector';
 
 interface PersonFormProps {
   person?: {
@@ -220,15 +221,6 @@ export default function PersonForm({
     }
   };
 
-  const handleGroupToggle = (groupId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      groupIds: prev.groupIds.includes(groupId)
-        ? prev.groupIds.filter((id) => id !== groupId)
-        : [...prev.groupIds, groupId],
-    }));
-  };
-
   const setLastContactToToday = () => {
     const today = new Date().toISOString().split('T')[0];
     setFormData({ ...formData, lastContact: today });
@@ -385,37 +377,11 @@ export default function PersonForm({
       )}
 
       {groups.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Groups
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {groups.map((group) => (
-              <button
-                key={group.id}
-                type="button"
-                onClick={() => handleGroupToggle(group.id)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  formData.groupIds.includes(group.id)
-                    ? 'ring-2 ring-blue-500'
-                    : 'ring-1 ring-gray-300 dark:ring-gray-600'
-                }`}
-                style={{
-                  backgroundColor: group.color
-                    ? formData.groupIds.includes(group.id)
-                      ? group.color
-                      : `${group.color}40`
-                    : formData.groupIds.includes(group.id)
-                    ? '#3B82F6'
-                    : '#E5E7EB',
-                  color: formData.groupIds.includes(group.id) ? 'white' : '#374151',
-                }}
-              >
-                {group.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <GroupsSelector
+          availableGroups={groups}
+          selectedGroupIds={formData.groupIds}
+          onChange={(groupIds) => setFormData({ ...formData, groupIds })}
+        />
       )}
 
       {/* Collapsible Details Section */}
