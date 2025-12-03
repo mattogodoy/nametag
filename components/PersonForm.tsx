@@ -81,7 +81,7 @@ export default function PersonForm({ person, groups, relationshipTypes, mode }: 
       }
       router.refresh();
     } catch (error) {
-      setError('Failed to save person');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

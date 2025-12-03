@@ -57,7 +57,7 @@ export default function ProfileForm({ userId, currentName, currentEmail }: Profi
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError('Failed to update profile');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

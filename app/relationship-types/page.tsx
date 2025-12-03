@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import EmptyState from '@/components/EmptyState';
 
 export default async function RelationshipTypesPage() {
   const session = await auth();
@@ -138,10 +139,14 @@ export default async function RelationshipTypesPage() {
           )}
 
           {customTypes.length === 0 && (
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-400">
-                No custom relationship types yet. Create one to get started!
-              </p>
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+              <EmptyState
+                icon="🔗"
+                title="No custom relationship types"
+                description="You're using the default relationship types. Create custom types to better represent the unique connections in your network."
+                actionLabel="Create Relationship Type"
+                actionHref="/relationship-types/new"
+              />
             </div>
           )}
         </div>

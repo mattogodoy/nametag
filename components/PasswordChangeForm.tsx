@@ -65,7 +65,7 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError('Failed to change password');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

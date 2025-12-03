@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import EmptyState from '@/components/EmptyState';
 
 export default async function GroupsPage() {
   const session = await auth();
@@ -50,16 +51,14 @@ export default async function GroupsPage() {
           </div>
 
           {groups.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-12 text-center">
-              <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
-                No groups yet. Create your first group to organize people!
-              </p>
-              <Link
-                href="/groups/new"
-                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Create Your First Group
-              </Link>
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+              <EmptyState
+                icon="📁"
+                title="No groups yet"
+                description="Create groups to organize your network. Groups help you categorize people by family, friends, work, or any custom category."
+                actionLabel="Create Your First Group"
+                actionHref="/groups/new"
+              />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

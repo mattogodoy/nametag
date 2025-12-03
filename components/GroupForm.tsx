@@ -68,7 +68,7 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
       }
       router.refresh();
     } catch (error) {
-      setError('Failed to save group');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

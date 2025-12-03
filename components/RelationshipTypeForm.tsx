@@ -115,7 +115,7 @@ export default function RelationshipTypeForm({
       router.push('/relationship-types');
       router.refresh();
     } catch (error) {
-      setError('Failed to save relationship type');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

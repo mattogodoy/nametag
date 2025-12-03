@@ -84,7 +84,7 @@ export default function RelationshipManager({
       setFormData({ relatedPersonId: '', relationshipTypeId: defaultTypeId, notes: '' });
       router.refresh();
     } catch (error) {
-      setError('Failed to create relationship');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +119,7 @@ export default function RelationshipManager({
       setSelectedRelationship(null);
       router.refresh();
     } catch (error) {
-      setError('Failed to update relationship');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -129,6 +129,7 @@ export default function RelationshipManager({
     if (!selectedRelationship) return;
 
     setIsLoading(true);
+    setError('');
 
     try {
       const response = await fetch(`/api/relationships/${selectedRelationship.id}`, {
@@ -136,7 +137,8 @@ export default function RelationshipManager({
       });
 
       if (!response.ok) {
-        alert('Failed to delete relationship');
+        const data = await response.json();
+        setError(data.error || 'Failed to delete relationship. Please try again.');
         setIsLoading(false);
         return;
       }
@@ -145,7 +147,7 @@ export default function RelationshipManager({
       setSelectedRelationship(null);
       router.refresh();
     } catch (error) {
-      alert('Failed to delete relationship');
+      setError('Unable to connect to server. Please check your connection and try again.');
       setIsLoading(false);
     }
   };
@@ -387,6 +389,13 @@ export default function RelationshipManager({
               </strong>
               ? This will also remove the reverse relationship.
             </p>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 rounded text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteModal(false)}

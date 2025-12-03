@@ -15,9 +15,11 @@ export default function DeletePersonButton({
   const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleDelete = async () => {
     setIsDeleting(true);
+    setError('');
 
     try {
       const response = await fetch(`/api/people/${personId}`, {
@@ -28,11 +30,12 @@ export default function DeletePersonButton({
         router.push('/people');
         router.refresh();
       } else {
-        alert('Failed to delete person');
+        const data = await response.json();
+        setError(data.error || 'Failed to delete person. Please try again.');
         setIsDeleting(false);
       }
     } catch (error) {
-      alert('Failed to delete person');
+      setError('Unable to connect to server. Please check your connection and try again.');
       setIsDeleting(false);
     }
   };
@@ -58,6 +61,13 @@ export default function DeletePersonButton({
               This action cannot be undone and will also delete all relationships
               associated with this person.
             </p>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 rounded text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowConfirm(false)}

@@ -31,7 +31,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (error) {
-      setError('Something went wrong. Please try again.');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

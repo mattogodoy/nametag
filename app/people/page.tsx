@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import EmptyState from '@/components/EmptyState';
 import { formatDate } from '@/lib/date-format';
 
 export default async function PeoplePage() {
@@ -59,16 +60,14 @@ export default async function PeoplePage() {
           </div>
 
           {people.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-12 text-center">
-              <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
-                No people yet. Start building your network!
-              </p>
-              <Link
-                href="/people/new"
-                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Add Your First Person
-              </Link>
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+              <EmptyState
+                icon="👥"
+                title="No people yet"
+                description="Start building your network by adding people you know. You can track their details, relationships, and stay connected."
+                actionLabel="Add Your First Person"
+                actionHref="/people/new"
+              />
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
