@@ -17,31 +17,70 @@ interface GraphEdge {
   color: string;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
 
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Fetch all people with their relationships and groups
+  // Parse query parameters for filtering
+  const { searchParams } = new URL(request.url);
+  const groupId = searchParams.get('groupId');
+  const limit = searchParams.get('limit');
+
+  // Build where clause
+  const whereClause: any = {
+    userId: session.user.id,
+  };
+
+  // Filter by group if specified
+  if (groupId && groupId !== 'all') {
+    whereClause.groups = {
+      some: {
+        groupId: groupId,
+      },
+    };
+  }
+
+  // Fetch people with optimized select to minimize payload
   const people = await prisma.person.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    include: {
-      relationshipToUser: true,
+    where: whereClause,
+    select: {
+      id: true,
+      fullName: true,
+      relationshipToUser: {
+        select: {
+          label: true,
+          color: true,
+        },
+      },
       groups: {
-        include: {
-          group: true,
+        select: {
+          group: {
+            select: {
+              name: true,
+              color: true,
+            },
+          },
         },
       },
       relationshipsFrom: {
-        include: {
-          relationshipType: true,
+        select: {
+          relatedPersonId: true,
+          relationshipType: {
+            select: {
+              label: true,
+              color: true,
+            },
+          },
         },
       },
     },
+    orderBy: {
+      fullName: 'asc',
+    },
+    ...(limit ? { take: parseInt(limit) } : {}),
   });
 
   // Build graph data

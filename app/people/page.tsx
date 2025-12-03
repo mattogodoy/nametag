@@ -6,7 +6,13 @@ import Navigation from '@/components/Navigation';
 import EmptyState from '@/components/EmptyState';
 import { formatDate } from '@/lib/date-format';
 
-export default async function PeoplePage() {
+const ITEMS_PER_PAGE = 50;
+
+export default async function PeoplePage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const session = await auth();
 
   if (!session?.user) {
@@ -20,21 +26,45 @@ export default async function PeoplePage() {
   });
   const dateFormat = user?.dateFormat || 'MDY';
 
+  const currentPage = Number(searchParams.page) || 1;
+  const skip = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  // Get total count for pagination
+  const totalCount = await prisma.person.count({
+    where: {
+      userId: session.user.id,
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
   const people = await prisma.person.findMany({
     where: {
       userId: session.user.id,
     },
     include: {
-      relationshipToUser: true,
+      relationshipToUser: {
+        select: {
+          label: true,
+          color: true,
+        },
+      },
       groups: {
         include: {
-          group: true,
+          group: {
+            select: {
+              name: true,
+              color: true,
+            },
+          },
         },
       },
     },
     orderBy: {
       fullName: 'asc',
     },
+    skip,
+    take: ITEMS_PER_PAGE,
   });
 
   return (
@@ -59,7 +89,7 @@ export default async function PeoplePage() {
             </Link>
           </div>
 
-          {people.length === 0 ? (
+          {totalCount === 0 ? (
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
               <EmptyState
                 icon="👥"
@@ -70,6 +100,10 @@ export default async function PeoplePage() {
               />
             </div>
           ) : (
+            <>
+              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                Showing {skip + 1}-{Math.min(skip + ITEMS_PER_PAGE, totalCount)} of {totalCount} people
+              </div>
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
@@ -161,7 +195,112 @@ export default async function PeoplePage() {
                   ))}
                 </tbody>
               </table>
+
+              {totalPages > 1 && (
+                <div className="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 flex justify-between sm:hidden">
+                      {currentPage > 1 ? (
+                        <Link
+                          href={`/people?page=${currentPage - 1}`}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          Previous
+                        </Link>
+                      ) : (
+                        <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-900 cursor-not-allowed">
+                          Previous
+                        </span>
+                      )}
+                      {currentPage < totalPages ? (
+                        <Link
+                          href={`/people?page=${currentPage + 1}`}
+                          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          Next
+                        </Link>
+                      ) : (
+                        <span className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-900 cursor-not-allowed">
+                          Next
+                        </span>
+                      )}
+                    </div>
+                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          Page <span className="font-medium">{currentPage}</span> of{' '}
+                          <span className="font-medium">{totalPages}</span>
+                        </p>
+                      </div>
+                      <div>
+                        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                          {currentPage > 1 ? (
+                            <Link
+                              href={`/people?page=${currentPage - 1}`}
+                              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              <span className="sr-only">Previous</span>
+                              ←
+                            </Link>
+                          ) : (
+                            <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                              <span className="sr-only">Previous</span>
+                              ←
+                            </span>
+                          )}
+
+                          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 7) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 4) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 3) {
+                              pageNum = totalPages - 6 + i;
+                            } else {
+                              pageNum = currentPage - 3 + i;
+                            }
+
+                            return pageNum === currentPage ? (
+                              <span
+                                key={pageNum}
+                                className="relative inline-flex items-center px-4 py-2 border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-sm font-medium text-blue-600 dark:text-blue-400"
+                              >
+                                {pageNum}
+                              </span>
+                            ) : (
+                              <Link
+                                key={pageNum}
+                                href={`/people?page=${pageNum}`}
+                                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                              >
+                                {pageNum}
+                              </Link>
+                            );
+                          })}
+
+                          {currentPage < totalPages ? (
+                            <Link
+                              href={`/people?page=${currentPage + 1}`}
+                              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              <span className="sr-only">Next</span>
+                              →
+                            </Link>
+                          ) : (
+                            <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                              <span className="sr-only">Next</span>
+                              →
+                            </span>
+                          )}
+                        </nav>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
+            </>
           )}
         </div>
       </main>

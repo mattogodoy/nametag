@@ -17,9 +17,9 @@ export default async function GroupsPage() {
       userId: session.user.id,
     },
     include: {
-      people: {
-        include: {
-          person: true,
+      _count: {
+        select: {
+          people: true,
         },
       },
     },
@@ -88,9 +88,9 @@ export default async function GroupsPage() {
                   </div>
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {group.people.length === 0 && 'No members yet'}
-                      {group.people.length === 1 && '1 member'}
-                      {group.people.length > 1 && `${group.people.length} members`}
+                      {group._count.people === 0 && 'No members yet'}
+                      {group._count.people === 1 && '1 member'}
+                      {group._count.people > 1 && `${group._count.people} members`}
                     </p>
                   </div>
                 </Link>

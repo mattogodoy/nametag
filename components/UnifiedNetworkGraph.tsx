@@ -66,7 +66,13 @@ export default function UnifiedNetworkGraph({
     if (!svgRef.current || !apiEndpoint) return;
 
     const fetchData = async () => {
-      const response = await fetch(apiEndpoint);
+      // Build URL with query parameters
+      const url = new URL(apiEndpoint, window.location.origin);
+      if (selectedGroupId) {
+        url.searchParams.set('groupId', selectedGroupId);
+      }
+
+      const response = await fetch(url.toString());
       const data = await response.json();
       renderGraph(data);
     };
@@ -83,26 +89,9 @@ export default function UnifiedNetworkGraph({
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
 
-    // Filter data by group if selected
-    let filteredNodes = data.nodes;
-    let filteredEdges = data.edges;
-
-    if (selectedGroupId && groups) {
-      filteredNodes = data.nodes.filter((node) => {
-        if (node.isCenter) return true; // Always show center node
-        return node.groups.some((groupName) => {
-          const group = groups.find(g => g.name === groupName);
-          return group?.id === selectedGroupId;
-        });
-      });
-
-      const visibleNodeIds = new Set(filteredNodes.map(n => n.id));
-      filteredEdges = data.edges.filter((edge) => {
-        const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
-        const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
-        return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
-      });
-    }
+    // Data is already filtered by the API based on selectedGroupId
+    const filteredNodes = data.nodes;
+    const filteredEdges = data.edges;
 
     const nodes = filteredNodes;
     const edges = filteredEdges;

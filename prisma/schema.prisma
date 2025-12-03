@@ -51,6 +51,8 @@ model Person {
 
   @@index([userId])
   @@index([relationshipToUserId])
+  @@index([userId, lastContact]) // For recent contacts query
+  @@index([userId, fullName]) // For name sorting/search
   @@map("people")
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Person {
@@ -10,31 +10,54 @@ interface Person {
 
 export default function NavigationSearch() {
   const router = useRouter();
-  const [people, setPeople] = useState<Person[]>([]);
+  const [results, setResults] = useState<Person[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch people list
-  useEffect(() => {
-    fetch('/api/people')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.people && Array.isArray(data.people)) {
-          setPeople(data.people.map((p: any) => ({ id: p.id, fullName: p.fullName })));
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load people:', error);
-      });
+  // Debounced server-side search
+  const performSearch = useCallback(async (query: string) => {
+    if (query.length === 0) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/people/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      if (data.people && Array.isArray(data.people)) {
+        setResults(data.people);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Filter people based on search term
-  const filteredPeople = people.filter((person) =>
-    person.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Debounce search input
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      performSearch(searchTerm);
+    }, 300);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchTerm, performSearch]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -79,7 +102,7 @@ export default function NavigationSearch() {
       case 'ArrowDown':
         e.preventDefault();
         setHighlightedIndex((prev) =>
-          prev < filteredPeople.length - 1 ? prev + 1 : prev
+          prev < results.length - 1 ? prev + 1 : prev
         );
         break;
       case 'ArrowUp':
@@ -88,8 +111,8 @@ export default function NavigationSearch() {
         break;
       case 'Enter':
         e.preventDefault();
-        if (filteredPeople[highlightedIndex]) {
-          handleSelect(filteredPeople[highlightedIndex]);
+        if (results[highlightedIndex]) {
+          handleSelect(results[highlightedIndex]);
         }
         break;
       case 'Escape':
@@ -102,7 +125,7 @@ export default function NavigationSearch() {
   };
 
   const handleFocus = () => {
-    if (searchTerm || filteredPeople.length > 0) {
+    if (searchTerm || results.length > 0) {
       setIsOpen(true);
     }
   };
@@ -136,9 +159,15 @@ export default function NavigationSearch() {
         </svg>
       </div>
 
-      {isOpen && filteredPeople.length > 0 && (
+      {isOpen && isLoading && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Searching...</p>
+        </div>
+      )}
+
+      {isOpen && !isLoading && results.length > 0 && (
         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto">
-          {filteredPeople.map((person, index) => (
+          {results.map((person, index) => (
             <button
               key={person.id}
               type="button"
@@ -158,7 +187,7 @@ export default function NavigationSearch() {
         </div>
       )}
 
-      {isOpen && searchTerm && filteredPeople.length === 0 && (
+      {isOpen && !isLoading && searchTerm && results.length === 0 && (
         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             No people found matching &quot;{searchTerm}&quot;
