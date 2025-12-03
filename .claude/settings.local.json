@@ -20,7 +20,8 @@
       "Bash(cat:*)",
       "Bash(sudo chown:*)",
       "Bash(docker volume:*)",
-      "Bash(docker restart:*)"
+      "Bash(docker restart:*)",
+      "Bash(docker ps:*)"
     ],
     "deny": [],
     "ask": []

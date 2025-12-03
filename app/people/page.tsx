@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import { formatDate } from '@/lib/date-format';
 
 export default async function PeoplePage() {
   const session = await auth();
@@ -10,6 +11,13 @@ export default async function PeoplePage() {
   if (!session?.user) {
     redirect('/login');
   }
+
+  // Fetch user's date format preference
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { dateFormat: true },
+  });
+  const dateFormat = user?.dateFormat || 'MDY';
 
   const people = await prisma.person.findMany({
     where: {
@@ -133,7 +141,7 @@ export default async function PeoplePage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {person.lastContact
-                          ? new Date(person.lastContact).toLocaleDateString()
+                          ? formatDate(new Date(person.lastContact), dateFormat)
                           : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

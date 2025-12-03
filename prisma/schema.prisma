@@ -11,13 +11,14 @@ datasource db {
 
 // User Model - Authentication and preferences
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  theme     Theme    @default(LIGHT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String     @id @default(cuid())
+  email      String     @unique
+  password   String
+  name       String?
+  theme      Theme      @default(LIGHT)
+  dateFormat DateFormat @default(MDY)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   // Relations
   people            Person[]
@@ -135,4 +136,10 @@ model RelationshipType {
 enum Theme {
   LIGHT
   DARK
+}
+
+enum DateFormat {
+  MDY // MM/DD/YYYY (e.g., 12/31/2024)
+  DMY // DD/MM/YYYY (e.g., 31/12/2024)
+  YMD // YYYY-MM-DD (e.g., 2024-12-31)
 }

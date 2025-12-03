@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import DashboardNetworkGraph from '@/components/DashboardNetworkGraph';
+import { formatDate } from '@/lib/date-format';
 
 function getRelativeTime(date: Date): string {
   const now = new Date();
@@ -31,6 +32,13 @@ export default async function DashboardPage() {
   if (!session?.user) {
     redirect('/login');
   }
+
+  // Fetch user's date format preference
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { dateFormat: true },
+  });
+  const dateFormat = user?.dateFormat || 'MDY';
 
   // Fetch statistics and groups
   const [peopleCount, groupsCount, relationshipsCount, recentPeople, groups] = await Promise.all([
@@ -184,12 +192,7 @@ export default async function DashboardPage() {
                     {person.lastContact && (
                       <span
                         className="text-sm text-gray-500 dark:text-gray-400 cursor-help"
-                        title={new Date(person.lastContact).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
+                        title={formatDate(new Date(person.lastContact), dateFormat)}
                       >
                         {getRelativeTime(new Date(person.lastContact))}
                       </span>

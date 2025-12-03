@@ -6,6 +6,7 @@ import DeletePersonButton from '@/components/DeletePersonButton';
 import RelationshipManager from '@/components/RelationshipManager';
 import NetworkGraph from '@/components/NetworkGraph';
 import Navigation from '@/components/Navigation';
+import { formatDate } from '@/lib/date-format';
 
 function getRelativeTime(date: Date): string {
   const now = new Date();
@@ -39,6 +40,13 @@ export default async function PersonDetailsPage({
   }
 
   const { id } = await params;
+
+  // Fetch user's date format preference
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { dateFormat: true },
+  });
+  const dateFormat = user?.dateFormat || 'MDY';
 
   const [person, allPeople, relationshipTypes] = await Promise.all([
     prisma.person.findUnique({
@@ -168,7 +176,7 @@ export default async function PersonDetailsPage({
                       Birth Date
                     </h3>
                     <p className="text-gray-900 dark:text-white">
-                      {new Date(person.birthDate).toLocaleDateString()}
+                      {formatDate(new Date(person.birthDate), dateFormat)}
                     </p>
                   </div>
                 )}
@@ -197,7 +205,7 @@ export default async function PersonDetailsPage({
                       Last Contact
                     </h3>
                     <p className="text-gray-900 dark:text-white">
-                      {new Date(person.lastContact).toLocaleDateString()}{' '}
+                      {formatDate(new Date(person.lastContact), dateFormat)}{' '}
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         ({getRelativeTime(new Date(person.lastContact))})
                       </span>
