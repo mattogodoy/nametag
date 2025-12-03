@@ -166,11 +166,28 @@ export async function DELETE(
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
     }
 
+    // Parse request body to check if we should also delete orphans
+    const body = await request.json().catch(() => ({}));
+    const { deleteOrphans, orphanIds } = body;
+
+    // Delete the person
     await prisma.person.delete({
       where: {
         id,
       },
     });
+
+    // If requested, also delete the orphans
+    if (deleteOrphans && orphanIds && Array.isArray(orphanIds)) {
+      await prisma.person.deleteMany({
+        where: {
+          id: {
+            in: orphanIds,
+          },
+          userId: session.user.id, // Ensure they belong to the user
+        },
+      });
+    }
 
     return NextResponse.json({ message: 'Person deleted successfully' });
   } catch (error) {

@@ -59,6 +59,16 @@ export default async function PeoplePage({
           },
         },
       },
+      relationshipsFrom: {
+        select: {
+          id: true,
+        },
+      },
+      relationshipsTo: {
+        select: {
+          id: true,
+        },
+      },
     },
     orderBy: {
       fullName: 'asc',
@@ -127,15 +137,31 @@ export default async function PeoplePage({
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {people.map((person) => (
+                  {people.map((person) => {
+                    const isOrphan = !person.relationshipToUser &&
+                                     person.relationshipsFrom.length === 0 &&
+                                     person.relationshipsTo.length === 0;
+
+                    return (
                     <tr key={person.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Link
-                          href={`/people/${person.id}`}
-                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                        >
-                          {person.fullName}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/people/${person.id}`}
+                            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          >
+                            {person.fullName}
+                          </Link>
+                          {isOrphan && (
+                            <span className="relative group cursor-help">
+                              <span className="text-yellow-500">⚠️</span>
+                              <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-lg whitespace-normal max-w-xs z-50 shadow-lg">
+                                This person has no relationships and will be shown as isolated in the network graph
+                                <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></span>
+                              </span>
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {person.relationshipToUser ? (
@@ -199,7 +225,8 @@ export default async function PeoplePage({
                         </Link>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
               </div>
