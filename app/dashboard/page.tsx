@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
-import DashboardNetworkGraph from '@/components/DashboardNetworkGraph';
+import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import { formatDate } from '@/lib/date-format';
 
 function getRelativeTime(date: Date): string {
@@ -169,7 +169,13 @@ export default async function DashboardPage() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                 Your Network
               </h2>
-              <DashboardNetworkGraph groups={groups} />
+              <UnifiedNetworkGraph
+                apiEndpoint="/api/dashboard/graph"
+                groups={groups}
+                centerNodeNonClickable={true}
+                linkDistance={120}
+                chargeStrength={-400}
+              />
             </div>
           )}
 

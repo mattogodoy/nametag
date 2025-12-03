@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import DeletePersonButton from '@/components/DeletePersonButton';
 import RelationshipManager from '@/components/RelationshipManager';
-import NetworkGraph from '@/components/NetworkGraph';
+import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import Navigation from '@/components/Navigation';
 import { formatDate } from '@/lib/date-format';
 
@@ -229,8 +229,12 @@ export default async function PersonDetailsPage({
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                   Relationship Network
                 </h3>
-                <NetworkGraph
-                  personId={person.id}
+                <UnifiedNetworkGraph
+                  apiEndpoint={`/api/people/${person.id}/graph`}
+                  centerNodeId={person.id}
+                  linkDistance={100}
+                  chargeStrength={-300}
+                  animateNewNodes={true}
                   refreshKey={person.relationshipsFrom.length}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">

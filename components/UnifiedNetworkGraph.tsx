@@ -25,70 +25,96 @@ interface Group {
   color: string | null;
 }
 
-interface DashboardNetworkGraphProps {
-  groups: Group[];
+interface UnifiedNetworkGraphProps {
+  // Data source: either fetch from API or use provided data
+  apiEndpoint?: string;
+
+  // For dashboard mode with groups filter
+  groups?: Group[];
+
+  // For controlling center node behavior
+  centerNodeId?: string; // ID of the center node (e.g., user or person)
+  centerNodeNonClickable?: boolean; // If true, center node won't navigate
+
+  // Force simulation parameters
+  linkDistance?: number;
+  chargeStrength?: number;
+
+  // Animation for new nodes
+  animateNewNodes?: boolean;
+
+  // Refresh trigger
   refreshKey?: number;
 }
 
-export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardNetworkGraphProps) {
+export default function UnifiedNetworkGraph({
+  apiEndpoint,
+  groups,
+  centerNodeId,
+  centerNodeNonClickable = false,
+  linkDistance = 120,
+  chargeStrength = -400,
+  animateNewNodes = false,
+  refreshKey,
+}: UnifiedNetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const previousNodeIdsRef = useRef<Set<string> | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!svgRef.current || !apiEndpoint) return;
+
+    const fetchData = async () => {
+      const response = await fetch(apiEndpoint);
+      const data = await response.json();
+      renderGraph(data);
+    };
+
+    fetchData();
+  }, [apiEndpoint, refreshKey, selectedGroupId]);
+
+  const renderGraph = (data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
     if (!svgRef.current) return;
 
-    // Fetch graph data
-    fetch('/api/dashboard/graph')
-      .then((res) => res.json())
-      .then((data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
-        // Filter nodes and edges based on selected group
-        let filteredNodes = data.nodes;
-        let filteredEdges = data.edges;
-
-        if (selectedGroupId) {
-          // Filter nodes: keep user node and nodes that belong to the selected group
-          filteredNodes = data.nodes.filter((node) => {
-            if (node.isCenter) return true; // Always show user
-            return node.groups.some((groupName) => {
-              const group = groups.find(g => g.name === groupName);
-              return group?.id === selectedGroupId;
-            });
-          });
-
-          // Filter edges: only keep edges where both nodes are in filtered set
-          const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-          filteredEdges = data.edges.filter((edge) => {
-            const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
-            const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
-            return filteredNodeIds.has(sourceId) && filteredNodeIds.has(targetId);
-          });
-        }
-
-        renderGraph(filteredNodes, filteredEdges);
-      })
-      .catch((error) => {
-        console.error('Failed to load graph data:', error);
-      });
-  }, [refreshKey, selectedGroupId, groups]);
-
-  const renderGraph = (nodes: GraphNode[], edges: GraphEdge[]) => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove(); // Clear previous graph
+    // Clear previous graph
+    d3.select(svgRef.current).selectAll('*').remove();
 
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
 
-    // Create zoom behavior
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
+    // Filter data by group if selected
+    let filteredNodes = data.nodes;
+    let filteredEdges = data.edges;
+
+    if (selectedGroupId && groups) {
+      filteredNodes = data.nodes.filter((node) => {
+        if (node.isCenter) return true; // Always show center node
+        return node.groups.some((groupName) => {
+          const group = groups.find(g => g.name === groupName);
+          return group?.id === selectedGroupId;
+        });
       });
 
-    svg.call(zoom);
+      const visibleNodeIds = new Set(filteredNodes.map(n => n.id));
+      filteredEdges = data.edges.filter((edge) => {
+        const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
+        const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
+        return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
+      });
+    }
+
+    const nodes = filteredNodes;
+    const edges = filteredEdges;
+
+    // Track new nodes for animation
+    const currentNodeIds = new Set(nodes.map((n) => n.id));
+    const newNodeIds = animateNewNodes && previousNodeIdsRef.current
+      ? new Set([...currentNodeIds].filter((id) => !previousNodeIdsRef.current!.has(id)))
+      : new Set<string>();
+    previousNodeIdsRef.current = currentNodeIds;
+
+    const svg = d3.select(svgRef.current);
 
     // Main group for zooming/panning
     const g = svg.append('g');
@@ -126,9 +152,9 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
         'link',
         d3.forceLink(edges)
           .id((d: any) => d.id)
-          .distance(120)
+          .distance(linkDistance)
       )
-      .force('charge', d3.forceManyBody().strength(-400))
+      .force('charge', d3.forceManyBody().strength(chargeStrength))
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(30));
 
@@ -140,9 +166,29 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
       .enter()
       .append('line')
       .attr('stroke', (d: any) => d.color || '#999')
-      .attr('stroke-opacity', 0.15)
+      .attr('stroke-opacity', (d: any) => {
+        if (animateNewNodes) {
+          // Fade in only edges connected to new nodes
+          const targetNode = typeof d.target === 'string' ? d.target : (d.target as GraphNode).id;
+          return newNodeIds.has(targetNode) ? 0 : 0.15;
+        }
+        return 0.15;
+      })
       .attr('stroke-width', 2)
       .attr('marker-end', (d: any) => `url(#arrow-${(d.color || '#999').replace('#', '')}-normal)`);
+
+    // Animate edges connected to new nodes
+    if (animateNewNodes) {
+      link
+        .filter((d: any) => {
+          const targetNode = typeof d.target === 'string' ? d.target : (d.target as GraphNode).id;
+          return newNodeIds.has(targetNode);
+        })
+        .transition()
+        .duration(400)
+        .delay(100)
+        .attr('stroke-opacity', 0.15);
+    }
 
     // Create edge labels (hidden by default)
     const edgeLabels = g
@@ -164,7 +210,10 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
       .data(nodes)
       .enter()
       .append('g')
-      .style('cursor', (d) => d.isCenter ? 'default' : 'pointer')
+      .style('cursor', (d) => {
+        if (centerNodeNonClickable && d.isCenter) return 'default';
+        return 'pointer';
+      })
       .call(
         d3
           .drag<SVGGElement, GraphNode>()
@@ -173,10 +222,9 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
           .on('end', dragended)
       )
       .on('click', (_event, d) => {
-        // Don't navigate if clicking the center user node
-        if (!d.isCenter) {
-          router.push(`/people/${d.id}`);
-        }
+        // Don't navigate if it's the center node and centerNodeNonClickable is true
+        if (centerNodeNonClickable && d.isCenter) return;
+        router.push(`/people/${d.id}`);
       })
       .on('mouseenter', function(_event, d) {
         // Highlight connected edges and update their arrow markers
@@ -221,24 +269,57 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
       });
 
     // Add circles to nodes
-    node
+    const circles = node
       .append('circle')
-      .attr('r', (d) => (d.isCenter ? 9 : 7))
-      .attr('fill', (d) => (d.isCenter ? '#3B82F6' : '#6B7280'))
-      .attr('stroke', (d) => (d.isCenter ? '#1E40AF' : '#fff'))
-      .attr('stroke-width', (d) => (d.isCenter ? 3 : 2));
+      .attr('r', (d) => (d.isCenter ? 12 : 8))
+      .attr('fill', (d) => {
+        if (d.isCenter) return '#3B82F6'; // Blue for center
+        if (d.colors.length > 0) return d.colors[0];
+        return '#9CA3AF';
+      })
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 2);
+
+    // Animate new nodes
+    if (animateNewNodes) {
+      circles
+        .filter((d) => newNodeIds.has(d.id))
+        .attr('r', 0)
+        .transition()
+        .duration(300)
+        .attr('r', (d) => (d.isCenter ? 12 : 8));
+    }
 
     // Add labels to nodes
-    node
+    const labels = node
       .append('text')
       .text((d) => d.label)
-      .attr('x', 0)
-      .attr('y', 22)
       .attr('text-anchor', 'middle')
-      .attr('font-size', 11)
+      .attr('dy', (d) => (d.isCenter ? 25 : 20))
+      .attr('font-size', (d) => (d.isCenter ? 14 : 12))
       .attr('font-weight', (d) => (d.isCenter ? 'bold' : 'normal'))
-      .attr('fill', '#9CA3AF')
+      .attr('fill', 'currentColor')
       .style('pointer-events', 'none');
+
+    // Animate new node labels
+    if (animateNewNodes) {
+      labels
+        .filter((d) => newNodeIds.has(d.id))
+        .style('opacity', 0)
+        .transition()
+        .duration(300)
+        .style('opacity', 1);
+    }
+
+    // Add zoom behavior
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 3])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
+      });
+
+    svg.call(zoom as any);
 
     // Update positions on each tick
     simulation.on('tick', () => {
@@ -248,7 +329,7 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
         .attr('x2', (d: any) => d.target.x)
         .attr('y2', (d: any) => d.target.y);
 
-      // Position labels at the center of the edge
+      // Position edge labels at the center of edges
       edgeLabels
         .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
         .attr('y', (d: any) => (d.source.y + d.target.y) / 2);
@@ -257,18 +338,18 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
     });
 
     // Drag functions
-    function dragstarted(event: any, d: GraphNode) {
+    function dragstarted(event: any, d: any) {
       if (!event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
     }
 
-    function dragged(event: any, d: GraphNode) {
+    function dragged(event: any, d: any) {
       d.fx = event.x;
       d.fy = event.y;
     }
 
-    function dragended(event: any, d: GraphNode) {
+    function dragended(event: any, d: any) {
       if (!event.active) simulation.alphaTarget(0);
       d.fx = null;
       d.fy = null;
@@ -276,20 +357,19 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
   };
 
   return (
-    <div className="w-full">
-      {/* Group Filter */}
-      {groups.length > 0 && (
+    <div className="w-full h-full">
+      {groups && (
         <div className="mb-4">
           <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Filter by Group
           </label>
           <select
             id="group-filter"
-            value={selectedGroupId}
-            onChange={(e) => setSelectedGroupId(e.target.value)}
-            className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={selectedGroupId || ''}
+            onChange={(e) => setSelectedGroupId(e.target.value || null)}
+            className="block w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
           >
-            <option value="">All Groups</option>
+            <option value="">All groups</option>
             {groups.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.name}
@@ -298,11 +378,10 @@ export default function DashboardNetworkGraph({ groups, refreshKey }: DashboardN
           </select>
         </div>
       )}
-
-      {/* Graph */}
-      <div className="w-full h-96 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700">
-        <svg ref={svgRef} className="w-full h-full" />
-      </div>
+      <svg
+        ref={svgRef}
+        className="w-full h-[600px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+      />
     </div>
   );
 }
