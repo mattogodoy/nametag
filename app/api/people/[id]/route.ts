@@ -87,11 +87,32 @@ export async function PUT(
       );
     }
 
-    if (!relationshipToUserId) {
-      return NextResponse.json(
-        { error: 'Relationship to user is required' },
-        { status: 400 }
-      );
+    // Relationship is not required for people with indirect connections
+    // (they are connected through other people in the network)
+
+    // Build update data
+    const updateData: any = {
+      fullName,
+      birthDate: birthDate ? new Date(birthDate) : null,
+      phone: phone || null,
+      address: address || null,
+      lastContact: lastContact ? new Date(lastContact) : null,
+      notes: notes || null,
+      groups: groupIds
+        ? {
+            deleteMany: {},
+            create: groupIds.map((groupId: string) => ({
+              groupId,
+            })),
+          }
+        : undefined,
+    };
+
+    // Only update relationshipToUserId if it's provided
+    if (relationshipToUserId) {
+      updateData.relationshipToUser = {
+        connect: { id: relationshipToUserId }
+      };
     }
 
     // Update person and handle group associations
@@ -99,23 +120,7 @@ export async function PUT(
       where: {
         id,
       },
-      data: {
-        fullName,
-        birthDate: birthDate ? new Date(birthDate) : null,
-        phone: phone || null,
-        address: address || null,
-        lastContact: lastContact ? new Date(lastContact) : null,
-        notes: notes || null,
-        relationshipToUserId,
-        groups: groupIds
-          ? {
-              deleteMany: {},
-              create: groupIds.map((groupId: string) => ({
-                groupId,
-              })),
-            }
-          : undefined,
-      },
+      data: updateData,
       include: {
         groups: {
           include: {

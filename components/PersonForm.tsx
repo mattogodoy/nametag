@@ -70,6 +70,7 @@ export default function PersonForm({
     initialKnownThroughPerson?.fullName || userName
   );
   const [inheritGroups, setInheritGroups] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: person?.fullName || initialFullName || '',
@@ -179,12 +180,14 @@ export default function PersonForm({
 
       // Redirect logic:
       // - Edit mode: Go to the edited person's detail page
-      // - Create mode with "Known Through" another person: Go to that person's detail page
-      // - Create mode direct to user: Go to people list
+      // - Create mode with "Known Through" another person: Go to that person's detail page (to see the new relationship)
+      // - Create mode direct to user: Go to the newly created person's detail page
       if (mode === 'edit' && person?.id) {
         router.push(`/people/${person.id}`);
       } else if (mode === 'create' && knownThroughId !== 'user') {
         router.push(`/people/${knownThroughId}`);
+      } else if (mode === 'create' && data.person?.id) {
+        router.push(`/people/${data.person.id}`);
       } else {
         router.push('/people');
       }
@@ -277,11 +280,10 @@ export default function PersonForm({
             htmlFor="relationshipToUserId"
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
-            Relationship to You *
+            Relationship to You
           </label>
           <select
             id="relationshipToUserId"
-            required
             value={formData.relationshipToUserId}
             onChange={(e) =>
               setFormData({ ...formData, relationshipToUserId: e.target.value })
@@ -361,109 +363,6 @@ export default function PersonForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label
-            htmlFor="birthDate"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Birth Date
-          </label>
-          <input
-            type="date"
-            id="birthDate"
-            value={formData.birthDate}
-            max={new Date().toISOString().split('T')[0]}
-            onChange={(e) =>
-              setFormData({ ...formData, birthDate: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="phone"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Phone
-          </label>
-          <input
-            type="tel"
-            id="phone"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="(555) 123-4567"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Enter in any format (e.g., +1-555-123-4567)
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="address"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Address
-        </label>
-        <input
-          type="text"
-          id="address"
-          value={formData.address}
-          onChange={(e) =>
-            setFormData({ ...formData, address: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label
-          htmlFor="lastContact"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Last Contact
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="date"
-            id="lastContact"
-            value={formData.lastContact}
-            max={new Date().toISOString().split('T')[0]}
-            onChange={(e) =>
-              setFormData({ ...formData, lastContact: e.target.value })
-            }
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={setLastContactToToday}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Today
-          </button>
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="notes"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Notes
-        </label>
-        <textarea
-          id="notes"
-          rows={4}
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
       {groups.length > 0 && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -497,6 +396,136 @@ export default function PersonForm({
           </div>
         </div>
       )}
+
+      {/* Collapsible Details Section */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex items-center justify-between w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+        >
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            More details
+          </span>
+          <svg
+            className={`w-5 h-5 text-gray-500 transition-transform ${
+              showDetails ? 'transform rotate-180' : ''
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {showDetails && (
+          <div className="mt-4 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  htmlFor="birthDate"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Birth Date
+                </label>
+                <input
+                  type="date"
+                  id="birthDate"
+                  value={formData.birthDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, birthDate: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="(555) 123-4567"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Enter in any format (e.g., +1-555-123-4567)
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="address"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Address
+              </label>
+              <input
+                type="text"
+                id="address"
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="lastContact"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Last Contact
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  id="lastContact"
+                  value={formData.lastContact}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastContact: e.target.value })
+                  }
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={setLastContactToToday}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="notes"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                rows={4}
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-end space-x-4 pt-4">
         <Link
