@@ -202,14 +202,14 @@ async function main() {
       userId: user.id,
       name: 'John',
       surname: 'Smith',
-      birthDate: new Date('1985-03-15'),
-      phone: '+1 (555) 123-4567',
-      address: '123 Main St, Springfield, IL',
       lastContact: new Date('2024-11-25'),
-      notes: 'My brother. Works as a software engineer.',
+      notes: 'My brother. Works as a software engineer. Phone: +1 (555) 123-4567. Address: 123 Main St, Springfield, IL',
       relationshipToUserId: siblingType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
+      },
+      importantDates: {
+        create: [{ title: 'Birthday', date: new Date('1985-03-15') }],
       },
     },
   });
@@ -219,14 +219,14 @@ async function main() {
       userId: user.id,
       name: 'Sarah',
       surname: 'Johnson',
-      birthDate: new Date('1987-07-22'),
-      phone: '+1 (555) 234-5678',
-      address: '123 Main St, Springfield, IL',
       lastContact: new Date('2024-11-20'),
-      notes: "John's wife. Teacher at elementary school.",
+      notes: "John's wife. Teacher at elementary school. Phone: +1 (555) 234-5678. Address: 123 Main St, Springfield, IL",
       relationshipToUserId: relativeType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
+      },
+      importantDates: {
+        create: [{ title: 'Birthday', date: new Date('1987-07-22') }],
       },
     },
   });
@@ -236,11 +236,13 @@ async function main() {
       userId: user.id,
       name: 'Emma',
       surname: 'Smith',
-      birthDate: new Date('2015-05-10'),
       notes: "John and Sarah's daughter. Loves reading and drawing.",
       relationshipToUserId: relativeType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
+      },
+      importantDates: {
+        create: [{ title: 'Birthday', date: new Date('2015-05-10') }],
       },
     },
   });
@@ -250,11 +252,13 @@ async function main() {
       userId: user.id,
       name: 'Lucas',
       surname: 'Smith',
-      birthDate: new Date('2018-09-03'),
       notes: "John and Sarah's son. Plays soccer.",
       relationshipToUserId: relativeType.id,
       groups: {
         create: [{ groupId: familyGroup.id }],
+      },
+      importantDates: {
+        create: [{ title: 'Birthday', date: new Date('2018-09-03') }],
       },
     },
   });
@@ -264,13 +268,14 @@ async function main() {
       userId: user.id,
       name: 'Mike',
       surname: 'Chen',
-      birthDate: new Date('1990-01-18'),
-      phone: '+1 (555) 345-6789',
       lastContact: new Date('2024-11-28'),
-      notes: 'Best friend from college. Software developer at TechCorp.',
+      notes: 'Best friend from college. Software developer at TechCorp. Phone: +1 (555) 345-6789',
       relationshipToUserId: friendType.id,
       groups: {
         create: [{ groupId: friendsGroup.id }],
+      },
+      importantDates: {
+        create: [{ title: 'Birthday', date: new Date('1990-01-18') }],
       },
     },
   });
@@ -280,13 +285,14 @@ async function main() {
       userId: user.id,
       name: 'Jessica',
       surname: 'Martinez',
-      birthDate: new Date('1988-11-30'),
-      phone: '+1 (555) 456-7890',
       lastContact: new Date('2024-11-15'),
-      notes: 'Colleague from work. Project manager. Email: jessica@example.com',
+      notes: 'Colleague from work. Project manager. Email: jessica@example.com. Phone: +1 (555) 456-7890',
       relationshipToUserId: colleagueType.id,
       groups: {
         create: [{ groupId: workGroup.id }],
+      },
+      importantDates: {
+        create: [{ title: 'Birthday', date: new Date('1988-11-30') }],
       },
     },
   });
@@ -296,13 +302,14 @@ async function main() {
       userId: user.id,
       name: 'David',
       surname: 'Brown',
-      birthDate: new Date('1983-06-12'),
-      phone: '+1 (555) 567-8901',
       lastContact: new Date('2024-10-20'),
-      notes: 'Neighbor and friend. Architect.',
+      notes: 'Neighbor and friend. Architect. Phone: +1 (555) 567-8901',
       relationshipToUserId: friendType.id,
       groups: {
         create: [{ groupId: friendsGroup.id }],
+      },
+      importantDates: {
+        create: [{ title: 'Birthday', date: new Date('1983-06-12') }],
       },
     },
   });

@@ -11,16 +11,20 @@ datasource db {
 
 // User Model - Authentication and preferences
 model User {
-  id         String     @id @default(cuid())
-  email      String     @unique
-  password   String
-  name       String
-  surname    String?
-  nickname   String?
-  theme      Theme      @default(LIGHT)
-  dateFormat DateFormat @default(MDY)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  password           String
+  name               String
+  surname            String?
+  nickname           String?
+  theme              Theme     @default(LIGHT)
+  dateFormat         DateFormat @default(MDY)
+  emailVerified      Boolean   @default(false)
+  emailVerifyToken   String?   @unique
+  emailVerifyExpires DateTime?
+  emailVerifySentAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // Relations
   people            Person[]

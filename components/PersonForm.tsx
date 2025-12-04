@@ -93,7 +93,7 @@ export default function PersonForm({
     groupIds: person?.groups.map((g) => g.groupId) || [],
   });
 
-  const [importantDates, setImportantDates] = useState(
+  const [importantDates, setImportantDates] = useState<Array<{ id?: string; title: string; date: string }>>(
     person?.importantDates?.map((d) => ({
       id: d.id,
       title: d.title,

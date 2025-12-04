@@ -1,12 +1,9 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [nickname, setNickname] = useState('');
@@ -14,6 +11,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -48,24 +46,39 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto sign in after registration
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Account created but login failed. Please try logging in.');
-      } else {
-        router.push('/dashboard');
-        router.refresh();
-      }
+      // Show success message instead of auto-login
+      setSuccess(true);
     } catch (error) {
       setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 rounded-lg p-6">
+            <h2 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
+              Check your email
+            </h2>
+            <p className="text-green-600 dark:text-green-300 mb-4">
+              We&apos;ve sent a verification link to <strong>{email}</strong>.
+            </p>
+            <p className="text-sm text-green-600 dark:text-green-300">
+              Please click the link in the email to verify your account before logging in.
+            </p>
+          </div>
+          <Link
+            href="/login"
+            className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            Go to login page
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
