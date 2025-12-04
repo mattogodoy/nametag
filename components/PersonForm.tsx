@@ -72,7 +72,7 @@ export default function PersonForm({
     initialKnownThrough || 'user'
   );
   const [knownThroughName, setKnownThroughName] = useState<string>(
-    initialKnownThroughPerson ? `${initialKnownThroughPerson.name}${initialKnownThroughPerson.surname ? ' ' + initialKnownThroughPerson.surname : ''}` : userName
+    initialKnownThroughPerson ? `${initialKnownThroughPerson.name}${initialKnownThroughPerson.surname ? ' ' + initialKnownThroughPerson.surname : ''}` : 'You'
   );
   const [inheritGroups, setInheritGroups] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -131,7 +131,7 @@ export default function PersonForm({
 
   // Create list of people including the user for autocomplete
   const peopleWithUser = [
-    { id: 'user', name: userName, surname: null, nickname: null, groups: [] },
+    { id: 'user', name: 'You', surname: null, nickname: null, groups: [] },
     ...availablePeople
   ];
 

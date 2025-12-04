@@ -95,7 +95,7 @@ export async function GET(request: Request) {
   const userId = `user-${session.user.id}`;
   nodes.push({
     id: userId,
-    label: session.user.name || session.user.email || 'You',
+    label: 'You',
     groups: [],
     colors: [],
     isCenter: true,

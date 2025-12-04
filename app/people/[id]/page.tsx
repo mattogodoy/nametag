@@ -258,7 +258,7 @@ export default async function PersonDetailsPage({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-gray-900 dark:text-white font-medium">
-                          {session.user.name || session.user.email || 'You'}
+                          You
                         </span>
                         <span className="text-gray-500 dark:text-gray-400">•</span>
                         <span
