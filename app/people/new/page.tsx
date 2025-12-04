@@ -8,7 +8,7 @@ import Navigation from '@/components/Navigation';
 export default async function NewPersonPage({
   searchParams,
 }: {
-  searchParams: Promise<{ fullName?: string; knownThrough?: string; relationshipType?: string }>;
+  searchParams: Promise<{ name?: string; knownThrough?: string; relationshipType?: string }>;
 }) {
   const session = await auth();
 
@@ -41,7 +41,9 @@ export default async function NewPersonPage({
       },
       select: {
         id: true,
-        fullName: true,
+        name: true,
+        surname: true,
+        nickname: true,
         groups: {
           select: {
             groupId: true,
@@ -49,7 +51,7 @@ export default async function NewPersonPage({
         },
       },
       orderBy: {
-        fullName: 'asc',
+        name: 'asc',
       },
     }),
   ]);
@@ -59,6 +61,7 @@ export default async function NewPersonPage({
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/people"
       />
 
@@ -75,7 +78,7 @@ export default async function NewPersonPage({
               availablePeople={people}
               userName={session.user.name || session.user.email || 'You'}
               mode="create"
-              initialFullName={params.fullName}
+              initialName={params.name}
               initialKnownThrough={params.knownThrough}
               initialRelationshipType={params.relationshipType}
             />

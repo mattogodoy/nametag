@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatFullName } from '@/lib/nameUtils';
 
 interface DeletePersonButtonProps {
   personId: string;
@@ -10,7 +11,7 @@ interface DeletePersonButtonProps {
 
 interface Orphan {
   id: string;
-  fullName: string;
+  fullName: string; // This comes from the API already formatted
 }
 
 export default function DeletePersonButton({

@@ -4,11 +4,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name } = await request.json();
+    const { email, password, name, surname, nickname } = await request.json();
 
-    if (!email || !password) {
+    if (!email || !password || !name) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Email, password, and name are required' },
         { status: 400 }
       );
     }
@@ -33,7 +33,9 @@ export async function POST(request: Request) {
       data: {
         email,
         password: hashedPassword,
-        name: name || null,
+        name,
+        surname: surname || null,
+        nickname: nickname || null,
       },
     });
 
@@ -43,6 +45,8 @@ export async function POST(request: Request) {
           id: user.id,
           email: user.email,
           name: user.name,
+          surname: user.surname,
+          nickname: user.nickname,
         },
       },
       { status: 201 }

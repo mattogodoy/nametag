@@ -7,6 +7,7 @@ import RelationshipManager from '@/components/RelationshipManager';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import Navigation from '@/components/Navigation';
 import { formatDate } from '@/lib/date-format';
+import { formatFullName } from '@/lib/nameUtils';
 
 function getRelativeTime(date: Date): string {
   const now = new Date();
@@ -76,10 +77,12 @@ export default async function PersonDetailsPage({
       },
       select: {
         id: true,
-        fullName: true,
+        name: true,
+        surname: true,
+        nickname: true,
       },
       orderBy: {
-        fullName: 'asc',
+        name: 'asc',
       },
     }),
     prisma.relationshipType.findMany({
@@ -119,6 +122,7 @@ export default async function PersonDetailsPage({
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/people"
       />
 
@@ -137,7 +141,7 @@ export default async function PersonDetailsPage({
             <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {person.fullName}
+                  {formatFullName(person)}
                 </h1>
                 {person.groups.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -165,7 +169,7 @@ export default async function PersonDetailsPage({
                 >
                   Edit
                 </Link>
-                <DeletePersonButton personId={person.id} personName={person.fullName} />
+                <DeletePersonButton personId={person.id} personName={formatFullName(person)} />
               </div>
             </div>
 
@@ -285,7 +289,7 @@ export default async function PersonDetailsPage({
                 {/* Relationships to other people */}
                 <RelationshipManager
                   personId={person.id}
-                  personName={person.fullName}
+                  personName={formatFullName(person)}
                   relationships={person.relationshipsFrom}
                   availablePeople={availablePeople}
                   relationshipTypes={relationshipTypes}

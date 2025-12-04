@@ -48,6 +48,7 @@ export default async function RelationshipTypesPage() {
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/relationship-types"
       />
 

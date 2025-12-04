@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
+import { formatFullName } from '@/lib/nameUtils';
 
 interface Person {
   id: string;
-  fullName: string;
+  name: string;
+  surname?: string | null;
+  nickname?: string | null;
 }
 
 interface RelationshipType {
@@ -84,7 +87,7 @@ export default function RelationshipManager({
       }
 
       const relatedPerson = availablePeople.find(p => p.id === formData.relatedPersonId);
-      toast.success(`Relationship with ${relatedPerson?.fullName} has been added`);
+      toast.success(`Relationship with ${formatFullName(relatedPerson!)} has been added`);
 
       setShowAddModal(false);
       setFormData({ relatedPersonId: '', relationshipTypeId: defaultTypeId, notes: '' });
@@ -121,7 +124,7 @@ export default function RelationshipManager({
         return;
       }
 
-      toast.success(`Relationship with ${selectedRelationship.relatedPerson.fullName} has been updated`);
+      toast.success(`Relationship with ${formatFullName(selectedRelationship.relatedPerson)} has been updated`);
 
       setShowEditModal(false);
       setSelectedRelationship(null);
@@ -178,7 +181,7 @@ export default function RelationshipManager({
   const handleCreateNewPerson = (searchTerm: string) => {
     // Navigate to create person page with pre-filled data
     const params = new URLSearchParams({
-      fullName: searchTerm,
+      name: searchTerm,
       knownThrough: personId,
       relationshipType: formData.relationshipTypeId,
     });
@@ -216,7 +219,7 @@ export default function RelationshipManager({
                     href={`/people/${rel.relatedPersonId}`}
                     className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
-                    {rel.relatedPerson.fullName}
+                    {formatFullName(rel.relatedPerson)}
                   </Link>
                   <span className="text-gray-500 dark:text-gray-400">•</span>
                   <span
@@ -349,7 +352,7 @@ export default function RelationshipManager({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Edit Relationship with {selectedRelationship.relatedPerson.fullName}
+              Edit Relationship with {formatFullName(selectedRelationship.relatedPerson)}
             </h3>
             <form onSubmit={handleEdit} className="space-y-4">
               {error && (
@@ -421,7 +424,7 @@ export default function RelationshipManager({
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               Are you sure you want to delete the relationship with{' '}
               <strong className="text-gray-900 dark:text-white">
-                {selectedRelationship.relatedPerson.fullName}
+                {formatFullName(selectedRelationship.relatedPerson)}
               </strong>
               ? This will also remove the reverse relationship.
             </p>

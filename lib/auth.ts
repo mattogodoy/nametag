@@ -41,6 +41,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
+          surname: user.surname,
+          nickname: user.nickname,
         };
       },
     }),
@@ -50,11 +52,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.name = user.name;
+        token.surname = user.surname;
+        token.nickname = user.nickname;
         token.email = user.email;
       }
       // Update token when session is updated
       if (trigger === 'update' && session) {
         token.name = session.name;
+        token.surname = session.surname;
+        token.nickname = session.nickname;
         token.email = session.email;
       }
       return token;
@@ -63,6 +69,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.name = token.name as string | null;
+        session.user.surname = token.surname as string | null;
+        session.user.nickname = token.nickname as string | null;
         session.user.email = token.email as string;
       }
       return session;

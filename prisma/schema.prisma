@@ -14,7 +14,9 @@ model User {
   id         String     @id @default(cuid())
   email      String     @unique
   password   String
-  name       String?
+  name       String
+  surname    String?
+  nickname   String?
   theme      Theme      @default(LIGHT)
   dateFormat DateFormat @default(MDY)
   createdAt  DateTime   @default(now())
@@ -32,7 +34,9 @@ model User {
 model Person {
   id                   String    @id @default(cuid())
   userId               String
-  fullName             String
+  name                 String
+  surname              String?
+  nickname             String?
   birthDate            DateTime?
   phone                String?
   address              String?
@@ -52,7 +56,9 @@ model Person {
   @@index([userId])
   @@index([relationshipToUserId])
   @@index([userId, lastContact]) // For recent contacts query
-  @@index([userId, fullName]) // For name sorting/search
+  @@index([userId, name]) // For name sorting/search
+  @@index([userId, surname]) // For surname sorting/search
+  @@index([userId, nickname]) // For nickname sorting/search
   @@map("people")
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { formatFullName } from '@/lib/nameUtils';
 
 // GET /api/people/[id]/orphans - Check which people would become orphans if this person is deleted
 export async function GET(
@@ -73,7 +74,9 @@ export async function GET(
         where: { id: relatedPersonId },
         select: {
           id: true,
-          fullName: true,
+          name: true,
+          surname: true,
+          nickname: true,
           relationshipToUserId: true,
         },
       });
@@ -84,7 +87,7 @@ export async function GET(
       if (relatedPerson && !relatedPerson.relationshipToUserId && otherRelationships.length === 0) {
         potentialOrphans.push({
           id: relatedPerson.id,
-          fullName: relatedPerson.fullName,
+          fullName: formatFullName(relatedPerson),
         });
       }
     }

@@ -2,10 +2,13 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatFullName } from '@/lib/nameUtils';
 
 interface Person {
   id: string;
-  fullName: string;
+  name: string;
+  surname?: string | null;
+  nickname?: string | null;
 }
 
 export default function NavigationSearch() {
@@ -180,7 +183,7 @@ export default function NavigationSearch() {
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="text-gray-900 dark:text-white">
-                {person.fullName}
+                {formatFullName(person)}
               </div>
             </button>
           ))}

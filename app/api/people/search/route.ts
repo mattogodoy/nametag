@@ -20,17 +20,35 @@ export async function GET(request: Request) {
   const people = await prisma.person.findMany({
     where: {
       userId: session.user.id,
-      fullName: {
-        contains: query,
-        mode: 'insensitive',
-      },
+      OR: [
+        {
+          name: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          surname: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          nickname: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+      ],
     },
     select: {
       id: true,
-      fullName: true,
+      name: true,
+      surname: true,
+      nickname: true,
     },
     orderBy: {
-      fullName: 'asc',
+      name: 'asc',
     },
     take: 20, // Limit to 20 results
   });

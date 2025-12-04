@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import DeleteGroupButton from '@/components/DeleteGroupButton';
 import Navigation from '@/components/Navigation';
 import GroupMembersManager from '@/components/GroupMembersManager';
+import { formatFullName } from '@/lib/nameUtils';
 
 export default async function GroupDetailsPage({
   params,
@@ -31,7 +32,9 @@ export default async function GroupDetailsPage({
             person: {
               select: {
                 id: true,
-                fullName: true,
+                name: true,
+                surname: true,
+                nickname: true,
               },
             },
           },
@@ -44,10 +47,12 @@ export default async function GroupDetailsPage({
       },
       select: {
         id: true,
-        fullName: true,
+        name: true,
+        surname: true,
+        nickname: true,
       },
       orderBy: {
-        fullName: 'asc',
+        name: 'asc',
       },
     }),
   ]);
@@ -63,6 +68,7 @@ export default async function GroupDetailsPage({
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/groups"
       />
 

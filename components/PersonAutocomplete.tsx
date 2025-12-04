@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { formatFullName } from '@/lib/nameUtils';
 
 interface Person {
   id: string;
-  fullName: string;
+  name: string;
+  surname?: string | null;
+  nickname?: string | null;
 }
 
 interface PersonAutocompleteProps {
@@ -32,12 +35,17 @@ export default function PersonAutocomplete({
 
   // Get the selected person's name
   const selectedPerson = people.find((p) => p.id === value);
-  const displayValue = selectedPerson ? selectedPerson.fullName : searchTerm;
+  const displayValue = selectedPerson ? formatFullName(selectedPerson) : searchTerm;
 
-  // Filter people based on search term
-  const filteredPeople = people.filter((person) =>
-    person.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter people based on search term - search in name, surname, and nickname
+  const filteredPeople = people.filter((person) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      person.name.toLowerCase().includes(searchLower) ||
+      person.surname?.toLowerCase().includes(searchLower) ||
+      person.nickname?.toLowerCase().includes(searchLower)
+    );
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -71,7 +79,7 @@ export default function PersonAutocomplete({
   };
 
   const handleSelect = (person: Person) => {
-    onChange(person.id, person.fullName);
+    onChange(person.id, formatFullName(person));
     setSearchTerm('');
     setIsOpen(false);
     inputRef.current?.blur();
@@ -155,7 +163,7 @@ export default function PersonAutocomplete({
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="text-gray-900 dark:text-white">
-                {person.fullName}
+                {formatFullName(person)}
               </div>
             </button>
           ))}

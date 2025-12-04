@@ -7,9 +7,10 @@ import { handleSignOut } from '@/app/actions/auth';
 interface UserMenuProps {
   userEmail?: string;
   userName?: string | null;
+  userNickname?: string | null;
 }
 
-export default function UserMenu({ userEmail, userName }: UserMenuProps) {
+export default function UserMenu({ userEmail, userName, userNickname }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +41,7 @@ export default function UserMenu({ userEmail, userName }: UserMenuProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
-        <span>{userName || userEmail}</span>
+        <span>{userNickname || userName || userEmail}</span>
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"

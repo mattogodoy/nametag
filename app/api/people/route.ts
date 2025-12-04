@@ -24,7 +24,7 @@ export async function GET() {
         },
       },
       orderBy: {
-        fullName: 'asc',
+        name: 'asc',
       },
     });
 
@@ -48,12 +48,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { fullName, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds, connectedThroughId } =
+    const { name, surname, nickname, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds, connectedThroughId } =
       body;
 
-    if (!fullName) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Full name is required' },
+        { error: 'Name is required' },
         { status: 400 }
       );
     }
@@ -85,7 +85,9 @@ export async function POST(request: Request) {
       user: {
         connect: { id: session.user.id },
       },
-      fullName,
+      name,
+      surname: surname || null,
+      nickname: nickname || null,
       birthDate: birthDate ? new Date(birthDate) : null,
       phone: phone || null,
       address: address || null,

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
 import EmptyState from '@/components/EmptyState';
 import { formatDate } from '@/lib/date-format';
+import { formatFullName } from '@/lib/nameUtils';
 
 const ITEMS_PER_PAGE = 50;
 
@@ -82,7 +83,17 @@ export default async function PeoplePage({
 
     switch (sortBy) {
       case 'name':
-        primaryComparison = a.fullName.localeCompare(b.fullName);
+        primaryComparison = a.name.localeCompare(b.name);
+        break;
+      case 'surname':
+        const aSurname = a.surname || 'zzz'; // Put people without surnames at the end
+        const bSurname = b.surname || 'zzz';
+        primaryComparison = aSurname.localeCompare(bSurname);
+        break;
+      case 'nickname':
+        const aNickname = a.nickname || 'zzz'; // Put people without nicknames at the end
+        const bNickname = b.nickname || 'zzz';
+        primaryComparison = aNickname.localeCompare(bNickname);
         break;
       case 'relationship':
         const aRel = a.relationshipToUser?.label || 'zzz'; // Put indirect relationships at the end
@@ -100,7 +111,7 @@ export default async function PeoplePage({
         primaryComparison = aDate - bDate;
         break;
       default:
-        primaryComparison = a.fullName.localeCompare(b.fullName);
+        primaryComparison = a.name.localeCompare(b.name);
     }
 
     // Apply order to primary comparison only
@@ -112,7 +123,7 @@ export default async function PeoplePage({
     }
 
     // Otherwise, use secondary sort by name (always ascending)
-    return a.fullName.localeCompare(b.fullName);
+    return a.name.localeCompare(b.name);
   });
 
   // Paginate the sorted results
@@ -132,6 +143,7 @@ export default async function PeoplePage({
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/people"
       />
 
@@ -176,6 +188,32 @@ export default async function PeoplePage({
                       >
                         Name
                         {sortBy === 'name' && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </Link>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <Link
+                        href={`/people?sortBy=surname&order=${sortBy === 'surname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
+                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                      >
+                        Surname
+                        {sortBy === 'surname' && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </Link>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <Link
+                        href={`/people?sortBy=nickname&order=${sortBy === 'nickname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
+                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                      >
+                        Nickname
+                        {sortBy === 'nickname' && (
                           <span className="text-blue-600 dark:text-blue-400">
                             {order === 'asc' ? '↑' : '↓'}
                           </span>
@@ -240,7 +278,7 @@ export default async function PeoplePage({
                             href={`/people/${person.id}`}
                             className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                           >
-                            {person.fullName}
+                            {person.name}
                           </Link>
                           {isOrphan && (
                             <span className="relative group cursor-help">
@@ -252,6 +290,12 @@ export default async function PeoplePage({
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {person.surname || '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {person.nickname ? `'${person.nickname}'` : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {person.relationshipToUser ? (

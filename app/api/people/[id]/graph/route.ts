@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { formatFullName } from '@/lib/nameUtils';
 
 interface GraphNode {
   id: string;
@@ -72,7 +73,7 @@ export async function GET(
   // Add center node (the person we're viewing)
   nodes.push({
     id: person.id,
-    label: person.fullName,
+    label: formatFullName(person),
     groups: person.groups.map((pg) => pg.group.name),
     colors: person.groups.map((pg) => pg.group.color || '#3B82F6'),
     isCenter: true,
@@ -105,7 +106,7 @@ export async function GET(
     if (!nodeIds.has(rel.relatedPersonId)) {
       nodes.push({
         id: rel.relatedPersonId,
-        label: rel.relatedPerson.fullName,
+        label: formatFullName(rel.relatedPerson),
         groups: rel.relatedPerson.groups.map((pg) => pg.group.name),
         colors: rel.relatedPerson.groups.map((pg) => pg.group.color || '#3B82F6'),
         isCenter: false,

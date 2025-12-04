@@ -65,7 +65,7 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { fullName, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds } =
+    const { name, surname, nickname, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds } =
       body;
 
     // Check if person exists and belongs to user
@@ -80,9 +80,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
     }
 
-    if (!fullName) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Full name is required' },
+        { error: 'Name is required' },
         { status: 400 }
       );
     }
@@ -92,7 +92,9 @@ export async function PUT(
 
     // Build update data
     const updateData: any = {
-      fullName,
+      name,
+      surname: surname || null,
+      nickname: nickname || null,
       birthDate: birthDate ? new Date(birthDate) : null,
       phone: phone || null,
       address: address || null,

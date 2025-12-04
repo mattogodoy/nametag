@@ -29,6 +29,7 @@ export default async function SettingsPage() {
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/settings"
       />
 
@@ -37,6 +38,20 @@ export default async function SettingsPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
             Settings
           </h1>
+
+          {/* Profile Settings */}
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Profile
+            </h2>
+            <ProfileForm
+              userId={session.user.id}
+              currentName={session.user.name || ''}
+              currentSurname={session.user.surname || ''}
+              currentNickname={session.user.nickname || ''}
+              currentEmail={session.user.email || ''}
+            />
+          </div>
 
           {/* Theme Settings */}
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
@@ -52,18 +67,6 @@ export default async function SettingsPage() {
               Date Format
             </h2>
             <DateFormatSelector userId={session.user.id} currentFormat={currentDateFormat} />
-          </div>
-
-          {/* Profile Settings */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Profile
-            </h2>
-            <ProfileForm
-              userId={session.user.id}
-              currentName={session.user.name || ''}
-              currentEmail={session.user.email || ''}
-            />
           </div>
 
           {/* Password Settings */}

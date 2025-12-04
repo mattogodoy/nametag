@@ -7,10 +7,12 @@ import { useSession } from 'next-auth/react';
 interface ProfileFormProps {
   userId: string;
   currentName: string;
+  currentSurname: string;
+  currentNickname: string;
   currentEmail: string;
 }
 
-export default function ProfileForm({ userId, currentName, currentEmail }: ProfileFormProps) {
+export default function ProfileForm({ userId, currentName, currentSurname, currentNickname, currentEmail }: ProfileFormProps) {
   const router = useRouter();
   const { update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +21,8 @@ export default function ProfileForm({ userId, currentName, currentEmail }: Profi
 
   const [formData, setFormData] = useState({
     name: currentName,
+    surname: currentSurname,
+    nickname: currentNickname,
     email: currentEmail,
   });
 
@@ -49,6 +53,8 @@ export default function ProfileForm({ userId, currentName, currentEmail }: Profi
       // Update the session with new data
       await update({
         name: formData.name,
+        surname: formData.surname,
+        nickname: formData.nickname,
         email: formData.email,
       });
 
@@ -77,20 +83,55 @@ export default function ProfileForm({ userId, currentName, currentEmail }: Profi
         </div>
       )}
 
-      <div>
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Name
-        </label>
-        <input
-          type="text"
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Name
+          </label>
+          <input
+            type="text"
+            id="name"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="surname"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Surname
+          </label>
+          <input
+            type="text"
+            id="surname"
+            value={formData.surname}
+            onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="nickname"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Nickname
+          </label>
+          <input
+            type="text"
+            id="nickname"
+            value={formData.nickname}
+            onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
       </div>
 
       <div>

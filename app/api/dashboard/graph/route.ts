@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { formatFullName } from '@/lib/nameUtils';
 
 interface GraphNode {
   id: string;
@@ -48,7 +49,9 @@ export async function GET(request: Request) {
     where: whereClause,
     select: {
       id: true,
-      fullName: true,
+      name: true,
+      surname: true,
+      nickname: true,
       relationshipToUser: {
         select: {
           label: true,
@@ -78,7 +81,7 @@ export async function GET(request: Request) {
       },
     },
     orderBy: {
-      fullName: 'asc',
+      name: 'asc',
     },
     ...(limit ? { take: parseInt(limit) } : {}),
   });
@@ -103,7 +106,7 @@ export async function GET(request: Request) {
   people.forEach((person) => {
     nodes.push({
       id: person.id,
-      label: person.fullName,
+      label: formatFullName(person),
       groups: person.groups.map((pg) => pg.group.name),
       colors: person.groups.map((pg) => pg.group.color || '#3B82F6'),
       isCenter: false,

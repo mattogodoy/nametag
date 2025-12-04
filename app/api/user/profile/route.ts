@@ -11,11 +11,11 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email } = body;
+    const { name, surname, nickname, email } = body;
 
-    if (!email) {
+    if (!email || !name) {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: 'Email and name are required' },
         { status: 400 }
       );
     }
@@ -35,7 +35,9 @@ export async function PUT(request: Request) {
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        name: name || null,
+        name,
+        surname: surname || null,
+        nickname: nickname || null,
         email,
       },
     });

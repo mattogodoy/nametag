@@ -33,6 +33,7 @@ export default async function GroupsPage() {
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/groups"
       />
 

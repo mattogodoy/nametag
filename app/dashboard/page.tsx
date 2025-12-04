@@ -5,6 +5,7 @@ import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import { formatDate } from '@/lib/date-format';
+import { formatFullName } from '@/lib/nameUtils';
 
 function getRelativeTime(date: Date): string {
   const now = new Date();
@@ -62,7 +63,9 @@ export default async function DashboardPage() {
       take: 5,
       select: {
         id: true,
-        fullName: true,
+        name: true,
+        surname: true,
+        nickname: true,
         lastContact: true,
       },
     }),
@@ -77,6 +80,7 @@ export default async function DashboardPage() {
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/dashboard"
       />
 
@@ -193,7 +197,7 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <span className="text-gray-900 dark:text-white font-medium">
-                      {person.fullName}
+                      {formatFullName(person)}
                     </span>
                     {person.lastContact && (
                       <span

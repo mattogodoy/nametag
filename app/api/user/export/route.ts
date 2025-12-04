@@ -47,7 +47,9 @@ export async function GET() {
               relatedPerson: {
                 select: {
                   id: true,
-                  fullName: true,
+                  name: true,
+                  surname: true,
+                  nickname: true,
                 },
               },
               relationshipType: {
@@ -88,7 +90,9 @@ export async function GET() {
       })),
       people: people.map((person) => ({
         id: person.id,
-        fullName: person.fullName,
+        name: person.name,
+        surname: person.surname,
+        nickname: person.nickname,
         birthDate: person.birthDate,
         phone: person.phone,
         address: person.address,
@@ -103,7 +107,7 @@ export async function GET() {
         groups: person.groups.map((pg) => pg.group.name),
         relationships: person.relationshipsFrom.map((rel) => ({
           relatedPersonId: rel.relatedPersonId,
-          relatedPersonName: rel.relatedPerson.fullName,
+          relatedPersonName: `${rel.relatedPerson.name}${rel.relatedPerson.nickname ? ` '${rel.relatedPerson.nickname}'` : ''}${rel.relatedPerson.surname ? ` ${rel.relatedPerson.surname}` : ''}`,
           relationshipType: rel.relationshipType
             ? {
                 name: rel.relationshipType.name,

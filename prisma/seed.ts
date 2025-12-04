@@ -200,7 +200,8 @@ async function main() {
   const john = await prisma.person.create({
     data: {
       userId: user.id,
-      fullName: 'John Smith',
+      name: 'John',
+      surname: 'Smith',
       birthDate: new Date('1985-03-15'),
       phone: '+1 (555) 123-4567',
       address: '123 Main St, Springfield, IL',
@@ -216,7 +217,8 @@ async function main() {
   const sarah = await prisma.person.create({
     data: {
       userId: user.id,
-      fullName: 'Sarah Johnson',
+      name: 'Sarah',
+      surname: 'Johnson',
       birthDate: new Date('1987-07-22'),
       phone: '+1 (555) 234-5678',
       address: '123 Main St, Springfield, IL',
@@ -232,7 +234,8 @@ async function main() {
   const emma = await prisma.person.create({
     data: {
       userId: user.id,
-      fullName: 'Emma Smith',
+      name: 'Emma',
+      surname: 'Smith',
       birthDate: new Date('2015-05-10'),
       notes: "John and Sarah's daughter. Loves reading and drawing.",
       relationshipToUserId: relativeType.id,
@@ -245,7 +248,8 @@ async function main() {
   const lucas = await prisma.person.create({
     data: {
       userId: user.id,
-      fullName: 'Lucas Smith',
+      name: 'Lucas',
+      surname: 'Smith',
       birthDate: new Date('2018-09-03'),
       notes: "John and Sarah's son. Plays soccer.",
       relationshipToUserId: relativeType.id,
@@ -258,7 +262,8 @@ async function main() {
   const mike = await prisma.person.create({
     data: {
       userId: user.id,
-      fullName: 'Mike Chen',
+      name: 'Mike',
+      surname: 'Chen',
       birthDate: new Date('1990-01-18'),
       phone: '+1 (555) 345-6789',
       lastContact: new Date('2024-11-28'),
@@ -273,7 +278,8 @@ async function main() {
   const jessica = await prisma.person.create({
     data: {
       userId: user.id,
-      fullName: 'Jessica Martinez',
+      name: 'Jessica',
+      surname: 'Martinez',
       birthDate: new Date('1988-11-30'),
       phone: '+1 (555) 456-7890',
       lastContact: new Date('2024-11-15'),
@@ -288,7 +294,8 @@ async function main() {
   const david = await prisma.person.create({
     data: {
       userId: user.id,
-      fullName: 'David Brown',
+      name: 'David',
+      surname: 'Brown',
       birthDate: new Date('1983-06-12'),
       phone: '+1 (555) 567-8901',
       lastContact: new Date('2024-10-20'),

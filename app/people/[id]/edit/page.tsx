@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import PersonForm from '@/components/PersonForm';
 import Navigation from '@/components/Navigation';
+import { formatFullName } from '@/lib/nameUtils';
 
 export default async function EditPersonPage({
   params,
@@ -56,6 +57,7 @@ export default async function EditPersonPage({
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
+        userNickname={session.user.nickname}
         currentPath="/people"
       />
 
@@ -66,12 +68,12 @@ export default async function EditPersonPage({
               href={`/people/${person.id}`}
               className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
             >
-              ← Back to {person.fullName}
+              ← Back to {formatFullName(person)}
             </Link>
           </div>
 
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-            Edit {person.fullName}
+            Edit {formatFullName(person)}
           </h1>
 
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">

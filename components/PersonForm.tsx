@@ -10,7 +10,9 @@ import GroupsSelector from './GroupsSelector';
 interface PersonFormProps {
   person?: {
     id: string;
-    fullName: string;
+    name: string;
+    surname: string | null;
+    nickname: string | null;
     birthDate: Date | null;
     phone: string | null;
     address: string | null;
@@ -34,12 +36,14 @@ interface PersonFormProps {
   }>;
   availablePeople?: Array<{
     id: string;
-    fullName: string;
+    name: string;
+    surname: string | null;
+    nickname: string | null;
     groups: Array<{ groupId: string }>;
   }>;
   userName?: string;
   mode: 'create' | 'edit';
-  initialFullName?: string;
+  initialName?: string;
   initialKnownThrough?: string;
   initialRelationshipType?: string;
 }
@@ -51,7 +55,7 @@ export default function PersonForm({
   availablePeople = [],
   userName = 'You',
   mode,
-  initialFullName,
+  initialName,
   initialKnownThrough,
   initialRelationshipType,
 }: PersonFormProps) {
@@ -68,7 +72,7 @@ export default function PersonForm({
     initialKnownThrough || 'user'
   );
   const [knownThroughName, setKnownThroughName] = useState<string>(
-    initialKnownThroughPerson?.fullName || userName
+    initialKnownThroughPerson ? `${initialKnownThroughPerson.name}${initialKnownThroughPerson.surname ? ' ' + initialKnownThroughPerson.surname : ''}` : userName
   );
   const [inheritGroups, setInheritGroups] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -76,7 +80,9 @@ export default function PersonForm({
   const [createAnother, setCreateAnother] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: person?.fullName || initialFullName || '',
+    name: person?.name || initialName || '',
+    surname: person?.surname || '',
+    nickname: person?.nickname || '',
     birthDate: person?.birthDate
       ? new Date(person.birthDate).toISOString().split('T')[0]
       : '',
@@ -125,7 +131,7 @@ export default function PersonForm({
 
   // Create list of people including the user for autocomplete
   const peopleWithUser = [
-    { id: 'user', fullName: userName, groups: [] },
+    { id: 'user', name: userName, surname: null, nickname: null, groups: [] },
     ...availablePeople
   ];
 
@@ -178,10 +184,11 @@ export default function PersonForm({
       }
 
       // Show success toast
+      const displayName = `${formData.name}${formData.surname ? ' ' + formData.surname : ''}`;
       toast.success(
         mode === 'create'
-          ? `${formData.fullName} has been added to your network`
-          : `${formData.fullName}'s information has been updated`
+          ? `${displayName} has been added to your network`
+          : `${displayName}'s information has been updated`
       );
 
       // Redirect logic:
@@ -234,23 +241,61 @@ export default function PersonForm({
         </div>
       )}
 
-      <div>
-        <label
-          htmlFor="fullName"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Full Name *
-        </label>
-        <input
-          type="text"
-          id="fullName"
-          required
-          value={formData.fullName}
-          onChange={(e) =>
-            setFormData({ ...formData, fullName: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Name *
+          </label>
+          <input
+            type="text"
+            id="name"
+            required
+            value={formData.name}
+            onChange={(e) =>
+              setFormData({ ...formData, name: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="surname"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Surname
+          </label>
+          <input
+            type="text"
+            id="surname"
+            value={formData.surname}
+            onChange={(e) =>
+              setFormData({ ...formData, surname: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="nickname"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            Nickname
+          </label>
+          <input
+            type="text"
+            id="nickname"
+            value={formData.nickname}
+            onChange={(e) =>
+              setFormData({ ...formData, nickname: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
       </div>
 
       {mode === 'create' && (
@@ -280,7 +325,7 @@ export default function PersonForm({
                 className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
               />
               <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                Inherit groups from {selectedBasePerson.fullName}
+                Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
               </label>
             </div>
           )}

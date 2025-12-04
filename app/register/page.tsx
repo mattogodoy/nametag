@@ -8,6 +8,8 @@ import Link from 'next/link';
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,7 +38,7 @@ export default function RegisterPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, surname, nickname }),
       });
 
       const data = await response.json();
@@ -92,10 +94,39 @@ export default function RegisterPage() {
                 id="name"
                 name="name"
                 type="text"
+                required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Name (optional)"
+                placeholder="Name *"
+              />
+            </div>
+            <div>
+              <label htmlFor="surname" className="sr-only">
+                Surname
+              </label>
+              <input
+                id="surname"
+                name="surname"
+                type="text"
+                value={surname}
+                onChange={(e) => setSurname(e.target.value)}
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Surname (optional)"
+              />
+            </div>
+            <div>
+              <label htmlFor="nickname" className="sr-only">
+                Nickname
+              </label>
+              <input
+                id="nickname"
+                name="nickname"
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Nickname (optional)"
               />
             </div>
             <div>

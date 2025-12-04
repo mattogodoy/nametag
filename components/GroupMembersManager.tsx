@@ -4,10 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import PillSelector from './PillSelector';
+import { formatFullName } from '@/lib/nameUtils';
 
 interface Person {
   id: string;
-  fullName: string;
+  name: string;
+  surname?: string | null;
+  nickname?: string | null;
 }
 
 interface Member extends Person {
@@ -33,12 +36,12 @@ export default function GroupMembersManager({
   // Transform people to PillItem format
   const pillItems = availablePeople.map((person) => ({
     id: person.id,
-    label: person.fullName,
+    label: formatFullName(person),
   }));
 
   const selectedItems = currentMembers.map((member) => ({
     id: member.id,
-    label: member.fullName,
+    label: formatFullName(member),
   }));
 
   const handleAdd = async (item: { id: string; label: string }) => {
@@ -81,7 +84,7 @@ export default function GroupMembersManager({
         return;
       }
 
-      toast.success(`${member.fullName} removed from ${groupName}`);
+      toast.success(`${formatFullName(member)} removed from ${groupName}`);
       router.refresh();
     } catch (error) {
       toast.error('Unable to connect to server');

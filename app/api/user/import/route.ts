@@ -13,7 +13,9 @@ interface ImportData {
   }>;
   people: Array<{
     id: string;
-    fullName: string;
+    name: string;
+    surname?: string | null;
+    nickname?: string | null;
     birthDate?: string | null;
     phone?: string | null;
     address?: string | null;
@@ -149,10 +151,16 @@ export async function POST(request: NextRequest) {
       const existingPerson = await prisma.person.findFirst({
         where: {
           userId: session.user.id,
-          fullName: {
-            equals: person.fullName,
+          name: {
+            equals: person.name,
             mode: 'insensitive',
           },
+          surname: person.surname
+            ? {
+                equals: person.surname,
+                mode: 'insensitive',
+              }
+            : null,
         },
       });
 
@@ -181,7 +189,9 @@ export async function POST(request: NextRequest) {
         const newPerson = await prisma.person.create({
           data: {
             userId: session.user.id,
-            fullName: person.fullName,
+            name: person.name,
+            surname: person.surname,
+            nickname: person.nickname,
             birthDate: person.birthDate ? new Date(person.birthDate) : null,
             phone: person.phone,
             address: person.address,

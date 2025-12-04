@@ -6,10 +6,11 @@ import UserMenu from './UserMenu';
 interface NavigationProps {
   userEmail?: string;
   userName?: string | null;
+  userNickname?: string | null;
   currentPath?: string;
 }
 
-export default function Navigation({ userEmail, userName, currentPath }: NavigationProps) {
+export default function Navigation({ userEmail, userName, userNickname, currentPath }: NavigationProps) {
   const navItems = [
     { href: '/people', label: 'People' },
     { href: '/groups', label: 'Groups' },
@@ -55,7 +56,7 @@ export default function Navigation({ userEmail, userName, currentPath }: Navigat
           <div className="flex items-center space-x-4">
             <NavigationSearch />
             {userEmail && (
-              <UserMenu userEmail={userEmail} userName={userName} />
+              <UserMenu userEmail={userEmail} userName={userName} userNickname={userNickname} />
             )}
           </div>
         </div>
