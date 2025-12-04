@@ -69,30 +69,61 @@ export default async function RelationshipTypesPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Default Types
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {defaultTypes.map((type) => (
-                <div
-                  key={type.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4"
-                  style={{ borderLeftColor: type.color || '#3B82F6' }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {type.label}
-                      </h3>
-                      {type.inverse && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                          Inverse: {type.inverse.label}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Used {type._count.relationships} time(s)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Color
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Relationship
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Inverse Relationship
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {defaultTypes.map((type) => (
+                    <tr key={type.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div
+                          className="w-8 h-8 rounded"
+                          style={{ backgroundColor: type.color || '#3B82F6' }}
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {type.label}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Used {type._count.relationships} time(s)
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {type.inverse ? (
+                          <span className="text-sm text-gray-900 dark:text-white">
+                            {type.inverse.label}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400 dark:text-gray-500">
+                            —
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <span className="text-sm text-gray-400 dark:text-gray-500">
+                          Default
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -102,38 +133,69 @@ export default async function RelationshipTypesPage() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Custom Types
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {customTypes.map((type) => (
-                  <div
-                    key={type.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4"
-                    style={{ borderLeftColor: type.color || '#3B82F6' }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {type.label}
-                        </h3>
-                        {type.inverse && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                            Inverse: {type.inverse.label}
-                          </p>
-                        )}
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          Used {type._count.relationships} time(s)
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 mt-4">
-                      <Link
-                        href={`/relationship-types/${type.id}/edit`}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Edit
-                      </Link>
-                    </div>
-                  </div>
-                ))}
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Color
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Relationship
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Inverse Relationship
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {customTypes.map((type) => (
+                      <tr key={type.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div
+                            className="w-8 h-8 rounded"
+                            style={{ backgroundColor: type.color || '#3B82F6' }}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {type.label}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Used {type._count.relationships} time(s)
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {type.inverse ? (
+                            <span className="text-sm text-gray-900 dark:text-white">
+                              {type.inverse.label}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400 dark:text-gray-500">
+                              —
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex justify-end gap-3">
+                            <Link
+                              href={`/relationship-types/${type.id}/edit`}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                              title="Edit"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
