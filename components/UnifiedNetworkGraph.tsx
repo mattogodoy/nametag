@@ -213,7 +213,13 @@ export default function UnifiedNetworkGraph({
       .on('click', (_event, d) => {
         // Don't navigate if it's the center node and centerNodeNonClickable is true
         if (centerNodeNonClickable && d.isCenter) return;
-        router.push(`/people/${d.id}`);
+
+        // Check if it's the user node (starts with "user-")
+        if (d.id.startsWith('user-')) {
+          router.push('/dashboard');
+        } else {
+          router.push(`/people/${d.id}`);
+        }
       })
       .on('mouseenter', function(_event, d) {
         // Highlight connected edges and update their arrow markers

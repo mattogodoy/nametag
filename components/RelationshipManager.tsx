@@ -188,9 +188,9 @@ export default function RelationshipManager({
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Relationships
-        </h3>
+        <h4 className="text-base font-medium text-gray-700 dark:text-gray-300">
+          Other Relationships
+        </h4>
         <button
           onClick={() => setShowAddModal(true)}
           className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -211,33 +211,50 @@ export default function RelationshipManager({
               className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
             >
               <div className="flex-1">
-                <Link
-                  href={`/people/${rel.relatedPersonId}`}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  {rel.relatedPerson.fullName}
-                </Link>
-                <span className="text-gray-500 dark:text-gray-400 ml-2">
-                  ({rel.relationshipType?.label || 'Unknown'})
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Link
+                    href={`/people/${rel.relatedPersonId}`}
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  >
+                    {rel.relatedPerson.fullName}
+                  </Link>
+                  <span className="text-gray-500 dark:text-gray-400">•</span>
+                  <span
+                    className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                    style={{
+                      backgroundColor: rel.relationshipType?.color
+                        ? `${rel.relationshipType.color}20`
+                        : '#E5E7EB',
+                      color: rel.relationshipType?.color || '#374151',
+                    }}
+                  >
+                    {rel.relationshipType?.label || 'Unknown'}
+                  </span>
+                </div>
                 {rel.notes && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     {rel.notes}
                   </p>
                 )}
               </div>
-              <div className="flex space-x-2">
+              <div className="flex gap-3">
                 <button
                   onClick={() => openEditModal(rel)}
-                  className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                  title="Edit"
                 >
-                  Edit
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => openDeleteModal(rel)}
-                  className="text-red-600 dark:text-red-400 hover:underline text-sm"
+                  className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
+                  title="Delete"
                 >
-                  Delete
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </button>
               </div>
             </div>

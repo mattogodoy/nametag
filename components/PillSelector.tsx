@@ -59,6 +59,11 @@ export default function PillSelector<T extends PillItem>({
     ? unselectedItems
     : [];
 
+  // Sort selected items alphabetically by label
+  const sortedSelectedItems = [...selectedItems].sort((a, b) =>
+    a.label.localeCompare(b.label)
+  );
+
   const handleAdd = (item: T) => {
     onAdd(item);
     setSearchTerm('');
@@ -89,9 +94,9 @@ export default function PillSelector<T extends PillItem>({
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
       setSearchTerm('');
-    } else if (e.key === 'Backspace' && !searchTerm && selectedItems.length > 0) {
-      // Remove last item when backspace is pressed on empty input
-      handleRemove(selectedItems[selectedItems.length - 1].id);
+    } else if (e.key === 'Backspace' && !searchTerm && sortedSelectedItems.length > 0) {
+      // Remove last item (alphabetically) when backspace is pressed on empty input
+      handleRemove(sortedSelectedItems[sortedSelectedItems.length - 1].id);
     }
   };
 
@@ -166,7 +171,7 @@ export default function PillSelector<T extends PillItem>({
       >
         <div className="flex flex-wrap gap-2 items-center">
           {/* Selected items as pills */}
-          {selectedItems.map((item) =>
+          {sortedSelectedItems.map((item) =>
             pillRenderer(item, () => handleRemove(item.id))
           )}
 

@@ -244,6 +244,45 @@ export default async function PersonDetailsPage({
               </div>
 
               <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                  Relationships
+                </h3>
+
+                {/* Relationship to user */}
+                {person.relationshipToUser && (
+                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900 dark:text-white font-medium">
+                          {session.user.name || session.user.email || 'You'}
+                        </span>
+                        <span className="text-gray-500 dark:text-gray-400">•</span>
+                        <span
+                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                          style={{
+                            backgroundColor: person.relationshipToUser.color
+                              ? `${person.relationshipToUser.color}20`
+                              : '#E5E7EB',
+                            color: person.relationshipToUser.color || '#374151',
+                          }}
+                        >
+                          {person.relationshipToUser.label}
+                        </span>
+                      </div>
+                      <Link
+                        href={`/people/${person.id}/edit`}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                        title="Edit"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Relationships to other people */}
                 <RelationshipManager
                   personId={person.id}
                   personName={person.fullName}
