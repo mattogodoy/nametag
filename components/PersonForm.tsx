@@ -542,7 +542,7 @@ export default function PersonForm({
             disabled={isLoading}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Saving...' : 'Update Person'}
+            {isLoading ? 'Saving...' : 'Save'}
           </button>
         )}
       </div>
