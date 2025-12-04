@@ -91,6 +91,28 @@ export async function PUT(
       );
     }
 
+    const normalizedName = name.toUpperCase().replace(/\s+/g, '_');
+
+    // Check if another relationship type with this name already exists (case-insensitive)
+    const duplicateType = await prisma.relationshipType.findFirst({
+      where: {
+        OR: [
+          { userId: null, name: { equals: normalizedName, mode: 'insensitive' } }, // Default types
+          { userId: session.user.id, name: { equals: normalizedName, mode: 'insensitive' } }, // User's custom types
+        ],
+        id: {
+          not: id, // Exclude the current type being updated
+        },
+      },
+    });
+
+    if (duplicateType) {
+      return NextResponse.json(
+        { error: 'A relationship type with this name already exists' },
+        { status: 400 }
+      );
+    }
+
     let finalInverseId = inverseId || null;
 
     // If inverseLabel is provided (new type to create), create it first
@@ -100,6 +122,23 @@ export async function PUT(
         .trim()
         .replace(/[^A-Z0-9\s]/g, '')
         .replace(/\s+/g, '_');
+
+      // Check if inverse type already exists
+      const existingInverseType = await prisma.relationshipType.findFirst({
+        where: {
+          OR: [
+            { userId: null, name: { equals: inverseName, mode: 'insensitive' } },
+            { userId: session.user.id, name: { equals: inverseName, mode: 'insensitive' } },
+          ],
+        },
+      });
+
+      if (existingInverseType) {
+        return NextResponse.json(
+          { error: `The inverse relationship type "${inverseLabel}" already exists` },
+          { status: 400 }
+        );
+      }
 
       // Create the inverse type with the same color
       const inverseType = await prisma.relationshipType.create({
@@ -119,7 +158,7 @@ export async function PUT(
     const relationshipType = await prisma.relationshipType.update({
       where: { id },
       data: {
-        name: name.toUpperCase().replace(/\s+/g, '_'),
+        name: normalizedName,
         label,
         color: color || null,
         inverseId: finalInverseId,

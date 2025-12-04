@@ -69,15 +69,18 @@ export async function POST(request: NextRequest) {
     // 1. Import custom relationship types first
     if (data.customRelationshipTypes && data.customRelationshipTypes.length > 0) {
       for (const relType of data.customRelationshipTypes) {
-        // Check if a relationship type with this name already exists
+        // Check if a relationship type with this name already exists (case-insensitive, including defaults)
         const existing = await prisma.relationshipType.findFirst({
           where: {
-            userId: session.user.id,
-            name: relType.name,
+            OR: [
+              { userId: null, name: { equals: relType.name, mode: 'insensitive' } }, // Default types
+              { userId: session.user.id, name: { equals: relType.name, mode: 'insensitive' } }, // User's custom types
+            ],
           },
         });
 
         if (existing) {
+          // Reuse existing relationship type
           relationshipTypeIdMap.set(relType.id, existing.id);
         } else {
           // Create new relationship type (without inverse for now)
@@ -211,11 +214,12 @@ export async function POST(request: NextRequest) {
           relationshipTypeId = relType?.id || null;
         }
 
-        // Check if relationship already exists (to avoid duplicates)
+        // Check if this specific relationship already exists (to avoid duplicates)
         const existingRel = await prisma.relationship.findFirst({
           where: {
             personId: newPersonId,
             relatedPersonId: newRelatedPersonId,
+            relationshipTypeId: relationshipTypeId,
           },
         });
 

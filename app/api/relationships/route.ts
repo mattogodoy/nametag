@@ -90,14 +90,26 @@ export async function POST(request: Request) {
 
     // Create the inverse relationship if applicable
     if (relationshipType.inverseId) {
-      await prisma.relationship.create({
-        data: {
+      // Check if inverse relationship already exists
+      const existingInverse = await prisma.relationship.findFirst({
+        where: {
           personId: relatedPersonId,
           relatedPersonId: personId,
           relationshipTypeId: relationshipType.inverseId,
-          notes: notes || null,
         },
       });
+
+      // Only create if it doesn't exist
+      if (!existingInverse) {
+        await prisma.relationship.create({
+          data: {
+            personId: relatedPersonId,
+            relatedPersonId: personId,
+            relationshipTypeId: relationshipType.inverseId,
+            notes: notes || null,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ relationship }, { status: 201 });
