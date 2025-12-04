@@ -61,6 +61,19 @@ export default function UnifiedNetworkGraph({
   const router = useRouter();
   const previousNodeIdsRef = useRef<Set<string> | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!svgRef.current || !apiEndpoint) return;
@@ -78,7 +91,7 @@ export default function UnifiedNetworkGraph({
     };
 
     fetchData();
-  }, [apiEndpoint, refreshKey, selectedGroupId]);
+  }, [apiEndpoint, refreshKey, selectedGroupId, isMobile]);
 
   const renderGraph = (data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
     if (!svgRef.current) return;
@@ -95,6 +108,12 @@ export default function UnifiedNetworkGraph({
 
     const nodes = filteredNodes;
     const edges = filteredEdges;
+
+    // Mobile-specific parameters
+    const nodeRadius = isMobile ? { center: 10, normal: 7 } : { center: 12, normal: 8 };
+    const fontSize = isMobile ? { center: 12, normal: 10, edge: 9 } : { center: 14, normal: 12, edge: 10 };
+    const mobileLinkDistance = isMobile ? 80 : linkDistance;
+    const mobileChargeStrength = isMobile ? -250 : chargeStrength;
 
     // Track new nodes for animation
     const currentNodeIds = new Set(nodes.map((n) => n.id));
@@ -141,11 +160,11 @@ export default function UnifiedNetworkGraph({
         'link',
         d3.forceLink(edges)
           .id((d: any) => d.id)
-          .distance(linkDistance)
+          .distance(mobileLinkDistance)
       )
-      .force('charge', d3.forceManyBody().strength(chargeStrength))
+      .force('charge', d3.forceManyBody().strength(mobileChargeStrength))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(30));
+      .force('collision', d3.forceCollide().radius(isMobile ? 25 : 30));
 
     // Create edges with arrows
     const link = g
@@ -186,7 +205,7 @@ export default function UnifiedNetworkGraph({
       .data(edges)
       .enter()
       .append('text')
-      .attr('font-size', 10)
+      .attr('font-size', fontSize.edge)
       .attr('fill', (d: any) => d.color || '#666')
       .attr('text-anchor', 'middle')
       .attr('opacity', 0)
@@ -266,7 +285,7 @@ export default function UnifiedNetworkGraph({
     // Add circles to nodes
     const circles = node
       .append('circle')
-      .attr('r', (d) => (d.isCenter ? 12 : 8))
+      .attr('r', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal))
       .attr('fill', (d) => {
         if (d.isCenter) return '#3B82F6'; // Blue for center
         if (d.colors.length > 0) return d.colors[0];
@@ -282,7 +301,7 @@ export default function UnifiedNetworkGraph({
         .attr('r', 0)
         .transition()
         .duration(300)
-        .attr('r', (d) => (d.isCenter ? 12 : 8));
+        .attr('r', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal));
     }
 
     // Add labels to nodes
@@ -290,8 +309,8 @@ export default function UnifiedNetworkGraph({
       .append('text')
       .text((d) => d.label)
       .attr('text-anchor', 'middle')
-      .attr('dy', (d) => (d.isCenter ? 25 : 20))
-      .attr('font-size', (d) => (d.isCenter ? 14 : 12))
+      .attr('dy', (d) => (d.isCenter ? (isMobile ? 22 : 25) : (isMobile ? 18 : 20)))
+      .attr('font-size', (d) => (d.isCenter ? fontSize.center : fontSize.normal))
       .attr('font-weight', (d) => (d.isCenter ? 'bold' : 'normal'))
       .attr('fill', 'currentColor')
       .style('pointer-events', 'none');
@@ -362,7 +381,7 @@ export default function UnifiedNetworkGraph({
             id="group-filter"
             value={selectedGroupId || ''}
             onChange={(e) => setSelectedGroupId(e.target.value || null)}
-            className="block w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+            className="block w-full sm:w-64 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
           >
             <option value="">All groups</option>
             {groups.map((group) => (
@@ -375,7 +394,7 @@ export default function UnifiedNetworkGraph({
       )}
       <svg
         ref={svgRef}
-        className="w-full h-[600px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
       />
     </div>
   );

@@ -194,7 +194,7 @@ export default async function PeoplePage({
                         )}
                       </Link>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=surname&order=${sortBy === 'surname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
                         className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
@@ -207,7 +207,7 @@ export default async function PeoplePage({
                         )}
                       </Link>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=nickname&order=${sortBy === 'nickname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
                         className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
@@ -291,10 +291,10 @@ export default async function PeoplePage({
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {person.surname || '—'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {person.nickname ? `'${person.nickname}'` : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

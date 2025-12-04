@@ -138,9 +138,9 @@ export default async function PersonDetailsPage({
           </div>
 
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
                   {formatFullName(person)}
                 </h1>
                 {person.groups.length > 0 && (
@@ -162,10 +162,10 @@ export default async function PersonDetailsPage({
                   </div>
                 )}
               </div>
-              <div className="flex space-x-3">
+              <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
                 <Link
                   href={`/people/${person.id}/edit`}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
                 >
                   Edit
                 </Link>

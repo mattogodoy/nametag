@@ -84,16 +84,16 @@ export default async function GroupDetailsPage({
           </div>
 
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-visible">
-            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start">
-              <div className="flex items-center">
+            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start gap-4">
+              <div className="flex items-center flex-1 min-w-0">
                 {group.color && (
                   <div
                     className="w-12 h-12 rounded-full mr-4 flex-shrink-0"
                     style={{ backgroundColor: group.color }}
                   />
                 )}
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <div className="min-w-0">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
                     {group.name}
                   </h1>
                   {group.description && (
@@ -103,10 +103,10 @@ export default async function GroupDetailsPage({
                   )}
                 </div>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
                 <Link
                   href={`/groups/${group.id}/edit`}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
                 >
                   Edit
                 </Link>
