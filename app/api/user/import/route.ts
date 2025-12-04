@@ -112,15 +112,32 @@ export async function POST(request: NextRequest) {
 
     // 2. Import groups
     for (const group of data.groups) {
-      const newGroup = await prisma.group.create({
-        data: {
+      // Check if a group with the same name already exists (case-insensitive)
+      const existingGroup = await prisma.group.findFirst({
+        where: {
           userId: session.user.id,
-          name: group.name,
-          description: group.description,
-          color: group.color,
+          name: {
+            equals: group.name,
+            mode: 'insensitive',
+          },
         },
       });
-      groupIdMap.set(group.id, newGroup.id);
+
+      if (existingGroup) {
+        // Reuse existing group
+        groupIdMap.set(group.id, existingGroup.id);
+      } else {
+        // Create new group
+        const newGroup = await prisma.group.create({
+          data: {
+            userId: session.user.id,
+            name: group.name,
+            description: group.description,
+            color: group.color,
+          },
+        });
+        groupIdMap.set(group.id, newGroup.id);
+      }
     }
 
     // 3. Import people (without relationships first)

@@ -80,6 +80,27 @@ export async function PUT(
       );
     }
 
+    // Check if another group with the same name already exists for this user (case-insensitive)
+    const duplicateGroup = await prisma.group.findFirst({
+      where: {
+        userId: session.user.id,
+        name: {
+          equals: name,
+          mode: 'insensitive',
+        },
+        id: {
+          not: id, // Exclude the current group
+        },
+      },
+    });
+
+    if (duplicateGroup) {
+      return NextResponse.json(
+        { error: 'A group with this name already exists' },
+        { status: 400 }
+      );
+    }
+
     const group = await prisma.group.update({
       where: {
         id,

@@ -56,6 +56,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if a group with the same name already exists for this user (case-insensitive)
+    const existingGroup = await prisma.group.findFirst({
+      where: {
+        userId: session.user.id,
+        name: {
+          equals: name,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    if (existingGroup) {
+      return NextResponse.json(
+        { error: 'A group with this name already exists' },
+        { status: 400 }
+      );
+    }
+
     const group = await prisma.group.create({
       data: {
         userId: session.user.id,
