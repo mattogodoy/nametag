@@ -9,6 +9,23 @@ import Navigation from '@/components/Navigation';
 import { formatDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 
+function getReminderDescription(date: {
+  reminderEnabled: boolean;
+  reminderType: string | null;
+  reminderInterval: number | null;
+  reminderIntervalUnit: string | null;
+}): string | null {
+  if (!date.reminderEnabled) return null;
+  if (date.reminderType === 'ONCE') {
+    return 'Remind once';
+  }
+  if (date.reminderType === 'RECURRING' && date.reminderInterval && date.reminderIntervalUnit) {
+    const unit = date.reminderIntervalUnit.toLowerCase();
+    return `Remind every ${date.reminderInterval} ${date.reminderInterval === 1 ? unit.slice(0, -1) : unit}`;
+  }
+  return null;
+}
+
 function getRelativeTime(date: Date): string {
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -210,21 +227,32 @@ export default async function PersonDetailsPage({
                     Important Dates
                   </h3>
                   <div className="space-y-2">
-                    {person.importantDates.map((date) => (
-                      <div
-                        key={date.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900 dark:text-white text-sm">
-                            {date.title}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDate(new Date(date.date), dateFormat)}
+                    {person.importantDates.map((date) => {
+                      const reminderDesc = getReminderDescription(date);
+                      return (
+                        <div
+                          key={date.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900 dark:text-white text-sm">
+                              {date.title}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatDate(new Date(date.date), dateFormat)}
+                            </div>
+                            {reminderDesc && (
+                              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                {reminderDesc}
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

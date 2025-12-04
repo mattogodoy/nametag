@@ -108,9 +108,20 @@ export async function PUT(
       importantDates: importantDates
         ? {
             deleteMany: {},
-            create: importantDates.map((date: { title: string; date: string }) => ({
+            create: importantDates.map((date: {
+              title: string;
+              date: string;
+              reminderEnabled?: boolean;
+              reminderType?: string;
+              reminderInterval?: number;
+              reminderIntervalUnit?: string;
+            }) => ({
               title: date.title,
               date: new Date(date.date),
+              reminderEnabled: date.reminderEnabled ?? false,
+              reminderType: date.reminderEnabled ? date.reminderType : null,
+              reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
+              reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
             })),
           }
         : undefined,

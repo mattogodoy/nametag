@@ -25,6 +25,10 @@ interface PersonFormProps {
       id: string;
       title: string;
       date: Date;
+      reminderEnabled?: boolean;
+      reminderType?: 'ONCE' | 'RECURRING' | null;
+      reminderInterval?: number | null;
+      reminderIntervalUnit?: 'WEEKS' | 'MONTHS' | 'YEARS' | null;
     }>;
   };
   groups: Array<{
@@ -93,11 +97,23 @@ export default function PersonForm({
     groupIds: person?.groups.map((g) => g.groupId) || [],
   });
 
-  const [importantDates, setImportantDates] = useState<Array<{ id?: string; title: string; date: string }>>(
+  const [importantDates, setImportantDates] = useState<Array<{
+    id?: string;
+    title: string;
+    date: string;
+    reminderEnabled?: boolean;
+    reminderType?: 'ONCE' | 'RECURRING' | null;
+    reminderInterval?: number | null;
+    reminderIntervalUnit?: 'WEEKS' | 'MONTHS' | 'YEARS' | null;
+  }>>(
     person?.importantDates?.map((d) => ({
       id: d.id,
       title: d.title,
       date: new Date(d.date).toISOString().split('T')[0],
+      reminderEnabled: d.reminderEnabled,
+      reminderType: d.reminderType,
+      reminderInterval: d.reminderInterval,
+      reminderIntervalUnit: d.reminderIntervalUnit,
     })) || []
   );
 

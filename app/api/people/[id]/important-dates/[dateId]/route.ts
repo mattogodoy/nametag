@@ -16,7 +16,7 @@ export async function PUT(
 
     const { id, dateId } = await params;
     const body = await request.json();
-    const { title, date } = body;
+    const { title, date, reminderEnabled, reminderType, reminderInterval, reminderIntervalUnit } = body;
 
     if (!title || !date) {
       return NextResponse.json(
@@ -46,6 +46,10 @@ export async function PUT(
       data: {
         title,
         date: new Date(date),
+        reminderEnabled: reminderEnabled ?? false,
+        reminderType: reminderEnabled ? reminderType : null,
+        reminderInterval: reminderEnabled && reminderType === 'RECURRING' ? reminderInterval : null,
+        reminderIntervalUnit: reminderEnabled && reminderType === 'RECURRING' ? reminderIntervalUnit : null,
       },
     });
 

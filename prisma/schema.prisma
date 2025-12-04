@@ -121,12 +121,16 @@ model Relationship {
 
 // ImportantDate Model - Important dates for a person (birthdays, anniversaries, etc.)
 model ImportantDate {
-  id        String   @id @default(cuid())
-  personId  String
-  title     String   // e.g., "Birthday", "Anniversary", "First met"
-  date      DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String                @id @default(cuid())
+  personId             String
+  title                String                // e.g., "Birthday", "Anniversary", "First met"
+  date                 DateTime
+  reminderEnabled      Boolean               @default(false)
+  reminderType         ReminderType?
+  reminderInterval     Int?                  // For recurring reminders
+  reminderIntervalUnit ReminderIntervalUnit? // For recurring reminders
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   // Relations
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
@@ -134,6 +138,17 @@ model ImportantDate {
   @@index([personId])
   @@index([personId, date]) // For sorting by date
   @@map("important_dates")
+}
+
+enum ReminderType {
+  ONCE
+  RECURRING
+}
+
+enum ReminderIntervalUnit {
+  WEEKS
+  MONTHS
+  YEARS
 }
 
 // RelationshipType Model - User-defined or default relationship types

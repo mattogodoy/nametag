@@ -2,10 +2,17 @@
 
 import { useState } from 'react';
 
+type ReminderType = 'ONCE' | 'RECURRING';
+type ReminderIntervalUnit = 'WEEKS' | 'MONTHS' | 'YEARS';
+
 interface ImportantDate {
   id?: string;
   title: string;
   date: string; // ISO date string
+  reminderEnabled?: boolean;
+  reminderType?: ReminderType | null;
+  reminderInterval?: number | null;
+  reminderIntervalUnit?: ReminderIntervalUnit | null;
 }
 
 interface ImportantDatesManagerProps {
@@ -15,6 +22,15 @@ interface ImportantDatesManagerProps {
   mode: 'create' | 'edit';
 }
 
+const defaultNewDate: ImportantDate = {
+  title: '',
+  date: '',
+  reminderEnabled: false,
+  reminderType: null,
+  reminderInterval: 1,
+  reminderIntervalUnit: 'YEARS',
+};
+
 export default function ImportantDatesManager({
   personId,
   initialDates = [],
@@ -23,42 +39,74 @@ export default function ImportantDatesManager({
 }: ImportantDatesManagerProps) {
   const [dates, setDates] = useState<ImportantDate[]>(initialDates);
   const [isAdding, setIsAdding] = useState(false);
-  const [newDate, setNewDate] = useState({ title: '', date: '' });
+  const [newDate, setNewDate] = useState<ImportantDate>({ ...defaultNewDate });
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingDate, setEditingDate] = useState<ImportantDate | null>(null);
+
+  const isDateInFuture = (dateStr: string) => {
+    if (!dateStr) return false;
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today;
+  };
 
   const handleAdd = () => {
     if (!newDate.title.trim() || !newDate.date) return;
 
-    const updatedDates = [...dates, { ...newDate, id: undefined }];
+    const dateToAdd: ImportantDate = {
+      ...newDate,
+      id: undefined,
+      // Clear reminder fields if not enabled
+      reminderType: newDate.reminderEnabled ? newDate.reminderType : null,
+      reminderInterval: newDate.reminderEnabled && newDate.reminderType === 'RECURRING' ? newDate.reminderInterval : null,
+      reminderIntervalUnit: newDate.reminderEnabled && newDate.reminderType === 'RECURRING' ? newDate.reminderIntervalUnit : null,
+    };
+
+    const updatedDates = [...dates, dateToAdd];
     setDates(updatedDates);
     if (onChange) {
       onChange(updatedDates);
     }
-    setNewDate({ title: '', date: '' });
+    setNewDate({ ...defaultNewDate });
     setIsAdding(false);
   };
 
   const handleStartEdit = (index: number) => {
     setEditingIndex(index);
-    setEditingDate({ ...dates[index] });
+    setEditingDate({
+      ...dates[index],
+      reminderInterval: dates[index].reminderInterval ?? 1,
+      reminderIntervalUnit: dates[index].reminderIntervalUnit ?? 'YEARS',
+    });
   };
 
   const handleSaveEdit = async () => {
     if (!editingDate || editingIndex === null) return;
     if (!editingDate.title.trim() || !editingDate.date) return;
 
-    if (editingDate.id && mode === 'edit' && personId) {
+    const dateToSave: ImportantDate = {
+      ...editingDate,
+      reminderType: editingDate.reminderEnabled ? editingDate.reminderType : null,
+      reminderInterval: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderInterval : null,
+      reminderIntervalUnit: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderIntervalUnit : null,
+    };
+
+    if (dateToSave.id && mode === 'edit' && personId) {
       // Update in database
       try {
-        const response = await fetch(`/api/people/${personId}/important-dates/${editingDate.id}`, {
+        const response = await fetch(`/api/people/${personId}/important-dates/${dateToSave.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            title: editingDate.title,
-            date: editingDate.date,
+            title: dateToSave.title,
+            date: dateToSave.date,
+            reminderEnabled: dateToSave.reminderEnabled,
+            reminderType: dateToSave.reminderType,
+            reminderInterval: dateToSave.reminderInterval,
+            reminderIntervalUnit: dateToSave.reminderIntervalUnit,
           }),
         });
 
@@ -72,7 +120,7 @@ export default function ImportantDatesManager({
     }
 
     const updatedDates = [...dates];
-    updatedDates[editingIndex] = editingDate;
+    updatedDates[editingIndex] = dateToSave;
     setDates(updatedDates);
     if (onChange) {
       onChange(updatedDates);
@@ -110,6 +158,113 @@ export default function ImportantDatesManager({
     }
   };
 
+  const getReminderDescription = (date: ImportantDate) => {
+    if (!date.reminderEnabled) return null;
+    if (date.reminderType === 'ONCE') {
+      return 'Remind once';
+    }
+    if (date.reminderType === 'RECURRING' && date.reminderInterval && date.reminderIntervalUnit) {
+      const unit = date.reminderIntervalUnit.toLowerCase();
+      return `Remind every ${date.reminderInterval} ${date.reminderInterval === 1 ? unit.slice(0, -1) : unit}`;
+    }
+    return null;
+  };
+
+  const ReminderFields = ({
+    date,
+    onChange,
+    idPrefix,
+  }: {
+    date: ImportantDate;
+    onChange: (updates: Partial<ImportantDate>) => void;
+    idPrefix: string;
+  }) => {
+    const isFuture = isDateInFuture(date.date);
+
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+        <div className="flex items-center justify-between mb-3">
+          <label
+            htmlFor={`${idPrefix}-reminder-toggle`}
+            className="text-xs font-medium text-gray-700 dark:text-gray-300"
+          >
+            Remind me
+          </label>
+          <button
+            type="button"
+            id={`${idPrefix}-reminder-toggle`}
+            onClick={() => onChange({
+              reminderEnabled: !date.reminderEnabled,
+              reminderType: !date.reminderEnabled ? (isFuture ? 'ONCE' : 'RECURRING') : date.reminderType,
+            })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              date.reminderEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                date.reminderEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {date.reminderEnabled && (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              {isFuture && (
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name={`${idPrefix}-reminder-type`}
+                    checked={date.reminderType === 'ONCE'}
+                    onChange={() => onChange({ reminderType: 'ONCE' })}
+                    className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-gray-700 dark:text-gray-300">
+                    Only once on the specified date
+                  </span>
+                </label>
+              )}
+              <label className="flex items-center space-x-2 cursor-pointer flex-wrap gap-y-1">
+                <input
+                  type="radio"
+                  name={`${idPrefix}-reminder-type`}
+                  checked={date.reminderType === 'RECURRING'}
+                  onChange={() => onChange({ reminderType: 'RECURRING' })}
+                  className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                />
+                <span className="text-xs text-gray-700 dark:text-gray-300">Every</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={date.reminderInterval ?? 1}
+                  onChange={(e) => onChange({ reminderInterval: Math.max(1, parseInt(e.target.value) || 1) })}
+                  disabled={date.reminderType !== 'RECURRING'}
+                  className="w-14 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <select
+                  value={date.reminderIntervalUnit ?? 'YEARS'}
+                  onChange={(e) => onChange({ reminderIntervalUnit: e.target.value as ReminderIntervalUnit })}
+                  disabled={date.reminderType !== 'RECURRING'}
+                  className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="WEEKS">weeks</option>
+                  <option value="MONTHS">months</option>
+                  <option value="YEARS">years</option>
+                </select>
+                <span className={`text-xs ${date.reminderType === 'RECURRING' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                  starting from the specified date
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -133,7 +288,7 @@ export default function ImportantDatesManager({
             key={index}
             className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
           >
-            {editingIndex === index ? (
+            {editingIndex === index && editingDate ? (
               <div className="space-y-3">
                 <div>
                   <label
@@ -145,8 +300,8 @@ export default function ImportantDatesManager({
                   <input
                     type="text"
                     id={`edit-date-title-${index}`}
-                    value={editingDate?.title || ''}
-                    onChange={(e) => setEditingDate(editingDate ? { ...editingDate, title: e.target.value } : null)}
+                    value={editingDate.title}
+                    onChange={(e) => setEditingDate({ ...editingDate, title: e.target.value })}
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -160,12 +315,17 @@ export default function ImportantDatesManager({
                   <input
                     type="date"
                     id={`edit-date-date-${index}`}
-                    value={editingDate?.date || ''}
-                    onChange={(e) => setEditingDate(editingDate ? { ...editingDate, date: e.target.value } : null)}
+                    value={editingDate.date}
+                    onChange={(e) => setEditingDate({ ...editingDate, date: e.target.value })}
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
+                <ReminderFields
+                  date={editingDate}
+                  onChange={(updates) => setEditingDate({ ...editingDate, ...updates })}
+                  idPrefix={`edit-${index}`}
+                />
+                <div className="flex justify-end space-x-2 pt-2">
                   <button
                     type="button"
                     onClick={handleCancelEdit}
@@ -176,7 +336,7 @@ export default function ImportantDatesManager({
                   <button
                     type="button"
                     onClick={handleSaveEdit}
-                    disabled={!editingDate?.title.trim() || !editingDate?.date}
+                    disabled={!editingDate.title.trim() || !editingDate.date}
                     className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Save
@@ -196,6 +356,14 @@ export default function ImportantDatesManager({
                       day: 'numeric',
                     })}
                   </div>
+                  {getReminderDescription(date) && (
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      {getReminderDescription(date)}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -270,12 +438,17 @@ export default function ImportantDatesManager({
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <ReminderFields
+              date={newDate}
+              onChange={(updates) => setNewDate({ ...newDate, ...updates })}
+              idPrefix="new"
+            />
+            <div className="flex justify-end space-x-2 pt-2">
               <button
                 type="button"
                 onClick={() => {
                   setIsAdding(false);
-                  setNewDate({ title: '', date: '' });
+                  setNewDate({ ...defaultNewDate });
                 }}
                 className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
               >
