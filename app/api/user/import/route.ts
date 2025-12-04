@@ -145,33 +145,54 @@ export async function POST(request: NextRequest) {
 
     // 3. Import people (without relationships first)
     for (const person of data.people) {
-      // Find relationship type to user by name
-      let relationshipToUserId: string | null = null;
-      if (person.relationshipToUser) {
-        const relType = await prisma.relationshipType.findFirst({
-          where: {
-            OR: [
-              { userId: null, name: person.relationshipToUser.name }, // Default types
-              { userId: session.user.id, name: person.relationshipToUser.name }, // Custom types
-            ],
-          },
-        });
-        relationshipToUserId = relType?.id || null;
-      }
-
-      const newPerson = await prisma.person.create({
-        data: {
+      // Check if a person with the same name already exists (case-insensitive)
+      const existingPerson = await prisma.person.findFirst({
+        where: {
           userId: session.user.id,
-          fullName: person.fullName,
-          birthDate: person.birthDate ? new Date(person.birthDate) : null,
-          phone: person.phone,
-          address: person.address,
-          lastContact: person.lastContact ? new Date(person.lastContact) : null,
-          notes: person.notes,
-          relationshipToUserId,
+          fullName: {
+            equals: person.fullName,
+            mode: 'insensitive',
+          },
         },
       });
-      personIdMap.set(person.id, newPerson.id);
+
+      let personId: string;
+
+      if (existingPerson) {
+        // Reuse existing person
+        personId = existingPerson.id;
+        personIdMap.set(person.id, existingPerson.id);
+      } else {
+        // Find relationship type to user by name
+        let relationshipToUserId: string | null = null;
+        if (person.relationshipToUser) {
+          const relType = await prisma.relationshipType.findFirst({
+            where: {
+              OR: [
+                { userId: null, name: person.relationshipToUser.name }, // Default types
+                { userId: session.user.id, name: person.relationshipToUser.name }, // Custom types
+              ],
+            },
+          });
+          relationshipToUserId = relType?.id || null;
+        }
+
+        // Create new person
+        const newPerson = await prisma.person.create({
+          data: {
+            userId: session.user.id,
+            fullName: person.fullName,
+            birthDate: person.birthDate ? new Date(person.birthDate) : null,
+            phone: person.phone,
+            address: person.address,
+            lastContact: person.lastContact ? new Date(person.lastContact) : null,
+            notes: person.notes,
+            relationshipToUserId,
+          },
+        });
+        personId = newPerson.id;
+        personIdMap.set(person.id, newPerson.id);
+      }
 
       // Add person to groups
       for (const groupName of person.groups) {
@@ -180,12 +201,25 @@ export async function POST(request: NextRequest) {
         if (oldGroup) {
           const newGroupId = groupIdMap.get(oldGroup.id);
           if (newGroupId) {
-            await prisma.personGroup.create({
-              data: {
-                personId: newPerson.id,
-                groupId: newGroupId,
+            // Check if person-group relationship already exists
+            const existingPersonGroup = await prisma.personGroup.findUnique({
+              where: {
+                personId_groupId: {
+                  personId: personId,
+                  groupId: newGroupId,
+                },
               },
             });
+
+            // Only create if it doesn't exist
+            if (!existingPersonGroup) {
+              await prisma.personGroup.create({
+                data: {
+                  personId: personId,
+                  groupId: newGroupId,
+                },
+              });
+            }
           }
         }
       }
