@@ -11,7 +11,7 @@ const ITEMS_PER_PAGE = 50;
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string; sortBy?: string; order?: string }>;
 }) {
   const session = await auth();
 
@@ -26,7 +26,10 @@ export default async function PeoplePage({
   });
   const dateFormat = user?.dateFormat || 'MDY';
 
-  const currentPage = Number(searchParams.page) || 1;
+  const params = await searchParams;
+  const currentPage = Number(params.page) || 1;
+  const sortBy = params.sortBy || 'name';
+  const order = params.order || 'asc';
   const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 
   // Get total count for pagination
@@ -38,7 +41,8 @@ export default async function PeoplePage({
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-  const people = await prisma.person.findMany({
+  // Fetch all people for this user (we'll sort and paginate in memory)
+  const allPeople = await prisma.person.findMany({
     where: {
       userId: session.user.id,
     },
@@ -70,12 +74,58 @@ export default async function PeoplePage({
         },
       },
     },
-    orderBy: {
-      fullName: 'asc',
-    },
-    skip,
-    take: ITEMS_PER_PAGE,
   });
+
+  // Sort the people based on sortBy and order
+  const sortedPeople = [...allPeople].sort((a, b) => {
+    let primaryComparison = 0;
+
+    switch (sortBy) {
+      case 'name':
+        primaryComparison = a.fullName.localeCompare(b.fullName);
+        break;
+      case 'relationship':
+        const aRel = a.relationshipToUser?.label || 'zzz'; // Put indirect relationships at the end
+        const bRel = b.relationshipToUser?.label || 'zzz';
+        primaryComparison = aRel.localeCompare(bRel);
+        break;
+      case 'group':
+        const aGroup = a.groups[0]?.group.name || 'zzz';
+        const bGroup = b.groups[0]?.group.name || 'zzz';
+        primaryComparison = aGroup.localeCompare(bGroup);
+        break;
+      case 'lastContact':
+        const aDate = a.lastContact ? new Date(a.lastContact).getTime() : 0;
+        const bDate = b.lastContact ? new Date(b.lastContact).getTime() : 0;
+        primaryComparison = aDate - bDate;
+        break;
+      default:
+        primaryComparison = a.fullName.localeCompare(b.fullName);
+    }
+
+    // Apply order to primary comparison only
+    const orderedPrimaryComparison = order === 'desc' ? -primaryComparison : primaryComparison;
+
+    // If primary comparison is not equal, return it
+    if (orderedPrimaryComparison !== 0) {
+      return orderedPrimaryComparison;
+    }
+
+    // Otherwise, use secondary sort by name (always ascending)
+    return a.fullName.localeCompare(b.fullName);
+  });
+
+  // Paginate the sorted results
+  const people = sortedPeople.slice(skip, skip + ITEMS_PER_PAGE);
+
+  // Helper function to build URLs with sort parameters
+  const buildUrl = (page: number) => {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    if (sortBy !== 'name') params.set('sortBy', sortBy);
+    if (order !== 'asc') params.set('order', order);
+    return `/people?${params.toString()}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -120,16 +170,56 @@ export default async function PeoplePage({
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Name
+                      <Link
+                        href={`/people?sortBy=name&order=${sortBy === 'name' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
+                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                      >
+                        Name
+                        {sortBy === 'name' && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </Link>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Relationship
+                      <Link
+                        href={`/people?sortBy=relationship&order=${sortBy === 'relationship' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
+                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                      >
+                        Relationship
+                        {sortBy === 'relationship' && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </Link>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Groups
+                      <Link
+                        href={`/people?sortBy=group&order=${sortBy === 'group' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
+                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                      >
+                        Groups
+                        {sortBy === 'group' && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </Link>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Last Contact
+                      <Link
+                        href={`/people?sortBy=lastContact&order=${sortBy === 'lastContact' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
+                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                      >
+                        Last Contact
+                        {sortBy === 'lastContact' && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </Link>
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
@@ -246,7 +336,7 @@ export default async function PeoplePage({
                     <div className="flex-1 flex justify-between sm:hidden">
                       {currentPage > 1 ? (
                         <Link
-                          href={`/people?page=${currentPage - 1}`}
+                          href={buildUrl(currentPage - 1)}
                           className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                           Previous
@@ -258,7 +348,7 @@ export default async function PeoplePage({
                       )}
                       {currentPage < totalPages ? (
                         <Link
-                          href={`/people?page=${currentPage + 1}`}
+                          href={buildUrl(currentPage + 1)}
                           className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                           Next
@@ -280,7 +370,7 @@ export default async function PeoplePage({
                         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                           {currentPage > 1 ? (
                             <Link
-                              href={`/people?page=${currentPage - 1}`}
+                              href={buildUrl(currentPage - 1)}
                               className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
                               <span className="sr-only">Previous</span>
@@ -315,7 +405,7 @@ export default async function PeoplePage({
                             ) : (
                               <Link
                                 key={pageNum}
-                                href={`/people?page=${pageNum}`}
+                                href={buildUrl(pageNum)}
                                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                               >
                                 {pageNum}
@@ -325,7 +415,7 @@ export default async function PeoplePage({
 
                           {currentPage < totalPages ? (
                             <Link
-                              href={`/people?page=${currentPage + 1}`}
+                              href={buildUrl(currentPage + 1)}
                               className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
                               <span className="sr-only">Next</span>
