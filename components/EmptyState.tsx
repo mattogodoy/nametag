@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { ReactNode } from 'react';
 
 interface EmptyStateProps {
-  icon: string;
+  icon: string | ReactNode;
   title: string;
   description: string;
   actionLabel?: string;
@@ -17,7 +18,13 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="text-center py-12">
-      <div className="text-6xl mb-4">{icon}</div>
+      <div className="flex justify-center mb-4">
+        {typeof icon === 'string' ? (
+          <div className="text-6xl">{icon}</div>
+        ) : (
+          icon
+        )}
+      </div>
       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
         {title}
       </h3>
