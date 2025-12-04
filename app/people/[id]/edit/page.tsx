@@ -28,6 +28,11 @@ export default async function EditPersonPage({
       include: {
         groups: true,
         relationshipToUser: true,
+        importantDates: {
+          orderBy: {
+            date: 'asc',
+          },
+        },
       },
     }),
     prisma.group.findMany({

@@ -65,7 +65,7 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { name, surname, nickname, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds } =
+    const { name, surname, nickname, lastContact, notes, relationshipToUserId, groupIds, importantDates } =
       body;
 
     // Check if person exists and belongs to user
@@ -95,9 +95,6 @@ export async function PUT(
       name,
       surname: surname || null,
       nickname: nickname || null,
-      birthDate: birthDate ? new Date(birthDate) : null,
-      phone: phone || null,
-      address: address || null,
       lastContact: lastContact ? new Date(lastContact) : null,
       notes: notes || null,
       groups: groupIds
@@ -105,6 +102,15 @@ export async function PUT(
             deleteMany: {},
             create: groupIds.map((groupId: string) => ({
               groupId,
+            })),
+          }
+        : undefined,
+      importantDates: importantDates
+        ? {
+            deleteMany: {},
+            create: importantDates.map((date: { title: string; date: string }) => ({
+              title: date.title,
+              date: new Date(date.date),
             })),
           }
         : undefined,

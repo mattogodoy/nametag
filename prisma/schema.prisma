@@ -37,9 +37,6 @@ model Person {
   name                 String
   surname              String?
   nickname             String?
-  birthDate            DateTime?
-  phone                String?
-  address              String?
   lastContact          DateTime?
   notes                String?   @db.Text
   relationshipToUserId String?   // Relationship from user to this person (nullable for indirect connections)
@@ -52,6 +49,7 @@ model Person {
   groups             PersonGroup[]
   relationshipsFrom  Relationship[]    @relation("PersonRelationships")
   relationshipsTo    Relationship[]    @relation("RelatedPersonRelationships")
+  importantDates     ImportantDate[]
 
   @@index([userId])
   @@index([relationshipToUserId])
@@ -115,6 +113,23 @@ model Relationship {
   @@index([relatedPersonId])
   @@index([relationshipTypeId])
   @@map("relationships")
+}
+
+// ImportantDate Model - Important dates for a person (birthdays, anniversaries, etc.)
+model ImportantDate {
+  id        String   @id @default(cuid())
+  personId  String
+  title     String   // e.g., "Birthday", "Anniversary", "First met"
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@index([personId, date]) // For sorting by date
+  @@map("important_dates")
 }
 
 // RelationshipType Model - User-defined or default relationship types

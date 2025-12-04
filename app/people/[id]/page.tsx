@@ -68,6 +68,11 @@ export default async function PersonDetailsPage({
             relationshipType: true,
           },
         },
+        importantDates: {
+          orderBy: {
+            date: 'asc',
+          },
+        },
       },
     }),
     prisma.person.findMany({
@@ -174,50 +179,19 @@ export default async function PersonDetailsPage({
             </div>
 
             <div className="px-6 py-5 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {person.birthDate && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Birth Date
-                    </h3>
-                    <p className="text-gray-900 dark:text-white">
-                      {formatDate(new Date(person.birthDate), dateFormat)}
-                    </p>
-                  </div>
-                )}
-
-                {person.phone && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Phone
-                    </h3>
-                    <p className="text-gray-900 dark:text-white">{person.phone}</p>
-                  </div>
-                )}
-
-                {person.address && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Address
-                    </h3>
-                    <p className="text-gray-900 dark:text-white">{person.address}</p>
-                  </div>
-                )}
-
-                {person.lastContact && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Last Contact
-                    </h3>
-                    <p className="text-gray-900 dark:text-white">
-                      {formatDate(new Date(person.lastContact), dateFormat)}{' '}
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        ({getRelativeTime(new Date(person.lastContact))})
-                      </span>
-                    </p>
-                  </div>
-                )}
-              </div>
+              {person.lastContact && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Last Contact
+                  </h3>
+                  <p className="text-gray-900 dark:text-white">
+                    {formatDate(new Date(person.lastContact), dateFormat)}{' '}
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      ({getRelativeTime(new Date(person.lastContact))})
+                    </span>
+                  </p>
+                </div>
+              )}
 
               {person.notes && (
                 <div>
@@ -227,6 +201,31 @@ export default async function PersonDetailsPage({
                   <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
                     {person.notes}
                   </p>
+                </div>
+              )}
+
+              {person.importantDates && person.importantDates.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                    Important Dates
+                  </h3>
+                  <div className="space-y-2">
+                    {person.importantDates.map((date) => (
+                      <div
+                        key={date.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 dark:text-white text-sm">
+                            {date.title}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatDate(new Date(date.date), dateFormat)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

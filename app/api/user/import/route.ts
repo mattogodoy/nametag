@@ -16,9 +16,6 @@ interface ImportData {
     name: string;
     surname?: string | null;
     nickname?: string | null;
-    birthDate?: string | null;
-    phone?: string | null;
-    address?: string | null;
     lastContact?: string | null;
     notes?: string | null;
     relationshipToUser?: {
@@ -192,9 +189,6 @@ export async function POST(request: NextRequest) {
             name: person.name,
             surname: person.surname,
             nickname: person.nickname,
-            birthDate: person.birthDate ? new Date(person.birthDate) : null,
-            phone: person.phone,
-            address: person.address,
             lastContact: person.lastContact ? new Date(person.lastContact) : null,
             notes: person.notes,
             relationshipToUserId,

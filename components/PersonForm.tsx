@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
 import GroupsSelector from './GroupsSelector';
+import ImportantDatesManager from './ImportantDatesManager';
 
 interface PersonFormProps {
   person?: {
@@ -13,9 +14,6 @@ interface PersonFormProps {
     name: string;
     surname: string | null;
     nickname: string | null;
-    birthDate: Date | null;
-    phone: string | null;
-    address: string | null;
     lastContact: Date | null;
     notes: string | null;
     relationshipToUserId: string | null;
@@ -23,6 +21,11 @@ interface PersonFormProps {
       label: string;
     } | null;
     groups: Array<{ groupId: string }>;
+    importantDates?: Array<{
+      id: string;
+      title: string;
+      date: Date;
+    }>;
   };
   groups: Array<{
     id: string;
@@ -75,7 +78,6 @@ export default function PersonForm({
     initialKnownThroughPerson ? `${initialKnownThroughPerson.name}${initialKnownThroughPerson.surname ? ' ' + initialKnownThroughPerson.surname : ''}` : 'You'
   );
   const [inheritGroups, setInheritGroups] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
 
@@ -83,11 +85,6 @@ export default function PersonForm({
     name: person?.name || initialName || '',
     surname: person?.surname || '',
     nickname: person?.nickname || '',
-    birthDate: person?.birthDate
-      ? new Date(person.birthDate).toISOString().split('T')[0]
-      : '',
-    phone: person?.phone || '',
-    address: person?.address || '',
     lastContact: person?.lastContact
       ? new Date(person.lastContact).toISOString().split('T')[0]
       : '',
@@ -95,6 +92,14 @@ export default function PersonForm({
     relationshipToUserId: person?.relationshipToUserId || initialRelationshipType || '',
     groupIds: person?.groups.map((g) => g.groupId) || [],
   });
+
+  const [importantDates, setImportantDates] = useState(
+    person?.importantDates?.map((d) => ({
+      id: d.id,
+      title: d.title,
+      date: new Date(d.date).toISOString().split('T')[0],
+    })) || []
+  );
 
   // Get the selected base person's groups for inheritance
   const selectedBasePerson = knownThroughId !== 'user'
@@ -143,14 +148,6 @@ export default function PersonForm({
     setCreateAnother(addAnother);
 
     // Client-side validation
-    if (formData.birthDate) {
-      const birthDate = new Date(formData.birthDate);
-      if (birthDate > new Date()) {
-        setError('Birth date cannot be in the future');
-        return;
-      }
-    }
-
     if (formData.lastContact) {
       const lastContactDate = new Date(formData.lastContact);
       if (lastContactDate > new Date()) {
@@ -172,6 +169,7 @@ export default function PersonForm({
         },
         body: JSON.stringify({
           ...formData,
+          importantDates,
           ...(mode === 'create' && knownThroughId !== 'user' ? { connectedThroughId: knownThroughId } : {})
         }),
       });
@@ -421,6 +419,22 @@ export default function PersonForm({
         </div>
       )}
 
+      <div>
+        <label
+          htmlFor="notes"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Notes
+        </label>
+        <textarea
+          id="notes"
+          rows={4}
+          value={formData.notes}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
       {groups.length > 0 && (
         <GroupsSelector
           availableGroups={groups}
@@ -429,135 +443,40 @@ export default function PersonForm({
         />
       )}
 
-      {/* Collapsible Details Section */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-        <button
-          type="button"
-          onClick={() => setShowDetails(!showDetails)}
-          className="flex items-center justify-between w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+      <div>
+        <label
+          htmlFor="lastContact"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            More details
-          </span>
-          <svg
-            className={`w-5 h-5 text-gray-500 transition-transform ${
-              showDetails ? 'transform rotate-180' : ''
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          Last Contact
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            id="lastContact"
+            value={formData.lastContact}
+            max={new Date().toISOString().split('T')[0]}
+            onChange={(e) =>
+              setFormData({ ...formData, lastContact: e.target.value })
+            }
+            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="button"
+            onClick={setLastContactToToday}
+            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {showDetails && (
-          <div className="mt-4 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label
-                  htmlFor="birthDate"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Birth Date
-                </label>
-                <input
-                  type="date"
-                  id="birthDate"
-                  value={formData.birthDate}
-                  max={new Date().toISOString().split('T')[0]}
-                  onChange={(e) =>
-                    setFormData({ ...formData, birthDate: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="(555) 123-4567"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Enter in any format (e.g., +1-555-123-4567)
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="address"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Address
-              </label>
-              <input
-                type="text"
-                id="address"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="lastContact"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Last Contact
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  id="lastContact"
-                  value={formData.lastContact}
-                  max={new Date().toISOString().split('T')[0]}
-                  onChange={(e) =>
-                    setFormData({ ...formData, lastContact: e.target.value })
-                  }
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={setLastContactToToday}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  Today
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                rows={4}
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        )}
+            Today
+          </button>
+        </div>
       </div>
+
+      <ImportantDatesManager
+        personId={person?.id}
+        initialDates={importantDates}
+        onChange={setImportantDates}
+        mode={mode}
+      />
 
       <div className="flex justify-end space-x-4 pt-4">
         <Link

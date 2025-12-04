@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, surname, nickname, birthDate, phone, address, lastContact, notes, relationshipToUserId, groupIds, connectedThroughId } =
+    const { name, surname, nickname, lastContact, notes, relationshipToUserId, groupIds, connectedThroughId, importantDates } =
       body;
 
     if (!name) {
@@ -88,15 +88,20 @@ export async function POST(request: Request) {
       name,
       surname: surname || null,
       nickname: nickname || null,
-      birthDate: birthDate ? new Date(birthDate) : null,
-      phone: phone || null,
-      address: address || null,
       lastContact: lastContact ? new Date(lastContact) : null,
       notes: notes || null,
       groups: groupIds
         ? {
             create: groupIds.map((groupId: string) => ({
               groupId,
+            })),
+          }
+        : undefined,
+      importantDates: importantDates && importantDates.length > 0
+        ? {
+            create: importantDates.map((date: { title: string; date: string }) => ({
+              title: date.title,
+              date: new Date(date.date),
             })),
           }
         : undefined,

@@ -93,9 +93,6 @@ export async function GET() {
         name: person.name,
         surname: person.surname,
         nickname: person.nickname,
-        birthDate: person.birthDate,
-        phone: person.phone,
-        address: person.address,
         lastContact: person.lastContact,
         notes: person.notes,
         relationshipToUser: person.relationshipToUser
