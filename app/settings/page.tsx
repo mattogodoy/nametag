@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     select: { theme: true, dateFormat: true },
   });
 
-  const currentTheme = user?.theme || 'LIGHT';
+  const currentTheme = user?.theme || 'DARK';
   const currentDateFormat = user?.dateFormat || 'MDY';
 
   return (

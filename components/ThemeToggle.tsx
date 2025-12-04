@@ -10,42 +10,13 @@ interface ThemeToggleProps {
 
 export default function ThemeToggle({ userId, currentTheme }: ThemeToggleProps) {
   const router = useRouter();
-  const [theme, setTheme] = useState(currentTheme);
+  const [theme, setTheme] = useState('DARK');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const handleThemeChange = async () => {
-    const newTheme = theme === 'LIGHT' ? 'DARK' : 'LIGHT';
-    setIsLoading(true);
-    setMessage('');
-
-    try {
-      const response = await fetch('/api/user/theme', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ theme: newTheme }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage(data.error || 'Failed to update theme');
-        return;
-      }
-
-      setTheme(newTheme);
-      setMessage('Theme updated successfully');
-      router.refresh();
-
-      // Clear success message after 2 seconds
-      setTimeout(() => setMessage(''), 2000);
-    } catch (error) {
-      setMessage('Failed to update theme');
-    } finally {
-      setIsLoading(false);
-    }
+    // Disabled for now
+    return;
   };
 
   return (
@@ -61,7 +32,7 @@ export default function ThemeToggle({ userId, currentTheme }: ThemeToggleProps) 
 
         <button
           onClick={handleThemeChange}
-          disabled={isLoading}
+          disabled={true}
           className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
             theme === 'DARK'
               ? 'bg-blue-600'
@@ -78,6 +49,10 @@ export default function ThemeToggle({ userId, currentTheme }: ThemeToggleProps) 
 
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           🌙 Dark
+        </span>
+
+        <span className="text-sm text-gray-500 dark:text-gray-400 italic ml-2">
+          Coming soon!
         </span>
       </div>
 
