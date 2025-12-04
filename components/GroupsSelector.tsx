@@ -43,7 +43,7 @@ export default function GroupsSelector({
     item: { id: string; label: string; color?: string | null },
     onRemove: () => void
   ) => (
-    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium">
+    <div key={item.id} className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium">
       <div
         className="w-3 h-3 rounded-full flex-shrink-0"
         style={{
