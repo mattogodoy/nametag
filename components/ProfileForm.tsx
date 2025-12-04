@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 interface ProfileFormProps {
   userId: string;
@@ -18,6 +18,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
   const [formData, setFormData] = useState({
     name: currentName,
@@ -26,11 +27,25 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
     email: currentEmail,
   });
 
+  const emailChanged = formData.email !== currentEmail;
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    // Show confirmation dialog if email is being changed
+    if (emailChanged) {
+      setShowEmailConfirm(true);
+      return;
+    }
+
+    await saveProfile();
+  };
+
+  const saveProfile = async () => {
     setIsLoading(true);
+    setShowEmailConfirm(false);
 
     try {
       const response = await fetch('/api/user/profile', {
@@ -45,6 +60,12 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
 
       if (!response.ok) {
         setError(data.error || 'Failed to update profile');
+        return;
+      }
+
+      if (data.emailChanged) {
+        // Email was changed - sign out the user
+        await signOut({ callbackUrl: '/login' });
         return;
       }
 
@@ -70,96 +91,132 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
 
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded">
-          {success}
-        </div>
-      )}
+        {success && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded">
+            {success}
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="surname"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Surname
+            </label>
+            <input
+              type="text"
+              id="surname"
+              value={formData.surname}
+              onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="nickname"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Nickname
+            </label>
+            <input
+              type="text"
+              id="nickname"
+              value={formData.nickname}
+              onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
         <div>
           <label
-            htmlFor="name"
+            htmlFor="email"
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
-            Name
+            Email
           </label>
           <input
-            type="text"
-            id="name"
+            type="email"
+            id="email"
             required
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div>
-          <label
-            htmlFor="surname"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        <div className="flex justify-end pt-4">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Surname
-          </label>
-          <input
-            type="text"
-            id="surname"
-            value={formData.surname}
-            onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+            {isLoading ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
+      </form>
 
-        <div>
-          <label
-            htmlFor="nickname"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Nickname
-          </label>
-          <input
-            type="text"
-            id="nickname"
-            value={formData.nickname}
-            onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      {/* Email Change Confirmation Dialog */}
+      {showEmailConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              Confirm Email Change
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              You are about to change your email address to <strong className="text-gray-900 dark:text-white">{formData.email}</strong>.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              A verification email will be sent to your new address. You will be logged out and won&apos;t be able to log in until you verify your new email.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowEmailConfirm(false)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveProfile}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Saving...' : 'Confirm & Log Out'}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Email
-        </label>
-        <input
-          type="email"
-          id="email"
-          required
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="flex justify-end pt-4">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Saving...' : 'Save Changes'}
-        </button>
-      </div>
-    </form>
+      )}
+    </>
   );
 }
