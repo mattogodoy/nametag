@@ -5,6 +5,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import DateFormatSelector from '@/components/DateFormatSelector';
 import ProfileForm from '@/components/ProfileForm';
 import PasswordChangeForm from '@/components/PasswordChangeForm';
+import AccountManagement from '@/components/AccountManagement';
 import { prisma } from '@/lib/prisma';
 
 export default async function SettingsPage() {
@@ -71,6 +72,14 @@ export default async function SettingsPage() {
               Password
             </h2>
             <PasswordChangeForm userId={session.user.id} />
+          </div>
+
+          {/* Account Management */}
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Account Management
+            </h2>
+            <AccountManagement />
           </div>
         </div>
       </main>
