@@ -79,7 +79,6 @@ export default function GroupsSelector({
 
   return (
     <PillSelector
-      label="Groups"
       selectedItems={selectedItems}
       availableItems={pillItems}
       onAdd={handleAdd}

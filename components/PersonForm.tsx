@@ -255,6 +255,18 @@ export default function PersonForm({
     setFormData({ ...formData, lastContact: today });
   };
 
+  const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      {children}
+    </h3>
+  );
+
+  const Section = ({ children }: { children: React.ReactNode }) => (
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+      {children}
+    </div>
+  );
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
@@ -263,312 +275,324 @@ export default function PersonForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Name *
-          </label>
-          <input
-            type="text"
-            id="name"
-            required
-            value={formData.name}
-            onChange={(e) =>
-              setFormData({ ...formData, name: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="surname"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Surname
-          </label>
-          <input
-            type="text"
-            id="surname"
-            value={formData.surname}
-            onChange={(e) =>
-              setFormData({ ...formData, surname: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="nickname"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Nickname
-          </label>
-          <input
-            type="text"
-            id="nickname"
-            value={formData.nickname}
-            onChange={(e) =>
-              setFormData({ ...formData, nickname: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      {mode === 'create' && (
-        <div>
-          <label
-            htmlFor="knownThrough"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Known Through
-          </label>
-          <PersonAutocomplete
-            people={peopleWithUser}
-            value={knownThroughId}
-            onChange={handleKnownThroughChange}
-            placeholder="Search for a person..."
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Select who connects you to this person. For example, if adding your friend&apos;s child, select your friend.
-          </p>
-          {knownThroughId !== 'user' && selectedBasePerson && selectedBasePerson.groups.length > 0 && (
-            <div className="mt-3 flex items-center">
-              <input
-                type="checkbox"
-                id="inheritGroups"
-                checked={inheritGroups}
-                onChange={(e) => handleInheritGroupsChange(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
+      {/* Details Section */}
+      <Section>
+        <SectionHeader>Details</SectionHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Name *
               </label>
+              <input
+                type="text"
+                id="name"
+                required
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="surname"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Surname
+              </label>
+              <input
+                type="text"
+                id="surname"
+                value={formData.surname}
+                onChange={(e) =>
+                  setFormData({ ...formData, surname: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="nickname"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Nickname
+              </label>
+              <input
+                type="text"
+                id="nickname"
+                value={formData.nickname}
+                onChange={(e) =>
+                  setFormData({ ...formData, nickname: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {mode === 'create' && (
+            <div>
+              <label
+                htmlFor="knownThrough"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Known Through
+              </label>
+              <PersonAutocomplete
+                people={peopleWithUser}
+                value={knownThroughId}
+                onChange={handleKnownThroughChange}
+                placeholder="Search for a person..."
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Select who connects you to this person. For example, if adding your friend&apos;s child, select your friend.
+              </p>
+              {knownThroughId !== 'user' && selectedBasePerson && selectedBasePerson.groups.length > 0 && (
+                <div className="mt-3 flex items-center">
+                  <input
+                    type="checkbox"
+                    id="inheritGroups"
+                    checked={inheritGroups}
+                    onChange={(e) => handleInheritGroupsChange(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                    Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
+                  </label>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {mode === 'edit' && person?.relationshipToUserId && (
-        <div>
-          <label
-            htmlFor="relationshipToUserId"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Relationship to You
-          </label>
-          <select
-            id="relationshipToUserId"
-            value={formData.relationshipToUserId}
-            onChange={(e) =>
-              setFormData({ ...formData, relationshipToUserId: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select a relationship...</option>
-            {relationshipTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+          {mode === 'edit' && person?.relationshipToUserId && (
+            <div>
+              <label
+                htmlFor="relationshipToUserId"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Relationship to You
+              </label>
+              <select
+                id="relationshipToUserId"
+                value={formData.relationshipToUserId}
+                onChange={(e) =>
+                  setFormData({ ...formData, relationshipToUserId: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a relationship...</option>
+                {relationshipTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-      {mode === 'edit' && !person?.relationshipToUserId && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 px-4 py-3 rounded">
-          This person is connected to you through other people in your network, not directly.
-        </div>
-      )}
+          {mode === 'edit' && !person?.relationshipToUserId && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 px-4 py-3 rounded">
+              This person is connected to you through other people in your network, not directly.
+            </div>
+          )}
 
-      {mode === 'create' && knownThroughId === 'user' && (
-        <div>
-          <label
-            htmlFor="relationshipToUserId"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Relationship to {knownThroughName} *
-          </label>
-          <select
-            id="relationshipToUserId"
-            required
-            value={formData.relationshipToUserId}
-            onChange={(e) =>
-              setFormData({ ...formData, relationshipToUserId: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select a relationship...</option>
-            {relationshipTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+          {mode === 'create' && knownThroughId === 'user' && (
+            <div>
+              <label
+                htmlFor="relationshipToUserId"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Relationship to {knownThroughName} *
+              </label>
+              <select
+                id="relationshipToUserId"
+                required
+                value={formData.relationshipToUserId}
+                onChange={(e) =>
+                  setFormData({ ...formData, relationshipToUserId: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a relationship...</option>
+                {relationshipTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-      {mode === 'create' && knownThroughId !== 'user' && (
-        <div>
-          <label
-            htmlFor="relationshipToKnownThrough"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Relationship to {knownThroughName} *
-          </label>
-          <select
-            id="relationshipToKnownThrough"
-            required
-            value={formData.relationshipToUserId}
-            onChange={(e) =>
-              setFormData({ ...formData, relationshipToUserId: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select a relationship...</option>
-            {relationshipTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            This person will be connected to {knownThroughName}, not directly to you.
-          </p>
-        </div>
-      )}
+          {mode === 'create' && knownThroughId !== 'user' && (
+            <div>
+              <label
+                htmlFor="relationshipToKnownThrough"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Relationship to {knownThroughName} *
+              </label>
+              <select
+                id="relationshipToKnownThrough"
+                required
+                value={formData.relationshipToUserId}
+                onChange={(e) =>
+                  setFormData({ ...formData, relationshipToUserId: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a relationship...</option>
+                {relationshipTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                This person will be connected to {knownThroughName}, not directly to you.
+              </p>
+            </div>
+          )}
 
-      <div>
-        <label
-          htmlFor="notes"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Notes
-        </label>
-        <textarea
-          id="notes"
-          rows={4}
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {groups.length > 0 && (
-        <GroupsSelector
-          availableGroups={groups}
-          selectedGroupIds={formData.groupIds}
-          onChange={(groupIds) => setFormData({ ...formData, groupIds })}
-        />
-      )}
-
-      <div>
-        <label
-          htmlFor="lastContact"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Last Contact
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="date"
-            id="lastContact"
-            value={formData.lastContact}
-            max={new Date().toISOString().split('T')[0]}
-            onChange={(e) =>
-              setFormData({ ...formData, lastContact: e.target.value })
-            }
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={setLastContactToToday}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Today
-          </button>
-        </div>
-
-        {/* Contact Reminder */}
-        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="flex items-center flex-wrap gap-2">
-            <button
-              type="button"
-              id="contact-reminder-toggle"
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  contactReminderEnabled: !formData.contactReminderEnabled,
-                })
-              }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-                formData.contactReminderEnabled
-                  ? 'bg-blue-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                  formData.contactReminderEnabled
-                    ? 'translate-x-6'
-                    : 'translate-x-1'
-                }`}
-              />
-            </button>
+          <div>
             <label
-              htmlFor="contact-reminder-toggle"
-              className={`text-sm ${formData.contactReminderEnabled ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}
+              htmlFor="notes"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Remind me to catch up after
+              Notes
             </label>
-            <input
-              type="number"
-              min="1"
-              max="99"
-              disabled={!formData.contactReminderEnabled}
-              value={formData.contactReminderInterval}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  contactReminderInterval: Math.max(
-                    1,
-                    parseInt(e.target.value) || 1
-                  ),
-                })
-              }
-              className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            <textarea
+              id="notes"
+              rows={3}
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <select
-              disabled={!formData.contactReminderEnabled}
-              value={formData.contactReminderIntervalUnit}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  contactReminderIntervalUnit: e.target
-                    .value as ReminderIntervalUnit,
-                })
-              }
-              className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="WEEKS">weeks</option>
-              <option value="MONTHS">months</option>
-              <option value="YEARS">years</option>
-            </select>
           </div>
         </div>
-      </div>
+      </Section>
 
-      <ImportantDatesManager
-        personId={person?.id}
-        initialDates={importantDates}
-        onChange={setImportantDates}
-        mode={mode}
-      />
+      {/* Groups Section */}
+      {groups.length > 0 && (
+        <Section>
+          <SectionHeader>Groups</SectionHeader>
+          <GroupsSelector
+            availableGroups={groups}
+            selectedGroupIds={formData.groupIds}
+            onChange={(groupIds) => setFormData({ ...formData, groupIds })}
+          />
+        </Section>
+      )}
+
+      {/* Last Contact Section */}
+      <Section>
+        <SectionHeader>Last Contact</SectionHeader>
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <input
+              type="date"
+              id="lastContact"
+              value={formData.lastContact}
+              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) =>
+                setFormData({ ...formData, lastContact: e.target.value })
+              }
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              onClick={setLastContactToToday}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Today
+            </button>
+          </div>
+
+          {/* Contact Reminder */}
+          <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div className="flex items-center flex-wrap gap-2">
+              <button
+                type="button"
+                id="contact-reminder-toggle"
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    contactReminderEnabled: !formData.contactReminderEnabled,
+                  })
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+                  formData.contactReminderEnabled
+                    ? 'bg-blue-600'
+                    : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                    formData.contactReminderEnabled
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <label
+                htmlFor="contact-reminder-toggle"
+                className={`text-sm ${formData.contactReminderEnabled ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}
+              >
+                Remind me to catch up after
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                disabled={!formData.contactReminderEnabled}
+                value={formData.contactReminderInterval}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    contactReminderInterval: Math.max(
+                      1,
+                      parseInt(e.target.value) || 1
+                    ),
+                  })
+                }
+                className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <select
+                disabled={!formData.contactReminderEnabled}
+                value={formData.contactReminderIntervalUnit}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    contactReminderIntervalUnit: e.target
+                      .value as ReminderIntervalUnit,
+                  })
+                }
+                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="WEEKS">weeks</option>
+                <option value="MONTHS">months</option>
+                <option value="YEARS">years</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* Important Dates Section */}
+      <Section>
+        <SectionHeader>Important Dates</SectionHeader>
+        <ImportantDatesManager
+          personId={person?.id}
+          initialDates={importantDates}
+          onChange={setImportantDates}
+          mode={mode}
+        />
+      </Section>
 
       <div className="flex justify-end space-x-4 pt-4">
         <Link

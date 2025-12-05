@@ -267,11 +267,8 @@ export default function ImportantDatesManager({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Important Dates
-        </label>
-        {!isAdding && editingIndex === null && (
+      {!isAdding && editingIndex === null && (
+        <div className="flex justify-end mb-3">
           <button
             type="button"
             onClick={() => setIsAdding(true)}
@@ -279,8 +276,8 @@ export default function ImportantDatesManager({
           >
             + Add Date
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         {dates.map((date, index) => (

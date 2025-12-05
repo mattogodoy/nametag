@@ -209,77 +209,52 @@ export default async function PersonDetailsPage({
             </div>
 
             <div className="px-6 py-5 space-y-6">
-              {person.lastContact && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Last Contact
+              {/* Details Section */}
+              {(person.lastContact || person.notes) && (
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Details
                   </h3>
-                  <p className="text-gray-900 dark:text-white">
-                    {formatDate(new Date(person.lastContact), dateFormat)}{' '}
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      ({getRelativeTime(new Date(person.lastContact))})
-                    </span>
-                  </p>
-                  {getContactReminderDescription(person) && (
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                      </svg>
-                      {getContactReminderDescription(person)}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {person.notes && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Notes
-                  </h3>
-                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                    {person.notes}
-                  </p>
-                </div>
-              )}
-
-              {person.importantDates && person.importantDates.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    Important Dates
-                  </h3>
-                  <div className="space-y-2">
-                    {person.importantDates.map((date) => {
-                      const reminderDesc = getReminderDescription(date);
-                      return (
-                        <div
-                          key={date.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900 dark:text-white text-sm">
-                              {date.title}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatDate(new Date(date.date), dateFormat)}
-                            </div>
-                            {reminderDesc && (
-                              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                                {reminderDesc}
-                              </div>
-                            )}
+                  <div className="space-y-4">
+                    {person.lastContact && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                          Last Contact
+                        </h4>
+                        <p className="text-gray-900 dark:text-white">
+                          {formatDate(new Date(person.lastContact), dateFormat)}{' '}
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            ({getRelativeTime(new Date(person.lastContact))})
+                          </span>
+                        </p>
+                        {getContactReminderDescription(person) && (
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            {getContactReminderDescription(person)}
                           </div>
-                        </div>
-                      );
-                    })}
+                        )}
+                      </div>
+                    )}
+
+                    {person.notes && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                          Notes
+                        </h4>
+                        <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                          {person.notes}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              {/* Relationship Network Section */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Relationship Network
                 </h3>
                 <UnifiedNetworkGraph
@@ -295,8 +270,9 @@ export default async function PersonDetailsPage({
                 </p>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              {/* Relationships Section */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Relationships
                 </h3>
 
@@ -343,6 +319,43 @@ export default async function PersonDetailsPage({
                   relationshipTypes={relationshipTypes}
                 />
               </div>
+
+              {/* Important Dates Section */}
+              {person.importantDates && person.importantDates.length > 0 && (
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Important Dates
+                  </h3>
+                  <div className="space-y-2">
+                    {person.importantDates.map((date) => {
+                      const reminderDesc = getReminderDescription(date);
+                      return (
+                        <div
+                          key={date.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900 dark:text-white text-sm">
+                              {date.title}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatDate(new Date(date.date), dateFormat)}
+                            </div>
+                            {reminderDesc && (
+                              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                {reminderDesc}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
