@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default async function Home() {
   const session = await auth();
@@ -12,6 +13,15 @@ export default async function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
       <div className="max-w-4xl w-full text-center">
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/logo.svg"
+            alt="NameTag Logo"
+            width={192}
+            height={192}
+            priority
+          />
+        </div>
         <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-6">
           NameTag
         </h1>

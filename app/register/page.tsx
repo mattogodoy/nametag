@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -84,7 +85,14 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="max-w-md w-full space-y-8">
-        <div>
+        <div className="flex flex-col items-center">
+          <Image
+            src="/logo.svg"
+            alt="NameTag Logo"
+            width={96}
+            height={96}
+            priority
+          />
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
             Create your account
           </h2>

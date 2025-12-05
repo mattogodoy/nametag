@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, FormEvent, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -98,7 +99,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="max-w-md w-full space-y-8">
-        <div>
+        <div className="flex flex-col items-center">
+          <Image
+            src="/logo.svg"
+            alt="NameTag Logo"
+            width={192}
+            height={192}
+            priority
+          />
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
             Welcome to NameTag
           </h2>
