@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { resendVerificationSchema, validateRequest } from '@/lib/validations';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const TOKEN_EXPIRY_HOURS = 24;
 const RESEND_COOLDOWN_MINUTES = 2;
@@ -12,6 +13,12 @@ function generateVerificationToken(): string {
 }
 
 export async function POST(request: Request) {
+  // Check rate limit
+  const rateLimitResponse = checkRateLimit(request, 'resendVerification');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validation = validateRequest(resendVerificationSchema, body);

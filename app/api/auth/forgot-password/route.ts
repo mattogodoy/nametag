@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { forgotPasswordSchema, validateRequest } from '@/lib/validations';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const TOKEN_EXPIRY_HOURS = 1;
 const RESEND_COOLDOWN_MINUTES = 2;
@@ -12,6 +13,12 @@ function generateResetToken(): string {
 }
 
 export async function POST(request: Request) {
+  // Check rate limit
+  const rateLimitResponse = checkRateLimit(request, 'forgotPassword');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validation = validateRequest(forgotPasswordSchema, body);
