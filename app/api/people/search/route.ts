@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withAuth } from '@/lib/api-utils';
+import { apiResponse, withAuth } from '@/lib/api-utils';
 
 export const GET = withAuth(async (request, session) => {
   const { searchParams } = new URL(request.url);
@@ -8,7 +7,7 @@ export const GET = withAuth(async (request, session) => {
 
   // Only search if query is at least 1 character
   if (query.length === 0) {
-    return NextResponse.json({ people: [] });
+    return apiResponse.ok({ people: [] });
   }
 
   const people = await prisma.person.findMany({
@@ -47,5 +46,5 @@ export const GET = withAuth(async (request, session) => {
     take: 20, // Limit to 20 results
   });
 
-  return NextResponse.json({ people });
+  return apiResponse.ok({ people });
 });

@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // DELETE /api/groups/[id]/members/[personId] - Remove a member from a group
 export const DELETE = withAuth(async (_request, session, context) => {
@@ -16,7 +15,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (!group) {
-      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+      return apiResponse.notFound('Group not found');
     }
 
     // Remove person from group
@@ -28,13 +27,10 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (deleted.count === 0) {
-      return NextResponse.json(
-        { error: 'Person is not a member of this group' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Person is not a member of this group');
     }
 
-    return NextResponse.json({ success: true });
+    return apiResponse.success();
   } catch (error) {
     return handleApiError(error, 'groups-remove-member');
   }

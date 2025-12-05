@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipTypeSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 export const GET = withAuth(async (_request, session, context) => {
   const { id } = await context!.params;
@@ -26,13 +25,10 @@ export const GET = withAuth(async (_request, session, context) => {
   });
 
   if (!relationshipType) {
-    return NextResponse.json(
-      { error: 'Relationship type not found' },
-      { status: 404 }
-    );
+    return apiResponse.notFound('Relationship type not found');
   }
 
-  return NextResponse.json(relationshipType);
+  return apiResponse.ok({ relationshipType });
 });
 
 export const PUT = withAuth(async (request, session, context) => {
@@ -51,17 +47,11 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Relationship type not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Relationship type not found');
     }
 
     if (existing.isDefault) {
-      return NextResponse.json(
-        { error: 'Cannot modify default relationship types' },
-        { status: 403 }
-      );
+      return apiResponse.forbidden('Cannot modify default relationship types');
     }
 
     const body = await request.json();
@@ -89,10 +79,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (duplicateType) {
-      return NextResponse.json(
-        { error: 'A relationship type with this name already exists' },
-        { status: 400 }
-      );
+      return apiResponse.error('A relationship type with this name already exists');
     }
 
     let finalInverseId = inverseId || null;
@@ -116,10 +103,7 @@ export const PUT = withAuth(async (request, session, context) => {
       });
 
       if (existingInverseType) {
-        return NextResponse.json(
-          { error: `The inverse relationship type "${inverseLabel}" already exists` },
-          { status: 400 }
-        );
+        return apiResponse.error(`The inverse relationship type "${inverseLabel}" already exists`);
       }
 
       // Create the inverse type with the same color
@@ -164,7 +148,7 @@ export const PUT = withAuth(async (request, session, context) => {
       });
     }
 
-    return NextResponse.json(relationshipType);
+    return apiResponse.ok({ relationshipType });
   } catch (error) {
     return handleApiError(error, 'relationship-types-update');
   }
@@ -183,17 +167,11 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Relationship type not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Relationship type not found');
     }
 
     if (existing.isDefault) {
-      return NextResponse.json(
-        { error: 'Cannot delete default relationship types' },
-        { status: 403 }
-      );
+      return apiResponse.forbidden('Cannot delete default relationship types');
     }
 
     // Check if type is in use
@@ -202,11 +180,8 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (inUseCount > 0) {
-      return NextResponse.json(
-        {
-          error: `Cannot delete relationship type that is in use by ${inUseCount} relationship(s)`,
-        },
-        { status: 400 }
+      return apiResponse.error(
+        `Cannot delete relationship type that is in use by ${inUseCount} relationship(s)`
       );
     }
 
@@ -214,7 +189,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return apiResponse.success();
   } catch (error) {
     return handleApiError(error, 'relationship-types-delete');
   }

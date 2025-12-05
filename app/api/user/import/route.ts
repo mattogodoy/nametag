@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { importDataSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 import { z } from 'zod';
 
@@ -232,7 +231,7 @@ export const POST = withAuth(async (request, session) => {
       }
     }
 
-    return NextResponse.json({
+    return apiResponse.ok({
       success: true,
       imported: {
         groups: groupIdMap.size,

@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateImportantDateSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // PUT /api/people/[id]/important-dates/[dateId] - Update an important date
 export const PUT = withAuth(async (request, session, context) => {
@@ -25,7 +24,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (!person) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
     // Update the important date
@@ -44,7 +43,7 @@ export const PUT = withAuth(async (request, session, context) => {
       },
     });
 
-    return NextResponse.json({ importantDate: updatedDate });
+    return apiResponse.ok({ importantDate: updatedDate });
   } catch (error) {
     return handleApiError(error, 'important-date-update');
   }
@@ -64,7 +63,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (!person) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
     // Delete the important date
@@ -75,7 +74,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
       },
     });
 
-    return NextResponse.json({ message: 'Important date deleted successfully' });
+    return apiResponse.message('Important date deleted successfully');
   } catch (error) {
     return handleApiError(error, 'important-date-delete');
   }

@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people/[id] - Get a single person
@@ -30,10 +29,10 @@ export const GET = withAuth(async (_request, session, context) => {
     });
 
     if (!person) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
-    return NextResponse.json({ person });
+    return apiResponse.ok({ person });
   } catch (error) {
     return handleApiError(error, 'people-get');
   }
@@ -74,7 +73,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (!existingPerson) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
     // Relationship is not required for people with indirect connections
@@ -132,7 +131,7 @@ export const PUT = withAuth(async (request, session, context) => {
       },
     });
 
-    return NextResponse.json({ person });
+    return apiResponse.ok({ person });
   } catch (error) {
     return handleApiError(error, 'people-update');
   }
@@ -152,7 +151,7 @@ export const DELETE = withAuth(async (request, session, context) => {
     });
 
     if (!existingPerson) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
     // Parse request body to check if we should also delete orphans
@@ -183,7 +182,7 @@ export const DELETE = withAuth(async (request, session, context) => {
       });
     }
 
-    return NextResponse.json({ message: 'Person deleted successfully' });
+    return apiResponse.message('Person deleted successfully');
   } catch (error) {
     return handleApiError(error, 'people-delete');
   }

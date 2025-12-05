@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // PUT /api/relationships/[id] - Update a relationship
 export const PUT = withAuth(async (request, session, context) => {
@@ -26,22 +25,16 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Relationship not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Relationship not found');
     }
 
     // Verify the person belongs to the user
     if (existing.person.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiResponse.unauthorized();
     }
 
     if (!relationshipTypeId) {
-      return NextResponse.json(
-        { error: 'Relationship type is required' },
-        { status: 400 }
-      );
+      return apiResponse.error('Relationship type is required');
     }
 
     // Get the new relationship type to find its inverse
@@ -56,10 +49,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (!relationshipType) {
-      return NextResponse.json(
-        { error: 'Relationship type not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Relationship type not found');
     }
 
     // Update the primary relationship
@@ -89,7 +79,7 @@ export const PUT = withAuth(async (request, session, context) => {
       });
     }
 
-    return NextResponse.json({ relationship });
+    return apiResponse.ok({ relationship });
   } catch (error) {
     return handleApiError(error, 'relationships-update');
   }
@@ -109,15 +99,12 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Relationship not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Relationship not found');
     }
 
     // Verify the person belongs to the user
     if (existing.person.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiResponse.unauthorized();
     }
 
     // Delete the primary relationship
@@ -139,9 +126,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
       });
     }
 
-    return NextResponse.json({
-      message: 'Relationship deleted successfully',
-    });
+    return apiResponse.message('Relationship deleted successfully');
   } catch (error) {
     return handleApiError(error, 'relationships-delete');
   }

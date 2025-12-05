@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 export const GET = withAuth(async (_request, session) => {
   try {
@@ -117,7 +116,7 @@ export const GET = withAuth(async (_request, session) => {
       })),
     };
 
-    return NextResponse.json(exportData);
+    return apiResponse.ok(exportData);
   } catch (error) {
     return handleApiError(error, 'user-export');
   }

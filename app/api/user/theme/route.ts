@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateThemeSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 export const PUT = withAuth(async (request, session) => {
   try {
@@ -19,7 +18,7 @@ export const PUT = withAuth(async (request, session) => {
       data: { theme },
     });
 
-    return NextResponse.json({ user });
+    return apiResponse.ok({ user });
   } catch (error) {
     return handleApiError(error, 'user-theme-update');
   }

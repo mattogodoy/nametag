@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people - List all people for the current user
@@ -24,7 +23,7 @@ export const GET = withAuth(async (_request, session) => {
       },
     });
 
-    return NextResponse.json({ people });
+    return apiResponse.ok({ people });
   } catch (error) {
     return handleApiError(error, 'people-list');
   }
@@ -57,10 +56,7 @@ export const POST = withAuth(async (request, session) => {
 
     // Relationship is only required for direct connections (not when connected through another person)
     if (!connectedThroughId && !relationshipToUserId) {
-      return NextResponse.json(
-        { error: 'Relationship to user is required' },
-        { status: 400 }
-      );
+      return apiResponse.error('Relationship to user is required');
     }
 
     // If connectedThroughId is provided, verify the person exists and belongs to user
@@ -70,10 +66,7 @@ export const POST = withAuth(async (request, session) => {
       });
 
       if (!basePerson) {
-        return NextResponse.json(
-          { error: 'Base connection person not found' },
-          { status: 404 }
-        );
+        return apiResponse.notFound('Base connection person not found');
       }
     }
 
@@ -155,7 +148,7 @@ export const POST = withAuth(async (request, session) => {
       }
     }
 
-    return NextResponse.json({ person }, { status: 201 });
+    return apiResponse.created({ person });
   } catch (error) {
     return handleApiError(error, 'people-create');
   }

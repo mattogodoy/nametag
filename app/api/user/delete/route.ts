@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
 export const DELETE = withAuth(async (request, session) => {
@@ -10,18 +9,12 @@ export const DELETE = withAuth(async (request, session) => {
     const { password, confirmationText } = body;
 
     if (!password) {
-      return NextResponse.json(
-        { error: 'Password is required' },
-        { status: 400 }
-      );
+      return apiResponse.error('Password is required');
     }
 
     // Verify confirmation text
     if (confirmationText !== 'DELETE') {
-      return NextResponse.json(
-        { error: 'Confirmation text must be "DELETE"' },
-        { status: 400 }
-      );
+      return apiResponse.error('Confirmation text must be "DELETE"');
     }
 
     // Get user with password
@@ -30,17 +23,14 @@ export const DELETE = withAuth(async (request, session) => {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiResponse.notFound('User not found');
     }
 
     // Verify password
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      return NextResponse.json(
-        { error: 'Password is incorrect' },
-        { status: 400 }
-      );
+      return apiResponse.error('Password is incorrect');
     }
 
     // Delete user (cascade will delete all related data)
@@ -50,7 +40,7 @@ export const DELETE = withAuth(async (request, session) => {
 
     logger.info('Account deleted', { userId: session.user.id });
 
-    return NextResponse.json({
+    return apiResponse.ok({
       message: 'Account deleted successfully',
       success: true,
     });

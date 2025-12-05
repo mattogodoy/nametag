@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { updateProfileSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -28,10 +27,7 @@ export const PUT = withAuth(async (request, session) => {
     });
 
     if (existingUser && existingUser.id !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Email already in use' },
-        { status: 400 }
-      );
+      return apiResponse.error('Email already in use');
     }
 
     // Check if email is being changed
@@ -75,7 +71,7 @@ export const PUT = withAuth(async (request, session) => {
         from: 'accounts',
       });
 
-      return NextResponse.json({ emailChanged: true });
+      return apiResponse.ok({ emailChanged: true });
     }
 
     // Email not changed - just update profile
@@ -89,7 +85,7 @@ export const PUT = withAuth(async (request, session) => {
       },
     });
 
-    return NextResponse.json({ user, emailChanged: false });
+    return apiResponse.ok({ user, emailChanged: false });
   } catch (error) {
     return handleApiError(error, 'user-profile-update');
   }

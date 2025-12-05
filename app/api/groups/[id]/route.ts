@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { updateGroupSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // GET /api/groups/[id] - Get a single group
 export const GET = withAuth(async (_request, session, context) => {
@@ -23,10 +22,10 @@ export const GET = withAuth(async (_request, session, context) => {
     });
 
     if (!group) {
-      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+      return apiResponse.notFound('Group not found');
     }
 
-    return NextResponse.json({ group });
+    return apiResponse.ok({ group });
   } catch (error) {
     return handleApiError(error, 'groups-get');
   }
@@ -55,7 +54,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (!existingGroup) {
-      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+      return apiResponse.notFound('Group not found');
     }
 
     // Check if another group with the same name already exists for this user (case-insensitive)
@@ -73,10 +72,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (duplicateGroup) {
-      return NextResponse.json(
-        { error: 'A group with this name already exists' },
-        { status: 400 }
-      );
+      return apiResponse.error('A group with this name already exists');
     }
 
     const group = await prisma.group.update({
@@ -90,7 +86,7 @@ export const PUT = withAuth(async (request, session, context) => {
       },
     });
 
-    return NextResponse.json({ group });
+    return apiResponse.ok({ group });
   } catch (error) {
     return handleApiError(error, 'groups-update');
   }
@@ -110,7 +106,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (!existingGroup) {
-      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+      return apiResponse.notFound('Group not found');
     }
 
     await prisma.group.delete({
@@ -119,7 +115,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
       },
     });
 
-    return NextResponse.json({ message: 'Group deleted successfully' });
+    return apiResponse.message('Group deleted successfully');
   } catch (error) {
     return handleApiError(error, 'groups-delete');
   }

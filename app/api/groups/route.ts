@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createGroupSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // GET /api/groups - List all groups for the current user
 export const GET = withAuth(async (_request, session) => {
@@ -22,7 +21,7 @@ export const GET = withAuth(async (_request, session) => {
       },
     });
 
-    return NextResponse.json({ groups });
+    return apiResponse.ok({ groups });
   } catch (error) {
     return handleApiError(error, 'groups-list');
   }
@@ -52,10 +51,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (existingGroup) {
-      return NextResponse.json(
-        { error: 'A group with this name already exists' },
-        { status: 400 }
-      );
+      return apiResponse.error('A group with this name already exists');
     }
 
     const group = await prisma.group.create({
@@ -67,7 +63,7 @@ export const POST = withAuth(async (request, session) => {
       },
     });
 
-    return NextResponse.json({ group }, { status: 201 });
+    return apiResponse.created({ group });
   } catch (error) {
     return handleApiError(error, 'groups-create');
   }

@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createRelationshipTypeSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 export const GET = withAuth(async (_request, session) => {
   // Get all relationship types (both default and user-created)
@@ -27,7 +26,7 @@ export const GET = withAuth(async (_request, session) => {
     ],
   });
 
-  return NextResponse.json(relationshipTypes);
+  return apiResponse.ok({ relationshipTypes });
 });
 
 export const POST = withAuth(async (request, session) => {
@@ -54,10 +53,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (existingType) {
-      return NextResponse.json(
-        { error: 'A relationship type with this name already exists' },
-        { status: 400 }
-      );
+      return apiResponse.error('A relationship type with this name already exists');
     }
 
     let finalInverseId = inverseId || null;
@@ -81,10 +77,7 @@ export const POST = withAuth(async (request, session) => {
       });
 
       if (existingInverseType) {
-        return NextResponse.json(
-          { error: `The inverse relationship type "${inverseLabel}" already exists` },
-          { status: 400 }
-        );
+        return apiResponse.error(`The inverse relationship type "${inverseLabel}" already exists`);
       }
 
       // Create the inverse type with the same color
@@ -131,7 +124,7 @@ export const POST = withAuth(async (request, session) => {
       });
     }
 
-    return NextResponse.json(relationshipType, { status: 201 });
+    return apiResponse.created({ relationshipType });
   } catch (error) {
     return handleApiError(error, 'relationship-types-create');
   }

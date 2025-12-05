@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { addGroupMemberSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // POST /api/groups/[id]/members - Add a member to a group
 export const POST = withAuth(async (request, session, context) => {
@@ -25,7 +24,7 @@ export const POST = withAuth(async (request, session, context) => {
     });
 
     if (!group) {
-      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+      return apiResponse.notFound('Group not found');
     }
 
     // Verify person belongs to user
@@ -37,7 +36,7 @@ export const POST = withAuth(async (request, session, context) => {
     });
 
     if (!person) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
     // Check if already a member
@@ -51,10 +50,7 @@ export const POST = withAuth(async (request, session, context) => {
     });
 
     if (existingMembership) {
-      return NextResponse.json(
-        { error: 'Person is already a member of this group' },
-        { status: 400 }
-      );
+      return apiResponse.error('Person is already a member of this group');
     }
 
     // Add person to group
@@ -65,7 +61,7 @@ export const POST = withAuth(async (request, session, context) => {
       },
     });
 
-    return NextResponse.json({ success: true });
+    return apiResponse.success();
   } catch (error) {
     return handleApiError(error, 'groups-add-member');
   }

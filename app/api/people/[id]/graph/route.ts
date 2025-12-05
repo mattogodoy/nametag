@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 interface GraphNode {
   id: string;
@@ -54,7 +53,7 @@ export const GET = withAuth(async (_request, session, context) => {
     });
 
     if (!person) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
     // Build graph data
@@ -125,7 +124,7 @@ export const GET = withAuth(async (_request, session, context) => {
       }
     });
 
-    return NextResponse.json({ nodes, edges });
+    return apiResponse.ok({ nodes, edges });
   } catch (error) {
     return handleApiError(error, 'people-graph');
   }

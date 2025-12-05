@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { Prisma } from '@prisma/client';
 
 interface GraphNode {
@@ -145,7 +144,7 @@ export const GET = withAuth(async (request, session) => {
       });
     });
 
-    return NextResponse.json({ nodes, edges });
+    return apiResponse.ok({ nodes, edges });
   } catch (error) {
     return handleApiError(error, 'dashboard-graph');
   }

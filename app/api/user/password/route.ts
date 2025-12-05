@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { updatePasswordSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 export const PUT = withAuth(async (request, session) => {
   try {
@@ -21,17 +20,14 @@ export const PUT = withAuth(async (request, session) => {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiResponse.notFound('User not found');
     }
 
     // Verify current password
     const passwordMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!passwordMatch) {
-      return NextResponse.json(
-        { error: 'Current password is incorrect' },
-        { status: 400 }
-      );
+      return apiResponse.error('Current password is incorrect');
     }
 
     // Hash new password
@@ -43,7 +39,7 @@ export const PUT = withAuth(async (request, session) => {
       data: { password: hashedPassword },
     });
 
-    return NextResponse.json({ message: 'Password changed successfully' });
+    return apiResponse.message('Password changed successfully');
   } catch (error) {
     return handleApiError(error, 'user-password-change');
   }

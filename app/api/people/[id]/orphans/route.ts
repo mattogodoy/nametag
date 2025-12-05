@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // GET /api/people/[id]/orphans - Check which people would become orphans if this person is deleted
 export const GET = withAuth(async (_request, session, context) => {
@@ -17,7 +16,7 @@ export const GET = withAuth(async (_request, session, context) => {
     });
 
     if (!person) {
-      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      return apiResponse.notFound('Person not found');
     }
 
     // Get all people related to this person (both directions)
@@ -95,7 +94,7 @@ export const GET = withAuth(async (_request, session, context) => {
       }
     }
 
-    return NextResponse.json({ orphans: potentialOrphans });
+    return apiResponse.ok({ orphans: potentialOrphans });
   } catch (error) {
     return handleApiError(error, 'people-orphans');
   }

@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createRelationshipSchema, validateRequest } from '@/lib/validations';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // POST /api/relationships - Create a new relationship (bidirectional)
 export const POST = withAuth(async (request, session) => {
@@ -16,18 +15,12 @@ export const POST = withAuth(async (request, session) => {
     const { personId, relatedPersonId, relationshipTypeId, notes } = validation.data;
 
     if (!relationshipTypeId) {
-      return NextResponse.json(
-        { error: 'Relationship type is required' },
-        { status: 400 }
-      );
+      return apiResponse.error('Relationship type is required');
     }
 
     // Prevent self-relationships
     if (personId === relatedPersonId) {
-      return NextResponse.json(
-        { error: 'Cannot create a relationship with the same person' },
-        { status: 400 }
-      );
+      return apiResponse.error('Cannot create a relationship with the same person');
     }
 
     // Check for duplicate relationship
@@ -40,10 +33,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (existingRelationship) {
-      return NextResponse.json(
-        { error: 'This relationship already exists' },
-        { status: 400 }
-      );
+      return apiResponse.error('This relationship already exists');
     }
 
     // Verify both people belong to the user
@@ -66,17 +56,11 @@ export const POST = withAuth(async (request, session) => {
     ]);
 
     if (!person || !relatedPerson) {
-      return NextResponse.json(
-        { error: 'One or both people not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('One or both people not found');
     }
 
     if (!relationshipType) {
-      return NextResponse.json(
-        { error: 'Relationship type not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Relationship type not found');
     }
 
     // Create the primary relationship
@@ -113,7 +97,7 @@ export const POST = withAuth(async (request, session) => {
       }
     }
 
-    return NextResponse.json({ relationship }, { status: 201 });
+    return apiResponse.created({ relationship });
   } catch (error) {
     return handleApiError(error, 'relationships-create');
   }

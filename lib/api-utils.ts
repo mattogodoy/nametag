@@ -5,29 +5,66 @@ import { logger } from './logger';
 
 /**
  * Standard API response helpers
+ * Provides consistent response formatting across all API endpoints
  */
 export const apiResponse = {
-  success: <T>(data: T, status = 200) =>
-    NextResponse.json({ data }, { status }),
+  /**
+   * Return successful response with data
+   * @example apiResponse.ok({ people }) // returns { people: [...] }
+   * @example apiResponse.ok({ user }, 201) // returns { user: {...} } with 201 status
+   */
+  ok: <T extends Record<string, unknown>>(data: T, status = 200) =>
+    NextResponse.json(data, { status }),
 
-  created: <T>(data: T) =>
-    NextResponse.json({ data }, { status: 201 }),
+  /**
+   * Return created response (201) with data
+   * @example apiResponse.created({ person }) // returns { person: {...} } with 201 status
+   */
+  created: <T extends Record<string, unknown>>(data: T) =>
+    NextResponse.json(data, { status: 201 }),
 
+  /**
+   * Return success message
+   * @example apiResponse.message('Password changed successfully')
+   */
   message: (message: string, status = 200) =>
     NextResponse.json({ message }, { status }),
 
+  /**
+   * Return success with boolean flag
+   * @example apiResponse.success() // returns { success: true }
+   */
+  success: () =>
+    NextResponse.json({ success: true }),
+
+  /**
+   * Return error response
+   * @example apiResponse.error('Invalid input') // returns { error: '...' } with 400 status
+   */
   error: (message: string, status = 400) =>
     NextResponse.json({ error: message }, { status }),
 
+  /**
+   * Return 401 Unauthorized
+   */
   unauthorized: (message = 'Unauthorized') =>
     NextResponse.json({ error: message }, { status: 401 }),
 
+  /**
+   * Return 403 Forbidden
+   */
   forbidden: (message = 'Forbidden') =>
     NextResponse.json({ error: message }, { status: 403 }),
 
+  /**
+   * Return 404 Not Found
+   */
   notFound: (message = 'Not found') =>
     NextResponse.json({ error: message }, { status: 404 }),
 
+  /**
+   * Return 500 Internal Server Error
+   */
   serverError: (message = 'Internal server error') =>
     NextResponse.json({ error: message }, { status: 500 }),
 };
