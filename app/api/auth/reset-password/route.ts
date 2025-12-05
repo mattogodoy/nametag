@@ -1,24 +1,18 @@
 import { NextResponse } from 'next/server';
 import * as bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { resetPasswordSchema, validateRequest } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
-    const { token, password } = await request.json();
+    const body = await request.json();
+    const validation = validateRequest(resetPasswordSchema, body);
 
-    if (!token || !password) {
-      return NextResponse.json(
-        { error: 'Token and password are required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
+    const { token, password } = validation.data;
 
     // Find user with valid token
     const user = await prisma.user.findFirst({

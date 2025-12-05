@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateRelationshipTypeSchema, validateRequest } from '@/lib/validations';
 
 export async function GET(
   request: Request,
@@ -82,14 +83,13 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, label, color, inverseId, inverseLabel } = body;
+    const validation = validateRequest(updateRelationshipTypeSchema, body);
 
-    if (!name || !label) {
-      return NextResponse.json(
-        { error: 'Name and label are required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { name, label, color, inverseId, inverseLabel } = validation.data;
 
     const normalizedName = name.toUpperCase().replace(/\s+/g, '_');
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createGroupSchema, validateRequest } from '@/lib/validations';
 
 // GET /api/groups - List all groups for the current user
 export async function GET() {
@@ -47,14 +48,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, color } = body;
+    const validation = validateRequest(createGroupSchema, body);
 
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Group name is required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { name, description, color } = validation.data;
 
     // Check if a group with the same name already exists for this user (case-insensitive)
     const existingGroup = await prisma.group.findFirst({

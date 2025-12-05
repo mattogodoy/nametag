@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createPersonSchema, validateRequest } from '@/lib/validations';
 
 // GET /api/people - List all people for the current user
 export async function GET() {
@@ -48,6 +49,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    const validation = validateRequest(createPersonSchema, body);
+
+    if (!validation.success) {
+      return validation.response;
+    }
+
     const {
       name,
       surname,
@@ -61,14 +68,7 @@ export async function POST(request: Request) {
       contactReminderEnabled,
       contactReminderInterval,
       contactReminderIntervalUnit,
-    } = body;
-
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Relationship is only required for direct connections (not when connected through another person)
     if (!connectedThroughId && !relationshipToUserId) {
@@ -114,14 +114,7 @@ export async function POST(request: Request) {
         : undefined,
       importantDates: importantDates && importantDates.length > 0
         ? {
-            create: importantDates.map((date: {
-              title: string;
-              date: string;
-              reminderEnabled?: boolean;
-              reminderType?: string;
-              reminderInterval?: number;
-              reminderIntervalUnit?: string;
-            }) => ({
+            create: importantDates.map((date) => ({
               title: date.title,
               date: new Date(date.date),
               reminderEnabled: date.reminderEnabled ?? false,

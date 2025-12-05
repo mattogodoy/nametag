@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
+import { updatePasswordSchema, validateRequest } from '@/lib/validations';
 
 export async function PUT(request: Request) {
   try {
@@ -12,21 +13,13 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { currentPassword, newPassword } = body;
+    const validation = validateRequest(updatePasswordSchema, body);
 
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { error: 'Current password and new password are required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
 
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: 'New password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
+    const { currentPassword, newPassword } = validation.data;
 
     // Get user with password
     const user = await prisma.user.findUnique({

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateThemeSchema, validateRequest } from '@/lib/validations';
 
 export async function PUT(request: Request) {
   try {
@@ -11,14 +12,13 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { theme } = body;
+    const validation = validateRequest(updateThemeSchema, body);
 
-    if (!theme || (theme !== 'LIGHT' && theme !== 'DARK')) {
-      return NextResponse.json(
-        { error: 'Invalid theme. Must be LIGHT or DARK' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { theme } = validation.data;
 
     const user = await prisma.user.update({
       where: { id: session.user.id },

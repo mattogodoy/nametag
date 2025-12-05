@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateRelationshipSchema, validateRequest } from '@/lib/validations';
 
 // PUT /api/relationships/[id] - Update a relationship
 export async function PUT(
@@ -16,7 +17,13 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { relationshipTypeId, notes } = body;
+    const validation = validateRequest(updateRelationshipSchema, body);
+
+    if (!validation.success) {
+      return validation.response;
+    }
+
+    const { relationshipTypeId, notes } = validation.data;
 
     // Find the existing relationship
     const existing = await prisma.relationship.findUnique({
@@ -37,6 +44,13 @@ export async function PUT(
     // Verify the person belongs to the user
     if (existing.person.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!relationshipTypeId) {
+      return NextResponse.json(
+        { error: 'Relationship type is required' },
+        { status: 400 }
+      );
     }
 
     // Get the new relationship type to find its inverse

@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
+import { registerSchema, validateRequest } from '@/lib/validations';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -12,14 +13,14 @@ function generateVerificationToken(): string {
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name, surname, nickname } = await request.json();
+    const body = await request.json();
+    const validation = validateRequest(registerSchema, body);
 
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: 'Email, password, and name are required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { email, password, name, surname, nickname } = validation.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({

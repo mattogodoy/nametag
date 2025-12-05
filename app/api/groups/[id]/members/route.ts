@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { addGroupMemberSchema, validateRequest } from '@/lib/validations';
 
 // POST /api/groups/[id]/members - Add a member to a group
 export async function POST(
@@ -16,14 +17,13 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
-    const { personId } = body;
+    const validation = validateRequest(addGroupMemberSchema, body);
 
-    if (!personId) {
-      return NextResponse.json(
-        { error: 'Person ID is required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { personId } = validation.data;
 
     // Verify group belongs to user
     const group = await prisma.group.findUnique({

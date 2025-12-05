@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createRelationshipSchema, validateRequest } from '@/lib/validations';
 
 // POST /api/relationships - Create a new relationship (bidirectional)
 export async function POST(request: Request) {
@@ -12,11 +13,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { personId, relatedPersonId, relationshipTypeId, notes } = body;
+    const validation = validateRequest(createRelationshipSchema, body);
 
-    if (!personId || !relatedPersonId || !relationshipTypeId) {
+    if (!validation.success) {
+      return validation.response;
+    }
+
+    const { personId, relatedPersonId, relationshipTypeId, notes } = validation.data;
+
+    if (!relationshipTypeId) {
       return NextResponse.json(
-        { error: 'Person ID, related person ID, and relationship type are required' },
+        { error: 'Relationship type is required' },
         { status: 400 }
       );
     }

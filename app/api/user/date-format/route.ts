@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateDateFormatSchema, validateRequest } from '@/lib/validations';
 
 export async function PUT(request: Request) {
   try {
@@ -11,14 +12,13 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { dateFormat } = body;
+    const validation = validateRequest(updateDateFormatSchema, body);
 
-    if (!dateFormat || !['MDY', 'DMY', 'YMD'].includes(dateFormat)) {
-      return NextResponse.json(
-        { error: 'Invalid date format. Must be MDY, DMY, or YMD' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { dateFormat } = validation.data;
 
     const user = await prisma.user.update({
       where: { id: session.user.id },

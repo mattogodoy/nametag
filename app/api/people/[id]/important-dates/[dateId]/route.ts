@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateImportantDateSchema, validateRequest } from '@/lib/validations';
 
 // PUT /api/people/[id]/important-dates/[dateId] - Update an important date
 export async function PUT(
@@ -16,14 +17,13 @@ export async function PUT(
 
     const { id, dateId } = await params;
     const body = await request.json();
-    const { title, date, reminderEnabled, reminderType, reminderInterval, reminderIntervalUnit } = body;
+    const validation = validateRequest(updateImportantDateSchema, body);
 
-    if (!title || !date) {
-      return NextResponse.json(
-        { error: 'Title and date are required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { title, date, reminderEnabled, reminderType, reminderInterval, reminderIntervalUnit } = validation.data;
 
     // Check if person exists and belongs to user
     const person = await prisma.person.findUnique({

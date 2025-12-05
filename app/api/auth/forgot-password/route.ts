@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
+import { forgotPasswordSchema, validateRequest } from '@/lib/validations';
 
 const TOKEN_EXPIRY_HOURS = 1;
 const RESEND_COOLDOWN_MINUTES = 2;
@@ -12,14 +13,14 @@ function generateResetToken(): string {
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const body = await request.json();
+    const validation = validateRequest(forgotPasswordSchema, body);
 
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { email } = validation.data;
 
     // Find user
     const user = await prisma.user.findUnique({

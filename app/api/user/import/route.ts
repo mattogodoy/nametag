@@ -1,46 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { importDataSchema, validateRequest } from '@/lib/validations';
 
-interface ImportData {
-  version: string;
-  exportDate: string;
-  groups: Array<{
-    id: string;
-    name: string;
-    description?: string | null;
-    color?: string | null;
-  }>;
-  people: Array<{
-    id: string;
-    name: string;
-    surname?: string | null;
-    nickname?: string | null;
-    lastContact?: string | null;
-    notes?: string | null;
-    relationshipToUser?: {
-      name: string;
-      label: string;
-    } | null;
-    groups: string[];
-    relationships: Array<{
-      relatedPersonId: string;
-      relatedPersonName: string;
-      relationshipType?: {
-        name: string;
-        label: string;
-      } | null;
-      notes?: string | null;
-    }>;
-  }>;
-  customRelationshipTypes: Array<{
-    id: string;
-    name: string;
-    label: string;
-    color?: string | null;
-    inverseId?: string | null;
-  }>;
-}
+import { z } from 'zod';
+
+type ImportData = z.infer<typeof importDataSchema>;
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -50,15 +15,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const data: ImportData = await request.json();
+    const body = await request.json();
+    const validation = validateRequest(importDataSchema, body);
 
-    // Validate data structure
-    if (!data.version || !data.groups || !data.people) {
-      return NextResponse.json(
-        { error: 'Invalid import file format' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const data: ImportData = validation.data;
 
     // Track mapping of old IDs to new IDs
     const groupIdMap = new Map<string, string>();

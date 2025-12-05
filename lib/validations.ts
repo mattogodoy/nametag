@@ -1,0 +1,244 @@
+import { z } from 'zod';
+
+// ============================================
+// Common schemas
+// ============================================
+
+export const emailSchema = z.string().email('Invalid email address');
+
+export const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password must be less than 128 characters');
+
+export const cuidSchema = z.string().cuid('Invalid ID format');
+
+export const hexColorSchema = z
+  .string()
+  .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format')
+  .nullable()
+  .optional();
+
+// ============================================
+// Auth schemas
+// ============================================
+
+export const registerSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  name: z.string().min(1, 'Name is required').max(100),
+  surname: z.string().max(100).nullable().optional(),
+  nickname: z.string().max(100).nullable().optional(),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+  password: passwordSchema,
+});
+
+export const resendVerificationSchema = z.object({
+  email: emailSchema,
+});
+
+export const checkVerificationSchema = z.object({
+  email: emailSchema,
+});
+
+// ============================================
+// Person schemas
+// ============================================
+
+const reminderIntervalUnitSchema = z.enum(['WEEKS', 'MONTHS', 'YEARS']);
+
+const importantDateSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1, 'Title is required').max(100),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+  reminderEnabled: z.boolean().optional(),
+  reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
+  reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
+  reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
+});
+
+export const createPersonSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  surname: z.string().max(100).nullable().optional(),
+  nickname: z.string().max(100).nullable().optional(),
+  lastContact: z.string().refine((val) => !val || !isNaN(Date.parse(val)), 'Invalid date').nullable().optional(),
+  notes: z.string().max(10000).nullable().optional(),
+  relationshipToUserId: z.string().optional(),
+  groupIds: z.array(z.string()).optional(),
+  connectedThroughId: z.string().optional(),
+  importantDates: z.array(importantDateSchema).optional(),
+  contactReminderEnabled: z.boolean().optional(),
+  contactReminderInterval: z.number().int().min(1).max(99).nullable().optional(),
+  contactReminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
+});
+
+export const updatePersonSchema = createPersonSchema;
+
+export const deletePersonSchema = z.object({
+  deleteOrphans: z.boolean().optional(),
+  orphanIds: z.array(z.string()).optional(),
+});
+
+// ============================================
+// Group schemas
+// ============================================
+
+export const createGroupSchema = z.object({
+  name: z.string().min(1, 'Group name is required').max(100),
+  description: z.string().max(500).nullable().optional(),
+  color: hexColorSchema,
+});
+
+export const updateGroupSchema = createGroupSchema;
+
+export const addGroupMemberSchema = z.object({
+  personId: z.string().min(1, 'Person ID is required'),
+});
+
+// ============================================
+// Relationship schemas
+// ============================================
+
+export const createRelationshipSchema = z.object({
+  personId: z.string().min(1, 'Person ID is required'),
+  relatedPersonId: z.string().min(1, 'Related person ID is required'),
+  relationshipTypeId: z.string().nullable().optional(),
+  notes: z.string().max(1000).nullable().optional(),
+});
+
+export const updateRelationshipSchema = z.object({
+  relationshipTypeId: z.string().nullable().optional(),
+  notes: z.string().max(1000).nullable().optional(),
+});
+
+// ============================================
+// Relationship Type schemas
+// ============================================
+
+export const createRelationshipTypeSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(50),
+  label: z.string().min(1, 'Label is required').max(50),
+  color: hexColorSchema,
+  inverseId: z.string().nullable().optional(),
+  inverseLabel: z.string().max(50).optional(),
+});
+
+export const updateRelationshipTypeSchema = createRelationshipTypeSchema;
+
+// ============================================
+// User schemas
+// ============================================
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  surname: z.string().max(100).nullable().optional(),
+  nickname: z.string().max(100).nullable().optional(),
+  email: emailSchema,
+});
+
+export const updatePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: passwordSchema,
+});
+
+export const updateThemeSchema = z.object({
+  theme: z.enum(['LIGHT', 'DARK']),
+});
+
+export const updateDateFormatSchema = z.object({
+  dateFormat: z.enum(['MDY', 'DMY', 'YMD']),
+});
+
+// ============================================
+// Import schema
+// ============================================
+
+export const importDataSchema = z.object({
+  version: z.string(),
+  exportDate: z.string(),
+  groups: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    color: z.string().nullable().optional(),
+  })),
+  people: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    surname: z.string().nullable().optional(),
+    nickname: z.string().nullable().optional(),
+    lastContact: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    relationshipToUser: z.object({
+      name: z.string(),
+      label: z.string(),
+    }).nullable().optional(),
+    groups: z.array(z.string()),
+    relationships: z.array(z.object({
+      relatedPersonId: z.string(),
+      relatedPersonName: z.string(),
+      relationshipType: z.object({
+        name: z.string(),
+        label: z.string(),
+      }).nullable().optional(),
+      notes: z.string().nullable().optional(),
+    })),
+  })),
+  customRelationshipTypes: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    label: z.string(),
+    color: z.string().nullable().optional(),
+    inverseId: z.string().nullable().optional(),
+  })).optional(),
+});
+
+// ============================================
+// Important Date schemas
+// ============================================
+
+export const updateImportantDateSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+  reminderEnabled: z.boolean().optional(),
+  reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
+  reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
+  reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
+});
+
+// ============================================
+// Helper function for API validation
+// ============================================
+
+import { NextResponse } from 'next/server';
+
+export function validateRequest<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown
+): { success: true; data: T } | { success: false; response: NextResponse } {
+  const result = schema.safeParse(data);
+
+  if (!result.success) {
+    const errors = result.error.issues.map((issue) => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }));
+
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Validation failed', details: errors },
+        { status: 400 }
+      ),
+    };
+  }
+
+  return { success: true, data: result.data };
+}

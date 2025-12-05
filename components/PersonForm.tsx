@@ -10,6 +10,19 @@ import ImportantDatesManager from './ImportantDatesManager';
 
 type ReminderIntervalUnit = 'WEEKS' | 'MONTHS' | 'YEARS';
 
+// These must be defined OUTSIDE the component to prevent re-renders
+const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+    {children}
+  </h3>
+);
+
+const Section = ({ children }: { children: React.ReactNode }) => (
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+    {children}
+  </div>
+);
+
 interface PersonFormProps {
   person?: {
     id: string;
@@ -254,18 +267,6 @@ export default function PersonForm({
     const today = new Date().toISOString().split('T')[0];
     setFormData({ ...formData, lastContact: today });
   };
-
-  const SectionHeader = ({ children }: { children: React.ReactNode }) => (
-    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-      {children}
-    </h3>
-  );
-
-  const Section = ({ children }: { children: React.ReactNode }) => (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-      {children}
-    </div>
-  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

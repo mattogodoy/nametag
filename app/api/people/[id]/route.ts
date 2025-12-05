@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
 
 // GET /api/people/[id] - Get a single person
 export async function GET(
@@ -65,6 +66,12 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
+    const validation = validateRequest(updatePersonSchema, body);
+
+    if (!validation.success) {
+      return validation.response;
+    }
+
     const {
       name,
       surname,
@@ -77,7 +84,7 @@ export async function PUT(
       contactReminderEnabled,
       contactReminderInterval,
       contactReminderIntervalUnit,
-    } = body;
+    } = validation.data;
 
     // Check if person exists and belongs to user
     const existingPerson = await prisma.person.findUnique({
@@ -89,13 +96,6 @@ export async function PUT(
 
     if (!existingPerson) {
       return NextResponse.json({ error: 'Person not found' }, { status: 404 });
-    }
-
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
     }
 
     // Relationship is not required for people with indirect connections
@@ -122,14 +122,7 @@ export async function PUT(
       importantDates: importantDates
         ? {
             deleteMany: {},
-            create: importantDates.map((date: {
-              title: string;
-              date: string;
-              reminderEnabled?: boolean;
-              reminderType?: string;
-              reminderInterval?: number;
-              reminderIntervalUnit?: string;
-            }) => ({
+            create: importantDates.map((date) => ({
               title: date.title,
               date: new Date(date.date),
               reminderEnabled: date.reminderEnabled ?? false,
@@ -201,7 +194,12 @@ export async function DELETE(
 
     // Parse request body to check if we should also delete orphans
     const body = await request.json().catch(() => ({}));
-    const { deleteOrphans, orphanIds } = body;
+    const validation = validateRequest(deletePersonSchema, body);
+
+    // Use validated data, or defaults if body was empty/invalid
+    const { deleteOrphans, orphanIds } = validation.success
+      ? validation.data
+      : { deleteOrphans: false, orphanIds: [] };
 
     // Delete the person
     await prisma.person.delete({

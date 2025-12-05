@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
+import { updateProfileSchema, validateRequest } from '@/lib/validations';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -19,14 +20,13 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { name, surname, nickname, email } = body;
+    const validation = validateRequest(updateProfileSchema, body);
 
-    if (!email || !name) {
-      return NextResponse.json(
-        { error: 'Email and name are required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { name, surname, nickname, email } = validation.data;
 
     // Check if email is already taken by another user
     const existingUser = await prisma.user.findUnique({

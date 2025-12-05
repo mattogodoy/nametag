@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateGroupSchema, validateRequest } from '@/lib/validations';
 
 // GET /api/groups/[id] - Get a single group
 export async function GET(
@@ -59,7 +60,13 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { name, description, color } = body;
+    const validation = validateRequest(updateGroupSchema, body);
+
+    if (!validation.success) {
+      return validation.response;
+    }
+
+    const { name, description, color } = validation.data;
 
     // Check if group exists and belongs to user
     const existingGroup = await prisma.group.findUnique({
@@ -71,13 +78,6 @@ export async function PUT(
 
     if (!existingGroup) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
-    }
-
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Group name is required' },
-        { status: 400 }
-      );
     }
 
     // Check if another group with the same name already exists for this user (case-insensitive)
