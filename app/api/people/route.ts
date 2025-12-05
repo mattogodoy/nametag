@@ -1,19 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people - List all people for the current user
-export async function GET() {
+export const GET = withAuth(async (_request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const people = await prisma.person.findMany({
       where: {
         userId: session.user.id,
@@ -35,17 +28,11 @@ export async function GET() {
   } catch (error) {
     return handleApiError(error, 'people-list');
   }
-}
+});
 
 // POST /api/people - Create a new person
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const validation = validateRequest(createPersonSchema, body);
 
@@ -172,4 +159,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'people-create');
   }
-}
+});

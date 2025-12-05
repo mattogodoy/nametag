@@ -1,21 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { addGroupMemberSchema, validateRequest } from '@/lib/validations';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // POST /api/groups/[id]/members - Add a member to a group
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withAuth(async (request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
     const body = await request.json();
     const validation = validateRequest(addGroupMemberSchema, body);
 
@@ -76,10 +67,6 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error adding member to group:', error);
-    return NextResponse.json(
-      { error: 'Failed to add member to group' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'groups-add-member');
   }
-}
+});

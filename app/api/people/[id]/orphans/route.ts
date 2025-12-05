@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // GET /api/people/[id]/orphans - Check which people would become orphans if this person is deleted
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const GET = withAuth(async (_request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     // Verify the person exists and belongs to the current user
     const person = await prisma.person.findUnique({
@@ -109,4 +99,4 @@ export async function GET(
   } catch (error) {
     return handleApiError(error, 'people-orphans');
   }
-}
+});

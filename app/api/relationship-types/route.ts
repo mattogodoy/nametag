@@ -1,15 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createRelationshipTypeSchema, validateRequest } from '@/lib/validations';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
-export async function GET() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async (_request, session) => {
   // Get all relationship types (both default and user-created)
   const relationshipTypes = await prisma.relationshipType.findMany({
     where: {
@@ -34,15 +28,9 @@ export async function GET() {
   });
 
   return NextResponse.json(relationshipTypes);
-}
+});
 
-export async function POST(request: Request) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withAuth(async (request, session) => {
   try {
     const body = await request.json();
     const validation = validateRequest(createRelationshipTypeSchema, body);
@@ -145,10 +133,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(relationshipType, { status: 201 });
   } catch (error) {
-    console.error('Error creating relationship type:', error);
-    return NextResponse.json(
-      { error: 'Failed to create relationship type' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'relationship-types-create');
   }
-}
+});

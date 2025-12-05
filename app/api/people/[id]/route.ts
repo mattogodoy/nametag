@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people/[id] - Get a single person
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const GET = withAuth(async (_request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     const person = await prisma.person.findUnique({
       where: {
@@ -47,21 +37,12 @@ export async function GET(
   } catch (error) {
     return handleApiError(error, 'people-get');
   }
-}
+});
 
 // PUT /api/people/[id] - Update a person
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withAuth(async (request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     const body = await request.json();
     const validation = validateRequest(updatePersonSchema, body);
@@ -155,21 +136,12 @@ export async function PUT(
   } catch (error) {
     return handleApiError(error, 'people-update');
   }
-}
+});
 
 // DELETE /api/people/[id] - Delete a person
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withAuth(async (request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     // Check if person exists and belongs to user
     const existingPerson = await prisma.person.findUnique({
@@ -215,4 +187,4 @@ export async function DELETE(
   } catch (error) {
     return handleApiError(error, 'people-delete');
   }
-}
+});

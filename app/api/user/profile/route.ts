@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { updateProfileSchema, validateRequest } from '@/lib/validations';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -12,14 +11,8 @@ function generateVerificationToken(): string {
   return randomBytes(32).toString('hex');
 }
 
-export async function PUT(request: Request) {
+export const PUT = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const validation = validateRequest(updateProfileSchema, body);
 
@@ -100,4 +93,4 @@ export async function PUT(request: Request) {
   } catch (error) {
     return handleApiError(error, 'user-profile-update');
   }
-}
+});

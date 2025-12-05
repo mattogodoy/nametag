@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { withAuth } from '@/lib/api-utils';
 
-export async function GET(request: Request) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async (request, session) => {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q') || '';
 
@@ -54,4 +48,4 @@ export async function GET(request: Request) {
   });
 
   return NextResponse.json({ people });
-}
+});

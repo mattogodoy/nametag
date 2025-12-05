@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipSchema, validateRequest } from '@/lib/validations';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // PUT /api/relationships/[id] - Update a relationship
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withAuth(async (request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
     const body = await request.json();
     const validation = validateRequest(updateRelationshipSchema, body);
 
@@ -103,21 +93,12 @@ export async function PUT(
   } catch (error) {
     return handleApiError(error, 'relationships-update');
   }
-}
+});
 
 // DELETE /api/relationships/[id] - Delete a relationship
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withAuth(async (_request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     // Find the existing relationship
     const existing = await prisma.relationship.findUnique({
@@ -164,4 +145,4 @@ export async function DELETE(
   } catch (error) {
     return handleApiError(error, 'relationships-delete');
   }
-}
+});

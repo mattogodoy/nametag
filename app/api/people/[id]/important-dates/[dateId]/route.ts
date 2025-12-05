@@ -1,21 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateImportantDateSchema, validateRequest } from '@/lib/validations';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // PUT /api/people/[id]/important-dates/[dateId] - Update an important date
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string; dateId: string }> }
-) {
+export const PUT = withAuth(async (request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id, dateId } = await params;
+    const { id, dateId } = await context!.params;
     const body = await request.json();
     const validation = validateRequest(updateImportantDateSchema, body);
 
@@ -55,27 +46,14 @@ export async function PUT(
 
     return NextResponse.json({ importantDate: updatedDate });
   } catch (error) {
-    console.error('Error updating important date:', error);
-    return NextResponse.json(
-      { error: 'Failed to update important date' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'important-date-update');
   }
-}
+});
 
 // DELETE /api/people/[id]/important-dates/[dateId] - Delete an important date
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string; dateId: string }> }
-) {
+export const DELETE = withAuth(async (_request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id, dateId } = await params;
+    const { id, dateId } = await context!.params;
 
     // Check if person exists and belongs to user
     const person = await prisma.person.findUnique({
@@ -99,10 +77,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Important date deleted successfully' });
   } catch (error) {
-    console.error('Error deleting important date:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete important date' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'important-date-delete');
   }
-}
+});

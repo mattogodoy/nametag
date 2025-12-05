@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createGroupSchema, validateRequest } from '@/lib/validations';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // GET /api/groups - List all groups for the current user
-export async function GET() {
+export const GET = withAuth(async (_request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const groups = await prisma.group.findMany({
       where: {
         userId: session.user.id,
@@ -33,17 +26,11 @@ export async function GET() {
   } catch (error) {
     return handleApiError(error, 'groups-list');
   }
-}
+});
 
 // POST /api/groups - Create a new group
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const validation = validateRequest(createGroupSchema, body);
 
@@ -84,4 +71,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'groups-create');
   }
-}
+});

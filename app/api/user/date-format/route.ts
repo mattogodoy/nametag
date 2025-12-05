@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateDateFormatSchema, validateRequest } from '@/lib/validations';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
-export async function PUT(request: Request) {
+export const PUT = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const validation = validateRequest(updateDateFormatSchema, body);
 
@@ -27,10 +21,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ user });
   } catch (error) {
-    console.error('Error updating date format:', error);
-    return NextResponse.json(
-      { error: 'Failed to update date format' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-date-format-update');
   }
-}
+});

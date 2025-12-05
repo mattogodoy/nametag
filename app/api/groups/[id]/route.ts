@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateGroupSchema, validateRequest } from '@/lib/validations';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // GET /api/groups/[id] - Get a single group
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const GET = withAuth(async (_request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     const group = await prisma.group.findUnique({
       where: {
@@ -40,21 +30,12 @@ export async function GET(
   } catch (error) {
     return handleApiError(error, 'groups-get');
   }
-}
+});
 
 // PUT /api/groups/[id] - Update a group
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withAuth(async (request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     const body = await request.json();
     const validation = validateRequest(updateGroupSchema, body);
@@ -113,21 +94,12 @@ export async function PUT(
   } catch (error) {
     return handleApiError(error, 'groups-update');
   }
-}
+});
 
 // DELETE /api/groups/[id] - Delete a group
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withAuth(async (_request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+    const { id } = await context!.params;
 
     // Check if group exists and belongs to user
     const existingGroup = await prisma.group.findUnique({
@@ -151,4 +123,4 @@ export async function DELETE(
   } catch (error) {
     return handleApiError(error, 'groups-delete');
   }
-}
+});

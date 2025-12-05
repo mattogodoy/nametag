@@ -1,20 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // DELETE /api/groups/[id]/members/[personId] - Remove a member from a group
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string; personId: string }> }
-) {
+export const DELETE = withAuth(async (_request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id, personId } = await params;
+    const { id, personId } = await context!.params;
 
     // Verify group belongs to user
     const group = await prisma.group.findUnique({
@@ -45,10 +36,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error removing member from group:', error);
-    return NextResponse.json(
-      { error: 'Failed to remove member from group' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'groups-remove-member');
   }
-}
+});

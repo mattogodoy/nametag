@@ -1,19 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipTypeSchema, validateRequest } from '@/lib/validations';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { id } = await params;
+export const GET = withAuth(async (_request, session, context) => {
+  const { id } = await context!.params;
 
   const relationshipType = await prisma.relationshipType.findFirst({
     where: {
@@ -42,21 +33,12 @@ export async function GET(
   }
 
   return NextResponse.json(relationshipType);
-}
+});
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { id } = await params;
-
+export const PUT = withAuth(async (request, session, context) => {
   try {
+    const { id } = await context!.params;
+
     // First check if this is a default type
     const existing = await prisma.relationshipType.findFirst({
       where: {
@@ -184,27 +166,14 @@ export async function PUT(
 
     return NextResponse.json(relationshipType);
   } catch (error) {
-    console.error('Error updating relationship type:', error);
-    return NextResponse.json(
-      { error: 'Failed to update relationship type' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'relationship-types-update');
   }
-}
+});
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { id } = await params;
-
+export const DELETE = withAuth(async (_request, session, context) => {
   try {
+    const { id } = await context!.params;
+
     // First check if this is a default type
     const existing = await prisma.relationshipType.findFirst({
       where: {
@@ -247,10 +216,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting relationship type:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete relationship type' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'relationship-types-delete');
   }
-}
+});

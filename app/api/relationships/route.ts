@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createRelationshipSchema, validateRequest } from '@/lib/validations';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 // POST /api/relationships - Create a new relationship (bidirectional)
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const validation = validateRequest(createRelationshipSchema, body);
 
@@ -124,4 +117,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'relationships-create');
   }
-}
+});

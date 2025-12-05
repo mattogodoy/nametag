@@ -1,19 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { importDataSchema, validateRequest } from '@/lib/validations';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
 import { z } from 'zod';
 
 type ImportData = z.infer<typeof importDataSchema>;
 
-export async function POST(request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withAuth(async (request, session) => {
   try {
     const body = await request.json();
     const validation = validateRequest(importDataSchema, body);
@@ -247,10 +241,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Import error:', error);
-    return NextResponse.json(
-      { error: 'Failed to import data. Please check the file format and try again.' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-import');
   }
-}
+});

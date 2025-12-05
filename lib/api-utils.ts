@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { Session } from 'next-auth';
+import { auth } from './auth';
 import { logger } from './logger';
 
 /**
@@ -69,4 +71,61 @@ export function getClientIp(request: Request): string {
   }
 
   return 'unknown';
+}
+
+/**
+ * Session with guaranteed user (for authenticated handlers)
+ */
+export interface AuthenticatedSession extends Session {
+  user: Session['user'] & { id: string };
+}
+
+/**
+ * Route context for dynamic routes with params
+ */
+export interface RouteContext {
+  params: Promise<Record<string, string>>;
+}
+
+/**
+ * Handler function type for authenticated API routes
+ */
+export type AuthenticatedHandler<T = Response | NextResponse> = (
+  request: Request,
+  session: AuthenticatedSession,
+  context?: RouteContext
+) => Promise<T>;
+
+/**
+ * Higher-order function that wraps API handlers with authentication
+ * Automatically checks for valid session and returns 401 if not authenticated
+ *
+ * @example
+ * // Simple usage
+ * export const GET = withAuth(async (request, session) => {
+ *   const userId = session.user.id;
+ *   // ... handler logic
+ *   return NextResponse.json({ data });
+ * });
+ *
+ * // With route params
+ * export const GET = withAuth(async (request, session, context) => {
+ *   const { id } = await context!.params;
+ *   // ... handler logic
+ *   return NextResponse.json({ data });
+ * });
+ */
+export function withAuth(handler: AuthenticatedHandler) {
+  return async (
+    request: Request,
+    context?: RouteContext
+  ): Promise<Response | NextResponse> => {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return apiResponse.unauthorized();
+    }
+
+    return handler(request, session as AuthenticatedSession, context);
+  };
 }

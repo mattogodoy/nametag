@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { handleApiError, withAuth } from '@/lib/api-utils';
 
-export async function GET() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async (_request, session) => {
   try {
     // Fetch all user data
     const [user, people, groups, relationshipTypes] = await Promise.all([
@@ -125,10 +119,6 @@ export async function GET() {
 
     return NextResponse.json(exportData);
   } catch (error) {
-    console.error('Export error:', error);
-    return NextResponse.json(
-      { error: 'Failed to export data' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-export');
   }
-}
+});
