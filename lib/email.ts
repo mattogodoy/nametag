@@ -68,4 +68,15 @@ export const emailTemplates = {
     `,
     text: `Reminder: ${personName}'s ${eventType} is on ${date}. Don't forget to reach out!`,
   }),
+
+  contactReminder: (personName: string, lastContactDate: string | null, interval: string) => ({
+    subject: `Time to catch up with ${personName}`,
+    html: `
+      <h1>Stay in Touch</h1>
+      <p>It's been a while since you last contacted <strong>${personName}</strong>${lastContactDate ? ` (last contact: ${lastContactDate})` : ''}.</p>
+      <p>You asked to be reminded to catch up after ${interval} of your last contact.</p>
+      <p>Why not reach out today?</p>
+    `,
+    text: `Time to catch up with ${personName}!${lastContactDate ? ` Last contact: ${lastContactDate}.` : ''} You asked to be reminded to catch up after ${interval} of your last contact. Why not reach out today?`,
+  }),
 };

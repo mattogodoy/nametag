@@ -10,7 +10,8 @@
       "Bash(npx tsc:*)",
       "Bash(npx prisma:*)",
       "Bash(npm run build)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(docker:*)"
     ],
     "deny": [],
     "ask": []

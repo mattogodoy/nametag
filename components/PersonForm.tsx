@@ -8,6 +8,8 @@ import PersonAutocomplete from './PersonAutocomplete';
 import GroupsSelector from './GroupsSelector';
 import ImportantDatesManager from './ImportantDatesManager';
 
+type ReminderIntervalUnit = 'WEEKS' | 'MONTHS' | 'YEARS';
+
 interface PersonFormProps {
   person?: {
     id: string;
@@ -21,6 +23,9 @@ interface PersonFormProps {
       label: string;
     } | null;
     groups: Array<{ groupId: string }>;
+    contactReminderEnabled?: boolean;
+    contactReminderInterval?: number | null;
+    contactReminderIntervalUnit?: ReminderIntervalUnit | null;
     importantDates?: Array<{
       id: string;
       title: string;
@@ -28,7 +33,7 @@ interface PersonFormProps {
       reminderEnabled?: boolean;
       reminderType?: 'ONCE' | 'RECURRING' | null;
       reminderInterval?: number | null;
-      reminderIntervalUnit?: 'WEEKS' | 'MONTHS' | 'YEARS' | null;
+      reminderIntervalUnit?: ReminderIntervalUnit | null;
     }>;
   };
   groups: Array<{
@@ -95,6 +100,9 @@ export default function PersonForm({
     notes: person?.notes || '',
     relationshipToUserId: person?.relationshipToUserId || initialRelationshipType || '',
     groupIds: person?.groups.map((g) => g.groupId) || [],
+    contactReminderEnabled: person?.contactReminderEnabled || false,
+    contactReminderInterval: person?.contactReminderInterval || 1,
+    contactReminderIntervalUnit: (person?.contactReminderIntervalUnit || 'MONTHS') as ReminderIntervalUnit,
   });
 
   const [importantDates, setImportantDates] = useState<Array<{
@@ -484,6 +492,74 @@ export default function PersonForm({
           >
             Today
           </button>
+        </div>
+
+        {/* Contact Reminder */}
+        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="flex items-center flex-wrap gap-2">
+            <button
+              type="button"
+              id="contact-reminder-toggle"
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  contactReminderEnabled: !formData.contactReminderEnabled,
+                })
+              }
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+                formData.contactReminderEnabled
+                  ? 'bg-blue-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                  formData.contactReminderEnabled
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <label
+              htmlFor="contact-reminder-toggle"
+              className={`text-sm ${formData.contactReminderEnabled ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}
+            >
+              Remind me to catch up after
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="99"
+              disabled={!formData.contactReminderEnabled}
+              value={formData.contactReminderInterval}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  contactReminderInterval: Math.max(
+                    1,
+                    parseInt(e.target.value) || 1
+                  ),
+                })
+              }
+              className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <select
+              disabled={!formData.contactReminderEnabled}
+              value={formData.contactReminderIntervalUnit}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  contactReminderIntervalUnit: e.target
+                    .value as ReminderIntervalUnit,
+                })
+              }
+              className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="WEEKS">weeks</option>
+              <option value="MONTHS">months</option>
+              <option value="YEARS">years</option>
+            </select>
+          </div>
         </div>
       </div>
 

@@ -65,8 +65,19 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { name, surname, nickname, lastContact, notes, relationshipToUserId, groupIds, importantDates } =
-      body;
+    const {
+      name,
+      surname,
+      nickname,
+      lastContact,
+      notes,
+      relationshipToUserId,
+      groupIds,
+      importantDates,
+      contactReminderEnabled,
+      contactReminderInterval,
+      contactReminderIntervalUnit,
+    } = body;
 
     // Check if person exists and belongs to user
     const existingPerson = await prisma.person.findUnique({
@@ -97,6 +108,9 @@ export async function PUT(
       nickname: nickname || null,
       lastContact: lastContact ? new Date(lastContact) : null,
       notes: notes || null,
+      contactReminderEnabled: contactReminderEnabled ?? false,
+      contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
+      contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
       groups: groupIds
         ? {
             deleteMany: {},

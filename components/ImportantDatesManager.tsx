@@ -183,13 +183,7 @@ export default function ImportantDatesManager({
 
     return (
       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-        <div className="flex items-center justify-between mb-3">
-          <label
-            htmlFor={`${idPrefix}-reminder-toggle`}
-            className="text-xs font-medium text-gray-700 dark:text-gray-300"
-          >
-            Remind me
-          </label>
+        <div className="flex items-center gap-2 mb-3">
           <button
             type="button"
             id={`${idPrefix}-reminder-toggle`}
@@ -197,7 +191,7 @@ export default function ImportantDatesManager({
               reminderEnabled: !date.reminderEnabled,
               reminderType: !date.reminderEnabled ? (isFuture ? 'ONCE' : 'RECURRING') : date.reminderType,
             })}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
               date.reminderEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
             }`}
           >
@@ -207,6 +201,12 @@ export default function ImportantDatesManager({
               }`}
             />
           </button>
+          <label
+            htmlFor={`${idPrefix}-reminder-toggle`}
+            className="text-xs font-medium text-gray-700 dark:text-gray-300"
+          >
+            Remind me
+          </label>
         </div>
 
         {date.reminderEnabled && (

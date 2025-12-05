@@ -36,16 +36,20 @@ model User {
 
 // Person Model - Core entity representing people in the user's network
 model Person {
-  id                   String    @id @default(cuid())
-  userId               String
-  name                 String
-  surname              String?
-  nickname             String?
-  lastContact          DateTime?
-  notes                String?   @db.Text
-  relationshipToUserId String?   // Relationship from user to this person (nullable for indirect connections)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                          String                @id @default(cuid())
+  userId                      String
+  name                        String
+  surname                     String?
+  nickname                    String?
+  lastContact                 DateTime?
+  notes                       String?               @db.Text
+  relationshipToUserId        String?               // Relationship from user to this person (nullable for indirect connections)
+  contactReminderEnabled      Boolean               @default(false)
+  contactReminderInterval     Int?
+  contactReminderIntervalUnit ReminderIntervalUnit?
+  lastContactReminderSent     DateTime?
+  createdAt                   DateTime              @default(now())
+  updatedAt                   DateTime              @updatedAt
 
   // Relations
   user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -61,6 +65,7 @@ model Person {
   @@index([userId, name]) // For name sorting/search
   @@index([userId, surname]) // For surname sorting/search
   @@index([userId, nickname]) // For nickname sorting/search
+  @@index([contactReminderEnabled, lastContact]) // For contact reminder queries
   @@map("people")
 }
 

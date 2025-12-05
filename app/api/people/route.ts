@@ -48,8 +48,20 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, surname, nickname, lastContact, notes, relationshipToUserId, groupIds, connectedThroughId, importantDates } =
-      body;
+    const {
+      name,
+      surname,
+      nickname,
+      lastContact,
+      notes,
+      relationshipToUserId,
+      groupIds,
+      connectedThroughId,
+      importantDates,
+      contactReminderEnabled,
+      contactReminderInterval,
+      contactReminderIntervalUnit,
+    } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -90,6 +102,9 @@ export async function POST(request: Request) {
       nickname: nickname || null,
       lastContact: lastContact ? new Date(lastContact) : null,
       notes: notes || null,
+      contactReminderEnabled: contactReminderEnabled ?? false,
+      contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
+      contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
       groups: groupIds
         ? {
             create: groupIds.map((groupId: string) => ({
