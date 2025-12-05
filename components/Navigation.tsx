@@ -38,8 +38,8 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
               <Image
                 src="/logo.svg"
                 alt="NameTag Logo"
-                width={32}
-                height={32}
+                width={64}
+                height={64}
                 className="text-gray-900 dark:text-white"
               />
             </Link>
