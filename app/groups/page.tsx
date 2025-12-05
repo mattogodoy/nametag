@@ -5,12 +5,31 @@ import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
 import EmptyState from '@/components/EmptyState';
 
-export default async function GroupsPage() {
+const ITEMS_PER_PAGE = 24;
+
+export default async function GroupsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
     redirect('/login');
   }
+
+  const params = await searchParams;
+  const currentPage = Number(params.page) || 1;
+  const skip = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  // Get total count for pagination
+  const totalCount = await prisma.group.count({
+    where: {
+      userId: session.user.id,
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const groups = await prisma.group.findMany({
     where: {
@@ -26,6 +45,8 @@ export default async function GroupsPage() {
     orderBy: {
       name: 'asc',
     },
+    skip,
+    take: ITEMS_PER_PAGE,
   });
 
   return (
@@ -51,7 +72,7 @@ export default async function GroupsPage() {
             </Link>
           </div>
 
-          {groups.length === 0 ? (
+          {totalCount === 0 ? (
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
               <EmptyState
                 icon={
@@ -68,41 +89,114 @@ export default async function GroupsPage() {
               />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {groups.map((group) => (
-                <Link
-                  key={group.id}
-                  href={`/groups/${group.id}`}
-                  className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                        {group.name}
-                      </h3>
-                      {group.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {group.description}
-                        </p>
+            <>
+              {totalPages > 1 && (
+                <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  Showing {skip + 1}-{Math.min(skip + ITEMS_PER_PAGE, totalCount)} of {totalCount} groups
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {groups.map((group) => (
+                  <Link
+                    key={group.id}
+                    href={`/groups/${group.id}`}
+                    className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          {group.name}
+                        </h3>
+                        {group.description && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {group.description}
+                          </p>
+                        )}
+                      </div>
+                      {group.color && (
+                        <div
+                          className="w-6 h-6 rounded-full ml-3 flex-shrink-0"
+                          style={{ backgroundColor: group.color }}
+                        />
                       )}
                     </div>
-                    {group.color && (
-                      <div
-                        className="w-6 h-6 rounded-full ml-3 flex-shrink-0"
-                        style={{ backgroundColor: group.color }}
-                      />
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {group._count.people === 0 && 'No members yet'}
+                        {group._count.people === 1 && '1 member'}
+                        {group._count.people > 1 && `${group._count.people} members`}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center">
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {currentPage > 1 ? (
+                      <Link
+                        href={`/groups?page=${currentPage - 1}`}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <span className="sr-only">Previous</span>
+                        ←
+                      </Link>
+                    ) : (
+                      <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                        <span className="sr-only">Previous</span>
+                        ←
+                      </span>
                     )}
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {group._count.people === 0 && 'No members yet'}
-                      {group._count.people === 1 && '1 member'}
-                      {group._count.people > 1 && `${group._count.people} members`}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+
+                    {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 4) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 3) {
+                        pageNum = totalPages - 6 + i;
+                      } else {
+                        pageNum = currentPage - 3 + i;
+                      }
+
+                      return pageNum === currentPage ? (
+                        <span
+                          key={pageNum}
+                          className="relative inline-flex items-center px-4 py-2 border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-sm font-medium text-blue-600 dark:text-blue-400"
+                        >
+                          {pageNum}
+                        </span>
+                      ) : (
+                        <Link
+                          key={pageNum}
+                          href={`/groups?page=${pageNum}`}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {pageNum}
+                        </Link>
+                      );
+                    })}
+
+                    {currentPage < totalPages ? (
+                      <Link
+                        href={`/groups?page=${currentPage + 1}`}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <span className="sr-only">Next</span>
+                        →
+                      </Link>
+                    ) : (
+                      <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                        <span className="sr-only">Next</span>
+                        →
+                      </span>
+                    )}
+                  </nav>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
