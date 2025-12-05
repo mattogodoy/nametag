@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { updateImportantDateSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 // PUT /api/people/[id]/important-dates/[dateId] - Update an important date
 export const PUT = withAuth(async (request, session, context) => {
   try {
     const { id, dateId } = await context!.params;
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(updateImportantDateSchema, body);
 
     if (!validation.success) {

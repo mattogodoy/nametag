@@ -3,7 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { resetPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(resetPasswordSchema, body);
 
     if (!validation.success) {

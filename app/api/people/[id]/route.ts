@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people/[id] - Get a single person
@@ -43,7 +43,7 @@ export const PUT = withAuth(async (request, session, context) => {
   try {
     const { id } = await context!.params;
 
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(updatePersonSchema, body);
 
     if (!validation.success) {
@@ -155,7 +155,7 @@ export const DELETE = withAuth(async (request, session, context) => {
     }
 
     // Parse request body to check if we should also delete orphans
-    const body = await request.json().catch(() => ({}));
+    const body = await parseRequestBody(request).catch(() => ({}));
     const validation = validateRequest(deletePersonSchema, body);
 
     // Use validated data, or defaults if body was empty/invalid

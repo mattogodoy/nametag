@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
 export const DELETE = withAuth(async (request, session) => {
   try {
-    const body = await request.json();
+    const body = await parseRequestBody<{ password?: string; confirmationText?: string }>(request);
     const { password, confirmationText } = body;
 
     if (!password) {

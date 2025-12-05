@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people - List all people for the current user
@@ -32,7 +32,7 @@ export const GET = withAuth(async (_request, session) => {
 // POST /api/people - Create a new person
 export const POST = withAuth(async (request, session) => {
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(createPersonSchema, body);
 
     if (!validation.success) {

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createRelationshipTypeSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 export const GET = withAuth(async (_request, session) => {
   // Get all relationship types (both default and user-created)
@@ -31,7 +31,7 @@ export const GET = withAuth(async (_request, session) => {
 
 export const POST = withAuth(async (request, session) => {
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(createRelationshipTypeSchema, body);
 
     if (!validation.success) {

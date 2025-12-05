@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipTypeSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 export const GET = withAuth(async (_request, session, context) => {
   const { id } = await context!.params;
@@ -54,7 +54,7 @@ export const PUT = withAuth(async (request, session, context) => {
       return apiResponse.forbidden('Cannot modify default relationship types');
     }
 
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(updateRelationshipTypeSchema, body);
 
     if (!validation.success) {

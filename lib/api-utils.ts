@@ -4,6 +4,71 @@ import { auth } from './auth';
 import { logger } from './logger';
 
 /**
+ * Maximum request body size in bytes (1MB default)
+ * This helps prevent denial of service attacks with large payloads
+ */
+export const MAX_REQUEST_SIZE = 1 * 1024 * 1024; // 1MB
+
+/**
+ * Check if a request body exceeds the size limit
+ * Returns the parsed JSON body if within limits, or throws an error if exceeded
+ *
+ * @example
+ * const body = await parseRequestBody(request);
+ * // throws if body > 1MB
+ *
+ * @example
+ * const body = await parseRequestBody(request, 512 * 1024); // 512KB limit
+ */
+export async function parseRequestBody<T = unknown>(
+  request: Request,
+  maxSize = MAX_REQUEST_SIZE
+): Promise<T> {
+  // Check Content-Length header first (fast path)
+  const contentLength = request.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > maxSize) {
+    throw new RequestTooLargeError(maxSize);
+  }
+
+  // Clone the request to read the body
+  const clonedRequest = request.clone();
+  const text = await clonedRequest.text();
+
+  // Check actual body size
+  const bodySize = new TextEncoder().encode(text).length;
+  if (bodySize > maxSize) {
+    throw new RequestTooLargeError(maxSize);
+  }
+
+  // Parse JSON
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new InvalidJsonError();
+  }
+}
+
+/**
+ * Custom error for request too large
+ */
+export class RequestTooLargeError extends Error {
+  constructor(maxSize: number) {
+    super(`Request body exceeds maximum size of ${Math.round(maxSize / 1024)}KB`);
+    this.name = 'RequestTooLargeError';
+  }
+}
+
+/**
+ * Custom error for invalid JSON
+ */
+export class InvalidJsonError extends Error {
+  constructor() {
+    super('Invalid JSON in request body');
+    this.name = 'InvalidJsonError';
+  }
+}
+
+/**
  * Standard API response helpers
  * Provides consistent response formatting across all API endpoints
  */
@@ -63,6 +128,12 @@ export const apiResponse = {
     NextResponse.json({ error: message }, { status: 404 }),
 
   /**
+   * Return 413 Payload Too Large
+   */
+  payloadTooLarge: (message = 'Request body too large') =>
+    NextResponse.json({ error: message }, { status: 413 }),
+
+  /**
    * Return 500 Internal Server Error
    */
   serverError: (message = 'Internal server error') =>
@@ -78,6 +149,17 @@ export function handleApiError(
   context: string,
   additionalInfo?: Record<string, unknown>
 ): NextResponse {
+  // Handle specific error types with appropriate status codes
+  if (error instanceof RequestTooLargeError) {
+    logger.warn(`Request too large in ${context}`, { context, ...additionalInfo });
+    return apiResponse.payloadTooLarge(error.message);
+  }
+
+  if (error instanceof InvalidJsonError) {
+    logger.warn(`Invalid JSON in ${context}`, { context, ...additionalInfo });
+    return apiResponse.error(error.message);
+  }
+
   const errorObj = error instanceof Error ? error : new Error(String(error));
 
   logger.error(`API Error in ${context}`, {

@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { updateProfileSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -12,7 +12,7 @@ function generateVerificationToken(): string {
 
 export const PUT = withAuth(async (request, session) => {
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(updateProfileSchema, body);
 
     if (!validation.success) {

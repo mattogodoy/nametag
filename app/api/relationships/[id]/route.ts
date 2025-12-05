@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 // PUT /api/relationships/[id] - Update a relationship
 export const PUT = withAuth(async (request, session, context) => {
   try {
     const { id } = await context!.params;
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(updateRelationshipSchema, body);
 
     if (!validation.success) {

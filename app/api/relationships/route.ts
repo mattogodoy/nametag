@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { createRelationshipSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 // POST /api/relationships - Create a new relationship (bidirectional)
 export const POST = withAuth(async (request, session) => {
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(createRelationshipSchema, body);
 
     if (!validation.success) {

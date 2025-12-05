@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { importDataSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, MAX_REQUEST_SIZE, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 import { z } from 'zod';
 
@@ -8,7 +8,8 @@ type ImportData = z.infer<typeof importDataSchema>;
 
 export const POST = withAuth(async (request, session) => {
   try {
-    const body = await request.json();
+    // Use larger size limit for import data (5MB)
+    const body = await parseRequestBody(request, MAX_REQUEST_SIZE * 5);
     const validation = validateRequest(importDataSchema, body);
 
     if (!validation.success) {

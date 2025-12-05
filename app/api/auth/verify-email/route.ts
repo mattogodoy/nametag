@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
-    const { token } = await request.json();
+    const { token } = await parseRequestBody<{ token?: string }>(request);
 
     if (!token) {
       return NextResponse.json(

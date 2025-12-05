@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { registerSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
 const TOKEN_EXPIRY_HOURS = 24;
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(registerSchema, body);
 
     if (!validation.success) {

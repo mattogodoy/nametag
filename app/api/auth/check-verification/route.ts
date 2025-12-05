@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkVerificationSchema, validateRequest } from '@/lib/validations';
+import { parseRequestBody } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(checkVerificationSchema, body);
 
     if (!validation.success) {

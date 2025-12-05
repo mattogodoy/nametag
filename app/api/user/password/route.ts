@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { updatePasswordSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 export const PUT = withAuth(async (request, session) => {
   try {
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const validation = validateRequest(updatePasswordSchema, body);
 
     if (!validation.success) {
