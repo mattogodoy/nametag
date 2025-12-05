@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
 import { handleApiError } from '@/lib/api-utils';
+import { Prisma } from '@prisma/client';
 
 // GET /api/people/[id] - Get a single person
 export async function GET(
@@ -99,7 +100,7 @@ export async function PUT(
     // (they are connected through other people in the network)
 
     // Build update data
-    const updateData: any = {
+    const updateData: Prisma.PersonUpdateInput = {
       name,
       surname: surname || null,
       nickname: nickname || null,
@@ -111,7 +112,7 @@ export async function PUT(
       groups: groupIds
         ? {
             deleteMany: {},
-            create: groupIds.map((groupId: string) => ({
+            create: groupIds.map((groupId) => ({
               groupId,
             })),
           }
@@ -129,14 +130,11 @@ export async function PUT(
             })),
           }
         : undefined,
+      // Only update relationshipToUserId if it's provided
+      relationshipToUser: relationshipToUserId
+        ? { connect: { id: relationshipToUserId } }
+        : undefined,
     };
-
-    // Only update relationshipToUserId if it's provided
-    if (relationshipToUserId) {
-      updateData.relationshipToUser = {
-        connect: { id: relationshipToUserId }
-      };
-    }
 
     // Update person and handle group associations
     const person = await prisma.person.update({

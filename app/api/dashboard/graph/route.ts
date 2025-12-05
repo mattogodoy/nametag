@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
 import { handleApiError } from '@/lib/api-utils';
+import { Prisma } from '@prisma/client';
 
 interface GraphNode {
   id: string;
@@ -33,18 +34,17 @@ export async function GET(request: Request) {
   const limit = searchParams.get('limit');
 
   // Build where clause
-  const whereClause: any = {
+  const whereClause: Prisma.PersonWhereInput = {
     userId: session.user.id,
-  };
-
-  // Filter by group if specified
-  if (groupId && groupId !== 'all') {
-    whereClause.groups = {
-      some: {
-        groupId: groupId,
+    // Filter by group if specified
+    ...(groupId && groupId !== 'all' && {
+      groups: {
+        some: {
+          groupId: groupId,
+        },
       },
-    };
-  }
+    }),
+  };
 
   // Fetch people with optimized select to minimize payload
   const people = await prisma.person.findMany({

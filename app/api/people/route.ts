@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
 import { handleApiError } from '@/lib/api-utils';
+import { Prisma } from '@prisma/client';
 
 // GET /api/people - List all people for the current user
 export async function GET() {
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     // Create person data based on whether it's a direct or indirect connection
-    const personData: any = {
+    const personData: Prisma.PersonCreateInput = {
       user: {
         connect: { id: session.user.id },
       },
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
       contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
       groups: groupIds
         ? {
-            create: groupIds.map((groupId: string) => ({
+            create: groupIds.map((groupId) => ({
               groupId,
             })),
           }
@@ -121,14 +122,11 @@ export async function POST(request: Request) {
             })),
           }
         : undefined,
+      // Only add relationshipToUser if NOT connected through another person
+      relationshipToUser: !connectedThroughId && relationshipToUserId
+        ? { connect: { id: relationshipToUserId } }
+        : undefined,
     };
-
-    // Only add relationshipToUser if NOT connected through another person
-    if (!connectedThroughId && relationshipToUserId) {
-      personData.relationshipToUser = {
-        connect: { id: relationshipToUserId }
-      };
-    }
 
     const person = await prisma.person.create({
       data: personData,
