@@ -9,7 +9,8 @@
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
       "Bash(npx prisma:*)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       subject,
       html,
       text,
+      from: 'accounts',
     });
 
     return NextResponse.json(

@@ -2,16 +2,24 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "noreply@nametag.one";
+const EMAIL_DOMAIN = process.env.EMAIL_DOMAIN || "nametag.one";
+
+// Different from addresses for different email types
+export const fromAddresses = {
+  accounts: `Name Tag Accounts <accounts@${EMAIL_DOMAIN}>`,
+  reminders: `Name Tag Reminders <reminders@${EMAIL_DOMAIN}>`,
+  default: `Name Tag <hello@${EMAIL_DOMAIN}>`,
+};
 
 export type SendEmailOptions = {
   to: string | string[];
   subject: string;
   html: string;
   text?: string;
+  from?: keyof typeof fromAddresses;
 };
 
-export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, text, from = 'default' }: SendEmailOptions) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("RESEND_API_KEY not configured. Email not sent:", { to, subject });
     return { success: false, error: "Email service not configured" };
@@ -19,7 +27,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: fromAddresses[from],
       to,
       subject,
       html,

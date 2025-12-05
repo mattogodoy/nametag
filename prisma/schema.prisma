@@ -129,6 +129,7 @@ model ImportantDate {
   reminderType         ReminderType?
   reminderInterval     Int?                  // For recurring reminders
   reminderIntervalUnit ReminderIntervalUnit? // For recurring reminders
+  lastReminderSent     DateTime?             // Track when last reminder was sent
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
@@ -137,6 +138,7 @@ model ImportantDate {
 
   @@index([personId])
   @@index([personId, date]) // For sorting by date
+  @@index([reminderEnabled, date]) // For querying due reminders
   @@map("important_dates")
 }
 

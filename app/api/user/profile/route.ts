@@ -78,6 +78,7 @@ export async function PUT(request: Request) {
         subject,
         html,
         text,
+        from: 'accounts',
       });
 
       return NextResponse.json({ emailChanged: true });

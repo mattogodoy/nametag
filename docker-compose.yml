@@ -38,5 +38,31 @@ services:
         condition: service_healthy
     command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run dev"
 
+  cron:
+    image: alpine:3.19
+    container_name: nametag-cron
+    restart: unless-stopped
+    environment:
+      - CRON_SECRET=${CRON_SECRET}
+    depends_on:
+      - app
+    command: >
+      sh -c "
+        echo '0 8 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/send-reminders > /proc/1/fd/1 2>&1' > /etc/crontabs/root &&
+        crond -f -l 2
+      "
+
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: nametag-pgweb
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - DATABASE_URL=postgres://nametag:nametag_dev_password@db:5432/nametag_db?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
