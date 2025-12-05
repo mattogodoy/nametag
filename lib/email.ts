@@ -79,4 +79,16 @@ export const emailTemplates = {
     `,
     text: `Time to catch up with ${personName}!${lastContactDate ? ` Last contact: ${lastContactDate}.` : ''} You asked to be reminded to catch up after ${interval} of your last contact. Why not reach out today?`,
   }),
+
+  passwordReset: (resetUrl: string) => ({
+    subject: "Reset your NameTag password",
+    html: `
+      <h1>Password Reset Request</h1>
+      <p>We received a request to reset your password. Click the link below to set a new password:</p>
+      <p><a href="${resetUrl}">Reset Password</a></p>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you didn't request a password reset, you can safely ignore this email.</p>
+    `,
+    text: `Password Reset Request\n\nWe received a request to reset your password. Visit this link to set a new password: ${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request a password reset, you can safely ignore this email.`,
+  }),
 };

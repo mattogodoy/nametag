@@ -11,7 +11,8 @@
       "Bash(npx prisma:*)",
       "Bash(npm run build)",
       "Bash(chmod:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" npx prisma migrate reset:*)"
     ],
     "deny": [],
     "ask": []
