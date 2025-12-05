@@ -1,4 +1,4 @@
-# Name Tag
+# NameTag
 
 A personal relationships manager to help you remember the people in your life, their connections, and important details.
 

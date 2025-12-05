@@ -2,7 +2,7 @@
 
 # Script to set up the database (run this after docker-compose up)
 
-echo "🚀 Setting up Name Tag database..."
+echo "🚀 Setting up NameTag database..."
 echo ""
 
 # Wait for database to be ready

@@ -6,9 +6,9 @@ const EMAIL_DOMAIN = process.env.EMAIL_DOMAIN || "nametag.one";
 
 // Different from addresses for different email types
 export const fromAddresses = {
-  accounts: `Name Tag Accounts <accounts@${EMAIL_DOMAIN}>`,
-  reminders: `Name Tag Reminders <reminders@${EMAIL_DOMAIN}>`,
-  default: `Name Tag <hello@${EMAIL_DOMAIN}>`,
+  accounts: `NameTag Accounts <accounts@${EMAIL_DOMAIN}>`,
+  reminders: `NameTag Reminders <reminders@${EMAIL_DOMAIN}>`,
+  default: `NameTag <hello@${EMAIL_DOMAIN}>`,
 };
 
 export type SendEmailOptions = {
@@ -49,14 +49,14 @@ export async function sendEmail({ to, subject, html, text, from = 'default' }: S
 // Email template helpers for common use cases
 export const emailTemplates = {
   accountVerification: (verificationUrl: string) => ({
-    subject: "Verify your Name Tag account",
+    subject: "Verify your NameTag account",
     html: `
-      <h1>Welcome to Name Tag!</h1>
+      <h1>Welcome to NameTag!</h1>
       <p>Please verify your email address by clicking the link below:</p>
       <p><a href="${verificationUrl}">Verify Email</a></p>
       <p>If you didn't create an account, you can ignore this email.</p>
     `,
-    text: `Welcome to Name Tag! Please verify your email by visiting: ${verificationUrl}`,
+    text: `Welcome to NameTag! Please verify your email by visiting: ${verificationUrl}`,
   }),
 
   importantDateReminder: (personName: string, eventType: string, date: string) => ({

@@ -1,6 +1,6 @@
 # Database Setup Guide
 
-This guide explains how to set up the Name Tag database with Docker.
+This guide explains how to set up the NameTag database with Docker.
 
 ## Initial Setup
 

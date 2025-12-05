@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Name Tag - Personal Relationships Manager",
+  title: "NameTag - Personal Relationships Manager",
   description: "Manage your relationships, track important details, and visualize your network",
 };
 
