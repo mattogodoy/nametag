@@ -7,24 +7,66 @@ import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import { formatDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 
-function getRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+interface UpcomingEvent {
+  id: string;
+  personId: string;
+  personName: string;
+  type: 'important_date' | 'contact_reminder';
+  title: string;
+  date: Date;
+  daysUntil: number;
+}
 
-  if (diffDays === 0) {
-    return 'today';
-  } else if (diffDays === 1) {
-    return '1 day ago';
-  } else if (diffDays < 30) {
-    return `${diffDays} days ago`;
-  } else if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30);
-    return months === 1 ? '1 month ago' : `${months} months ago`;
-  } else {
-    const years = Math.floor(diffDays / 365);
-    return years === 1 ? '1 year ago' : `${years} years ago`;
+function getNextOccurrence(eventDate: Date, today: Date): Date {
+  const thisYearOccurrence = new Date(
+    today.getFullYear(),
+    eventDate.getMonth(),
+    eventDate.getDate()
+  );
+  thisYearOccurrence.setHours(0, 0, 0, 0);
+
+  const todayNormalized = new Date(today);
+  todayNormalized.setHours(0, 0, 0, 0);
+
+  if (thisYearOccurrence.getTime() >= todayNormalized.getTime()) {
+    return thisYearOccurrence;
   }
+
+  return new Date(
+    today.getFullYear() + 1,
+    eventDate.getMonth(),
+    eventDate.getDate()
+  );
+}
+
+function getIntervalMs(interval: number, unit: string): number {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  switch (unit) {
+    case 'WEEKS':
+      return interval * 7 * msPerDay;
+    case 'MONTHS':
+      return interval * 30 * msPerDay;
+    case 'YEARS':
+      return interval * 365 * msPerDay;
+    default:
+      return 30 * msPerDay;
+  }
+}
+
+function getDaysUntil(date: Date, today: Date): number {
+  const targetDate = new Date(date);
+  targetDate.setHours(0, 0, 0, 0);
+  const todayNormalized = new Date(today);
+  todayNormalized.setHours(0, 0, 0, 0);
+  return Math.round((targetDate.getTime() - todayNormalized.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function formatDaysUntil(days: number): string {
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  if (days < 7) return `In ${days} days`;
+  if (days < 14) return 'In 1 week';
+  return `In ${Math.floor(days / 7)} weeks`;
 }
 
 export default async function DashboardPage() {
@@ -41,8 +83,13 @@ export default async function DashboardPage() {
   });
   const dateFormat = user?.dateFormat || 'MDY';
 
-  // Fetch statistics and groups
-  const [peopleCount, groupsCount, relationshipsCount, recentPeople, groups] = await Promise.all([
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thirtyDaysFromNow = new Date(today);
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  // Fetch statistics, groups, and upcoming events data
+  const [peopleCount, groupsCount, relationshipsCount, groups, importantDates, peopleWithContactReminders] = await Promise.all([
     prisma.person.count({
       where: { userId: session.user.id },
     }),
@@ -54,26 +101,104 @@ export default async function DashboardPage() {
         person: { userId: session.user.id },
       },
     }),
+    prisma.group.findMany({
+      where: { userId: session.user.id },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.importantDate.findMany({
+      where: {
+        person: { userId: session.user.id },
+        reminderEnabled: true,
+      },
+      include: {
+        person: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            nickname: true,
+          },
+        },
+      },
+    }),
     prisma.person.findMany({
       where: {
         userId: session.user.id,
-        lastContact: { not: null },
+        contactReminderEnabled: true,
       },
-      orderBy: { lastContact: 'desc' },
-      take: 5,
       select: {
         id: true,
         name: true,
         surname: true,
         nickname: true,
         lastContact: true,
+        contactReminderInterval: true,
+        contactReminderIntervalUnit: true,
       },
     }),
-    prisma.group.findMany({
-      where: { userId: session.user.id },
-      orderBy: { name: 'asc' },
-    }),
   ]);
+
+  // Calculate upcoming events
+  const upcomingEvents: UpcomingEvent[] = [];
+
+  // Process important dates
+  for (const importantDate of importantDates) {
+    let eventDate: Date;
+
+    if (importantDate.reminderType === 'ONCE') {
+      eventDate = new Date(importantDate.date);
+    } else {
+      // Recurring - get next occurrence
+      eventDate = getNextOccurrence(new Date(importantDate.date), today);
+    }
+
+    const daysUntil = getDaysUntil(eventDate, today);
+
+    if (daysUntil >= 0 && daysUntil <= 30) {
+      upcomingEvents.push({
+        id: `important-${importantDate.id}`,
+        personId: importantDate.person.id,
+        personName: formatFullName(importantDate.person),
+        type: 'important_date',
+        title: importantDate.title,
+        date: eventDate,
+        daysUntil,
+      });
+    }
+  }
+
+  // Process contact reminders
+  for (const person of peopleWithContactReminders) {
+    const interval = person.contactReminderInterval || 1;
+    const unit = person.contactReminderIntervalUnit || 'MONTHS';
+    const intervalMs = getIntervalMs(interval, unit);
+
+    // Calculate when the reminder is due
+    const referenceDate = person.lastContact ? new Date(person.lastContact) : null;
+
+    if (referenceDate) {
+      const reminderDueDate = new Date(referenceDate.getTime() + intervalMs);
+      reminderDueDate.setHours(0, 0, 0, 0);
+
+      const daysUntil = getDaysUntil(reminderDueDate, today);
+
+      // Show if due within next 30 days (or already overdue)
+      if (daysUntil <= 30) {
+        upcomingEvents.push({
+          id: `contact-${person.id}`,
+          personId: person.id,
+          personName: formatFullName(person),
+          type: 'contact_reminder',
+          title: 'Time to catch up',
+          date: reminderDueDate,
+          daysUntil,
+        });
+      }
+    }
+  }
+
+  // Sort by days until (soonest first)
+  upcomingEvents.sort((a, b) => a.daysUntil - b.daysUntil);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -210,30 +335,58 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* Recent Contacts */}
-          {recentPeople.length > 0 && (
+          {/* Upcoming Events */}
+          {upcomingEvents.length > 0 && (
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Recent Contacts
+                Upcoming Events
               </h2>
               <div className="space-y-3">
-                {recentPeople.map((person) => (
+                {upcomingEvents.map((event) => (
                   <Link
-                    key={person.id}
-                    href={`/people/${person.id}`}
+                    key={event.id}
+                    href={`/people/${event.personId}`}
                     className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
-                    <span className="text-gray-900 dark:text-white font-medium">
-                      {formatFullName(person)}
-                    </span>
-                    {person.lastContact && (
-                      <span
-                        className="text-sm text-gray-500 dark:text-gray-400 cursor-help"
-                        title={formatDate(new Date(person.lastContact), dateFormat)}
-                      >
-                        {getRelativeTime(new Date(person.lastContact))}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${
+                        event.type === 'important_date'
+                          ? 'bg-purple-100 dark:bg-purple-900/30'
+                          : 'bg-blue-100 dark:bg-blue-900/30'
+                      }`}>
+                        {event.type === 'important_date' ? (
+                          <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-gray-900 dark:text-white font-medium">
+                          {event.personName}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {event.title}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-sm font-medium ${
+                        event.daysUntil <= 0
+                          ? 'text-red-600 dark:text-red-400'
+                          : event.daysUntil <= 3
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {event.daysUntil < 0 ? 'Overdue' : formatDaysUntil(event.daysUntil)}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(event.date, dateFormat)}
+                      </div>
+                    </div>
                   </Link>
                 ))}
               </div>
