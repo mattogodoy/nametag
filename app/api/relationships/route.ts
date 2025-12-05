@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createRelationshipSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 // POST /api/relationships - Create a new relationship (bidirectional)
 export async function POST(request: Request) {
@@ -121,10 +122,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ relationship }, { status: 201 });
   } catch (error) {
-    console.error('Error creating relationship:', error);
-    return NextResponse.json(
-      { error: 'Failed to create relationship' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'relationships-create');
   }
 }

@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { updateProfileSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -97,10 +98,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ user, emailChanged: false });
   } catch (error) {
-    console.error('Error updating profile:', error);
-    return NextResponse.json(
-      { error: 'Failed to update profile' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-profile-update');
   }
 }

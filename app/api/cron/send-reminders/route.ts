@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { formatFullName } from '@/lib/nameUtils';
+import { env } from '@/lib/env';
+import { handleApiError } from '@/lib/api-utils';
+import { logger, securityLogger } from '@/lib/logger';
+import { getClientIp } from '@/lib/api-utils';
 
 // This endpoint should be called by a cron job
 // Protect it with a secret key
@@ -9,17 +13,11 @@ export async function GET(request: Request) {
   try {
     // Verify the cron secret
     const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
 
-    if (!cronSecret) {
-      console.error('CRON_SECRET not configured');
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      );
-    }
-
-    if (authHeader !== `Bearer ${cronSecret}`) {
+    if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
+      securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', {
+        endpoint: 'send-reminders',
+      });
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -158,6 +156,13 @@ export async function GET(request: Request) {
       }
     }
 
+    logger.info('Reminders processed', {
+      sent: sentCount,
+      errors: errorCount,
+      processedImportantDates: importantDates.length,
+      processedContactReminders: peopleWithContactReminders.length,
+    });
+
     return NextResponse.json({
       success: true,
       sent: sentCount,
@@ -166,11 +171,7 @@ export async function GET(request: Request) {
       processedContactReminders: peopleWithContactReminders.length,
     });
   } catch (error) {
-    console.error('Error processing reminders:', error);
-    return NextResponse.json(
-      { error: 'Failed to process reminders' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'cron-send-reminders');
   }
 }
 

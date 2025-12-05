@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateGroupSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 // GET /api/groups/[id] - Get a single group
 export async function GET(
@@ -37,11 +38,7 @@ export async function GET(
 
     return NextResponse.json({ group });
   } catch (error) {
-    console.error('Error fetching group:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch group' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'groups-get');
   }
 }
 
@@ -114,11 +111,7 @@ export async function PUT(
 
     return NextResponse.json({ group });
   } catch (error) {
-    console.error('Error updating group:', error);
-    return NextResponse.json(
-      { error: 'Failed to update group' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'groups-update');
   }
 }
 
@@ -156,10 +149,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Group deleted successfully' });
   } catch (error) {
-    console.error('Error deleting group:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete group' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'groups-delete');
   }
 }

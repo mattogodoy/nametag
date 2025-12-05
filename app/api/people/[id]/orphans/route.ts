@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
+import { handleApiError } from '@/lib/api-utils';
 
 // GET /api/people/[id]/orphans - Check which people would become orphans if this person is deleted
 export async function GET(
@@ -16,6 +17,18 @@ export async function GET(
     }
 
     const { id } = await params;
+
+    // Verify the person exists and belongs to the current user
+    const person = await prisma.person.findUnique({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+    });
+
+    if (!person) {
+      return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+    }
 
     // Get all people related to this person (both directions)
     const relationships = await prisma.relationship.findMany({
@@ -94,10 +107,6 @@ export async function GET(
 
     return NextResponse.json({ orphans: potentialOrphans });
   } catch (error) {
-    console.error('Error checking for orphans:', error);
-    return NextResponse.json(
-      { error: 'Failed to check for orphans' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'people-orphans');
   }
 }

@@ -3,6 +3,8 @@ import * as bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { resetPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   // Check rate limit
@@ -52,15 +54,13 @@ export async function POST(request: Request) {
       },
     });
 
+    logger.info('Password reset successful', { userId: user.id });
+
     return NextResponse.json(
       { message: 'Password has been reset successfully. You can now log in with your new password.' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Reset password error:', error);
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'reset-password');
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 // PUT /api/relationships/[id] - Update a relationship
 export async function PUT(
@@ -100,11 +101,7 @@ export async function PUT(
 
     return NextResponse.json({ relationship });
   } catch (error) {
-    console.error('Error updating relationship:', error);
-    return NextResponse.json(
-      { error: 'Failed to update relationship' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'relationships-update');
   }
 }
 
@@ -165,10 +162,6 @@ export async function DELETE(
       message: 'Relationship deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting relationship:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete relationship' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'relationships-delete');
   }
 }

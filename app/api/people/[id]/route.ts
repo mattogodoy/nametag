@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 // GET /api/people/[id] - Get a single person
 export async function GET(
@@ -43,11 +44,7 @@ export async function GET(
 
     return NextResponse.json({ person });
   } catch (error) {
-    console.error('Error fetching person:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch person' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'people-get');
   }
 }
 
@@ -158,11 +155,7 @@ export async function PUT(
 
     return NextResponse.json({ person });
   } catch (error) {
-    console.error('Error updating person:', error);
-    return NextResponse.json(
-      { error: 'Failed to update person' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'people-update');
   }
 }
 
@@ -222,10 +215,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Person deleted successfully' });
   } catch (error) {
-    console.error('Error deleting person:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete person' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'people-delete');
   }
 }

@@ -1,8 +1,9 @@
 import { Resend } from "resend";
+import { env } from "./env";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
-const EMAIL_DOMAIN = process.env.EMAIL_DOMAIN || "nametag.one";
+const EMAIL_DOMAIN = env.EMAIL_DOMAIN;
 
 // Different from addresses for different email types
 export const fromAddresses = {
@@ -20,11 +21,6 @@ export type SendEmailOptions = {
 };
 
 export async function sendEmail({ to, subject, html, text, from = 'default' }: SendEmailOptions) {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn("RESEND_API_KEY not configured. Email not sent:", { to, subject });
-    return { success: false, error: "Email service not configured" };
-  }
-
   try {
     const { data, error } = await resend.emails.send({
       from: fromAddresses[from],

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
@@ -50,15 +52,13 @@ export async function POST(request: Request) {
       },
     });
 
+    logger.info('Email verified successfully', { userId: user.id });
+
     return NextResponse.json(
       { message: 'Email verified successfully. You can now log in.' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Email verification error:', error);
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'verify-email');
   }
 }

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
+import { handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function DELETE(request: Request) {
   try {
@@ -53,15 +55,13 @@ export async function DELETE(request: Request) {
       where: { id: session.user.id },
     });
 
+    logger.info('Account deleted', { userId: session.user.id });
+
     return NextResponse.json({
       message: 'Account deleted successfully',
       success: true,
     });
   } catch (error) {
-    console.error('Error deleting account:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete account' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-delete');
   }
 }

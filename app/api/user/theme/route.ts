@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateThemeSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function PUT(request: Request) {
   try {
@@ -27,10 +28,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ user });
   } catch (error) {
-    console.error('Error updating theme:', error);
-    return NextResponse.json(
-      { error: 'Failed to update theme' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-theme-update');
   }
 }

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { updatePasswordSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function PUT(request: Request) {
   try {
@@ -51,10 +52,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ message: 'Password changed successfully' });
   } catch (error) {
-    console.error('Error changing password:', error);
-    return NextResponse.json(
-      { error: 'Failed to change password' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-password-change');
   }
 }

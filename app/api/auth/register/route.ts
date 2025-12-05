@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { registerSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -76,6 +78,8 @@ export async function POST(request: Request) {
       from: 'accounts',
     });
 
+    logger.info('User registered successfully', { email, userId: user.id });
+
     return NextResponse.json(
       {
         message: 'Account created. Please check your email to verify your account.',
@@ -88,10 +92,6 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Registration error:', error);
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'register');
   }
 }

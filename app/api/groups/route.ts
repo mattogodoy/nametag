@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createGroupSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 // GET /api/groups - List all groups for the current user
 export async function GET() {
@@ -30,11 +31,7 @@ export async function GET() {
 
     return NextResponse.json({ groups });
   } catch (error) {
-    console.error('Error fetching groups:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch groups' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'groups-list');
   }
 }
 
@@ -85,10 +82,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ group }, { status: 201 });
   } catch (error) {
-    console.error('Error creating group:', error);
-    return NextResponse.json(
-      { error: 'Failed to create group' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'groups-create');
   }
 }

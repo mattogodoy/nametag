@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
+import { handleApiError } from '@/lib/api-utils';
 
 // GET /api/people - List all people for the current user
 export async function GET() {
@@ -31,11 +32,7 @@ export async function GET() {
 
     return NextResponse.json({ people });
   } catch (error) {
-    console.error('Error fetching people:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch people' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'people-list');
   }
 }
 
@@ -175,10 +172,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ person }, { status: 201 });
   } catch (error) {
-    console.error('Error creating person:', error);
-    return NextResponse.json(
-      { error: 'Failed to create person' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'people-create');
   }
 }

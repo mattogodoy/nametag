@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { securityLogger } from './logger';
 
 interface RateLimitEntry {
   count: number;
@@ -115,6 +116,14 @@ export function checkRateLimit(
     // Rate limit exceeded
     const retryAfterSeconds = Math.ceil((entry.resetTime - now) / 1000);
     const retryAfterMinutes = Math.ceil(retryAfterSeconds / 60);
+
+    // Log the rate limit violation
+    securityLogger.rateLimitExceeded(ip, type, {
+      attempts: entry.count,
+      maxAttempts: config.maxAttempts,
+      retryAfterSeconds,
+      identifier: identifier || undefined,
+    });
 
     return NextResponse.json(
       {

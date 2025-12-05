@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
+import { handleApiError } from '@/lib/api-utils';
 
 interface GraphNode {
   id: string;
@@ -19,13 +20,14 @@ interface GraphEdge {
 }
 
 export async function GET(request: Request) {
-  const session = await auth();
+  try {
+    const session = await auth();
 
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-  // Parse query parameters for filtering
+    // Parse query parameters for filtering
   const { searchParams } = new URL(request.url);
   const groupId = searchParams.get('groupId');
   const limit = searchParams.get('limit');
@@ -150,5 +152,8 @@ export async function GET(request: Request) {
     });
   });
 
-  return NextResponse.json({ nodes, edges });
+    return NextResponse.json({ nodes, edges });
+  } catch (error) {
+    return handleApiError(error, 'dashboard-graph');
+  }
 }
