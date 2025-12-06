@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 
 export interface ConfirmationModalProps {
   isOpen: boolean;
@@ -31,46 +31,82 @@ export default function ConfirmationModal({
   error = null,
   variant = 'danger',
 }: ConfirmationModalProps) {
-  if (!isOpen) return null;
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
-  const confirmButtonStyles = {
-    danger: 'bg-red-600 hover:bg-red-700',
-    warning: 'bg-yellow-600 hover:bg-yellow-700',
-    default: 'bg-blue-600 hover:bg-blue-700',
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      dialog.showModal();
+    } else {
+      dialog.close();
+    }
+  }, [isOpen]);
+
+  const variantStyles = {
+    danger: 'btn-error',
+    warning: 'btn-warning',
+    default: 'btn-primary',
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {title}
-        </h3>
+  const variantIcon = {
+    danger: 'icon-[tabler--alert-triangle]',
+    warning: 'icon-[tabler--alert-circle]',
+    default: 'icon-[tabler--info-circle]',
+  };
 
-        <div className="mb-4">{children}</div>
+  if (!isOpen) return null;
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="modal"
+      onClose={onClose}
+    >
+      <div className="modal-box">
+        <div className="flex items-start gap-4">
+          <div className={`flex-shrink-0 ${variant === 'danger' ? 'text-error' : variant === 'warning' ? 'text-warning' : 'text-info'}`}>
+            <span className={`${variantIcon[variant]} size-6`} />
+          </div>
+          <div className="flex-1">
+            <h3 className="modal-title text-lg font-semibold">{title}</h3>
+            <div className="mt-2 text-base-content/70">
+              {children}
+            </div>
+          </div>
+        </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 rounded text-sm">
-            {error}
+          <div className="alert alert-error mt-4">
+            <span className="icon-[tabler--alert-circle] size-5" />
+            <span>{error}</span>
           </div>
         )}
 
-        <div className="flex justify-end space-x-3">
+        <div className="modal-action">
           <button
+            type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="btn btn-outline"
           >
             {cancelText}
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={isLoading || confirmDisabled}
-            className={`px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${confirmButtonStyles[variant]}`}
+            className={`btn ${variantStyles[variant]}`}
           >
+            {isLoading && <span className="loading loading-spinner loading-sm" />}
             {isLoading ? loadingText : confirmText}
           </button>
         </div>
       </div>
-    </div>
+      <form method="dialog" className="modal-backdrop">
+        <button type="button" onClick={onClose}>close</button>
+      </form>
+    </dialog>
   );
 }

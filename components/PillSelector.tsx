@@ -104,7 +104,7 @@ export default function PillSelector<T extends PillItem>({
   const defaultRenderPill = (item: T, onRemoveClick: () => void) => (
     <div
       key={item.id}
-      className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium"
+      className="badge badge-lg gap-2"
     >
       {item.color && (
         <div
@@ -120,22 +120,10 @@ export default function PillSelector<T extends PillItem>({
           onRemoveClick();
         }}
         disabled={isLoading}
-        className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors disabled:opacity-50"
+        className="hover:bg-base-content/20 rounded-full p-0.5 transition-colors disabled:opacity-50"
         aria-label={`Remove ${item.label}`}
       >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
+        <span className="icon-[tabler--x] size-4" />
       </button>
     </div>
   );
@@ -149,7 +137,7 @@ export default function PillSelector<T extends PillItem>({
           style={{ backgroundColor: item.color }}
         />
       )}
-      <span className="text-gray-900 dark:text-white">{item.label}</span>
+      <span>{item.label}</span>
     </>
   );
 
@@ -159,14 +147,14 @@ export default function PillSelector<T extends PillItem>({
   return (
     <div className="relative">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          {label}
+        <label className="label">
+          <span className="label-text">{label}</span>
         </label>
       )}
 
       {/* Input box with pills */}
       <div
-        className="min-h-[60px] p-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus-within:border-blue-500 dark:focus-within:border-blue-400 transition-colors cursor-text"
+        className="min-h-[60px] p-2 border-2 border-base-content/20 rounded-lg bg-base-100 focus-within:border-primary transition-colors cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         <div className="flex flex-wrap gap-2 items-center">
@@ -198,7 +186,7 @@ export default function PillSelector<T extends PillItem>({
                   : placeholder.replace('Type to search', 'Add more')
               }
               disabled={isLoading}
-              className="w-full px-2 py-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none disabled:opacity-50"
+              className="w-full px-2 py-1 bg-transparent text-base-content placeholder-base-content/40 focus:outline-none disabled:opacity-50"
             />
           </div>
         </div>
@@ -206,41 +194,37 @@ export default function PillSelector<T extends PillItem>({
 
       {/* Suggestions dropdown */}
       {showSuggestions && (searchTerm || showAllOnFocus) && (
-        <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+        <ul className="menu absolute left-0 right-0 mt-1 bg-base-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 p-1">
           {filteredSuggestions.length > 0 ? (
-            <ul>
-              {filteredSuggestions.map((item, index) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleAdd(item)}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 ${
-                      index === highlightedIndex
-                        ? 'bg-gray-100 dark:bg-gray-600'
-                        : ''
-                    }`}
-                  >
-                    {suggestionRenderer(item)}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            filteredSuggestions.map((item, index) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => handleAdd(item)}
+                  className={`flex items-center gap-2 ${
+                    index === highlightedIndex ? 'active' : ''
+                  }`}
+                >
+                  {suggestionRenderer(item)}
+                </button>
+              </li>
+            ))
           ) : searchTerm ? (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            <li className="px-4 py-3 text-sm text-base-content/60">
               {emptyMessage} &quot;{searchTerm}&quot;
-            </div>
+            </li>
           ) : (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            <li className="px-4 py-3 text-sm text-base-content/60">
               All items are already selected
-            </div>
+            </li>
           )}
-        </div>
+        </ul>
       )}
 
       {helpText && (
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          {helpText}
-        </p>
+        <label className="label">
+          <span className="label-text-alt">{helpText}</span>
+        </label>
       )}
     </div>
   );

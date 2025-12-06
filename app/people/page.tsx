@@ -5,7 +5,6 @@ import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
 import EmptyState from '@/components/EmptyState';
 import { formatDate } from '@/lib/date-format';
-import { formatFullName } from '@/lib/nameUtils';
 
 const ITEMS_PER_PAGE = 50;
 
@@ -20,7 +19,6 @@ export default async function PeoplePage({
     redirect('/login');
   }
 
-  // Fetch user's date format preference
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { dateFormat: true },
@@ -33,7 +31,6 @@ export default async function PeoplePage({
   const order = params.order || 'asc';
   const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 
-  // Get total count for pagination
   const totalCount = await prisma.person.count({
     where: {
       userId: session.user.id,
@@ -42,7 +39,6 @@ export default async function PeoplePage({
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-  // Fetch all people for this user (we'll sort and paginate in memory)
   const allPeople = await prisma.person.findMany({
     where: {
       userId: session.user.id,
@@ -77,7 +73,6 @@ export default async function PeoplePage({
     },
   });
 
-  // Sort the people based on sortBy and order
   const sortedPeople = [...allPeople].sort((a, b) => {
     let primaryComparison = 0;
 
@@ -86,17 +81,17 @@ export default async function PeoplePage({
         primaryComparison = a.name.localeCompare(b.name);
         break;
       case 'surname':
-        const aSurname = a.surname || 'zzz'; // Put people without surnames at the end
+        const aSurname = a.surname || 'zzz';
         const bSurname = b.surname || 'zzz';
         primaryComparison = aSurname.localeCompare(bSurname);
         break;
       case 'nickname':
-        const aNickname = a.nickname || 'zzz'; // Put people without nicknames at the end
+        const aNickname = a.nickname || 'zzz';
         const bNickname = b.nickname || 'zzz';
         primaryComparison = aNickname.localeCompare(bNickname);
         break;
       case 'relationship':
-        const aRel = a.relationshipToUser?.label || 'zzz'; // Put indirect relationships at the end
+        const aRel = a.relationshipToUser?.label || 'zzz';
         const bRel = b.relationshipToUser?.label || 'zzz';
         primaryComparison = aRel.localeCompare(bRel);
         break;
@@ -114,22 +109,17 @@ export default async function PeoplePage({
         primaryComparison = a.name.localeCompare(b.name);
     }
 
-    // Apply order to primary comparison only
     const orderedPrimaryComparison = order === 'desc' ? -primaryComparison : primaryComparison;
 
-    // If primary comparison is not equal, return it
     if (orderedPrimaryComparison !== 0) {
       return orderedPrimaryComparison;
     }
 
-    // Otherwise, use secondary sort by name (always ascending)
     return a.name.localeCompare(b.name);
   });
 
-  // Paginate the sorted results
   const people = sortedPeople.slice(skip, skip + ITEMS_PER_PAGE);
 
-  // Helper function to build URLs with sort parameters
   const buildUrl = (page: number) => {
     const params = new URLSearchParams();
     params.set('page', page.toString());
@@ -138,8 +128,20 @@ export default async function PeoplePage({
     return `/people?${params.toString()}`;
   };
 
+  const SortableHeader = ({ column, label }: { column: string; label: string }) => (
+    <Link
+      href={`/people?sortBy=${column}&order=${sortBy === column && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
+      className="flex items-center gap-1 hover:text-base-content transition-colors"
+    >
+      {label}
+      {sortBy === column && (
+        <span className={`icon-[tabler--chevron-${order === 'asc' ? 'up' : 'down'}] size-4 text-primary`} />
+      )}
+    </Link>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-base-200">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -150,25 +152,21 @@ export default async function PeoplePage({
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold">
               People
             </h1>
-            <Link
-              href="/people/new"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
+            <Link href="/people/new" className="btn btn-primary">
+              <span className="icon-[tabler--plus] size-5" />
               Add Person
             </Link>
           </div>
 
           {totalCount === 0 ? (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div className="card bg-base-100 shadow-lg">
               <EmptyState
                 icon={
-                  <div className="p-4 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
+                  <div className="bg-primary/20 p-4 rounded-full">
+                    <span className="icon-[tabler--users] size-12 text-primary" />
                   </div>
                 }
                 title="No people yet"
@@ -179,311 +177,176 @@ export default async function PeoplePage({
             </div>
           ) : (
             <>
-              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="mb-4 text-sm text-base-content/60">
                 Showing {skip + 1}-{Math.min(skip + ITEMS_PER_PAGE, totalCount)} of {totalCount} people
               </div>
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      <Link
-                        href={`/people?sortBy=name&order=${sortBy === 'name' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
-                      >
-                        Name
-                        {sortBy === 'name' && (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {order === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </Link>
-                    </th>
-                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      <Link
-                        href={`/people?sortBy=surname&order=${sortBy === 'surname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
-                      >
-                        Surname
-                        {sortBy === 'surname' && (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {order === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </Link>
-                    </th>
-                    <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      <Link
-                        href={`/people?sortBy=nickname&order=${sortBy === 'nickname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
-                      >
-                        Nickname
-                        {sortBy === 'nickname' && (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {order === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </Link>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      <Link
-                        href={`/people?sortBy=relationship&order=${sortBy === 'relationship' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
-                      >
-                        Relationship
-                        {sortBy === 'relationship' && (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {order === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </Link>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      <Link
-                        href={`/people?sortBy=group&order=${sortBy === 'group' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
-                      >
-                        Groups
-                        {sortBy === 'group' && (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {order === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </Link>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      <Link
-                        href={`/people?sortBy=lastContact&order=${sortBy === 'lastContact' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
-                      >
-                        Last Contact
-                        {sortBy === 'lastContact' && (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {order === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </Link>
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {people.map((person) => {
-                    const isOrphan = !person.relationshipToUser &&
-                                     person.relationshipsFrom.length === 0 &&
-                                     person.relationshipsTo.length === 0;
+              <div className="card bg-base-100 shadow-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th><SortableHeader column="name" label="Name" /></th>
+                        <th className="hidden md:table-cell"><SortableHeader column="surname" label="Surname" /></th>
+                        <th className="hidden lg:table-cell"><SortableHeader column="nickname" label="Nickname" /></th>
+                        <th><SortableHeader column="relationship" label="Relationship" /></th>
+                        <th><SortableHeader column="group" label="Groups" /></th>
+                        <th><SortableHeader column="lastContact" label="Last Contact" /></th>
+                        <th className="text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {people.map((person) => {
+                        const isOrphan = !person.relationshipToUser &&
+                                         person.relationshipsFrom.length === 0 &&
+                                         person.relationshipsTo.length === 0;
 
-                    return (
-                    <tr key={person.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/people/${person.id}`}
-                            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                          >
-                            {person.name}
+                        return (
+                          <tr key={person.id} className="hover">
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  href={`/people/${person.id}`}
+                                  className="link link-primary font-medium"
+                                >
+                                  {person.name}
+                                </Link>
+                                {isOrphan && (
+                                  <div className="tooltip tooltip-right" data-tip="This person has no relationships">
+                                    <span className="icon-[tabler--alert-triangle] size-4 text-warning" />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="hidden md:table-cell">
+                              {person.surname || '—'}
+                            </td>
+                            <td className="hidden lg:table-cell text-base-content/60">
+                              {person.nickname ? `'${person.nickname}'` : '—'}
+                            </td>
+                            <td>
+                              {person.relationshipToUser ? (
+                                <span
+                                  className="badge badge-sm"
+                                  style={{
+                                    backgroundColor: person.relationshipToUser.color
+                                      ? `${person.relationshipToUser.color}20`
+                                      : undefined,
+                                    color: person.relationshipToUser.color || undefined,
+                                  }}
+                                >
+                                  {person.relationshipToUser.label}
+                                </span>
+                              ) : (
+                                <span className="badge badge-sm badge-ghost">
+                                  Indirect
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <div className="flex flex-wrap gap-1">
+                                {person.groups.map((pg) => (
+                                  <span
+                                    key={pg.groupId}
+                                    className="badge badge-sm"
+                                    style={{
+                                      backgroundColor: pg.group.color
+                                        ? `${pg.group.color}20`
+                                        : undefined,
+                                      color: pg.group.color || undefined,
+                                    }}
+                                  >
+                                    {pg.group.name}
+                                  </span>
+                                ))}
+                                {person.groups.length === 0 && (
+                                  <span className="text-base-content/40">—</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="text-base-content/60">
+                              {person.lastContact
+                                ? formatDate(new Date(person.lastContact), dateFormat)
+                                : '—'}
+                            </td>
+                            <td>
+                              <div className="flex justify-end gap-1">
+                                <Link
+                                  href={`/people/${person.id}/edit`}
+                                  className="btn btn-ghost btn-square btn-sm"
+                                  title="Edit"
+                                >
+                                  <span className="icon-[tabler--edit] size-4" />
+                                </Link>
+                                <Link
+                                  href={`/people/${person.id}`}
+                                  className="btn btn-ghost btn-square btn-sm"
+                                  title="View"
+                                >
+                                  <span className="icon-[tabler--eye] size-4" />
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="border-t border-base-content/10 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-base-content/60">
+                        Page {currentPage} of {totalPages}
+                      </p>
+                      <div className="join">
+                        {currentPage > 1 ? (
+                          <Link href={buildUrl(currentPage - 1)} className="join-item btn btn-sm">
+                            <span className="icon-[tabler--chevron-left] size-4" />
                           </Link>
-                          {isOrphan && (
-                            <span className="relative group cursor-help">
-                              <span className="text-yellow-500">⚠️</span>
-                              <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-lg whitespace-normal max-w-xs z-50 shadow-lg">
-                                This person has no relationships and will be shown as isolated in the network graph
-                                <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></span>
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {person.surname || '—'}
-                      </td>
-                      <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {person.nickname ? `'${person.nickname}'` : '—'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {person.relationshipToUser ? (
-                          <span
-                            className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                            style={{
-                              backgroundColor: person.relationshipToUser.color
-                                ? `${person.relationshipToUser.color}20`
-                                : '#E5E7EB',
-                              color: person.relationshipToUser.color || '#374151',
-                            }}
-                          >
-                            {person.relationshipToUser.label}
-                          </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700">
-                            Indirect
-                          </span>
+                          <button className="join-item btn btn-sm btn-disabled">
+                            <span className="icon-[tabler--chevron-left] size-4" />
+                          </button>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1">
-                          {person.groups.map((pg) => (
-                            <span
-                              key={pg.groupId}
-                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                              style={{
-                                backgroundColor: pg.group.color
-                                  ? `${pg.group.color}20`
-                                  : '#E5E7EB',
-                                color: pg.group.color || '#374151',
-                              }}
-                            >
-                              {pg.group.name}
-                            </span>
-                          ))}
-                          {person.groups.length === 0 && (
-                            <span className="text-sm text-gray-400 dark:text-gray-500">
-                              —
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {person.lastContact
-                          ? formatDate(new Date(person.lastContact), dateFormat)
-                          : '—'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex justify-end gap-3">
-                          <Link
-                            href={`/people/${person.id}/edit`}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                            title="Edit"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </Link>
-                          <Link
-                            href={`/people/${person.id}`}
-                            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 transition-colors"
-                            title="View"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              </div>
 
-              {totalPages > 1 && (
-                <div className="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 flex justify-between sm:hidden">
-                      {currentPage > 1 ? (
-                        <Link
-                          href={buildUrl(currentPage - 1)}
-                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          Previous
-                        </Link>
-                      ) : (
-                        <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-900 cursor-not-allowed">
-                          Previous
-                        </span>
-                      )}
-                      {currentPage < totalPages ? (
-                        <Link
-                          href={buildUrl(currentPage + 1)}
-                          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          Next
-                        </Link>
-                      ) : (
-                        <span className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-900 cursor-not-allowed">
-                          Next
-                        </span>
-                      )}
-                    </div>
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          Page <span className="font-medium">{currentPage}</span> of{' '}
-                          <span className="font-medium">{totalPages}</span>
-                        </p>
-                      </div>
-                      <div>
-                        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                          {currentPage > 1 ? (
-                            <Link
-                              href={buildUrl(currentPage - 1)}
-                              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            >
-                              <span className="sr-only">Previous</span>
-                              ←
-                            </Link>
+                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 7) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 4) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 3) {
+                            pageNum = totalPages - 6 + i;
+                          } else {
+                            pageNum = currentPage - 3 + i;
+                          }
+
+                          return pageNum === currentPage ? (
+                            <button key={pageNum} className="join-item btn btn-sm btn-active">
+                              {pageNum}
+                            </button>
                           ) : (
-                            <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
-                              <span className="sr-only">Previous</span>
-                              ←
-                            </span>
-                          )}
-
-                          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 7) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 4) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 3) {
-                              pageNum = totalPages - 6 + i;
-                            } else {
-                              pageNum = currentPage - 3 + i;
-                            }
-
-                            return pageNum === currentPage ? (
-                              <span
-                                key={pageNum}
-                                className="relative inline-flex items-center px-4 py-2 border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-sm font-medium text-blue-600 dark:text-blue-400"
-                              >
-                                {pageNum}
-                              </span>
-                            ) : (
-                              <Link
-                                key={pageNum}
-                                href={buildUrl(pageNum)}
-                                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                              >
-                                {pageNum}
-                              </Link>
-                            );
-                          })}
-
-                          {currentPage < totalPages ? (
-                            <Link
-                              href={buildUrl(currentPage + 1)}
-                              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            >
-                              <span className="sr-only">Next</span>
-                              →
+                            <Link key={pageNum} href={buildUrl(pageNum)} className="join-item btn btn-sm">
+                              {pageNum}
                             </Link>
-                          ) : (
-                            <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
-                              <span className="sr-only">Next</span>
-                              →
-                            </span>
-                          )}
-                        </nav>
+                          );
+                        })}
+
+                        {currentPage < totalPages ? (
+                          <Link href={buildUrl(currentPage + 1)} className="join-item btn btn-sm">
+                            <span className="icon-[tabler--chevron-right] size-4" />
+                          </Link>
+                        ) : (
+                          <button className="join-item btn btn-sm btn-disabled">
+                            <span className="icon-[tabler--chevron-right] size-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
             </>
           )}
         </div>

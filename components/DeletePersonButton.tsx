@@ -76,8 +76,9 @@ export default function DeletePersonButton({
     <>
       <button
         onClick={() => setShowConfirm(true)}
-        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+        className="btn btn-error flex-1 sm:flex-none"
       >
+        <span className="icon-[tabler--trash] size-4" />
         Delete
       </button>
 
@@ -93,65 +94,51 @@ export default function DeletePersonButton({
         error={error}
         variant="danger"
       >
-        <p className="text-gray-600 dark:text-gray-400 mb-1">
+        <p className="text-base-content/70 mb-1">
           Are you sure you want to delete{' '}
-          <strong className="text-gray-900 dark:text-white">{personName}</strong>?
+          <strong className="text-base-content">{personName}</strong>?
         </p>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-base-content/70 mb-4">
           This action cannot be undone.
         </p>
 
         {isLoadingOrphans && (
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 rounded text-sm">
-            Checking for orphaned people...
+          <div className="alert alert-info">
+            <span className="icon-[tabler--loader-2] size-4 animate-spin" />
+            <span>Checking for orphaned people...</span>
           </div>
         )}
 
         {!isLoadingOrphans && orphans.length > 0 && (
-          <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-800 rounded">
-            <p className="text-sm text-yellow-800 dark:text-yellow-400 mb-2">
-              <strong>Note:</strong> Deleting this person will leave others without any relationships, showing them as isolated nodes in the network graph:
-            </p>
-            <ul className="text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside mb-3 space-y-1">
-              {orphans.map((orphan) => (
-                <li key={orphan.id}>
-                  <a
-                    href={`/people/${orphan.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline inline-flex items-center gap-1"
-                  >
-                    {orphan.fullName}
-                    <svg
-                      className="w-3 h-3 inline"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+          <div className="alert alert-warning">
+            <div className="flex flex-col gap-2 w-full">
+              <p className="text-sm">
+                <strong>Note:</strong> Deleting this person will leave others without any relationships, showing them as isolated nodes in the network graph:
+              </p>
+              <ul className="text-sm list-disc list-inside space-y-1">
+                {orphans.map((orphan) => (
+                  <li key={orphan.id}>
+                    <a
+                      href={`/people/${orphan.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link link-hover inline-flex items-center gap-1"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                      />
-                    </svg>
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="deleteOrphans"
-                checked={deleteOrphans}
-                onChange={(e) => setDeleteOrphans(e.target.checked)}
-                className="w-4 h-4 text-red-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-red-500"
-              />
-              <label
-                htmlFor="deleteOrphans"
-                className="ml-2 text-sm text-yellow-800 dark:text-yellow-400 cursor-pointer"
-              >
-                Delete them too
+                      {orphan.fullName}
+                      <span className="icon-[tabler--external-link] size-3" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="deleteOrphans"
+                  checked={deleteOrphans}
+                  onChange={(e) => setDeleteOrphans(e.target.checked)}
+                  className="checkbox checkbox-sm checkbox-error"
+                />
+                <span className="text-sm">Delete them too</span>
               </label>
             </div>
           </div>

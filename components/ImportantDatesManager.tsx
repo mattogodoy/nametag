@@ -57,7 +57,6 @@ export default function ImportantDatesManager({
     const dateToAdd: ImportantDate = {
       ...newDate,
       id: undefined,
-      // Clear reminder fields if not enabled
       reminderType: newDate.reminderEnabled ? newDate.reminderType : null,
       reminderInterval: newDate.reminderEnabled && newDate.reminderType === 'RECURRING' ? newDate.reminderInterval : null,
       reminderIntervalUnit: newDate.reminderEnabled && newDate.reminderType === 'RECURRING' ? newDate.reminderIntervalUnit : null,
@@ -93,7 +92,6 @@ export default function ImportantDatesManager({
     };
 
     if (dateToSave.id && mode === 'edit' && personId) {
-      // Update in database
       try {
         const response = await fetch(`/api/people/${personId}/important-dates/${dateToSave.id}`, {
           method: 'PUT',
@@ -136,7 +134,6 @@ export default function ImportantDatesManager({
 
   const handleDelete = async (index: number, id?: string) => {
     if (id && mode === 'edit' && personId) {
-      // Delete from database
       try {
         const response = await fetch(`/api/people/${personId}/important-dates/${id}`, {
           method: 'DELETE',
@@ -182,28 +179,21 @@ export default function ImportantDatesManager({
     const isFuture = isDateInFuture(date.date);
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+      <div className="mt-3 pt-3 border-t border-base-content/10">
         <div className="flex items-center gap-2 mb-3">
-          <button
-            type="button"
+          <input
+            type="checkbox"
             id={`${idPrefix}-reminder-toggle`}
-            onClick={() => onChange({
+            checked={date.reminderEnabled}
+            onChange={() => onChange({
               reminderEnabled: !date.reminderEnabled,
               reminderType: !date.reminderEnabled ? (isFuture ? 'ONCE' : 'RECURRING') : date.reminderType,
             })}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-              date.reminderEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                date.reminderEnabled ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
+            className="toggle toggle-primary toggle-sm"
+          />
           <label
             htmlFor={`${idPrefix}-reminder-toggle`}
-            className="text-xs font-medium text-gray-700 dark:text-gray-300"
+            className="text-xs font-medium"
           >
             Remind me
           </label>
@@ -213,28 +203,28 @@ export default function ImportantDatesManager({
           <div className="space-y-3">
             <div className="space-y-2">
               {isFuture && (
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name={`${idPrefix}-reminder-type`}
                     checked={date.reminderType === 'ONCE'}
                     onChange={() => onChange({ reminderType: 'ONCE' })}
-                    className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                    className="radio radio-primary radio-sm"
                   />
-                  <span className="text-xs text-gray-700 dark:text-gray-300">
+                  <span className="text-xs">
                     Only once on the specified date
                   </span>
                 </label>
               )}
-              <label className="flex items-center space-x-2 cursor-pointer flex-wrap gap-y-1">
+              <label className="flex items-center gap-2 cursor-pointer flex-wrap">
                 <input
                   type="radio"
                   name={`${idPrefix}-reminder-type`}
                   checked={date.reminderType === 'RECURRING'}
                   onChange={() => onChange({ reminderType: 'RECURRING' })}
-                  className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                  className="radio radio-primary radio-sm"
                 />
-                <span className="text-xs text-gray-700 dark:text-gray-300">Every</span>
+                <span className="text-xs">Every</span>
                 <input
                   type="number"
                   min="1"
@@ -242,19 +232,19 @@ export default function ImportantDatesManager({
                   value={date.reminderInterval ?? 1}
                   onChange={(e) => onChange({ reminderInterval: Math.max(1, parseInt(e.target.value) || 1) })}
                   disabled={date.reminderType !== 'RECURRING'}
-                  className="w-14 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="input input-xs w-14"
                 />
                 <select
                   value={date.reminderIntervalUnit ?? 'YEARS'}
                   onChange={(e) => onChange({ reminderIntervalUnit: e.target.value as ReminderIntervalUnit })}
                   disabled={date.reminderType !== 'RECURRING'}
-                  className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="select select-xs"
                 >
                   <option value="WEEKS">weeks</option>
                   <option value="MONTHS">months</option>
                   <option value="YEARS">years</option>
                 </select>
-                <span className={`text-xs ${date.reminderType === 'RECURRING' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                <span className={`text-xs ${date.reminderType === 'RECURRING' ? '' : 'opacity-50'}`}>
                   starting from the specified date
                 </span>
               </label>
@@ -272,9 +262,10 @@ export default function ImportantDatesManager({
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            className="btn btn-ghost btn-sm text-primary"
           >
-            + Add Date
+            <span className="icon-[tabler--plus] size-4" />
+            Add Date
           </button>
         </div>
       )}
@@ -283,38 +274,32 @@ export default function ImportantDatesManager({
         {dates.map((date, index) => (
           <div
             key={index}
-            className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+            className="card bg-base-200 p-3"
           >
             {editingIndex === index && editingDate ? (
               <div className="space-y-3">
-                <div>
-                  <label
-                    htmlFor={`edit-date-title-${index}`}
-                    className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
-                    Title
+                <div className="form-control">
+                  <label htmlFor={`edit-date-title-${index}`} className="label py-1">
+                    <span className="label-text text-xs">Title</span>
                   </label>
                   <input
                     type="text"
                     id={`edit-date-title-${index}`}
                     value={editingDate.title}
                     onChange={(e) => setEditingDate({ ...editingDate, title: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input input-sm"
                   />
                 </div>
-                <div>
-                  <label
-                    htmlFor={`edit-date-date-${index}`}
-                    className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
-                    Date
+                <div className="form-control">
+                  <label htmlFor={`edit-date-date-${index}`} className="label py-1">
+                    <span className="label-text text-xs">Date</span>
                   </label>
                   <input
                     type="date"
                     id={`edit-date-date-${index}`}
                     value={editingDate.date}
                     onChange={(e) => setEditingDate({ ...editingDate, date: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input input-sm"
                   />
                 </div>
                 <ReminderFields
@@ -322,11 +307,11 @@ export default function ImportantDatesManager({
                   onChange={(updates) => setEditingDate({ ...editingDate, ...updates })}
                   idPrefix={`edit-${index}`}
                 />
-                <div className="flex justify-end space-x-2 pt-2">
+                <div className="flex justify-end gap-2 pt-2">
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    className="btn btn-ghost btn-sm"
                   >
                     Cancel
                   </button>
@@ -334,7 +319,7 @@ export default function ImportantDatesManager({
                     type="button"
                     onClick={handleSaveEdit}
                     disabled={!editingDate.title.trim() || !editingDate.date}
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-primary btn-sm"
                   >
                     Save
                   </button>
@@ -343,10 +328,10 @@ export default function ImportantDatesManager({
             ) : (
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white text-sm">
+                  <div className="font-medium text-sm">
                     {date.title}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-base-content/60">
                     {new Date(date.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -354,46 +339,30 @@ export default function ImportantDatesManager({
                     })}
                   </div>
                   {getReminderDescription(date) && (
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                      </svg>
+                    <div className="text-xs text-primary mt-1 flex items-center gap-1">
+                      <span className="icon-[tabler--bell] size-3" />
                       {getReminderDescription(date)}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => handleStartEdit(index)}
                     disabled={editingIndex !== null || isAdding}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-ghost btn-square btn-sm"
                     title="Edit"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
+                    <span className="icon-[tabler--edit] size-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(index, date.id)}
                     disabled={editingIndex !== null || isAdding}
-                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-ghost btn-square btn-sm text-error"
                     title="Delete"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
+                    <span className="icon-[tabler--trash] size-4" />
                   </button>
                 </div>
               </div>
@@ -402,13 +371,10 @@ export default function ImportantDatesManager({
         ))}
 
         {isAdding && (
-          <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-3">
-            <div>
-              <label
-                htmlFor="new-date-title"
-                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Title
+          <div className="card bg-base-200 p-3 space-y-3">
+            <div className="form-control">
+              <label htmlFor="new-date-title" className="label py-1">
+                <span className="label-text text-xs">Title</span>
               </label>
               <input
                 type="text"
@@ -416,23 +382,20 @@ export default function ImportantDatesManager({
                 value={newDate.title}
                 onChange={(e) => setNewDate({ ...newDate, title: e.target.value })}
                 placeholder="e.g., Birthday, Anniversary"
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input input-sm"
                 autoFocus
               />
             </div>
-            <div>
-              <label
-                htmlFor="new-date-date"
-                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Date
+            <div className="form-control">
+              <label htmlFor="new-date-date" className="label py-1">
+                <span className="label-text text-xs">Date</span>
               </label>
               <input
                 type="date"
                 id="new-date-date"
                 value={newDate.date}
                 onChange={(e) => setNewDate({ ...newDate, date: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input input-sm"
               />
             </div>
             <ReminderFields
@@ -440,14 +403,14 @@ export default function ImportantDatesManager({
               onChange={(updates) => setNewDate({ ...newDate, ...updates })}
               idPrefix="new"
             />
-            <div className="flex justify-end space-x-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => {
                   setIsAdding(false);
                   setNewDate({ ...defaultNewDate });
                 }}
-                className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                className="btn btn-ghost btn-sm"
               >
                 Cancel
               </button>
@@ -455,7 +418,7 @@ export default function ImportantDatesManager({
                 type="button"
                 onClick={handleAdd}
                 disabled={!newDate.title.trim() || !newDate.date}
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary btn-sm"
               >
                 Add
               </button>
@@ -464,7 +427,7 @@ export default function ImportantDatesManager({
         )}
 
         {dates.length === 0 && !isAdding && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+          <p className="text-sm text-base-content/60 py-2">
             No important dates added yet.
           </p>
         )}

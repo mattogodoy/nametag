@@ -15,25 +15,27 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
       <div className="max-w-md w-full text-center">
-        <div className="text-6xl mb-4">🔗</div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="mb-4">
+          <span className="icon-[tabler--link-off] size-16 text-error" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">
           Failed to load relationship types
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-base-content/70 mb-6">
           There was a problem loading your relationship types. Please try again.
         </p>
-        <div className="flex justify-center space-x-3">
+        <div className="flex justify-center gap-3">
           <button
             onClick={reset}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            className="btn btn-primary"
           >
             Try Again
           </button>
           <Link
             href="/dashboard"
-            className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="btn btn-ghost"
           >
             Go to Dashboard
           </Link>

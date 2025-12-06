@@ -57,7 +57,7 @@ export default async function NewPersonPage({
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-base-200">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -67,21 +67,23 @@ export default async function NewPersonPage({
 
       <main className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+          <h1 className="text-3xl font-bold mb-6">
             Add New Person
           </h1>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <PersonForm
-              groups={groups}
-              relationshipTypes={relationshipTypes}
-              availablePeople={people}
-              userName={session.user.name || session.user.email || 'You'}
-              mode="create"
-              initialName={params.name}
-              initialKnownThrough={params.knownThrough}
-              initialRelationshipType={params.relationshipType}
-            />
+          <div className="card bg-base-100 shadow-lg">
+            <div className="card-body">
+              <PersonForm
+                groups={groups}
+                relationshipTypes={relationshipTypes}
+                availablePeople={people}
+                userName={session.user.name || session.user.email || 'You'}
+                mode="create"
+                initialName={params.name}
+                initialKnownThrough={params.knownThrough}
+                initialRelationshipType={params.relationshipType}
+              />
+            </div>
           </div>
         </div>
       </main>

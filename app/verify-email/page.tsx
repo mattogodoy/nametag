@@ -45,88 +45,75 @@ function VerifyEmailContent() {
   }, [token]);
 
   return (
-    <div className="max-w-md w-full space-y-8 text-center">
-      {state === 'loading' && (
-        <div className="space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 dark:text-gray-400">Verifying your email...</p>
-        </div>
-      )}
+    <div className="card bg-base-100 w-full max-w-md shadow-xl">
+      <div className="card-body items-center text-center">
+        {state === 'loading' && (
+          <>
+            <span className="loading loading-spinner loading-lg text-primary" />
+            <p className="text-base-content/60 mt-4">Verifying your email...</p>
+          </>
+        )}
 
-      {state === 'success' && (
-        <div className="space-y-6">
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
-              Email Verified!
-            </h2>
-            <p className="text-green-600 dark:text-green-300">
-              {message}
-            </p>
-          </div>
-          <Link
-            href="/login"
-            className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Go to Login
-          </Link>
-        </div>
-      )}
+        {state === 'success' && (
+          <>
+            <div className="bg-success/20 p-4 rounded-full mb-4">
+              <span className="icon-[tabler--check] size-12 text-success" />
+            </div>
+            <h2 className="card-title text-2xl text-success">Email Verified!</h2>
+            <p className="text-base-content/70">{message}</p>
+            <div className="card-actions mt-4">
+              <Link href="/login" className="btn btn-primary w-full">
+                Go to Login
+              </Link>
+            </div>
+          </>
+        )}
 
-      {state === 'error' && (
-        <div className="space-y-6">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-red-700 dark:text-red-400 mb-4">
-              Verification Failed
-            </h2>
-            <p className="text-red-600 dark:text-red-300">
-              {message}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Link
-              href="/register"
-              className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Register Again
-            </Link>
-            <Link
-              href="/login"
-              className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400"
-            >
-              Go to Login
-            </Link>
-          </div>
-        </div>
-      )}
+        {state === 'error' && (
+          <>
+            <div className="bg-error/20 p-4 rounded-full mb-4">
+              <span className="icon-[tabler--x] size-12 text-error" />
+            </div>
+            <h2 className="card-title text-2xl text-error">Verification Failed</h2>
+            <p className="text-base-content/70">{message}</p>
+            <div className="card-actions mt-4 flex-col w-full gap-2">
+              <Link href="/register" className="btn btn-primary w-full">
+                Register Again
+              </Link>
+              <Link href="/login" className="link link-primary text-sm">
+                Go to Login
+              </Link>
+            </div>
+          </>
+        )}
 
-      {state === 'no-token' && (
-        <div className="space-y-6">
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-800 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-yellow-700 dark:text-yellow-400 mb-4">
-              No Verification Token
-            </h2>
-            <p className="text-yellow-600 dark:text-yellow-300">
+        {state === 'no-token' && (
+          <>
+            <div className="bg-warning/20 p-4 rounded-full mb-4">
+              <span className="icon-[tabler--alert-triangle] size-12 text-warning" />
+            </div>
+            <h2 className="card-title text-2xl text-warning">No Verification Token</h2>
+            <p className="text-base-content/70">
               Please use the link from your verification email.
             </p>
-          </div>
-          <Link
-            href="/login"
-            className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400"
-          >
-            Go to Login
-          </Link>
-        </div>
-      )}
+            <div className="card-actions mt-4">
+              <Link href="/login" className="link link-primary">
+                Go to Login
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
 function LoadingFallback() {
   return (
-    <div className="max-w-md w-full space-y-8 text-center">
-      <div className="space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+    <div className="card bg-base-100 w-full max-w-md shadow-xl">
+      <div className="card-body items-center text-center">
+        <span className="loading loading-spinner loading-lg text-primary" />
+        <p className="text-base-content/60 mt-4">Loading...</p>
       </div>
     </div>
   );
@@ -134,7 +121,7 @@ function LoadingFallback() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
       <Suspense fallback={<LoadingFallback />}>
         <VerifyEmailContent />
       </Suspense>

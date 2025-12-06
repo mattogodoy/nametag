@@ -12,7 +12,7 @@ export default async function NewGroupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-base-200">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -22,12 +22,14 @@ export default async function NewGroupPage() {
 
       <main className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+          <h1 className="text-3xl font-bold mb-6">
             Create New Group
           </h1>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <GroupForm mode="create" />
+          <div className="card bg-base-100 shadow-lg">
+            <div className="card-body">
+              <GroupForm mode="create" />
+            </div>
           </div>
         </div>
       </main>

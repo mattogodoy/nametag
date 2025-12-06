@@ -47,7 +47,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // Show success message instead of auto-login
       setSuccess(true);
     } catch (error) {
       setError('Unable to connect to server. Please check your connection and try again.');
@@ -58,58 +57,61 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-        <div className="max-w-md w-full space-y-8 text-center">
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
-              Check your email
-            </h2>
-            <p className="text-green-600 dark:text-green-300 mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
+        <div className="card bg-base-100 w-full max-w-md shadow-xl">
+          <div className="card-body items-center text-center">
+            <div className="bg-success/20 p-4 rounded-full mb-4">
+              <span className="icon-[tabler--mail-check] size-12 text-success" />
+            </div>
+            <h2 className="card-title text-2xl text-success">Check your email</h2>
+            <p className="text-base-content/70">
               We&apos;ve sent a verification link to <strong>{email}</strong>.
             </p>
-            <p className="text-sm text-green-600 dark:text-green-300">
+            <p className="text-sm text-base-content/60">
               Please click the link in the email to verify your account before logging in.
             </p>
+            <div className="card-actions mt-4">
+              <Link href="/login" className="btn btn-primary">
+                Go to login page
+              </Link>
+            </div>
           </div>
-          <Link
-            href="/login"
-            className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Go to login page
-          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="flex flex-col items-center">
-          <Image
-            src="/logo.svg"
-            alt="NameTag Logo"
-            width={96}
-            height={96}
-            priority
-          />
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Start managing your relationships with NameTag
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="name" className="sr-only">
-                Name
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+      <div className="card bg-base-100 w-full max-w-md shadow-xl">
+        <div className="card-body">
+          <div className="flex flex-col items-center mb-6">
+            <Image
+              src="/logo.svg"
+              alt="NameTag Logo"
+              width={96}
+              height={96}
+              priority
+            />
+            <h2 className="card-title text-2xl mt-4">
+              Create your account
+            </h2>
+            <p className="text-base-content/60 text-sm">
+              Start managing your relationships with NameTag
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="alert alert-error">
+                <span className="icon-[tabler--alert-circle] size-5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="form-control">
+              <label htmlFor="name" className="label">
+                <span className="label-text">Name *</span>
               </label>
               <input
                 id="name"
@@ -118,13 +120,14 @@ export default function RegisterPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Name *"
+                className="input"
+                placeholder="John"
               />
             </div>
-            <div>
-              <label htmlFor="surname" className="sr-only">
-                Surname
+
+            <div className="form-control">
+              <label htmlFor="surname" className="label">
+                <span className="label-text">Surname</span>
               </label>
               <input
                 id="surname"
@@ -132,13 +135,14 @@ export default function RegisterPage() {
                 type="text"
                 value={surname}
                 onChange={(e) => setSurname(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Surname (optional)"
+                className="input"
+                placeholder="Doe (optional)"
               />
             </div>
-            <div>
-              <label htmlFor="nickname" className="sr-only">
-                Nickname
+
+            <div className="form-control">
+              <label htmlFor="nickname" className="label">
+                <span className="label-text">Nickname</span>
               </label>
               <input
                 id="nickname"
@@ -146,13 +150,14 @@ export default function RegisterPage() {
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Nickname (optional)"
+                className="input"
+                placeholder="Johnny (optional)"
               />
             </div>
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
+
+            <div className="form-control">
+              <label htmlFor="email" className="label">
+                <span className="label-text">Email address *</span>
               </label>
               <input
                 id="email"
@@ -162,13 +167,14 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Email address"
+                className="input"
+                placeholder="you@example.com"
               />
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
+
+            <div className="form-control">
+              <label htmlFor="password" className="label">
+                <span className="label-text">Password *</span>
               </label>
               <input
                 id="password"
@@ -178,13 +184,14 @@ export default function RegisterPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Password"
+                className="input"
+                placeholder="Min 8 characters"
               />
             </div>
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                Confirm Password
+
+            <div className="form-control">
+              <label htmlFor="confirmPassword" className="label">
+                <span className="label-text">Confirm Password *</span>
               </label>
               <input
                 id="confirmPassword"
@@ -194,34 +201,30 @@ export default function RegisterPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Confirm password"
+                className="input"
+                placeholder="Repeat password"
               />
             </div>
-          </div>
 
-          <div>
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary w-full"
             >
+              {isLoading && <span className="loading loading-spinner loading-sm" />}
               {isLoading ? 'Creating account...' : 'Sign up'}
             </button>
-          </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Already have an account?{' '}
-              <Link
-                href="/login"
-                className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </form>
+            <div className="text-center pt-2">
+              <p className="text-sm text-base-content/60">
+                Already have an account?{' '}
+                <Link href="/login" className="link link-primary">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

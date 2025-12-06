@@ -140,48 +140,41 @@ export default function PersonAutocomplete({
         onFocus={handleFocus}
         placeholder={placeholder}
         required={required}
-        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="input w-full"
         autoComplete="off"
       />
 
       {isOpen && filteredPeople.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <ul className="menu absolute z-10 w-full mt-1 bg-base-200 rounded-lg shadow-lg max-h-60 overflow-auto p-1">
           {filteredPeople.map((person, index) => (
-            <button
-              key={person.id}
-              type="button"
-              onClick={() => handleSelect(person)}
-              className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                index === highlightedIndex
-                  ? 'bg-blue-50 dark:bg-blue-900/20'
-                  : ''
-              } ${
-                person.id === value
-                  ? 'bg-blue-100 dark:bg-blue-900/30 font-medium'
-                  : ''
-              }`}
-              onMouseEnter={() => setHighlightedIndex(index)}
-            >
-              <div className="text-gray-900 dark:text-white">
+            <li key={person.id}>
+              <button
+                type="button"
+                onClick={() => handleSelect(person)}
+                className={`${index === highlightedIndex ? 'active' : ''} ${person.id === value ? 'bg-primary/20' : ''}`}
+                onMouseEnter={() => setHighlightedIndex(index)}
+              >
+                <span className="icon-[tabler--user] size-4" />
                 {formatFullName(person)}
-              </div>
-            </button>
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {isOpen && searchTerm && filteredPeople.length === 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
+        <div className="absolute z-10 w-full mt-1 bg-base-200 rounded-lg shadow-lg p-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-base-content/60">
               No people found matching &quot;{searchTerm}&quot;
             </p>
             {onCreateNew && (
               <button
                 type="button"
                 onClick={() => onCreateNew(searchTerm)}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="btn btn-primary btn-sm"
               >
+                <span className="icon-[tabler--plus] size-4" />
                 Create
               </button>
             )}

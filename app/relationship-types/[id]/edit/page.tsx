@@ -62,27 +62,31 @@ export default async function EditRelationshipTypePage({
 
   if (relationshipType.isDefault) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-8 max-w-md">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Cannot Edit Default Type
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Default relationship types cannot be modified. You can create custom types instead.
-          </p>
-          <Link
-            href="/relationship-types"
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-          >
-            Back to Relationship Types
-          </Link>
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <div className="card bg-base-100 shadow-xl max-w-md">
+          <div className="card-body">
+            <h1 className="card-title text-2xl">
+              Cannot Edit Default Type
+            </h1>
+            <p className="text-base-content/70">
+              Default relationship types cannot be modified. You can create custom types instead.
+            </p>
+            <div className="card-actions justify-end mt-4">
+              <Link
+                href="/relationship-types"
+                className="btn btn-primary"
+              >
+                Back to Relationship Types
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-base-200">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -95,21 +99,24 @@ export default async function EditRelationshipTypePage({
           <div className="mb-6">
             <Link
               href="/relationship-types"
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+              className="link link-primary text-sm flex items-center gap-1"
             >
-              ← Back to Relationship Types
+              <span className="icon-[tabler--arrow-left] size-4" />
+              Back to Relationship Types
             </Link>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Edit Relationship Type
-            </h1>
-            <RelationshipTypeForm
-              relationshipType={relationshipType}
-              availableTypes={availableTypes}
-              mode="edit"
-            />
+          <div className="card bg-base-100 shadow-lg">
+            <div className="card-body">
+              <h1 className="card-title text-2xl mb-4">
+                Edit Relationship Type
+              </h1>
+              <RelationshipTypeForm
+                relationshipType={relationshipType}
+                availableTypes={availableTypes}
+                mode="edit"
+              />
+            </div>
           </div>
         </div>
       </main>

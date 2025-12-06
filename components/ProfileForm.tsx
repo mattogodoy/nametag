@@ -34,7 +34,6 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
     setError('');
     setSuccess('');
 
-    // Show confirmation dialog if email is being changed
     if (emailChanged) {
       setShowEmailConfirm(true);
       return;
@@ -64,14 +63,12 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
       }
 
       if (data.emailChanged) {
-        // Email was changed - sign out the user
         await signOut({ callbackUrl: '/login' });
         return;
       }
 
       setSuccess('Profile updated successfully');
 
-      // Update the session with new data
       await update({
         name: formData.name,
         surname: formData.surname,
@@ -81,7 +78,6 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
 
       router.refresh();
 
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       setError('Unable to connect to server. Please check your connection and try again.');
@@ -94,24 +90,23 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-            {error}
+          <div className="alert alert-error">
+            <span className="icon-[tabler--alert-circle] size-5" />
+            <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded">
-            {success}
+          <div className="alert alert-success">
+            <span className="icon-[tabler--check] size-5" />
+            <span>{success}</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Name
+          <div className="form-control">
+            <label htmlFor="name" className="label">
+              <span className="label-text">Name</span>
             </label>
             <input
               type="text"
@@ -119,49 +114,40 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="surname"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Surname
+          <div className="form-control">
+            <label htmlFor="surname" className="label">
+              <span className="label-text">Surname</span>
             </label>
             <input
               type="text"
               id="surname"
               value={formData.surname}
               onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="nickname"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Nickname
+          <div className="form-control">
+            <label htmlFor="nickname" className="label">
+              <span className="label-text">Nickname</span>
             </label>
             <input
               type="text"
               id="nickname"
               value={formData.nickname}
               onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
             />
           </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Email
+        <div className="form-control">
+          <label htmlFor="email" className="label">
+            <span className="label-text">Email</span>
           </label>
           <input
             type="email"
@@ -169,7 +155,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
             required
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input"
           />
         </div>
 
@@ -177,8 +163,9 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-primary"
           >
+            {isLoading && <span className="loading loading-spinner loading-sm" />}
             {isLoading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -186,22 +173,20 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
 
       {/* Email Change Confirmation Dialog */}
       {showEmailConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-              Confirm Email Change
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              You are about to change your email address to <strong className="text-gray-900 dark:text-white">{formData.email}</strong>.
+        <dialog open className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Confirm Email Change</h3>
+            <p className="py-4 text-base-content/70">
+              You are about to change your email address to <strong>{formData.email}</strong>.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-base-content/70">
               A verification email will be sent to your new address. You will be logged out and won&apos;t be able to log in until you verify your new email.
             </p>
-            <div className="flex justify-end space-x-3">
+            <div className="modal-action">
               <button
                 type="button"
                 onClick={() => setShowEmailConfirm(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="btn btn-outline"
               >
                 Cancel
               </button>
@@ -209,13 +194,17 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
                 type="button"
                 onClick={saveProfile}
                 disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary"
               >
+                {isLoading && <span className="loading loading-spinner loading-sm" />}
                 {isLoading ? 'Saving...' : 'Confirm & Log Out'}
               </button>
             </div>
           </div>
-        </div>
+          <form method="dialog" className="modal-backdrop">
+            <button type="button" onClick={() => setShowEmailConfirm(false)}>close</button>
+          </form>
+        </dialog>
       )}
     </>
   );

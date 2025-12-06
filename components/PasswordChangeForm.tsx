@@ -22,13 +22,11 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
     setError('');
     setSuccess('');
 
-    // Validate passwords match
     if (formData.newPassword !== formData.confirmPassword) {
       setError('New passwords do not match');
       return;
     }
 
-    // Validate password length
     if (formData.newPassword.length < 8) {
       setError('New password must be at least 8 characters');
       return;
@@ -62,7 +60,6 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
         confirmPassword: '',
       });
 
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       setError('Unable to connect to server. Please check your connection and try again.');
@@ -74,23 +71,22 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-          {error}
+        <div className="alert alert-error">
+          <span className="icon-[tabler--alert-circle] size-5" />
+          <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded">
-          {success}
+        <div className="alert alert-success">
+          <span className="icon-[tabler--check] size-5" />
+          <span>{success}</span>
         </div>
       )}
 
-      <div>
-        <label
-          htmlFor="currentPassword"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Current Password
+      <div className="form-control">
+        <label htmlFor="currentPassword" className="label">
+          <span className="label-text">Current Password</span>
         </label>
         <input
           type="password"
@@ -98,16 +94,13 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
           required
           value={formData.currentPassword}
           onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="newPassword"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          New Password
+      <div className="form-control">
+        <label htmlFor="newPassword" className="label">
+          <span className="label-text">New Password</span>
         </label>
         <input
           type="password"
@@ -115,19 +108,16 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
           required
           value={formData.newPassword}
           onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Minimum 8 characters
-        </p>
+        <label className="label">
+          <span className="label-text-alt">Minimum 8 characters</span>
+        </label>
       </div>
 
-      <div>
-        <label
-          htmlFor="confirmPassword"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Confirm New Password
+      <div className="form-control">
+        <label htmlFor="confirmPassword" className="label">
+          <span className="label-text">Confirm New Password</span>
         </label>
         <input
           type="password"
@@ -135,7 +125,7 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
           required
           value={formData.confirmPassword}
           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
       </div>
 
@@ -143,8 +133,9 @@ export default function PasswordChangeForm({ userId }: PasswordChangeFormProps) 
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-primary"
         >
+          {isLoading && <span className="loading loading-spinner loading-sm" />}
           {isLoading ? 'Changing Password...' : 'Change Password'}
         </button>
       </div>

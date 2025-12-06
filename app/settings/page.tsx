@@ -15,7 +15,6 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  // Fetch user's current theme and date format
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { theme: true, dateFormat: true },
@@ -25,7 +24,7 @@ export default async function SettingsPage() {
   const currentDateFormat = user?.dateFormat || 'MDY';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-base-200">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -35,54 +34,69 @@ export default async function SettingsPage() {
 
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+          <h1 className="text-3xl font-bold mb-6">
             Settings
           </h1>
 
           {/* Profile Settings */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Profile
-            </h2>
-            <ProfileForm
-              userId={session.user.id}
-              currentName={session.user.name || ''}
-              currentSurname={session.user.surname || ''}
-              currentNickname={session.user.nickname || ''}
-              currentEmail={session.user.email || ''}
-            />
+          <div className="card bg-base-100 shadow-lg mb-6">
+            <div className="card-body">
+              <h2 className="card-title">
+                <span className="icon-[tabler--user] size-6" />
+                Profile
+              </h2>
+              <ProfileForm
+                userId={session.user.id}
+                currentName={session.user.name || ''}
+                currentSurname={session.user.surname || ''}
+                currentNickname={session.user.nickname || ''}
+                currentEmail={session.user.email || ''}
+              />
+            </div>
           </div>
 
           {/* Theme Settings */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Appearance
-            </h2>
-            <ThemeToggle userId={session.user.id} currentTheme={currentTheme} />
+          <div className="card bg-base-100 shadow-lg mb-6">
+            <div className="card-body">
+              <h2 className="card-title">
+                <span className="icon-[tabler--palette] size-6" />
+                Appearance
+              </h2>
+              <ThemeToggle userId={session.user.id} currentTheme={currentTheme} />
+            </div>
           </div>
 
           {/* Date Format Settings */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Date Format
-            </h2>
-            <DateFormatSelector userId={session.user.id} currentFormat={currentDateFormat} />
+          <div className="card bg-base-100 shadow-lg mb-6">
+            <div className="card-body">
+              <h2 className="card-title">
+                <span className="icon-[tabler--calendar] size-6" />
+                Date Format
+              </h2>
+              <DateFormatSelector userId={session.user.id} currentFormat={currentDateFormat} />
+            </div>
           </div>
 
           {/* Password Settings */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Password
-            </h2>
-            <PasswordChangeForm userId={session.user.id} />
+          <div className="card bg-base-100 shadow-lg mb-6">
+            <div className="card-body">
+              <h2 className="card-title">
+                <span className="icon-[tabler--lock] size-6" />
+                Password
+              </h2>
+              <PasswordChangeForm userId={session.user.id} />
+            </div>
           </div>
 
           {/* Account Management */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Account Management
-            </h2>
-            <AccountManagement />
+          <div className="card bg-base-100 shadow-lg mb-6">
+            <div className="card-body">
+              <h2 className="card-title">
+                <span className="icon-[tabler--settings] size-6" />
+                Account Management
+              </h2>
+              <AccountManagement />
+            </div>
           </div>
         </div>
       </main>

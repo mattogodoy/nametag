@@ -142,57 +142,56 @@ export default function RelationshipTypeAutocomplete({
           onFocus={handleFocus}
           placeholder={placeholder}
           required={required}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input w-full pr-10"
           autoComplete="off"
         />
         {value && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-circle btn-xs"
           >
-            ✕
+            <span className="icon-[tabler--x] size-4" />
           </button>
         )}
       </div>
 
       {isOpen && filteredTypes.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-auto">
           {filteredTypes.map((type, index) => (
             <button
               key={type.id}
               type="button"
               onClick={() => handleSelect(type)}
-              className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+              className={`w-full text-left px-3 py-2 hover:bg-base-200 transition-colors ${
                 index === highlightedIndex
-                  ? 'bg-blue-50 dark:bg-blue-900/20'
+                  ? 'bg-primary/10'
                   : ''
               } ${
                 type.id === value
-                  ? 'bg-blue-100 dark:bg-blue-900/30 font-medium'
+                  ? 'bg-primary/20 font-medium'
                   : ''
               }`}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
-              <div className="text-gray-900 dark:text-white">
-                {type.label}
-              </div>
+              <div>{type.label}</div>
             </button>
           ))}
         </div>
       )}
 
       {isOpen && searchTerm && filteredTypes.length === 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
-          <p className="text-sm text-green-600 dark:text-green-400">
+        <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg p-3">
+          <p className="text-sm text-success">
             Press Enter to create new type: &quot;{searchTerm}&quot;
           </p>
         </div>
       )}
 
       {!isExisting && value && (
-        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-          ✓ Will create new type: &quot;{value}&quot;
+        <p className="text-xs text-success mt-1 flex items-center gap-1">
+          <span className="icon-[tabler--check] size-3" />
+          Will create new type: &quot;{value}&quot;
         </p>
       )}
     </div>

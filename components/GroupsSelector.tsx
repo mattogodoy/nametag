@@ -43,36 +43,24 @@ export default function GroupsSelector({
     item: { id: string; label: string; color?: string | null },
     onRemove: () => void
   ) => (
-    <div key={item.id} className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium">
+    <div key={item.id} className="badge badge-lg gap-2 bg-base-300">
       <div
         className="w-3 h-3 rounded-full flex-shrink-0"
         style={{
           backgroundColor: item.color || '#9CA3AF',
         }}
       />
-      <span className="text-gray-900 dark:text-white">{item.label}</span>
+      <span>{item.label}</span>
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onRemove();
         }}
-        className="hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-0.5 transition-colors text-gray-600 dark:text-gray-400"
+        className="hover:bg-base-content/20 rounded-full p-0.5 transition-colors"
         aria-label={`Remove ${item.label}`}
       >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
+        <span className="icon-[tabler--x] size-4" />
       </button>
     </div>
   );

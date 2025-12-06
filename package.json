@@ -17,6 +17,7 @@
     "@types/d3": "^7.4.3",
     "bcryptjs": "^3.0.3",
     "d3": "^7.9.0",
+    "flyonui": "^2.4.1",
     "next": "16.0.6",
     "next-auth": "^5.0.0-beta.30",
     "pg": "^8.16.3",
@@ -27,6 +28,8 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@iconify-json/tabler": "^1.2.23",
+    "@iconify/tailwind4": "^1.2.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",

@@ -85,17 +85,15 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-          {error}
+        <div className="alert alert-error">
+          <span className="icon-[tabler--alert-circle] size-5" />
+          <span>{error}</span>
         </div>
       )}
 
-      <div>
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Group Name *
+      <div className="form-control">
+        <label htmlFor="name" className="label">
+          <span className="label-text">Group Name *</span>
         </label>
         <input
           type="text"
@@ -103,17 +101,14 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           placeholder="e.g., Family, Friends, Colleagues"
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="description"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Description
+      <div className="form-control">
+        <label htmlFor="description" className="label">
+          <span className="label-text">Description</span>
         </label>
         <textarea
           id="description"
@@ -122,14 +117,14 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="textarea"
           placeholder="Optional description for this group"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Color
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">Color</span>
         </label>
         <div className="flex flex-wrap gap-3">
           {PRESET_COLORS.map((color) => (
@@ -139,7 +134,7 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
               onClick={() => setFormData({ ...formData, color })}
               className={`w-10 h-10 rounded-full transition-all ${
                 formData.color === color
-                  ? 'ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-gray-800 scale-110'
+                  ? 'ring-4 ring-primary ring-offset-2 ring-offset-base-100 scale-110'
                   : 'hover:scale-105'
               }`}
               style={{ backgroundColor: color }}
@@ -148,11 +143,8 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
           ))}
         </div>
         <div className="mt-3">
-          <label
-            htmlFor="customColor"
-            className="block text-xs text-gray-500 dark:text-gray-400 mb-1"
-          >
-            Or choose a custom color:
+          <label htmlFor="customColor" className="label">
+            <span className="label-text-alt">Or choose a custom color:</span>
           </label>
           <input
             type="color"
@@ -164,18 +156,16 @@ export default function GroupForm({ group, mode }: GroupFormProps) {
         </div>
       </div>
 
-      <div className="flex justify-end space-x-4 pt-4">
-        <Link
-          href="/groups"
-          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
+      <div className="flex justify-end gap-3 pt-4">
+        <Link href="/groups" className="btn btn-outline">
           Cancel
         </Link>
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-primary"
         >
+          {isLoading && <span className="loading loading-spinner loading-sm" />}
           {isLoading
             ? 'Saving...'
             : mode === 'create'

@@ -21,45 +21,38 @@ export default function ThemeToggle({ userId, currentTheme }: ThemeToggleProps) 
 
   return (
     <div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-sm text-base-content/60 mb-4">
         Choose your preferred theme
       </p>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          ☀️ Light
+        <span className="flex items-center gap-1 text-sm font-medium">
+          <span className="icon-[tabler--sun] size-4" />
+          Light
         </span>
 
-        <button
-          onClick={handleThemeChange}
+        <input
+          type="checkbox"
+          checked={theme === 'DARK'}
           disabled={true}
-          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-            theme === 'DARK'
-              ? 'bg-blue-600'
-              : 'bg-gray-300 dark:bg-gray-600'
-          }`}
-          aria-label="Toggle theme"
-        >
-          <span
-            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-              theme === 'DARK' ? 'translate-x-7' : 'translate-x-1'
-            }`}
-          />
-        </button>
+          onChange={handleThemeChange}
+          className="toggle toggle-primary"
+        />
 
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          🌙 Dark
+        <span className="flex items-center gap-1 text-sm font-medium">
+          <span className="icon-[tabler--moon] size-4" />
+          Dark
         </span>
 
-        <span className="text-sm text-gray-500 dark:text-gray-400 italic ml-2">
+        <span className="badge badge-ghost text-xs italic">
           Coming soon!
         </span>
       </div>
 
       {message && (
-        <p className={`mt-4 text-sm ${message.includes('success') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+        <div className={`mt-4 ${message.includes('success') ? 'text-success' : 'text-error'}`}>
           {message}
-        </p>
+        </div>
       )}
     </div>
   );

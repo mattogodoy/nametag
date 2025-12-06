@@ -56,9 +56,9 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-        <div className="max-w-md w-full space-y-8 text-center">
-          <div className="flex flex-col items-center">
+      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
+        <div className="card bg-base-100 w-full max-w-md shadow-xl">
+          <div className="card-body items-center text-center">
             <Image
               src="/logo.svg"
               alt="NameTag Logo"
@@ -66,21 +66,19 @@ function ResetPasswordForm() {
               height={96}
               priority
             />
-          </div>
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-red-700 dark:text-red-400 mb-4">
-              Invalid Reset Link
-            </h2>
-            <p className="text-red-600 dark:text-red-300">
+            <div className="bg-error/20 p-4 rounded-full my-4">
+              <span className="icon-[tabler--link-off] size-12 text-error" />
+            </div>
+            <h2 className="card-title text-2xl text-error">Invalid Reset Link</h2>
+            <p className="text-base-content/70">
               This password reset link is invalid or has expired.
             </p>
+            <div className="card-actions mt-4">
+              <Link href="/forgot-password" className="btn btn-primary">
+                Request a new reset link
+              </Link>
+            </div>
           </div>
-          <Link
-            href="/forgot-password"
-            className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Request a new reset link
-          </Link>
         </div>
       </div>
     );
@@ -88,9 +86,9 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-        <div className="max-w-md w-full space-y-8 text-center">
-          <div className="flex flex-col items-center">
+      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
+        <div className="card bg-base-100 w-full max-w-md shadow-xl">
+          <div className="card-body items-center text-center">
             <Image
               src="/logo.svg"
               alt="NameTag Logo"
@@ -98,54 +96,55 @@ function ResetPasswordForm() {
               height={96}
               priority
             />
-          </div>
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
-              Password Reset Successful
-            </h2>
-            <p className="text-green-600 dark:text-green-300">
+            <div className="bg-success/20 p-4 rounded-full my-4">
+              <span className="icon-[tabler--check] size-12 text-success" />
+            </div>
+            <h2 className="card-title text-2xl text-success">Password Reset Successful</h2>
+            <p className="text-base-content/70">
               Your password has been updated. You can now log in with your new password.
             </p>
+            <div className="card-actions mt-4">
+              <Link href="/login" className="btn btn-primary">
+                Go to login
+              </Link>
+            </div>
           </div>
-          <Link
-            href="/login"
-            className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Go to login
-          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="flex flex-col items-center">
-          <Image
-            src="/logo.svg"
-            alt="NameTag Logo"
-            width={96}
-            height={96}
-            priority
-          />
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
-            Reset your password
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Enter your new password below
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="password" className="sr-only">
-                New Password
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
+      <div className="card bg-base-100 w-full max-w-md shadow-xl">
+        <div className="card-body">
+          <div className="flex flex-col items-center mb-6">
+            <Image
+              src="/logo.svg"
+              alt="NameTag Logo"
+              width={96}
+              height={96}
+              priority
+            />
+            <h2 className="card-title text-2xl mt-4">
+              Reset your password
+            </h2>
+            <p className="text-base-content/60 text-sm">
+              Enter your new password below
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="alert alert-error">
+                <span className="icon-[tabler--alert-circle] size-5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="form-control">
+              <label htmlFor="password" className="label">
+                <span className="label-text">New Password</span>
               </label>
               <input
                 id="password"
@@ -155,13 +154,14 @@ function ResetPasswordForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="New password"
+                className="input"
+                placeholder="Min 8 characters"
               />
             </div>
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                Confirm New Password
+
+            <div className="form-control">
+              <label htmlFor="confirmPassword" className="label">
+                <span className="label-text">Confirm New Password</span>
               </label>
               <input
                 id="confirmPassword"
@@ -171,34 +171,30 @@ function ResetPasswordForm() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Confirm new password"
+                className="input"
+                placeholder="Repeat password"
               />
             </div>
-          </div>
 
-          <div>
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary w-full"
             >
+              {isLoading && <span className="loading loading-spinner loading-sm" />}
               {isLoading ? 'Resetting...' : 'Reset password'}
             </button>
-          </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Remember your password?{' '}
-              <Link
-                href="/login"
-                className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </form>
+            <div className="text-center pt-2">
+              <p className="text-sm text-base-content/60">
+                Remember your password?{' '}
+                <Link href="/login" className="link link-primary">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -207,8 +203,8 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-base-200">
+        <span className="loading loading-spinner loading-lg" />
       </div>
     }>
       <ResetPasswordForm />

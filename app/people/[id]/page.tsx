@@ -72,7 +72,6 @@ export default async function PersonDetailsPage({
 
   const { id } = await params;
 
-  // Fetch user's date format preference
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { dateFormat: true },
@@ -144,7 +143,6 @@ export default async function PersonDetailsPage({
     notFound();
   }
 
-  // Filter out people who already have a relationship
   const relatedPersonIds = new Set(
     person.relationshipsFrom.map((r) => r.relatedPersonId)
   );
@@ -153,7 +151,7 @@ export default async function PersonDetailsPage({
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-base-200">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -164,195 +162,200 @@ export default async function PersonDetailsPage({
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="mb-6">
-            <Link
-              href="/people"
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-            >
-              ← Back to People
+            <Link href="/people" className="link link-primary text-sm flex items-center gap-1">
+              <span className="icon-[tabler--arrow-left] size-4" />
+              Back to People
             </Link>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start gap-4">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
-                  {formatFullName(person)}
-                </h1>
-                {person.groups.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {person.groups.map((pg) => (
-                      <span
-                        key={pg.groupId}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                        style={{
-                          backgroundColor: pg.group.color
-                            ? `${pg.group.color}20`
-                            : '#E5E7EB',
-                          color: pg.group.color || '#374151',
-                        }}
-                      >
-                        {pg.group.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
-                <Link
-                  href={`/people/${person.id}/edit`}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
-                >
-                  Edit
-                </Link>
-                <DeletePersonButton personId={person.id} personName={formatFullName(person)} />
+          <div className="card bg-base-100 shadow-lg overflow-visible">
+            <div className="card-body border-b border-base-content/10">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl sm:text-3xl font-bold break-words">
+                    {formatFullName(person)}
+                  </h1>
+                  {person.groups.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {person.groups.map((pg) => (
+                        <span
+                          key={pg.groupId}
+                          className="badge"
+                          style={{
+                            backgroundColor: pg.group.color
+                              ? `${pg.group.color}20`
+                              : undefined,
+                            color: pg.group.color || undefined,
+                          }}
+                        >
+                          {pg.group.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-shrink-0 gap-3 w-full sm:w-auto">
+                  <Link
+                    href={`/people/${person.id}/edit`}
+                    className="btn btn-primary flex-1 sm:flex-none"
+                  >
+                    <span className="icon-[tabler--edit] size-4" />
+                    Edit
+                  </Link>
+                  <DeletePersonButton personId={person.id} personName={formatFullName(person)} />
+                </div>
               </div>
             </div>
 
-            <div className="px-6 py-5 space-y-6">
+            <div className="card-body space-y-6">
               {/* Details Section */}
               {(person.lastContact || person.notes) && (
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Details
-                  </h3>
-                  <div className="space-y-4">
-                    {person.lastContact && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                          Last Contact
-                        </h4>
-                        <p className="text-gray-900 dark:text-white">
-                          {formatDate(new Date(person.lastContact), dateFormat)}{' '}
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            ({getRelativeTime(new Date(person.lastContact))})
-                          </span>
-                        </p>
-                        {getContactReminderDescription(person) && (
-                          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            {getContactReminderDescription(person)}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                <div className="card bg-base-200">
+                  <div className="card-body">
+                    <h3 className="card-title text-lg">
+                      <span className="icon-[tabler--info-circle] size-5" />
+                      Details
+                    </h3>
+                    <div className="space-y-4">
+                      {person.lastContact && (
+                        <div>
+                          <h4 className="text-sm font-medium text-base-content/60 mb-1">
+                            Last Contact
+                          </h4>
+                          <p>
+                            {formatDate(new Date(person.lastContact), dateFormat)}{' '}
+                            <span className="text-sm text-base-content/60">
+                              ({getRelativeTime(new Date(person.lastContact))})
+                            </span>
+                          </p>
+                          {getContactReminderDescription(person) && (
+                            <div className="text-xs text-primary mt-1 flex items-center gap-1">
+                              <span className="icon-[tabler--bell] size-3" />
+                              {getContactReminderDescription(person)}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                    {person.notes && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                          Notes
-                        </h4>
-                        <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                          {person.notes}
-                        </p>
-                      </div>
-                    )}
+                      {person.notes && (
+                        <div>
+                          <h4 className="text-sm font-medium text-base-content/60 mb-1">
+                            Notes
+                          </h4>
+                          <p className="whitespace-pre-wrap">
+                            {person.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Relationship Network Section */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Relationship Network
-                </h3>
-                <UnifiedNetworkGraph
-                  apiEndpoint={`/api/people/${person.id}/graph`}
-                  centerNodeId={person.id}
-                  linkDistance={100}
-                  chargeStrength={-300}
-                  animateNewNodes={true}
-                  refreshKey={person.relationshipsFrom.length}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Click nodes to navigate • Drag to reposition • Scroll to zoom
-                </p>
+              <div className="card bg-base-200">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">
+                    <span className="icon-[tabler--network] size-5" />
+                    Relationship Network
+                  </h3>
+                  <UnifiedNetworkGraph
+                    apiEndpoint={`/api/people/${person.id}/graph`}
+                    centerNodeId={person.id}
+                    linkDistance={100}
+                    chargeStrength={-300}
+                    animateNewNodes={true}
+                    refreshKey={person.relationshipsFrom.length}
+                  />
+                  <p className="text-xs text-base-content/60 mt-2">
+                    Click nodes to navigate | Drag to reposition | Scroll to zoom
+                  </p>
+                </div>
               </div>
 
               {/* Relationships Section */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Relationships
-                </h3>
+              <div className="card bg-base-200">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">
+                    <span className="icon-[tabler--heart-handshake] size-5" />
+                    Relationships
+                  </h3>
 
-                {/* Relationship to user */}
-                {person.relationshipToUser && (
-                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-900 dark:text-white font-medium">
-                          You
-                        </span>
-                        <span className="text-gray-500 dark:text-gray-400">•</span>
-                        <span
-                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          style={{
-                            backgroundColor: person.relationshipToUser.color
-                              ? `${person.relationshipToUser.color}20`
-                              : '#E5E7EB',
-                            color: person.relationshipToUser.color || '#374151',
-                          }}
+                  {/* Relationship to user */}
+                  {person.relationshipToUser && (
+                    <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">You</span>
+                          <span className="text-base-content/40">•</span>
+                          <span
+                            className="badge badge-sm"
+                            style={{
+                              backgroundColor: person.relationshipToUser.color
+                                ? `${person.relationshipToUser.color}20`
+                                : undefined,
+                              color: person.relationshipToUser.color || undefined,
+                            }}
+                          >
+                            {person.relationshipToUser.label}
+                          </span>
+                        </div>
+                        <Link
+                          href={`/people/${person.id}/edit`}
+                          className="btn btn-ghost btn-square btn-sm"
+                          title="Edit"
                         >
-                          {person.relationshipToUser.label}
-                        </span>
+                          <span className="icon-[tabler--edit] size-4" />
+                        </Link>
                       </div>
-                      <Link
-                        href={`/people/${person.id}/edit`}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                        title="Edit"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </Link>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Relationships to other people */}
-                <RelationshipManager
-                  personId={person.id}
-                  personName={formatFullName(person)}
-                  relationships={person.relationshipsFrom}
-                  availablePeople={availablePeople}
-                  relationshipTypes={relationshipTypes}
-                />
+                  {/* Relationships to other people */}
+                  <RelationshipManager
+                    personId={person.id}
+                    personName={formatFullName(person)}
+                    relationships={person.relationshipsFrom}
+                    availablePeople={availablePeople}
+                    relationshipTypes={relationshipTypes}
+                  />
+                </div>
               </div>
 
               {/* Important Dates Section */}
               {person.importantDates && person.importantDates.length > 0 && (
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Important Dates
-                  </h3>
-                  <div className="space-y-2">
-                    {person.importantDates.map((date) => {
-                      const reminderDesc = getReminderDescription(date);
-                      return (
-                        <div
-                          key={date.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900 dark:text-white text-sm">
-                              {date.title}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatDate(new Date(date.date), dateFormat)}
-                            </div>
-                            {reminderDesc && (
-                              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                                {reminderDesc}
+                <div className="card bg-base-200">
+                  <div className="card-body">
+                    <h3 className="card-title text-lg">
+                      <span className="icon-[tabler--calendar-event] size-5" />
+                      Important Dates
+                    </h3>
+                    <div className="space-y-2">
+                      {person.importantDates.map((date) => {
+                        const reminderDesc = getReminderDescription(date);
+                        return (
+                          <div
+                            key={date.id}
+                            className="flex items-center justify-between p-3 bg-base-300 rounded-lg"
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">
+                                {date.title}
                               </div>
-                            )}
+                              <div className="text-xs text-base-content/60">
+                                {formatDate(new Date(date.date), dateFormat)}
+                              </div>
+                              {reminderDesc && (
+                                <div className="text-xs text-primary mt-1 flex items-center gap-1">
+                                  <span className="icon-[tabler--bell] size-3" />
+                                  {reminderDesc}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}

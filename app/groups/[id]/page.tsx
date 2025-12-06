@@ -5,7 +5,6 @@ import { prisma } from '@/lib/prisma';
 import DeleteGroupButton from '@/components/DeleteGroupButton';
 import Navigation from '@/components/Navigation';
 import GroupMembersManager from '@/components/GroupMembersManager';
-import { formatFullName } from '@/lib/nameUtils';
 
 export default async function GroupDetailsPage({
   params,
@@ -64,7 +63,7 @@ export default async function GroupDetailsPage({
   const currentMembers = group.people.map((pg) => pg.person);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-base-200">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -75,46 +74,47 @@ export default async function GroupDetailsPage({
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="mb-6">
-            <Link
-              href="/groups"
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-            >
-              ← Back to Groups
+            <Link href="/groups" className="link link-primary text-sm flex items-center gap-1">
+              <span className="icon-[tabler--arrow-left] size-4" />
+              Back to Groups
             </Link>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-visible">
-            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start gap-4">
-              <div className="flex items-center flex-1 min-w-0">
-                {group.color && (
-                  <div
-                    className="w-12 h-12 rounded-full mr-4 flex-shrink-0"
-                    style={{ backgroundColor: group.color }}
-                  />
-                )}
-                <div className="min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
-                    {group.name}
-                  </h1>
-                  {group.description && (
-                    <p className="text-gray-600 dark:text-gray-400 mt-1">
-                      {group.description}
-                    </p>
+          <div className="card bg-base-100 shadow-lg overflow-visible">
+            <div className="card-body border-b border-base-content/10">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="flex items-center flex-1 min-w-0">
+                  {group.color && (
+                    <div
+                      className="w-12 h-12 rounded-full mr-4 flex-shrink-0"
+                      style={{ backgroundColor: group.color }}
+                    />
                   )}
+                  <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold break-words">
+                      {group.name}
+                    </h1>
+                    {group.description && (
+                      <p className="text-base-content/60 mt-1">
+                        {group.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
-                <Link
-                  href={`/groups/${group.id}/edit`}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
-                >
-                  Edit
-                </Link>
-                <DeleteGroupButton groupId={group.id} groupName={group.name} />
+                <div className="flex flex-shrink-0 gap-3 w-full sm:w-auto">
+                  <Link
+                    href={`/groups/${group.id}/edit`}
+                    className="btn btn-primary flex-1 sm:flex-none"
+                  >
+                    <span className="icon-[tabler--edit] size-4" />
+                    Edit
+                  </Link>
+                  <DeleteGroupButton groupId={group.id} groupName={group.name} />
+                </div>
               </div>
             </div>
 
-            <div className="px-6 py-5">
+            <div className="card-body">
               <GroupMembersManager
                 groupId={group.id}
                 groupName={group.name}

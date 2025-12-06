@@ -191,19 +191,20 @@ export default function RelationshipManager({
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <h4 className="text-base font-medium text-gray-700 dark:text-gray-300">
+        <h4 className="text-base font-medium text-base-content/80">
           Other Relationships
         </h4>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="btn btn-primary btn-sm"
         >
+          <span className="icon-[tabler--plus] size-4" />
           Add Relationship
         </button>
       </div>
 
       {relationships.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <p className="text-base-content/60 text-sm">
           No relationships yet.
         </p>
       ) : (
@@ -211,53 +212,49 @@ export default function RelationshipManager({
           {relationships.map((rel) => (
             <div
               key={rel.id}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+              className="flex items-center justify-between p-3 bg-base-300 rounded-lg"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
                     href={`/people/${rel.relatedPersonId}`}
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    className="link link-primary font-medium"
                   >
                     {formatFullName(rel.relatedPerson)}
                   </Link>
-                  <span className="text-gray-500 dark:text-gray-400">•</span>
+                  <span className="text-base-content/40">•</span>
                   <span
-                    className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                    className="badge badge-sm"
                     style={{
                       backgroundColor: rel.relationshipType?.color
                         ? `${rel.relationshipType.color}20`
-                        : '#E5E7EB',
-                      color: rel.relationshipType?.color || '#374151',
+                        : undefined,
+                      color: rel.relationshipType?.color || undefined,
                     }}
                   >
                     {rel.relationshipType?.label || 'Unknown'}
                   </span>
                 </div>
                 {rel.notes && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-base-content/60 mt-1">
                     {rel.notes}
                   </p>
                 )}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-1">
                 <button
                   onClick={() => openEditModal(rel)}
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                  className="btn btn-ghost btn-square btn-sm"
                   title="Edit"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
+                  <span className="icon-[tabler--edit] size-4" />
                 </button>
                 <button
                   onClick={() => openDeleteModal(rel)}
-                  className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
+                  className="btn btn-ghost btn-square btn-sm text-error"
                   title="Delete"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <span className="icon-[tabler--trash] size-4" />
                 </button>
               </div>
             </div>
@@ -267,189 +264,201 @@ export default function RelationshipManager({
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Add Relationship
-            </h3>
-            <form onSubmit={handleAdd} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-3 py-2 rounded text-sm">
-                  {error}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="card bg-base-100 max-w-md w-full shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title">
+                Add Relationship
+              </h3>
+              <form onSubmit={handleAdd} className="space-y-4">
+                {error && (
+                  <div className="alert alert-error">
+                    <span className="icon-[tabler--alert-circle] size-5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Relationship Type *</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.relationshipTypeId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, relationshipTypeId: e.target.value })
+                    }
+                    className="select"
+                  >
+                    {relationshipTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Relationship Type *
-                </label>
-                <select
-                  required
-                  value={formData.relationshipTypeId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, relationshipTypeId: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {relationshipTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Person *
-                </label>
-                <PersonAutocomplete
-                  people={availablePeople}
-                  value={formData.relatedPersonId}
-                  onChange={(personId) =>
-                    setFormData({ ...formData, relatedPersonId: personId })
-                  }
-                  placeholder="Search for a person..."
-                  required
-                  onCreateNew={handleCreateNewPerson}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Optional notes..."
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isLoading ? 'Adding...' : 'Add Relationship'}
-                </button>
-              </div>
-            </form>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Person *</span>
+                  </label>
+                  <PersonAutocomplete
+                    people={availablePeople}
+                    value={formData.relatedPersonId}
+                    onChange={(personId) =>
+                      setFormData({ ...formData, relatedPersonId: personId })
+                    }
+                    placeholder="Search for a person..."
+                    required
+                    onCreateNew={handleCreateNewPerson}
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Notes</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    className="textarea"
+                    placeholder="Optional notes..."
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="btn btn-ghost"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="btn btn-primary"
+                  >
+                    {isLoading && <span className="loading loading-spinner loading-sm" />}
+                    {isLoading ? 'Adding...' : 'Add Relationship'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Modal */}
       {showEditModal && selectedRelationship && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Edit Relationship with {formatFullName(selectedRelationship.relatedPerson)}
-            </h3>
-            <form onSubmit={handleEdit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-3 py-2 rounded text-sm">
-                  {error}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="card bg-base-100 max-w-md w-full shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title">
+                Edit Relationship with {formatFullName(selectedRelationship.relatedPerson)}
+              </h3>
+              <form onSubmit={handleEdit} className="space-y-4">
+                {error && (
+                  <div className="alert alert-error">
+                    <span className="icon-[tabler--alert-circle] size-5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Relationship Type *</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.relationshipTypeId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, relationshipTypeId: e.target.value })
+                    }
+                    className="select"
+                  >
+                    {relationshipTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Relationship Type *
-                </label>
-                <select
-                  required
-                  value={formData.relationshipTypeId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, relationshipTypeId: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {relationshipTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Optional notes..."
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isLoading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Notes</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    className="textarea"
+                    placeholder="Optional notes..."
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="btn btn-ghost"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="btn btn-primary"
+                  >
+                    {isLoading && <span className="loading loading-spinner loading-sm" />}
+                    {isLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Delete Modal */}
       {showDeleteModal && selectedRelationship && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Delete Relationship
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete the relationship with{' '}
-              <strong className="text-gray-900 dark:text-white">
-                {formatFullName(selectedRelationship.relatedPerson)}
-              </strong>
-              ? This will also remove the reverse relationship.
-            </p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="card bg-base-100 max-w-md w-full shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title">
+                Delete Relationship
+              </h3>
+              <p className="text-base-content/70">
+                Are you sure you want to delete the relationship with{' '}
+                <strong className="text-base-content">
+                  {formatFullName(selectedRelationship.relatedPerson)}
+                </strong>
+                ? This will also remove the reverse relationship.
+              </p>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 rounded text-sm">
-                {error}
+              {error && (
+                <div className="alert alert-error mt-4">
+                  <span className="icon-[tabler--alert-circle] size-5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isLoading}
+                  className="btn btn-ghost"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isLoading}
+                  className="btn btn-error"
+                >
+                  {isLoading && <span className="loading loading-spinner loading-sm" />}
+                  {isLoading ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
-            )}
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isLoading}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
-              >
-                {isLoading ? 'Deleting...' : 'Delete'}
-              </button>
             </div>
           </div>
         </div>

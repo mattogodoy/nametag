@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getDateFormatLabel, getDateFormatExample } from '@/lib/date-format';
+import { getDateFormatExample } from '@/lib/date-format';
 
 interface DateFormatSelectorProps {
   userId: string;
@@ -45,7 +45,6 @@ export default function DateFormatSelector({ userId, currentFormat }: DateFormat
       setMessage('Date format updated successfully');
       router.refresh();
 
-      // Clear success message after 2 seconds
       setTimeout(() => setMessage(''), 2000);
     } catch (error) {
       setMessage('Failed to update date format');
@@ -56,7 +55,7 @@ export default function DateFormatSelector({ userId, currentFormat }: DateFormat
 
   return (
     <div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-sm text-base-content/60 mb-4">
         Choose how dates are displayed throughout the app
       </p>
 
@@ -66,27 +65,23 @@ export default function DateFormatSelector({ userId, currentFormat }: DateFormat
             key={format.value}
             onClick={() => handleFormatChange(format.value)}
             disabled={isLoading}
-            className={`w-full text-left px-4 py-3 border-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
               dateFormat === format.value
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-700'
-            }`}
+                ? 'border-primary bg-primary/10'
+                : 'border-base-content/20 hover:border-primary/50'
+            } disabled:opacity-50`}
           >
             <div className="flex justify-between items-center">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">
+                <div className="font-medium">
                   {format.label}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-base-content/60">
                   Example: {getDateFormatExample(format.value)}
                 </div>
               </div>
               {dateFormat === format.value && (
-                <div className="text-blue-600 dark:text-blue-400">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
+                <span className="icon-[tabler--circle-check-filled] size-6 text-primary" />
               )}
             </div>
           </button>
@@ -94,9 +89,9 @@ export default function DateFormatSelector({ userId, currentFormat }: DateFormat
       </div>
 
       {message && (
-        <p className={`mt-4 text-sm ${message.includes('success') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+        <div className={`mt-4 text-sm ${message.includes('success') ? 'text-success' : 'text-error'}`}>
           {message}
-        </p>
+        </div>
       )}
     </div>
   );

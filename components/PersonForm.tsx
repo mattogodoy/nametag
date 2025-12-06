@@ -10,19 +10,6 @@ import ImportantDatesManager from './ImportantDatesManager';
 
 type ReminderIntervalUnit = 'WEEKS' | 'MONTHS' | 'YEARS';
 
-// These must be defined OUTSIDE the component to prevent re-renders
-const SectionHeader = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-    {children}
-  </h3>
-);
-
-const Section = ({ children }: { children: React.ReactNode }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-    {children}
-  </div>
-);
-
 interface PersonFormProps {
   person?: {
     id: string;
@@ -88,7 +75,6 @@ export default function PersonForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Initialize knownThrough from URL params if provided
   const initialKnownThroughPerson = initialKnownThrough
     ? availablePeople.find(p => p.id === initialKnownThrough)
     : null;
@@ -101,7 +87,6 @@ export default function PersonForm({
   );
   const [inheritGroups, setInheritGroups] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [createAnother, setCreateAnother] = useState(false);
 
   const [formData, setFormData] = useState({
     name: person?.name || initialName || '',
@@ -138,12 +123,10 @@ export default function PersonForm({
     })) || []
   );
 
-  // Get the selected base person's groups for inheritance
   const selectedBasePerson = knownThroughId !== 'user'
     ? availablePeople.find(p => p.id === knownThroughId)
     : null;
 
-  // Auto-inherit groups when checkbox is checked or base person changes
   const handleInheritGroupsChange = (checked: boolean) => {
     setInheritGroups(checked);
     if (checked && selectedBasePerson) {
@@ -155,7 +138,6 @@ export default function PersonForm({
     }
   };
 
-  // Update groups when base person changes if inherit is enabled
   const handleKnownThroughChange = (newPersonId: string, newPersonName: string) => {
     setKnownThroughId(newPersonId);
     setKnownThroughName(newPersonName);
@@ -171,7 +153,6 @@ export default function PersonForm({
     }
   };
 
-  // Create list of people including the user for autocomplete
   const peopleWithUser = [
     { id: 'user', name: 'You', surname: null, nickname: null, groups: [] },
     ...availablePeople
@@ -181,10 +162,6 @@ export default function PersonForm({
     e.preventDefault();
     setError('');
 
-    // Set createAnother based on the parameter
-    setCreateAnother(addAnother);
-
-    // Client-side validation
     if (formData.lastContact) {
       const lastContactDate = new Date(formData.lastContact);
       if (lastContactDate > new Date()) {
@@ -218,7 +195,6 @@ export default function PersonForm({
         return;
       }
 
-      // Show success toast
       const displayName = `${formData.name}${formData.surname ? ' ' + formData.surname : ''}`;
       toast.success(
         mode === 'create'
@@ -226,17 +202,10 @@ export default function PersonForm({
           : `${displayName}'s information has been updated`
       );
 
-      // Redirect logic:
-      // - Edit mode: Go to the edited person's detail page
-      // - Create mode with "create another": Reload the create page
-      // - Create mode with "Known Through" another person: Go to that person's detail page (to see the new relationship)
-      // - Create mode direct to user: Go to the newly created person's detail page
       if (mode === 'edit' && person?.id) {
         router.push(`/people/${person.id}`);
         router.refresh();
       } else if (mode === 'create' && addAnother) {
-        // Reload the create page to reset the form
-        // Preserve query params for knownThrough and relationshipType if they exist
         const params = new URLSearchParams();
         if (initialKnownThrough) {
           params.set('knownThrough', initialKnownThrough);
@@ -271,394 +240,316 @@ export default function PersonForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-          {error}
+        <div className="alert alert-error">
+          <span className="icon-[tabler--alert-circle] size-5" />
+          <span>{error}</span>
         </div>
       )}
 
       {/* Details Section */}
-      <Section>
-        <SectionHeader>Details</SectionHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+      <div className="card bg-base-200">
+        <div className="card-body">
+          <h3 className="card-title text-lg">Details</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="form-control">
+                <label htmlFor="name" className="label">
+                  <span className="label-text">Name *</span>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input"
+                />
+              </div>
+
+              <div className="form-control">
+                <label htmlFor="surname" className="label">
+                  <span className="label-text">Surname</span>
+                </label>
+                <input
+                  type="text"
+                  id="surname"
+                  value={formData.surname}
+                  onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
+                  className="input"
+                />
+              </div>
+
+              <div className="form-control">
+                <label htmlFor="nickname" className="label">
+                  <span className="label-text">Nickname</span>
+                </label>
+                <input
+                  type="text"
+                  id="nickname"
+                  value={formData.nickname}
+                  onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                  className="input"
+                />
+              </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="surname"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Surname
-              </label>
-              <input
-                type="text"
-                id="surname"
-                value={formData.surname}
-                onChange={(e) =>
-                  setFormData({ ...formData, surname: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {mode === 'create' && (
+              <div className="form-control">
+                <label htmlFor="knownThrough" className="label">
+                  <span className="label-text">Known Through</span>
+                </label>
+                <PersonAutocomplete
+                  people={peopleWithUser}
+                  value={knownThroughId}
+                  onChange={handleKnownThroughChange}
+                  placeholder="Search for a person..."
+                />
+                <label className="label">
+                  <span className="label-text-alt">
+                    Select who connects you to this person.
+                  </span>
+                </label>
+                {knownThroughId !== 'user' && selectedBasePerson && selectedBasePerson.groups.length > 0 && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="inheritGroups"
+                      checked={inheritGroups}
+                      onChange={(e) => handleInheritGroupsChange(e.target.checked)}
+                      className="checkbox checkbox-primary checkbox-sm"
+                    />
+                    <label htmlFor="inheritGroups" className="label-text text-sm">
+                      Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div>
-              <label
-                htmlFor="nickname"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Nickname
-              </label>
-              <input
-                type="text"
-                id="nickname"
-                value={formData.nickname}
-                onChange={(e) =>
-                  setFormData({ ...formData, nickname: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+            {mode === 'edit' && person?.relationshipToUserId && (
+              <div className="form-control">
+                <label htmlFor="relationshipToUserId" className="label">
+                  <span className="label-text">Relationship to You</span>
+                </label>
+                <select
+                  id="relationshipToUserId"
+                  value={formData.relationshipToUserId}
+                  onChange={(e) => setFormData({ ...formData, relationshipToUserId: e.target.value })}
+                  className="select"
+                >
+                  <option value="">Select a relationship...</option>
+                  {relationshipTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-          {mode === 'create' && (
-            <div>
-              <label
-                htmlFor="knownThrough"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Known Through
-              </label>
-              <PersonAutocomplete
-                people={peopleWithUser}
-                value={knownThroughId}
-                onChange={handleKnownThroughChange}
-                placeholder="Search for a person..."
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Select who connects you to this person. For example, if adding your friend&apos;s child, select your friend.
-              </p>
-              {knownThroughId !== 'user' && selectedBasePerson && selectedBasePerson.groups.length > 0 && (
-                <div className="mt-3 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="inheritGroups"
-                    checked={inheritGroups}
-                    onChange={(e) => handleInheritGroupsChange(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
+            {mode === 'edit' && !person?.relationshipToUserId && (
+              <div className="alert alert-info">
+                <span className="icon-[tabler--info-circle] size-5" />
+                <span>This person is connected to you through other people in your network, not directly.</span>
+              </div>
+            )}
+
+            {mode === 'create' && (
+              <div className="form-control">
+                <label htmlFor="relationshipToUserId" className="label">
+                  <span className="label-text">Relationship to {knownThroughName} *</span>
+                </label>
+                <select
+                  id="relationshipToUserId"
+                  required
+                  value={formData.relationshipToUserId}
+                  onChange={(e) => setFormData({ ...formData, relationshipToUserId: e.target.value })}
+                  className="select"
+                >
+                  <option value="">Select a relationship...</option>
+                  {relationshipTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+                {knownThroughId !== 'user' && (
+                  <label className="label">
+                    <span className="label-text-alt">
+                      This person will be connected to {knownThroughName}, not directly to you.
+                    </span>
                   </label>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {mode === 'edit' && person?.relationshipToUserId && (
-            <div>
-              <label
-                htmlFor="relationshipToUserId"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Relationship to You
+            <div className="form-control">
+              <label htmlFor="notes" className="label">
+                <span className="label-text">Notes</span>
               </label>
-              <select
-                id="relationshipToUserId"
-                value={formData.relationshipToUserId}
-                onChange={(e) =>
-                  setFormData({ ...formData, relationshipToUserId: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select a relationship...</option>
-                {relationshipTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+              <textarea
+                id="notes"
+                rows={3}
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="textarea"
+              />
             </div>
-          )}
-
-          {mode === 'edit' && !person?.relationshipToUserId && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 px-4 py-3 rounded">
-              This person is connected to you through other people in your network, not directly.
-            </div>
-          )}
-
-          {mode === 'create' && knownThroughId === 'user' && (
-            <div>
-              <label
-                htmlFor="relationshipToUserId"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Relationship to {knownThroughName} *
-              </label>
-              <select
-                id="relationshipToUserId"
-                required
-                value={formData.relationshipToUserId}
-                onChange={(e) =>
-                  setFormData({ ...formData, relationshipToUserId: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select a relationship...</option>
-                {relationshipTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {mode === 'create' && knownThroughId !== 'user' && (
-            <div>
-              <label
-                htmlFor="relationshipToKnownThrough"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Relationship to {knownThroughName} *
-              </label>
-              <select
-                id="relationshipToKnownThrough"
-                required
-                value={formData.relationshipToUserId}
-                onChange={(e) =>
-                  setFormData({ ...formData, relationshipToUserId: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select a relationship...</option>
-                {relationshipTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                This person will be connected to {knownThroughName}, not directly to you.
-              </p>
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor="notes"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Notes
-            </label>
-            <textarea
-              id="notes"
-              rows={3}
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
           </div>
         </div>
-      </Section>
+      </div>
 
       {/* Groups Section */}
       {groups.length > 0 && (
-        <Section>
-          <SectionHeader>Groups</SectionHeader>
-          <GroupsSelector
-            availableGroups={groups}
-            selectedGroupIds={formData.groupIds}
-            onChange={(groupIds) => setFormData({ ...formData, groupIds })}
-          />
-        </Section>
+        <div className="card bg-base-200">
+          <div className="card-body">
+            <h3 className="card-title text-lg">Groups</h3>
+            <GroupsSelector
+              availableGroups={groups}
+              selectedGroupIds={formData.groupIds}
+              onChange={(groupIds) => setFormData({ ...formData, groupIds })}
+            />
+          </div>
+        </div>
       )}
 
       {/* Last Contact Section */}
-      <Section>
-        <SectionHeader>Last Contact</SectionHeader>
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <input
-              type="date"
-              id="lastContact"
-              value={formData.lastContact}
-              max={new Date().toISOString().split('T')[0]}
-              onChange={(e) =>
-                setFormData({ ...formData, lastContact: e.target.value })
-              }
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="button"
-              onClick={setLastContactToToday}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Today
-            </button>
-          </div>
-
-          {/* Contact Reminder */}
-          <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center flex-wrap gap-2">
+      <div className="card bg-base-200">
+        <div className="card-body">
+          <h3 className="card-title text-lg">Last Contact</h3>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="date"
+                id="lastContact"
+                value={formData.lastContact}
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setFormData({ ...formData, lastContact: e.target.value })}
+                className="input flex-1"
+              />
               <button
                 type="button"
-                id="contact-reminder-toggle"
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    contactReminderEnabled: !formData.contactReminderEnabled,
-                  })
-                }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-                  formData.contactReminderEnabled
-                    ? 'bg-blue-600'
-                    : 'bg-gray-300 dark:bg-gray-600'
-                }`}
+                onClick={setLastContactToToday}
+                className="btn btn-neutral"
               >
-                <span
-                  className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                    formData.contactReminderEnabled
-                      ? 'translate-x-6'
-                      : 'translate-x-1'
-                  }`}
-                />
+                Today
               </button>
-              <label
-                htmlFor="contact-reminder-toggle"
-                className={`text-sm ${formData.contactReminderEnabled ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}
-              >
-                Remind me to catch up after
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="99"
-                disabled={!formData.contactReminderEnabled}
-                value={formData.contactReminderInterval}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    contactReminderInterval: Math.max(
-                      1,
-                      parseInt(e.target.value) || 1
-                    ),
-                  })
-                }
-                className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <select
-                disabled={!formData.contactReminderEnabled}
-                value={formData.contactReminderIntervalUnit}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    contactReminderIntervalUnit: e.target
-                      .value as ReminderIntervalUnit,
-                  })
-                }
-                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="WEEKS">weeks</option>
-                <option value="MONTHS">months</option>
-                <option value="YEARS">years</option>
-              </select>
+            </div>
+
+            {/* Contact Reminder */}
+            <div className="p-3 bg-base-300 rounded-lg">
+              <div className="flex items-center flex-wrap gap-2">
+                <input
+                  type="checkbox"
+                  id="contact-reminder-toggle"
+                  checked={formData.contactReminderEnabled}
+                  onChange={() => setFormData({ ...formData, contactReminderEnabled: !formData.contactReminderEnabled })}
+                  className="toggle toggle-primary toggle-sm"
+                />
+                <label
+                  htmlFor="contact-reminder-toggle"
+                  className={`text-sm ${formData.contactReminderEnabled ? '' : 'opacity-50'}`}
+                >
+                  Remind me to catch up after
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="99"
+                  disabled={!formData.contactReminderEnabled}
+                  value={formData.contactReminderInterval}
+                  onChange={(e) => setFormData({ ...formData, contactReminderInterval: Math.max(1, parseInt(e.target.value) || 1) })}
+                  className="input input-sm w-16"
+                />
+                <select
+                  disabled={!formData.contactReminderEnabled}
+                  value={formData.contactReminderIntervalUnit}
+                  onChange={(e) => setFormData({ ...formData, contactReminderIntervalUnit: e.target.value as ReminderIntervalUnit })}
+                  className="select select-sm"
+                >
+                  <option value="WEEKS">weeks</option>
+                  <option value="MONTHS">months</option>
+                  <option value="YEARS">years</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
-      </Section>
+      </div>
 
       {/* Important Dates Section */}
-      <Section>
-        <SectionHeader>Important Dates</SectionHeader>
-        <ImportantDatesManager
-          personId={person?.id}
-          initialDates={importantDates}
-          onChange={setImportantDates}
-          mode={mode}
-        />
-      </Section>
+      <div className="card bg-base-200">
+        <div className="card-body">
+          <h3 className="card-title text-lg">Important Dates</h3>
+          <ImportantDatesManager
+            personId={person?.id}
+            initialDates={importantDates}
+            onChange={setImportantDates}
+            mode={mode}
+          />
+        </div>
+      </div>
 
-      <div className="flex justify-end space-x-4 pt-4">
-        <Link
-          href="/people"
-          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
+      <div className="flex justify-end gap-3 pt-4">
+        <Link href="/people" className="btn btn-outline">
           Cancel
         </Link>
 
         {mode === 'create' ? (
-          <div className="relative">
-            <div className="flex">
+          <div className="dropdown dropdown-end">
+            <div className="join">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-l-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary join-item"
               >
+                {isLoading && <span className="loading loading-spinner loading-sm" />}
                 {isLoading ? 'Saving...' : 'Create'}
               </button>
               <button
                 type="button"
                 disabled={isLoading}
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="px-2 py-2 bg-blue-600 text-white border-l border-blue-500 rounded-r-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary join-item"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <span className="icon-[tabler--chevron-down] size-4" />
               </button>
             </div>
 
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-10">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    setShowDropdown(false);
-                    // Trigger form submission with validation
-                    const form = e.currentTarget.closest('form');
-                    if (form) {
-                      // Check if form is valid using HTML5 validation
-                      if (form.checkValidity()) {
-                        // Manually create and dispatch submit event
-                        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-                        Object.defineProperty(submitEvent, 'target', { value: form, enumerable: true });
-                        handleSubmit(submitEvent as any, true);
-                      } else {
-                        // Trigger browser's built-in validation UI
-                        form.reportValidity();
+              <ul className="dropdown-menu dropdown-open:opacity-100 mt-2 min-w-48">
+                <li>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      setShowDropdown(false);
+                      const form = e.currentTarget.closest('form');
+                      if (form) {
+                        if (form.checkValidity()) {
+                          const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                          Object.defineProperty(submitEvent, 'target', { value: form, enumerable: true });
+                          handleSubmit(submitEvent as unknown as FormEvent<HTMLFormElement>, true);
+                        } else {
+                          form.reportValidity();
+                        }
                       }
-                    }
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Create and add another
-                </button>
-              </div>
+                    }}
+                    className="dropdown-item"
+                  >
+                    <span className="icon-[tabler--plus] size-4" />
+                    Create and add another
+                  </button>
+                </li>
+              </ul>
             )}
           </div>
         ) : (
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-primary"
           >
+            {isLoading && <span className="loading loading-spinner loading-sm" />}
             {isLoading ? 'Saving...' : 'Save'}
           </button>
         )}

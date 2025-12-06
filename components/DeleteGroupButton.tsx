@@ -45,8 +45,9 @@ export default function DeleteGroupButton({
     <>
       <button
         onClick={() => setShowConfirm(true)}
-        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+        className="btn btn-error flex-1 sm:flex-none"
       >
+        <span className="icon-[tabler--trash] size-4" />
         Delete
       </button>
 
@@ -61,11 +62,11 @@ export default function DeleteGroupButton({
         error={error}
         variant="danger"
       >
-        <p className="text-gray-600 dark:text-gray-400 mb-1">
+        <p className="text-base-content/70 mb-1">
           Are you sure you want to delete{' '}
-          <strong className="text-gray-900 dark:text-white">{groupName}</strong>?
+          <strong className="text-base-content">{groupName}</strong>?
         </p>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-base-content/70">
           This will remove all people from this group but will not delete the
           people themselves.
         </p>

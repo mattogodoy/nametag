@@ -8,11 +8,9 @@ export default function AccountManagement() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Export state
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
 
-  // Import state
   const [isImporting, setIsImporting] = useState(false);
   const [importMessage, setImportMessage] = useState('');
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -22,14 +20,12 @@ export default function AccountManagement() {
     customRelationshipTypes: number;
   } | null>(null);
 
-  // Delete state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Export data
   const handleExport = async () => {
     setIsExporting(true);
     setExportMessage('');
@@ -44,7 +40,6 @@ export default function AccountManagement() {
 
       const data = await response.json();
 
-      // Create blob and download
       const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: 'application/json',
       });
@@ -66,7 +61,6 @@ export default function AccountManagement() {
     }
   };
 
-  // Handle file selection for import
   const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -78,7 +72,6 @@ export default function AccountManagement() {
       const text = await file.text();
       const data = JSON.parse(text);
 
-      // Validate and preview
       if (data.version && data.groups && data.people) {
         setImportPreview({
           groups: data.groups.length,
@@ -97,7 +90,6 @@ export default function AccountManagement() {
     }
   };
 
-  // Import data
   const handleImport = async () => {
     if (!importFile) return;
 
@@ -132,7 +124,6 @@ export default function AccountManagement() {
         fileInputRef.current.value = '';
       }
 
-      // Refresh the page to show imported data
       setTimeout(() => {
         router.refresh();
       }, 2000);
@@ -143,7 +134,6 @@ export default function AccountManagement() {
     }
   };
 
-  // Delete account
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== 'DELETE') {
       setDeleteError('Please type DELETE to confirm');
@@ -177,7 +167,6 @@ export default function AccountManagement() {
         return;
       }
 
-      // Sign out and redirect to login
       await signOut({ redirect: true, callbackUrl: '/login' });
     } catch (error) {
       setDeleteError('Failed to delete account');
@@ -190,39 +179,35 @@ export default function AccountManagement() {
     <div className="space-y-8">
       {/* Export Section */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-semibold mb-2">
           Export Data
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-base-content/60 mb-4">
           Download all your data as a JSON file. This includes people, groups,
           relationships, and custom relationship types.
         </p>
         <button
           onClick={handleExport}
           disabled={isExporting}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-primary"
         >
+          {isExporting && <span className="loading loading-spinner loading-sm" />}
+          <span className="icon-[tabler--download] size-4" />
           {isExporting ? 'Exporting...' : 'Export Data'}
         </button>
         {exportMessage && (
-          <p
-            className={`mt-2 text-sm ${
-              exportMessage.includes('success')
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
-            }`}
-          >
+          <div className={`mt-2 text-sm ${exportMessage.includes('success') ? 'text-success' : 'text-error'}`}>
             {exportMessage}
-          </p>
+          </div>
         )}
       </div>
 
       {/* Import Section */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-semibold mb-2">
           Import Data
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-base-content/60 mb-4">
           Import data from a previously exported JSON file. This will add to your
           existing data without removing anything.
         </p>
@@ -233,49 +218,47 @@ export default function AccountManagement() {
             type="file"
             accept=".json"
             onChange={handleFileSelect}
-            className="block w-full text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-white dark:bg-gray-800 focus:outline-none"
+            className="file-input file-input-bordered w-full"
           />
 
           {importPreview && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">
-                Import Preview
-              </h4>
-              <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
-                <li>• {importPreview.groups} groups</li>
-                <li>• {importPreview.people} people</li>
-                <li>• {importPreview.customRelationshipTypes} custom relationship types</li>
-              </ul>
-              <button
-                onClick={handleImport}
-                disabled={isImporting}
-                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isImporting ? 'Importing...' : 'Confirm Import'}
-              </button>
+            <div className="alert alert-info">
+              <span className="icon-[tabler--info-circle] size-5" />
+              <div>
+                <h4 className="font-medium mb-1">Import Preview</h4>
+                <ul className="text-sm space-y-1">
+                  <li>{importPreview.groups} groups</li>
+                  <li>{importPreview.people} people</li>
+                  <li>{importPreview.customRelationshipTypes} custom relationship types</li>
+                </ul>
+                <button
+                  onClick={handleImport}
+                  disabled={isImporting}
+                  className="btn btn-sm btn-primary mt-3"
+                >
+                  {isImporting && <span className="loading loading-spinner loading-xs" />}
+                  {isImporting ? 'Importing...' : 'Confirm Import'}
+                </button>
+              </div>
             </div>
           )}
 
           {importMessage && (
-            <p
-              className={`text-sm ${
-                importMessage.includes('Success')
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}
-            >
+            <div className={`text-sm ${importMessage.includes('Success') ? 'text-success' : 'text-error'}`}>
               {importMessage}
-            </p>
+            </div>
           )}
         </div>
       </div>
 
       {/* Delete Account Section */}
-      <div className="border-t border-gray-300 dark:border-gray-600 pt-8">
-        <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+      <div className="divider" />
+
+      <div>
+        <h3 className="text-lg font-semibold text-error mb-2">
           Delete Account
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-base-content/60 mb-4">
           Permanently delete your account and all associated data. This action cannot
           be undone.
         </p>
@@ -283,97 +266,85 @@ export default function AccountManagement() {
         {!showDeleteDialog ? (
           <button
             onClick={() => setShowDeleteDialog(true)}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+            className="btn btn-error"
           >
+            <span className="icon-[tabler--trash] size-4" />
             Delete Account
           </button>
         ) : (
-          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <svg
-                className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              <div>
-                <h4 className="font-bold text-red-900 dark:text-red-300 mb-2">
-                  Warning: This is permanent!
-                </h4>
-                <p className="text-sm text-red-800 dark:text-red-400 mb-4">
-                  All your data including people, groups, relationships, and custom
-                  relationship types will be permanently deleted. We recommend exporting
-                  your data first.
-                </p>
+          <div className="alert alert-error">
+            <div className="w-full">
+              <div className="flex items-start gap-3">
+                <span className="icon-[tabler--alert-triangle] size-6 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-bold mb-2">
+                    Warning: This is permanent!
+                  </h4>
+                  <p className="text-sm mb-4">
+                    All your data including people, groups, relationships, and custom
+                    relationship types will be permanently deleted. We recommend exporting
+                    your data first.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {deleteError && (
-              <div className="bg-red-100 dark:bg-red-900/40 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-                {deleteError}
+              {deleteError && (
+                <div className="bg-error-content/20 p-3 rounded-lg mb-4">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="form-control">
+                  <label htmlFor="delete-password" className="label">
+                    <span className="label-text">Confirm your password</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="delete-password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className="input input-bordered"
+                  />
+                </div>
+
+                <div className="form-control">
+                  <label htmlFor="delete-confirmation" className="label">
+                    <span className="label-text">Type <strong>DELETE</strong> to confirm</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="delete-confirmation"
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    placeholder="DELETE"
+                    className="input input-bordered"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting || deleteConfirmation !== 'DELETE'}
+                    className="btn btn-error"
+                  >
+                    {isDeleting && <span className="loading loading-spinner loading-sm" />}
+                    {isDeleting ? 'Deleting...' : 'Delete My Account'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDeleteDialog(false);
+                      setDeletePassword('');
+                      setDeleteConfirmation('');
+                      setDeleteError('');
+                    }}
+                    disabled={isDeleting}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            )}
-
-            <div>
-              <label
-                htmlFor="delete-password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Confirm your password
-              </label>
-              <input
-                type="password"
-                id="delete-password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="delete-confirmation"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Type <strong>DELETE</strong> to confirm
-              </label>
-              <input
-                type="text"
-                id="delete-confirmation"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                placeholder="DELETE"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleDeleteAccount}
-                disabled={isDeleting || deleteConfirmation !== 'DELETE'}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete My Account'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowDeleteDialog(false);
-                  setDeletePassword('');
-                  setDeleteConfirmation('');
-                  setDeleteError('');
-                }}
-                disabled={isDeleting}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
             </div>
           </div>
         )}
