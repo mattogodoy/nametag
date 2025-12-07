@@ -17,7 +17,9 @@
       "Bash(./scripts/run-unit-tests.sh:*)",
       "Bash(./scripts/run-integration-tests.sh:*)",
       "Bash(ls:*)",
-      "WebFetch(domain:uiverse.io)"
+      "WebFetch(domain:uiverse.io)",
+      "WebSearch",
+      "Bash(npx @next/codemod@latest upgrade:*)"
     ],
     "deny": [],
     "ask": []
