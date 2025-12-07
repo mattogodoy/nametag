@@ -19,7 +19,8 @@
       "Bash(ls:*)",
       "WebFetch(domain:uiverse.io)",
       "WebSearch",
-      "Bash(npx @next/codemod@latest upgrade:*)"
+      "Bash(npx @next/codemod@latest upgrade:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

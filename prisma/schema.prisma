@@ -17,7 +17,7 @@ model User {
   name               String
   surname            String?
   nickname           String?
-  theme              Theme     @default(LIGHT)
+  theme              Theme     @default(DARK)
   dateFormat         DateFormat @default(MDY)
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique

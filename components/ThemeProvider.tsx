@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useLayoutEffect, ReactNode } from 'react';
 
 type Theme = 'LIGHT' | 'DARK';
 
@@ -25,31 +25,38 @@ interface ThemeProviderProps {
   initialTheme?: Theme;
 }
 
-export default function ThemeProvider({ children, initialTheme = 'DARK' }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(initialTheme);
-
-  useEffect(() => {
-    // Apply theme class to html element
+// Apply theme class to document - runs synchronously to avoid flash
+function applyThemeClass(theme: Theme) {
+  if (typeof document !== 'undefined') {
     const root = document.documentElement;
     if (theme === 'DARK') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
+  }
+}
+
+export default function ThemeProvider({ children, initialTheme = 'DARK' }: ThemeProviderProps) {
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
+
+  // Use useLayoutEffect to apply theme synchronously before paint
+  // This prevents flash of wrong theme
+  useLayoutEffect(() => {
+    applyThemeClass(theme);
   }, [theme]);
 
-  // Also sync initial theme on mount
+  // Sync state if initialTheme changes (e.g., after navigation)
   useEffect(() => {
-    const root = document.documentElement;
-    if (initialTheme === 'DARK') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    setThemeState(initialTheme);
   }, [initialTheme]);
 
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+  };
+
   const toggleTheme = () => {
-    setTheme(prev => prev === 'DARK' ? 'LIGHT' : 'DARK');
+    setThemeState(prev => prev === 'DARK' ? 'LIGHT' : 'DARK');
   };
 
   return (
