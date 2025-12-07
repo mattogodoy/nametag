@@ -48,9 +48,13 @@ export default async function Home() {
           </Link>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="text-blue-600 dark:text-blue-400 text-3xl mb-4">👥</div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg w-fit mb-4 mx-auto">
+              <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Manage People
             </h3>
@@ -60,7 +64,11 @@ export default async function Home() {
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="text-green-600 dark:text-green-400 text-3xl mb-4">🔗</div>
+            <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg w-fit mb-4 mx-auto">
+              <svg className="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Track Relationships
             </h3>
@@ -70,7 +78,11 @@ export default async function Home() {
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="text-purple-600 dark:text-purple-400 text-3xl mb-4">📊</div>
+            <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg w-fit mb-4 mx-auto">
+              <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+            </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Visualize Networks
             </h3>
