@@ -29,7 +29,7 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 export function setAuthSession(session: typeof mockSession | null) {
-  mockAuth.mockResolvedValue(session);
+  mockAuth.mockResolvedValue(session as typeof mockSession);
 }
 
 export function resetAuthMocks() {

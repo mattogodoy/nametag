@@ -15,7 +15,8 @@
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" npx prisma migrate reset:*)",
       "Bash(npm run test:run:*)",
       "Bash(./scripts/run-unit-tests.sh:*)",
-      "Bash(./scripts/run-integration-tests.sh:*)"
+      "Bash(./scripts/run-integration-tests.sh:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

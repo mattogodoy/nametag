@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SessionProvider from "@/components/SessionProvider";
+import ThemeProvider from "@/components/ThemeProvider";
 import { Toaster } from "sonner";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,17 +22,35 @@ export const metadata: Metadata = {
   description: "Manage your relationships, track important details, and visualize your network",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
+  // Get user's theme preference from database
+  let initialTheme: 'LIGHT' | 'DARK' = 'DARK';
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { theme: true },
+    });
+    if (user?.theme) {
+      initialTheme = user.theme;
+    }
+  }
+
   return (
-    <html lang="en">
+    <html lang="en" className={initialTheme === 'DARK' ? 'dark' : ''}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <ThemeProvider initialTheme={initialTheme}>
+            {children}
+          </ThemeProvider>
+        </SessionProvider>
         <Toaster position="top-right" richColors />
       </body>
     </html>
