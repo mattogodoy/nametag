@@ -16,7 +16,8 @@
       "Bash(npm run test:run:*)",
       "Bash(./scripts/run-unit-tests.sh:*)",
       "Bash(./scripts/run-integration-tests.sh:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:uiverse.io)"
     ],
     "deny": [],
     "ask": []
