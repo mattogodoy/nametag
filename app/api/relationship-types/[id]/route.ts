@@ -61,7 +61,7 @@ export const PUT = withAuth(async (request, session, context) => {
       return validation.response;
     }
 
-    const { name, label, color, inverseId, inverseLabel } = validation.data;
+    const { name, label, color, inverseId, inverseLabel, symmetric } = validation.data;
 
     const normalizedName = name.toUpperCase().replace(/\s+/g, '_');
 
@@ -80,6 +80,30 @@ export const PUT = withAuth(async (request, session, context) => {
 
     if (duplicateType) {
       return apiResponse.error('A relationship type with this name already exists');
+    }
+
+    // Handle symmetric relationships (e.g., friend <-> friend)
+    if (symmetric) {
+      const relationshipType = await prisma.relationshipType.update({
+        where: { id },
+        data: {
+          name: normalizedName,
+          label,
+          color: color || null,
+          inverseId: id, // Points to itself
+        },
+        include: {
+          inverse: {
+            select: {
+              id: true,
+              name: true,
+              label: true,
+            },
+          },
+        },
+      });
+
+      return apiResponse.ok({ relationshipType });
     }
 
     let finalInverseId = inverseId || null;
@@ -141,7 +165,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     // Update inverse relationship's color to match
-    if (finalInverseId) {
+    if (finalInverseId && finalInverseId !== id) {
       await prisma.relationshipType.update({
         where: { id: finalInverseId },
         data: { color: color || null },

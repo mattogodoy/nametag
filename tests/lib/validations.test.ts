@@ -370,6 +370,39 @@ describe('validations', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should accept symmetric flag', () => {
+      const result = createRelationshipTypeSchema.safeParse({
+        name: 'friend',
+        label: 'Friend',
+        symmetric: true,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.symmetric).toBe(true);
+      }
+    });
+
+    it('should accept symmetric as false', () => {
+      const result = createRelationshipTypeSchema.safeParse({
+        name: 'parent',
+        label: 'Parent',
+        symmetric: false,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.symmetric).toBe(false);
+      }
+    });
+
+    it('should reject non-boolean symmetric', () => {
+      const result = createRelationshipTypeSchema.safeParse({
+        name: 'friend',
+        label: 'Friend',
+        symmetric: 'yes',
+      });
+      expect(result.success).toBe(false);
+    });
+
     it('should require name', () => {
       const result = createRelationshipTypeSchema.safeParse({
         label: 'Parent',

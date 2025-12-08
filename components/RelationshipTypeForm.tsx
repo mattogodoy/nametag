@@ -55,6 +55,10 @@ export default function RelationshipTypeForm({
   const [inverseIsExisting, setInverseIsExisting] = useState(!!relationshipType?.inverseId);
   const [inverseLabel, setInverseLabel] = useState(relationshipType?.inverse?.label || '');
 
+  // Symmetric relationship toggle (inverse is the same as main, e.g., friend <-> friend)
+  const isInitiallySymmetric = relationshipType?.inverseId === relationshipType?.id;
+  const [isSymmetric, setIsSymmetric] = useState(isInitiallySymmetric);
+
   // Sanitize label to create internal name
   const sanitizeName = (label: string): string => {
     return label
@@ -86,7 +90,10 @@ export default function RelationshipTypeForm({
       };
 
       // Add inverse relationship data
-      if (inverseValue) {
+      if (isSymmetric) {
+        // Symmetric relationship - inverse is the same as main (e.g., friend <-> friend)
+        payload.symmetric = true;
+      } else if (inverseValue) {
         if (inverseIsExisting) {
           // Existing type - send ID
           payload.inverseId = inverseValue;
@@ -159,23 +166,59 @@ export default function RelationshipTypeForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Inverse Relationship (Optional)
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Inverse Relationship
         </label>
-        <RelationshipTypeAutocomplete
-          types={availableTypes}
-          value={inverseValue}
-          isExisting={inverseIsExisting}
-          onChange={(value, isExisting, label) => {
-            setInverseValue(value);
-            setInverseIsExisting(isExisting);
-            setInverseLabel(label);
-          }}
-          placeholder="Search existing or type to create new..."
-        />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Select an existing type or type a new name to create it automatically. The reciprocal relationship (e.g., Parent ↔ Child, Mentor ↔ Student)
+
+        {/* Symmetric toggle */}
+        <div className="flex items-center mb-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isSymmetric}
+            onClick={() => {
+              setIsSymmetric(!isSymmetric);
+              if (!isSymmetric) {
+                // When enabling symmetric, clear the inverse value
+                setInverseValue('');
+                setInverseIsExisting(false);
+                setInverseLabel('');
+              }
+            }}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+              isSymmetric ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isSymmetric ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+            Symmetric (same as inverse)
+          </span>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          {isSymmetric
+            ? `Both directions will use the same label (e.g., Friend ↔ Friend)`
+            : 'The reciprocal relationship (e.g., Parent ↔ Child, Mentor ↔ Student)'}
         </p>
+
+        {/* Inverse autocomplete - only shown when not symmetric */}
+        {!isSymmetric && (
+          <RelationshipTypeAutocomplete
+            types={availableTypes}
+            value={inverseValue}
+            isExisting={inverseIsExisting}
+            onChange={(value, isExisting, label) => {
+              setInverseValue(value);
+              setInverseIsExisting(isExisting);
+              setInverseLabel(label);
+            }}
+            placeholder="Search existing or type to create new..."
+          />
+        )}
       </div>
 
       <div>

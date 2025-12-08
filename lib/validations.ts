@@ -128,6 +128,7 @@ export const createRelationshipTypeSchema = z.object({
   color: hexColorSchema,
   inverseId: z.string().nullable().optional(),
   inverseLabel: z.string().max(50).optional(),
+  symmetric: z.boolean().optional(),
 });
 
 export const updateRelationshipTypeSchema = createRelationshipTypeSchema;
