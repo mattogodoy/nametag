@@ -85,6 +85,11 @@ export default function PersonAutocomplete({
     inputRef.current?.blur();
   };
 
+  // Calculate total options including "Create new" option
+  const hasCreateOption = onCreateNew && searchTerm;
+  const totalOptions = filteredPeople.length + (hasCreateOption ? 1 : 0);
+  const createNewIndex = filteredPeople.length; // "Create new" is always last
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
@@ -98,7 +103,7 @@ export default function PersonAutocomplete({
       case 'ArrowDown':
         e.preventDefault();
         setHighlightedIndex((prev) =>
-          prev < filteredPeople.length - 1 ? prev + 1 : prev
+          prev < totalOptions - 1 ? prev + 1 : prev
         );
         break;
       case 'ArrowUp':
@@ -107,11 +112,11 @@ export default function PersonAutocomplete({
         break;
       case 'Enter':
         e.preventDefault();
-        if (filteredPeople.length > 0 && filteredPeople[highlightedIndex]) {
-          handleSelect(filteredPeople[highlightedIndex]);
-        } else if (filteredPeople.length === 0 && searchTerm && onCreateNew) {
-          // No results - trigger create new
+        if (highlightedIndex === createNewIndex && hasCreateOption) {
+          // "Create new" option selected
           onCreateNew(searchTerm);
+        } else if (filteredPeople.length > 0 && filteredPeople[highlightedIndex]) {
+          handleSelect(filteredPeople[highlightedIndex]);
         }
         break;
       case 'Escape':
@@ -144,7 +149,7 @@ export default function PersonAutocomplete({
         autoComplete="off"
       />
 
-      {isOpen && filteredPeople.length > 0 && (
+      {isOpen && (filteredPeople.length > 0 || hasCreateOption) && (
         <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
           {filteredPeople.map((person, index) => (
             <button
@@ -167,25 +172,38 @@ export default function PersonAutocomplete({
               </div>
             </button>
           ))}
-        </div>
-      )}
-
-      {isOpen && searchTerm && filteredPeople.length === 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No people found matching &quot;{searchTerm}&quot;
-            </p>
-            {onCreateNew && (
+          {hasCreateOption && (
+            <>
+              {filteredPeople.length > 0 && (
+                <div className="border-t border-gray-200 dark:border-gray-700" />
+              )}
               <button
                 type="button"
                 onClick={() => onCreateNew(searchTerm)}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                  highlightedIndex === createNewIndex
+                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    : ''
+                }`}
+                onMouseEnter={() => setHighlightedIndex(createNewIndex)}
               >
-                Create
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Create &quot;{searchTerm}&quot;</span>
+                </div>
               </button>
-            )}
-          </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {isOpen && searchTerm && filteredPeople.length === 0 && !onCreateNew && (
+        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No people found matching &quot;{searchTerm}&quot;
+          </p>
         </div>
       )}
     </div>

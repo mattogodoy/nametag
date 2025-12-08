@@ -354,20 +354,6 @@ export default function PersonForm({
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Select who connects you to this person. For example, if adding your friend&apos;s child, select your friend.
               </p>
-              {knownThroughId !== 'user' && selectedBasePerson && selectedBasePerson.groups.length > 0 && (
-                <div className="mt-3 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="inheritGroups"
-                    checked={inheritGroups}
-                    onChange={(e) => handleInheritGroupsChange(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
-                  </label>
-                </div>
-              )}
             </div>
           )}
 
@@ -482,6 +468,20 @@ export default function PersonForm({
       {groups.length > 0 && (
         <Section>
           <SectionHeader>Groups</SectionHeader>
+          {mode === 'create' && knownThroughId !== 'user' && selectedBasePerson && selectedBasePerson.groups.length > 0 && (
+            <div className="mb-4 flex items-center">
+              <input
+                type="checkbox"
+                id="inheritGroups"
+                checked={inheritGroups}
+                onChange={(e) => handleInheritGroupsChange(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
+              </label>
+            </div>
+          )}
           <GroupsSelector
             availableGroups={groups}
             selectedGroupIds={formData.groupIds}
