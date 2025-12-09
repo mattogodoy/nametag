@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { toast } from 'sonner';
 import PillSelector from './PillSelector';
 
 interface Group {
@@ -12,15 +14,37 @@ interface GroupsSelectorProps {
   availableGroups: Group[];
   selectedGroupIds: string[];
   onChange: (groupIds: string[]) => void;
+  allowCreate?: boolean;
+}
+
+// Generate a random color from a nice palette
+function generateRandomColor(): string {
+  const colors = [
+    '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
+    '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
+    '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
+    '#EC4899', '#F43F5E',
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
 }
 
 export default function GroupsSelector({
   availableGroups,
   selectedGroupIds,
   onChange,
+  allowCreate = true,
 }: GroupsSelectorProps) {
+  // Track newly created groups that aren't in the original list
+  const [createdGroups, setCreatedGroups] = useState<Group[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Combine original groups with newly created ones
+  const allGroups = [...availableGroups, ...createdGroups.filter(
+    (cg) => !availableGroups.some((ag) => ag.id === cg.id)
+  )];
+
   // Transform groups to PillItem format
-  const pillItems = availableGroups.map((group) => ({
+  const pillItems = allGroups.map((group) => ({
     id: group.id,
     label: group.name,
     color: group.color,
@@ -36,6 +60,47 @@ export default function GroupsSelector({
 
   const handleRemove = (itemId: string) => {
     onChange(selectedGroupIds.filter((id) => id !== itemId));
+  };
+
+  const handleCreateNew = async (name: string) => {
+    if (isCreating) return;
+
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          color: generateRandomColor(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to create group');
+        return;
+      }
+
+      const newGroup: Group = {
+        id: data.group.id,
+        name: data.group.name,
+        color: data.group.color,
+      };
+
+      // Add to created groups list
+      setCreatedGroups((prev) => [...prev, newGroup]);
+
+      // Auto-select the newly created group
+      onChange([...selectedGroupIds, newGroup.id]);
+
+      toast.success(`Group "${name}" created`);
+    } catch (error) {
+      toast.error('Failed to create group');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   // Custom pill renderer for groups (gray background with color circle on left)
@@ -83,11 +148,17 @@ export default function GroupsSelector({
       availableItems={pillItems}
       onAdd={handleAdd}
       onRemove={handleRemove}
+      onCreateNew={allowCreate ? handleCreateNew : undefined}
       placeholder="Type to search groups..."
       emptyMessage="No groups found matching"
-      helpText="Type to search for groups and press Enter to add them. Click × to remove."
+      createNewLabel="Create group"
+      helpText={allowCreate
+        ? "Type to search or create new groups. Press Enter to add."
+        : "Type to search for groups and press Enter to add them. Click × to remove."
+      }
       showAllOnFocus={true}
       renderPill={renderGroupPill}
+      isLoading={isCreating}
     />
   );
 }

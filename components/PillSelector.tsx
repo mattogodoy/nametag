@@ -14,8 +14,10 @@ interface PillSelectorProps<T extends PillItem> {
   availableItems: T[];
   onAdd: (item: T) => void;
   onRemove: (itemId: string) => void;
+  onCreateNew?: (name: string) => void | Promise<void>;
   placeholder?: string;
   emptyMessage?: string;
+  createNewLabel?: string;
   helpText?: string;
   renderPill?: (item: T, onRemove: () => void) => ReactNode;
   renderSuggestion?: (item: T) => ReactNode;
@@ -29,8 +31,10 @@ export default function PillSelector<T extends PillItem>({
   availableItems,
   onAdd,
   onRemove,
+  onCreateNew,
   placeholder = 'Type to search...',
   emptyMessage = 'No items found',
+  createNewLabel = 'Create',
   helpText,
   renderPill,
   renderSuggestion,
@@ -59,6 +63,18 @@ export default function PillSelector<T extends PillItem>({
     ? unselectedItems
     : [];
 
+  // Check if the search term exactly matches an existing item (case-insensitive)
+  const exactMatch = availableItems.some(
+    (item) => item.label.toLowerCase() === searchTerm.toLowerCase()
+  );
+
+  // Show create option if there's a search term, no exact match, and onCreateNew is provided
+  const showCreateOption = searchTerm && !exactMatch && onCreateNew;
+
+  // Total options including create option for keyboard navigation
+  const totalOptions = filteredSuggestions.length + (showCreateOption ? 1 : 0);
+  const createOptionIndex = filteredSuggestions.length;
+
   // Sort selected items alphabetically by label
   const sortedSelectedItems = [...selectedItems].sort((a, b) =>
     a.label.localeCompare(b.label)
@@ -77,18 +93,30 @@ export default function PillSelector<T extends PillItem>({
     inputRef.current?.focus();
   };
 
+  const handleCreateNew = async () => {
+    if (onCreateNew && searchTerm) {
+      await onCreateNew(searchTerm);
+      setSearchTerm('');
+      setShowSuggestions(showAllOnFocus);
+      setHighlightedIndex(0);
+      inputRef.current?.focus();
+    }
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setHighlightedIndex((prev) =>
-        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+        prev < totalOptions - 1 ? prev + 1 : prev
       );
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredSuggestions.length > 0 && filteredSuggestions[highlightedIndex]) {
+      if (highlightedIndex === createOptionIndex && showCreateOption) {
+        handleCreateNew();
+      } else if (filteredSuggestions.length > 0 && filteredSuggestions[highlightedIndex]) {
         handleAdd(filteredSuggestions[highlightedIndex]);
       }
     } else if (e.key === 'Escape') {
@@ -207,7 +235,7 @@ export default function PillSelector<T extends PillItem>({
       {/* Suggestions dropdown */}
       {showSuggestions && (searchTerm || showAllOnFocus) && (
         <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
-          {filteredSuggestions.length > 0 ? (
+          {filteredSuggestions.length > 0 || showCreateOption ? (
             <ul>
               {filteredSuggestions.map((item, index) => (
                 <li key={item.id}>
@@ -224,6 +252,29 @@ export default function PillSelector<T extends PillItem>({
                   </button>
                 </li>
               ))}
+              {showCreateOption && (
+                <li>
+                  {filteredSuggestions.length > 0 && (
+                    <div className="border-t border-gray-200 dark:border-gray-600" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCreateNew}
+                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 ${
+                      highlightedIndex === createOptionIndex
+                        ? 'bg-gray-100 dark:bg-gray-600'
+                        : ''
+                    }`}
+                  >
+                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span className="text-blue-600 dark:text-blue-400">
+                      {createNewLabel} &quot;{searchTerm}&quot;
+                    </span>
+                  </button>
+                </li>
+              )}
             </ul>
           ) : searchTerm ? (
             <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
