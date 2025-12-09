@@ -1,10 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
-export const GET = withAuth(async (_request, session) => {
+export const GET = withAuth(async (request, session) => {
   try {
+    // Parse query params for group filtering
+    const { searchParams } = new URL(request.url);
+    const groupIdsParam = searchParams.get('groupIds');
+    const filterByGroups = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : null;
+
     // Fetch all user data
-    const [user, people, groups, relationshipTypes] = await Promise.all([
+    const [user, allPeople, allGroups, relationshipTypes] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -16,7 +21,18 @@ export const GET = withAuth(async (_request, session) => {
         },
       }),
       prisma.person.findMany({
-        where: { userId: session.user.id },
+        where: {
+          userId: session.user.id,
+          ...(filterByGroups && filterByGroups.length > 0
+            ? {
+                groups: {
+                  some: {
+                    groupId: { in: filterByGroups },
+                  },
+                },
+              }
+            : {}),
+        },
         include: {
           relationshipToUser: {
             select: {
@@ -63,6 +79,27 @@ export const GET = withAuth(async (_request, session) => {
         where: { userId: session.user.id },
       }),
     ]);
+
+    // Get set of exported person IDs for filtering relationships
+    const exportedPersonIds = new Set(allPeople.map((p) => p.id));
+
+    // When filtering by groups, only include those specific groups (not all groups the people belong to)
+    const exportedGroupIds = filterByGroups && filterByGroups.length > 0
+      ? new Set(filterByGroups)
+      : new Set(allPeople.flatMap((p) => p.groups.map((g) => g.group.id)));
+
+    // Filter relationships to only include those between exported people
+    // Also filter person's groups to only include the exported groups
+    const people = allPeople.map((person) => ({
+      ...person,
+      groups: person.groups.filter((g) => exportedGroupIds.has(g.group.id)),
+      relationshipsFrom: person.relationshipsFrom.filter((rel) =>
+        exportedPersonIds.has(rel.relatedPersonId)
+      ),
+    }));
+
+    // Filter groups to only include the exported groups
+    const groups = allGroups.filter((g) => exportedGroupIds.has(g.id));
 
     // Build export data structure
     const exportData = {

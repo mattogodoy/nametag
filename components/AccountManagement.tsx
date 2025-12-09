@@ -3,14 +3,27 @@
 import { useState, useRef, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import GroupsSelector from './GroupsSelector';
 
-export default function AccountManagement() {
+interface Group {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+interface AccountManagementProps {
+  groups: Group[];
+}
+
+export default function AccountManagement({ groups }: AccountManagementProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Export state
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
+  const [exportMode, setExportMode] = useState<'all' | 'groups'>('all');
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
   // Import state
   const [isImporting, setIsImporting] = useState(false);
@@ -35,7 +48,10 @@ export default function AccountManagement() {
     setExportMessage('');
 
     try {
-      const response = await fetch('/api/user/export');
+      const exportUrl = exportMode === 'groups' && selectedGroupIds.length > 0
+        ? `/api/user/export?groupIds=${selectedGroupIds.join(',')}`
+        : '/api/user/export';
+      const response = await fetch(exportUrl);
 
       if (!response.ok) {
         setExportMessage('Failed to export data');
@@ -194,12 +210,59 @@ export default function AccountManagement() {
           Export Data
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Download all your data as a JSON file. This includes people, groups,
+          Download your data as a JSON file. This includes people, groups,
           relationships, and custom relationship types.
         </p>
+
+        {/* Export Mode Toggle */}
+        <div className="mb-4 space-y-3">
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="exportMode"
+                value="all"
+                checked={exportMode === 'all'}
+                onChange={() => setExportMode('all')}
+                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Export everything</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="exportMode"
+                value="groups"
+                checked={exportMode === 'groups'}
+                onChange={() => setExportMode('groups')}
+                disabled={groups.length === 0}
+                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-blue-500 disabled:opacity-50"
+              />
+              <span className={`text-sm ${groups.length === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                Export specific groups
+              </span>
+            </label>
+          </div>
+
+          {exportMode === 'groups' && (
+            <div className="pl-6">
+              <GroupsSelector
+                availableGroups={groups}
+                selectedGroupIds={selectedGroupIds}
+                onChange={setSelectedGroupIds}
+              />
+              {selectedGroupIds.length > 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Will export people in selected groups, their group memberships, and relationships between them.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
         <button
           onClick={handleExport}
-          disabled={isExporting}
+          disabled={isExporting || (exportMode === 'groups' && selectedGroupIds.length === 0)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isExporting ? 'Exporting...' : 'Export Data'}

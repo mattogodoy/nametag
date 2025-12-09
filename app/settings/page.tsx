@@ -15,11 +15,17 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  // Fetch user's current theme and date format
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { theme: true, dateFormat: true },
-  });
+  // Fetch user's current theme, date format, and groups
+  const [user, groups] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { theme: true, dateFormat: true },
+    }),
+    prisma.group.findMany({
+      where: { userId: session.user.id },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
 
   const currentTheme = user?.theme || 'DARK';
   const currentDateFormat = user?.dateFormat || 'MDY';
@@ -82,7 +88,7 @@ export default async function SettingsPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
               Account Management
             </h2>
-            <AccountManagement />
+            <AccountManagement groups={groups} />
           </div>
         </div>
       </main>
