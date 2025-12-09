@@ -1,0 +1,103 @@
+# Production Docker Compose Configuration
+# Use this for production deployments with proper secrets management
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nametag-db-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nametag-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: nametag-app-prod
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - NODE_ENV=production
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_DOMAIN=${EMAIL_DOMAIN}
+      - CRON_SECRET=${CRON_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - nametag-network
+
+  # Database backup service
+  backup:
+    image: prodrigestivill/postgres-backup-local
+    container_name: nametag-backup
+    restart: always
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=8080
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      - db
+    networks:
+      - nametag-network
+
+  # Cron service for sending reminders
+  cron:
+    image: alpine:3.19
+    container_name: nametag-cron-prod
+    restart: always
+    environment:
+      - CRON_SECRET=${CRON_SECRET}
+    depends_on:
+      - app
+    command: >
+      sh -c "
+        echo '0 8 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/send-reminders > /proc/1/fd/1 2>&1' > /etc/crontabs/root &&
+        crond -f -l 2
+      "
+    networks:
+      - nametag-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  nametag-network:
+    driver: bridge
+

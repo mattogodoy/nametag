@@ -13,7 +13,19 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    log: ['query'],
+    // Only log queries in development to avoid performance issues and sensitive data exposure
+    log: process.env.NODE_ENV === 'production' 
+      ? ['error', 'warn']
+      : ['query', 'info', 'warn', 'error'],
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+// Graceful shutdown handlers
+async function gracefulShutdown() {
+  await prisma.$disconnect();
+  process.exit(0);
+}
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);

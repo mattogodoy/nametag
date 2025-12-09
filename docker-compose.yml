@@ -4,15 +4,15 @@ services:
     container_name: nametag-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: nametag
-      POSTGRES_PASSWORD: nametag_dev_password
-      POSTGRES_DB: nametag_db
+      POSTGRES_USER: ${DB_USER:-nametag}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Database password required}
+      POSTGRES_DB: ${DB_NAME:-nametag_db}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nametag -d nametag_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-nametag} -d ${DB_NAME:-nametag_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,8 +26,14 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgresql://nametag:nametag_dev_password@db:5432/nametag_db
-      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${DB_USER:-nametag}:${DB_PASSWORD}@db:5432/${DB_NAME:-nametag_db}}
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NextAuth secret required}
+      - RESEND_API_KEY=${RESEND_API_KEY:?Resend API key required}
+      - EMAIL_DOMAIN=${EMAIL_DOMAIN:?Email domain required}
+      - CRON_SECRET=${CRON_SECRET:?Cron secret required}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
       # Mount source code for hot-reload
       - .:/app
@@ -36,6 +42,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run dev"
 
   cron:
