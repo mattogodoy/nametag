@@ -233,8 +233,48 @@ export default function AccountManagement() {
             type="file"
             accept=".json"
             onChange={handleFileSelect}
-            className="block w-full text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-white dark:bg-gray-800 focus:outline-none"
+            className="hidden"
           />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <svg
+                className="w-8 h-8 text-gray-400 dark:text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              {importFile ? (
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {importFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Click to choose a different file
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    Click to select a JSON file
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    or drag and drop
+                  </p>
+                </div>
+              )}
+            </div>
+          </button>
 
           {importPreview && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
