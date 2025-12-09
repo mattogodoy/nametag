@@ -45,6 +45,10 @@ interface UnifiedNetworkGraphProps {
 
   // Refresh trigger
   refreshKey?: number;
+
+  // Clustering by group
+  enableGroupClustering?: boolean;
+  clusterStrength?: number; // 0 to 1, how strongly nodes are pulled to their cluster
 }
 
 export default function UnifiedNetworkGraph({
@@ -56,12 +60,16 @@ export default function UnifiedNetworkGraph({
   chargeStrength = -400,
   animateNewNodes = false,
   refreshKey,
+  enableGroupClustering = true,
+  clusterStrength = 0.3,
 }: UnifiedNetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
   const previousNodeIdsRef = useRef<Set<string> | null>(null);
+  const zoomTransformRef = useRef<d3.ZoomTransform | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [clusteringEnabled, setClusteringEnabled] = useState(enableGroupClustering);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -91,7 +99,7 @@ export default function UnifiedNetworkGraph({
     };
 
     fetchData();
-  }, [apiEndpoint, refreshKey, selectedGroupId, isMobile]);
+  }, [apiEndpoint, refreshKey, selectedGroupId, isMobile, clusteringEnabled]);
 
   const renderGraph = (data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
     if (!svgRef.current) return;
@@ -153,6 +161,40 @@ export default function UnifiedNetworkGraph({
       });
     });
 
+    // Calculate cluster positions for group clustering
+    let clusterCenters: Map<string, { x: number; y: number }> = new Map();
+    if (clusteringEnabled) {
+      // Get unique group IDs from nodes
+      const uniqueGroupIds = Array.from(
+        new Set(nodes.flatMap((n) => n.groups))
+      ).filter(Boolean);
+
+      // Arrange clusters in a circle around the center
+      const clusterRadius = Math.min(width, height) * 0.35;
+      uniqueGroupIds.forEach((groupId, index) => {
+        const angle = (2 * Math.PI * index) / uniqueGroupIds.length - Math.PI / 2;
+        clusterCenters.set(groupId, {
+          x: width / 2 + clusterRadius * Math.cos(angle),
+          y: height / 2 + clusterRadius * Math.sin(angle),
+        });
+      });
+    }
+
+    // Helper to get target position for a node based on its groups
+    const getClusterTarget = (node: GraphNode): { x: number; y: number } | null => {
+      if (!clusteringEnabled || node.isCenter || node.groups.length === 0) {
+        return null;
+      }
+      // Use the first group as the primary cluster
+      const primaryGroup = node.groups[0];
+      return clusterCenters.get(primaryGroup) || null;
+    };
+
+    // Increase collision radius when clustering to spread nodes apart more
+    const collisionRadius = clusteringEnabled
+      ? (isMobile ? 40 : 50)
+      : (isMobile ? 25 : 30);
+
     // Create force simulation
     const simulation = d3
       .forceSimulation(nodes)
@@ -162,9 +204,28 @@ export default function UnifiedNetworkGraph({
           .id((d: any) => d.id)
           .distance(mobileLinkDistance)
       )
-      .force('charge', d3.forceManyBody().strength(mobileChargeStrength))
+      .force('charge', d3.forceManyBody().strength(clusteringEnabled ? mobileChargeStrength * 1.5 : mobileChargeStrength))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(isMobile ? 25 : 30));
+      .force('collision', d3.forceCollide().radius(collisionRadius));
+
+    // Add clustering forces if enabled
+    if (clusteringEnabled) {
+      simulation
+        .force(
+          'clusterX',
+          d3.forceX<GraphNode>((d) => {
+            const target = getClusterTarget(d);
+            return target ? target.x : width / 2;
+          }).strength((d) => (getClusterTarget(d) ? clusterStrength : 0))
+        )
+        .force(
+          'clusterY',
+          d3.forceY<GraphNode>((d) => {
+            const target = getClusterTarget(d);
+            return target ? target.y : height / 2;
+          }).strength((d) => (getClusterTarget(d) ? clusterStrength : 0))
+        );
+    }
 
     // Create edges with arrows
     const link = g
@@ -331,9 +392,16 @@ export default function UnifiedNetworkGraph({
       .scaleExtent([0.5, 3])
       .on('zoom', (event) => {
         g.attr('transform', event.transform);
+        // Save the current transform for restoration on re-render
+        zoomTransformRef.current = event.transform;
       });
 
     svg.call(zoom as any);
+
+    // Restore previous zoom transform if it exists
+    if (zoomTransformRef.current) {
+      svg.call(zoom.transform as any, zoomTransformRef.current);
+    }
 
     // Update positions on each tick
     simulation.on('tick', () => {
@@ -373,23 +441,46 @@ export default function UnifiedNetworkGraph({
   return (
     <div className="w-full h-full">
       {groups && (
-        <div className="mb-4">
-          <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Filter by Group
-          </label>
-          <select
-            id="group-filter"
-            value={selectedGroupId || ''}
-            onChange={(e) => setSelectedGroupId(e.target.value || null)}
-            className="block w-full sm:w-64 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All groups</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-end gap-4">
+          <div>
+            <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Filter by Group
+            </label>
+            <select
+              id="group-filter"
+              value={selectedGroupId || ''}
+              onChange={(e) => setSelectedGroupId(e.target.value || null)}
+              className="block w-full sm:w-64 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+            >
+              <option value="">All groups</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setClusteringEnabled(!clusteringEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                clusteringEnabled
+                  ? 'bg-blue-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+              aria-label="Toggle group clustering"
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                  clusteringEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Cluster by group
+            </span>
+          </div>
         </div>
       )}
       <svg
