@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createGroupSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 
 // GET /api/groups - List all groups for the current user
 export const GET = withAuth(async (_request, session) => {
@@ -39,6 +40,10 @@ export const POST = withAuth(async (request, session) => {
 
     const { name, description, color } = validation.data;
 
+    // Sanitize user inputs to prevent XSS attacks
+    const sanitizedName = sanitizeName(name) || name;
+    const sanitizedDescription = description ? sanitizeNotes(description) : null;
+
     // Check if a group with the same name already exists for this user (case-insensitive)
     const existingGroup = await prisma.group.findFirst({
       where: {
@@ -57,8 +62,8 @@ export const POST = withAuth(async (request, session) => {
     const group = await prisma.group.create({
       data: {
         userId: session.user.id,
-        name,
-        description: description || null,
+        name: sanitizedName,
+        description: sanitizedDescription,
         color: color || null,
       },
     });

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people - List all people for the current user
@@ -70,16 +71,22 @@ export const POST = withAuth(async (request, session) => {
       }
     }
 
+    // Sanitize user inputs to prevent XSS attacks
+    const sanitizedName = sanitizeName(name) || name; // Fallback to original if sanitization fails
+    const sanitizedSurname = surname ? sanitizeName(surname) : null;
+    const sanitizedNickname = nickname ? sanitizeName(nickname) : null;
+    const sanitizedNotes = notes ? sanitizeNotes(notes) : null;
+
     // Create person data based on whether it's a direct or indirect connection
     const personData: Prisma.PersonCreateInput = {
       user: {
         connect: { id: session.user.id },
       },
-      name,
-      surname: surname || null,
-      nickname: nickname || null,
+      name: sanitizedName,
+      surname: sanitizedSurname,
+      nickname: sanitizedNickname,
       lastContact: lastContact ? new Date(lastContact) : null,
-      notes: notes || null,
+      notes: sanitizedNotes,
       contactReminderEnabled: contactReminderEnabled ?? false,
       contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
       contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,

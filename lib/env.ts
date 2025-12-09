@@ -22,11 +22,17 @@ const envSchema = z.object({
   // Cron
   CRON_SECRET: z.string().min(16, 'CRON_SECRET must be at least 16 characters'),
 
+  // Redis (Optional for development, recommended for production)
+  REDIS_URL: z.string().url().optional(),
+
   // Optional
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  
+  // Error Tracking (Optional)
+  SENTRY_DSN: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

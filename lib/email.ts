@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { env } from "./env";
+import { escapeHtml } from "./sanitize";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -56,21 +57,21 @@ export const emailTemplates = {
   }),
 
   importantDateReminder: (personName: string, eventType: string, date: string) => ({
-    subject: `Reminder: ${personName}'s ${eventType} is coming up`,
+    subject: `Reminder: ${escapeHtml(personName)}'s ${escapeHtml(eventType)} is coming up`,
     html: `
       <h1>Upcoming Event Reminder</h1>
-      <p><strong>${personName}</strong>'s ${eventType} is on <strong>${date}</strong>.</p>
+      <p><strong>${escapeHtml(personName)}</strong>'s ${escapeHtml(eventType)} is on <strong>${escapeHtml(date)}</strong>.</p>
       <p>Don't forget to reach out!</p>
     `,
     text: `Reminder: ${personName}'s ${eventType} is on ${date}. Don't forget to reach out!`,
   }),
 
   contactReminder: (personName: string, lastContactDate: string | null, interval: string) => ({
-    subject: `Time to catch up with ${personName}`,
+    subject: `Time to catch up with ${escapeHtml(personName)}`,
     html: `
       <h1>Stay in Touch</h1>
-      <p>It's been a while since you last contacted <strong>${personName}</strong>${lastContactDate ? ` (last contact: ${lastContactDate})` : ''}.</p>
-      <p>You asked to be reminded to catch up after ${interval} of your last contact.</p>
+      <p>It's been a while since you last contacted <strong>${escapeHtml(personName)}</strong>${lastContactDate ? ` (last contact: ${escapeHtml(lastContactDate)})` : ''}.</p>
+      <p>You asked to be reminded to catch up after ${escapeHtml(interval)} of your last contact.</p>
       <p>Why not reach out today?</p>
     `,
     text: `Time to catch up with ${personName}!${lastContactDate ? ` Last contact: ${lastContactDate}.` : ''} You asked to be reminded to catch up after ${interval} of your last contact. Why not reach out today?`,

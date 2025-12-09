@@ -17,7 +17,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: [CMD-SHELL, "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,7 +31,7 @@ services:
     container_name: nametag-app-prod
     restart: always
     ports:
-      - "3000:3000"
+      - 3000:3000
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - NODE_ENV=production
@@ -46,7 +46,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      test: [CMD, wget, -q, --spider, http://localhost:3000/api/health]
       interval: 30s
       timeout: 10s
       retries: 3

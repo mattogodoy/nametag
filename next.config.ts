@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
   
   // Production optimization
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  
+  // Instrumentation is now enabled by default in Next.js 16+
+  // No need for experimental.instrumentationHook anymore
   
   // Security headers
   async headers() {
@@ -56,4 +60,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap config with Sentry if DSN is provided
+const sentryWebpackPluginOptions = {
+  // Suppresses source map uploading logs during build
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+};
+
+export default process.env.SENTRY_DSN
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  : nextConfig;

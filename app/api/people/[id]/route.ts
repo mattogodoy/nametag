@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { Prisma } from '@prisma/client';
 
 // GET /api/people/[id] - Get a single person
@@ -79,13 +80,19 @@ export const PUT = withAuth(async (request, session, context) => {
     // Relationship is not required for people with indirect connections
     // (they are connected through other people in the network)
 
+    // Sanitize user inputs to prevent XSS attacks
+    const sanitizedName = sanitizeName(name) || name;
+    const sanitizedSurname = surname ? sanitizeName(surname) : null;
+    const sanitizedNickname = nickname ? sanitizeName(nickname) : null;
+    const sanitizedNotes = notes ? sanitizeNotes(notes) : null;
+
     // Build update data
     const updateData: Prisma.PersonUpdateInput = {
-      name,
-      surname: surname || null,
-      nickname: nickname || null,
+      name: sanitizedName,
+      surname: sanitizedSurname,
+      nickname: sanitizedNickname,
       lastContact: lastContact ? new Date(lastContact) : null,
-      notes: notes || null,
+      notes: sanitizedNotes,
       contactReminderEnabled: contactReminderEnabled ?? false,
       contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
       contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,

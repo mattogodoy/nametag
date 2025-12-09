@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { registerSchema, validateRequest } from '@/lib/validations';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit-redis';
 import { handleApiError, parseRequestBody } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
@@ -15,8 +15,8 @@ function generateVerificationToken(): string {
 }
 
 export async function POST(request: Request) {
-  // Check rate limit
-  const rateLimitResponse = checkRateLimit(request, 'register');
+  // Check rate limit (async with Redis)
+  const rateLimitResponse = await checkRateLimit(request, 'register');
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
