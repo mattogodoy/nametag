@@ -52,17 +52,5 @@ services:
         crond -f -l 2
       "
 
-  pgweb:
-    image: sosedoff/pgweb:latest
-    container_name: nametag-pgweb
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    environment:
-      - DATABASE_URL=postgres://nametag:nametag_dev_password@db:5432/nametag_db?sslmode=disable
-    depends_on:
-      db:
-        condition: service_healthy
-
 volumes:
   postgres_data:
