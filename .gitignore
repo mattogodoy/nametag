@@ -37,6 +37,10 @@ yarn-error.log*
 # Production secrets (generated)
 PRODUCTION_SECRETS.txt
 
+# Database backups
+/backups
+/backups/
+
 # Claude Code local settings
 .claude/settings.local.json
 
