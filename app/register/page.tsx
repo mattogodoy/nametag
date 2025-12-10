@@ -12,20 +12,39 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<Array<{ field: string; message: string }>>([]);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
+    setValidationErrors([]);
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
+    // Client-side password validation (matches backend requirements)
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number');
+      return;
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      setError('Password must contain at least one special character (!@#$%^&*)');
       return;
     }
 
@@ -43,7 +62,13 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Something went wrong');
+        // Check if there are detailed validation errors
+        if (data.details && Array.isArray(data.details)) {
+          setValidationErrors(data.details);
+          setError(data.error || 'Please fix the errors below');
+        } else {
+          setError(data.error || 'Something went wrong');
+        }
         return;
       }
 
@@ -103,7 +128,16 @@ export default function RegisterPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-              {error}
+              <div className="font-medium">{error}</div>
+              {validationErrors.length > 0 && (
+                <ul className="mt-2 ml-4 list-disc space-y-1 text-sm">
+                  {validationErrors.map((err, index) => (
+                    <li key={index}>
+                      <strong>{err.field}:</strong> {err.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           <div className="rounded-md shadow-sm space-y-4">
@@ -179,7 +213,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Password"
+                placeholder="Password (min 8 chars, A-Z, a-z, 0-9, !@#$)"
               />
             </div>
             <div>

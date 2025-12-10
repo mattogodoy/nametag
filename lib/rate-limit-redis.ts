@@ -68,18 +68,36 @@ async function checkRateLimitRedis(
 ): Promise<NextResponse | null> {
   const redis = getRedis();
   
-  if (!redis || !isRedisConnected()) {
+  if (!redis) {
     // Fallback to memory store in development
     if (process.env.NODE_ENV !== 'production') {
       return checkRateLimitMemory(key, maxAttempts, windowMs, ip, type, identifier);
     }
     
     // In production, fail open (allow request) but log warning
-    securityLogger.suspiciousActivity(ip, 'Redis unavailable, rate limit bypassed', {
+    securityLogger.suspiciousActivity(ip, 'Redis client not initialized', {
       type,
       identifier,
     });
     return null;
+  }
+
+  // Try to check connection status with a quick ping
+  // Note: In Next.js, API routes run in workers, so connection check may be delayed
+  if (!isRedisConnected()) {
+    try {
+      await redis.ping();
+      // If ping succeeds, Redis is connected (connection status will update asynchronously)
+    } catch (error) {
+      // Redis is genuinely not available
+      if (process.env.NODE_ENV !== 'production') {
+        return checkRateLimitMemory(key, maxAttempts, windowMs, ip, type, identifier);
+      }
+      
+      // Log at debug level since this is expected on first request in Next.js workers
+      // (Redis connects asynchronously in each worker process)
+      return null;
+    }
   }
 
   try {

@@ -1,4 +1,10 @@
-import 'dotenv/config';
+// Load .env file in development (optional in production where env vars come from Docker)
+try {
+  require('dotenv/config');
+} catch {
+  // dotenv not available or not needed (production)
+}
+
 import { defineConfig, env } from 'prisma/config';
 
 export default defineConfig({

@@ -10,6 +10,7 @@ import { logger } from './logger';
 
 let redis: Redis | null = null;
 let isRedisAvailable = false;
+let connectionPromise: Promise<void> | null = null;
 
 /**
  * Initialize Redis client
@@ -72,6 +73,88 @@ function createRedisClient(): Redis | null {
     
     return null;
   }
+}
+
+/**
+ * Initialize Redis connection and wait for it to be ready
+ */
+export async function initRedis(): Promise<void> {
+  // If already initialized, return immediately
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+
+  // If already connected, return immediately
+  if (isRedisAvailable && redis !== null) {
+    return Promise.resolve();
+  }
+
+  connectionPromise = new Promise<void>((resolve, reject) => {
+    // Create Redis client if not already created
+    if (redis === null) {
+      redis = createRedisClient();
+    }
+
+    // If Redis is disabled (no URL in dev), resolve immediately
+    if (redis === null) {
+      isRedisAvailable = false;
+      resolve();
+      return;
+    }
+
+    // Set a timeout for connection
+    const timeout = setTimeout(() => {
+      logger.warn('Redis connection timeout after 5 seconds, continuing without Redis');
+      isRedisAvailable = false;
+      resolve();
+    }, 5000);
+
+    // Wait for connection or error
+    const onConnect = () => {
+      clearTimeout(timeout);
+      redis?.off('error', onError);
+      isRedisAvailable = true;
+      logger.info('Redis initialized and ready');
+      resolve();
+    };
+
+    const onError = (err: Error) => {
+      clearTimeout(timeout);
+      redis?.off('connect', onConnect);
+      isRedisAvailable = false;
+      
+      if (process.env.NODE_ENV === 'production') {
+        logger.error('Redis connection failed in production', {}, err);
+        reject(err);
+      } else {
+        logger.warn('Redis connection failed, continuing without Redis');
+        resolve();
+      }
+    };
+
+    // If already connected (between check and promise creation), resolve immediately
+    if (isRedisAvailable) {
+      clearTimeout(timeout);
+      resolve();
+      return;
+    }
+
+    // Check if already connected by trying a ping
+    redis.ping()
+      .then(() => {
+        clearTimeout(timeout);
+        isRedisAvailable = true;
+        logger.info('Redis already connected');
+        resolve();
+      })
+      .catch(() => {
+        // Not connected yet, wait for connect event
+        redis!.once('connect', onConnect);
+        redis!.once('error', onError);
+      });
+  });
+
+  return connectionPromise;
 }
 
 /**

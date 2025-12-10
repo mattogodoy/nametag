@@ -10,9 +10,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci --only=production && \
-    npx prisma generate
+# Install ALL dependencies (including devDependencies needed for build)
+RUN npm ci
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -22,13 +21,21 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set dummy environment variables for build (actual values provided at runtime)
+# These are required for lib/env.ts validation during build
+ENV DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy"
+ENV NEXTAUTH_URL="http://localhost:3000"
+ENV NEXTAUTH_SECRET="build-time-secret-min-32-chars-xxxxxxxxxxxxxxxxx"
+ENV RESEND_API_KEY="re_build_time_key"
+ENV EMAIL_DOMAIN="build.example.com"
+ENV CRON_SECRET="build-time-cron-secret"
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
 # Generate Prisma Client
 RUN npx prisma generate
 
 # Build Next.js application
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
 RUN npm run build
 
 # Stage 3: Runner
@@ -47,13 +54,13 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 
-# Copy standalone build
+# Copy standalone build (includes node_modules)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Install only production dependencies
-RUN npm ci --only=production && \
-    npx prisma generate
+# Copy Prisma generated files to the correct location
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Switch to non-root user
 USER nextjs
