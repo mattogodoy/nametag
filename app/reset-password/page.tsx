@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -24,8 +25,25 @@ function ResetPasswordForm() {
       return;
     }
 
+    // Client-side password validation (matches backend requirements)
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number');
+      return;
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      setError('Password must contain at least one special character (!@#$%^&*)');
       return;
     }
 
@@ -143,7 +161,7 @@ function ResetPasswordForm() {
             </div>
           )}
           <div className="rounded-md shadow-sm space-y-4">
-            <div>
+            <div className="space-y-2">
               <label htmlFor="password" className="sr-only">
                 New Password
               </label>
@@ -158,6 +176,7 @@ function ResetPasswordForm() {
                 className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="New password"
               />
+              <PasswordStrengthIndicator password={password} showRequirements={true} />
             </div>
             <div>
               <label htmlFor="confirmPassword" className="sr-only">

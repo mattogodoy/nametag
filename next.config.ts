@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   // Production optimization
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
   
+  // Logging configuration
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
+  
   // Instrumentation is now enabled by default in Next.js 16+
   // No need for experimental.instrumentationHook anymore
   

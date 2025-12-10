@@ -1,75 +1,52 @@
-import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 
-/**
- * Security headers to protect against common web vulnerabilities
- */
-const securityHeaders = {
-  // Prevent clickjacking attacks
-  'X-Frame-Options': 'DENY',
-  // Prevent MIME type sniffing
-  'X-Content-Type-Options': 'nosniff',
-  // Enable XSS filter in older browsers
-  'X-XSS-Protection': '1; mode=block',
-  // Control referrer information
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  // Prevent loading in Adobe products
-  'X-Permitted-Cross-Domain-Policies': 'none',
-  // Content Security Policy
-  'Content-Security-Policy': [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Next.js requires unsafe-inline/eval
-    "style-src 'self' 'unsafe-inline'", // Tailwind requires unsafe-inline
-    "img-src 'self' data: blob:",
-    "font-src 'self'",
-    "connect-src 'self'",
-    "frame-ancestors 'none'",
-    "form-action 'self'",
-    "base-uri 'self'",
-  ].join('; '),
-  // Permissions Policy (formerly Feature-Policy)
-  'Permissions-Policy': [
-    'camera=()',
-    'microphone=()',
-    'geolocation=()',
-    'interest-cohort=()', // Opt out of FLoC
-  ].join(', '),
-};
+export function proxy(request: NextRequest) {
+  const startTime = Date.now();
+  const { pathname, search } = request.nextUrl;
+  const method = request.method;
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || 
+             request.headers.get('x-real-ip') || 
+             'unknown';
 
-/**
- * Add security headers to a response
- */
-function addSecurityHeaders(response: NextResponse): NextResponse {
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
+  // Create response
+  const response = NextResponse.next();
+
+  // Log the request
+  response.headers.set('x-request-id', crypto.randomUUID());
+
+  // Log after response (this runs on every request)
+  const duration = Date.now() - startTime;
+
+  // Log based on status (we'll check this in the response)
+  // For now, log all requests in development
+  if (process.env.NODE_ENV === 'development') {
+    logger.info(`${method} ${pathname}${search}`, {
+      method,
+      path: pathname,
+      query: search,
+      ip,
+      userAgent,
+      duration: `${duration}ms`,
+    });
+  }
+
   return response;
 }
 
-export const proxy = auth((req) => {
-  const { pathname } = req.nextUrl;
-  const isLoggedIn = !!req.auth;
-
-  // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password'];
-  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
-
-  // If user is not logged in and trying to access a protected route
-  if (!isLoggedIn && !isPublicRoute && pathname !== '/') {
-    const response = NextResponse.redirect(new URL('/login', req.url));
-    return addSecurityHeaders(response);
-  }
-
-  // If user is logged in and trying to access login/register, redirect to dashboard
-  if (isLoggedIn && isPublicRoute) {
-    const response = NextResponse.redirect(new URL('/dashboard', req.url));
-    return addSecurityHeaders(response);
-  }
-
-  const response = NextResponse.next();
-  return addSecurityHeaders(response);
-});
-
+// Configure which routes to run middleware on
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.ico$).*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * But DO match API routes and public assets to log them
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };
+
