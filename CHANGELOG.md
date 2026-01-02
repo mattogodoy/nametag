@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.1.3](https://github.com/mattogodoy/nametag/compare/v0.1.2...v0.1.3) (2026-01-02)
+## [0.1.4](https://github.com/mattogodoy/nametag/compare/v0.1.3...v0.1.4) (2026-01-02)
 
 ### Bug Fixes
 
-* Fixed relationship use count ([95419e7](https://github.com/mattogodoy/nametag/commit/95419e7d7d8a1fc9ffe6e14d7941bcd0ac1a78b4))
+* Removed email account verification for self-hosted mode ([18e88b5](https://github.com/mattogodoy/nametag/commit/18e88b56675b9b6f8ea71d8dfa7105a38944c022))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.1.4](https://github.com/mattogodoy/nametag/compare/v0.1.3...v0.1.4)
+
+- 🐛 Fix:: Removed email account verification for self-hosted mode [`18e88b5`](https://github.com/mattogodoy/nametag/commit/18e88b56675b9b6f8ea71d8dfa7105a38944c022)
+
 #### [v0.1.3](https://github.com/mattogodoy/nametag/compare/v0.1.2...v0.1.3)
 
+> 2 January 2026
+
 - 🔧 Chore:: Added Support Development link [`7ba4393`](https://github.com/mattogodoy/nametag/commit/7ba43934a9fb3f7142260bf1ad75ec9dc3e32a2d)
+- 🔧 Chore:: release v0.1.3 [`8614287`](https://github.com/mattogodoy/nametag/commit/86142870aea22053d0357c0788ff1ceb4faa7226)
 - 🐛 Fix:: Fixed relationship use count [`95419e7`](https://github.com/mattogodoy/nametag/commit/95419e7d7d8a1fc9ffe6e14d7941bcd0ac1a78b4)
 
 #### [v0.1.2](https://github.com/mattogodoy/nametag/compare/v0.1.1...v0.1.2)
