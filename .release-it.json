@@ -19,7 +19,7 @@
     "publish": false
   },
   "hooks": {
-    "before:init": ["npm run build"],
+    "before:init": ["npm run lint", "npm run build"],
     "after:bump": "npx auto-changelog -p"
   },
   "plugins": {

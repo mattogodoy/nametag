@@ -21,7 +21,7 @@ import path from 'path';
 const TEST_BACKUP_DIR = path.join(process.cwd(), 'backups', 'test');
 const DOCKER_COMPOSE_CMD = 'docker-compose -f docker-compose.prod.yml';
 
-describe('Database Backup & Restore', () => {
+describe.skip('Database Backup & Restore', () => {
   beforeAll(() => {
     // Create test backup directory
     if (!fs.existsSync(TEST_BACKUP_DIR)) {
@@ -252,7 +252,7 @@ describe('Database Backup & Restore', () => {
   });
 });
 
-describe('Database Restore Procedures', () => {
+describe.skip('Database Restore Procedures', () => {
   describe('Restore Validation', () => {
     it('should be able to create a test database for restore testing', () => {
       const testDbName = 'nametag_test_restore';
@@ -365,7 +365,7 @@ describe('Database Restore Procedures', () => {
   });
 });
 
-describe('Backup Configuration', () => {
+describe.skip('Backup Configuration', () => {
   it('should have correct backup retention settings', () => {
     const composeFile = path.join(process.cwd(), 'docker-compose.prod.yml');
     

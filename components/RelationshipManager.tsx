@@ -48,7 +48,7 @@ interface RelationshipManagerProps {
 
 export default function RelationshipManager({
   personId,
-  personName,
+  personName: _personName,
   relationships,
   availablePeople,
   relationshipTypes,
@@ -143,7 +143,7 @@ export default function RelationshipManager({
       setShowAddModal(false);
       setFormData({ relatedPersonId: '', relationshipTypeId: defaultTypeId, notes: '' });
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
@@ -180,7 +180,7 @@ export default function RelationshipManager({
       setShowEditModal(false);
       setSelectedRelationship(null);
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
@@ -208,7 +208,7 @@ export default function RelationshipManager({
       setShowDeleteModal(false);
       setSelectedRelationship(null);
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       setError('Unable to connect to server. Please check your connection and try again.');
       setIsLoading(false);
     }

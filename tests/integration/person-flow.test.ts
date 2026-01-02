@@ -108,6 +108,13 @@ vi.mock('../../lib/auth', () => ({
   ),
 }));
 
+// Mock billing
+vi.mock('../../lib/billing', () => ({
+  canCreateResource: vi.fn(() => Promise.resolve({ allowed: true, current: 0, limit: 50, tier: 'FREE', isUnlimited: false })),
+  canEnableReminder: vi.fn(() => Promise.resolve({ allowed: true, current: 0, limit: 5, isUnlimited: false })),
+  getUserUsage: vi.fn(() => Promise.resolve({ people: 0, groups: 0, reminders: 0 })),
+}));
+
 // Import after mocking
 import { GET as getPeople, POST as createPerson } from '../../app/api/people/route';
 import { GET as getGroups, POST as createGroup } from '../../app/api/groups/route';

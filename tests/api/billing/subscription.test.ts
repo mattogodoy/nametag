@@ -24,6 +24,11 @@ vi.mock('@/lib/auth', () => ({
   ),
 }));
 
+// Mock features to enable SaaS mode for billing tests
+vi.mock('@/lib/features', () => ({
+  isSaasMode: () => true,
+}));
+
 // Import after mocking
 import { GET } from '@/app/api/billing/subscription/route';
 
@@ -49,7 +54,7 @@ describe('GET /api/billing/subscription', () => {
       promotionExpiry: null,
       usage: { people: 5, groups: 2, reminders: 1 },
       limits: {
-        people: { current: 5, limit: 20, isUnlimited: false },
+        people: { current: 5, limit: 50, isUnlimited: false },
         groups: { current: 2, limit: 10, isUnlimited: false },
         reminders: { current: 1, limit: 5, isUnlimited: false },
       },
@@ -117,7 +122,7 @@ describe('GET /api/billing/subscription', () => {
       promotionExpiry: null,
       usage: { people: 0, groups: 0, reminders: 0 },
       limits: {
-        people: { current: 0, limit: 20, isUnlimited: false },
+        people: { current: 0, limit: 50, isUnlimited: false },
         groups: { current: 0, limit: 10, isUnlimited: false },
         reminders: { current: 0, limit: 5, isUnlimited: false },
       },

@@ -3,11 +3,22 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Use vi.hoisted to create mocks before hoisting
 const mocks = vi.hoisted(() => ({
   createCheckoutSession: vi.fn(),
+  userPromotionFindFirst: vi.fn(),
+}));
+
+// Mock Prisma
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    userPromotion: {
+      findFirst: mocks.userPromotionFindFirst,
+    },
+  },
 }));
 
 // Mock billing module
 vi.mock('@/lib/billing', () => ({
   createCheckoutSession: mocks.createCheckoutSession,
+  isPromotionActive: vi.fn(() => false), // Default: no active promotion
 }));
 
 // Mock auth
@@ -19,12 +30,19 @@ vi.mock('@/lib/auth', () => ({
   ),
 }));
 
+// Mock features to enable SaaS mode for billing tests
+vi.mock('@/lib/features', () => ({
+  isSaasMode: () => true,
+}));
+
 // Import after mocking
 import { POST } from '@/app/api/billing/checkout/route';
 
 describe('POST /api/billing/checkout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: no user promotion
+    mocks.userPromotionFindFirst.mockResolvedValue(null);
   });
 
   it('should create checkout session for PERSONAL tier monthly', async () => {

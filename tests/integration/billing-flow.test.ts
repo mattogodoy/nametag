@@ -124,6 +124,11 @@ vi.mock('@/lib/auth', () => ({
   ),
 }));
 
+// Mock features to enable SaaS mode for billing tests
+vi.mock('@/lib/features', () => ({
+  isSaasMode: () => true,
+}));
+
 // Import billing functions after mocking
 import {
   getUserSubscription,
@@ -203,13 +208,13 @@ describe('Billing Integration Flows', () => {
         tier: 'FREE',
         promotion: null,
       });
-      mocks.personCount.mockResolvedValue(20); // At limit
+      mocks.personCount.mockResolvedValue(50); // At limit
 
       const result = await canCreateResource('user-123', 'people');
 
       expect(result.allowed).toBe(false);
-      expect(result.current).toBe(20);
-      expect(result.limit).toBe(20);
+      expect(result.current).toBe(50);
+      expect(result.limit).toBe(50);
     });
 
     it('should allow creation when under limit', async () => {
@@ -223,7 +228,7 @@ describe('Billing Integration Flows', () => {
 
       expect(result.allowed).toBe(true);
       expect(result.current).toBe(10);
-      expect(result.limit).toBe(20);
+      expect(result.limit).toBe(50);
     });
 
     it('should use higher limits after upgrade to PERSONAL', async () => {
@@ -392,7 +397,7 @@ describe('Billing Integration Flows', () => {
         tier: 'FREE',
         promotion: null,
       });
-      mocks.personCount.mockResolvedValueOnce(20);
+      mocks.personCount.mockResolvedValueOnce(50);
 
       const beforeUpgrade = await canCreateResource('user-123', 'people');
       expect(beforeUpgrade.allowed).toBe(false);
@@ -402,7 +407,7 @@ describe('Billing Integration Flows', () => {
         tier: 'PERSONAL',
         promotion: null,
       });
-      mocks.personCount.mockResolvedValueOnce(20);
+      mocks.personCount.mockResolvedValueOnce(50);
 
       const afterUpgrade = await canCreateResource('user-123', 'people');
       expect(afterUpgrade.allowed).toBe(true);

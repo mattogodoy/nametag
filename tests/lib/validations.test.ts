@@ -38,9 +38,9 @@ describe('validations', () => {
 
   describe('passwordSchema', () => {
     it('should accept valid passwords', () => {
-      expect(passwordSchema.safeParse('password123').success).toBe(true);
-      expect(passwordSchema.safeParse('12345678').success).toBe(true);
-      expect(passwordSchema.safeParse('a'.repeat(128)).success).toBe(true);
+      expect(passwordSchema.safeParse('Password123!').success).toBe(true);
+      expect(passwordSchema.safeParse('ValidP@ss1').success).toBe(true);
+      expect(passwordSchema.safeParse('Aa1!' + 'a'.repeat(124)).success).toBe(true);
     });
 
     it('should reject short passwords', () => {
@@ -102,7 +102,7 @@ describe('validations', () => {
     it('should accept valid registration data', () => {
       const result = registerSchema.safeParse({
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123!',
         name: 'John',
       });
       expect(result.success).toBe(true);
@@ -111,7 +111,7 @@ describe('validations', () => {
     it('should accept optional fields', () => {
       const result = registerSchema.safeParse({
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123!',
         name: 'John',
         surname: 'Doe',
         nickname: 'Johnny',
@@ -122,14 +122,14 @@ describe('validations', () => {
     it('should require name', () => {
       const result = registerSchema.safeParse({
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123!',
       });
       expect(result.success).toBe(false);
     });
 
     it('should require email', () => {
       const result = registerSchema.safeParse({
-        password: 'password123',
+        password: 'Password123!',
         name: 'John',
       });
       expect(result.success).toBe(false);
@@ -158,14 +158,14 @@ describe('validations', () => {
     it('should accept valid data', () => {
       const result = resetPasswordSchema.safeParse({
         token: 'valid-token',
-        password: 'newpassword123',
+        password: 'NewPassword123!',
       });
       expect(result.success).toBe(true);
     });
 
     it('should require token', () => {
       const result = resetPasswordSchema.safeParse({
-        password: 'newpassword123',
+        password: 'NewPassword123!',
       });
       expect(result.success).toBe(false);
     });
@@ -455,22 +455,22 @@ describe('validations', () => {
   describe('updatePasswordSchema', () => {
     it('should accept valid password data', () => {
       const result = updatePasswordSchema.safeParse({
-        currentPassword: 'oldpassword123',
-        newPassword: 'newpassword123',
+        currentPassword: 'OldPassword123!',
+        newPassword: 'NewPassword123!',
       });
       expect(result.success).toBe(true);
     });
 
     it('should require currentPassword', () => {
       const result = updatePasswordSchema.safeParse({
-        newPassword: 'newpassword123',
+        newPassword: 'NewPassword123!',
       });
       expect(result.success).toBe(false);
     });
 
     it('should validate newPassword', () => {
       const result = updatePasswordSchema.safeParse({
-        currentPassword: 'oldpassword123',
+        currentPassword: 'OldPassword123!',
         newPassword: 'short',
       });
       expect(result.success).toBe(false);

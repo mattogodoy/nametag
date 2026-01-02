@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { SubscriptionTier, BillingFrequency } from '@prisma/client';
-import { TIER_INFO, STRIPE_PRICES } from './constants';
+import { TIER_INFO } from './constants';
 import { logger } from '@/lib/logger';
 
 // Tier ranking for determining upgrade vs downgrade

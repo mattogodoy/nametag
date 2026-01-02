@@ -99,7 +99,7 @@ export function sanitizeLabel(label: string | null | undefined): string | null {
  * Batch sanitize an object's string fields
  * Useful for sanitizing API request bodies
  */
-export function sanitizeObject<T extends Record<string, any>>(
+export function sanitizeObject<T extends Record<string, unknown>>(
   obj: T,
   fields: Array<keyof T>,
   sanitizer: (value: string | null | undefined) => string | null = sanitizePlainText

@@ -19,6 +19,11 @@ vi.mock('@/lib/auth', () => ({
   ),
 }));
 
+// Mock features to enable SaaS mode for billing tests
+vi.mock('@/lib/features', () => ({
+  isSaasMode: () => true,
+}));
+
 // Import after mocking
 import { GET } from '@/app/api/billing/usage/route';
 
@@ -32,7 +37,7 @@ describe('GET /api/billing/usage', () => {
       subscription: { tier: 'FREE' },
       usage: { people: 10, groups: 5, reminders: 3 },
       limits: {
-        people: { current: 10, limit: 20, isUnlimited: false },
+        people: { current: 10, limit: 50, isUnlimited: false },
         groups: { current: 5, limit: 10, isUnlimited: false },
         reminders: { current: 3, limit: 5, isUnlimited: false },
       },
@@ -45,7 +50,7 @@ describe('GET /api/billing/usage', () => {
     expect(response.status).toBe(200);
     expect(body.tier).toBe('FREE');
     expect(body.usage).toEqual({ people: 10, groups: 5, reminders: 3 });
-    expect(body.limits.people.limit).toBe(20);
+    expect(body.limits.people.limit).toBe(50);
   });
 
   it('should return unlimited for PRO tier', async () => {
@@ -75,7 +80,7 @@ describe('GET /api/billing/usage', () => {
       subscription: null,
       usage: { people: 0, groups: 0, reminders: 0 },
       limits: {
-        people: { current: 0, limit: 20, isUnlimited: false },
+        people: { current: 0, limit: 50, isUnlimited: false },
         groups: { current: 0, limit: 10, isUnlimited: false },
         reminders: { current: 0, limit: 5, isUnlimited: false },
       },

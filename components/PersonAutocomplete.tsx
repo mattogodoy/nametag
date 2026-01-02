@@ -66,6 +66,7 @@ export default function PersonAutocomplete({
 
   // Reset highlighted index when filtered list changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHighlightedIndex(0);
   }, [searchTerm]);
 

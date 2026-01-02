@@ -6,7 +6,8 @@ const mocks = vi.hoisted(() => ({
   userCreate: vi.fn(),
   userUpdate: vi.fn(),
   sendEmail: vi.fn(),
-  checkRateLimit: vi.fn(),
+  checkRateLimitAsync: vi.fn(), // For rate-limit-redis (async)
+  checkRateLimitSync: vi.fn(),  // For rate-limit (sync)
   bcryptHash: vi.fn(),
   bcryptCompare: vi.fn(),
 }));
@@ -39,9 +40,16 @@ vi.mock('../../lib/email', () => ({
   },
 }));
 
-// Mock rate limit
+// Mock rate limit - must match the actual import paths
+// register uses rate-limit-redis (async)
+vi.mock('../../lib/rate-limit-redis', () => ({
+  checkRateLimit: mocks.checkRateLimitAsync,
+  resetRateLimit: vi.fn(),
+}));
+
+// forgot-password uses rate-limit (sync)
 vi.mock('../../lib/rate-limit', () => ({
-  checkRateLimit: mocks.checkRateLimit,
+  checkRateLimit: mocks.checkRateLimitSync,
   resetRateLimit: vi.fn(),
 }));
 
@@ -63,6 +71,22 @@ vi.mock('../../lib/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  securityLogger: {
+    rateLimitExceeded: vi.fn(),
+    suspiciousActivity: vi.fn(),
+    authenticationFailure: vi.fn(),
+    authenticationSuccess: vi.fn(),
+  },
+}));
+
+// Mock billing
+vi.mock('../../lib/billing', () => ({
+  createFreeSubscription: vi.fn(() => Promise.resolve({ id: 'sub-1', tier: 'FREE' })),
+}));
+
+// Mock relationship types
+vi.mock('../../lib/relationship-types', () => ({
+  createPreloadedRelationshipTypes: vi.fn(() => Promise.resolve()),
 }));
 
 // Import after mocking
@@ -72,7 +96,10 @@ import { POST as forgotPassword } from '../../app/api/auth/forgot-password/route
 describe('Auth API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.checkRateLimit.mockReturnValue(null);
+    // Async rate limit (for register)
+    mocks.checkRateLimitAsync.mockResolvedValue(null);
+    // Sync rate limit (for forgot-password)
+    mocks.checkRateLimitSync.mockReturnValue(null);
     mocks.sendEmail.mockResolvedValue({ success: true });
     mocks.bcryptHash.mockResolvedValue('hashed-password');
   });
@@ -219,7 +246,7 @@ describe('Auth API', () => {
     });
 
     it('should respect rate limiting', async () => {
-      mocks.checkRateLimit.mockReturnValue(
+      mocks.checkRateLimitAsync.mockResolvedValueOnce(
         new Response(JSON.stringify({ error: 'Too many attempts' }), {
           status: 429,
         })
@@ -243,6 +270,25 @@ describe('Auth API', () => {
   });
 
   describe('POST /api/auth/forgot-password', () => {
+    it('should respect rate limiting', async () => {
+      // Override the mock just for this test
+      mocks.checkRateLimitSync.mockReturnValueOnce(
+        new Response(JSON.stringify({ error: 'Too many attempts' }), {
+          status: 429,
+        })
+      );
+
+      const request = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'test@example.com' }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      const response = await forgotPassword(request);
+
+      expect(response.status).toBe(429);
+    });
+
     it('should send reset email for existing user', async () => {
       mocks.userFindUnique.mockResolvedValue({
         id: 'user-123',
@@ -345,24 +391,6 @@ describe('Auth API', () => {
       const response = await forgotPassword(request);
 
       expect(response.status).toBe(400);
-    });
-
-    it('should respect rate limiting', async () => {
-      mocks.checkRateLimit.mockReturnValue(
-        new Response(JSON.stringify({ error: 'Too many attempts' }), {
-          status: 429,
-        })
-      );
-
-      const request = new Request('http://localhost/api/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email: 'test@example.com' }),
-        headers: { 'content-type': 'application/json' },
-      });
-
-      const response = await forgotPassword(request);
-
-      expect(response.status).toBe(429);
     });
   });
 });

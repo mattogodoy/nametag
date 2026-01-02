@@ -88,9 +88,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Skip tests for initial release - TODO: fix failing tests
-      # - name: Run tests
-      #   run: npm run test:run
+      - name: Run tests
+        run: npm run test:run
 
       - name: Build
         run: npm run build

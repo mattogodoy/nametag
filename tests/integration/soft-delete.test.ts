@@ -59,6 +59,9 @@ const mocks = vi.hoisted(() => ({
   importantDateDeleteMany: vi.fn(),
   // PersonGroup operations
   personGroupDeleteMany: vi.fn(),
+  // CronJobLog operations
+  cronJobLogCreate: vi.fn(),
+  cronJobLogUpdate: vi.fn(),
 }));
 
 // Track if withDeleted was used
@@ -104,6 +107,10 @@ vi.mock('../../lib/prisma', () => ({
     personGroup: {
       deleteMany: mocks.personGroupDeleteMany,
     },
+    cronJobLog: {
+      create: mocks.cronJobLogCreate,
+      update: mocks.cronJobLogUpdate,
+    },
   },
   withDeleted: vi.fn(() => {
     withDeletedClient = {
@@ -143,6 +150,10 @@ vi.mock('../../lib/prisma', () => ({
       },
       personGroup: {
         deleteMany: mocks.personGroupDeleteMany,
+      },
+      cronJobLog: {
+        create: mocks.cronJobLogCreate,
+        update: mocks.cronJobLogUpdate,
       },
       $disconnect: vi.fn(),
     };
@@ -193,6 +204,10 @@ describe('Soft Delete Integration', () => {
     vi.clearAllMocks();
     resetStore();
     withDeletedClient = null;
+
+    // Setup cronJobLog mocks
+    mocks.cronJobLogCreate.mockResolvedValue({ id: 'cron-1' });
+    mocks.cronJobLogUpdate.mockResolvedValue({ id: 'cron-1' });
   });
 
   describe('Person Soft Delete', () => {

@@ -78,7 +78,7 @@ export const TIER_INFO: Record<
     monthlyPrice: null,
     yearlyPrice: null,
     features: [
-      'Up to 100 people',
+      'Up to 50 people',
       'Up to 10 groups',
       'Up to 5 reminders',
       'Basic relationship tracking',

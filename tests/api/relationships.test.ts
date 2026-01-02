@@ -339,7 +339,7 @@ describe('Relationships API', () => {
       };
 
       mocks.relationshipFindUnique.mockResolvedValue(existing);
-      mocks.relationshipDelete.mockResolvedValue(existing);
+      mocks.relationshipUpdate.mockResolvedValue(existing);
       mocks.relationshipFindFirst.mockResolvedValue(inverse);
 
       const request = new Request('http://localhost/api/relationships/rel-1', {
@@ -349,13 +349,19 @@ describe('Relationships API', () => {
 
       await DELETE(request, context);
 
-      // Should delete both primary and inverse
-      expect(mocks.relationshipDelete).toHaveBeenCalledTimes(2);
-      expect(mocks.relationshipDelete).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'rel-1' } })
+      // Should soft delete both primary and inverse (using update with deletedAt)
+      expect(mocks.relationshipUpdate).toHaveBeenCalledTimes(2);
+      expect(mocks.relationshipUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'rel-1' },
+          data: expect.objectContaining({ deletedAt: expect.any(Date) })
+        })
       );
-      expect(mocks.relationshipDelete).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'inverse-rel' } })
+      expect(mocks.relationshipUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'inverse-rel' },
+          data: expect.objectContaining({ deletedAt: expect.any(Date) })
+        })
       );
     });
 

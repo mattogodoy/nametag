@@ -10,17 +10,17 @@ describe('PasswordStrengthIndicator', () => {
     });
 
     it('should show "Very Weak" for password with only 1 requirement', () => {
-      const { container } = render(<PasswordStrengthIndicator password="password" />);
+      const { container } = render(<PasswordStrengthIndicator password="aaaa" />);
       expect(container).toHaveTextContent('Very Weak');
     });
 
     it('should show "Weak" for password with 2 requirements', () => {
-      const { container } = render(<PasswordStrengthIndicator password="Password" />);
+      const { container } = render(<PasswordStrengthIndicator password="Aaaa" />);
       expect(container).toHaveTextContent('Weak');
     });
 
     it('should show "Medium" for password with 3 requirements', () => {
-      const { container } = render(<PasswordStrengthIndicator password="Password1" />);
+      const { container } = render(<PasswordStrengthIndicator password="Aaa1" />);
       expect(container).toHaveTextContent('Medium');
     });
 
@@ -77,19 +77,19 @@ describe('PasswordStrengthIndicator', () => {
     });
 
     it('should show orange bar for weak password', () => {
-      const { container } = render(<PasswordStrengthIndicator password="Pass1" />);
+      const { container } = render(<PasswordStrengthIndicator password="Aaaa" />);
       const bar = container.querySelector('.bg-orange-500');
       expect(bar).toBeInTheDocument();
     });
 
     it('should show yellow bar for medium password', () => {
-      const { container } = render(<PasswordStrengthIndicator password="Pass1!a" />);
+      const { container } = render(<PasswordStrengthIndicator password="Aaa1" />);
       const bar = container.querySelector('.bg-yellow-500');
       expect(bar).toBeInTheDocument();
     });
 
     it('should show blue bar for strong password', () => {
-      const { container } = render(<PasswordStrengthIndicator password="Pass1!ab" />);
+      const { container } = render(<PasswordStrengthIndicator password="Aa1!" />);
       const bar = container.querySelector('.bg-blue-500');
       expect(bar).toBeInTheDocument();
     });
@@ -142,10 +142,10 @@ describe('PasswordStrengthIndicator', () => {
 
   describe('Real-world Passwords', () => {
     const testCases = [
-      { password: 'pass', expectedLabel: 'Very Weak', expectedScore: 1 },
-      { password: 'Password', expectedLabel: 'Weak', expectedScore: 2 },
-      { password: 'Password1', expectedLabel: 'Medium', expectedScore: 3 },
-      { password: 'Pass123!', expectedLabel: 'Strong', expectedScore: 4 },
+      { password: 'aaaa', expectedLabel: 'Very Weak', expectedScore: 1 },
+      { password: 'Aaaa', expectedLabel: 'Weak', expectedScore: 2 },
+      { password: 'Aaa1', expectedLabel: 'Medium', expectedScore: 3 },
+      { password: 'Aa1!', expectedLabel: 'Strong', expectedScore: 4 },
       { password: 'Password123!', expectedLabel: 'Very Strong', expectedScore: 5 },
       { password: 'MySecureP@ss1', expectedLabel: 'Very Strong', expectedScore: 5 },
       { password: 'Test@123', expectedLabel: 'Very Strong', expectedScore: 5 },
@@ -172,11 +172,11 @@ describe('PasswordStrengthIndicator', () => {
     });
 
     it('should show checkmarks for met requirements', () => {
-      render(<PasswordStrengthIndicator password="Password123!" />);
-      
+      const { container } = render(<PasswordStrengthIndicator password="Password123!" />);
+
       // All 5 requirements should show green checkmarks
-      const checkmarks = screen.getAllByRole('img', { hidden: true });
-      expect(checkmarks.length).toBeGreaterThanOrEqual(5);
+      const greenCheckmarks = container.querySelectorAll('.text-green-500');
+      expect(greenCheckmarks.length).toBeGreaterThanOrEqual(5);
     });
   });
 });

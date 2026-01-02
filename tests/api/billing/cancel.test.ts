@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Use vi.hoisted to create mocks before hoisting
 const mocks = vi.hoisted(() => ({
   subscriptionFindUnique: vi.fn(),
+  userFindUnique: vi.fn(),
   cancelStripeSubscription: vi.fn(),
   cancelSubscription: vi.fn(),
 }));
@@ -12,6 +13,9 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     subscription: {
       findUnique: mocks.subscriptionFindUnique,
+    },
+    user: {
+      findUnique: mocks.userFindUnique,
     },
   },
 }));
@@ -31,12 +35,22 @@ vi.mock('@/lib/auth', () => ({
   ),
 }));
 
+// Mock features to enable SaaS mode for billing tests
+vi.mock('@/lib/features', () => ({
+  isSaasMode: () => true,
+}));
+
 // Import after mocking
 import { POST } from '@/app/api/billing/cancel/route';
 
 describe('POST /api/billing/cancel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: user exists with email (for email notifications)
+    mocks.userFindUnique.mockResolvedValue({
+      id: 'user-123',
+      email: 'test@example.com',
+    });
   });
 
   it('should cancel subscription at period end', async () => {

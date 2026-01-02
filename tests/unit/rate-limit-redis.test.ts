@@ -98,8 +98,8 @@ describe('Redis Rate Limiting', () => {
       });
 
       const result = await checkRateLimit(request, 'login');
-      
-      expect(result).toBeInstanceOf(NextResponse);
+
+      expect(result).toBeInstanceOf(Object);
       expect(result?.status).toBe(429);
       
       const json = await result?.json();

@@ -88,7 +88,7 @@ async function checkRateLimitRedis(
     try {
       await redis.ping();
       // If ping succeeds, Redis is connected (connection status will update asynchronously)
-    } catch (error) {
+    } catch (_error) {
       // Redis is genuinely not available
       if (process.env.NODE_ENV !== 'production') {
         return checkRateLimitMemory(key, maxAttempts, windowMs, ip, type, identifier);

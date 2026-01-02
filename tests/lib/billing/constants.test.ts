@@ -10,7 +10,7 @@ describe('billing/constants', () => {
   describe('TIER_LIMITS', () => {
     it('should define limits for FREE tier', () => {
       expect(TIER_LIMITS.FREE).toEqual({
-        maxPeople: 100,
+        maxPeople: 50,
         maxGroups: 10,
         maxReminders: 5,
       });
@@ -55,13 +55,13 @@ describe('billing/constants', () => {
     });
 
     it('should have correct prices for PERSONAL tier', () => {
-      expect(TIER_INFO.PERSONAL.monthlyPrice).toBe(2);
-      expect(TIER_INFO.PERSONAL.yearlyPrice).toBe(20);
+      expect(TIER_INFO.PERSONAL.monthlyPrice).toBe(1);
+      expect(TIER_INFO.PERSONAL.yearlyPrice).toBe(10);
     });
 
     it('should have correct prices for PRO tier', () => {
-      expect(TIER_INFO.PRO.monthlyPrice).toBe(4);
-      expect(TIER_INFO.PRO.yearlyPrice).toBe(40);
+      expect(TIER_INFO.PRO.monthlyPrice).toBe(2);
+      expect(TIER_INFO.PRO.yearlyPrice).toBe(20);
     });
 
     it('should have features array for each tier', () => {
@@ -80,7 +80,7 @@ describe('billing/constants', () => {
 
   describe('getTierLimit', () => {
     it('should return correct limit for people', () => {
-      expect(getTierLimit('FREE', 'people')).toBe(100);
+      expect(getTierLimit('FREE', 'people')).toBe(50);
       expect(getTierLimit('PERSONAL', 'people')).toBe(1000);
       expect(getTierLimit('PRO', 'people')).toBe(Infinity);
     });

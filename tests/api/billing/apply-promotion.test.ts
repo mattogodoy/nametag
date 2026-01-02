@@ -29,6 +29,11 @@ vi.mock('@/lib/auth', () => ({
   ),
 }));
 
+// Mock features to enable SaaS mode for billing tests
+vi.mock('@/lib/features', () => ({
+  isSaasMode: () => true,
+}));
+
 // Import after mocking
 import { POST } from '@/app/api/billing/apply-promotion/route';
 

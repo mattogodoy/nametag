@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   personDeleteMany: vi.fn(),
   relationshipTypeFindUnique: vi.fn(),
   relationshipCreate: vi.fn(),
+  importantDateCount: vi.fn(),
 }));
 
 // Mock Prisma
@@ -33,6 +34,9 @@ vi.mock('../../lib/prisma', () => ({
     relationship: {
       create: mocks.relationshipCreate,
     },
+    importantDate: {
+      count: mocks.importantDateCount,
+    },
   },
 }));
 
@@ -43,6 +47,13 @@ vi.mock('../../lib/auth', () => ({
       user: { id: 'user-123', email: 'test@example.com', name: 'Test' },
     })
   ),
+}));
+
+// Mock billing
+vi.mock('../../lib/billing', () => ({
+  canCreateResource: vi.fn(() => Promise.resolve({ allowed: true, current: 0, limit: 50, tier: 'FREE', isUnlimited: false })),
+  canEnableReminder: vi.fn(() => Promise.resolve({ allowed: true, current: 0, limit: 5, isUnlimited: false })),
+  getUserUsage: vi.fn(() => Promise.resolve({ people: 0, groups: 0, reminders: 0 })),
 }));
 
 // Import after mocking
@@ -259,10 +270,11 @@ describe('People API', () => {
 
   describe('PUT /api/people/[id]', () => {
     it('should update a person', async () => {
-      const existingPerson = { id: 'person-1', name: 'John', userId: 'user-123' };
+      const existingPerson = { id: 'person-1', name: 'John', userId: 'user-123', contactReminderEnabled: false };
       const updatedPerson = { id: 'person-1', name: 'John Updated', groups: [] };
 
       mocks.personFindUnique.mockResolvedValue(existingPerson);
+      mocks.importantDateCount.mockResolvedValue(0);
       mocks.personUpdate.mockResolvedValue(updatedPerson);
 
       const request = new Request('http://localhost/api/people/person-1', {
@@ -305,10 +317,11 @@ describe('People API', () => {
     });
 
     it('should update groups', async () => {
-      const existingPerson = { id: 'person-1', name: 'John', userId: 'user-123' };
+      const existingPerson = { id: 'person-1', name: 'John', userId: 'user-123', contactReminderEnabled: false };
       const updatedPerson = { id: 'person-1', name: 'John', groups: [] };
 
       mocks.personFindUnique.mockResolvedValue(existingPerson);
+      mocks.importantDateCount.mockResolvedValue(0);
       mocks.personUpdate.mockResolvedValue(updatedPerson);
 
       const request = new Request('http://localhost/api/people/person-1', {

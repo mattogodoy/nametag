@@ -6,7 +6,7 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
-interface RateLimitConfig {
+interface _RateLimitConfig {
   maxAttempts: number;
   windowMs: number;
 }

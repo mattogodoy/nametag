@@ -96,7 +96,7 @@ async function main() {
     },
   });
 
-  const acquaintanceType = await prisma.relationshipType.create({
+  const _acquaintanceType = await prisma.relationshipType.create({
     data: {
       userId: user.id,
       name: 'ACQUAINTANCE',
@@ -114,7 +114,7 @@ async function main() {
     },
   });
 
-  const otherType = await prisma.relationshipType.create({
+  const _otherType = await prisma.relationshipType.create({
     data: {
       userId: user.id,
       name: 'OTHER',

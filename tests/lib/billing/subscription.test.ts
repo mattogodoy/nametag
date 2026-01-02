@@ -48,6 +48,11 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+// Mock features to enable SaaS mode for billing tests
+vi.mock('@/lib/features', () => ({
+  isSaasMode: () => true,
+}));
+
 // Import after mocking
 import {
   getUserSubscription,
@@ -156,7 +161,7 @@ describe('billing/subscription', () => {
 
       expect(result.allowed).toBe(true);
       expect(result.current).toBe(10);
-      expect(result.limit).toBe(20);
+      expect(result.limit).toBe(50);
       expect(result.tier).toBe('FREE');
     });
 
@@ -165,13 +170,13 @@ describe('billing/subscription', () => {
         tier: 'FREE',
         promotion: null,
       });
-      mocks.personCount.mockResolvedValue(20);
+      mocks.personCount.mockResolvedValue(50);
 
       const result = await canCreateResource('user-123', 'people');
 
       expect(result.allowed).toBe(false);
-      expect(result.current).toBe(20);
-      expect(result.limit).toBe(20);
+      expect(result.current).toBe(50);
+      expect(result.limit).toBe(50);
     });
 
     it('should always allow creation for PRO tier', async () => {
@@ -197,7 +202,7 @@ describe('billing/subscription', () => {
       const result = await canCreateResource('user-123', 'people');
 
       expect(result.allowed).toBe(true);
-      expect(result.limit).toBe(1000);
+      expect(result.limit).toBe(1000); // PERSONAL tier: 1000 people
     });
 
     it('should default to FREE tier if no subscription', async () => {
@@ -207,7 +212,7 @@ describe('billing/subscription', () => {
       const result = await canCreateResource('user-123', 'people');
 
       expect(result.tier).toBe('FREE');
-      expect(result.limit).toBe(20);
+      expect(result.limit).toBe(50); // Updated from 20 to 50
     });
 
     it('should check groups limit correctly', async () => {

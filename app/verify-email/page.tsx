@@ -9,12 +9,14 @@ type VerificationState = 'loading' | 'success' | 'error' | 'no-token';
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const [state, setState] = useState<VerificationState>('loading');
+  // Derive initial state from token to avoid setState in effect
+  const [state, setState] = useState<VerificationState>(() =>
+    !token ? 'no-token' : 'loading'
+  );
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (!token) {
-      setState('no-token');
       return;
     }
 

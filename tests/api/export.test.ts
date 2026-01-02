@@ -132,7 +132,7 @@ describe('Export API', () => {
       expect(body.version).toBe('1.0');
       expect(body.people).toHaveLength(3);
       expect(body.groups).toHaveLength(3);
-      expect(body.customRelationshipTypes).toHaveLength(1);
+      expect(body.relationshipTypes).toHaveLength(1);
     });
 
     it('should filter people by group when groupIds is provided', async () => {

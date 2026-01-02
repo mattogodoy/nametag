@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 /**
  * Redis Connection Test Script
- * 
+ *
  * Tests the Redis connection and basic operations
  * Usage: node scripts/test-redis.js
  */
 
 // Load environment variables from .env file
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 require('dotenv').config();
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const Redis = require('ioredis');
 
 async function testRedis() {
