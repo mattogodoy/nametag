@@ -65,6 +65,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          # Prisma schema requires DATABASE_URL to be present (does not need to be reachable for generate)
+          DATABASE_URL: "postgresql://dummy:dummy@dummy:5432/dummy"
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
@@ -76,6 +82,16 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Build-time dummy envs (actual values provided at runtime in the deployed environment)
+          DATABASE_URL: "postgresql://dummy:dummy@dummy:5432/dummy"
+          NEXTAUTH_URL: "http://localhost:3000"
+          NEXTAUTH_SECRET: "build-time-secret-min-32-chars-xxxxxxxxxxxxxxxxx"
+          RESEND_API_KEY: "re_build_time_key"
+          EMAIL_DOMAIN: "build.example.com"
+          CRON_SECRET: "build-time-cron-secret"
+          NODE_ENV: "production"
+          NEXT_TELEMETRY_DISABLED: "1"
 
       - name: Create Release
         env:

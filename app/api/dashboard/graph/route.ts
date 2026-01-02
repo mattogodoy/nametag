@@ -2,6 +2,32 @@ import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
+type DashboardGraphPerson = {
+  id: string;
+  name: string;
+  surname: string | null;
+  nickname: string | null;
+  relationshipToUser: {
+    label: string;
+    color: string | null;
+  } | null;
+  groups: Array<{
+    group: {
+      name: string;
+      color: string | null;
+    };
+  }>;
+  relationshipsFrom: Array<{
+    relatedPersonId: string;
+    relationshipType:
+      | {
+          label: string;
+          color: string | null;
+        }
+      | null;
+  }>;
+};
+
 interface GraphNode {
   id: string;
   label: string;
@@ -42,7 +68,7 @@ export const GET = withAuth(async (request, session) => {
     };
 
     // Fetch people with optimized select to minimize payload
-    const people = await prisma.person.findMany({
+    const people = (await prisma.person.findMany({
       where: whereClause,
       select: {
         id: true,
@@ -98,7 +124,7 @@ export const GET = withAuth(async (request, session) => {
         name: 'asc',
       },
       ...(limit ? { take: parseInt(limit) } : {}),
-    });
+    })) as unknown as DashboardGraphPerson[];
 
     // Build graph data
     const nodes: GraphNode[] = [];
