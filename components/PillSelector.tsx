@@ -258,18 +258,22 @@ export default function PillSelector<T extends PillItem>({
                   <button
                     type="button"
                     onClick={handleCreateNew}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 ${
+                    className={`w-full text-left px-4 py-2.5 transition-colors flex items-center gap-2 ${
                       highlightedIndex === createOptionIndex
-                        ? 'bg-gray-100 dark:bg-gray-600'
-                        : ''
+                        ? 'bg-blue-100 dark:bg-blue-900/40'
+                        : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40'
                     }`}
                   >
-                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span className="text-blue-600 dark:text-blue-400">
-                      {createNewLabel} &quot;{searchTerm}&quot;
-                    </span>
+                    <div className="flex items-center justify-center w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded-full flex-shrink-0">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-medium text-blue-700 dark:text-blue-300">
+                        {createNewLabel} &quot;{searchTerm}&quot;
+                      </span>
+                    </div>
                   </button>
                 </li>
               )}

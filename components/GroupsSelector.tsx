@@ -143,22 +143,43 @@ export default function GroupsSelector({
   );
 
   return (
-    <PillSelector
-      selectedItems={selectedItems}
-      availableItems={pillItems}
-      onAdd={handleAdd}
-      onRemove={handleRemove}
-      onCreateNew={allowCreate ? handleCreateNew : undefined}
-      placeholder="Type to search groups..."
-      emptyMessage="No groups found matching"
-      createNewLabel="Create group"
-      helpText={allowCreate
-        ? "Type to search or create new groups. Press Enter to add."
-        : "Type to search for groups and press Enter to add them. Click × to remove."
-      }
-      showAllOnFocus={true}
-      renderPill={renderGroupPill}
-      isLoading={isCreating}
-    />
+    <div>
+      {allowCreate && (
+        <div className="mb-2 flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <svg
+            className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              <span className="font-medium">Quick tip:</span> Don't see a group? Just type its name and press <kbd className="px-1.5 py-0.5 text-xs bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 rounded">Enter</kbd> to create it on the fly!
+            </p>
+          </div>
+        </div>
+      )}
+      <PillSelector
+        selectedItems={selectedItems}
+        availableItems={pillItems}
+        onAdd={handleAdd}
+        onRemove={handleRemove}
+        onCreateNew={allowCreate ? handleCreateNew : undefined}
+        placeholder="Type to search or create groups..."
+        emptyMessage="No groups found matching"
+        createNewLabel="Create group"
+        helpText="Click × on a group to remove it."
+        showAllOnFocus={true}
+        renderPill={renderGroupPill}
+        isLoading={isCreating}
+      />
+    </div>
   );
 }
