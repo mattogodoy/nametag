@@ -51,18 +51,20 @@ export const GET = withAuth(async (request, session) => {
   try {
     // Parse query parameters for filtering
     const { searchParams } = new URL(request.url);
-    const groupId = searchParams.get('groupId');
+    const groupIds = searchParams.getAll('groupIds'); // Get all groupIds parameters
     const limit = searchParams.get('limit');
 
     // Build where clause
     const whereClause = {
       userId: session.user.id,
       deletedAt: null,
-      // Filter by group if specified
-      ...(groupId && groupId !== 'all' && {
+      // Filter by groups if specified (show people who belong to ANY of the selected groups)
+      ...(groupIds.length > 0 && {
         groups: {
           some: {
-            groupId: groupId,
+            groupId: {
+              in: groupIds,
+            },
             group: {
               deletedAt: null,
             },

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useRouter } from 'next/navigation';
+import PillSelector from './PillSelector';
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -67,7 +68,7 @@ export default function UnifiedNetworkGraph({
   const previousNodeIdsRef = useRef<Set<string> | null>(null);
   const zoomTransformRef = useRef<d3.ZoomTransform | null>(null);
   const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [clusteringEnabled, setClusteringEnabled] = useState(enableGroupClustering);
 
@@ -459,8 +460,11 @@ export default function UnifiedNetworkGraph({
     const fetchData = async () => {
       // Build URL with query parameters
       const url = new URL(apiEndpoint, window.location.origin);
-      if (selectedGroupId) {
-        url.searchParams.set('groupId', selectedGroupId);
+      // Add all selected group IDs as query parameters
+      if (selectedGroupIds.length > 0) {
+        selectedGroupIds.forEach((groupId) => {
+          url.searchParams.append('groupIds', groupId);
+        });
       }
 
       const response = await fetch(url.toString());
@@ -469,51 +473,67 @@ export default function UnifiedNetworkGraph({
     };
 
     fetchData();
-  }, [apiEndpoint, refreshKey, selectedGroupId, isMobile, clusteringEnabled, renderGraph]);
+  }, [apiEndpoint, refreshKey, selectedGroupIds, isMobile, clusteringEnabled, renderGraph]);
 
   return (
     <div className="w-full h-full">
       {groups && (
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-end gap-4">
-          <div>
-            <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Filter by Group
-            </label>
-            <select
-              id="group-filter"
-              value={selectedGroupId || ''}
-              onChange={(e) => setSelectedGroupId(e.target.value || null)}
-              className="block w-full sm:w-64 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-            >
-              <option value="">All groups</option>
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setClusteringEnabled(!clusteringEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                clusteringEnabled
-                  ? 'bg-blue-600'
-                  : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-              aria-label="Toggle group clustering"
-            >
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                  clusteringEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Cluster by group
-            </span>
-          </div>
+        <div className="mb-4">
+          <PillSelector
+            label="Filter by Groups"
+            selectedItems={groups
+              .filter((g) => selectedGroupIds.includes(g.id))
+              .map((g) => ({
+                id: g.id,
+                label: g.name,
+                color: g.color,
+              }))}
+            availableItems={groups.map((g) => ({
+              id: g.id,
+              label: g.name,
+              color: g.color,
+            }))}
+            onAdd={(item) => setSelectedGroupIds([...selectedGroupIds, item.id])}
+            onRemove={(itemId) =>
+              setSelectedGroupIds(selectedGroupIds.filter((id) => id !== itemId))
+            }
+            placeholder="Type to filter by groups..."
+            emptyMessage="No groups found matching"
+            helpText="Select one or more groups to filter the network. Leave empty to show all people."
+            showAllOnFocus={true}
+            renderPill={(item, onRemove) => (
+              <div
+                key={item.id}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium"
+              >
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: item.color || '#9CA3AF' }}
+                />
+                <span className="text-gray-900 dark:text-white">{item.label}</span>
+                <button
+                  type="button"
+                  onClick={onRemove}
+                  className="hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-0.5 transition-colors text-gray-600 dark:text-gray-400"
+                  aria-label={`Remove ${item.label}`}
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+          />
         </div>
       )}
       <div className="relative">
@@ -521,23 +541,49 @@ export default function UnifiedNetworkGraph({
           ref={svgRef}
           className="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
         />
-        <button
-          onClick={recenterGraph}
-          className="absolute bottom-4 right-4 p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all"
-          aria-label="Re-center graph"
-          title="Re-center graph"
-        >
-          <svg
-            className="w-5 h-5 text-gray-700 dark:text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="absolute bottom-4 right-4 flex gap-2">
+          <button
+            onClick={() => setClusteringEnabled(!clusteringEnabled)}
+            className={`p-2.5 border rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all ${
+              clusteringEnabled
+                ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
+                : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
+            aria-label="Cluster by group"
+            title="Cluster by group"
           >
-            <circle cx="12" cy="12" r="10" strokeWidth="2" />
-            <circle cx="12" cy="12" r="3" strokeWidth="2" fill="currentColor" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4M2 12h4m12 0h4" />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={recenterGraph}
+            className="p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all"
+            aria-label="Re-center graph"
+            title="Re-center graph"
+          >
+            <svg
+              className="w-5 h-5 text-gray-700 dark:text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="10" strokeWidth="2" />
+              <circle cx="12" cy="12" r="3" strokeWidth="2" fill="currentColor" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
