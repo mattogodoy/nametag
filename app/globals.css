@@ -5,33 +5,33 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Light mode colors - Minimal Red theme */
-  --background: #FFFFFF;
-  --foreground: #0F0F0F;
-  --surface: #F4F4F4;
-  --surface-elevated: #FAFAFA;
-  --border: rgba(214, 69, 61, 0.15);
-  --primary: #D6453D;
-  --primary-dark: #B83A33;
-  --secondary: #D6453D;
-  --tertiary: #D6453D;
-  --accent: #D6453D;
-  --muted: rgba(15, 15, 15, 0.6);
+  /* Light mode colors - Cool Contrast Blue theme */
+  --background: #F6F7F9;
+  --foreground: #1B1D21;
+  --surface: #FFFFFF;
+  --surface-elevated: #FAFBFC;
+  --border: rgba(30, 99, 255, 0.15);
+  --primary: #1E63FF;
+  --primary-dark: #1552D9;
+  --secondary: #6DA8FF;
+  --tertiary: #6DA8FF;
+  --accent: #6DA8FF;
+  --muted: rgba(27, 29, 33, 0.6);
 }
 
 .dark {
-  /* Dark mode colors - Minimal Red theme */
-  --background: #0A0A0A;
-  --foreground: #D3D3D3;
-  --surface: #1E1E1E;
-  --surface-elevated: #2A2A2A;
-  --border: rgba(255, 86, 78, 0.2);
-  --primary: #FF564E;
-  --primary-dark: #E64A42;
-  --secondary: #FF564E;
-  --tertiary: #FF564E;
-  --accent: #FF564E;
-  --muted: rgba(211, 211, 211, 0.65);
+  /* Dark mode colors - Cool Contrast Blue theme */
+  --background: #0B0C10;
+  --foreground: #E7EAF0;
+  --surface: #15171D;
+  --surface-elevated: #1D1F26;
+  --border: rgba(92, 130, 255, 0.2);
+  --primary: #5C82FF;
+  --primary-dark: #4A6FE6;
+  --secondary: #2C3E9F;
+  --tertiary: #2C3E9F;
+  --accent: #2C3E9F;
+  --muted: rgba(231, 234, 240, 0.65);
 }
 
 @theme inline {
