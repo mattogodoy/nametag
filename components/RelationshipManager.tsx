@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
 import { formatFullName } from '@/lib/nameUtils';
+import { Button } from './ui/Button';
 
 interface Person {
   id: string;
@@ -242,19 +243,19 @@ export default function RelationshipManager({
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <h4 className="text-base font-medium text-gray-700 dark:text-gray-300">
+        <h4 className="text-base font-medium text-muted">
           Other Relationships
         </h4>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="px-3 py-1 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50"
         >
           Add Relationship
         </button>
       </div>
 
       {relationships.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <p className="text-muted text-sm">
           No relationships yet.
         </p>
       ) : (
@@ -262,7 +263,7 @@ export default function RelationshipManager({
           {relationships.map((rel) => (
             <div
               key={rel.id}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+              className="flex items-center justify-between p-3 bg-surface-elevated rounded-lg"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -272,7 +273,7 @@ export default function RelationshipManager({
                   >
                     {formatFullName(rel.relatedPerson)}
                   </Link>
-                  <span className="text-gray-500 dark:text-gray-400">•</span>
+                  <span className="text-muted">•</span>
                   <span
                     className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                     style={{
@@ -286,7 +287,7 @@ export default function RelationshipManager({
                   </span>
                 </div>
                 {rel.notes && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-muted mt-1">
                     {rel.notes}
                   </p>
                 )}
@@ -319,8 +320,8 @@ export default function RelationshipManager({
       {/* Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-surface rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Add Relationship
             </h3>
             <form onSubmit={handleAdd} className="space-y-4">
@@ -330,7 +331,7 @@ export default function RelationshipManager({
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted mb-1">
                   Relationship Type *
                 </label>
                 <select
@@ -339,7 +340,7 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, relationshipTypeId: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {relationshipTypes.map((type) => (
                     <option key={type.id} value={type.id}>
@@ -349,7 +350,7 @@ export default function RelationshipManager({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted mb-1">
                   Person *
                 </label>
                 <PersonAutocomplete
@@ -365,7 +366,7 @@ export default function RelationshipManager({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted mb-1">
                   Notes
                 </label>
                 <textarea
@@ -374,25 +375,24 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Optional notes..."
                 />
               </div>
               <div className="flex justify-end space-x-3 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
                   {isLoading ? 'Adding...' : 'Add Relationship'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -402,8 +402,8 @@ export default function RelationshipManager({
       {/* Edit Modal */}
       {showEditModal && selectedRelationship && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-surface rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Edit Relationship with {formatFullName(selectedRelationship.relatedPerson)}
             </h3>
             <form onSubmit={handleEdit} className="space-y-4">
@@ -413,7 +413,7 @@ export default function RelationshipManager({
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted mb-1">
                   Relationship Type *
                 </label>
                 <select
@@ -422,7 +422,7 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, relationshipTypeId: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {relationshipTypes.map((type) => (
                     <option key={type.id} value={type.id}>
@@ -432,7 +432,7 @@ export default function RelationshipManager({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted mb-1">
                   Notes
                 </label>
                 <textarea
@@ -441,25 +441,24 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Optional notes..."
                 />
               </div>
               <div className="flex justify-end space-x-3 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
                   {isLoading ? 'Saving...' : 'Save Changes'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -469,13 +468,13 @@ export default function RelationshipManager({
       {/* Delete Modal */}
       {showDeleteModal && selectedRelationship && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <div className="bg-surface rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Delete Relationship
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-muted mb-6">
               Are you sure you want to delete the relationship with{' '}
-              <strong className="text-gray-900 dark:text-white">
+              <strong className="text-foreground">
                 {formatFullName(selectedRelationship.relatedPerson)}
               </strong>
               ? This will also remove the reverse relationship.
@@ -488,20 +487,20 @@ export default function RelationshipManager({
             )}
 
             <div className="flex justify-end space-x-3">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setShowDeleteModal(false)}
                 disabled={isLoading}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={handleDelete}
                 disabled={isLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
               >
                 {isLoading ? 'Deleting...' : 'Delete'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

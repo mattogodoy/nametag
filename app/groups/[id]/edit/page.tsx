@@ -30,7 +30,7 @@ export default async function EditGroupPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -49,11 +49,11 @@ export default async function EditGroupPage({
             </Link>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+          <h1 className="text-3xl font-bold text-foreground mb-6">
             Edit {group.name}
           </h1>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <div className="bg-surface shadow rounded-lg p-6">
             <GroupForm group={group} mode="edit" />
           </div>
         </div>

@@ -22,22 +22,22 @@ export default async function AppearanceSettingsPage() {
   return (
     <div className="space-y-6">
       {/* Theme Settings */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           Theme
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-muted mb-6">
           Choose how NameTag looks to you.
         </p>
         <ThemeToggle userId={session.user.id} currentTheme={currentTheme} />
       </div>
 
       {/* Date Format Settings */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           Date Format
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-muted mb-6">
           Choose how dates are displayed throughout the app.
         </p>
         <DateFormatSelector userId={session.user.id} currentFormat={currentDateFormat} />

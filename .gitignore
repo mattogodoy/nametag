@@ -51,4 +51,7 @@ PRODUCTION_SECRETS.txt
 *.tsbuildinfo
 next-env.d.ts
 
+# Playwright MCP screenshots
+.playwright-mcp
+
 /app/generated/prisma

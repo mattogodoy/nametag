@@ -64,7 +64,7 @@ export default async function GroupDetailsPage({
   const currentMembers = group.people.map((pg) => pg.person);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -77,14 +77,14 @@ export default async function GroupDetailsPage({
           <div className="mb-6">
             <Link
               href="/groups"
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+              className="text-primary hover:underline text-sm"
             >
               ← Back to Groups
             </Link>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-visible">
-            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start gap-4">
+          <div className="bg-surface shadow rounded-lg overflow-visible">
+            <div className="px-6 py-5 border-b border-border flex flex-col sm:flex-row justify-between items-start gap-4">
               <div className="flex items-center flex-1 min-w-0">
                 {group.color && (
                   <div
@@ -93,11 +93,11 @@ export default async function GroupDetailsPage({
                   />
                 )}
                 <div className="min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
                     {group.name}
                   </h1>
                   {group.description && (
-                    <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-muted mt-1">
                       {group.description}
                     </p>
                   )}
@@ -106,7 +106,7 @@ export default async function GroupDetailsPage({
               <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
                 <Link
                   href={`/groups/${group.id}/edit`}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 text-center"
                 >
                   Edit
                 </Link>

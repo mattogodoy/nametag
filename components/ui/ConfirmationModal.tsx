@@ -36,13 +36,13 @@ export default function ConfirmationModal({
   const confirmButtonStyles = {
     danger: 'bg-red-600 hover:bg-red-700',
     warning: 'bg-yellow-600 hover:bg-yellow-700',
-    default: 'bg-blue-600 hover:bg-blue-700',
+    default: 'bg-primary text-white hover:bg-primary-dark shadow-lg hover:shadow-primary/50',
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface rounded-lg max-w-md w-full p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           {title}
         </h3>
 
@@ -58,7 +58,7 @@ export default function ConfirmationModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 border border-border text-muted rounded-lg font-medium hover:bg-surface-elevated transition-colors disabled:opacity-50"
           >
             {cancelText}
           </button>

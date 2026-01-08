@@ -43,8 +43,9 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-surface shadow-lg border-b-2 border-primary/20 relative">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-tertiary/5 pointer-events-none"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex justify-between items-center h-16">
           {/* Left section: Logo, Search (desktop), Nav items (desktop) */}
           <div className="flex items-center space-x-4 md:space-x-8">
@@ -54,7 +55,7 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
                 alt="NameTag Logo"
                 width={64}
                 height={64}
-                className="text-gray-900 dark:text-white"
+                className="text-foreground"
               />
             </Link>
 
@@ -70,30 +71,30 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
                   {item.createHref ? (
                     <div className={`flex items-center rounded-md overflow-hidden border ${
                       isActive(item.href)
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-primary/10 border-primary'
+                        : 'bg-surface-elevated border-border hover:bg-surface-elevated hover:border-primary/50'
                     }`}>
                       <Link
                         href={item.href}
                         className={`px-3 py-2 text-sm font-medium ${
                           isActive(item.href)
-                            ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-gray-700 dark:text-gray-300'
+                            ? 'text-primary'
+                            : 'text-foreground'
                         }`}
                       >
                         {item.label}
                       </Link>
                       <div className={`w-px h-5 ${
                         isActive(item.href)
-                          ? 'bg-blue-200 dark:bg-blue-700'
-                          : 'bg-gray-300 dark:bg-gray-600'
+                          ? 'bg-primary/30'
+                          : 'bg-border'
                       }`} />
                       <Link
                         href={item.createHref}
                         className={`px-2 py-2 transition-colors ${
                           isActive(item.href)
-                            ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                            ? 'text-primary hover:text-primary-dark'
+                            : 'text-muted hover:text-primary'
                         }`}
                         title={`Create new ${item.createLabel}`}
                         aria-label={`Create new ${item.createLabel}`}
@@ -109,8 +110,8 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
                         href={item.href}
                         className={`px-3 py-2 rounded-md text-sm font-medium border ${
                           isActive(item.href)
-                            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                            : 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'text-primary bg-primary/10 border-primary'
+                            : 'text-foreground bg-surface-elevated border-border hover:bg-surface-elevated hover:border-primary/50'
                         }`}
                       >
                         {item.label}
@@ -131,7 +132,7 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="lg:hidden p-2 rounded-md text-foreground hover:bg-surface-elevated transition-colors"
               aria-label="Toggle menu"
             >
               <svg
@@ -163,14 +164,14 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
           />
 
           {/* Mobile menu panel */}
-          <div className="lg:hidden fixed top-0 right-0 bottom-0 w-[90%] max-w-md bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out">
+          <div className="lg:hidden fixed top-0 right-0 bottom-0 w-[90%] max-w-md bg-surface shadow-xl z-50 transform transition-transform duration-300 ease-in-out">
             <div className="h-full flex flex-col">
               {/* Menu header with close button */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-lg font-semibold text-foreground">Menu</h2>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-2 rounded-md text-muted hover:bg-surface-elevated transition-colors"
                   aria-label="Close menu"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +181,7 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
               </div>
 
               {/* Mobile search */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 md:hidden">
+              <div className="p-4 border-b border-border md:hidden">
                 <NavigationSearch />
               </div>
 
@@ -192,32 +193,32 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
                       {item.createHref ? (
                         <div className={`flex items-center rounded-lg overflow-hidden border ${
                           isActive(item.href)
-                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                            : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'bg-primary/10 border-primary'
+                            : 'bg-surface-elevated border-border hover:bg-surface-elevated hover:border-primary/50'
                         }`}>
                           <Link
                             href={item.href}
                             onClick={() => setMobileMenuOpen(false)}
                             className={`flex-1 px-4 py-3 text-base font-medium ${
                               isActive(item.href)
-                                ? 'text-blue-600 dark:text-blue-400'
-                                : 'text-gray-700 dark:text-gray-300'
+                                ? 'text-primary'
+                                : 'text-foreground'
                             }`}
                           >
                             {item.label}
                           </Link>
                           <div className={`w-px h-8 ${
                             isActive(item.href)
-                              ? 'bg-blue-200 dark:bg-blue-700'
-                              : 'bg-gray-300 dark:bg-gray-600'
+                              ? 'bg-primary/30'
+                              : 'bg-border'
                           }`} />
                           <Link
                             href={item.createHref}
                             onClick={() => setMobileMenuOpen(false)}
                             className={`px-4 py-3 transition-colors ${
                               isActive(item.href)
-                                ? 'text-blue-600 dark:text-blue-400'
-                                : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                                ? 'text-primary'
+                                : 'text-muted hover:text-primary'
                             }`}
                             title={`Create new ${item.createLabel}`}
                             aria-label={`Create new ${item.createLabel}`}
@@ -233,8 +234,8 @@ export default function Navigation({ userEmail, userName, userNickname, currentP
                           onClick={() => setMobileMenuOpen(false)}
                           className={`flex items-center px-4 py-3 rounded-lg text-base font-medium border transition-colors ${
                             isActive(item.href)
-                              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                              : 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                              ? 'text-primary bg-primary/10 border-primary'
+                              : 'text-foreground bg-surface-elevated border-border hover:bg-surface-elevated hover:border-primary/50'
                           }`}
                         >
                           {item.label}

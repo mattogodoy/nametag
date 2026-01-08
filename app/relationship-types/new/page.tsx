@@ -28,7 +28,7 @@ export default async function NewRelationshipTypePage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -41,14 +41,14 @@ export default async function NewRelationshipTypePage() {
           <div className="mb-6">
             <Link
               href="/relationship-types"
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+              className="text-primary hover:underline text-sm"
             >
               ← Back to Relationship Types
             </Link>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          <div className="bg-surface shadow rounded-lg p-6">
+            <h1 className="text-2xl font-bold text-foreground mb-6">
               Create Relationship Type
             </h1>
             <RelationshipTypeForm availableTypes={availableTypes} mode="create" />

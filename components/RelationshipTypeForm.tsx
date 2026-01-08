@@ -2,9 +2,9 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'sonner';
 import RelationshipTypeAutocomplete from './RelationshipTypeAutocomplete';
+import { Button } from './ui/Button';
 
 interface RelationshipType {
   id: string;
@@ -156,7 +156,7 @@ export default function RelationshipTypeForm({
       <div>
         <label
           htmlFor="label"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="block text-sm font-medium text-muted mb-1"
         >
           Relationship Label *
         </label>
@@ -166,16 +166,16 @@ export default function RelationshipTypeForm({
           required
           value={formData.label}
           onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="e.g., Mentor, Student, Neighbor"
         />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs text-muted mt-1">
           The name that will be displayed to users
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-muted mb-2">
           Inverse Relationship
         </label>
 
@@ -195,7 +195,7 @@ export default function RelationshipTypeForm({
               }
             }}
             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-              isSymmetric ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+              isSymmetric ? 'bg-blue-600' : 'bg-surface-elevated'
             }`}
           >
             <span
@@ -204,11 +204,11 @@ export default function RelationshipTypeForm({
               }`}
             />
           </button>
-          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+          <span className="ml-3 text-sm text-muted">
             Symmetric (same as inverse)
           </span>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        <p className="text-xs text-muted mb-3">
           {isSymmetric
             ? `Both directions will use the same label (e.g., Friend ↔ Friend)`
             : 'The reciprocal relationship (e.g., Parent ↔ Child, Mentor ↔ Student)'}
@@ -231,7 +231,7 @@ export default function RelationshipTypeForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-muted mb-2">
           Color
         </label>
         <div className="flex flex-wrap gap-3">
@@ -253,7 +253,7 @@ export default function RelationshipTypeForm({
         <div className="mt-3">
           <label
             htmlFor="customColor"
-            className="block text-xs text-gray-500 dark:text-gray-400 mb-1"
+            className="block text-xs text-muted mb-1"
           >
             Or choose a custom color:
           </label>
@@ -268,23 +268,16 @@ export default function RelationshipTypeForm({
       </div>
 
       <div className="flex justify-end space-x-4 pt-4">
-        <Link
-          href="/relationship-types"
-          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
+        <Button variant="secondary" href="/relationship-types">
           Cancel
-        </Link>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        </Button>
+        <Button type="submit" disabled={isLoading}>
           {isLoading
             ? 'Saving...'
             : mode === 'create'
             ? 'Create Type'
             : 'Update Type'}
-        </button>
+        </Button>
       </div>
     </form>
   );

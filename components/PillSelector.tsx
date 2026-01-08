@@ -177,7 +177,7 @@ export default function PillSelector<T extends PillItem>({
           style={{ backgroundColor: item.color }}
         />
       )}
-      <span className="text-gray-900 dark:text-white">{item.label}</span>
+      <span className="text-foreground">{item.label}</span>
     </>
   );
 
@@ -187,14 +187,14 @@ export default function PillSelector<T extends PillItem>({
   return (
     <div className="relative">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           {label}
         </label>
       )}
 
       {/* Input box with pills */}
       <div
-        className="min-h-[42px] p-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus-within:border-blue-500 dark:focus-within:border-blue-400 transition-colors cursor-text"
+        className="min-h-[42px] p-2 border-2 border-border rounded-lg bg-surface-elevated focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20 transition-all cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         <div className="flex flex-wrap gap-1.5 items-center">
@@ -226,7 +226,7 @@ export default function PillSelector<T extends PillItem>({
                   : placeholder.replace('Type to search', 'Add more')
               }
               disabled={isLoading}
-              className="w-full px-2 py-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none disabled:opacity-50"
+              className="w-full px-2 py-1 bg-transparent text-foreground placeholder-muted focus:outline-none disabled:opacity-50"
             />
           </div>
 
@@ -237,7 +237,7 @@ export default function PillSelector<T extends PillItem>({
               onClick={onClearAll}
               onMouseDown={(e) => e.preventDefault()}
               disabled={isLoading}
-              className="flex-shrink-0 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+              className="flex-shrink-0 p-1 text-muted hover:text-primary hover:bg-primary/10 rounded transition-colors disabled:opacity-50"
               aria-label="Clear all"
               title="Clear all"
             >
@@ -261,7 +261,7 @@ export default function PillSelector<T extends PillItem>({
 
       {/* Suggestions dropdown */}
       {showSuggestions && (searchTerm || showAllOnFocus) && (
-        <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+        <div className="absolute left-0 right-0 mt-1 bg-surface border-2 border-secondary/30 rounded-lg shadow-lg shadow-secondary/20 max-h-60 overflow-y-auto z-50">
           {filteredSuggestions.length > 0 || showCreateOption ? (
             <ul>
               {filteredSuggestions.map((item, index) => (
@@ -269,10 +269,10 @@ export default function PillSelector<T extends PillItem>({
                   <button
                     type="button"
                     onClick={() => handleAdd(item)}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 ${
+                    className={`w-full text-left px-4 py-2 hover:bg-surface-elevated transition-colors flex items-center gap-2 border-l-2 ${
                       index === highlightedIndex
-                        ? 'bg-gray-100 dark:bg-gray-600'
-                        : ''
+                        ? 'bg-secondary/10 border-l-secondary'
+                        : 'border-l-transparent'
                     }`}
                   >
                     {suggestionRenderer(item)}
@@ -282,24 +282,24 @@ export default function PillSelector<T extends PillItem>({
               {showCreateOption && (
                 <li>
                   {filteredSuggestions.length > 0 && (
-                    <div className="border-t border-gray-200 dark:border-gray-600" />
+                    <div className="border-t border-border" />
                   )}
                   <button
                     type="button"
                     onClick={handleCreateNew}
                     className={`w-full text-left px-4 py-2.5 transition-colors flex items-center gap-2 ${
                       highlightedIndex === createOptionIndex
-                        ? 'bg-blue-100 dark:bg-blue-900/40'
-                        : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+                        ? 'bg-primary/20'
+                        : 'bg-primary/10 hover:bg-primary/20'
                     }`}
                   >
-                    <div className="flex items-center justify-center w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded-full flex-shrink-0">
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center justify-center w-5 h-5 bg-primary rounded-full flex-shrink-0">
+                      <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <span className="font-medium text-blue-700 dark:text-blue-300">
+                      <span className="font-medium text-primary">
                         {createNewLabel} &quot;{searchTerm}&quot;
                       </span>
                     </div>
@@ -308,11 +308,11 @@ export default function PillSelector<T extends PillItem>({
               )}
             </ul>
           ) : searchTerm ? (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            <div className="px-4 py-3 text-sm text-muted">
               {emptyMessage} &quot;{searchTerm}&quot;
             </div>
           ) : (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            <div className="px-4 py-3 text-sm text-muted">
               All items are already selected
             </div>
           )}
@@ -320,7 +320,7 @@ export default function PillSelector<T extends PillItem>({
       )}
 
       {helpText && (
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-xs text-muted">
           {helpText}
         </p>
       )}

@@ -54,13 +54,13 @@ export default async function BillingSettingsPage() {
       </Suspense>
 
       {/* Current Plan */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+      <div className="bg-surface shadow rounded-lg p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-bold text-foreground">
               Current Plan
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-muted mt-1">
               Manage your subscription and billing
             </p>
           </div>
@@ -71,7 +71,7 @@ export default async function BillingSettingsPage() {
                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
                   : tier === 'PERSONAL'
                   ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  : 'bg-surface-elevated text-muted'
               }`}
             >
               {tierInfo.name}
@@ -82,11 +82,11 @@ export default async function BillingSettingsPage() {
         {/* Plan details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Plan</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
+            <p className="text-sm text-muted">Plan</p>
+            <p className="text-lg font-medium text-foreground">
               {tierInfo.name}
               {subscriptionData.subscription?.billingFrequency && (
-                <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                <span className="text-sm text-muted ml-2">
                   ({subscriptionData.subscription.billingFrequency.toLowerCase()})
                 </span>
               )}
@@ -94,12 +94,12 @@ export default async function BillingSettingsPage() {
           </div>
           {subscriptionData.subscription?.currentPeriodEnd && (
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted">
                 {subscriptionData.subscription.cancelAtPeriodEnd
                   ? 'Access until'
                   : 'Next billing date'}
               </p>
-              <p className="text-lg font-medium text-gray-900 dark:text-white">
+              <p className="text-lg font-medium text-foreground">
                 {formatDate(subscriptionData.subscription.currentPeriodEnd)}
               </p>
             </div>
@@ -175,8 +175,8 @@ export default async function BillingSettingsPage() {
       </div>
 
       {/* Usage */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           Usage
         </h2>
         <div className="space-y-4">
@@ -203,8 +203,8 @@ export default async function BillingSettingsPage() {
 
       {/* Apply Promotion */}
       {!isComplimentary && !subscriptionData.subscription?.promotion && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold text-foreground mb-4">
             Have a Promotion Code?
           </h2>
           <ApplyPromoForm hasActivePromo={!!subscriptionData.subscription?.promotion} />
@@ -213,8 +213,8 @@ export default async function BillingSettingsPage() {
 
       {/* Upgrade/Downgrade */}
       {!isComplimentary && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+        <div className="bg-surface shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold text-foreground mb-6">
             Available Plans
           </h2>
           <PricingTable
@@ -226,8 +226,8 @@ export default async function BillingSettingsPage() {
 
       {/* Payment History */}
       {payments.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold text-foreground mb-4">
             Payment History
           </h2>
           <PaymentHistoryTable

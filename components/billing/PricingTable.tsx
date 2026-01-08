@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { SubscriptionTier, BillingFrequency } from '@prisma/client';
 import { TIER_INFO } from '@/lib/billing/constants';
 import { toast } from 'sonner';
+import { Button } from '../ui/Button';
 
 interface PricingTableProps {
   currentTier: SubscriptionTier;
@@ -60,20 +61,20 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
       {/* Frequency Toggle */}
       <div className="flex flex-col items-center gap-3">
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <p className="text-sm font-medium text-muted mb-1">
             Choose your billing frequency
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted">
             Switch between monthly and yearly pricing
           </p>
         </div>
-        <div className="inline-flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1.5 shadow-sm">
+        <div className="inline-flex items-center bg-surface-elevated rounded-lg p-1.5 shadow-sm">
           <button
             onClick={() => setFrequency('MONTHLY')}
             className={`px-6 py-3 text-base font-semibold rounded-md transition-all ${
               frequency === 'MONTHLY'
-                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-md scale-105'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-surface text-foreground shadow-md scale-105'
+                : 'text-muted hover:text-foreground'
             }`}
           >
             Monthly
@@ -82,8 +83,8 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
             onClick={() => setFrequency('YEARLY')}
             className={`px-6 py-3 text-base font-semibold rounded-md transition-all relative ${
               frequency === 'YEARLY'
-                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-md scale-105'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-surface text-foreground shadow-md scale-105'
+                : 'text-muted hover:text-foreground'
             }`}
           >
             <span className="flex items-center gap-2">
@@ -111,12 +112,12 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
           return (
             <div
               key={tier}
-              className={`relative bg-white dark:bg-gray-800 rounded-lg border-2 p-6 flex flex-col ${
+              className={`relative bg-surface rounded-lg border-2 p-6 flex flex-col ${
                 isCurrent
                   ? 'border-blue-500'
                   : tier === 'PERSONAL'
                   ? 'border-purple-500'
-                  : 'border-gray-200 dark:border-gray-700'
+                  : 'border-border'
               }`}
             >
               {isCurrent && (
@@ -131,19 +132,19 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
               )}
 
               <div className="text-center mb-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{info.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{info.description}</p>
+                <h3 className="text-lg font-bold text-foreground">{info.name}</h3>
+                <p className="text-sm text-muted mt-1">{info.description}</p>
                 <div className="mt-4">
                   {price === null ? (
-                    <span className="text-3xl font-bold text-gray-900 dark:text-white">Free</span>
+                    <span className="text-3xl font-bold text-foreground">Free</span>
                   ) : (
                     <>
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                      <span className="text-3xl font-bold text-foreground">
                         ${frequency === 'YEARLY' ? getMonthlyEquivalent(tier) : price}
                       </span>
-                      <span className="text-gray-500 dark:text-gray-400">/mo</span>
+                      <span className="text-muted">/mo</span>
                       {frequency === 'YEARLY' && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <p className="text-sm text-muted mt-1">
                           ${price} billed yearly
                         </p>
                       )}
@@ -168,38 +169,33 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{feature}</span>
+                    <span className="text-sm text-muted">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               <div className="mt-auto">
                 {isCurrent ? (
-                  <button
-                    disabled
-                    className="w-full py-2 px-4 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                  >
+                  <Button variant="secondary" fullWidth disabled>
                     Current Plan
-                  </button>
+                  </Button>
                 ) : tier === 'FREE' ? (
-                  <button
-                    disabled={isDowngrade}
-                    className="w-full py-2 px-4 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
-                  >
+                  <Button variant="secondary" fullWidth disabled={isDowngrade}>
                     {isDowngrade ? 'Cancel your current subscription to downgrade' : 'Free'}
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
+                    fullWidth
                     onClick={() => handleUpgrade(tier as Exclude<SubscriptionTier, 'FREE'>)}
                     disabled={loading !== null}
-                    className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                    className={
                       tier === 'PERSONAL'
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                        : 'bg-amber-500 hover:bg-amber-600 text-white'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-600/50'
+                        : 'bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg hover:shadow-yellow-600/50'
+                    }
                   >
                     {loading === tier ? 'Loading...' : isUpgrade ? 'Upgrade' : 'Switch Plan'}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

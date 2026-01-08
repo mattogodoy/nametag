@@ -21,11 +21,11 @@ export default async function AccountSettingsPage() {
   ]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className="bg-surface shadow rounded-lg p-6">
+      <h2 className="text-xl font-bold text-foreground mb-4">
         Account Management
       </h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <p className="text-muted mb-6">
         Export your data, import from a backup, or delete your account.
       </p>
       <AccountManagement groups={groups} peopleCount={peopleCount} />

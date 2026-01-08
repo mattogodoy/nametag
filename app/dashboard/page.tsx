@@ -193,7 +193,7 @@ export default async function DashboardPage() {
   upcomingEvents.sort((a, b) => a.daysUntil - b.daysUntil);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -205,53 +205,54 @@ export default async function DashboardPage() {
         <div className="px-4 py-6 sm:px-0">
           {/* Upcoming Events */}
           {upcomingEvents.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface shadow-lg rounded-lg p-6 mb-8 border-2 border-primary/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+              <h2 className="text-xl font-bold text-primary mb-4 relative">
                 Upcoming Events
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-3 relative">
                 {upcomingEvents.map((event) => (
                   <Link
                     key={event.id}
                     href={`/people/${event.personId}`}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="flex items-center justify-between p-4 bg-surface-elevated hover:bg-surface-elevated/80 rounded-lg transition-all border-2 border-border hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 relative group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-lg shadow-lg ${
                         event.type === 'important_date'
-                          ? 'bg-purple-100 dark:bg-purple-900/30'
-                          : 'bg-blue-100 dark:bg-blue-900/30'
+                          ? 'bg-secondary/30 shadow-secondary/20'
+                          : 'bg-primary/30 shadow-primary/20'
                       }`}>
                         {event.type === 'important_date' ? (
-                          <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-secondary drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         ) : (
-                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-primary drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                           </svg>
                         )}
                       </div>
                       <div>
-                        <div className="text-gray-900 dark:text-white font-medium">
+                        <div className="text-foreground font-semibold text-base">
                           {event.personName}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-muted">
                           {event.title}
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-sm font-medium ${
+                      <div className={`text-sm font-bold ${
                         event.daysUntil <= 0
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-tertiary'
                           : event.daysUntil <= 3
-                          ? 'text-orange-600 dark:text-orange-400'
-                          : 'text-gray-600 dark:text-gray-400'
+                          ? 'text-secondary'
+                          : 'text-primary'
                       }`}>
                         {event.daysUntil < 0 ? 'Overdue' : formatDaysUntil(event.daysUntil)}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-muted/80">
                         {formatDate(event.date, dateFormat)}
                       </div>
                     </div>
@@ -263,37 +264,41 @@ export default async function DashboardPage() {
 
           {/* Network Graph */}
           {peopleCount > 0 ? (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface shadow-lg rounded-lg p-6 mb-8 border-2 border-primary/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+              <h2 className="text-xl font-bold text-primary mb-4 relative">
                 Your Network
               </h2>
-              <UnifiedNetworkGraph
-                apiEndpoint="/api/dashboard/graph"
-                groups={groups}
-                centerNodeNonClickable={true}
-                linkDistance={120}
-                chargeStrength={-400}
-              />
+              <div className="relative">
+                <UnifiedNetworkGraph
+                  apiEndpoint="/api/dashboard/graph"
+                  groups={groups}
+                  centerNodeNonClickable={true}
+                  linkDistance={120}
+                  chargeStrength={-400}
+                />
+              </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <div className="text-center py-12">
+            <div className="bg-surface shadow-lg rounded-lg p-6 mb-8 border-2 border-primary/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+              <div className="text-center py-12 relative">
                 <div className="flex justify-center mb-4">
-                  <div className="p-4 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="p-6 bg-primary/30 rounded-2xl shadow-lg shadow-primary/20">
+                    <svg className="w-16 h-16 text-primary drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                <h3 className="text-xl font-bold text-foreground mb-3">
                   Your network is empty
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                <p className="text-base text-muted mb-8 max-w-md mx-auto">
                   Start building your personal network by adding people you know.
                 </p>
                 <Link
                   href="/people/new"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-semibold rounded-lg shadow-lg bg-primary hover:bg-primary-dark text-black transition-all hover:shadow-primary/50 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   Create your first person
                 </Link>

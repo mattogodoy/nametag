@@ -107,8 +107,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/10 to-tertiary/10 pointer-events-none"></div>
+      <div className="absolute top-20 left-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+      <div className="max-w-md w-full space-y-8 relative">
         <div className="flex flex-col items-center">
           <Image
             src="/logo.svg"
@@ -117,10 +120,10 @@ export default function LoginPage() {
             height={192}
             priority
           />
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-center text-3xl font-bold text-foreground">
             Welcome to NameTag
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-center text-sm text-muted">
             Sign in to manage your relationships
           </p>
         </div>
@@ -130,10 +133,10 @@ export default function LoginPage() {
             <GoogleSignInButton mode="signin" />
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                <span className="px-2 bg-background text-muted">
                   Or continue with email
                 </span>
               </div>
@@ -141,14 +144,15 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6 bg-surface border-2 border-primary/20 rounded-2xl p-8 shadow-2xl relative overflow-hidden" onSubmit={handleSubmit}>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
           {resendSuccess && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded">
+            <div className="bg-primary/20 border-2 border-primary text-primary px-4 py-3 rounded-lg shadow-lg shadow-primary/20 relative">
               Verification email sent! Please check your inbox.
             </div>
           )}
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
+            <div className="bg-tertiary/30 border-2 border-tertiary text-tertiary px-4 py-3 rounded-lg shadow-lg shadow-tertiary/20 relative">
               <p>{error}</p>
               {isUnverified && !resendSuccess && (
                 <div className="mt-2">
@@ -170,9 +174,9 @@ export default function LoginPage() {
               )}
             </div>
           )}
-          <div className="rounded-md shadow-sm space-y-4">
+          <div className="rounded-md space-y-4 relative">
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
                 Email address
               </label>
               <input
@@ -183,12 +187,12 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Email address"
+                className="appearance-none rounded-lg relative block w-full px-4 py-3 border-2 border-border placeholder-muted text-foreground bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                placeholder="you@example.com"
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-muted mb-2">
                 Password
               </label>
               <input
@@ -199,36 +203,36 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Password"
+                className="appearance-none rounded-lg relative block w-full px-4 py-3 border-2 border-border placeholder-muted text-foreground bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                placeholder="••••••••"
               />
             </div>
           </div>
 
-          <div>
+          <div className="relative">
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 px-6 border-2 border-transparent text-base font-bold rounded-lg text-black bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-primary/50 hover:scale-105"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
 
           <div className="text-center space-y-2">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted">
               <Link
                 href="/forgot-password"
-                className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                className="font-medium text-primary hover:text-primary-dark transition-colors"
               >
                 Forgot your password?
               </Link>
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted">
               Don&apos;t have an account?{' '}
               <Link
                 href="/register"
-                className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                className="font-medium text-primary hover:text-primary-dark transition-colors"
               >
                 Sign up
               </Link>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ConfirmationModal from './ui/ConfirmationModal';
+import { Button } from './ui/Button';
 
 interface DeleteGroupButtonProps {
   groupId: string;
@@ -60,12 +61,9 @@ export default function DeleteGroupButton({
 
   return (
     <>
-      <button
-        onClick={() => setShowConfirm(true)}
-        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-      >
+      <Button variant="danger" onClick={() => setShowConfirm(true)}>
         Delete
-      </button>
+      </Button>
 
       <ConfirmationModal
         isOpen={showConfirm}
@@ -79,15 +77,15 @@ export default function DeleteGroupButton({
         variant="danger"
         confirmDisabled={isDeleteDisabled}
       >
-        <p className="text-gray-600 dark:text-gray-400 mb-1">
+        <p className="text-muted mb-1">
           Are you sure you want to delete{' '}
-          <strong className="text-gray-900 dark:text-white">{groupName}</strong>?
+          <strong className="text-foreground">{groupName}</strong>?
         </p>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-muted mb-4">
           This action will only remove the group, but will not delete the people themselves.
         </p>
 
-        <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="space-y-3 pt-4 border-t border-border">
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -98,9 +96,9 @@ export default function DeleteGroupButton({
                   setConfirmDeletion(false);
                 }
               }}
-              className="mt-1 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 dark:border-gray-600 dark:focus:ring-red-600 dark:ring-offset-gray-800"
+              className="mt-1 w-4 h-4 text-red-600 border-border rounded focus:ring-red-500 dark:focus:ring-red-600 dark:ring-offset-gray-800"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-muted">
               Delete all people in this group too
             </span>
           </label>
@@ -111,7 +109,7 @@ export default function DeleteGroupButton({
                 type="checkbox"
                 checked={confirmDeletion}
                 onChange={(e) => setConfirmDeletion(e.target.checked)}
-                className="mt-1 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 dark:border-gray-600 dark:focus:ring-red-600 dark:ring-offset-gray-800"
+                className="mt-1 w-4 h-4 text-red-600 border-border rounded focus:ring-red-500 dark:focus:ring-red-600 dark:ring-offset-gray-800"
               />
               <span className="text-sm font-medium text-red-600 dark:text-red-500">
                 Yes, I&apos;m sure!

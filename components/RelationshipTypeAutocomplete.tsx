@@ -140,14 +140,14 @@ export default function RelationshipTypeAutocomplete({
           onFocus={handleFocus}
           placeholder={placeholder}
           required={required}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
           autoComplete="off"
         />
         {value && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
           >
             ✕
           </button>
@@ -155,13 +155,13 @@ export default function RelationshipTypeAutocomplete({
       </div>
 
       {isOpen && filteredTypes.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-10 w-full mt-1 bg-surface border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
           {filteredTypes.map((type, index) => (
             <button
               key={type.id}
               type="button"
               onClick={() => handleSelect(type)}
-              className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+              className={`w-full text-left px-3 py-2 hover:bg-surface-elevated transition-colors ${
                 index === highlightedIndex
                   ? 'bg-blue-50 dark:bg-blue-900/20'
                   : ''
@@ -172,7 +172,7 @@ export default function RelationshipTypeAutocomplete({
               }`}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
-              <div className="text-gray-900 dark:text-white">
+              <div className="text-foreground">
                 {type.label}
               </div>
             </button>
@@ -181,7 +181,7 @@ export default function RelationshipTypeAutocomplete({
       )}
 
       {isOpen && searchTerm && filteredTypes.length === 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
+        <div className="absolute z-10 w-full mt-1 bg-surface border border-border rounded-lg shadow-lg p-3">
           <p className="text-sm text-green-600 dark:text-green-400">
             Press Enter to create new type: &quot;{searchTerm}&quot;
           </p>

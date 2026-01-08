@@ -143,7 +143,7 @@ export default async function PeoplePage({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -154,13 +154,13 @@ export default async function PeoplePage({
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-foreground">
               People
             </h1>
             {canCreate.allowed ? (
               <Link
                 href="/people/new"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50"
               >
                 Add Person
               </Link>
@@ -171,7 +171,7 @@ export default async function PeoplePage({
                 </span>
                 <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-lg z-10">
                   <p className="mb-2">You&apos;ve reached the limit of {canCreate.limit} people.</p>
-                  <Link href="/settings/billing" className="text-blue-400 hover:text-blue-300 underline">
+                  <Link href="/settings/billing" className="text-primary hover:text-primary-dark underline">
                     Upgrade your plan
                   </Link>
                 </div>
@@ -180,11 +180,11 @@ export default async function PeoplePage({
           </div>
 
           {totalCount === 0 ? (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div className="bg-surface shadow-lg rounded-lg border-2 border-primary/30">
               <EmptyState
                 icon={
-                  <div className="p-4 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="p-4 bg-primary/20 rounded-lg shadow-lg shadow-primary/20">
+                    <svg className="w-12 h-12 text-primary drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
@@ -197,110 +197,110 @@ export default async function PeoplePage({
             </div>
           ) : (
             <>
-              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="mb-4 text-sm text-muted">
                 Showing {skip + 1}-{Math.min(skip + ITEMS_PER_PAGE, totalCount)} of {totalCount} people
               </div>
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+            <div className="bg-surface shadow-lg rounded-lg overflow-hidden border-2 border-primary/30">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <table className="min-w-full divide-y divide-border">
+                <thead className="bg-surface-elevated">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=name&order=${sortBy === 'name' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                        className="flex items-center gap-1 hover:text-foreground"
                       >
                         Name
                         {sortBy === 'name' && (
-                          <span className="text-blue-600 dark:text-blue-400">
+                          <span className="text-primary">
                             {order === 'asc' ? '↑' : '↓'}
                           </span>
                         )}
                       </Link>
                     </th>
-                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=surname&order=${sortBy === 'surname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                        className="flex items-center gap-1 hover:text-foreground"
                       >
                         Surname
                         {sortBy === 'surname' && (
-                          <span className="text-blue-600 dark:text-blue-400">
+                          <span className="text-primary">
                             {order === 'asc' ? '↑' : '↓'}
                           </span>
                         )}
                       </Link>
                     </th>
-                    <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=nickname&order=${sortBy === 'nickname' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                        className="flex items-center gap-1 hover:text-foreground"
                       >
                         Nickname
                         {sortBy === 'nickname' && (
-                          <span className="text-blue-600 dark:text-blue-400">
+                          <span className="text-primary">
                             {order === 'asc' ? '↑' : '↓'}
                           </span>
                         )}
                       </Link>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=relationship&order=${sortBy === 'relationship' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                        className="flex items-center gap-1 hover:text-foreground"
                       >
                         Relationship
                         {sortBy === 'relationship' && (
-                          <span className="text-blue-600 dark:text-blue-400">
+                          <span className="text-primary">
                             {order === 'asc' ? '↑' : '↓'}
                           </span>
                         )}
                       </Link>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=group&order=${sortBy === 'group' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                        className="flex items-center gap-1 hover:text-foreground"
                       >
                         Groups
                         {sortBy === 'group' && (
-                          <span className="text-blue-600 dark:text-blue-400">
+                          <span className="text-primary">
                             {order === 'asc' ? '↑' : '↓'}
                           </span>
                         )}
                       </Link>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                       <Link
                         href={`/people?sortBy=lastContact&order=${sortBy === 'lastContact' && order === 'asc' ? 'desc' : 'asc'}&page=${currentPage}`}
-                        className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-100"
+                        className="flex items-center gap-1 hover:text-foreground"
                       >
                         Last Contact
                         {sortBy === 'lastContact' && (
-                          <span className="text-blue-600 dark:text-blue-400">
+                          <span className="text-primary">
                             {order === 'asc' ? '↑' : '↓'}
                           </span>
                         )}
                       </Link>
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-surface divide-y divide-border">
                   {people.map((person) => {
                     const isOrphan = !person.relationshipToUser &&
                                      person.relationshipsFrom.length === 0 &&
                                      person.relationshipsTo.length === 0;
 
                     return (
-                    <tr key={person.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={person.id} className="hover:bg-surface-elevated transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <Link
                             href={`/people/${person.id}`}
-                            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                            className="text-primary hover:underline font-medium"
                           >
                             {person.name}
                           </Link>
@@ -315,10 +315,10 @@ export default async function PeoplePage({
                           )}
                         </div>
                       </td>
-                      <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {person.surname || '—'}
                       </td>
-                      <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-muted">
                         {person.nickname ? `'${person.nickname}'` : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -335,7 +335,7 @@ export default async function PeoplePage({
                             {person.relationshipToUser.label}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700">
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-muted bg-surface-elevated">
                             Indirect
                           </span>
                         )}
@@ -357,13 +357,13 @@ export default async function PeoplePage({
                             </span>
                           ))}
                           {person.groups.length === 0 && (
-                            <span className="text-sm text-gray-400 dark:text-gray-500">
+                            <span className="text-sm text-muted">
                               —
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                         {person.lastContact
                           ? formatDate(new Date(person.lastContact), dateFormat)
                           : '—'}
@@ -372,7 +372,7 @@ export default async function PeoplePage({
                         <div className="flex justify-end gap-3">
                           <Link
                             href={`/people/${person.id}/edit`}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                            className="text-primary hover:text-primary-dark transition-colors"
                             title="Edit"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,7 +381,7 @@ export default async function PeoplePage({
                           </Link>
                           <Link
                             href={`/people/${person.id}`}
-                            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 transition-colors"
+                            className="text-muted hover:text-foreground transition-colors"
                             title="View"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -399,37 +399,37 @@ export default async function PeoplePage({
               </div>
 
               {totalPages > 1 && (
-                <div className="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                <div className="bg-surface px-4 py-3 border-t border-border sm:px-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 flex justify-between sm:hidden">
                       {currentPage > 1 ? (
                         <Link
                           href={buildUrl(currentPage - 1)}
-                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className="relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-surface-elevated hover:bg-surface-elevated/80 transition-colors"
                         >
                           Previous
                         </Link>
                       ) : (
-                        <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-900 cursor-not-allowed">
+                        <span className="relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-muted bg-surface cursor-not-allowed">
                           Previous
                         </span>
                       )}
                       {currentPage < totalPages ? (
                         <Link
                           href={buildUrl(currentPage + 1)}
-                          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-surface-elevated hover:bg-surface-elevated/80 transition-colors"
                         >
                           Next
                         </Link>
                       ) : (
-                        <span className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-900 cursor-not-allowed">
+                        <span className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-muted bg-surface cursor-not-allowed">
                           Next
                         </span>
                       )}
                     </div>
                     <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                        <p className="text-sm text-foreground">
                           Page <span className="font-medium">{currentPage}</span> of{' '}
                           <span className="font-medium">{totalPages}</span>
                         </p>
@@ -439,13 +439,13 @@ export default async function PeoplePage({
                           {currentPage > 1 ? (
                             <Link
                               href={buildUrl(currentPage - 1)}
-                              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-surface-elevated text-sm font-medium text-foreground hover:bg-surface-elevated/80 transition-colors"
                             >
                               <span className="sr-only">Previous</span>
                               ←
                             </Link>
                           ) : (
-                            <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                            <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-surface text-sm font-medium text-muted cursor-not-allowed">
                               <span className="sr-only">Previous</span>
                               ←
                             </span>
@@ -466,7 +466,7 @@ export default async function PeoplePage({
                             return pageNum === currentPage ? (
                               <span
                                 key={pageNum}
-                                className="relative inline-flex items-center px-4 py-2 border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-sm font-medium text-blue-600 dark:text-blue-400"
+                                className="relative inline-flex items-center px-4 py-2 border border-primary bg-primary/10 text-sm font-medium text-primary"
                               >
                                 {pageNum}
                               </span>
@@ -474,7 +474,7 @@ export default async function PeoplePage({
                               <Link
                                 key={pageNum}
                                 href={buildUrl(pageNum)}
-                                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                className="relative inline-flex items-center px-4 py-2 border border-border bg-surface-elevated text-sm font-medium text-foreground hover:bg-surface-elevated/80 transition-colors"
                               >
                                 {pageNum}
                               </Link>
@@ -484,13 +484,13 @@ export default async function PeoplePage({
                           {currentPage < totalPages ? (
                             <Link
                               href={buildUrl(currentPage + 1)}
-                              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-surface-elevated text-sm font-medium text-foreground hover:bg-surface-elevated/80 transition-colors"
                             >
                               <span className="sr-only">Next</span>
                               →
                             </Link>
                           ) : (
-                            <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                            <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-surface text-sm font-medium text-muted cursor-not-allowed">
                               <span className="sr-only">Next</span>
                               →
                             </span>

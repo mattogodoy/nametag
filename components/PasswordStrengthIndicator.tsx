@@ -103,7 +103,7 @@ export function PasswordStrengthIndicator({
     <div className="space-y-2">
       {/* Strength Bar */}
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="flex-1 h-2 bg-surface-elevated rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ease-in-out ${strength.barColor}`}
             style={{ width: `${widthPercentage}%` }}
@@ -167,7 +167,7 @@ function RequirementItem({ met, text }: RequirementItemProps) {
         </svg>
       ) : (
         <svg
-          className="w-4 h-4 text-gray-400 dark:text-gray-600"
+          className="w-4 h-4 text-muted"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -178,7 +178,7 @@ function RequirementItem({ met, text }: RequirementItemProps) {
           />
         </svg>
       )}
-      <span className={met ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-500'}>
+      <span className={met ? 'text-muted' : 'text-muted'}>
         {text}
       </span>
     </div>

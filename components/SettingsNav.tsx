@@ -90,8 +90,8 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
   return (
     <div>
       {/* Mobile: Dropdown menu */}
-      <div className="md:hidden bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-        <label htmlFor="settings-menu" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <div className="md:hidden bg-surface shadow rounded-lg p-4">
+        <label htmlFor="settings-menu" className="block text-sm font-medium text-muted mb-2">
           Settings Menu
         </label>
         <div className="relative">
@@ -99,7 +99,7 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
             id="settings-menu"
             value={activeItem?.href || settingsNavItems[0]?.href}
             onChange={(e) => handleMobileChange(e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2.5 pl-3 pr-10 text-base appearance-none"
+            className="block w-full rounded-lg border border-border bg-surface text-foreground shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2.5 pl-3 pr-10 text-base appearance-none"
           >
             {settingsNavItems.map((item) => (
               <option key={item.href} value={item.href}>
@@ -107,7 +107,7 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
               </option>
             ))}
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 dark:text-gray-400">
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-muted">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
@@ -116,7 +116,7 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
       </div>
 
       {/* Desktop: Sidebar navigation */}
-      <nav className="hidden md:block bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+      <nav className="hidden md:block bg-surface shadow rounded-lg overflow-hidden">
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {settingsNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -128,17 +128,17 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
                   className={`flex items-center gap-3 px-4 py-3 transition-colors ${
                     isActive
                       ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-4 border-transparent'
+                      : 'text-muted hover:bg-surface-elevated/50 border-l-4 border-transparent'
                   }`}
                 >
-                  <span className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}>
+                  <span className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-muted'}>
                     {item.icon}
                   </span>
                   <div className="min-w-0">
                     <p className={`font-medium ${isActive ? 'text-blue-700 dark:text-blue-400' : ''}`}>
                       {item.label}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    <p className="text-sm text-muted truncate">
                       {item.description}
                     </p>
                   </div>

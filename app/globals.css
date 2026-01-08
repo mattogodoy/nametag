@@ -4,19 +4,70 @@
 /* Enable class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* PALETTE A — Cool Contrast Blue */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --a-primary: #1E63FF;
+  --a-secondary: #6DA8FF;
+  --a-text: #1B1D21;
+  --a-bg: #F6F7F9;
+  --a-surface: #FFFFFF;
+
+  /* Legacy variables for compatibility */
+  --background: #F6F7F9;
+  --foreground: #1B1D21;
+  --surface: #FFFFFF;
+  --surface-elevated: #FAFBFC;
+  --border: rgba(30, 99, 255, 0.15);
+  --primary: #1E63FF;
+  --primary-dark: #1552D9;
+  --secondary: #6DA8FF;
+  --tertiary: #6DA8FF;
+  --accent: #6DA8FF;
+  --muted: rgba(27, 29, 33, 0.6);
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --a-primary: #5C82FF;
+  --a-secondary: #2C3E9F;
+  --a-text: #E7EAF0;
+  --a-bg: #0B0C10;
+  --a-surface: #15171D;
+
+  /* Legacy variables for compatibility */
+  --background: #0B0C10;
+  --foreground: #E7EAF0;
+  --surface: #15171D;
+  --surface-elevated: #1D1F26;
+  --border: rgba(92, 130, 255, 0.2);
+  --primary: #5C82FF;
+  --primary-dark: #4A6FE6;
+  --secondary: #2C3E9F;
+  --tertiary: #2C3E9F;
+  --accent: #2C3E9F;
+  --muted: rgba(231, 234, 240, 0.65);
 }
 
 @theme inline {
+  /* New palette A colors */
+  --color-a-primary: var(--a-primary);
+  --color-a-secondary: var(--a-secondary);
+  --color-a-text: var(--a-text);
+  --color-a-bg: var(--a-bg);
+  --color-a-surface: var(--a-surface);
+
+  /* Legacy colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+
   /* Use system font stack for better performance */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;

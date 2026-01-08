@@ -51,7 +51,7 @@ function VerifyEmailContent() {
       {state === 'loading' && (
         <div className="space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 dark:text-gray-400">Verifying your email...</p>
+          <p className="text-muted">Verifying your email...</p>
         </div>
       )}
 
@@ -67,7 +67,7 @@ function VerifyEmailContent() {
           </div>
           <Link
             href="/login"
-            className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700"
+            className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-black bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/50"
           >
             Go to Login
           </Link>
@@ -87,7 +87,7 @@ function VerifyEmailContent() {
           <div className="space-y-2">
             <Link
               href="/register"
-              className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-black bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/50"
             >
               Register Again
             </Link>
@@ -128,7 +128,7 @@ function LoadingFallback() {
     <div className="max-w-md w-full space-y-8 text-center">
       <div className="space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        <p className="text-muted">Loading...</p>
       </div>
     </div>
   );
@@ -136,7 +136,7 @@ function LoadingFallback() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Suspense fallback={<LoadingFallback />}>
         <VerifyEmailContent />
       </Suspense>

@@ -60,7 +60,7 @@ export default async function EditPersonPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navigation
         userEmail={session.user.email || undefined}
         userName={session.user.name}
@@ -79,11 +79,11 @@ export default async function EditPersonPage({
             </Link>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+          <h1 className="text-3xl font-bold text-foreground mb-6">
             Edit {formatFullName(person)}
           </h1>
 
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <div className="bg-surface shadow rounded-lg p-6">
             <PersonForm
               person={person}
               groups={groups}

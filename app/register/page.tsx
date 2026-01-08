@@ -94,7 +94,7 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-800 rounded-lg p-6">
             <h2 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
@@ -119,7 +119,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="flex flex-col items-center">
           <Image
@@ -129,10 +129,10 @@ export default function RegisterPage() {
             height={96}
             priority
           />
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-center text-3xl font-bold text-foreground">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-center text-sm text-muted">
             Start managing your relationships with NameTag
           </p>
         </div>
@@ -142,10 +142,10 @@ export default function RegisterPage() {
             <GoogleSignInButton mode="signup" />
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                <span className="px-2 bg-background text-muted">
                   Or sign up with email
                 </span>
               </div>
@@ -180,7 +180,7 @@ export default function RegisterPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Name *"
               />
             </div>
@@ -194,7 +194,7 @@ export default function RegisterPage() {
                 type="text"
                 value={surname}
                 onChange={(e) => setSurname(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Surname (optional)"
               />
             </div>
@@ -208,7 +208,7 @@ export default function RegisterPage() {
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Nickname (optional)"
               />
             </div>
@@ -224,7 +224,7 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Email address"
               />
             </div>
@@ -240,7 +240,7 @@ export default function RegisterPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Password"
               />
               <PasswordStrengthIndicator password={password} showRequirements={true} />
@@ -257,7 +257,7 @@ export default function RegisterPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Confirm password"
               />
             </div>
@@ -267,14 +267,14 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-semibold rounded-lg text-black bg-primary hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating account...' : 'Sign up'}
             </button>
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted">
               Already have an account?{' '}
               <Link
                 href="/login"

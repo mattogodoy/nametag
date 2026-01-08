@@ -45,7 +45,7 @@ export default function ThemeToggle({}: ThemeToggleProps) {
 
   return (
     <div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-sm text-muted mb-4">
         Choose your preferred theme
       </p>
 

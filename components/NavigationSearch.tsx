@@ -144,11 +144,11 @@ export default function NavigationSearch() {
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           placeholder="Search people..."
-          className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-9 pr-3 py-1.5 text-sm border-2 border-border rounded-lg bg-surface-elevated text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
           autoComplete="off"
         />
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -163,26 +163,26 @@ export default function NavigationSearch() {
       </div>
 
       {isOpen && isLoading && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Searching...</p>
+        <div className="absolute z-50 w-full mt-1 bg-surface border-2 border-primary/30 rounded-lg shadow-lg shadow-primary/20 p-3">
+          <p className="text-sm text-muted">Searching...</p>
         </div>
       )}
 
       {isOpen && !isLoading && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto">
+        <div className="absolute z-50 w-full mt-1 bg-surface border-2 border-primary/30 rounded-lg shadow-lg shadow-primary/20 max-h-96 overflow-auto">
           {results.map((person, index) => (
             <button
               key={person.id}
               type="button"
               onClick={() => handleSelect(person)}
-              className={`w-full text-left px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm ${
+              className={`w-full text-left px-4 py-2.5 hover:bg-surface-elevated transition-colors text-sm border-l-2 ${
                 index === highlightedIndex
-                  ? 'bg-blue-50 dark:bg-blue-900/20'
-                  : ''
+                  ? 'bg-primary/10 border-l-primary'
+                  : 'border-l-transparent'
               }`}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
-              <div className="text-gray-900 dark:text-white">
+              <div className="text-foreground font-medium">
                 {formatFullName(person)}
               </div>
             </button>
@@ -191,8 +191,8 @@ export default function NavigationSearch() {
       )}
 
       {isOpen && !isLoading && searchTerm && results.length === 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="absolute z-50 w-full mt-1 bg-surface border-2 border-tertiary/30 rounded-lg shadow-lg shadow-tertiary/20 p-3">
+          <p className="text-sm text-muted">
             No people found matching &quot;{searchTerm}&quot;
           </p>
         </div>

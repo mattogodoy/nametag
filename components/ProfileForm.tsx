@@ -109,7 +109,7 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-muted mb-1"
             >
               Name
             </label>
@@ -119,14 +119,14 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label
               htmlFor="surname"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-muted mb-1"
             >
               Surname
             </label>
@@ -135,14 +135,14 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
               id="surname"
               value={formData.surname}
               onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label
               htmlFor="nickname"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-muted mb-1"
             >
               Nickname
             </label>
@@ -151,7 +151,7 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
               id="nickname"
               value={formData.nickname}
               onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -159,7 +159,7 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="block text-sm font-medium text-muted mb-1"
           >
             Email
           </label>
@@ -169,7 +169,7 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
             required
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -177,7 +177,7 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Saving...' : 'Save Changes'}
           </button>
@@ -187,21 +187,21 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
       {/* Email Change Confirmation Dialog */}
       {showEmailConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+          <div className="bg-surface rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-foreground mb-4">
               Confirm Email Change
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              You are about to change your email address to <strong className="text-gray-900 dark:text-white">{formData.email}</strong>.
+            <p className="text-muted mb-4">
+              You are about to change your email address to <strong className="text-foreground">{formData.email}</strong>.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-muted mb-6">
               A verification email will be sent to your new address. You will be logged out and won&apos;t be able to log in until you verify your new email.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={() => setShowEmailConfirm(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 border border-border text-muted rounded-lg font-medium hover:bg-surface-elevated transition-colors"
               >
                 Cancel
               </button>
@@ -209,7 +209,7 @@ export default function ProfileForm({ currentName, currentSurname, currentNickna
                 type="button"
                 onClick={saveProfile}
                 disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Saving...' : 'Confirm & Log Out'}
               </button>

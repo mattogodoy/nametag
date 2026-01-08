@@ -2,10 +2,10 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'sonner';
 import PillSelector from './PillSelector';
 import { formatFullName } from '@/lib/nameUtils';
+import { Button } from './ui/Button';
 
 interface Person {
   id: string;
@@ -111,7 +111,7 @@ export default function GroupForm({ group, mode, availablePeople = [] }: GroupFo
       <div>
         <label
           htmlFor="name"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="block text-sm font-medium text-muted mb-1"
         >
           Group Name *
         </label>
@@ -121,7 +121,7 @@ export default function GroupForm({ group, mode, availablePeople = [] }: GroupFo
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="e.g., Family, Friends, Colleagues"
         />
       </div>
@@ -129,7 +129,7 @@ export default function GroupForm({ group, mode, availablePeople = [] }: GroupFo
       <div>
         <label
           htmlFor="description"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="block text-sm font-medium text-muted mb-1"
         >
           Description
         </label>
@@ -140,13 +140,13 @@ export default function GroupForm({ group, mode, availablePeople = [] }: GroupFo
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Optional description for this group"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-muted mb-2">
           Color
         </label>
         <div className="flex flex-wrap gap-3">
@@ -168,7 +168,7 @@ export default function GroupForm({ group, mode, availablePeople = [] }: GroupFo
         <div className="mt-3">
           <label
             htmlFor="customColor"
-            className="block text-xs text-gray-500 dark:text-gray-400 mb-1"
+            className="block text-xs text-muted mb-1"
           >
             Or choose a custom color:
           </label>
@@ -203,23 +203,16 @@ export default function GroupForm({ group, mode, availablePeople = [] }: GroupFo
       )}
 
       <div className="flex justify-end space-x-4 pt-4">
-        <Link
-          href="/groups"
-          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
+        <Button variant="secondary" href="/groups">
           Cancel
-        </Link>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        </Button>
+        <Button type="submit" disabled={isLoading}>
           {isLoading
             ? 'Saving...'
             : mode === 'create'
             ? 'Create Group'
             : 'Update Group'}
-        </button>
+        </Button>
       </div>
     </form>
   );

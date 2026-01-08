@@ -10,11 +10,11 @@ export default async function ProfileSettingsPage() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className="bg-surface shadow rounded-lg p-6">
+      <h2 className="text-xl font-bold text-foreground mb-4">
         Profile
       </h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <p className="text-muted mb-6">
         Manage your personal information and how others see you.
       </p>
       <ProfileForm

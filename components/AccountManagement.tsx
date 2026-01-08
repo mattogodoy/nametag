@@ -4,6 +4,7 @@ import { useState, useRef, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import GroupsSelector from './GroupsSelector';
+import { Button } from './ui/Button';
 
 interface Group {
   id: string;
@@ -240,10 +241,10 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
     <div className="space-y-8">
       {/* Export Section */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-semibold text-foreground mb-2">
           Export Data
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted mb-4">
           Download your data as a JSON file. This includes people, groups,
           relationships, and custom relationship types.
         </p>
@@ -259,9 +260,9 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                 checked={exportMode === 'all'}
                 onChange={() => setExportMode('all')}
                 disabled={peopleCount === 0 && groups.length === 0}
-                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-blue-500 disabled:opacity-50"
+                className="w-4 h-4 text-blue-600 bg-surface-elevated border-border focus:ring-blue-500 disabled:opacity-50"
               />
-              <span className={`text-sm ${peopleCount === 0 && groups.length === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
+              <span className={`text-sm ${peopleCount === 0 && groups.length === 0 ? 'text-muted' : 'text-muted'}`}>
                 Export everything
               </span>
             </label>
@@ -273,9 +274,9 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                 checked={exportMode === 'groups'}
                 onChange={() => setExportMode('groups')}
                 disabled={groups.length === 0}
-                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-blue-500 disabled:opacity-50"
+                className="w-4 h-4 text-blue-600 bg-surface-elevated border-border focus:ring-blue-500 disabled:opacity-50"
               />
-              <span className={`text-sm ${groups.length === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
+              <span className={`text-sm ${groups.length === 0 ? 'text-muted' : 'text-muted'}`}>
                 Export specific groups
               </span>
             </label>
@@ -289,7 +290,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                 onChange={setSelectedGroupIds}
               />
               {selectedGroupIds.length > 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                <p className="text-xs text-muted mt-2">
                   Will export people in selected groups, their group memberships, and relationships between them.
                 </p>
               )}
@@ -297,21 +298,20 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           )}
         </div>
 
-        <button
+        <Button
           onClick={handleExport}
           disabled={
             isExporting ||
             (exportMode === 'groups' && selectedGroupIds.length === 0) ||
             (exportMode === 'all' && peopleCount === 0 && groups.length === 0)
           }
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isExporting ? 'Exporting...' : 'Export Data'}
-        </button>
+        </Button>
 
         {/* Show helpful message when no data to export */}
         {exportMode === 'all' && peopleCount === 0 && groups.length === 0 && (
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-sm text-muted">
             No data to export. Add people or groups first.
           </p>
         )}
@@ -331,10 +331,10 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
       {/* Import Section */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-semibold text-foreground mb-2">
           Import Data
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted mb-4">
           Import data from a previously exported JSON file. This will add to your
           existing data without removing anything.
         </p>
@@ -350,11 +350,11 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+            className="w-full border-2 border-dashed border-border rounded-lg p-6 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-surface-elevated/50 transition-colors cursor-pointer"
           >
             <div className="flex flex-col items-center gap-2">
               <svg
-                className="w-8 h-8 text-gray-400 dark:text-gray-500"
+                className="w-8 h-8 text-muted"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -368,19 +368,19 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
               </svg>
               {importFile ? (
                 <div className="text-center">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-foreground">
                     {importFile.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted mt-1">
                     Click to choose a different file
                   </p>
                 </div>
               ) : (
                 <div className="text-center">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-foreground">
                     Click to select a JSON file
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted mt-1">
                     or drag and drop
                   </p>
                 </div>
@@ -389,8 +389,8 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           </button>
 
           {isValidating && (
-            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="bg-surface-elevated border border-border rounded-lg p-4">
+              <p className="text-sm text-muted">
                 Validating import data...
               </p>
             </div>
@@ -420,7 +420,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                   <button
                     onClick={handleImport}
                     disabled={isImporting}
-                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-3 px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isImporting ? 'Importing...' : 'Confirm Import'}
                   </button>
@@ -447,7 +447,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                         fileInputRef.current.value = '';
                       }
                     }}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    className="px-4 py-2 bg-surface-elevated text-foreground rounded-lg font-medium hover:bg-surface-elevated transition-colors"
                   >
                     Choose Different File
                   </button>
@@ -471,22 +471,22 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       </div>
 
       {/* Delete Account Section */}
-      <div className="border-t border-gray-300 dark:border-gray-600 pt-8">
+      <div className="border-t border-border pt-8">
         <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
           Delete Account
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted mb-4">
           Permanently delete your account and all associated data. This action cannot
           be undone.
         </p>
 
         {!showDeleteDialog ? (
-          <button
+          <Button
+            variant="danger"
             onClick={() => setShowDeleteDialog(true)}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
           >
             Delete Account
-          </button>
+          </Button>
         ) : (
           <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 space-y-4">
             <div className="flex items-start gap-3">
@@ -524,7 +524,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
             <div>
               <label
                 htmlFor="delete-password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-muted mb-1"
               >
                 Confirm your password
               </label>
@@ -533,14 +533,14 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                 id="delete-password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
 
             <div>
               <label
                 htmlFor="delete-confirmation"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-muted mb-1"
               >
                 Type <strong>DELETE</strong> to confirm
               </label>
@@ -550,19 +550,20 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                 value={deleteConfirmation}
                 onChange={(e) => setDeleteConfirmation(e.target.value)}
                 placeholder="DELETE"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
+                variant="danger"
                 onClick={handleDeleteAccount}
                 disabled={isDeleting || deleteConfirmation !== 'DELETE'}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : 'Delete My Account'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setShowDeleteDialog(false);
                   setDeletePassword('');
@@ -570,10 +571,9 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
                   setDeleteError('');
                 }}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

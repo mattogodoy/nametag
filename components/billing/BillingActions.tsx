@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SubscriptionTier } from '@prisma/client';
 import { toast } from 'sonner';
+import { Button } from '../ui/Button';
 
 interface BillingActionsProps {
   tier: SubscriptionTier;
@@ -78,23 +79,23 @@ export default function BillingActions({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3">
         {hasStripeSubscription && (
-          <button
+          <Button
+            variant="secondary"
             onClick={handleOpenPortal}
             disabled={loading !== null}
-            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading === 'portal' ? 'Opening...' : 'Manage Billing'}
-          </button>
+          </Button>
         )}
 
         {hasStripeSubscription && !cancelAtPeriodEnd && (
-          <button
+          <Button
+            variant="danger"
             onClick={() => setShowCancelConfirm(true)}
             disabled={loading !== null}
-            className="px-4 py-2 text-red-600 dark:text-red-400 font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cancel Subscription
-          </button>
+          </Button>
         )}
 
         {cancelAtPeriodEnd && (
@@ -107,14 +108,14 @@ export default function BillingActions({
       {/* Cancel Confirmation Modal */}
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-surface rounded-lg max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-foreground">
               Cancel Subscription?
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted">
               Are you sure you want to cancel your subscription? You can choose to:
             </p>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+            <ul className="text-sm text-muted space-y-2">
               <li className="flex items-start gap-2">
                 <span className="font-medium">Cancel at period end:</span>
                 Keep access until your current billing period ends
@@ -125,27 +126,30 @@ export default function BillingActions({
               </li>
             </ul>
             <div className="flex flex-col gap-2 pt-4">
-              <button
+              <Button
+                fullWidth
                 onClick={() => handleCancel(false)}
                 disabled={loading === 'cancel'}
-                className="w-full py-2 px-4 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 disabled:opacity-50 transition-colors"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg hover:shadow-yellow-500/50"
               >
                 {loading === 'cancel' ? 'Processing...' : 'Cancel at Period End'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
+                fullWidth
                 onClick={() => handleCancel(true)}
                 disabled={loading === 'cancel'}
-                className="w-full py-2 px-4 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
                 Cancel Immediately
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                fullWidth
                 onClick={() => setShowCancelConfirm(false)}
                 disabled={loading === 'cancel'}
-                className="w-full py-2 px-4 text-gray-600 dark:text-gray-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 Keep Subscription
-              </button>
+              </Button>
             </div>
           </div>
         </div>

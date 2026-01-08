@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ConfirmationModal from './ui/ConfirmationModal';
+import { Button } from './ui/Button';
 
 interface DeletePersonButtonProps {
   personId: string;
@@ -87,12 +88,9 @@ export default function DeletePersonButton({
 
   return (
     <>
-      <button
-        onClick={openConfirm}
-        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-      >
+      <Button variant="danger" onClick={openConfirm}>
         Delete
-      </button>
+      </Button>
 
       <ConfirmationModal
         isOpen={showConfirm}
@@ -106,11 +104,11 @@ export default function DeletePersonButton({
         error={error}
         variant="danger"
       >
-        <p className="text-gray-600 dark:text-gray-400 mb-1">
+        <p className="text-muted mb-1">
           Are you sure you want to delete{' '}
-          <strong className="text-gray-900 dark:text-white">{personName}</strong>?
+          <strong className="text-foreground">{personName}</strong>?
         </p>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-muted mb-4">
           You can restore deleted items within 30 days.
         </p>
 
@@ -158,7 +156,7 @@ export default function DeletePersonButton({
                 id="deleteOrphans"
                 checked={deleteOrphans}
                 onChange={(e) => setDeleteOrphans(e.target.checked)}
-                className="w-4 h-4 text-red-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-red-500"
+                className="w-4 h-4 text-red-600 bg-surface-elevated border-border rounded focus:ring-red-500"
               />
               <label
                 htmlFor="deleteOrphans"

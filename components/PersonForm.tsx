@@ -8,18 +8,19 @@ import PersonAutocomplete from './PersonAutocomplete';
 import GroupsSelector from './GroupsSelector';
 import ImportantDatesManager from './ImportantDatesManager';
 import MarkdownEditor from './MarkdownEditor';
+import { Button } from './ui/Button';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
 
 // These must be defined OUTSIDE the component to prevent re-renders
 const SectionHeader = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+  <h3 className="text-lg font-semibold text-foreground mb-4">
     {children}
   </h3>
 );
 
 const Section = ({ children }: { children: React.ReactNode }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+  <div className="border border-border rounded-lg p-4">
     {children}
   </div>
 );
@@ -287,7 +288,7 @@ export default function PersonForm({
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-muted mb-1"
               >
                 Name *
               </label>
@@ -299,14 +300,14 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div>
               <label
                 htmlFor="surname"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-muted mb-1"
               >
                 Surname
               </label>
@@ -317,14 +318,14 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, surname: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div>
               <label
                 htmlFor="nickname"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-muted mb-1"
               >
                 Nickname
               </label>
@@ -335,7 +336,7 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, nickname: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
@@ -344,7 +345,7 @@ export default function PersonForm({
             <div>
               <label
                 htmlFor="knownThrough"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-muted mb-1"
               >
                 Known Through
               </label>
@@ -354,7 +355,7 @@ export default function PersonForm({
                 onChange={handleKnownThroughChange}
                 placeholder="Search for a person..."
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted mt-1">
                 Select who connects you to this person. For example, if adding your friend&apos;s child, select your friend.
               </p>
             </div>
@@ -364,12 +365,12 @@ export default function PersonForm({
             <div>
               <label
                 htmlFor="relationshipToUserId"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="flex items-center gap-1.5 text-sm font-medium text-muted mb-1"
               >
                 Relationship to You
                 <div className="group relative inline-block">
                   <svg
-                    className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help"
+                    className="w-4 h-4 text-muted cursor-help"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -381,9 +382,9 @@ export default function PersonForm({
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap z-10 pointer-events-none">
+                  <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-surface-elevated text-foreground text-xs rounded-lg whitespace-nowrap z-10 pointer-events-none">
                     You can create custom relationship types in the Relationships section
-                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-surface-elevated"></div>
                   </div>
                 </div>
               </label>
@@ -393,7 +394,7 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, relationshipToUserId: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select a relationship...</option>
                 {relationshipTypes.map((type) => (
@@ -406,7 +407,7 @@ export default function PersonForm({
           )}
 
           {mode === 'edit' && !person?.relationshipToUserId && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 px-4 py-3 rounded">
+            <div className="bg-primary/10 border border-primary text-primary px-4 py-3 rounded">
               This person is connected to you through other people in your network, not directly.
             </div>
           )}
@@ -415,12 +416,12 @@ export default function PersonForm({
             <div>
               <label
                 htmlFor="relationshipToUserId"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="flex items-center gap-1.5 text-sm font-medium text-muted mb-1"
               >
                 Relationship to {knownThroughName} *
                 <div className="group relative inline-block">
                   <svg
-                    className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help"
+                    className="w-4 h-4 text-muted cursor-help"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -432,9 +433,9 @@ export default function PersonForm({
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap z-10 pointer-events-none">
+                  <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-surface-elevated text-foreground text-xs rounded-lg whitespace-nowrap z-10 pointer-events-none">
                     You can create custom relationship types in the Relationships section
-                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-surface-elevated"></div>
                   </div>
                 </div>
               </label>
@@ -445,7 +446,7 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, relationshipToUserId: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select a relationship...</option>
                 {relationshipTypes.map((type) => (
@@ -461,12 +462,12 @@ export default function PersonForm({
             <div>
               <label
                 htmlFor="relationshipToKnownThrough"
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="flex items-center gap-1.5 text-sm font-medium text-muted mb-1"
               >
                 Relationship to {knownThroughName} *
                 <div className="group relative inline-block">
                   <svg
-                    className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help"
+                    className="w-4 h-4 text-muted cursor-help"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -478,9 +479,9 @@ export default function PersonForm({
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap z-10 pointer-events-none">
+                  <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-surface-elevated text-foreground text-xs rounded-lg whitespace-nowrap z-10 pointer-events-none">
                     You can create custom relationship types in the Relationships section
-                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-surface-elevated"></div>
                   </div>
                 </div>
               </label>
@@ -491,7 +492,7 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, relationshipToUserId: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select a relationship...</option>
                 {relationshipTypes.map((type) => (
@@ -500,7 +501,7 @@ export default function PersonForm({
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted mt-1">
                 This person will be connected to {knownThroughName}, not directly to you.
               </p>
             </div>
@@ -509,7 +510,7 @@ export default function PersonForm({
           <div>
             <label
               htmlFor="notes"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-muted mb-1"
             >
               Notes
             </label>
@@ -520,7 +521,7 @@ export default function PersonForm({
               placeholder="Add notes about this person..."
               rows={4}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-muted mt-1">
               Supports Markdown formatting
             </p>
           </div>
@@ -538,9 +539,9 @@ export default function PersonForm({
                 id="inheritGroups"
                 checked={inheritGroups}
                 onChange={(e) => handleInheritGroupsChange(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-primary bg-surface-elevated border-border rounded focus:ring-primary"
               />
-              <label htmlFor="inheritGroups" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="inheritGroups" className="ml-2 text-sm text-muted">
                 Inherit groups from {selectedBasePerson.name}{selectedBasePerson.surname ? ' ' + selectedBasePerson.surname : ''}
               </label>
             </div>
@@ -566,19 +567,19 @@ export default function PersonForm({
               onChange={(e) =>
                 setFormData({ ...formData, lastContact: e.target.value })
               }
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={setLastContactToToday}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
             >
               Today
-            </button>
+            </Button>
           </div>
 
           {/* Contact Reminder */}
-          <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="p-3 bg-surface-elevated rounded-lg">
             {(() => {
               const canToggleContactReminder = formData.contactReminderEnabled ||
                 !reminderLimit || reminderLimit.isUnlimited || reminderLimit.canCreate;
@@ -598,8 +599,8 @@ export default function PersonForm({
                       }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
                         formData.contactReminderEnabled
-                          ? 'bg-blue-600'
-                          : 'bg-gray-300 dark:bg-gray-600'
+                          ? 'bg-primary'
+                          : 'bg-muted'
                       } ${!canToggleContactReminder ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span
@@ -612,7 +613,7 @@ export default function PersonForm({
                     </button>
                     <label
                       htmlFor="contact-reminder-toggle"
-                      className={`text-sm ${canToggleContactReminder && formData.contactReminderEnabled ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}
+                      className={`text-sm ${canToggleContactReminder && formData.contactReminderEnabled ? 'text-muted' : 'text-muted'}`}
                     >
                       Remind me to catch up after
                     </label>
@@ -631,7 +632,7 @@ export default function PersonForm({
                           ),
                         })
                       }
-                      className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-16 px-2 py-1 text-sm border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <select
                       disabled={!formData.contactReminderEnabled}
@@ -643,7 +644,7 @@ export default function PersonForm({
                             .value as ReminderIntervalUnit,
                         })
                       }
-                      className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 py-1 text-sm border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="DAYS">days</option>
                       <option value="WEEKS">weeks</option>
@@ -678,7 +679,7 @@ export default function PersonForm({
       <div className="flex justify-end space-x-4 pt-4">
         <Link
           href="/people"
-          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="px-6 py-2 border border-border text-muted rounded-lg font-medium hover:bg-surface-elevated transition-colors"
         >
           Cancel
         </Link>
@@ -689,7 +690,7 @@ export default function PersonForm({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-l-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-primary text-white rounded-l-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Saving...' : 'Create'}
               </button>
@@ -697,7 +698,7 @@ export default function PersonForm({
                 type="button"
                 disabled={isLoading}
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="px-2 py-2 bg-blue-600 text-white border-l border-blue-500 rounded-r-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-2 py-2 bg-primary text-white border-l border-primary rounded-r-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -706,7 +707,7 @@ export default function PersonForm({
             </div>
 
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-10">
+              <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-surface border border-border z-10">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -726,7 +727,7 @@ export default function PersonForm({
                       }
                     }
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-2 text-sm text-muted hover:bg-surface-elevated rounded-lg transition-colors"
                 >
                   Create and add another
                 </button>
@@ -737,7 +738,7 @@ export default function PersonForm({
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Saving...' : 'Save'}
           </button>

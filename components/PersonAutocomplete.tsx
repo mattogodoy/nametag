@@ -148,18 +148,18 @@ export default function PersonAutocomplete({
         onFocus={handleFocus}
         placeholder={placeholder}
         required={required}
-        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
         autoComplete="off"
       />
 
       {isOpen && (filteredPeople.length > 0 || hasCreateOption) && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-10 w-full mt-1 bg-surface border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
           {filteredPeople.map((person, index) => (
             <button
               key={person.id}
               type="button"
               onClick={() => handleSelect(person)}
-              className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+              className={`w-full text-left px-3 py-2 hover:bg-surface-elevated transition-colors ${
                 index === highlightedIndex
                   ? 'bg-blue-50 dark:bg-blue-900/20'
                   : ''
@@ -170,7 +170,7 @@ export default function PersonAutocomplete({
               }`}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
-              <div className="text-gray-900 dark:text-white">
+              <div className="text-foreground">
                 <span className={person.id === highlightPersonId ? 'font-bold' : ''}>
                   {formatFullName(person)}
                 </span>
@@ -183,12 +183,12 @@ export default function PersonAutocomplete({
           {hasCreateOption && (
             <>
               {filteredPeople.length > 0 && (
-                <div className="border-t border-gray-200 dark:border-gray-700" />
+                <div className="border-t border-border" />
               )}
               <button
                 type="button"
                 onClick={() => onCreateNew(searchTerm)}
-                className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                className={`w-full text-left px-3 py-2 hover:bg-surface-elevated transition-colors ${
                   highlightedIndex === createNewIndex
                     ? 'bg-blue-50 dark:bg-blue-900/20'
                     : ''
@@ -208,8 +208,8 @@ export default function PersonAutocomplete({
       )}
 
       {isOpen && searchTerm && filteredPeople.length === 0 && !onCreateNew && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="absolute z-10 w-full mt-1 bg-surface border border-border rounded-lg shadow-lg p-3">
+          <p className="text-sm text-muted">
             No people found matching &quot;{searchTerm}&quot;
           </p>
         </div>

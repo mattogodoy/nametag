@@ -18,13 +18,13 @@ export default function UsageMeter({ label, current, limit, isUnlimited }: Usage
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span className="text-gray-700 dark:text-gray-300">{label}</span>
-        <span className={`font-medium ${isAtLimit ? 'text-red-600 dark:text-red-400' : isNearLimit ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+        <span className="text-muted">{label}</span>
+        <span className={`font-medium ${isAtLimit ? 'text-red-600 dark:text-red-400' : isNearLimit ? 'text-yellow-600 dark:text-yellow-400' : 'text-foreground'}`}>
           {formatNumber(current)} / {isUnlimited ? 'Unlimited' : formatNumber(limit)}
         </span>
       </div>
       {!isUnlimited && (
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div className="w-full bg-surface-elevated rounded-full h-2">
           <div
             className={`h-2 rounded-full transition-all ${
               isAtLimit

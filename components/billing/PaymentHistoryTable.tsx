@@ -22,7 +22,7 @@ interface PaymentHistoryTableProps {
 export default function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
   if (payments.length === 0) {
     return (
-      <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+      <p className="text-muted text-center py-8">
         No payment history yet
       </p>
     );
@@ -65,13 +65,13 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
         );
       case 'REFUNDED':
         return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-surface-elevated text-muted">
             Refunded
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-surface-elevated text-muted">
             {status}
           </span>
         );
@@ -83,16 +83,16 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead>
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
               Date
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
               Description
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
               Amount
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
               Status
             </th>
           </tr>
@@ -100,10 +100,10 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
           {payments.map((payment) => (
             <tr key={payment.id}>
-              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td className="px-4 py-4 whitespace-nowrap text-sm text-foreground">
                 {formatDate(payment.paidAt || payment.createdAt)}
               </td>
-              <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
+              <td className="px-4 py-4 text-sm text-muted">
                 {payment.description || 'Subscription payment'}
                 {payment.promotionCode && (
                   <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
@@ -112,7 +112,7 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
                 )}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm">
-                <span className="text-gray-900 dark:text-white font-medium">
+                <span className="text-foreground font-medium">
                   {formatAmount(payment.amount, payment.currency)}
                 </span>
                 {payment.discountAmount && payment.discountAmount > 0 && (

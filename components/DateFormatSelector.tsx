@@ -56,7 +56,7 @@ export default function DateFormatSelector({ currentFormat }: DateFormatSelector
 
   return (
     <div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-sm text-muted mb-4">
         Choose how dates are displayed throughout the app
       </p>
 
@@ -69,15 +69,15 @@ export default function DateFormatSelector({ currentFormat }: DateFormatSelector
             className={`w-full text-left px-4 py-3 border-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               dateFormat === format.value
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-700'
+                : 'border-border hover:border-blue-300 dark:hover:border-blue-700'
             }`}
           >
             <div className="flex justify-between items-center">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">
+                <div className="font-medium text-foreground">
                   {format.label}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-muted">
                   Example: {getDateFormatExample(format.value)}
                 </div>
               </div>

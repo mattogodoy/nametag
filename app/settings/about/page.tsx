@@ -15,15 +15,15 @@ export default function AboutPage() {
   return (
     <div className="space-y-6">
       {/* App Information */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           About NameTag
         </h2>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-            <span className="text-gray-600 dark:text-gray-400">Version</span>
-            <span className="font-mono font-medium text-gray-900 dark:text-white">
+          <div className="flex items-center justify-between py-3 border-b border-border">
+            <span className="text-muted">Version</span>
+            <span className="font-mono font-medium text-foreground">
               v{version}
               {isPre && (
                 <span className="ml-2 text-xs text-orange-600 dark:text-orange-400">
@@ -33,13 +33,13 @@ export default function AboutPage() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-            <span className="text-gray-600 dark:text-gray-400">License</span>
-            <span className="text-gray-900 dark:text-white">AGPL-3.0</span>
+          <div className="flex items-center justify-between py-3 border-b border-border">
+            <span className="text-muted">License</span>
+            <span className="text-foreground">AGPL-3.0</span>
           </div>
 
           <div className="flex items-center justify-between py-3">
-            <span className="text-gray-600 dark:text-gray-400">Repository</span>
+            <span className="text-muted">Repository</span>
             <a
               href="https://github.com/mattogodoy/nametag"
               target="_blank"
@@ -53,13 +53,13 @@ export default function AboutPage() {
       </div>
 
       {/* Release Information */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h3 className="text-lg font-bold text-foreground mb-4">
           Release Information
         </h3>
 
         <div className="space-y-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted">
             View the full changelog and release notes on GitHub:
           </p>
 
@@ -94,16 +94,16 @@ export default function AboutPage() {
       </div>
 
       {/* Open Source */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h3 className="text-lg font-bold text-foreground mb-4">
           Open Source
         </h3>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted mb-4">
           NameTag is open source software licensed under AGPL-3.0. This means you can:
         </p>
 
-        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+        <ul className="space-y-2 text-sm text-muted">
           <li className="flex items-start gap-2">
             <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -124,7 +124,7 @@ export default function AboutPage() {
           </li>
         </ul>
 
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-4 pt-4 border-t border-border">
           <a
             href="https://github.com/mattogodoy/nametag/blob/master/CONTRIBUTING.md"
             target="_blank"
@@ -137,12 +137,12 @@ export default function AboutPage() {
       </div>
 
       {/* Support */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h3 className="text-lg font-bold text-foreground mb-4">
           Support
         </h3>
 
-        <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+        <div className="space-y-3 text-sm text-muted">
           <p>
             Found a bug or have a feature request?{' '}
             <a
@@ -183,13 +183,13 @@ export default function AboutPage() {
 
       {/* Support Development - Only show in self-hosted mode */}
       {showSupportDevelopment && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+        <div className="bg-surface shadow rounded-lg p-6">
+          <h3 className="text-lg font-bold text-foreground mb-4">
             Support Development
           </h3>
 
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted">
               If you find NameTag useful and want to support its development, you can buy me a coffee! ☕
             </p>
 

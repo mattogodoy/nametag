@@ -108,21 +108,21 @@ export default function GroupsSelector({
     item: { id: string; label: string; color?: string | null },
     onRemove: () => void
   ) => (
-    <div key={item.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium">
+    <div key={item.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-elevated rounded-full text-sm font-medium">
       <div
         className="w-3 h-3 rounded-full flex-shrink-0"
         style={{
           backgroundColor: item.color || '#9CA3AF',
         }}
       />
-      <span className="text-gray-900 dark:text-white">{item.label}</span>
+      <span className="text-foreground">{item.label}</span>
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onRemove();
         }}
-        className="hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-0.5 transition-colors text-gray-600 dark:text-gray-400"
+        className="hover:bg-surface-elevated rounded-full p-0.5 transition-colors text-muted"
         aria-label={`Remove ${item.label}`}
       >
         <svg
@@ -161,7 +161,7 @@ export default function GroupsSelector({
           </svg>
           <div className="flex-1">
             <p className="text-sm text-blue-800 dark:text-blue-300">
-              <span className="font-medium">Quick tip:</span> Don&apos;t see a group? Just type its name and press <kbd className="px-1.5 py-0.5 text-xs bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 rounded">Enter</kbd> to create it on the fly!
+              <span className="font-medium">Quick tip:</span> Don&apos;t see a group? Just type its name and press <kbd className="px-1.5 py-0.5 text-xs bg-surface border border-blue-300 dark:border-blue-600 rounded">Enter</kbd> to create it on the fly!
             </p>
           </div>
         </div>

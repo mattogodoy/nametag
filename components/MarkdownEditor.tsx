@@ -25,7 +25,7 @@ function ToolbarButton({ onClick, title, children }: ToolbarButtonProps) {
       type="button"
       onClick={onClick}
       title={title}
-      className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+      className="p-1.5 text-muted hover:text-foreground hover:bg-surface-elevated rounded transition-colors"
     >
       {children}
     </button>
@@ -141,9 +141,9 @@ export default function MarkdownEditor({
   }, [value, onChange]);
 
   return (
-    <div className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+    <div className="border border-border rounded-lg overflow-hidden bg-surface">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-2 py-1">
+      <div className="flex items-center justify-between border-b border-border bg-background px-2 py-1">
         <div className="flex items-center gap-0.5">
           <ToolbarButton onClick={() => insertFormat('bold')} title="Bold (Ctrl+B)">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -156,7 +156,7 @@ export default function MarkdownEditor({
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 4h4m-2 0l-4 16m0 0h4" />
             </svg>
           </ToolbarButton>
-          <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+          <div className="w-px h-4 bg-surface-elevated mx-1" />
           <ToolbarButton onClick={() => insertFormat('heading')} title="Heading">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10" />
@@ -167,7 +167,7 @@ export default function MarkdownEditor({
               <path d="M6 17h3l2-4V7H5v6h3l-2 4zm8 0h3l2-4V7h-6v6h3l-2 4z" />
             </svg>
           </ToolbarButton>
-          <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+          <div className="w-px h-4 bg-surface-elevated mx-1" />
           <ToolbarButton onClick={() => insertFormat('list')} title="Bullet List">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h.01M8 6h12M4 12h.01M8 12h12M4 18h.01M8 18h12" />
@@ -181,7 +181,7 @@ export default function MarkdownEditor({
               <text x="2" y="19" fontSize="5" fill="currentColor" stroke="none">3</text>
             </svg>
           </ToolbarButton>
-          <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+          <div className="w-px h-4 bg-surface-elevated mx-1" />
           <ToolbarButton onClick={() => insertFormat('link')} title="Link">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -195,7 +195,7 @@ export default function MarkdownEditor({
             className={`text-xs px-2 py-1 rounded transition-colors ${
               showPreview
                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                : 'text-muted hover:bg-surface-elevated'
             }`}
           >
             {showPreview ? 'Edit' : 'Preview'}
@@ -209,7 +209,7 @@ export default function MarkdownEditor({
           {value ? (
             <ReactMarkdown>{value}</ReactMarkdown>
           ) : (
-            <p className="text-gray-400 dark:text-gray-500 italic">Nothing to preview</p>
+            <p className="text-muted italic">Nothing to preview</p>
           )}
         </div>
       ) : (
@@ -220,7 +220,7 @@ export default function MarkdownEditor({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset resize-y"
+          className="w-full px-3 py-2 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset resize-y"
           onKeyDown={(e) => {
             // Handle keyboard shortcuts
             if (e.ctrlKey || e.metaKey) {

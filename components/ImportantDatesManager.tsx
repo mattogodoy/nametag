@@ -205,7 +205,7 @@ export default function ImportantDatesManager({
     const canToggle = date.reminderEnabled || canEnable;
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+      <div className="mt-3 pt-3 border-t border-border">
         <div className="flex items-center gap-2 mb-3">
           <button
             type="button"
@@ -219,7 +219,7 @@ export default function ImportantDatesManager({
               });
             }}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-              date.reminderEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+              date.reminderEnabled ? 'bg-blue-600' : 'bg-surface-elevated'
             } ${!canToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <span
@@ -230,7 +230,7 @@ export default function ImportantDatesManager({
           </button>
           <label
             htmlFor={`${idPrefix}-reminder-toggle`}
-            className={`text-xs font-medium ${canToggle ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}
+            className={`text-xs font-medium ${canToggle ? 'text-muted' : 'text-muted'}`}
           >
             Remind me
           </label>
@@ -251,9 +251,9 @@ export default function ImportantDatesManager({
                     name={`${idPrefix}-reminder-type`}
                     checked={date.reminderType === 'ONCE'}
                     onChange={() => onChange({ reminderType: 'ONCE' })}
-                    className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                    className="h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
                   />
-                  <span className="text-xs text-gray-700 dark:text-gray-300">
+                  <span className="text-xs text-muted">
                     Only once on the specified date
                   </span>
                 </label>
@@ -264,9 +264,9 @@ export default function ImportantDatesManager({
                   name={`${idPrefix}-reminder-type`}
                   checked={date.reminderType === 'RECURRING'}
                   onChange={() => onChange({ reminderType: 'RECURRING' })}
-                  className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                  className="h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
                 />
-                <span className="text-xs text-gray-700 dark:text-gray-300">Every</span>
+                <span className="text-xs text-muted">Every</span>
                 <input
                   type="number"
                   min="1"
@@ -274,20 +274,20 @@ export default function ImportantDatesManager({
                   value={date.reminderInterval ?? 1}
                   onChange={(e) => onChange({ reminderInterval: Math.max(1, parseInt(e.target.value) || 1) })}
                   disabled={date.reminderType !== 'RECURRING'}
-                  className="w-14 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-14 px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <select
                   value={date.reminderIntervalUnit ?? 'YEARS'}
                   onChange={(e) => onChange({ reminderIntervalUnit: e.target.value as ReminderIntervalUnit })}
                   disabled={date.reminderType !== 'RECURRING'}
-                  className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="DAYS">days</option>
                   <option value="WEEKS">weeks</option>
                   <option value="MONTHS">months</option>
                   <option value="YEARS">years</option>
                 </select>
-                <span className={`text-xs ${date.reminderType === 'RECURRING' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                <span className={`text-xs ${date.reminderType === 'RECURRING' ? 'text-muted' : 'text-muted'}`}>
                   starting from the specified date
                 </span>
               </label>
@@ -316,14 +316,14 @@ export default function ImportantDatesManager({
         {dates.map((date, index) => (
           <div
             key={index}
-            className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+            className="p-3 bg-surface-elevated rounded-lg"
           >
             {editingIndex === index && editingDate ? (
               <div className="space-y-3">
                 <div>
                   <label
                     htmlFor={`edit-date-title-${index}`}
-                    className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    className="block text-xs font-medium text-muted mb-1"
                   >
                     Title
                   </label>
@@ -332,13 +332,13 @@ export default function ImportantDatesManager({
                     id={`edit-date-title-${index}`}
                     value={editingDate.title}
                     onChange={(e) => setEditingDate({ ...editingDate, title: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor={`edit-date-date-${index}`}
-                    className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    className="block text-xs font-medium text-muted mb-1"
                   >
                     Date
                   </label>
@@ -347,7 +347,7 @@ export default function ImportantDatesManager({
                     id={`edit-date-date-${index}`}
                     value={editingDate.date}
                     onChange={(e) => setEditingDate({ ...editingDate, date: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <ReminderFields
@@ -361,7 +361,7 @@ export default function ImportantDatesManager({
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    className="px-3 py-1.5 text-sm text-muted hover:bg-surface-elevated rounded transition-colors"
                   >
                     Cancel
                   </button>
@@ -369,7 +369,7 @@ export default function ImportantDatesManager({
                     type="button"
                     onClick={handleSaveEdit}
                     disabled={!editingDate.title.trim() || !editingDate.date}
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Save
                   </button>
@@ -378,10 +378,10 @@ export default function ImportantDatesManager({
             ) : (
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white text-sm">
+                  <div className="font-medium text-foreground text-sm">
                     {date.title}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-muted">
                     {new Date(date.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -437,11 +437,11 @@ export default function ImportantDatesManager({
         ))}
 
         {isAdding && (
-          <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-3">
+          <div className="p-3 bg-surface-elevated rounded-lg space-y-3">
             <div>
               <label
                 htmlFor="new-date-title"
-                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-xs font-medium text-muted mb-1"
               >
                 Title
               </label>
@@ -451,14 +451,14 @@ export default function ImportantDatesManager({
                 value={newDate.title}
                 onChange={(e) => setNewDate({ ...newDate, title: e.target.value })}
                 placeholder="e.g., Birthday, Anniversary"
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
             </div>
             <div>
               <label
                 htmlFor="new-date-date"
-                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-xs font-medium text-muted mb-1"
               >
                 Date
               </label>
@@ -467,7 +467,7 @@ export default function ImportantDatesManager({
                 id="new-date-date"
                 value={newDate.date}
                 onChange={(e) => setNewDate({ ...newDate, date: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <ReminderFields
@@ -484,7 +484,7 @@ export default function ImportantDatesManager({
                   setIsAdding(false);
                   setNewDate({ ...defaultNewDate });
                 }}
-                className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                className="px-3 py-1.5 text-sm text-muted hover:bg-surface-elevated rounded transition-colors"
               >
                 Cancel
               </button>
@@ -492,7 +492,7 @@ export default function ImportantDatesManager({
                 type="button"
                 onClick={handleAdd}
                 disabled={!newDate.title.trim() || !newDate.date}
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add
               </button>
@@ -501,7 +501,7 @@ export default function ImportantDatesManager({
         )}
 
         {dates.length === 0 && !isAdding && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+          <p className="text-sm text-muted py-2">
             No important dates added yet.
           </p>
         )}

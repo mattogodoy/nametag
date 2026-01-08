@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from './ui/Button';
 
 interface DeleteRelationshipTypeButtonProps {
   relationshipTypeId: string;
@@ -47,29 +48,31 @@ export default function DeleteRelationshipTypeButton({
   if (showConfirm) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-700 dark:text-gray-300">
+        <span className="text-xs text-muted">
           Delete <span className="font-medium">{relationshipTypeName}</span>
           {usageCount > 0 ? ` (used ${usageCount} time${usageCount === 1 ? '' : 's'})` : ''}?
         </span>
-        <button
+        <Button
+          size="sm"
+          variant="danger"
           onClick={handleDelete}
           disabled={isDeleting}
-          className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
           title="Confirm delete"
         >
           {isDeleting ? 'Deleting...' : 'Confirm'}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
           onClick={() => {
             setShowConfirm(false);
             setError('');
           }}
           disabled={isDeleting}
-          className="px-3 py-1 text-xs bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors disabled:opacity-50"
           title="Cancel"
         >
           Cancel
-        </button>
+        </Button>
         {error && (
           <span className="text-xs text-red-600 dark:text-red-400">{error}</span>
         )}
