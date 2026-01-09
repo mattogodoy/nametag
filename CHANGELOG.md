@@ -6,22 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.7.0](https://github.com/mattogodoy/nametag/compare/v0.6.0...v0.7.0) (2026-01-08)
-
-### Features
-
-* New design. Dark theme mostly done. Light theme comes next ([f057353](https://github.com/mattogodoy/nametag/commit/f057353896d3672d093a28c28dae272fdef099be))
+## [0.7.1](https://github.com/mattogodoy/nametag/compare/v0.7.0...v0.7.1) (2026-01-09)
 
 ### Bug Fixes
 
-* Fix build ([f45d1b4](https://github.com/mattogodoy/nametag/commit/f45d1b4ffaf6d69510727736e46b01836042d519))
-* Fixed tests after redesign ([0d0f899](https://github.com/mattogodoy/nametag/commit/0d0f89975f3580d4cce25dbdc467e8d358594145))
+* Improved colors for warning messages ([59bfccf](https://github.com/mattogodoy/nametag/commit/59bfccf863588d17fe6173278dca5575bed3c758))
+* Make dashboard icons consistent ([7978140](https://github.com/mattogodoy/nametag/commit/79781408fc75ecb12359e35c256e5fad060bef2d))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.7.1](https://github.com/mattogodoy/nametag/compare/v0.7.0...v0.7.1)
+
+- 🐛 Fix: Improved colors for warning messages [`59bfccf`](https://github.com/mattogodoy/nametag/commit/59bfccf863588d17fe6173278dca5575bed3c758)
+- 🔧 Chore: Updated README screenshots after redesign [`acf736b`](https://github.com/mattogodoy/nametag/commit/acf736b4fcc3f52b252581c79f6e1c53c48dd856)
+- 🐛 Fix: Make dashboard icons consistent [`7978140`](https://github.com/mattogodoy/nametag/commit/79781408fc75ecb12359e35c256e5fad060bef2d)
+
 #### [v0.7.0](https://github.com/mattogodoy/nametag/compare/v0.6.0...v0.7.0)
+
+> 8 January 2026
 
 - Redesign UI color palette [`#2`](https://github.com/mattogodoy/nametag/pull/2)
 - ✨ Feature: New design. Dark theme mostly done. Light theme comes next [`f057353`](https://github.com/mattogodoy/nametag/commit/f057353896d3672d093a28c28dae272fdef099be)
@@ -32,6 +36,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Testing Modern Minimal Red [`8148210`](https://github.com/mattogodoy/nametag/commit/814821095fdc0021f16d82a8a75fc3b568d4b3e8)
 - Monochrome [`df7ab18`](https://github.com/mattogodoy/nametag/commit/df7ab18cb149d92532aa99d04a84419ddd167dd6)
 - Warm Professional [`4672659`](https://github.com/mattogodoy/nametag/commit/46726590ba160dadd60b05d3bb0718f1b3c2d233)
+- 🔧 Chore: release v0.7.0 [`7ed9a5d`](https://github.com/mattogodoy/nametag/commit/7ed9a5dd9e3664587243daa27d74cd1cc48b2674)
 - 🐛 Fix: Fixed tests after redesign [`0d0f899`](https://github.com/mattogodoy/nametag/commit/0d0f89975f3580d4cce25dbdc467e8d358594145)
 - 🔧 Chore: Some theme improvements on the network graph [`cd541a2`](https://github.com/mattogodoy/nametag/commit/cd541a281a2c25e10b9d5bf6cbe14758fa7d9f6e)
 - 🔧 Chore: Increased the arrow head a bit [`ce480f0`](https://github.com/mattogodoy/nametag/commit/ce480f0018a56b5dc5812f07c99b437cd30abbe5)
