@@ -85,7 +85,7 @@ describe('POST /api/billing/checkout', () => {
     });
 
     const response = await POST(request);
-    const body = await response.json();
+    await response.json();
 
     expect(response.status).toBe(200);
     expect(mocks.createCheckoutSession).toHaveBeenCalledWith(

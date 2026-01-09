@@ -18,7 +18,7 @@ const mockDataStore = {
 
 // Track ID generation
 let idCounter = 0;
-function generateId(prefix: string) {
+function _generateId(prefix: string) {
   return `${prefix}-${++idCounter}`;
 }
 

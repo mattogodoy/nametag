@@ -5,7 +5,6 @@ import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
 import EmptyState from '@/components/EmptyState';
 import { formatDate } from '@/lib/date-format';
-import { formatFullName } from '@/lib/nameUtils';
 import { canCreateResource } from '@/lib/billing/subscription';
 import { getTranslations } from 'next-intl/server';
 

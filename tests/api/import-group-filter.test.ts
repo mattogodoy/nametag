@@ -274,8 +274,6 @@ describe('Import API - Group Filtering', () => {
     });
 
     it('should preserve relationship types even when filtering groups', () => {
-      const selectedGroupIds = ['group-1']; // Only Family
-
       // Relationship types should always be included
       const filteredRelationshipTypes = importData.relationshipTypes;
 

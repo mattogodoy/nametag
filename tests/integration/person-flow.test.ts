@@ -116,7 +116,7 @@ vi.mock('../../lib/billing', () => ({
 }));
 
 // Import after mocking
-import { GET as getPeople, POST as createPerson } from '../../app/api/people/route';
+import { POST as createPerson } from '../../app/api/people/route';
 import { GET as getGroups, POST as createGroup } from '../../app/api/groups/route';
 import { POST as createRelationship } from '../../app/api/relationships/route';
 

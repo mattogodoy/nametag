@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
-import { canCreateResource, canEnableReminder, getUserUsage } from '@/lib/billing';
+import { canCreateResource, canEnableReminder } from '@/lib/billing';
 
 // GET /api/people - List all people for the current user
 export const GET = withAuth(async (_request, session) => {

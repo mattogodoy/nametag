@@ -201,6 +201,7 @@ export default async function AboutPage() {
               rel="noopener noreferrer"
               className="inline-block"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
                 alt="Buy Me A Coffee"

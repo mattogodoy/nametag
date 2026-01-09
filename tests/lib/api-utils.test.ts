@@ -6,7 +6,6 @@ import {
   apiResponse,
   handleApiError,
   getClientIp,
-  withAuth,
   MAX_REQUEST_SIZE,
 } from '@/lib/api-utils';
 

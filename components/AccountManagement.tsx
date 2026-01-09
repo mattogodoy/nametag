@@ -6,6 +6,8 @@ import { signOut } from 'next-auth/react';
 import GroupsSelector from './GroupsSelector';
 import { Button } from './ui/Button';
 import { useTranslations } from 'next-intl';
+import { importDataSchema } from '@/lib/validations';
+import { z } from 'zod';
 
 interface Group {
   id: string;
@@ -24,6 +26,9 @@ interface AccountManagementProps {
   groups: Group[];
   peopleCount: number;
 }
+
+type ImportData = z.infer<typeof importDataSchema>;
+type ImportRequestBody = ImportData & { groupIds?: string[] };
 
 export default function AccountManagement({ groups, peopleCount }: AccountManagementProps) {
   const t = useTranslations('settings.account');

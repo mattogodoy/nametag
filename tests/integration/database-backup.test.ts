@@ -19,7 +19,6 @@ import path from 'path';
  */
 
 const TEST_BACKUP_DIR = path.join(process.cwd(), 'backups', 'test');
-const DOCKER_COMPOSE_CMD = 'docker-compose -f docker-compose.prod.yml';
 
 describe.skip('Database Backup & Restore', () => {
   beforeAll(() => {

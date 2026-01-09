@@ -7,6 +7,7 @@ import { isSaasMode } from '@/lib/features';
 import { z } from 'zod';
 
 type ImportData = z.infer<typeof importDataSchema>;
+type ImportRequestBody = ImportData & { groupIds?: string[] };
 
 export const POST = withAuth(async (request, session) => {
   try {
@@ -21,7 +22,7 @@ export const POST = withAuth(async (request, session) => {
     const data: ImportData = validation.data;
 
     // Check if we're importing specific groups
-    const selectedGroupIds = (body as any)?.groupIds as string[] | undefined;
+    const selectedGroupIds = (body as ImportRequestBody)?.groupIds;
     let filteredData = data;
 
     if (selectedGroupIds && selectedGroupIds.length > 0) {

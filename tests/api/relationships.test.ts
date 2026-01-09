@@ -157,7 +157,7 @@ describe('Relationships API', () => {
       });
 
       const response = await POST(request);
-      const body = await response.json();
+      await response.json();
 
       expect(response.status).toBe(400);
     });
@@ -267,7 +267,7 @@ describe('Relationships API', () => {
       const context = { params: Promise.resolve({ id: 'rel-1' }) };
 
       const response = await PUT(request, context);
-      const body = await response.json();
+      await response.json();
 
       expect(response.status).toBe(400);
     });

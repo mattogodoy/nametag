@@ -6,11 +6,6 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
-interface _RateLimitConfig {
-  maxAttempts: number;
-  windowMs: number;
-}
-
 // In-memory store for rate limiting
 // Note: This resets on server restart and doesn't work across multiple instances
 // For production with multiple instances, use Redis or a similar distributed cache

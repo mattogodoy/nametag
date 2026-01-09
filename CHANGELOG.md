@@ -6,20 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.7.1](https://github.com/mattogodoy/nametag/compare/v0.7.0...v0.7.1) (2026-01-09)
+## [0.8.0](https://github.com/mattogodoy/nametag/compare/v0.7.1...v0.8.0) (2026-01-09)
+
+### Features
+
+* Ability to select which groups to import ([af6a6b0](https://github.com/mattogodoy/nametag/commit/af6a6b084378afaa9faa19e691fea7b8a83f28be))
 
 ### Bug Fixes
 
-* Improved colors for warning messages ([59bfccf](https://github.com/mattogodoy/nametag/commit/59bfccf863588d17fe6173278dca5575bed3c758))
-* Make dashboard icons consistent ([7978140](https://github.com/mattogodoy/nametag/commit/79781408fc75ecb12359e35c256e5fad060bef2d))
+* Defined types and removed unused variables ([aecc4ee](https://github.com/mattogodoy/nametag/commit/aecc4eeee4b5ea1e62084ff9129358a9a12835a9))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.8.0](https://github.com/mattogodoy/nametag/compare/v0.7.1...v0.8.0)
+
+- ✨ Feature: Ability to select which groups to import [`af6a6b0`](https://github.com/mattogodoy/nametag/commit/af6a6b084378afaa9faa19e691fea7b8a83f28be)
+- 🐛 Fix: Defined types and removed unused variables [`aecc4ee`](https://github.com/mattogodoy/nametag/commit/aecc4eeee4b5ea1e62084ff9129358a9a12835a9)
+- 🔧 Chore: Type declaration [`1a5def1`](https://github.com/mattogodoy/nametag/commit/1a5def1c94d534973ad02e0d96abe436832ed1f3)
+
 #### [v0.7.1](https://github.com/mattogodoy/nametag/compare/v0.7.0...v0.7.1)
 
+> 9 January 2026
+
 - 🐛 Fix: Improved colors for warning messages [`59bfccf`](https://github.com/mattogodoy/nametag/commit/59bfccf863588d17fe6173278dca5575bed3c758)
+- 🔧 Chore: release v0.7.1 [`3753827`](https://github.com/mattogodoy/nametag/commit/37538277c14b4acbaba34b21df112a8a9b2c7b82)
 - 🔧 Chore: Updated README screenshots after redesign [`acf736b`](https://github.com/mattogodoy/nametag/commit/acf736b4fcc3f52b252581c79f6e1c53c48dd856)
 - 🐛 Fix: Make dashboard icons consistent [`7978140`](https://github.com/mattogodoy/nametag/commit/79781408fc75ecb12359e35c256e5fad060bef2d)
 

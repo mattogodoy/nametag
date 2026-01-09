@@ -70,7 +70,6 @@ describe('OAuth Authentication', () => {
     it('should return credentials provider in self-hosted mode', async () => {
       mocks.isSaasMode.mockReturnValue(false);
 
-      const request = new Request('http://localhost/api/auth/available-providers');
       const response = await availableProviders();
       const body = await response.json();
 
@@ -87,7 +86,6 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const request = new Request('http://localhost/api/auth/available-providers');
       const response = await availableProviders();
       const body = await response.json();
 
@@ -103,7 +101,6 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const request = new Request('http://localhost/api/auth/available-providers');
       const response = await availableProviders();
       const body = await response.json();
 
@@ -118,7 +115,6 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const request = new Request('http://localhost/api/auth/available-providers');
       const response = await availableProviders();
       const body = await response.json();
 

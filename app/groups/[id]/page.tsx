@@ -8,6 +8,7 @@ import GroupMembersManager from '@/components/GroupMembersManager';
 import { formatFullName } from '@/lib/nameUtils';
 import { getTranslations } from 'next-intl/server';
 
+
 export default async function GroupDetailsPage({
   params,
 }: {

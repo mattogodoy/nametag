@@ -5,7 +5,6 @@ import { sendEmail, emailTemplates } from '@/lib/email';
 import { forgotPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { handleApiError, parseRequestBody } from '@/lib/api-utils';
-import { logger } from '@/lib/logger';
 
 const TOKEN_EXPIRY_HOURS = 1;
 const RESEND_COOLDOWN_MINUTES = 2;

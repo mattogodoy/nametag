@@ -3,8 +3,6 @@ import type Redis from 'ioredis';
 
 // Create shared spy functions outside the mock that will persist
 const mockOn = vi.fn();
-const mockPing = vi.fn().mockResolvedValue('PONG');
-const mockQuit = vi.fn().mockResolvedValue('OK');
 
 // Mock ioredis before importing the module
 vi.mock('ioredis', () => {
