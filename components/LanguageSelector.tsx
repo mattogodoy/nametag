@@ -11,7 +11,7 @@ interface LanguageSelectorProps {
 }
 
 const LANGUAGES = [
-  { code: 'en' as const, name: 'English', flag: 'us' },
+  { code: 'en' as const, name: 'English', flag: 'gb' },
   { code: 'es-ES' as const, name: 'Español (España)', flag: 'es' },
 ];
 
