@@ -1,6 +1,6 @@
 {
   "name": "nametag",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "private": true,
   "scripts": {
     "dev": "next dev",

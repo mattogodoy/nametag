@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.10.2](https://github.com/mattogodoy/nametag/compare/v0.10.1...v0.10.2) (2026-01-09)
+## [0.10.3](https://github.com/mattogodoy/nametag/compare/v0.10.2...v0.10.3) (2026-01-09)
 
 ### Bug Fixes
 
-* Trying to reduce docker image size and build times ([12e4491](https://github.com/mattogodoy/nametag/commit/12e4491f688016d5625d877542fd98a627330ef2))
+* Added prisma/engines module to build ([2e27822](https://github.com/mattogodoy/nametag/commit/2e278226b17b49dc6d32953466db660bd97a0544))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.10.3](https://github.com/mattogodoy/nametag/compare/v0.10.2...v0.10.3)
+
+- 🐛 Fix: Added prisma/engines module to build [`2e27822`](https://github.com/mattogodoy/nametag/commit/2e278226b17b49dc6d32953466db660bd97a0544)
+
 #### [v0.10.2](https://github.com/mattogodoy/nametag/compare/v0.10.1...v0.10.2)
 
+> 9 January 2026
+
 - 🐛 Fix: Trying to reduce docker image size and build times [`12e4491`](https://github.com/mattogodoy/nametag/commit/12e4491f688016d5625d877542fd98a627330ef2)
+- 🔧 Chore: release v0.10.2 [`26b5f7b`](https://github.com/mattogodoy/nametag/commit/26b5f7b64d7bd4f6160d8ad036f6ac834284f528)
 
 #### [v0.10.1](https://github.com/mattogodoy/nametag/compare/v0.10.0...v0.10.1)
 
