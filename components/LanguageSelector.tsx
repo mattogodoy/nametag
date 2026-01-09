@@ -41,7 +41,11 @@ export default function LanguageSelector({ currentLanguage }: LanguageSelectorPr
       }
 
       // Set cookie for immediate effect
-      document.cookie = `NEXT_LOCALE=${newLanguage}; path=/; max-age=${365 * 24 * 60 * 60}`;
+      const domain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+      const secure = process.env.NODE_ENV === 'production' ? '; secure' : '';
+      const domainAttr = domain ? `; domain=${domain}` : '';
+
+      document.cookie = `NEXT_LOCALE=${newLanguage}; path=/; max-age=${365 * 24 * 60 * 60}; samesite=lax${secure}${domainAttr}`;
 
       toast.success(tSuccess('languageChanged'));
 

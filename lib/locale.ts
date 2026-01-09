@@ -72,12 +72,24 @@ export async function getLocaleFromCookie(): Promise<SupportedLocale | null> {
 export async function setLocaleCookie(locale: SupportedLocale): Promise<void> {
   try {
     const cookieStore = await cookies();
-    cookieStore.set(LOCALE_COOKIE_NAME, locale, {
+    const cookieOptions: any = {
       path: '/',
       maxAge: 365 * 24 * 60 * 60, // 1 year
       httpOnly: false, // Allow client-side access
       sameSite: 'lax',
-    });
+    };
+
+    // Add domain for cross-subdomain sharing (production only)
+    if (process.env.NEXT_PUBLIC_COOKIE_DOMAIN) {
+      cookieOptions.domain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+    }
+
+    // Use secure cookies in production
+    if (process.env.NODE_ENV === 'production') {
+      cookieOptions.secure = true;
+    }
+
+    cookieStore.set(LOCALE_COOKIE_NAME, locale, cookieOptions);
   } catch (error) {
     console.error('Error setting locale cookie:', error);
   }
