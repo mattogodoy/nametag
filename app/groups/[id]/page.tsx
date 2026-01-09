@@ -5,7 +5,6 @@ import { prisma } from '@/lib/prisma';
 import DeleteGroupButton from '@/components/DeleteGroupButton';
 import Navigation from '@/components/Navigation';
 import GroupMembersManager from '@/components/GroupMembersManager';
-import { formatFullName } from '@/lib/nameUtils';
 import { getTranslations } from 'next-intl/server';
 
 

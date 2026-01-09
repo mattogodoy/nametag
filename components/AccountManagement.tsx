@@ -21,7 +21,6 @@ interface AccountManagementProps {
 }
 
 type ImportData = z.infer<typeof importDataSchema>;
-type ImportRequestBody = ImportData & { groupIds?: string[] };
 
 export default function AccountManagement({ groups, peopleCount }: AccountManagementProps) {
   const t = useTranslations('settings.account');

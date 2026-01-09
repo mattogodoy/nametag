@@ -117,7 +117,6 @@ describe('Language API Endpoint', () => {
       });
 
       const response = await PUT(request);
-      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(prisma.user.update).not.toHaveBeenCalled();

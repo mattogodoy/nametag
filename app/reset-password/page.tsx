@@ -9,7 +9,6 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 
 function ResetPasswordForm() {
   const t = useTranslations('auth');
-  const tCommon = useTranslations('common');
   const tErrors = useTranslations('errors');
   const tValidation = useTranslations('validation');
   const searchParams = useSearchParams();

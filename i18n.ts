@@ -1,6 +1,6 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies, headers } from 'next/headers';
-import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type SupportedLocale, isSupportedLocale } from './lib/locale';
+import { DEFAULT_LOCALE, type SupportedLocale, isSupportedLocale } from './lib/locale';
 
 /**
  * next-intl configuration

@@ -64,12 +64,12 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
 
     // Get features as array
     const features: string[] = [];
-    const featuresObj = t.raw(`tiers.${tierKey}.features` as any) as Record<string, string>;
+    const featuresObj = t.raw(`tiers.${tierKey}.features` as 'tiers.free.features') as Record<string, string>;
     Object.values(featuresObj).forEach(value => features.push(value));
 
     return {
-      name: t(`tiers.${tierKey}.name` as any),
-      description: t(`tiers.${tierKey}.description` as any),
+      name: t(`tiers.${tierKey}.name` as 'tiers.free.name'),
+      description: t(`tiers.${tierKey}.description` as 'tiers.free.description'),
       features,
     };
   };
@@ -121,7 +121,6 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {tiers.map((tier) => {
-          const info = TIER_INFO[tier];
           const tierTranslations = getTierTranslations(tier);
           const price = getPrice(tier);
           const isCurrent = tier === currentTier;

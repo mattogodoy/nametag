@@ -44,7 +44,7 @@ export default async function AppearanceSettingsPage() {
         <h2 className="text-xl font-bold text-foreground mb-4">
           {t('language.title')}
         </h2>
-        <LanguageSelector userId={session.user.id} currentLanguage={currentLanguage} />
+        <LanguageSelector currentLanguage={currentLanguage} />
       </div>
 
       {/* Date Format Settings */}

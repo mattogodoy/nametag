@@ -90,7 +90,7 @@ export default function RegisterPage() {
 
       // Show success message instead of auto-login
       setSuccess(true);
-    } catch (error) {
+    } catch {
       setError(tErrors('server.networkError'));
     } finally {
       setIsLoading(false);

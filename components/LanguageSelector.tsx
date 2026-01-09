@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import 'flag-icons/css/flag-icons.min.css';
 
 interface LanguageSelectorProps {
-  userId: string | undefined;
   currentLanguage: 'en' | 'es-ES';
 }
 
@@ -15,7 +14,7 @@ const LANGUAGES = [
   { code: 'es-ES' as const, name: 'Español (España)', flag: 'es' },
 ];
 
-export default function LanguageSelector({ userId, currentLanguage }: LanguageSelectorProps) {
+export default function LanguageSelector({ currentLanguage }: LanguageSelectorProps) {
   const t = useTranslations('settings.appearance.language');
   const tSuccess = useTranslations('success.profile');
   const tCommon = useTranslations('common');
@@ -55,8 +54,6 @@ export default function LanguageSelector({ userId, currentLanguage }: LanguageSe
       setIsLoading(false);
     }
   };
-
-  const currentLang = LANGUAGES.find(lang => lang.code === selectedLanguage);
 
   return (
     <div>

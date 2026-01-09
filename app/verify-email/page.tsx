@@ -9,7 +9,6 @@ type VerificationState = 'loading' | 'success' | 'error' | 'no-token';
 
 function VerifyEmailContent() {
   const t = useTranslations('auth');
-  const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   // Derive initial state from token to avoid setState in effect
@@ -47,7 +46,7 @@ function VerifyEmailContent() {
     }
 
     verifyEmail();
-  }, [token]);
+  }, [token, t]);
 
   return (
     <div className="max-w-md w-full space-y-8 text-center">

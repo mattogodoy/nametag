@@ -68,7 +68,7 @@ function getContactReminderDescription(
   return null;
 }
 
-function getRelativeTime(date: Date, t: any): string {
+function getRelativeTime(date: Date, t: (key: string, values?: Record<string, string | number>) => string): string {
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - date.getTime());
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -95,7 +95,6 @@ export default async function PersonDetailsPage({
 }) {
   const session = await auth();
   const t = await getTranslations('people');
-  const tCommon = await getTranslations('common');
 
   if (!session?.user) {
     redirect('/login');

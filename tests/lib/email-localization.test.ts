@@ -183,7 +183,9 @@ describe('Email Localization', () => {
         'es-ES'
       );
 
-      expect(subject.toLowerCase()).toContain('suscripción') || expect(subject.toLowerCase()).toContain('mejorado');
+      expect(
+        subject.toLowerCase().includes('suscripción') || subject.toLowerCase().includes('mejorado')
+      ).toBe(true);
       expect(html).toContain('Personal');
       expect(html).toContain('Pro');
       expect(html).toContain('$9.99');
