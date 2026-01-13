@@ -6,23 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.12.0](https://github.com/mattogodoy/nametag/compare/v0.11.0...v0.12.0) (2026-01-13)
-
-### Features
-
-* Added link to disable reminders directly from the emails. Other fixes related to reminders ([b67c4ed](https://github.com/mattogodoy/nametag/commit/b67c4ed5354bce31ffdd79358d6a22959947eaf9))
+## [0.12.1](https://github.com/mattogodoy/nametag/compare/v0.12.0...v0.12.1) (2026-01-13)
 
 ### Bug Fixes
 
-* Added missing var to the env schema ([e9c442c](https://github.com/mattogodoy/nametag/commit/e9c442c3ad12bf1d5030662ef93a3f1d587eb3eb))
+* Make the self-hosted version work without setting the resend API key ([bab3b6e](https://github.com/mattogodoy/nametag/commit/bab3b6efa1e5e099e74166204d7caae6f3319a8a))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.12.1](https://github.com/mattogodoy/nametag/compare/v0.12.0...v0.12.1)
+
+- 🐛 Fix: Make the self-hosted version work without setting the resend API key [`bab3b6e`](https://github.com/mattogodoy/nametag/commit/bab3b6efa1e5e099e74166204d7caae6f3319a8a)
+- 🔧 Chore: Added square logo [`6066222`](https://github.com/mattogodoy/nametag/commit/606622246819177de535ae3892d5368ab2a060e5)
+
 #### [v0.12.0](https://github.com/mattogodoy/nametag/compare/v0.11.0...v0.12.0)
 
+> 13 January 2026
+
 - ✨ Feature: Added link to disable reminders directly from the emails. Other fixes related to reminders [`b67c4ed`](https://github.com/mattogodoy/nametag/commit/b67c4ed5354bce31ffdd79358d6a22959947eaf9)
+- 🔧 Chore: release v0.12.0 [`5177b45`](https://github.com/mattogodoy/nametag/commit/5177b451c594c203e46aba8b4b7afe782f6160ee)
 - 🐛 Fix: Added missing var to the env schema [`e9c442c`](https://github.com/mattogodoy/nametag/commit/e9c442c3ad12bf1d5030662ef93a3f1d587eb3eb)
 
 #### [v0.11.0](https://github.com/mattogodoy/nametag/compare/v0.10.4...v0.11.0)
