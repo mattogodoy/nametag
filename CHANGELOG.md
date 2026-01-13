@@ -6,23 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.11.0](https://github.com/mattogodoy/nametag/compare/v0.10.4...v0.11.0) (2026-01-12)
+## [0.12.0](https://github.com/mattogodoy/nametag/compare/v0.11.0...v0.12.0) (2026-01-13)
 
 ### Features
 
-* Added middle name and second last name fields ([59ae3d0](https://github.com/mattogodoy/nametag/commit/59ae3d0aff3b2ce5ca06f133047bedbf0b6f4059))
+* Added link to disable reminders directly from the emails. Other fixes related to reminders ([b67c4ed](https://github.com/mattogodoy/nametag/commit/b67c4ed5354bce31ffdd79358d6a22959947eaf9))
 
 ### Bug Fixes
 
-* Disable 1passowrd for autocomplete fields ([dd0d473](https://github.com/mattogodoy/nametag/commit/dd0d473a6be567d088f14bf46a9cb946f61cb48b))
+* Added missing var to the env schema ([e9c442c](https://github.com/mattogodoy/nametag/commit/e9c442c3ad12bf1d5030662ef93a3f1d587eb3eb))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.12.0](https://github.com/mattogodoy/nametag/compare/v0.11.0...v0.12.0)
+
+- ✨ Feature: Added link to disable reminders directly from the emails. Other fixes related to reminders [`b67c4ed`](https://github.com/mattogodoy/nametag/commit/b67c4ed5354bce31ffdd79358d6a22959947eaf9)
+- 🐛 Fix: Added missing var to the env schema [`e9c442c`](https://github.com/mattogodoy/nametag/commit/e9c442c3ad12bf1d5030662ef93a3f1d587eb3eb)
+
 #### [v0.11.0](https://github.com/mattogodoy/nametag/compare/v0.10.4...v0.11.0)
 
+> 12 January 2026
+
 - ✨ Feature: Added middle name and second last name fields [`59ae3d0`](https://github.com/mattogodoy/nametag/commit/59ae3d0aff3b2ce5ca06f133047bedbf0b6f4059)
+- 🔧 Chore: release v0.11.0 [`e08a29a`](https://github.com/mattogodoy/nametag/commit/e08a29a76c7fd5d79c71c60816d137f10f54ed18)
 - 🐛 Fix: Disable 1passowrd for autocomplete fields [`dd0d473`](https://github.com/mattogodoy/nametag/commit/dd0d473a6be567d088f14bf46a9cb946f61cb48b)
 - Added missing translation key [`656d8b0`](https://github.com/mattogodoy/nametag/commit/656d8b08c90b2cf7ccc90c3ce8899ce813f26c6b)
 
