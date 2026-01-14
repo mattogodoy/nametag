@@ -26,10 +26,10 @@ interface RelationshipType {
 
 interface Relationship {
   id: string;
-  relatedPersonId: string;
+  personId: string;
   relationshipTypeId: string | null;
   notes: string | null;
-  relatedPerson: Person;
+  person: Person;
   relationshipType: RelationshipType | null;
 }
 
@@ -124,12 +124,16 @@ export default function RelationshipManager({
       }
 
       // Regular person-to-person relationship
+      // Since we display relationshipsTo (relationships pointing TO the current person),
+      // we create the relationship FROM the other person TO the current person
       const response = await fetch('/api/relationships', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personId,
-          ...formData,
+          personId: formData.relatedPersonId,  // The other person (source)
+          relatedPersonId: personId,           // The current person (target)
+          relationshipTypeId: formData.relationshipTypeId,  // Use the type the user selected
+          notes: formData.notes || null,
         }),
       });
 
@@ -179,7 +183,7 @@ export default function RelationshipManager({
         return;
       }
 
-      toast.success(`Relationship with ${formatFullName(selectedRelationship.relatedPerson)} has been updated`);
+      toast.success(`Relationship with ${formatFullName(selectedRelationship.person)} has been updated`);
 
       setShowEditModal(false);
       setSelectedRelationship(null);
@@ -221,7 +225,7 @@ export default function RelationshipManager({
   const openEditModal = (relationship: Relationship) => {
     setSelectedRelationship(relationship);
     setFormData({
-      relatedPersonId: relationship.relatedPersonId,
+      relatedPersonId: relationship.personId,
       relationshipTypeId: relationship.relationshipTypeId || defaultTypeId,
       notes: relationship.notes || '',
     });
@@ -271,10 +275,10 @@ export default function RelationshipManager({
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
-                    href={`/people/${rel.relatedPersonId}`}
+                    href={`/people/${rel.personId}`}
                     className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
-                    {formatFullName(rel.relatedPerson)}
+                    {formatFullName(rel.person)}
                   </Link>
                   <span className="text-muted">•</span>
                   <span
@@ -407,7 +411,7 @@ export default function RelationshipManager({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">
-              {t('editRelationship', { name: formatFullName(selectedRelationship.relatedPerson) })}
+              {t('editRelationship', { name: formatFullName(selectedRelationship.person) })}
             </h3>
             <form onSubmit={handleEdit} className="space-y-4">
               {error && (
@@ -476,7 +480,7 @@ export default function RelationshipManager({
               {t('deleteRelationship')}
             </h3>
             <p className="text-muted mb-6">
-              {t('deleteRelationshipConfirm', { name: formatFullName(selectedRelationship.relatedPerson) })}
+              {t('deleteRelationshipConfirm', { name: formatFullName(selectedRelationship.person) })}
             </p>
 
             {error && (

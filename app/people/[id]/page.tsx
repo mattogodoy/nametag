@@ -136,15 +136,15 @@ export default async function PersonDetailsPage({
             group: true,
           },
         },
-        relationshipsFrom: {
+        relationshipsTo: {
           where: {
             deletedAt: null,
-            relatedPerson: {
+            person: {
               deletedAt: null,
             },
           },
           include: {
-            relatedPerson: true,
+            person: true,
             relationshipType: {
               where: {
                 deletedAt: null,
@@ -198,7 +198,7 @@ export default async function PersonDetailsPage({
 
   // Filter out people who already have a relationship
   const relatedPersonIds = new Set(
-    person.relationshipsFrom.map((r) => r.relatedPersonId)
+    person.relationshipsTo.map((r) => r.personId)
   );
   const availablePeople = allPeople.filter(
     (p) => !relatedPersonIds.has(p.id)
@@ -353,7 +353,7 @@ export default async function PersonDetailsPage({
                   linkDistance={100}
                   chargeStrength={-300}
                   animateNewNodes={true}
-                  refreshKey={person.relationshipsFrom.length + (person.relationshipToUserId ? 1000 : 0)}
+                  refreshKey={person.relationshipsTo.length + (person.relationshipToUserId ? 1000 : 0)}
                 />
                 <p className="text-xs text-muted mt-2">
                   {t('graphHelp')}
@@ -410,7 +410,7 @@ export default async function PersonDetailsPage({
                 <RelationshipManager
                   personId={person.id}
                   personName={formatFullName(person)}
-                  relationships={person.relationshipsFrom}
+                  relationships={person.relationshipsTo}
                   availablePeople={availablePeople}
                   relationshipTypes={relationshipTypes}
                   currentUser={{
