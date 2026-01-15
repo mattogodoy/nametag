@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.14.0](https://github.com/mattogodoy/nametag/compare/v0.13.0...v0.14.0) (2026-01-15)
+## [0.14.1](https://github.com/mattogodoy/nametag/compare/v0.14.0...v0.14.1) (2026-01-15)
 
-### Features
+### Performance Improvements
 
-* add multi-platform Docker support (AMD64 and ARM64) ([3504ea4](https://github.com/mattogodoy/nametag/commit/3504ea4822e324f2ea3a6db3584a9fc22037c9c4))
+* parallelize multi-arch Docker builds for faster CI ([b4cd5c5](https://github.com/mattogodoy/nametag/commit/b4cd5c5f59c314ea81f0ee08f430c73bacb4e8fe))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.14.1](https://github.com/mattogodoy/nametag/compare/v0.14.0...v0.14.1)
+
+- ⚡ Performance: parallelize multi-arch Docker builds for faster CI [`b4cd5c5`](https://github.com/mattogodoy/nametag/commit/b4cd5c5f59c314ea81f0ee08f430c73bacb4e8fe)
+
 #### [v0.14.0](https://github.com/mattogodoy/nametag/compare/v0.13.0...v0.14.0)
 
+> 15 January 2026
+
 - 👷 CI: build multi-arch docker image [`#18`](https://github.com/mattogodoy/nametag/pull/18)
+- 🔧 Chore: release v0.14.0 [`3eda6a3`](https://github.com/mattogodoy/nametag/commit/3eda6a3ab36bec9723284de613695260d1f4169f)
 - ✨ Feature: add multi-platform Docker support (AMD64 and ARM64) [`3504ea4`](https://github.com/mattogodoy/nametag/commit/3504ea4822e324f2ea3a6db3584a9fc22037c9c4)
 - 👷 CI: add manual workflow trigger [`2dccdef`](https://github.com/mattogodoy/nametag/commit/2dccdef83306fb9c1bf8da9a7daddcc05f239bfc)
 - 👷 CI: build to arm64 [`c47c8a7`](https://github.com/mattogodoy/nametag/commit/c47c8a7ef73d31f6c9291406b425084062db1e9a)
