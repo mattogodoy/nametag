@@ -6,19 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.14.1](https://github.com/mattogodoy/nametag/compare/v0.14.0...v0.14.1) (2026-01-15)
+## [0.15.0](https://github.com/mattogodoy/nametag/compare/v0.14.1...v0.15.0) (2026-01-15)
 
-### Performance Improvements
+### Features
 
-* parallelize multi-arch Docker builds for faster CI ([b4cd5c5](https://github.com/mattogodoy/nametag/commit/b4cd5c5f59c314ea81f0ee08f430c73bacb4e8fe))
+* Support SMTP server for custom email sender ([721b654](https://github.com/mattogodoy/nametag/commit/721b654f42ecedee0d73df266797866380120f27))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.15.0](https://github.com/mattogodoy/nametag/compare/v0.14.1...v0.15.0)
+
+- Add support for SMTP server [`#21`](https://github.com/mattogodoy/nametag/pull/21)
+- 👷 CI: use github actions matrix for parallel builds [`#20`](https://github.com/mattogodoy/nametag/pull/20)
+- ✨ Feature: Support SMTP server for custom email sender [`721b654`](https://github.com/mattogodoy/nametag/commit/721b654f42ecedee0d73df266797866380120f27)
+
 #### [v0.14.1](https://github.com/mattogodoy/nametag/compare/v0.14.0...v0.14.1)
 
+> 15 January 2026
+
 - ⚡ Performance: parallelize multi-arch Docker builds for faster CI [`b4cd5c5`](https://github.com/mattogodoy/nametag/commit/b4cd5c5f59c314ea81f0ee08f430c73bacb4e8fe)
+- 🔧 Chore: release v0.14.1 [`c3ef2e4`](https://github.com/mattogodoy/nametag/commit/c3ef2e4b1f092f5f993a4d22a45f539a0260db1d)
 
 #### [v0.14.0](https://github.com/mattogodoy/nametag/compare/v0.13.0...v0.14.0)
 
