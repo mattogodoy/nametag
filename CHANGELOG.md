@@ -6,21 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.15.0](https://github.com/mattogodoy/nametag/compare/v0.14.1...v0.15.0) (2026-01-15)
+## [0.15.1](https://github.com/mattogodoy/nametag/compare/v0.15.0...v0.15.1) (2026-01-17)
 
-### Features
+### Bug Fixes
 
-* Support SMTP server for custom email sender ([721b654](https://github.com/mattogodoy/nametag/commit/721b654f42ecedee0d73df266797866380120f27))
+* Redirect to login when email verification is disabled ([27a7cb2](https://github.com/mattogodoy/nametag/commit/27a7cb25d4a7875d46674ddeb184c277694be95e))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.15.1](https://github.com/mattogodoy/nametag/compare/v0.15.0...v0.15.1)
+
+- 🔧 Chore: Added Roadmap section to the README file. [`394ddda`](https://github.com/mattogodoy/nametag/commit/394ddda85640b1b2ac51a4fdeda82cd6a471c034)
+- 🐛 Fix: Redirect to login when email verification is disabled [`27a7cb2`](https://github.com/mattogodoy/nametag/commit/27a7cb25d4a7875d46674ddeb184c277694be95e)
+
 #### [v0.15.0](https://github.com/mattogodoy/nametag/compare/v0.14.1...v0.15.0)
+
+> 15 January 2026
 
 - Add support for SMTP server [`#21`](https://github.com/mattogodoy/nametag/pull/21)
 - 👷 CI: use github actions matrix for parallel builds [`#20`](https://github.com/mattogodoy/nametag/pull/20)
 - ✨ Feature: Support SMTP server for custom email sender [`721b654`](https://github.com/mattogodoy/nametag/commit/721b654f42ecedee0d73df266797866380120f27)
+- 🔧 Chore: release v0.15.0 [`a108c2a`](https://github.com/mattogodoy/nametag/commit/a108c2a8ba92045e30fa3f9ae58d9d72a6262816)
 
 #### [v0.14.1](https://github.com/mattogodoy/nametag/compare/v0.14.0...v0.14.1)
 
