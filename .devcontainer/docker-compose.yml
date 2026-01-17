@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  app:
+    image: node:20
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    networks:
+      - nametag-dev-network
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_USER: nametag
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devpassword}
+      POSTGRES_DB: nametag_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nametag -d nametag_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nametag-dev-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    command: redis-server --requirepass ${REDIS_PASSWORD:-devpassword}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD:-devpassword}\" ping | grep -q PONG || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nametag-dev-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  nametag-dev-network:
+    driver: bridge
