@@ -7,14 +7,20 @@ services:
       - ..:/workspace:cached
     command: sleep infinity
     network_mode: service:db
+    env_file:
+      - ../.env
     environment:
-      - DATABASE_URL=postgresql://nametag:nametag_dev_password@localhost:5432/nametag_db
+      # Override database settings to use docker services
+      - DB_HOST=localhost
+      - DB_PORT=5432
+      - DB_NAME=nametag_db
+      - DB_USER=nametag
+      - DB_PASSWORD=nametag_dev_password
+      # Override Redis to use docker service
       - REDIS_URL=redis://:nametag_dev_password@localhost:6379
-      - NODE_ENV=development
+      # Override app URL for dev container
       - NEXTAUTH_URL=http://localhost:3000
-      - NEXT_PUBLIC_APP_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=dev-secret-minimum-32-characters-long-for-testing
-      - CRON_SECRET=dev-cron-secret-16
+      - NODE_ENV=development
 
   db:
     image: postgres:16-alpine

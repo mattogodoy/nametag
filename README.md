@@ -368,8 +368,10 @@ Perfect for getting started quickly with zero configuration.
 1. Install [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 2. Clone the repository
 3. Open in VS Code and click "Reopen in Container" when prompted
-4. Wait for automatic setup to complete
-5. Start developing! Run `npm run dev` and open `http://localhost:3000`
+4. Wait for automatic setup to complete (database migration & seeding)
+5. The dev server starts automatically - open `http://localhost:3000`
+
+**Note:** If the dev server doesn't start automatically, open a terminal in VS Code and run `npm run dev`
 
 ### Option 2: Local Development (Best for daily development)
 Faster iteration and better debugging experience.
