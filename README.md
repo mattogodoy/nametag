@@ -175,7 +175,7 @@ CRON_SECRET=your-cron-secret-minimum-16-characters
 4. Start the services:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 The database will be automatically set up on first run.
@@ -399,7 +399,7 @@ Faster iteration and better debugging experience.
 1. **Prerequisites:** Node.js 20+ and Docker
 2. Clone the repository
 3. Install dependencies: `npm install`
-4. Start database services: `docker-compose -f docker-compose.services.yml up -d`
+4. Start database services: `docker compose -f docker-compose.services.yml up -d`
 5. Set up database: `./scripts/setup-db.sh`
 6. Start dev server: `npm run dev`
 7. Open `http://localhost:3000`

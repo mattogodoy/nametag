@@ -101,6 +101,7 @@ npm run release -- 1.2.3
 ## Version History
 
 Versions are tracked in:
+
 - `package.json` - npm package version
 - Git tags - `v1.2.3`
 - GitHub Releases - Release notes with changelog
@@ -109,6 +110,7 @@ Versions are tracked in:
 ## Where Version is Displayed
 
 The current version is shown in:
+
 - App footer (all pages)
 - Settings > About page
 - Docker image tags
@@ -142,12 +144,12 @@ The `CHANGELOG.md` file is automatically generated from commit messages. To manu
 
 ## Version Bumping Rules
 
-| Commit Type | Version Bump | Example |
-|-------------|--------------|---------|
-| `fix:` | PATCH | 1.0.0 → 1.0.1 |
-| `feat:` | MINOR | 1.0.0 → 1.1.0 |
-| `feat!:` or `BREAKING CHANGE:` | MAJOR | 1.0.0 → 2.0.0 |
-| `docs:`, `style:`, `refactor:`, `test:`, `chore:` | No bump | - |
+| Commit Type                                       | Version Bump | Example       |
+| ------------------------------------------------- | ------------ | ------------- |
+| `fix:`                                            | PATCH        | 1.0.0 → 1.0.1 |
+| `feat:`                                           | MINOR        | 1.0.0 → 1.1.0 |
+| `feat!:` or `BREAKING CHANGE:`                    | MAJOR        | 1.0.0 → 2.0.0 |
+| `docs:`, `style:`, `refactor:`, `test:`, `chore:` | No bump      | -             |
 
 ## Best Practices
 
