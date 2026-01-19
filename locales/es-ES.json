@@ -102,7 +102,8 @@
         "title": "Idioma",
         "description": "Elige tu idioma",
         "en": "English",
-        "esES": "Español (España)"
+        "esES": "Español (España)",
+        "jaJP": "日本語"
       }
     },
     "security": {
