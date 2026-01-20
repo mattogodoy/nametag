@@ -65,7 +65,9 @@ export async function isTokenBlacklisted(tokenId: string): Promise<boolean> {
       const redis = getRedis();
       if (redis) {
         const result = await redis.get(`blacklist:${tokenId}`);
-        return result !== null;
+        if (result !== null) {
+          return true;
+        }
       }
     }
 

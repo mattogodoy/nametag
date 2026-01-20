@@ -57,11 +57,8 @@ test.describe('Session Invalidation Security', () => {
     const sessionData2 = await sessionResponse2?.json();
 
     // CRITICAL CHECK: Session should be invalidated
-    // The user object should be undefined/empty after logout
-    if (sessionData2.user) {
-      // If user exists, it should not have the email (indicating empty session)
-      expect(sessionData2.user.email).toBeUndefined();
-    }
+    // The user should be undefined/missing after logout
+    expect(sessionData2?.user).toBeUndefined();
 
     // Step 7: Verify dashboard redirects to login (not accessible)
     await newPage.goto('/dashboard');
