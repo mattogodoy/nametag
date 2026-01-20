@@ -19,6 +19,8 @@ permissions:
 jobs:
   check-commits:
     runs-on: ubuntu-latest
+    # Only run on the main repository, not on forks
+    if: github.repository == 'mattogodoy/nametag'
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
     steps:
