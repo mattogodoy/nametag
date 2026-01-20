@@ -247,7 +247,7 @@ npm run verify:all
 We use [Conventional Commits](https://www.conventionalcommits.org/) for automatic versioning and changelog generation.
 
 **Format:**
-```
+```text
 <type>[optional scope]: <description>
 
 [optional body]
@@ -485,7 +485,7 @@ try {
 
 ## Project Structure
 
-```
+```text
 /app                          # Next.js app directory (routes)
   /api                        # API endpoints
     /people                   # Person CRUD operations
