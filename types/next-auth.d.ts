@@ -23,5 +23,6 @@ declare module 'next-auth/jwt' {
     id: string;
     surname: string | null;
     nickname: string | null;
+    jti?: string; // JWT ID for token blacklist tracking
   }
 }

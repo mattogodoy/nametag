@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
+import { randomUUID } from 'crypto';
 import { env } from '@/lib/env';
 import { isSaasMode } from '@/lib/features';
 
@@ -143,6 +144,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.nickname = user.nickname;
         token.email = user.email;
       }
+      // Ensure jti exists for blacklist tracking (even on existing sessions)
+      if (!token.jti) {
+        token.jti = randomUUID();
+      }
       // Update token when session is updated
       if (trigger === 'update' && session) {
         token.name = session.name;
@@ -153,6 +158,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      // Check if token is blacklisted (logged out)
+      if (token.jti) {
+        const { isTokenBlacklisted } = await import('@/lib/token-blacklist');
+        const blacklisted = await isTokenBlacklisted(token.jti as string);
+        if (blacklisted) {
+          // Return session with cleared user to invalidate it
+          // This makes auth() return null and redirects to login
+          return {
+            ...session,
+            user: undefined as unknown as typeof session.user,
+          };
+        }
+      }
+
       if (session.user) {
         session.user.id = token.id as string;
         session.user.name = token.name as string | null;
