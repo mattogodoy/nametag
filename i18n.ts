@@ -37,6 +37,10 @@ export default getRequestConfig(async () => {
           }
 
           const languageCode = browserLocale.split('-')[0].toLowerCase();
+          if (languageCode === 'de') {
+            locale = 'de-DE';
+            break;
+          }
           if (languageCode === 'es') {
             locale = 'es-ES';
             break;

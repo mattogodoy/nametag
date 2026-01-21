@@ -103,6 +103,7 @@
         "description": "Choose your preferred language",
         "en": "English",
         "esES": "Español (España)",
+        "deDE": "Deutsch",
         "jaJP": "日本語"
       }
     },
