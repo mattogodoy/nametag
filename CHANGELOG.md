@@ -6,18 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.15.4](https://github.com/mattogodoy/nametag/compare/v0.15.3...v0.15.4) (2026-01-20)
+## [0.16.0](https://github.com/mattogodoy/nametag/compare/v0.15.4...v0.16.0) (2026-01-21)
 
-### Bug Fixes
+### Features
 
-* Allow GitHub Actions bot to create new releases ([3f98c37](https://github.com/mattogodoy/nametag/commit/3f98c371004a4e7c1199c463bed4c883e860b807))
-* Fix for cookie hijacking vulnerability ([e68445b](https://github.com/mattogodoy/nametag/commit/e68445b14185b028169c1269a340228dd20efe6c))
+* Create release for Japanese translations (PR [#36](https://github.com/mattogodoy/nametag/issues/36)) ([c684a74](https://github.com/mattogodoy/nametag/commit/c684a74ff1bb6465439f5bf229fa2ce39ce1ca3d))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.16.0](https://github.com/mattogodoy/nametag/compare/v0.15.4...v0.16.0)
+
+- add Japanese translation [`#36`](https://github.com/mattogodoy/nametag/pull/36)
+- ✨ Feature: Create release for Japanese translations (PR #36) [`c684a74`](https://github.com/mattogodoy/nametag/commit/c684a74ff1bb6465439f5bf229fa2ce39ce1ca3d)
+- Add files via upload [`a3cfe0b`](https://github.com/mattogodoy/nametag/commit/a3cfe0b680aba802b55a93a3fa5ec27250fa0078)
+- Delete package-lock.json [`2dc875c`](https://github.com/mattogodoy/nametag/commit/2dc875c3e20a43e4064122eec5e585a9e22eafd3)
+- Add files via upload [`912c055`](https://github.com/mattogodoy/nametag/commit/912c0558975c57d0da6d916f353835edeb911ea0)
+- 🔧 Chore: release v0.16.0 [`767c8a1`](https://github.com/mattogodoy/nametag/commit/767c8a151387bf5e6671bd7db58b58801cd5e4f3)
+- Add files via upload [`1a8e284`](https://github.com/mattogodoy/nametag/commit/1a8e284d5905e1e993076f70e73602de9fcd251e)
+- Delete CHANGELOG.md [`defcea8`](https://github.com/mattogodoy/nametag/commit/defcea8e51a2f0be33e5a47b1b5a047e5c0f29ee)
+- Delete package.json [`1cf3b9f`](https://github.com/mattogodoy/nametag/commit/1cf3b9fa03cba524a172408b2d2f664e9a28366c)
+- Update LanguageSelector.tsx [`9695926`](https://github.com/mattogodoy/nametag/commit/96959265f3ba6bfe391460a77571f87e045ed99f)
+- Update ja-JP.json [`9f235d7`](https://github.com/mattogodoy/nametag/commit/9f235d79437ed4559fa0ea9976faed930ad5d194)
+- Update LanguageSelector.tsx [`e56d47a`](https://github.com/mattogodoy/nametag/commit/e56d47a5a56233c8f455c3c59e195cf57a619a54)
+- Update ja-JP.json [`977f306`](https://github.com/mattogodoy/nametag/commit/977f306ab8934d7f6ab8e99fb64ffc5ed7430268)
+- Update en.json [`d84b31a`](https://github.com/mattogodoy/nametag/commit/d84b31a6aad35c6566c2589bd5e44fe337b82ee0)
+- Update es-ES.json [`13ecb56`](https://github.com/mattogodoy/nametag/commit/13ecb5619371e8894a1d73d2c8bd8f615a0e6bae)
+
 #### [v0.15.4](https://github.com/mattogodoy/nametag/compare/v0.15.3...v0.15.4)
+
+> 20 January 2026
 
 - Allow GitHub Actions bot to create new releases [`#45`](https://github.com/mattogodoy/nametag/pull/45)
 - Fix session cookie hijack vulnerability [`#44`](https://github.com/mattogodoy/nametag/pull/44)
@@ -29,6 +48,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - 🔧 Chore: Fix tests so they pass verifications [`64bea35`](https://github.com/mattogodoy/nametag/commit/64bea35e0a6859a52a9a1e5521799acc22e5a086)
 - Disable E2E tests verification [`e98d45b`](https://github.com/mattogodoy/nametag/commit/e98d45b4ac2ab9fa277e28d5bff8e6d998924266)
 - 🔧 Chore: Tightening the solution to the vulnerability [`6deddd1`](https://github.com/mattogodoy/nametag/commit/6deddd1890772021674af62fae4274fde8d6fd37)
+- 🔧 Chore: release v0.15.4 [`d0fc2a6`](https://github.com/mattogodoy/nametag/commit/d0fc2a63af7fe942ddfb285813fb3b6265cce1c2)
 - Mock change to trigger the verification [`bf3f5ec`](https://github.com/mattogodoy/nametag/commit/bf3f5ec0a1f5e20c9de792b1e7a7cbeffe80de67)
 - 🐛 Fix: Allow GitHub Actions bot to create new releases [`3f98c37`](https://github.com/mattogodoy/nametag/commit/3f98c371004a4e7c1199c463bed4c883e860b807)
 - 🔧 Chore: Allow manual PR verification run [`3ad37f6`](https://github.com/mattogodoy/nametag/commit/3ad37f62880b9ba378c807adaf510e37d8f0374d)
