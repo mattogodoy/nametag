@@ -4,7 +4,7 @@ import { prisma } from './prisma';
 /**
  * Supported locales
  */
-export const SUPPORTED_LOCALES = ['en', 'es-ES'] as const;
+export const SUPPORTED_LOCALES = ['en', 'es-ES', 'ja-JP'] as const;
 export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
 
 /**
@@ -42,6 +42,10 @@ export function normalizeLocale(locale: string): SupportedLocale {
 
   if (languageCode === 'en') {
     return 'en';
+  }
+
+  if (languageCode === 'ja') {
+    return 'ja-JP';
   }
 
   return DEFAULT_LOCALE;
@@ -139,6 +143,9 @@ export async function detectBrowserLocale(): Promise<SupportedLocale> {
       }
       if (languageCode === 'en') {
         return 'en';
+      }
+      if (languageCode === 'ja') {
+        return 'ja-JP';
       }
     }
 

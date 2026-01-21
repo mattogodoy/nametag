@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest) {
     // Validate language
     if (!language || !isSupportedLocale(language)) {
       return NextResponse.json(
-        { error: 'Invalid language. Supported languages: en, es-ES' },
+        { error: 'Invalid language. Supported languages: en, es-ES, ja-JP' },
         { status: 400 }
       );
     }
