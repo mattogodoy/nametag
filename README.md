@@ -60,7 +60,7 @@ _Clean light theme for comfortable daytime use_
 - Organize contacts into custom groups
 - Set reminders for important dates and staying in touch
 - Full dark mode support
-- Multiple languages (English and Spanish)
+- Multiple languages (English, Spanish, Japanese, Norwegian, German)
 - Mobile-responsive design
 - Multi-platform Docker support (AMD64 and ARM64)
 

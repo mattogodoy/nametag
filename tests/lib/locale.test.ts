@@ -39,9 +39,13 @@ describe('Locale Utilities', () => {
       expect(isSupportedLocale('nb-NO')).toBe(true);
     });
 
+    it('should return true for "de-DE"', () => {
+      expect(isSupportedLocale('de-DE')).toBe(true);
+    });
+
     it('should return false for unsupported locales', () => {
       expect(isSupportedLocale('fr-FR')).toBe(false);
-      expect(isSupportedLocale('de')).toBe(false);
+      expect(isSupportedLocale('it')).toBe(false);
     });
   });
 
@@ -51,6 +55,7 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('es-ES')).toBe('es-ES');
       expect(normalizeLocale('ja-JP')).toBe('ja-JP');
       expect(normalizeLocale('nb-NO')).toBe('nb-NO');
+      expect(normalizeLocale('de-DE')).toBe('de-DE');
     });
 
     it('should map "es" to "es-ES"', () => {
@@ -73,9 +78,13 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('no')).toBe('nb-NO');
     });
 
+    it('should map "de" to "de-DE"', () => {
+      expect(normalizeLocale('de')).toBe('de-DE');
+    });
+
     it('should default to "en" for unsupported locales', () => {
       expect(normalizeLocale('fr-FR')).toBe('en');
-      expect(normalizeLocale('de')).toBe('en');
+      expect(normalizeLocale('it')).toBe('en');
     });
   });
 
@@ -273,6 +282,28 @@ describe('Locale Utilities', () => {
       expect(locale).toBe('nb-NO');
     });
 
+    it('should detect German from Accept-Language header', async () => {
+      const { headers } = await import('next/headers');
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('de-DE,de;q=0.9,en;q=0.8'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('de-DE');
+    });
+
+    it('should map "de" to "de-DE"', async () => {
+      const { headers } = await import('next/headers');
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('de,en;q=0.9'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('de-DE');
+    });
+    
     it('should default to "en" for unsupported languages', async () => {
       const { headers } = await import('next/headers');
       vi.mocked(headers).mockResolvedValue({

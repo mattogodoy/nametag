@@ -104,7 +104,8 @@
         "en": "English",
         "esES": "Español (España)",
         "jaJP": "日本語",
-        "nbNO": "Norsk bokmål (Norwegian Bokmål)"
+        "nbNO": "Norsk bokmål (Norwegian Bokmål)",
+        "deDE": "Deutsch"
       }
     },
     "security": {
