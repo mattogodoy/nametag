@@ -2,6 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getUserLocale, detectBrowserLocale, isSupportedLocale, normalizeLocale } from '@/lib/locale';
 import { prisma } from '@/lib/prisma';
 
+// Supported languages for the testcases
+const SUPPORTED = [
+  'en',
+  'es-ES',
+  'ja-JP',
+  'nb-NO',
+  'de-DE',
+] as const;
+
+// Normalization mapping for the testcases including one line for each alias
+const NORMALIZE_MAP = [
+  ['es', 'es-ES'],
+  ['ja', 'ja-JP'],
+  ['nb', 'nb-NO'],
+  ['no', 'nb-NO'],
+  ['de', 'de-DE'],
+]
+
+// Unsupported languages for the testcases
+const UNSUPPORTED = ['fr-FR', 'it'] as const;
+
 // Mock prisma
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -23,65 +44,36 @@ describe('Locale Utilities', () => {
   });
 
   describe('isSupportedLocale', () => {
-    it('should return true for "en"', () => {
-      expect(isSupportedLocale('en')).toBe(true);
+    for (const locale of SUPPORTED) {
+      it(`should return true for "${locale}"`, () => {
+        expect(isSupportedLocale(locale)).toBe(true);
+      });
+    }
+    
+    it(`should return false for unsupported locales`, () => {
+      for (const locale of UNSUPPORTED) {
+        expect(isSupportedLocale(locale)).toBe(false);
+      }
     });
-
-    it('should return true for "es-ES"', () => {
-      expect(isSupportedLocale('es-ES')).toBe(true);
-    });
-
-    it('should return true for "ja-JP"', () => {
-      expect(isSupportedLocale('ja-JP')).toBe(true);
-    });
-
-    it('should return true for "nb-NO"', () => {
-      expect(isSupportedLocale('nb-NO')).toBe(true);
-    });
-
-    it('should return true for "de-DE"', () => {
-      expect(isSupportedLocale('de-DE')).toBe(true);
-    });
-
-    it('should return false for unsupported locales', () => {
-      expect(isSupportedLocale('fr-FR')).toBe(false);
-      expect(isSupportedLocale('it')).toBe(false);
-    });
+ 
   });
 
   describe('normalizeLocale', () => {
     it('should pass through exact matches', () => {
-      expect(normalizeLocale('en')).toBe('en');
-      expect(normalizeLocale('es-ES')).toBe('es-ES');
-      expect(normalizeLocale('ja-JP')).toBe('ja-JP');
-      expect(normalizeLocale('nb-NO')).toBe('nb-NO');
-      expect(normalizeLocale('de-DE')).toBe('de-DE');
-    });
-
-    it('should map "es" to "es-ES"', () => {
-      expect(normalizeLocale('es')).toBe('es-ES');
+      for (const locale of SUPPORTED) {
+        expect(normalizeLocale(locale)).toBe(locale);
+      }
     });
 
     it('should map "en-US" to "en"', () => {
       expect(normalizeLocale('en-US')).toBe('en');
     });
 
-    it('should map "ja" to "ja-JP"', () => {
-      expect(normalizeLocale('ja')).toBe('ja-JP');
-    });
-
-    it('should map "nb" to "nb-NO"', () => {
-      expect(normalizeLocale('nb')).toBe('nb-NO');
-    });
-
-    it('should map "no" to "nb-NO"', () => {
-      expect(normalizeLocale('no')).toBe('nb-NO');
-    });
-
-    it('should map "de" to "de-DE"', () => {
-      expect(normalizeLocale('de')).toBe('de-DE');
-    });
-
+    for (const [input, expected] of NORMALIZE_MAP) {
+      it(`should map "${input}" to "${expected}"`, () => {
+        expect(normalizeLocale(input)).toBe(expected);
+      });
+    }
     it('should default to "en" for unsupported locales', () => {
       expect(normalizeLocale('fr-FR')).toBe('en');
       expect(normalizeLocale('it')).toBe('en');

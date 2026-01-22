@@ -4,7 +4,8 @@ import ThemeToggle from '@/components/ThemeToggle';
 import DateFormatSelector from '@/components/DateFormatSelector';
 import LanguageSelector from '@/components/LanguageSelector';
 import { prisma } from '@/lib/prisma';
-import { getUserLocale, type SupportedLocale } from '@/lib/locale';
+import { getUserLocale } from '@/lib/locale';
+import { type SupportedLocale } from '@/lib/locale-config';
 import { getTranslations } from 'next-intl/server';
 
 export default async function AppearanceSettingsPage() {

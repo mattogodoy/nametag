@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isSupportedLocale, setLocaleCookie } from '@/lib/locale';
+import { SUPPORTED_LOCALES } from '@/lib/locale-config';
 
 /**
  * PUT /api/user/language
@@ -20,11 +21,12 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const { language } = body;
+    
 
     // Validate language
     if (!language || !isSupportedLocale(language)) {
       return NextResponse.json(
-        { error: 'Invalid language. Supported languages: en, es-ES, ja-JP, nb-NO, de-DE' },
+        { error: 'Invalid language. Supported languages: ${SUPPORTED_LOCALES.join(", ")}' },
         { status: 400 }
       );
     }

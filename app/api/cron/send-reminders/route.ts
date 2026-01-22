@@ -7,6 +7,7 @@ import { handleApiError } from '@/lib/api-utils';
 import { logger, securityLogger } from '@/lib/logger';
 import { getClientIp } from '@/lib/api-utils';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
+import { type SupportedLocale, DEFAULT_LOCALE} from '@/lib/locale-config';
 
 // This endpoint should be called by a cron job
 export async function GET(request: Request) {
@@ -69,7 +70,7 @@ export async function GET(request: Request) {
       if (shouldSend) {
         const { person } = importantDate;
         const userEmail = person.user.email;
-        const userLanguage = (person.user.language as 'en' | 'es-ES') || 'en';
+        const userLanguage = (person.user.language as SupportedLocale) || DEFAULT_LOCALE
         const personName = formatFullName(person);
         const formattedDate = formatDateForEmail(
           importantDate.date,
@@ -141,7 +142,7 @@ export async function GET(request: Request) {
       const shouldSend = shouldSendContactReminder(person, today);
 
       if (shouldSend) {
-        const userLanguage = (person.user.language as 'en' | 'es-ES') || 'en';
+        const userLanguage = (person.user.language as SupportedLocale) || DEFAULT_LOCALE
         const personName = formatFullName(person);
         const lastContactFormatted = person.lastContact
           ? formatDateForEmail(person.lastContact, person.user.dateFormat, userLanguage)
@@ -421,7 +422,7 @@ function formatInterval(interval: number, unit: string): string {
 function formatDateForEmail(
   date: Date,
   dateFormat: string | null,
-  locale: 'en' | 'es-ES' = 'en'
+  locale: SupportedLocale = DEFAULT_LOCALE
 ): string {
   const d = new Date(date);
   const localeCode = locale === 'es-ES' ? 'es-ES' : 'en-US';

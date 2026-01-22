@@ -1,16 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { prisma } from './prisma';
-
-/**
- * Supported locales
- */
-export const SUPPORTED_LOCALES = ['en', 'es-ES', 'ja-JP', 'nb-NO', 'de-DE'] as const;
-export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
-
-/**
- * Default locale
- */
-export const DEFAULT_LOCALE: SupportedLocale = 'en';
+import {LANGUAGES, SUPPORTED_LOCALES, DEFAULT_LOCALE, SupportedLocale } from './locale-config';
 
 /**
  * Cookie name for locale preference
@@ -25,6 +15,15 @@ export function isSupportedLocale(locale: string): locale is SupportedLocale {
 }
 
 /**
+ * Function to check if a locale has aliases (see locale-config.ts)
+ */
+function localeHasAliases(
+  lang: (typeof LANGUAGES)[number]
+): lang is (typeof LANGUAGES)[number] & { aliases: readonly string[] } {
+  return 'aliases' in lang;
+}
+
+/**
  * Normalize locale string (e.g., "es" -> "es-ES")
  */
 export function normalizeLocale(locale: string): SupportedLocale {
@@ -35,25 +34,15 @@ export function normalizeLocale(locale: string): SupportedLocale {
 
   // Handle language code only (e.g., "es" -> "es-ES")
   const languageCode = locale.split('-')[0].toLowerCase();
+  if (!languageCode) return DEFAULT_LOCALE;
 
-  if (languageCode === 'es') {
-    return 'es-ES';
-  }
+  for (const lang of LANGUAGES) {
+    const base = lang.code.split('-')[0].toLowerCase();
+    if (base === languageCode) return lang.code;
 
-  if (languageCode === 'en') {
-    return 'en';
-  }
-
-  if (languageCode === 'ja') {
-    return 'ja-JP';
-  }
-
-  if (languageCode === 'nb' || languageCode === 'no') {
-    return 'nb-NO';
-  }
-
-  if (languageCode === 'de') {
-    return 'de-DE';
+    if (localeHasAliases(lang) && lang.aliases.some(a => a.toLowerCase() === languageCode)) {
+      return lang.code;
+    }
   }
 
   return DEFAULT_LOCALE;
@@ -146,20 +135,15 @@ export async function detectBrowserLocale(): Promise<SupportedLocale> {
 
       // Check language code mapping (e.g., "es" -> "es-ES")
       const languageCode = locale.split('-')[0].toLowerCase();
-      if (languageCode === 'es') {
-        return 'es-ES';
-      }
-      if (languageCode === 'en') {
-        return 'en';
-      }
-      if (languageCode === 'ja') {
-        return 'ja-JP';
-      }
-      if (languageCode === 'nb' || languageCode === 'no') {
-        return 'nb-NO';
-      }
-      if (languageCode === 'de') {
-        return 'de-DE';
+      if (!languageCode) return DEFAULT_LOCALE;
+
+      for (const lang of LANGUAGES) {
+        const base = lang.code.split('-')[0].toLowerCase();
+        if (base === languageCode) return lang.code;
+
+        if (localeHasAliases(lang) && lang.aliases.some(a => a.toLowerCase() === languageCode)) {
+          return lang.code;
+        }
       }
     }
 
