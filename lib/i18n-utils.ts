@@ -1,5 +1,6 @@
 import { getTranslations as getT } from 'next-intl/server';
-import { getUserLocale, type SupportedLocale } from './locale';
+import { getUserLocale} from './locale';
+import { type SupportedLocale } from './locale-config';
 
 // Re-export SupportedLocale for convenience
 export type { SupportedLocale };

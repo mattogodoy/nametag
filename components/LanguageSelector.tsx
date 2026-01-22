@@ -4,20 +4,20 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import 'flag-icons/css/flag-icons.min.css';
+import { LANGUAGES, SupportedLocale } from "@/lib/locale-config";
 
 interface LanguageSelectorProps {
-  currentLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE';
+  currentLanguage: SupportedLocale;
 }
 
-const LANGUAGES = [
-  { code: 'en' as const, name: 'English', flag: 'gb' },
-  { code: 'es-ES' as const, name: 'Español (España)', flag: 'es' },
-  { code: 'ja-JP' as const, name: '日本語', flag: 'jp' },
-  { code: 'nb-NO' as const, name: 'Norsk bokmål', flag: 'no' },
-  { code: 'de-DE' as const, name: 'Deutsch (German)', flag: 'de' },
-];
+type LocaleCode = (typeof LANGUAGES)[number]["code"];
 
-const labelMap = { en: 'en', 'es-ES': 'esES', 'ja-JP': 'jaJP', 'nb-NO': 'nbNO', 'de-DE': 'deDE' } as const;
+export const labelMap = Object.fromEntries(
+  LANGUAGES.map(({ code }) => {
+    const [lang, region] = code.split("-");
+    return [code, region ? `${lang}${region}` : lang];
+  }),
+) as Record<LocaleCode, string>;
 
 export default function LanguageSelector({ currentLanguage }: LanguageSelectorProps) {
   const t = useTranslations('settings.appearance.language');
@@ -27,7 +27,7 @@ export default function LanguageSelector({ currentLanguage }: LanguageSelectorPr
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLanguageChange = async (newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE') => {
+  const handleLanguageChange = async (newLanguage: SupportedLocale) => {
     if (isLoading || newLanguage === selectedLanguage) return;
 
     setIsLoading(true);

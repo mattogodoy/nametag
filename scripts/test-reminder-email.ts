@@ -9,6 +9,7 @@ import { prisma } from '../lib/prisma';
 import { sendEmail, emailTemplates } from '../lib/email';
 import { createUnsubscribeToken } from '../lib/unsubscribe-tokens';
 import { formatFullName } from '../lib/nameUtils';
+import { type SupportedLocale, DEFAULT_LOCALE } from '../lib/locale-config';
 
 async function testReminderEmail() {
   try {
@@ -68,7 +69,7 @@ async function testReminderEmail() {
         importantDate.title,
         formattedDate,
         unsubscribeUrl,
-        (importantDate.person.user.language as 'en' | 'es-ES') || 'en'
+        (importantDate.person.user.language as SupportedLocale) || DEFAULT_LOCALE
       );
 
       console.log('📧 Sending test email...');
@@ -146,7 +147,7 @@ async function testReminderEmail() {
         lastContactFormatted,
         intervalText,
         unsubscribeUrl,
-        (person.user.language as 'en' | 'es-ES') || 'en'
+        (person.user.language as SupportedLocale) || DEFAULT_LOCALE
       );
 
       console.log('📧 Sending test email...');

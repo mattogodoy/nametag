@@ -1,6 +1,7 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies, headers } from 'next/headers';
-import { DEFAULT_LOCALE, type SupportedLocale, isSupportedLocale } from './lib/locale';
+import { isSupportedLocale, normalizeLocale } from './lib/locale';
+import { type SupportedLocale,  DEFAULT_LOCALE } from './lib/locale-config';
 
 /**
  * next-intl configuration
@@ -36,25 +37,10 @@ export default getRequestConfig(async () => {
             break;
           }
 
-          const languageCode = browserLocale.split('-')[0].toLowerCase();
-          if (languageCode === 'es') {
-            locale = 'es-ES';
-            break;
-          }
-          if (languageCode === 'en') {
-            locale = 'en';
-            break;
-          }
-          if (languageCode === 'ja') {
-            locale = 'ja-JP';
-            break;
-          }
-          if (languageCode === 'nb' || languageCode === 'no') {
-            locale = 'nb-NO';
-            break;
-          }
-           if (languageCode === 'de') {
-            locale = 'de-DE';
+          // Normalize by language code / aliases (e.g. "de" -> "de-DE", "no" -> "nb-NO")
+          const normalized = normalizeLocale(browserLocale);
+          if (normalized) {
+            locale = normalized;
             break;
           }
         }

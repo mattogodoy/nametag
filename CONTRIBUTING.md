@@ -389,6 +389,9 @@ Nametag supports multiple languages. **All user-facing strings must be translate
 
 - English (`en`) - Default language
 - Spanish (`es-ES`)
+- Japanese (`ja-JP`)
+- Norwegian (`nb-NO`)
+- German (`de-DE`)
 
 ### Adding or Changing Strings
 
@@ -397,6 +400,9 @@ Nametag supports multiple languages. **All user-facing strings must be translate
 1. **Add translation keys to all locale files**:
    - `/locales/en.json` - English translations
    - `/locales/es-ES.json` - Spanish translations
+   - `/locales/ja-JP.json` - Japanese translations
+   - `/locales/nb-NO.json` - Norwegian translations
+   - `/locales/de-DE.json` - German translations
 
 2. **Use the translation hook in components**:
 
@@ -494,120 +500,25 @@ Translate all strings in the new file. Keep the same structure and keys as the E
 
 #### Step 2: Update Locale Configuration
 
-Edit `/lib/locale.ts`:
+Edit `/lib/locale-config.ts`:
 
-**Add to SUPPORTED_LOCALES array** (around line 7):
-
-```typescript
-export const SUPPORTED_LOCALES = ["en", "es-ES", "ja-JP", "fr-FR"] as const;
-//                                                        ^^^^^^^ Add your locale
-```
-
-**Add language mapping in `normalizeLocale()` function** (around line 48):
+**Add to LANGUAGES array** (around line 6):
 
 ```typescript
-if (languageCode === "ja") {
-  return "ja-JP";
-}
-
-// Add your language mapping
-if (languageCode === "fr") {
-  return "fr-FR";
-}
-```
-
-**Add language mapping in `detectBrowserLocale()` function** (around line 148):
-
-```typescript
-if (languageCode === "ja") {
-  return "ja-JP";
-}
-
-// Add your language mapping
-if (languageCode === "fr") {
-  return "fr-FR";
-}
-```
-
-#### Step 3: Update i18n Configuration
-
-Edit `/i18n.ts`:
-
-**Add language code mapping** (around line 48):
-
-```typescript
-if (languageCode === "ja") {
-  locale = "ja-JP";
-  break;
-}
-
-// Add your language mapping
-if (languageCode === "fr") {
-  locale = "fr-FR";
-  break;
-}
-```
-
-#### Step 4: Update LanguageSelector Component
-
-Edit `/components/LanguageSelector.tsx`:
-
-**Update TypeScript types** (line 9):
-
-```typescript
-interface LanguageSelectorProps {
-  currentLanguage: "en" | "es-ES" | "ja-JP" | "fr-FR";
-  //                                          ^^^^^^^ Add your locale
-}
-```
-
-**Add to LANGUAGES array** (around line 12):
-
-```typescript
-const LANGUAGES = [
-  { code: "en" as const, name: "English", flag: "gb" },
-  { code: "es-ES" as const, name: "Español (España)", flag: "es" },
-  { code: "ja-JP" as const, name: "日本語", flag: "jp" },
-  { code: "fr-FR" as const, name: "Français (France)", flag: "fr" },
+export const LANGUAGES = [
+  { code: 'en' as const, name: 'English', flag: 'gb' },
+  { code: 'es-ES' as const, name: 'Español (España)', flag: 'es' },
+  { code: 'ja-JP' as const, name: '日本語', flag: 'jp' },
+  { code: 'nb-NO' as const, name: 'Norsk bokmål', flag: 'no', aliases: ['no'] as const }, // aliases is optional
+  { code: 'de-DE' as const, name: 'Deutsch (German)', flag: 'de' },
+  { code: 'fr-FR' as const, name: 'Français (France)', flag: 'fr' },
   //                                                    ^^^^ Flag code from flag-icons
-];
+] as const;
 ```
 
-**Add to labelMap** (around line 18):
+#### Step 3: Add Language Names to All Translation Files
 
-```typescript
-const labelMap = {
-  en: "en",
-  "es-ES": "esES",
-  "ja-JP": "jaJP",
-  "fr-FR": "frFR", // Convert hyphen to camelCase: fr-FR → frFR
-} as const;
-```
-
-**Update handleLanguageChange type** (line 28):
-
-```typescript
-const handleLanguageChange = async (newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'fr-FR') => {
-  //                                                                          ^^^^^^^ Add your locale
-```
-
-#### Step 5: Update API Route
-
-Edit `/app/api/user/language/route.ts`:
-
-**Update error message** (around line 27):
-
-```typescript
-return NextResponse.json(
-  { error: "Invalid language. Supported languages: en, es-ES, ja-JP, fr-FR" },
-  //                                                                 ^^^^^^^ Add your locale
-  { status: 400 },
-);
-```
-
-#### Step 6: Add Language Names to All Translation Files
-
-Add your language name to **ALL** locale files under `settings.appearance.language`:
+Add your language name to **ALL** locale files under `locales`:
 
 **In `/locales/en.json`**:
 
@@ -635,18 +546,7 @@ Add your language name to **ALL** locale files under `settings.appearance.langua
 }
 ```
 
-**In `/locales/ja-JP.json`**:
-
-```json
-"language": {
-  "title": "言語",
-  "description": "お好みの言語を選択してください",
-  "en": "English",
-  "esES": "Español (España)",
-  "jaJP": "日本語",
-  "frFR": "Français (France)"
-}
-```
+**...**
 
 **And in your new locale file** (e.g., `/locales/fr-FR.json`):
 
@@ -661,49 +561,53 @@ Add your language name to **ALL** locale files under `settings.appearance.langua
 }
 ```
 
-#### Step 7: Add Tests
+#### Step 4: Add Tests
 
 Edit `/tests/lib/locale.test.ts`:
 
-Add test cases for your new language:
+Add your language to the testcases:
 
 ```typescript
-// In isSupportedLocale tests
-it('should return true for "fr-FR"', () => {
-  expect(isSupportedLocale("fr-FR")).toBe(true);
-});
+const SUPPORTED = ['en', 'es-ES', 'ja-JP', 'nb-NO', 'de-DE'] as const;
+```
 
-// In normalizeLocale tests
-it('should pass through "fr-FR"', () => {
-  expect(normalizeLocale("fr-FR")).toBe("fr-FR");
-});
+Add all your aliases to the normalize map:
+```typescript
+const NORMALIZE_MAP = [
+  ['es', 'es-ES'],
+  ['ja', 'ja-JP'],
+  ['nb', 'nb-NO'],
+  ['no', 'nb-NO'],
+  ['de', 'de-DE']
+]
+```
 
-it('should map "fr" to "fr-FR"', () => {
-  expect(normalizeLocale("fr")).toBe("fr-FR");
-});
+#### Step 5: Adjust Documentation
 
-// In detectBrowserLocale tests
-it("should detect French from Accept-Language header", async () => {
-  const { headers } = await import("next/headers");
-  vi.mocked(headers).mockResolvedValue({
-    get: vi.fn().mockReturnValue("fr-FR,fr;q=0.9,en;q=0.8"),
-  } as any);
 
-  const locale = await detectBrowserLocale();
+Edit `README.md`:
+Add you locale to Features-Chapter
+```
+- Multiple languages (English, Spanish, ...)
+```
 
-  expect(locale).toBe("fr-FR");
-});
 
-it('should map "fr" to "fr-FR"', async () => {
-  const { headers } = await import("next/headers");
-  vi.mocked(headers).mockResolvedValue({
-    get: vi.fn().mockReturnValue("fr,en;q=0.9"),
-  } as any);
+Edit `CONTRIBUTING.md`:
 
-  const locale = await detectBrowserLocale();
+Add you locale to Internationalization-Chapter
+```
+### Supported Languages
 
-  expect(locale).toBe("fr-FR");
-});
+- English (`en`) - Default language
+- Spanish (`es-ES`)
+  ....
+```
+
+```
+1. **Add translation keys to all locale files**:
+   - `/locales/en.json` - English translations
+   - `/locales/es-ES.json` - Spanish translations
+     ....
 ```
 
 #### Important Notes
