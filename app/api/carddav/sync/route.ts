@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { bidirectionalSync } from '@/lib/carddav/sync';
 
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
     const session = await auth();
 
@@ -17,9 +17,11 @@ export async function POST(request: Request) {
       success: true,
       imported: result.imported,
       exported: result.exported,
+      updated: result.updated,
       conflicts: result.conflicts,
       errors: result.errors,
       errorMessages: result.errorMessages,
+      pendingImports: result.pendingImports || 0,
     });
   } catch (error) {
     console.error('Manual sync failed:', error);

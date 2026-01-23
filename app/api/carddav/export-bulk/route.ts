@@ -117,9 +117,8 @@ export async function POST(request: Request) {
           }
 
           // Ensure person has a UID
-          let uid = person.uid;
-          if (!uid) {
-            uid = uuidv4();
+          const uid: string = person.uid || uuidv4();
+          if (!person.uid) {
             await prisma.person.update({
               where: { id: person.id },
               data: { uid },

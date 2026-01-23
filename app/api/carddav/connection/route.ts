@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import { encryptPassword } from '@/lib/carddav/encryption';
 import { z } from 'zod';
 
 const connectionSchema = z.object({
@@ -63,8 +63,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Encrypt password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Encrypt password (reversible encryption, not hashing)
+    const encryptedPassword = encryptPassword(password);
 
     // Create connection
     const connection = await prisma.cardDavConnection.create({
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         userId: session.user.id,
         serverUrl,
         username,
-        password: hashedPassword,
+        password: encryptedPassword,
         provider: provider || null,
         syncEnabled: syncEnabled ?? true,
         autoExportNew: autoExportNew ?? true,
@@ -153,7 +153,7 @@ export async function PUT(request: Request) {
 
     // Only update password if provided
     if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
+      updateData.password = encryptPassword(password);
     }
 
     // Update sync settings if provided
@@ -189,7 +189,7 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(_request: Request) {
   try {
     const session = await auth();
 

@@ -6,7 +6,7 @@ import ImportContactsList from '@/components/ImportContactsList';
 
 export default async function ImportPage() {
   const session = await auth();
-  const t = await getTranslations('carddav.import');
+  const t = await getTranslations('settings.carddav.import');
 
   if (!session?.user) {
     redirect('/login');

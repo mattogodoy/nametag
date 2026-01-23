@@ -1,5 +1,6 @@
-import { createDAVClient, DAVClient, DAVAddressBook, DAVVCard } from 'tsdav';
+import { createDAVClient, DAVAddressBook, DAVVCard } from 'tsdav';
 import { CardDavConnection } from '@prisma/client';
+import { decryptPassword } from './encryption';
 
 export interface AddressBook {
   url: string;
@@ -29,9 +30,8 @@ export interface CardDavClientInterface {
 export async function createCardDavClient(
   connection: CardDavConnection
 ): Promise<CardDavClientInterface> {
-  // TODO: Implement proper password encryption/decryption
-  // For now, assume password is stored in plain text (it's actually bcrypt hashed)
-  const password = connection.password;
+  // Decrypt the password from database
+  const password = decryptPassword(connection.password);
 
   const client = await createDAVClient({
     serverUrl: connection.serverUrl,
@@ -46,7 +46,7 @@ export async function createCardDavClient(
   return {
     async fetchAddressBooks(): Promise<AddressBook[]> {
       const addressBooks = await client.fetchAddressBooks();
-      return addressBooks.map((ab) => ({
+      return addressBooks.map((ab: DAVAddressBook) => ({
         url: ab.url,
         displayName: typeof ab.displayName === 'string' ? ab.displayName : undefined,
         description: ab.description,
@@ -60,7 +60,7 @@ export async function createCardDavClient(
         addressBook: addressBook.raw,
       });
 
-      return vCards.map((vc) => ({
+      return vCards.map((vc: DAVVCard) => ({
         url: vc.url,
         etag: vc.etag || '',
         data: vc.data || '',

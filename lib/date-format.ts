@@ -57,3 +57,34 @@ export function getDateFormatExample(format: DateFormat): string {
   const exampleDate = new Date(2024, 11, 31); // December 31, 2024
   return formatDate(exampleDate, format);
 }
+
+export function formatDateTime(date: Date | string, format: DateFormat = 'MDY'): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+
+  if (isNaN(d.getTime())) {
+    return 'Invalid Date';
+  }
+
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+
+  let dateStr: string;
+  switch (format) {
+    case 'MDY':
+      dateStr = `${month}/${day}/${year}`;
+      break;
+    case 'DMY':
+      dateStr = `${day}/${month}/${year}`;
+      break;
+    case 'YMD':
+      dateStr = `${year}-${month}-${day}`;
+      break;
+    default:
+      dateStr = `${month}/${day}/${year}`;
+  }
+
+  return `${dateStr}, ${hours}:${minutes}`;
+}

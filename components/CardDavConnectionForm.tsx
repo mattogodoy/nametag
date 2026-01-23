@@ -24,7 +24,7 @@ interface CardDavConnectionFormProps {
 }
 
 export default function CardDavConnectionForm({
-  userId,
+  userId: _userId,
   existingConnection,
 }: CardDavConnectionFormProps) {
   const t = useTranslations('settings.carddav');
@@ -85,7 +85,7 @@ export default function CardDavConnectionForm({
           message: t('testSuccess'),
         });
       }
-    } catch (err) {
+    } catch (_err) {
       setTestResult({
         success: false,
         message: t('testError'),
@@ -126,7 +126,7 @@ export default function CardDavConnectionForm({
         router.refresh();
         setPassword(''); // Clear password after successful save
       }
-    } catch (err) {
+    } catch (_err) {
       setError(t('saveError'));
     } finally {
       setIsLoading(false);
@@ -152,7 +152,7 @@ export default function CardDavConnectionForm({
         setSuccess(t('disconnectSuccess'));
         router.refresh();
       }
-    } catch (err) {
+    } catch (_err) {
       setError(t('disconnectError'));
     } finally {
       setIsLoading(false);
@@ -174,16 +174,24 @@ export default function CardDavConnectionForm({
       if (!response.ok) {
         setError(data.error || t('syncFailed'));
       } else {
-        setSuccess(
-          t('syncSuccess', {
-            imported: data.imported || 0,
-            exported: data.exported || 0,
-            updated: data.updated || 0,
-          })
-        );
+        const pendingImports = data.pendingImports || 0;
+
+        // Build success message
+        let message = t('syncSuccess', {
+          imported: data.imported || 0,
+          exported: data.exported || 0,
+          updated: data.updated || 0,
+        });
+
+        // Add pending imports message if any
+        if (pendingImports > 0) {
+          message += ' ' + t('syncPendingImports', { count: pendingImports });
+        }
+
+        setSuccess(message);
         router.refresh();
       }
-    } catch (err) {
+    } catch (_err) {
       setError(t('syncError'));
     } finally {
       setIsSyncing(false);
@@ -357,11 +365,16 @@ export default function CardDavConnectionForm({
             <button
               type="button"
               onClick={handleManualSync}
-              disabled={isSyncing}
+              disabled={isSyncing || !syncEnabled}
               className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSyncing ? t('syncing') : t('syncNow')}
             </button>
+            {!syncEnabled && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 text-center">
+                {t('syncDisabledWarning')}
+              </p>
+            )}
           </div>
         </div>
       )}
