@@ -1,0 +1,35 @@
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { bidirectionalSync } from '@/lib/carddav/sync';
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Perform bidirectional sync
+    const result = await bidirectionalSync(session.user.id);
+
+    return NextResponse.json({
+      success: true,
+      imported: result.imported,
+      exported: result.exported,
+      conflicts: result.conflicts,
+      errors: result.errors,
+      errorMessages: result.errorMessages,
+    });
+  } catch (error) {
+    console.error('Manual sync failed:', error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Sync failed',
+      },
+      { status: 500 }
+    );
+  }
+}
