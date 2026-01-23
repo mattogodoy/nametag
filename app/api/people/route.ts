@@ -3,6 +3,7 @@ import { createPersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canCreateResource, canEnableReminder } from '@/lib/billing';
+import { autoExportPerson } from '@/lib/carddav/auto-export';
 
 // GET /api/people - List all people for the current user
 export const GET = withAuth(async (_request, session) => {
@@ -297,6 +298,12 @@ export const POST = withAuth(async (request, session) => {
         },
       });
     }
+
+    // Auto-export to CardDAV if enabled (don't await - let it run in background)
+    autoExportPerson(person.id).catch((error) => {
+      console.error('Auto-export failed:', error);
+      // Don't fail the request if auto-export fails
+    });
 
     return apiResponse.created({ person });
   } catch (error) {
