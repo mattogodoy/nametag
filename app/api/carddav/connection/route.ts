@@ -9,6 +9,9 @@ const connectionSchema = z.object({
   username: z.string().min(1),
   password: z.string().optional(),
   provider: z.string().nullable().optional(),
+  syncEnabled: z.boolean().optional(),
+  autoExportNew: z.boolean().optional(),
+  autoSyncInterval: z.number().int().min(60).max(86400).optional(), // 1 min to 24 hours
 });
 
 export async function POST(request: Request) {
@@ -29,7 +32,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const { serverUrl, username, password, provider } = validationResult.data;
+    const {
+      serverUrl,
+      username,
+      password,
+      provider,
+      syncEnabled,
+      autoExportNew,
+      autoSyncInterval,
+    } = validationResult.data;
 
     if (!password) {
       return NextResponse.json(
@@ -61,9 +72,9 @@ export async function POST(request: Request) {
         username,
         password: hashedPassword,
         provider: provider || null,
-        syncEnabled: true,
-        autoExportNew: true,
-        autoSyncInterval: 300, // 5 minutes
+        syncEnabled: syncEnabled ?? true,
+        autoExportNew: autoExportNew ?? true,
+        autoSyncInterval: autoSyncInterval ?? 300, // Default: 5 minutes
       },
     });
 
@@ -98,7 +109,15 @@ export async function PUT(request: Request) {
       );
     }
 
-    const { serverUrl, username, password, provider } = validationResult.data;
+    const {
+      serverUrl,
+      username,
+      password,
+      provider,
+      syncEnabled,
+      autoExportNew,
+      autoSyncInterval,
+    } = validationResult.data;
 
     // Check if connection exists
     const existingConnection = await prisma.cardDavConnection.findUnique({
@@ -118,6 +137,9 @@ export async function PUT(request: Request) {
       username: string;
       password?: string;
       provider: string | null;
+      syncEnabled?: boolean;
+      autoExportNew?: boolean;
+      autoSyncInterval?: number;
     } = {
       serverUrl,
       username,
@@ -127,6 +149,17 @@ export async function PUT(request: Request) {
     // Only update password if provided
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    // Update sync settings if provided
+    if (syncEnabled !== undefined) {
+      updateData.syncEnabled = syncEnabled;
+    }
+    if (autoExportNew !== undefined) {
+      updateData.autoExportNew = autoExportNew;
+    }
+    if (autoSyncInterval !== undefined) {
+      updateData.autoSyncInterval = autoSyncInterval;
     }
 
     // Update connection
