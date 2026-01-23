@@ -214,6 +214,14 @@
         "errors": "{count} errors",
         "errorDetails": "Error details",
         "noContactsSelected": "Please select at least one contact to import"
+      },
+      "notifications": {
+        "newContactsFound": "{count} new contacts found",
+        "newContactsFoundDescription": "New contacts are available to import from your CardDAV server",
+        "viewPending": "View Pending Imports",
+        "autoExportEnabled": "Auto-export enabled",
+        "autoExportDisabled": "Auto-export disabled",
+        "autoExportDescription": "Automatically export new contacts to CardDAV server"
       }
     },
     "billing": {

@@ -3,6 +3,7 @@ import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/v
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canEnableReminder } from '@/lib/billing';
+import { autoUpdatePerson } from '@/lib/carddav/auto-export';
 
 // GET /api/people/[id] - Get a single person
 export const GET = withAuth(async (_request, session, context) => {
@@ -310,6 +311,12 @@ export const PUT = withAuth(async (request, session, context) => {
         customFields: true,
         importantDates: true,
       },
+    });
+
+    // Auto-update on CardDAV if enabled (don't await - let it run in background)
+    autoUpdatePerson(person.id).catch((error) => {
+      console.error('Auto-update failed:', error);
+      // Don't fail the request if auto-update fails
     });
 
     return apiResponse.ok({ person });
