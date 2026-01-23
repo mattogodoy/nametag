@@ -1,12 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient, AddressBook } from './client';
 import { personToVCard, vCardToPerson } from './vcard';
+import { withRetry, categorizeError } from './retry';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
 interface SyncResult {
   imported: number;
   exported: number;
+  updated: number;
   conflicts: number;
   errors: number;
   errorMessages: string[];
@@ -30,6 +32,7 @@ export async function syncFromServer(
   const result: SyncResult = {
     imported: 0,
     exported: 0,
+    updated: 0,
     conflicts: 0,
     errors: 0,
     errorMessages: [],
@@ -52,8 +55,12 @@ export async function syncFromServer(
     // Create CardDAV client
     const client = await createCardDavClient(connection);
 
-    // Get address books
-    const addressBooks = await client.fetchAddressBooks();
+    // Get address books with retry
+    const addressBooks = await withRetry(
+      () => client.fetchAddressBooks(),
+      { maxAttempts: 3 }
+    );
+
     if (addressBooks.length === 0) {
       throw new Error('No address books found');
     }
@@ -61,8 +68,11 @@ export async function syncFromServer(
     // Use the first address book
     const addressBook = addressBooks[0];
 
-    // Fetch vCards from address book
-    const vCards = await client.fetchVCards(addressBook);
+    // Fetch vCards from address book with retry
+    const vCards = await withRetry(
+      () => client.fetchVCards(addressBook),
+      { maxAttempts: 3 }
+    );
 
     // Process each vCard
     for (const vCard of vCards) {
@@ -203,6 +213,9 @@ export async function syncFromServer(
   } catch (error) {
     console.error('Sync from server failed:', error);
 
+    // Categorize error for better user feedback
+    const categorized = categorizeError(error);
+
     // Update connection with error
     const connection = await prisma.cardDavConnection.findUnique({
       where: { userId },
@@ -212,13 +225,16 @@ export async function syncFromServer(
       await prisma.cardDavConnection.update({
         where: { id: connection.id },
         data: {
-          lastError: error instanceof Error ? error.message : 'Unknown error',
+          lastError: categorized.userMessage,
           lastErrorAt: new Date(),
         },
       });
     }
 
-    throw error;
+    // Re-throw with user-friendly message
+    const enhancedError = new Error(categorized.userMessage);
+    (enhancedError as { category?: string }).category = categorized.category;
+    throw enhancedError;
   }
 }
 
@@ -231,6 +247,7 @@ export async function syncToServer(
   const result: SyncResult = {
     imported: 0,
     exported: 0,
+    updated: 0,
     conflicts: 0,
     errors: 0,
     errorMessages: [],
@@ -253,8 +270,12 @@ export async function syncToServer(
     // Create CardDAV client
     const client = await createCardDavClient(connection);
 
-    // Get address books
-    const addressBooks = await client.fetchAddressBooks();
+    // Get address books with retry
+    const addressBooks = await withRetry(
+      () => client.fetchAddressBooks(),
+      { maxAttempts: 3 }
+    );
+
     if (addressBooks.length === 0) {
       throw new Error('No address books found');
     }
@@ -304,21 +325,23 @@ export async function syncToServer(
         const vCardData = personToVCard(personWithAllRelations);
 
         if (mapping.href) {
-          // Update existing vCard
+          // Update existing vCard with retry
           const vCard = {
             url: mapping.href,
             etag: mapping.etag || '',
             data: '',
           };
-          await client.updateVCard(vCard, vCardData);
-          result.exported++;
+          await withRetry(
+            () => client.updateVCard(vCard, vCardData),
+            { maxAttempts: 3 }
+          );
+          result.updated++;
         } else {
-          // Create new vCard
+          // Create new vCard with retry
           const filename = `${mapping.uid || uuidv4()}.vcf`;
-          const created = await client.createVCard(
-            addressBook,
-            vCardData,
-            filename
+          const created = await withRetry(
+            () => client.createVCard(addressBook, vCardData, filename),
+            { maxAttempts: 3 }
           );
 
           await prisma.cardDavMapping.update({
@@ -364,7 +387,29 @@ export async function syncToServer(
     return result;
   } catch (error) {
     console.error('Sync to server failed:', error);
-    throw error;
+
+    // Categorize error for better user feedback
+    const categorized = categorizeError(error);
+
+    // Update connection with error
+    const connection = await prisma.cardDavConnection.findUnique({
+      where: { userId },
+    });
+
+    if (connection) {
+      await prisma.cardDavConnection.update({
+        where: { id: connection.id },
+        data: {
+          lastError: categorized.userMessage,
+          lastErrorAt: new Date(),
+        },
+      });
+    }
+
+    // Re-throw with user-friendly message
+    const enhancedError = new Error(categorized.userMessage);
+    (enhancedError as { category?: string }).category = categorized.category;
+    throw enhancedError;
   }
 }
 
