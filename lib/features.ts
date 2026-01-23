@@ -42,6 +42,9 @@ export const features = {
 
   /** Require Redis (fail if not configured) */
   requireRedis: () => isSaasMode(),
+
+  /** Enable CardDAV sync integration */
+  cardDav: () => true, // Available in all modes
 };
 
 /**
