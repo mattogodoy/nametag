@@ -12,6 +12,7 @@ interface CardDavConnection {
   provider: string | null;
   syncEnabled: boolean;
   autoExportNew: boolean;
+  autoSyncInterval: number;
   lastSyncAt: Date | null;
   lastError: string | null;
 }
@@ -32,6 +33,9 @@ export default function CardDavConnectionForm({
   const [serverUrl, setServerUrl] = useState(existingConnection?.serverUrl || '');
   const [username, setUsername] = useState(existingConnection?.username || '');
   const [password, setPassword] = useState('');
+  const [syncEnabled, setSyncEnabled] = useState(existingConnection?.syncEnabled ?? true);
+  const [autoExportNew, setAutoExportNew] = useState(existingConnection?.autoExportNew ?? true);
+  const [autoSyncInterval, setAutoSyncInterval] = useState(existingConnection?.autoSyncInterval || 300);
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [error, setError] = useState('');
@@ -103,6 +107,9 @@ export default function CardDavConnectionForm({
           username,
           password: password || undefined,
           provider: provider !== 'custom' ? provider : null,
+          syncEnabled,
+          autoExportNew,
+          autoSyncInterval,
         }),
       });
 
@@ -229,6 +236,68 @@ export default function CardDavConnectionForm({
           </p>
         )}
       </div>
+
+      {/* Sync Settings */}
+      {existingConnection && (
+        <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {t('syncSettings')}
+          </h3>
+
+          {/* Sync Enabled */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="syncEnabled"
+              checked={syncEnabled}
+              onChange={(e) => setSyncEnabled(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="syncEnabled" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              {t('syncEnabledLabel')}
+            </label>
+          </div>
+
+          {/* Auto Export New */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="autoExportNew"
+              checked={autoExportNew}
+              onChange={(e) => setAutoExportNew(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="autoExportNew" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              {t('autoExportNewLabel')}
+            </label>
+          </div>
+
+          {/* Sync Interval */}
+          <div>
+            <label htmlFor="autoSyncInterval" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('syncIntervalLabel')}
+            </label>
+            <select
+              id="autoSyncInterval"
+              value={autoSyncInterval}
+              onChange={(e) => setAutoSyncInterval(Number(e.target.value))}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value={60}>{t('interval1min')}</option>
+              <option value={300}>{t('interval5min')}</option>
+              <option value={600}>{t('interval10min')}</option>
+              <option value={1800}>{t('interval30min')}</option>
+              <option value={3600}>{t('interval1hour')}</option>
+              <option value={21600}>{t('interval6hours')}</option>
+              <option value={43200}>{t('interval12hours')}</option>
+              <option value={86400}>{t('interval24hours')}</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t('syncIntervalHelp')}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Test Connection Result */}
       {testResult && (
