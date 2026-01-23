@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { discoverNewContacts } from '@/lib/carddav/discover';
 
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
     const session = await auth();
 

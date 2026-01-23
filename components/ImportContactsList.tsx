@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { vCardToPerson } from '@/lib/carddav/vcard';
+import { formatDateTime } from '@/lib/date-format';
 
 interface PendingImport {
   id: string;
@@ -29,7 +30,7 @@ export default function ImportContactsList({
   pendingImports,
   groups,
 }: ImportContactsListProps) {
-  const t = useTranslations('carddav.import');
+  const t = useTranslations('settings.carddav.import');
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
@@ -259,7 +260,7 @@ export default function ImportContactsList({
                   )}
 
                   <p className="mt-2 text-xs text-muted">
-                    {t('discovered')}: {new Date(pendingImport.discoveredAt).toLocaleString()}
+                    {t('discovered')}: {formatDateTime(pendingImport.discoveredAt)}
                   </p>
                 </div>
               </div>

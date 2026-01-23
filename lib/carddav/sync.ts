@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { createCardDavClient, AddressBook } from './client';
+import { createCardDavClient } from './client';
 import { personToVCard, vCardToPerson } from './vcard';
 import { withRetry, categorizeError } from './retry';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,6 +12,7 @@ interface SyncResult {
   conflicts: number;
   errors: number;
   errorMessages: string[];
+  pendingImports?: number; // New contacts discovered and added to pending imports
 }
 
 /**
@@ -36,6 +37,7 @@ export async function syncFromServer(
     conflicts: 0,
     errors: 0,
     errorMessages: [],
+    pendingImports: 0,
   };
 
   try {
@@ -120,7 +122,6 @@ export async function syncFromServer(
             customFields: mapping.person.customFields,
           };
 
-          const localHash = generatePersonHash(localData);
           const remoteHash = generatePersonHash(parsedData);
 
           // Check if both local and remote changed since last sync
@@ -188,6 +189,7 @@ export async function syncFromServer(
               displayName: parsedData.name || parsedData.surname || 'Unknown',
             },
           });
+          result.pendingImports = (result.pendingImports || 0) + 1;
         }
       } catch (error) {
         console.error('Error processing vCard:', error);
@@ -251,6 +253,7 @@ export async function syncToServer(
     conflicts: 0,
     errors: 0,
     errorMessages: [],
+    pendingImports: 0,
   };
 
   try {
@@ -426,12 +429,14 @@ export async function bidirectionalSync(userId: string): Promise<SyncResult> {
   return {
     imported: pullResult.imported,
     exported: pushResult.exported,
+    updated: pullResult.updated + pushResult.updated,
     conflicts: pullResult.conflicts + pushResult.conflicts,
     errors: pullResult.errors + pushResult.errors,
     errorMessages: [
       ...pullResult.errorMessages,
       ...pushResult.errorMessages,
     ],
+    pendingImports: (pullResult.pendingImports || 0) + (pushResult.pendingImports || 0),
   };
 }
 
