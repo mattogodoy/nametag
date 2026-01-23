@@ -13,6 +13,7 @@ interface CardDavConnection {
   syncEnabled: boolean;
   autoExportNew: boolean;
   autoSyncInterval: number;
+  importMode: string;
   lastSyncAt: Date | null;
   lastError: string | null;
 }
@@ -36,8 +37,10 @@ export default function CardDavConnectionForm({
   const [syncEnabled, setSyncEnabled] = useState(existingConnection?.syncEnabled ?? true);
   const [autoExportNew, setAutoExportNew] = useState(existingConnection?.autoExportNew ?? true);
   const [autoSyncInterval, setAutoSyncInterval] = useState(existingConnection?.autoSyncInterval || 300);
+  const [importMode, setImportMode] = useState(existingConnection?.importMode || 'manual');
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -110,6 +113,7 @@ export default function CardDavConnectionForm({
           syncEnabled,
           autoExportNew,
           autoSyncInterval,
+          importMode,
         }),
       });
 
@@ -152,6 +156,37 @@ export default function CardDavConnectionForm({
       setError(t('disconnectError'));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch('/api/carddav/sync', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || t('syncFailed'));
+      } else {
+        setSuccess(
+          t('syncSuccess', {
+            imported: data.imported || 0,
+            exported: data.exported || 0,
+            updated: data.updated || 0,
+          })
+        );
+        router.refresh();
+      }
+    } catch (err) {
+      setError(t('syncError'));
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -296,6 +331,38 @@ export default function CardDavConnectionForm({
               {t('syncIntervalHelp')}
             </p>
           </div>
+
+          {/* Import Mode */}
+          <div>
+            <label htmlFor="importMode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('importModeLabel')}
+            </label>
+            <select
+              id="importMode"
+              value={importMode}
+              onChange={(e) => setImportMode(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="manual">{t('importModeManual')}</option>
+              <option value="notify">{t('importModeNotify')}</option>
+              <option value="auto">{t('importModeAuto')}</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t('importModeHelp')}
+            </p>
+          </div>
+
+          {/* Manual Sync Button */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isSyncing ? t('syncing') : t('syncNow')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -396,6 +463,22 @@ export default function CardDavConnectionForm({
           <li>{t('helpNextcloud')}</li>
         </ul>
       </div>
+
+      {/* Troubleshooting Tips */}
+      {existingConnection && existingConnection.lastError && (
+        <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+          <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">
+            {t('troubleshootingTitle')}
+          </h3>
+          <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1 list-disc list-inside">
+            <li>{t('troubleshootingCheckCredentials')}</li>
+            <li>{t('troubleshootingCheckUrl')}</li>
+            <li>{t('troubleshootingCheckNetwork')}</li>
+            <li>{t('troubleshootingCheckAppPassword')}</li>
+            <li>{t('troubleshootingTestConnection')}</li>
+          </ul>
+        </div>
+      )}
     </form>
   );
 }
