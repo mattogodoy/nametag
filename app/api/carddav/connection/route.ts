@@ -12,6 +12,7 @@ const connectionSchema = z.object({
   syncEnabled: z.boolean().optional(),
   autoExportNew: z.boolean().optional(),
   autoSyncInterval: z.number().int().min(60).max(86400).optional(), // 1 min to 24 hours
+  importMode: z.enum(['manual', 'notify', 'auto']).optional(),
 });
 
 export async function POST(request: Request) {
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
       syncEnabled,
       autoExportNew,
       autoSyncInterval,
+      importMode,
     } = validationResult.data;
 
     if (!password) {
@@ -75,6 +77,7 @@ export async function POST(request: Request) {
         syncEnabled: syncEnabled ?? true,
         autoExportNew: autoExportNew ?? true,
         autoSyncInterval: autoSyncInterval ?? 300, // Default: 5 minutes
+        importMode: importMode ?? 'manual', // Default: manual
       },
     });
 
@@ -117,6 +120,7 @@ export async function PUT(request: Request) {
       syncEnabled,
       autoExportNew,
       autoSyncInterval,
+      importMode,
     } = validationResult.data;
 
     // Check if connection exists
@@ -140,6 +144,7 @@ export async function PUT(request: Request) {
       syncEnabled?: boolean;
       autoExportNew?: boolean;
       autoSyncInterval?: number;
+      importMode?: string;
     } = {
       serverUrl,
       username,
@@ -160,6 +165,9 @@ export async function PUT(request: Request) {
     }
     if (autoSyncInterval !== undefined) {
       updateData.autoSyncInterval = autoSyncInterval;
+    }
+    if (importMode !== undefined) {
+      updateData.importMode = importMode;
     }
 
     // Update connection
