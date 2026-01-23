@@ -723,6 +723,30 @@
           "work": "Trabajo",
           "other": "Otro"
         }
+      },
+      "customFields": {
+        "label": "Campos personalizados",
+        "description": "Agrega propiedades personalizadas a este contacto (almacenadas como campos X- de vCard)",
+        "add": "Agregar campo",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "remove": "Eliminar",
+        "preset": "Tipo de campo",
+        "keyPlaceholder": "Clave personalizada (ej. X-DEPARTAMENTO)",
+        "valuePlaceholder": "Valor",
+        "noFields": "No se han agregado campos personalizados",
+        "presets": {
+          "spouse": "Cónyuge",
+          "manager": "Gerente",
+          "assistant": "Asistente",
+          "twitter": "Usuario de Twitter",
+          "linkedin": "Perfil de LinkedIn",
+          "facebook": "Perfil de Facebook",
+          "instagram": "Usuario de Instagram",
+          "github": "Perfil de GitHub",
+          "custom": "Campo personalizado"
+        }
       }
     }
   },

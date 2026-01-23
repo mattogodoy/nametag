@@ -723,6 +723,30 @@
           "work": "Work",
           "other": "Other"
         }
+      },
+      "customFields": {
+        "label": "Custom Fields",
+        "description": "Add custom properties to this contact (stored as X- vCard fields)",
+        "add": "Add Field",
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "remove": "Remove",
+        "preset": "Field Type",
+        "keyPlaceholder": "Custom key (e.g., X-DEPARTMENT)",
+        "valuePlaceholder": "Value",
+        "noFields": "No custom fields added yet",
+        "presets": {
+          "spouse": "Spouse",
+          "manager": "Manager",
+          "assistant": "Assistant",
+          "twitter": "Twitter Handle",
+          "linkedin": "LinkedIn Profile",
+          "facebook": "Facebook Profile",
+          "instagram": "Instagram Handle",
+          "github": "GitHub Profile",
+          "custom": "Custom Field"
+        }
       }
     }
   },
