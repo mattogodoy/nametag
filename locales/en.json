@@ -168,7 +168,29 @@
       "helpGoogle": "Google: Use your Gmail address and create an app password in your Google Account settings",
       "helpIcloud": "iCloud: Use your Apple ID and create an app-specific password in your Apple ID settings",
       "helpOutlook": "Outlook: Use your Outlook email and account password",
-      "helpNextcloud": "Nextcloud/Radicale: Enter your server URL, username, and password"
+      "helpNextcloud": "Nextcloud/Radicale: Enter your server URL, username, and password",
+      "conflicts": {
+        "title": "Sync Conflicts",
+        "noConflicts": "No conflicts",
+        "noConflictsDescription": "All contacts are in sync",
+        "conflictsFound": "{count} sync conflicts need your attention",
+        "conflictDetected": "Conflict detected on {date}",
+        "localVersion": "Local Version (Nametag)",
+        "remoteVersion": "Remote Version (Server)",
+        "name": "Name",
+        "nickname": "Nickname",
+        "organization": "Organization",
+        "jobTitle": "Job Title",
+        "phones": "Phones",
+        "emails": "Emails",
+        "addresses": "Addresses",
+        "notes": "Notes",
+        "none": "None",
+        "chooseVersion": "Which version do you want to keep?",
+        "keepLocal": "Keep Local",
+        "keepRemote": "Keep Remote",
+        "resolving": "Resolving..."
+      }
     },
     "billing": {
       "title": "Billing",

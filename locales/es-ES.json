@@ -168,7 +168,29 @@
       "helpGoogle": "Google: Usa tu dirección de Gmail y crea una contraseña de aplicación en la configuración de tu cuenta de Google",
       "helpIcloud": "iCloud: Usa tu Apple ID y crea una contraseña específica de aplicación en la configuración de tu Apple ID",
       "helpOutlook": "Outlook: Usa tu correo de Outlook y contraseña de cuenta",
-      "helpNextcloud": "Nextcloud/Radicale: Introduce la URL de tu servidor, nombre de usuario y contraseña"
+      "helpNextcloud": "Nextcloud/Radicale: Introduce la URL de tu servidor, nombre de usuario y contraseña",
+      "conflicts": {
+        "title": "Conflictos de sincronización",
+        "noConflicts": "Sin conflictos",
+        "noConflictsDescription": "Todos los contactos están sincronizados",
+        "conflictsFound": "{count} conflictos de sincronización necesitan tu atención",
+        "conflictDetected": "Conflicto detectado el {date}",
+        "localVersion": "Versión local (Nametag)",
+        "remoteVersion": "Versión remota (Servidor)",
+        "name": "Nombre",
+        "nickname": "Apodo",
+        "organization": "Organización",
+        "jobTitle": "Puesto de trabajo",
+        "phones": "Teléfonos",
+        "emails": "Correos electrónicos",
+        "addresses": "Direcciones",
+        "notes": "Notas",
+        "none": "Ninguno",
+        "chooseVersion": "¿Qué versión quieres conservar?",
+        "keepLocal": "Mantener local",
+        "keepRemote": "Mantener remota",
+        "resolving": "Resolviendo..."
+      }
     },
     "billing": {
       "title": "Facturación",

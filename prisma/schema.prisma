@@ -648,6 +648,7 @@ model CardDavMapping {
   // Relations
   connection CardDavConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   person     Person             @relation(fields: [personId], references: [id], onDelete: Cascade)
+  conflicts  CardDavConflict[]
 
   @@unique([connectionId, uid])
   @@index([connectionId])
@@ -691,6 +692,9 @@ model CardDavConflict {
   resolvedBy    String?  // "user", "auto"
 
   createdAt     DateTime @default(now())
+
+  // Relations
+  mapping CardDavMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
 
   @@index([mappingId])
   @@index([resolvedAt])
