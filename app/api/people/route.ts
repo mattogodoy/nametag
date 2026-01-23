@@ -18,6 +18,13 @@ export const GET = withAuth(async (_request, session) => {
             group: true,
           },
         },
+        phoneNumbers: true,
+        emails: true,
+        addresses: true,
+        urls: true,
+        imHandles: true,
+        locations: true,
+        customFields: true,
       },
       orderBy: {
         name: 'asc',
@@ -55,6 +62,15 @@ export const POST = withAuth(async (request, session) => {
       middleName,
       secondLastName,
       nickname,
+      prefix,
+      suffix,
+      uid,
+      organization,
+      jobTitle,
+      role,
+      photo,
+      gender,
+      anniversary,
       lastContact,
       notes,
       relationshipToUserId,
@@ -64,6 +80,13 @@ export const POST = withAuth(async (request, session) => {
       contactReminderEnabled,
       contactReminderInterval,
       contactReminderIntervalUnit,
+      phoneNumbers,
+      emails,
+      addresses,
+      urls,
+      imHandles,
+      locations,
+      customFields,
     } = validation.data;
 
     // Relationship type is always required when creating a person
@@ -122,6 +145,22 @@ export const POST = withAuth(async (request, session) => {
       middleName: sanitizedMiddleName,
       secondLastName: sanitizedSecondLastName,
       nickname: sanitizedNickname,
+
+      // vCard identification fields
+      prefix: prefix || null,
+      suffix: suffix || null,
+      uid: uid || null,
+
+      // Professional fields
+      organization: organization || null,
+      jobTitle: jobTitle || null,
+      role: role || null,
+
+      // Other vCard fields
+      photo: photo || null,
+      gender: gender || null,
+      anniversary: anniversary ? new Date(anniversary) : null,
+
       lastContact: lastContact ? new Date(lastContact) : null,
       notes: sanitizedNotes,
       contactReminderEnabled: contactReminderEnabled ?? false,
@@ -143,6 +182,74 @@ export const POST = withAuth(async (request, session) => {
               reminderType: date.reminderEnabled ? date.reminderType : null,
               reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
               reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+            })),
+          }
+        : undefined,
+      // Multi-value vCard fields
+      phoneNumbers: phoneNumbers && phoneNumbers.length > 0
+        ? {
+            create: phoneNumbers.map((phone) => ({
+              type: phone.type,
+              number: phone.number,
+              isPrimary: phone.isPrimary ?? false,
+            })),
+          }
+        : undefined,
+      emails: emails && emails.length > 0
+        ? {
+            create: emails.map((email) => ({
+              type: email.type,
+              email: email.email,
+              isPrimary: email.isPrimary ?? false,
+            })),
+          }
+        : undefined,
+      addresses: addresses && addresses.length > 0
+        ? {
+            create: addresses.map((addr) => ({
+              type: addr.type,
+              street: addr.street || null,
+              locality: addr.locality || null,
+              region: addr.region || null,
+              postalCode: addr.postalCode || null,
+              country: addr.country || null,
+              isPrimary: addr.isPrimary ?? false,
+            })),
+          }
+        : undefined,
+      urls: urls && urls.length > 0
+        ? {
+            create: urls.map((url) => ({
+              type: url.type,
+              url: url.url,
+              label: url.label || null,
+            })),
+          }
+        : undefined,
+      imHandles: imHandles && imHandles.length > 0
+        ? {
+            create: imHandles.map((im) => ({
+              protocol: im.protocol,
+              handle: im.handle,
+            })),
+          }
+        : undefined,
+      locations: locations && locations.length > 0
+        ? {
+            create: locations.map((loc) => ({
+              type: loc.type,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              label: loc.label || null,
+            })),
+          }
+        : undefined,
+      customFields: customFields && customFields.length > 0
+        ? {
+            create: customFields.map((field) => ({
+              key: field.key,
+              value: field.value,
+              type: field.type || null,
             })),
           }
         : undefined,

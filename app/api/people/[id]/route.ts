@@ -26,6 +26,14 @@ export const GET = withAuth(async (_request, session, context) => {
             relatedPerson: true,
           },
         },
+        phoneNumbers: true,
+        emails: true,
+        addresses: true,
+        urls: true,
+        imHandles: true,
+        locations: true,
+        customFields: true,
+        importantDates: true,
       },
     });
 
@@ -57,6 +65,15 @@ export const PUT = withAuth(async (request, session, context) => {
       middleName,
       secondLastName,
       nickname,
+      prefix,
+      suffix,
+      uid,
+      organization,
+      jobTitle,
+      role,
+      photo,
+      gender,
+      anniversary,
       lastContact,
       notes,
       relationshipToUserId,
@@ -65,6 +82,13 @@ export const PUT = withAuth(async (request, session, context) => {
       contactReminderEnabled,
       contactReminderInterval,
       contactReminderIntervalUnit,
+      phoneNumbers,
+      emails,
+      addresses,
+      urls,
+      imHandles,
+      locations,
+      customFields,
     } = validation.data;
 
     // Check if person exists and belongs to user
@@ -119,46 +143,151 @@ export const PUT = withAuth(async (request, session, context) => {
     const sanitizedNickname = nickname ? sanitizeName(nickname) : null;
     const sanitizedNotes = notes ? sanitizeNotes(notes) : null;
 
-    // Build update data
-    const updateData = {
-      name: sanitizedName,
-      surname: sanitizedSurname,
-      middleName: sanitizedMiddleName,
-      secondLastName: sanitizedSecondLastName,
-      nickname: sanitizedNickname,
-      lastContact: lastContact ? new Date(lastContact) : null,
-      notes: sanitizedNotes,
-      contactReminderEnabled: contactReminderEnabled ?? false,
-      contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
-      contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
-      groups: groupIds
-        ? {
-            deleteMany: {},
-            create: groupIds.map((groupId) => ({
-              groupId,
-            })),
-          }
-        : undefined,
-      importantDates: importantDates
-        ? {
-            deleteMany: {},
-            create: importantDates.map((date) => ({
-              title: date.title,
-              date: new Date(date.date),
-              reminderEnabled: date.reminderEnabled ?? false,
-              reminderType: date.reminderEnabled ? date.reminderType : null,
-              reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
-              reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
-            })),
-          }
-        : undefined,
-      // Only update relationshipToUserId if it's provided
-      relationshipToUser: relationshipToUserId !== undefined
-        ? relationshipToUserId
-          ? { connect: { id: relationshipToUserId } }
-          : { disconnect: true }
-        : undefined,
-    };
+    // Build update data (only include fields that were provided)
+    const updateData: Record<string, unknown> = {};
+
+    if (name !== undefined) updateData.name = sanitizedName;
+    if (surname !== undefined) updateData.surname = sanitizedSurname;
+    if (middleName !== undefined) updateData.middleName = sanitizedMiddleName;
+    if (secondLastName !== undefined) updateData.secondLastName = sanitizedSecondLastName;
+    if (nickname !== undefined) updateData.nickname = sanitizedNickname;
+
+    // vCard identification fields
+    if (prefix !== undefined) updateData.prefix = prefix || null;
+    if (suffix !== undefined) updateData.suffix = suffix || null;
+    if (uid !== undefined) updateData.uid = uid || null;
+
+    // Professional fields
+    if (organization !== undefined) updateData.organization = organization || null;
+    if (jobTitle !== undefined) updateData.jobTitle = jobTitle || null;
+    if (role !== undefined) updateData.role = role || null;
+
+    // Other vCard fields
+    if (photo !== undefined) updateData.photo = photo || null;
+    if (gender !== undefined) updateData.gender = gender || null;
+    if (anniversary !== undefined) updateData.anniversary = anniversary ? new Date(anniversary) : null;
+
+    if (lastContact !== undefined) updateData.lastContact = lastContact ? new Date(lastContact) : null;
+    if (notes !== undefined) updateData.notes = sanitizedNotes;
+    if (contactReminderEnabled !== undefined) {
+      updateData.contactReminderEnabled = contactReminderEnabled;
+      updateData.contactReminderInterval = contactReminderEnabled ? contactReminderInterval : null;
+      updateData.contactReminderIntervalUnit = contactReminderEnabled ? contactReminderIntervalUnit : null;
+    }
+
+    // Groups (deleteMany + create pattern)
+    if (groupIds !== undefined) {
+      updateData.groups = {
+        deleteMany: {},
+        create: groupIds.map((groupId) => ({
+          groupId,
+        })),
+      };
+    }
+
+    // Important dates (deleteMany + create pattern)
+    if (importantDates !== undefined) {
+      updateData.importantDates = {
+        deleteMany: {},
+        create: importantDates.map((date) => ({
+          title: date.title,
+          date: new Date(date.date),
+          reminderEnabled: date.reminderEnabled ?? false,
+          reminderType: date.reminderEnabled ? date.reminderType : null,
+          reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
+          reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+        })),
+      };
+    }
+
+    // Multi-value vCard fields (deleteMany + create pattern)
+    if (phoneNumbers !== undefined) {
+      updateData.phoneNumbers = {
+        deleteMany: {},
+        create: phoneNumbers.map((phone) => ({
+          type: phone.type,
+          number: phone.number,
+          isPrimary: phone.isPrimary ?? false,
+        })),
+      };
+    }
+
+    if (emails !== undefined) {
+      updateData.emails = {
+        deleteMany: {},
+        create: emails.map((email) => ({
+          type: email.type,
+          email: email.email,
+          isPrimary: email.isPrimary ?? false,
+        })),
+      };
+    }
+
+    if (addresses !== undefined) {
+      updateData.addresses = {
+        deleteMany: {},
+        create: addresses.map((addr) => ({
+          type: addr.type,
+          street: addr.street || null,
+          locality: addr.locality || null,
+          region: addr.region || null,
+          postalCode: addr.postalCode || null,
+          country: addr.country || null,
+          isPrimary: addr.isPrimary ?? false,
+        })),
+      };
+    }
+
+    if (urls !== undefined) {
+      updateData.urls = {
+        deleteMany: {},
+        create: urls.map((url) => ({
+          type: url.type,
+          url: url.url,
+          label: url.label || null,
+        })),
+      };
+    }
+
+    if (imHandles !== undefined) {
+      updateData.imHandles = {
+        deleteMany: {},
+        create: imHandles.map((im) => ({
+          protocol: im.protocol,
+          handle: im.handle,
+        })),
+      };
+    }
+
+    if (locations !== undefined) {
+      updateData.locations = {
+        deleteMany: {},
+        create: locations.map((loc) => ({
+          type: loc.type,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          label: loc.label || null,
+        })),
+      };
+    }
+
+    if (customFields !== undefined) {
+      updateData.customFields = {
+        deleteMany: {},
+        create: customFields.map((field) => ({
+          key: field.key,
+          value: field.value,
+          type: field.type || null,
+        })),
+      };
+    }
+
+    // Only update relationshipToUserId if it's provided
+    if (relationshipToUserId !== undefined) {
+      updateData.relationshipToUser = relationshipToUserId
+        ? { connect: { id: relationshipToUserId } }
+        : { disconnect: true };
+    }
 
     // Update person and handle group associations
     const person = await prisma.person.update({
@@ -172,6 +301,14 @@ export const PUT = withAuth(async (request, session, context) => {
             group: true,
           },
         },
+        phoneNumbers: true,
+        emails: true,
+        addresses: true,
+        urls: true,
+        imHandles: true,
+        locations: true,
+        customFields: true,
+        importantDates: true,
       },
     });
 
