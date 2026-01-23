@@ -222,6 +222,27 @@
         "autoExportEnabled": "Auto-exportación activada",
         "autoExportDisabled": "Auto-exportación desactivada",
         "autoExportDescription": "Exportar automáticamente nuevos contactos al servidor CardDAV"
+      },
+      "export": {
+        "title": "Exportación masiva",
+        "nothingToExport": "Todos los contactos ya están exportados",
+        "nothingToExportDescription": "Todos tus contactos han sido exportados a CardDAV",
+        "description": "{count} contactos disponibles para exportar a CardDAV",
+        "selectAll": "Seleccionar todos",
+        "deselectAll": "Deseleccionar todos",
+        "selected": "seleccionados",
+        "organization": "Organización",
+        "jobTitle": "Puesto de trabajo",
+        "email": "Correo electrónico",
+        "phone": "Teléfono",
+        "exportSelected": "Exportar {count} seleccionados",
+        "exporting": "Exportando...",
+        "exportComplete": "Exportación completa",
+        "exported": "{count} contactos exportados",
+        "skipped": "{count} ya exportados",
+        "errors": "{count} errores",
+        "errorDetails": "Detalles del error",
+        "noContactsSelected": "Por favor selecciona al menos un contacto para exportar"
       }
     },
     "billing": {
