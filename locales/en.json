@@ -190,6 +190,30 @@
         "keepLocal": "Keep Local",
         "keepRemote": "Keep Remote",
         "resolving": "Resolving..."
+      },
+      "import": {
+        "title": "Import Contacts",
+        "noPending": "No contacts to import",
+        "noPendingDescription": "All contacts from your CardDAV server have been imported",
+        "description": "{count} new contacts found on your CardDAV server",
+        "assignToGroups": "Assign to Groups (Optional)",
+        "assignToGroupsDescription": "Selected contacts will be added to these groups",
+        "selectAll": "Select All",
+        "deselectAll": "Deselect All",
+        "selected": "selected",
+        "organization": "Organization",
+        "jobTitle": "Job Title",
+        "email": "Email",
+        "phone": "Phone",
+        "discovered": "Discovered",
+        "importSelected": "Import {count} Selected",
+        "importing": "Importing...",
+        "importComplete": "Import Complete",
+        "imported": "{count} contacts imported",
+        "skipped": "{count} duplicates skipped",
+        "errors": "{count} errors",
+        "errorDetails": "Error details",
+        "noContactsSelected": "Please select at least one contact to import"
       }
     },
     "billing": {
