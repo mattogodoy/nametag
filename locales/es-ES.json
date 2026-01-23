@@ -500,6 +500,100 @@
         "remindOnceShort": "Recordar una vez",
         "remindEveryShort": "Recordar cada {interval} {unit}",
         "reminderLimitReached": "Límite de recordatorios alcanzado ({limit}). Mejora tu plan para añadir más."
+      },
+      "phones": {
+        "label": "Números de teléfono",
+        "add": "Agregar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "remove": "Eliminar",
+        "primary": "Principal",
+        "setPrimary": "Establecer como principal",
+        "numberPlaceholder": "Número de teléfono",
+        "noPhones": "No se han agregado números de teléfono",
+        "types": {
+          "mobile": "Móvil",
+          "home": "Casa",
+          "work": "Trabajo",
+          "fax": "Fax",
+          "other": "Otro"
+        }
+      },
+      "emails": {
+        "label": "Correos electrónicos",
+        "add": "Agregar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "remove": "Eliminar",
+        "primary": "Principal",
+        "setPrimary": "Establecer como principal",
+        "emailPlaceholder": "correo@ejemplo.com",
+        "noEmails": "No se han agregado correos electrónicos",
+        "types": {
+          "home": "Personal",
+          "work": "Trabajo",
+          "other": "Otro"
+        }
+      },
+      "addresses": {
+        "label": "Direcciones",
+        "add": "Agregar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "remove": "Eliminar",
+        "primary": "Principal",
+        "setPrimary": "Establecer como principal",
+        "streetPlaceholder": "Dirección",
+        "cityPlaceholder": "Ciudad",
+        "regionPlaceholder": "Estado/Provincia",
+        "postalCodePlaceholder": "Código postal",
+        "countryPlaceholder": "País",
+        "noAddresses": "No se han agregado direcciones",
+        "noAddressData": "(Sin datos de dirección)",
+        "types": {
+          "home": "Casa",
+          "work": "Trabajo",
+          "other": "Otro"
+        }
+      },
+      "urls": {
+        "label": "Sitios web",
+        "add": "Agregar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "remove": "Eliminar",
+        "urlPlaceholder": "https://ejemplo.com",
+        "labelPlaceholder": "Etiqueta (opcional)",
+        "noUrls": "No se han agregado sitios web",
+        "types": {
+          "personal": "Personal",
+          "work": "Trabajo",
+          "home": "Casa",
+          "other": "Otro"
+        }
+      },
+      "locations": {
+        "label": "Ubicaciones",
+        "add": "Agregar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "remove": "Eliminar",
+        "labelPlaceholder": "Etiqueta (ej. Oficina principal)",
+        "latitudePlaceholder": "Latitud (-90 a 90)",
+        "longitudePlaceholder": "Longitud (-180 a 180)",
+        "noLocations": "No se han agregado ubicaciones",
+        "viewOnMap": "Ver en mapa",
+        "coordinatesHelp": "Latitud: -90 a 90, Longitud: -180 a 180",
+        "types": {
+          "home": "Casa",
+          "work": "Trabajo",
+          "other": "Otro"
+        }
       }
     }
   },
