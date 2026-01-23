@@ -500,6 +500,100 @@
         "remindOnceShort": "Remind once",
         "remindEveryShort": "Remind every {interval} {unit}",
         "reminderLimitReached": "Reminder limit reached ({limit}). Upgrade to add more."
+      },
+      "phones": {
+        "label": "Phone Numbers",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "remove": "Remove",
+        "primary": "Primary",
+        "setPrimary": "Set as primary",
+        "numberPlaceholder": "Phone number",
+        "noPhones": "No phone numbers added yet",
+        "types": {
+          "mobile": "Mobile",
+          "home": "Home",
+          "work": "Work",
+          "fax": "Fax",
+          "other": "Other"
+        }
+      },
+      "emails": {
+        "label": "Email Addresses",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "remove": "Remove",
+        "primary": "Primary",
+        "setPrimary": "Set as primary",
+        "emailPlaceholder": "email@example.com",
+        "noEmails": "No email addresses added yet",
+        "types": {
+          "home": "Personal",
+          "work": "Work",
+          "other": "Other"
+        }
+      },
+      "addresses": {
+        "label": "Addresses",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "remove": "Remove",
+        "primary": "Primary",
+        "setPrimary": "Set as primary",
+        "streetPlaceholder": "Street address",
+        "cityPlaceholder": "City",
+        "regionPlaceholder": "State/Province",
+        "postalCodePlaceholder": "Postal code",
+        "countryPlaceholder": "Country",
+        "noAddresses": "No addresses added yet",
+        "noAddressData": "(No address data)",
+        "types": {
+          "home": "Home",
+          "work": "Work",
+          "other": "Other"
+        }
+      },
+      "urls": {
+        "label": "Websites",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "remove": "Remove",
+        "urlPlaceholder": "https://example.com",
+        "labelPlaceholder": "Label (optional)",
+        "noUrls": "No websites added yet",
+        "types": {
+          "personal": "Personal",
+          "work": "Work",
+          "home": "Home",
+          "other": "Other"
+        }
+      },
+      "locations": {
+        "label": "Locations",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "remove": "Remove",
+        "labelPlaceholder": "Label (e.g., Main Office)",
+        "latitudePlaceholder": "Latitude (-90 to 90)",
+        "longitudePlaceholder": "Longitude (-180 to 180)",
+        "noLocations": "No locations added yet",
+        "viewOnMap": "View on map",
+        "coordinatesHelp": "Latitude: -90 to 90, Longitude: -180 to 180",
+        "types": {
+          "home": "Home",
+          "work": "Work",
+          "other": "Other"
+        }
       }
     }
   },
