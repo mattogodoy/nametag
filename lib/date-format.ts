@@ -1,7 +1,24 @@
 type DateFormat = 'MDY' | 'DMY' | 'YMD';
 
+/**
+ * Parse a date string or Date object as a local date, avoiding timezone issues.
+ * Date-only strings (YYYY-MM-DD) are parsed as local dates instead of UTC.
+ */
+export function parseAsLocalDate(date: Date | string): Date {
+  if (typeof date === 'string') {
+    // Parse date-only strings (YYYY-MM-DD) as local dates to avoid timezone issues
+    const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (dateOnlyPattern.test(date)) {
+      const [year, month, day] = date.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    return new Date(date);
+  }
+  return date;
+}
+
 export function formatDate(date: Date | string, format: DateFormat): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
+  const d = parseAsLocalDate(date);
 
   if (isNaN(d.getTime())) {
     return 'Invalid Date';
