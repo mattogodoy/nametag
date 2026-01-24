@@ -77,6 +77,8 @@ _Clean light theme for comfortable daytime use_
 
 This guide covers self-hosting setup.
 
+For a free, non-Docker setup guide, see [Deploying for Free](docs/deploy-free.md).
+
 ## Self-Hosting with Docker
 
 The official Docker images support both **AMD64** (x86_64) and **ARM64** (aarch64) architectures, making Nametag compatible with Apple Silicon Macs, Raspberry Pi, and ARM-based servers.
