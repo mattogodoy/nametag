@@ -6,20 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.16.5](https://github.com/mattogodoy/nametag/compare/v0.16.4...v0.16.5) (2026-01-24)
+## [0.16.6](https://github.com/mattogodoy/nametag/compare/v0.16.5...v0.16.6) (2026-01-24)
 
 ### Bug Fixes
 
-* Solve timezone conversion issue ([bd1c280](https://github.com/mattogodoy/nametag/commit/bd1c2801918c858aa4d5e7bd224f9cc7281b51aa))
+* Create release for Optimize Orphan Detection (PR [#59](https://github.com/mattogodoy/nametag/issues/59)) ([51daea5](https://github.com/mattogodoy/nametag/commit/51daea51f3e96a84cdf7ea59a49f4ebc92a38e2e))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.16.6](https://github.com/mattogodoy/nametag/compare/v0.16.5...v0.16.6)
+
+- optimize orphan detection [`#59`](https://github.com/mattogodoy/nametag/pull/59)
+- 🐛 Fix: Create release for Optimize Orphan Detection (PR #59) [`51daea5`](https://github.com/mattogodoy/nametag/commit/51daea51f3e96a84cdf7ea59a49f4ebc92a38e2e)
+- optimize orphan detection logic to avoid n+1 queries [`0be1799`](https://github.com/mattogodoy/nametag/commit/0be1799f7f7a1f5f715730c94bdc737e720deb34)
+
 #### [v0.16.5](https://github.com/mattogodoy/nametag/compare/v0.16.4...v0.16.5)
+
+> 24 January 2026
 
 - Solve timezone conversion issue [`#61`](https://github.com/mattogodoy/nametag/pull/61)
 - 🐛 Fix: Solve timezone conversion issue [`bd1c280`](https://github.com/mattogodoy/nametag/commit/bd1c2801918c858aa4d5e7bd224f9cc7281b51aa)
+- 🔧 Chore: release v0.16.5 [`3a76b48`](https://github.com/mattogodoy/nametag/commit/3a76b481d15eff5bb3e227a5b1a5e81a5926a4e0)
 
 #### [v0.16.4](https://github.com/mattogodoy/nametag/compare/v0.16.3...v0.16.4)
 
