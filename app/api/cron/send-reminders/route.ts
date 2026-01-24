@@ -7,6 +7,7 @@ import { handleApiError } from '@/lib/api-utils';
 import { logger, securityLogger } from '@/lib/logger';
 import { getClientIp } from '@/lib/api-utils';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
+import { parseAsLocalDate } from '@/lib/date-format';
 
 // This endpoint should be called by a cron job
 export async function GET(request: Request) {
@@ -249,7 +250,7 @@ async function shouldSendImportantDateReminder(
   },
   today: Date
 ): Promise<boolean> {
-  const eventDate = new Date(importantDate.date);
+  const eventDate = parseAsLocalDate(importantDate.date);
 
   if (importantDate.reminderType === 'ONCE') {
     // For one-time reminders, send on the exact date if not already sent

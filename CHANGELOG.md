@@ -6,19 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.16.3](https://github.com/mattogodoy/nametag/compare/v0.16.2...v0.16.3) (2026-01-22)
+## [0.16.5](https://github.com/mattogodoy/nametag/compare/v0.16.4...v0.16.5) (2026-01-24)
 
 ### Bug Fixes
 
-* Create release for German translations (PR [#52](https://github.com/mattogodoy/nametag/issues/52)) ([dc2ed7f](https://github.com/mattogodoy/nametag/commit/dc2ed7f3cdba20cbd98a4bb2793b644c6ae4afe2))
+* Solve timezone conversion issue ([bd1c280](https://github.com/mattogodoy/nametag/commit/bd1c2801918c858aa4d5e7bd224f9cc7281b51aa))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.16.5](https://github.com/mattogodoy/nametag/compare/v0.16.4...v0.16.5)
+
+- Solve timezone conversion issue [`#61`](https://github.com/mattogodoy/nametag/pull/61)
+- 🐛 Fix: Solve timezone conversion issue [`bd1c280`](https://github.com/mattogodoy/nametag/commit/bd1c2801918c858aa4d5e7bd224f9cc7281b51aa)
+
+#### [v0.16.4](https://github.com/mattogodoy/nametag/compare/v0.16.3...v0.16.4)
+
+> 24 January 2026
+
+- Allow special characters in relationship types [`#60`](https://github.com/mattogodoy/nametag/pull/60)
+- 🔧 Chore: release v0.16.4 [`48b93cf`](https://github.com/mattogodoy/nametag/commit/48b93cf1afdb4f3d0451c65beb2ebb27653af9d1)
+- 🐛 Fix: Allow special characrters in relationship types [`47abd03`](https://github.com/mattogodoy/nametag/commit/47abd039d766682553c16522e31935a925eb2cbc)
+
 #### [v0.16.3](https://github.com/mattogodoy/nametag/compare/v0.16.2...v0.16.3)
 
+> 22 January 2026
+
 - Added German Translation [`#52`](https://github.com/mattogodoy/nametag/pull/52)
+- 🔧 Chore: release v0.16.3 [`11d5db7`](https://github.com/mattogodoy/nametag/commit/11d5db76a5d688e9dea108794d7fbcadc9c773ee)
 - 🐛 Fix: Create release for German translations (PR #52) [`dc2ed7f`](https://github.com/mattogodoy/nametag/commit/dc2ed7f3cdba20cbd98a4bb2793b644c6ae4afe2)
 
 #### [v0.16.2](https://github.com/mattogodoy/nametag/compare/v0.16.1...v0.16.2)

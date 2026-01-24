@@ -65,8 +65,6 @@ export default function RelationshipTypeForm({
   const sanitizeName = (label: string): string => {
     return label
       .toUpperCase()
-      .trim()
-      .replace(/[^A-Z0-9\s]/g, '') // Remove special characters
       .replace(/\s+/g, '_'); // Replace spaces with underscores
   };
 
