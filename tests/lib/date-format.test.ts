@@ -1,7 +1,116 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, getDateFormatLabel, getDateFormatExample } from '@/lib/date-format';
+import { formatDate, getDateFormatLabel, getDateFormatExample, parseAsLocalDate } from '@/lib/date-format';
 
 describe('date-format', () => {
+  describe('parseAsLocalDate', () => {
+    describe('with date-only strings (YYYY-MM-DD)', () => {
+      it('should parse date-only string as local date', () => {
+        const result = parseAsLocalDate('2024-12-25');
+        expect(result.getFullYear()).toBe(2024);
+        expect(result.getMonth()).toBe(11); // December is month 11
+        expect(result.getDate()).toBe(25);
+      });
+
+      it('should handle February dates correctly (issue #57)', () => {
+        const result = parseAsLocalDate('1993-02-08');
+        expect(result.getFullYear()).toBe(1993);
+        expect(result.getMonth()).toBe(1); // February is month 1
+        expect(result.getDate()).toBe(8);
+      });
+
+      it('should handle first day of month', () => {
+        const result = parseAsLocalDate('2024-01-01');
+        expect(result.getFullYear()).toBe(2024);
+        expect(result.getMonth()).toBe(0);
+        expect(result.getDate()).toBe(1);
+      });
+
+      it('should handle last day of month', () => {
+        const result = parseAsLocalDate('2024-12-31');
+        expect(result.getFullYear()).toBe(2024);
+        expect(result.getMonth()).toBe(11);
+        expect(result.getDate()).toBe(31);
+      });
+
+      it('should handle leap year date', () => {
+        const result = parseAsLocalDate('2024-02-29');
+        expect(result.getFullYear()).toBe(2024);
+        expect(result.getMonth()).toBe(1);
+        expect(result.getDate()).toBe(29);
+      });
+    });
+
+    describe('with Date objects', () => {
+      it('should return Date object as-is', () => {
+        const original = new Date(2024, 11, 25);
+        const result = parseAsLocalDate(original);
+        expect(result).toBe(original);
+      });
+    });
+
+    describe('with ISO datetime strings', () => {
+      it('should parse full ISO datetime string normally', () => {
+        const isoString = '2024-12-25T10:30:00.000Z';
+        const result = parseAsLocalDate(isoString);
+        // Should parse as UTC datetime
+        expect(result.toISOString()).toBe(isoString);
+      });
+    });
+
+    describe('timezone consistency (issue #57 fix)', () => {
+      it('should maintain date consistency when parsing and formatting', () => {
+        // This is the core test for issue #57
+        // A date string should parse and format back to the same date
+        const dateString = '1993-02-08';
+        const parsed = parseAsLocalDate(dateString);
+
+        // Format back to YYYY-MM-DD
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
+
+        expect(formatted).toBe(dateString);
+      });
+
+      it('should work correctly for all months', () => {
+        const months = [
+          '2024-01-15', '2024-02-15', '2024-03-15', '2024-04-15',
+          '2024-05-15', '2024-06-15', '2024-07-15', '2024-08-15',
+          '2024-09-15', '2024-10-15', '2024-11-15', '2024-12-15'
+        ];
+
+        months.forEach(dateString => {
+          const parsed = parseAsLocalDate(dateString);
+          const year = parsed.getFullYear();
+          const month = String(parsed.getMonth() + 1).padStart(2, '0');
+          const day = String(parsed.getDate()).padStart(2, '0');
+          const formatted = `${year}-${month}-${day}`;
+
+          expect(formatted).toBe(dateString);
+        });
+      });
+
+      it('should maintain date when used with formatDate', () => {
+        // Integration test with formatDate
+        const dateString = '1993-02-08';
+        const result = formatDate(dateString, 'YMD');
+        expect(result).toBe(dateString);
+      });
+
+      it('should maintain date for MDY format', () => {
+        const dateString = '1993-02-08';
+        const result = formatDate(dateString, 'MDY');
+        expect(result).toBe('02/08/1993');
+      });
+
+      it('should maintain date for DMY format', () => {
+        const dateString = '1993-02-08';
+        const result = formatDate(dateString, 'DMY');
+        expect(result).toBe('08/02/1993');
+      });
+    });
+  });
   describe('formatDate', () => {
     const testDate = new Date(2024, 11, 25); // December 25, 2024
 

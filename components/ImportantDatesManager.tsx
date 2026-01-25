@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { parseAsLocalDate } from '@/lib/date-format';
 
 type ReminderType = 'ONCE' | 'RECURRING';
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -65,7 +66,7 @@ export default function ImportantDatesManager({
 
   const isDateInFuture = (dateStr: string) => {
     if (!dateStr) return false;
-    const date = new Date(dateStr);
+    const date = parseAsLocalDate(dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return date >= today;
@@ -385,7 +386,7 @@ export default function ImportantDatesManager({
                     {date.title}
                   </div>
                   <div className="text-xs text-muted">
-                    {new Date(date.date).toLocaleDateString('en-US', {
+                    {parseAsLocalDate(date.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',

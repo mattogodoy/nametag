@@ -9,6 +9,7 @@ import { prisma } from '../lib/prisma';
 import { sendEmail, emailTemplates } from '../lib/email';
 import { createUnsubscribeToken } from '../lib/unsubscribe-tokens';
 import { formatFullName } from '../lib/nameUtils';
+import { parseAsLocalDate } from '../lib/date-format';
 
 async function testReminderEmail() {
   try {
@@ -55,7 +56,7 @@ async function testReminderEmail() {
       console.log(`🔗 Unsubscribe URL: ${unsubscribeUrl}\n`);
 
       // Format date
-      const date = new Date(importantDate.date);
+      const date = parseAsLocalDate(importantDate.date);
       const formattedDate = date.toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',

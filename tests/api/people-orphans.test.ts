@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Use vi.hoisted to create mocks before hoisting
 const mocks = vi.hoisted(() => ({
   personFindUnique: vi.fn(),
+  personFindMany: vi.fn(),
   relationshipFindMany: vi.fn(),
 }));
 
@@ -11,6 +12,7 @@ vi.mock('../../lib/prisma', () => ({
   prisma: {
     person: {
       findUnique: mocks.personFindUnique,
+      findMany: mocks.personFindMany,
     },
     relationship: {
       findMany: mocks.relationshipFindMany,
@@ -49,48 +51,28 @@ describe('People Orphans API', () => {
     });
 
     it('should detect orphans - person with no relationshipToUser and no other relationships', async () => {
-      // Person being deleted
-      mocks.personFindUnique
-        .mockResolvedValueOnce({
-          id: 'person-1',
-          userId: 'user-123',
-          name: 'John',
-          surname: 'Doe',
-        })
-        // Related person (will become orphan)
-        .mockResolvedValueOnce({
+      // 1. Person being deleted with their relationships
+      mocks.personFindUnique.mockResolvedValueOnce({
+        id: 'person-1',
+        userId: 'user-123',
+        name: 'John',
+        surname: 'Doe',
+        relationshipsFrom: [{ id: 'rel-1', relatedPersonId: 'person-2' }],
+        relationshipsTo: [],
+      });
+
+      // 2. Related people and their relationships
+      mocks.personFindMany.mockResolvedValueOnce([
+        {
           id: 'person-2',
           name: 'Jane',
           surname: 'Smith',
           nickname: null,
-          relationshipToUser: null, // No direct relationship to user
-        });
-
-      // Relationships for person-1
-      mocks.relationshipFindMany
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-            person: {
-              id: 'person-1',
-              relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
-            },
-            relatedPerson: {
-              id: 'person-2',
-              relationshipToUser: null,
-            },
-          },
-        ])
-        // Relationships for person-2 (only has relationship with person-1)
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-          },
-        ]);
+          relationshipToUser: null,
+          relationshipsFrom: [],
+          relationshipsTo: [{ id: 'rel-1', personId: 'person-1' }],
+        },
+      ]);
 
       const request = new Request('http://localhost/api/people/person-1/orphans');
       const context = { params: Promise.resolve({ id: 'person-1' }) };
@@ -106,48 +88,28 @@ describe('People Orphans API', () => {
     });
 
     it('should NOT detect as orphan - person with direct relationshipToUser', async () => {
-      // Person being deleted
-      mocks.personFindUnique
-        .mockResolvedValueOnce({
-          id: 'person-1',
-          userId: 'user-123',
-          name: 'John',
-          surname: 'Doe',
-        })
-        // Related person (NOT an orphan because has relationshipToUser)
-        .mockResolvedValueOnce({
+      // 1. Person being deleted with their relationships
+      mocks.personFindUnique.mockResolvedValueOnce({
+        id: 'person-1',
+        userId: 'user-123',
+        name: 'John',
+        surname: 'Doe',
+        relationshipsFrom: [{ id: 'rel-1', relatedPersonId: 'person-2' }],
+        relationshipsTo: [],
+      });
+
+      // 2. Related people (NOT orphan because has relationshipToUser)
+      mocks.personFindMany.mockResolvedValueOnce([
+        {
           id: 'person-2',
           name: 'Jane',
           surname: 'Smith',
           nickname: null,
-          relationshipToUser: { id: 'rel-type-1', label: 'Friend' }, // Has direct relationship
-        });
-
-      // Relationships for person-1
-      mocks.relationshipFindMany
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-            person: {
-              id: 'person-1',
-              relationshipToUser: { id: 'rel-type-2', label: 'Colleague' },
-            },
-            relatedPerson: {
-              id: 'person-2',
-              relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
-            },
-          },
-        ])
-        // Relationships for person-2
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-          },
-        ]);
+          relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
+          relationshipsFrom: [],
+          relationshipsTo: [{ id: 'rel-1', personId: 'person-1' }],
+        },
+      ]);
 
       const request = new Request('http://localhost/api/people/person-1/orphans');
       const context = { params: Promise.resolve({ id: 'person-1' }) };
@@ -159,53 +121,32 @@ describe('People Orphans API', () => {
     });
 
     it('should NOT detect as orphan - person has other relationships', async () => {
-      // Person being deleted
-      mocks.personFindUnique
-        .mockResolvedValueOnce({
-          id: 'person-1',
-          userId: 'user-123',
-          name: 'John',
-          surname: 'Doe',
-        })
-        // Related person (NOT an orphan because has other relationships)
-        .mockResolvedValueOnce({
+      // 1. Person being deleted with their relationships
+      mocks.personFindUnique.mockResolvedValueOnce({
+        id: 'person-1',
+        userId: 'user-123',
+        name: 'John',
+        surname: 'Doe',
+        relationshipsFrom: [{ id: 'rel-1', relatedPersonId: 'person-2' }],
+        relationshipsTo: [],
+      });
+
+      // 2. Related people (NOT orphan because has another relationship with person-3)
+      mocks.personFindMany.mockResolvedValueOnce([
+        {
           id: 'person-2',
           name: 'Jane',
           surname: 'Smith',
           nickname: null,
-          relationshipToUser: null, // No direct relationship to user
-        });
-
-      // Relationships for person-1
-      mocks.relationshipFindMany
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-            person: {
-              id: 'person-1',
-              relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
-            },
-            relatedPerson: {
-              id: 'person-2',
-              relationshipToUser: null,
-            },
-          },
-        ])
-        // Relationships for person-2 (has relationship with person-1 AND person-3)
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-          },
-          {
-            id: 'rel-2',
-            personId: 'person-2',
-            relatedPersonId: 'person-3', // Has another relationship
-          },
-        ]);
+          relationshipToUser: null,
+          relationshipsFrom: [
+            { id: 'rel-2', relatedPersonId: 'person-3' }, // Another relationship
+          ],
+          relationshipsTo: [
+            { id: 'rel-1', personId: 'person-1' },
+          ],
+        },
+      ]);
 
       const request = new Request('http://localhost/api/people/person-1/orphans');
       const context = { params: Promise.resolve({ id: 'person-1' }) };
@@ -217,53 +158,28 @@ describe('People Orphans API', () => {
     });
 
     it('should detect as orphan - person with soft-deleted relationshipToUser (the bug fix)', async () => {
-      // This is the critical test case for the bug we just fixed
-      // When a RelationshipType is soft-deleted, the relationshipToUserId field remains
-      // but the relationshipToUser relation is null due to Prisma's soft-delete middleware
+      // 1. Person being deleted with their relationships
+      mocks.personFindUnique.mockResolvedValueOnce({
+        id: 'person-1',
+        userId: 'user-123',
+        name: 'John',
+        surname: 'Doe',
+        relationshipsFrom: [{ id: 'rel-1', relatedPersonId: 'person-2' }],
+        relationshipsTo: [],
+      });
 
-      // Person being deleted
-      mocks.personFindUnique
-        .mockResolvedValueOnce({
-          id: 'person-1',
-          userId: 'user-123',
-          name: 'John',
-          surname: 'Doe',
-        })
-        // Related person (SHOULD be orphan - relationshipToUser is soft-deleted)
-        .mockResolvedValueOnce({
+      // 2. Related people (SHOULD be orphan - relationshipToUser is null/soft-deleted)
+      mocks.personFindMany.mockResolvedValueOnce([
+        {
           id: 'person-2',
           name: 'Jane',
           surname: 'Smith',
           nickname: null,
-          relationshipToUser: null, // Relation is null (soft-deleted)
-          // Note: relationshipToUserId would still exist in DB but we don't check it
-        });
-
-      // Relationships for person-1
-      mocks.relationshipFindMany
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-            person: {
-              id: 'person-1',
-              relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
-            },
-            relatedPerson: {
-              id: 'person-2',
-              relationshipToUser: null, // Soft-deleted
-            },
-          },
-        ])
-        // Relationships for person-2 (only has relationship with person-1)
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-          },
-        ]);
+          relationshipToUser: null, // Soft-deleted relation is null
+          relationshipsFrom: [],
+          relationshipsTo: [{ id: 'rel-1', personId: 'person-1' }],
+        },
+      ]);
 
       const request = new Request('http://localhost/api/people/person-1/orphans');
       const context = { params: Promise.resolve({ id: 'person-1' }) };
@@ -279,77 +195,40 @@ describe('People Orphans API', () => {
     });
 
     it('should detect multiple orphans', async () => {
-      // Person being deleted
-      mocks.personFindUnique
-        .mockResolvedValueOnce({
-          id: 'person-1',
-          userId: 'user-123',
-          name: 'John',
-          surname: 'Doe',
-        })
-        // First orphan
-        .mockResolvedValueOnce({
+      // 1. Person being deleted with their relationships
+      mocks.personFindUnique.mockResolvedValueOnce({
+        id: 'person-1',
+        userId: 'user-123',
+        name: 'John',
+        surname: 'Doe',
+        relationshipsFrom: [
+          { id: 'rel-1', relatedPersonId: 'person-2' },
+          { id: 'rel-2', relatedPersonId: 'person-3' },
+        ],
+        relationshipsTo: [],
+      });
+
+      // 2. Related people (both should be orphans)
+      mocks.personFindMany.mockResolvedValueOnce([
+        {
           id: 'person-2',
           name: 'Jane',
           surname: 'Smith',
           nickname: null,
           relationshipToUser: null,
-        })
-        // Second orphan
-        .mockResolvedValueOnce({
+          relationshipsFrom: [],
+          relationshipsTo: [{ id: 'rel-1', personId: 'person-1' }],
+        },
+        {
           id: 'person-3',
           name: 'Bob',
           surname: 'Johnson',
           nickname: 'Bobby',
           relationshipToUser: null,
-        });
-
-      // Relationships for person-1
-      mocks.relationshipFindMany
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-            person: {
-              id: 'person-1',
-              relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
-            },
-            relatedPerson: {
-              id: 'person-2',
-              relationshipToUser: null,
-            },
-          },
-          {
-            id: 'rel-2',
-            personId: 'person-1',
-            relatedPersonId: 'person-3',
-            person: {
-              id: 'person-1',
-              relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
-            },
-            relatedPerson: {
-              id: 'person-3',
-              relationshipToUser: null,
-            },
-          },
-        ])
-        // Relationships for person-2
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-          },
-        ])
-        // Relationships for person-3
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-2',
-            personId: 'person-1',
-            relatedPersonId: 'person-3',
-          },
-        ]);
+          relationshipsFrom: [],
+          relationshipsTo: [{ id: 'rel-2', personId: 'person-1' }],
+        },
+      ]);
 
       const request = new Request('http://localhost/api/people/person-1/orphans');
       const context = { params: Promise.resolve({ id: 'person-1' }) };
@@ -369,16 +248,15 @@ describe('People Orphans API', () => {
     });
 
     it('should return empty array when person has no relationships', async () => {
-      // Person being deleted
+      // 1. Person being deleted with no relationships
       mocks.personFindUnique.mockResolvedValueOnce({
         id: 'person-1',
         userId: 'user-123',
         name: 'John',
         surname: 'Doe',
+        relationshipsFrom: [],
+        relationshipsTo: [],
       });
-
-      // No relationships for this person
-      mocks.relationshipFindMany.mockResolvedValueOnce([]);
 
       const request = new Request('http://localhost/api/people/person-1/orphans');
       const context = { params: Promise.resolve({ id: 'person-1' }) };
@@ -390,48 +268,28 @@ describe('People Orphans API', () => {
     });
 
     it('should use nickname in fullName if available', async () => {
-      // Person being deleted
-      mocks.personFindUnique
-        .mockResolvedValueOnce({
-          id: 'person-1',
-          userId: 'user-123',
-          name: 'John',
-          surname: 'Doe',
-        })
-        // Related person with nickname
-        .mockResolvedValueOnce({
+      // 1. Person being deleted with their relationships
+      mocks.personFindUnique.mockResolvedValueOnce({
+        id: 'person-1',
+        userId: 'user-123',
+        name: 'John',
+        surname: 'Doe',
+        relationshipsFrom: [{ id: 'rel-1', relatedPersonId: 'person-2' }],
+        relationshipsTo: [],
+      });
+
+      // 2. Related person with nickname
+      mocks.personFindMany.mockResolvedValueOnce([
+        {
           id: 'person-2',
           name: 'Jane',
           surname: 'Smith',
-          nickname: 'Jenny', // Has nickname
+          nickname: 'Jenny',
           relationshipToUser: null,
-        });
-
-      // Relationships for person-1
-      mocks.relationshipFindMany
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-            person: {
-              id: 'person-1',
-              relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
-            },
-            relatedPerson: {
-              id: 'person-2',
-              relationshipToUser: null,
-            },
-          },
-        ])
-        // Relationships for person-2
-        .mockResolvedValueOnce([
-          {
-            id: 'rel-1',
-            personId: 'person-1',
-            relatedPersonId: 'person-2',
-          },
-        ]);
+          relationshipsFrom: [],
+          relationshipsTo: [{ id: 'rel-1', personId: 'person-1' }],
+        },
+      ]);
 
       const request = new Request('http://localhost/api/people/person-1/orphans');
       const context = { params: Promise.resolve({ id: 'person-1' }) };
@@ -442,7 +300,7 @@ describe('People Orphans API', () => {
       expect(body.orphans).toHaveLength(1);
       expect(body.orphans[0]).toEqual({
         id: 'person-2',
-        fullName: "Jane 'Jenny' Smith", // Uses nickname
+        fullName: "Jane 'Jenny' Smith",
       });
     });
   });
