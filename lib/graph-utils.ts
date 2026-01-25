@@ -118,9 +118,16 @@ export function relationshipToInverseGraphEdge(
   };
 }
 
-type Person = Prisma.PersonGetPayload<{
-  include: { groups: { include: { group: true } } };
+type Group = Prisma.GroupGetPayload<{
+  select: { name: true; color: true };
 }>;
+
+interface Person
+  extends Prisma.PersonGetPayload<{
+    select: { id: true; name: true; surname: true; nickname: true };
+  }> {
+  groups: { group: Group }[];
+}
 
 export function personToGraphNode(person: Person, isCenter = false): GraphNode {
   return {
