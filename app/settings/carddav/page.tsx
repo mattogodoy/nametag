@@ -1,13 +1,10 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import CardDavConnectionForm from '@/components/CardDavConnectionForm';
-import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
+import CardDavSettings from './CardDavSettings';
 
 export default async function CardDavSettingsPage() {
   const session = await auth();
-  const t = await getTranslations('settings.carddav');
 
   if (!session?.user) {
     redirect('/login');
@@ -29,29 +26,21 @@ export default async function CardDavSettingsPage() {
       })
     : 0;
 
-  return (
-    <div className="bg-surface shadow rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-foreground">
-          {t('title')}
-        </h2>
-        {connection && pendingImportsCount > 0 && (
-          <Link
-            href="/carddav/import"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            {t('viewPendingImports')} ({pendingImportsCount})
-          </Link>
-        )}
-      </div>
-      <p className="text-muted mb-6">
-        {t('pageDescription')}
-      </p>
+  // Get synced contacts count
+  const syncedContactsCount = connection
+    ? await prisma.cardDavMapping.count({
+        where: {
+          connectionId: connection.id,
+          syncStatus: 'synced',
+        },
+      })
+    : 0;
 
-      <CardDavConnectionForm
-        userId={session.user.id}
-        existingConnection={connection}
-      />
-    </div>
+  return (
+    <CardDavSettings
+      connection={connection}
+      pendingImportsCount={pendingImportsCount}
+      syncedContactsCount={syncedContactsCount}
+    />
   );
 }

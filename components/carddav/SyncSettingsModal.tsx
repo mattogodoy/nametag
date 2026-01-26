@@ -1,0 +1,266 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import Modal from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+
+interface CardDavConnection {
+  id: string;
+  syncEnabled: boolean;
+  autoExportNew: boolean;
+  autoSyncInterval: number;
+  importMode: string;
+}
+
+interface SyncSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentSettings: CardDavConnection | null;
+}
+
+export default function SyncSettingsModal({
+  isOpen,
+  onClose,
+  currentSettings,
+}: SyncSettingsModalProps) {
+  const t = useTranslations('settings.carddav');
+  const router = useRouter();
+
+  const [syncEnabled, setSyncEnabled] = useState(currentSettings?.syncEnabled ?? true);
+  const [autoExportNew, setAutoExportNew] = useState(currentSettings?.autoExportNew ?? true);
+  const [autoSyncInterval, setAutoSyncInterval] = useState(currentSettings?.autoSyncInterval || 300);
+  const [importMode, setImportMode] = useState(currentSettings?.importMode || 'manual');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
+
+  // Reset form when modal opens or settings change
+  useEffect(() => {
+    if (isOpen && currentSettings) {
+      setSyncEnabled(currentSettings.syncEnabled);
+      setAutoExportNew(currentSettings.autoExportNew);
+      setAutoSyncInterval(currentSettings.autoSyncInterval);
+      setImportMode(currentSettings.importMode);
+      setError('');
+    }
+  }, [isOpen, currentSettings]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/carddav/connection', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          syncEnabled,
+          autoExportNew,
+          autoSyncInterval,
+          importMode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || t('saveFailed'));
+      } else {
+        router.refresh();
+        onClose();
+      }
+    } catch (_err) {
+      setError(t('saveError'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setIsDisconnecting(true);
+    setDisconnectError(null);
+
+    try {
+      const response = await fetch('/api/carddav/connection', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setDisconnectError(data.error || t('disconnectFailed'));
+      } else {
+        router.refresh();
+        setShowDisconnectConfirm(false);
+        onClose();
+      }
+    } catch (_err) {
+      setDisconnectError(t('disconnectError'));
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
+  return (
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={t('settingsModalTitle')}
+        size="md"
+      >
+        <div className="space-y-6">
+          <p className="text-sm text-muted">
+            {t('settingsModalDescription')}
+          </p>
+
+          {/* Sync Enabled */}
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                type="checkbox"
+                id="syncEnabled"
+                checked={syncEnabled}
+                onChange={(e) => setSyncEnabled(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+            </div>
+            <div className="ml-3">
+              <label htmlFor="syncEnabled" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('syncEnabledLabel')}
+              </label>
+            </div>
+          </div>
+
+          {/* Auto Export New */}
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                type="checkbox"
+                id="autoExportNew"
+                checked={autoExportNew}
+                onChange={(e) => setAutoExportNew(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+            </div>
+            <div className="ml-3">
+              <label htmlFor="autoExportNew" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('autoExportNewLabel')}
+              </label>
+            </div>
+          </div>
+
+          {/* Sync Interval */}
+          <div>
+            <label htmlFor="autoSyncInterval" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('syncIntervalLabel')}
+            </label>
+            <select
+              id="autoSyncInterval"
+              value={autoSyncInterval}
+              onChange={(e) => setAutoSyncInterval(Number(e.target.value))}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value={60}>{t('interval1min')}</option>
+              <option value={300}>{t('interval5min')}</option>
+              <option value={600}>{t('interval10min')}</option>
+              <option value={1800}>{t('interval30min')}</option>
+              <option value={3600}>{t('interval1hour')}</option>
+              <option value={21600}>{t('interval6hours')}</option>
+              <option value={43200}>{t('interval12hours')}</option>
+              <option value={86400}>{t('interval24hours')}</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t('syncIntervalHelp')}
+            </p>
+          </div>
+
+          {/* Import Mode */}
+          <div>
+            <label htmlFor="importMode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('importModeLabel')}
+            </label>
+            <select
+              id="importMode"
+              value={importMode}
+              onChange={(e) => setImportMode(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="manual">{t('importModeManual')}</option>
+              <option value="notify">{t('importModeNotify')}</option>
+              <option value="auto">{t('importModeAuto')}</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t('importModeHelp')}
+            </p>
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-lg border border-red-200 dark:border-red-800">
+              {error}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex gap-3 pt-4 border-t border-border">
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? t('saving') : t('saveSettings')}
+            </Button>
+
+            <Button
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              variant="secondary"
+            >
+              {t('cancel')}
+            </Button>
+          </div>
+
+          {/* Disconnect section */}
+          <div className="pt-4 border-t border-border">
+            <Button
+              type="button"
+              onClick={() => setShowDisconnectConfirm(true)}
+              disabled={isSaving}
+              variant="danger"
+              fullWidth
+            >
+              {t('disconnectButton')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Disconnect confirmation modal */}
+      <ConfirmationModal
+        isOpen={showDisconnectConfirm}
+        onClose={() => {
+          setShowDisconnectConfirm(false);
+          setDisconnectError(null);
+        }}
+        onConfirm={handleDisconnect}
+        title={t('disconnectConfirmTitle')}
+        confirmText={t('disconnect')}
+        cancelText={t('cancel')}
+        isLoading={isDisconnecting}
+        loadingText={t('saving')}
+        error={disconnectError}
+        variant="danger"
+      >
+        <p className="text-muted">
+          {t('disconnectConfirmMessage')}
+        </p>
+      </ConfirmationModal>
+    </>
+  );
+}
