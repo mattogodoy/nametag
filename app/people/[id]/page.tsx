@@ -7,7 +7,7 @@ import DeleteUserRelationshipButton from '@/components/DeleteUserRelationshipBut
 import RelationshipManager from '@/components/RelationshipManager';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import Navigation from '@/components/Navigation';
-import { formatDate } from '@/lib/date-format';
+import { formatDate, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { getTranslations } from 'next-intl/server';
@@ -311,7 +311,7 @@ export default async function PersonDetailsPage({
                   <div className="space-y-2">
                     {person.importantDates.map((date) => {
                       const reminderDesc = getReminderDescription(date, t);
-                      const dateObj = new Date(date.date);
+                      const dateObj = parseAsLocalDate(date.date);
                       const yearsAgo = getYearsAgo(dateObj, t);
                       return (
                         <div

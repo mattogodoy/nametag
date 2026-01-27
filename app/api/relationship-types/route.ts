@@ -84,8 +84,6 @@ export const POST = withAuth(async (request, session) => {
     if (inverseLabel && !inverseId) {
       const inverseName = inverseLabel
         .toUpperCase()
-        .trim()
-        .replace(/[^A-Z0-9\s]/g, '')
         .replace(/\s+/g, '_');
 
       // Check if inverse type already exists

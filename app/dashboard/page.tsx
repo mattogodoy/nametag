@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
-import { formatDate } from '@/lib/date-format';
+import { formatDate, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import { getTranslations } from 'next-intl/server';
 
@@ -168,13 +168,13 @@ export default async function DashboardPage() {
     let eventDate: Date;
 
     if (importantDate.reminderType === 'ONCE') {
-      eventDate = new Date(importantDate.date);
+      eventDate = parseAsLocalDate(importantDate.date);
     } else {
       // Recurring - get next occurrence based on interval
       const interval = importantDate.reminderInterval || 1;
       const intervalUnit = importantDate.reminderIntervalUnit || 'YEARS';
       eventDate = getNextOccurrence(
-        new Date(importantDate.date),
+        parseAsLocalDate(importantDate.date),
         today,
         interval,
         intervalUnit,
