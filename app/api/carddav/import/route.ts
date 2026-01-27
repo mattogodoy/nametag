@@ -233,6 +233,7 @@ export async function POST(request: Request) {
             personId: person.id,
             uid: parsedData.uid || person.uid!,
             href: pendingImport.href,
+            etag: pendingImport.etag,
             syncStatus: 'synced',
             lastSyncedAt: new Date(),
           },

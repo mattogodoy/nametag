@@ -663,6 +663,7 @@ model CardDavPendingImport {
 
   uid          String
   href         String
+  etag         String?  // ETag from server for tracking changes
   vCardData    String   @db.Text
   displayName  String   // For UI preview
 
