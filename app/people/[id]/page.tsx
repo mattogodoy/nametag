@@ -114,7 +114,7 @@ export default async function PersonDetailsPage({
   });
   const dateFormat = user?.dateFormat || 'MDY';
 
-  const [person, allPeople, relationshipTypes] = await Promise.all([
+  const [person, allPeople, relationshipTypes, cardDavConnection] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -167,6 +167,7 @@ export default async function PersonDetailsPage({
             date: 'asc',
           },
         },
+        cardDavMapping: true,
       },
     }),
     prisma.person.findMany({
@@ -196,6 +197,10 @@ export default async function PersonDetailsPage({
         inverseId: true,
       },
       orderBy: { name: 'asc' },
+    }),
+    prisma.cardDavConnection.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
     }),
   ]);
 
@@ -269,7 +274,11 @@ export default async function PersonDetailsPage({
                 >
                   {t('edit')}
                 </Link>
-                <DeletePersonButton personId={person.id} personName={formatFullName(person)} />
+                <DeletePersonButton
+                  personId={person.id}
+                  personName={formatFullName(person)}
+                  hasCardDavSync={!!cardDavConnection && !!person.cardDavMapping}
+                />
               </div>
             </div>
 

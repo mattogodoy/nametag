@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import EmptyState from '@/components/EmptyState';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { formatDateTime } from '@/lib/date-format';
 
 interface CardDavConnection {
   id: string;
@@ -123,13 +124,11 @@ export default function ConnectionStatus({
         </div>
         <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <p className="text-sm text-muted mb-1">
-            {connection.lastSyncAt ? t('lastSyncedAt', {
-              time: new Date(connection.lastSyncAt).toLocaleString()
-            }) : t('neverSynced')}
+            {connection.lastSyncAt ? t('lastSyncedAt') : t('neverSynced')}
           </p>
           {connection.lastSyncAt && (
             <p className="text-sm text-foreground">
-              {new Date(connection.lastSyncAt).toLocaleString()}
+              {formatDateTime(connection.lastSyncAt)}
             </p>
           )}
         </div>

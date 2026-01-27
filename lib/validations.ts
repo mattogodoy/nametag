@@ -183,6 +183,7 @@ export const deletePersonSchema = z.object({
     .describe('Also delete people only connected through this person'),
   orphanIds: z.array(z.string()).optional()
     .describe('Specific orphan IDs to delete'),
+  deleteFromCardDav: z.boolean().optional(),
 });
 
 // ============================================

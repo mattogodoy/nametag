@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { vCardToPerson } from '@/lib/carddav/vcard';
-import { formatDateTime } from '@/lib/date-format';
+import CompactContactRow from './CompactContactRow';
 
 interface PendingImport {
   id: string;
@@ -34,14 +34,9 @@ export default function ImportContactsList({
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [perContactGroups, setPerContactGroups] = useState<Map<string, string[]>>(new Map());
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{
-    imported: number;
-    skipped: number;
-    errors: number;
-    errorMessages: string[];
-  } | null>(null);
 
   const handleToggleContact = (id: string) => {
     const newSelected = new Set(selectedIds);
@@ -69,6 +64,44 @@ export default function ImportContactsList({
     }
   };
 
+  const handlePerContactGroupsChange = (contactId: string, groupIds: string[]) => {
+    setPerContactGroups((prev) => {
+      const newMap = new Map(prev);
+      if (groupIds.length === 0) {
+        newMap.delete(contactId);
+      } else {
+        newMap.set(contactId, groupIds);
+      }
+      return newMap;
+    });
+  };
+
+  // Detect unsaved changes
+  const hasUnsavedChanges = selectedIds.size > 0 || selectedGroupIds.length > 0 || perContactGroups.size > 0;
+
+  // Warn before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      if (window.confirm(t('confirmLeave'))) {
+        router.push('/settings/carddav');
+      }
+    } else {
+      router.push('/settings/carddav');
+    }
+  };
+
   const handleImport = async () => {
     if (selectedIds.size === 0) {
       setError(t('noContactsSelected'));
@@ -77,15 +110,21 @@ export default function ImportContactsList({
 
     setImporting(true);
     setError(null);
-    setResult(null);
 
     try {
+      // Build per-contact groups object
+      const perContactGroupsObj: Record<string, string[]> = {};
+      perContactGroups.forEach((groupIds, contactId) => {
+        perContactGroupsObj[contactId] = groupIds;
+      });
+
       const response = await fetch('/api/carddav/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           importIds: Array.from(selectedIds),
-          groupIds: selectedGroupIds,
+          globalGroupIds: selectedGroupIds,
+          perContactGroups: perContactGroupsObj,
         }),
       });
 
@@ -95,17 +134,17 @@ export default function ImportContactsList({
       }
 
       const data = await response.json();
-      setResult(data);
 
-      // Refresh after successful import
-      if (data.imported > 0) {
-        setTimeout(() => {
-          router.refresh();
-        }, 2000);
-      }
+      // Redirect immediately with query params for toast notification
+      const params = new URLSearchParams({
+        importSuccess: 'true',
+        imported: data.imported.toString(),
+        skipped: data.skipped.toString(),
+        errors: data.errors.toString(),
+      });
+      router.push(`/settings/carddav?${params.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import contacts');
-    } finally {
       setImporting(false);
     }
   };
@@ -150,32 +189,6 @@ export default function ImportContactsList({
         </div>
       )}
 
-      {/* Results */}
-      {result && (
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-lg">
-          <p className="font-medium mb-2">{t('importComplete')}</p>
-          <ul className="text-sm space-y-1">
-            <li>✓ {t('imported', { count: result.imported })}</li>
-            {result.skipped > 0 && (
-              <li>⊘ {t('skipped', { count: result.skipped })}</li>
-            )}
-            {result.errors > 0 && (
-              <li>✗ {t('errors', { count: result.errors })}</li>
-            )}
-          </ul>
-          {result.errorMessages.length > 0 && (
-            <div className="mt-2 text-sm">
-              <p className="font-medium">{t('errorDetails')}:</p>
-              <ul className="list-disc list-inside">
-                {result.errorMessages.map((msg, i) => (
-                  <li key={i}>{msg}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Error */}
       {error && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-lg">
@@ -205,80 +218,40 @@ export default function ImportContactsList({
         {pendingImports.map((pendingImport) => {
           const parsed = parseVCard(pendingImport.vCardData);
           const isSelected = selectedIds.has(pendingImport.id);
+          const contactGroupIds = perContactGroups.get(pendingImport.id) || [];
 
           return (
-            <div
+            <CompactContactRow
               key={pendingImport.id}
-              className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                isSelected
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-              onClick={() => handleToggleContact(pendingImport.id)}
-            >
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => handleToggleContact(pendingImport.id)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="mt-1 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                />
-
-                <div className="flex-1">
-                  <h4 className="font-semibold text-foreground">
-                    {pendingImport.displayName}
-                  </h4>
-
-                  {parsed && (
-                    <div className="mt-2 space-y-1 text-sm text-muted">
-                      {parsed.organization && (
-                        <p>
-                          <span className="font-medium">{t('organization')}:</span>{' '}
-                          {parsed.organization}
-                        </p>
-                      )}
-                      {parsed.jobTitle && (
-                        <p>
-                          <span className="font-medium">{t('jobTitle')}:</span>{' '}
-                          {parsed.jobTitle}
-                        </p>
-                      )}
-                      {parsed.emails && parsed.emails.length > 0 && (
-                        <p>
-                          <span className="font-medium">{t('email')}:</span>{' '}
-                          {parsed.emails[0].email}
-                        </p>
-                      )}
-                      {parsed.phoneNumbers && parsed.phoneNumbers.length > 0 && (
-                        <p>
-                          <span className="font-medium">{t('phone')}:</span>{' '}
-                          {parsed.phoneNumbers[0].number}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <p className="mt-2 text-xs text-muted">
-                    {t('discovered')}: {formatDateTime(pendingImport.discoveredAt)}
-                  </p>
-                </div>
-              </div>
-            </div>
+              pendingImport={pendingImport}
+              isSelected={isSelected}
+              onToggle={handleToggleContact}
+              availableGroups={groups}
+              selectedGroupIds={contactGroupIds}
+              onGroupsChange={handlePerContactGroupsChange}
+              parsedData={parsed}
+            />
           );
         })}
       </div>
 
-      {/* Import Button */}
+      {/* Action Buttons */}
       <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={handleImport}
           disabled={importing || selectedIds.size === 0}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
         >
           {importing
             ? t('importing')
             : t('importSelected', { count: selectedIds.size })}
+        </button>
+        <button
+          onClick={handleCancel}
+          disabled={importing}
+          className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+        >
+          {t('cancel')}
         </button>
       </div>
     </div>

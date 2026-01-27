@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import ImportContactsList from '@/components/ImportContactsList';
+import Navigation from '@/components/Navigation';
 
 export default async function ImportPage() {
   const session = await auth();
@@ -11,6 +12,16 @@ export default async function ImportPage() {
   if (!session?.user) {
     redirect('/login');
   }
+
+  // Get user for navigation
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      email: true,
+      name: true,
+      nickname: true,
+    },
+  });
 
   // Get CardDAV connection
   const connection = await prisma.cardDavConnection.findUnique({
@@ -42,35 +53,44 @@ export default async function ImportPage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="bg-surface shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-foreground mb-4">
-          {t('title')}
-        </h1>
+    <>
+      <Navigation
+        userEmail={user?.email}
+        userName={user?.name}
+        userNickname={user?.nickname}
+        currentPath="/carddav/import"
+      />
 
-        {pendingImports.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📥</div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              {t('noPending')}
-            </h2>
-            <p className="text-muted">
-              {t('noPendingDescription')}
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="text-muted mb-6">
-              {t('description', { count: pendingImports.length })}
-            </p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-surface shadow rounded-lg p-6">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            {t('title')}
+          </h1>
 
-            <ImportContactsList
-              pendingImports={pendingImports}
-              groups={groups}
-            />
-          </>
-        )}
+          {pendingImports.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📥</div>
+              <h2 className="text-xl font-semibold text-foreground mb-2">
+                {t('noPending')}
+              </h2>
+              <p className="text-muted">
+                {t('noPendingDescription')}
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-muted mb-6">
+                {t('description', { count: pendingImports.length })}
+              </p>
+
+              <ImportContactsList
+                pendingImports={pendingImports}
+                groups={groups}
+              />
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
