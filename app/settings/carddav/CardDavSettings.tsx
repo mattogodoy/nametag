@@ -5,6 +5,7 @@ import ConnectionStatus from '@/components/carddav/ConnectionStatus';
 import ConnectionModal from '@/components/carddav/ConnectionModal';
 import SyncSettingsModal from '@/components/carddav/SyncSettingsModal';
 import SyncProgressModal from '@/components/carddav/SyncProgressModal';
+import ImportSuccessToast from '@/components/carddav/ImportSuccessToast';
 
 interface CardDavConnection {
   id: string;
@@ -36,6 +37,8 @@ export default function CardDavSettings({
 
   return (
     <>
+      <ImportSuccessToast />
+
       <ConnectionStatus
         connection={connection}
         pendingImportsCount={pendingImportsCount}

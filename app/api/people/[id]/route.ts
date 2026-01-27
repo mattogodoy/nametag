@@ -4,6 +4,7 @@ import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/a
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canEnableReminder } from '@/lib/billing';
 import { autoUpdatePerson } from '@/lib/carddav/auto-export';
+import { deleteFromCardDav as deleteContactFromCardDav } from '@/lib/carddav/delete-contact';
 
 // GET /api/people/[id] - Get a single person
 export const GET = withAuth(async (_request, session, context) => {
@@ -347,9 +348,25 @@ export const DELETE = withAuth(async (request, session, context) => {
     const validation = validateRequest(deletePersonSchema, body);
 
     // Use validated data, or defaults if body was empty/invalid
-    const { deleteOrphans, orphanIds } = validation.success
+    const { deleteOrphans, orphanIds, deleteFromCardDav } = validation.success
       ? validation.data
-      : { deleteOrphans: false, orphanIds: [] };
+      : { deleteOrphans: false, orphanIds: [], deleteFromCardDav: false };
+
+    // If requested, delete from CardDAV server (do this before soft-deleting)
+    if (deleteFromCardDav) {
+      await deleteContactFromCardDav(id).catch((error) => {
+        console.error('Failed to delete from CardDAV server:', error);
+        // Continue with local deletion even if CardDAV delete fails
+      });
+    }
+
+    // Always delete the CardDAV mapping when deleting a person
+    // This allows re-importing the contact if it still exists on the server
+    await prisma.cardDavMapping.deleteMany({
+      where: {
+        personId: id,
+      },
+    });
 
     // Soft delete the person (set deletedAt instead of removing)
     await prisma.person.update({

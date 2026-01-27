@@ -169,6 +169,7 @@ export const updatePersonSchema = createPersonSchema.partial();
 export const deletePersonSchema = z.object({
   deleteOrphans: z.boolean().optional(),
   orphanIds: z.array(z.string()).optional(),
+  deleteFromCardDav: z.boolean().optional(),
 });
 
 // ============================================

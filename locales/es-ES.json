@@ -282,7 +282,17 @@
         "skipped": "{count} duplicados omitidos",
         "errors": "{count} errores",
         "errorDetails": "Detalles del error",
-        "noContactsSelected": "Por favor selecciona al menos un contacto para importar"
+        "noContactsSelected": "Por favor selecciona al menos un contacto para importar",
+        "cancel": "Cancelar",
+        "confirmLeave": "Tienes selecciones sin guardar. ¿Estás seguro de que quieres salir?",
+        "expandDetails": "Mostrar detalles",
+        "collapseDetails": "Ocultar detalles",
+        "contactGroups": "Grupos",
+        "noGroups": "Sin grupos",
+        "selectGroups": "Seleccionar grupos...",
+        "groupsCount": "{count, plural, =0 {Sin grupos} =1 {1 grupo} other {# grupos}}",
+        "importSuccessToast": "{imported, plural, =1 {1 contacto importado exitosamente} other {# contactos importados exitosamente}}{skipped, plural, =0 {} =1 {, 1 duplicado omitido} other {, # duplicados omitidos}}",
+        "importCompleteWithErrors": "{imported, plural, =0 {No se importaron contactos} =1 {1 contacto importado} other {# contactos importados}}, {errors, plural, =1 {ocurrió 1 error} other {ocurrieron # errores}}"
       },
       "notifications": {
         "newContactsFound": "{count} contactos nuevos encontrados",
@@ -594,6 +604,8 @@
     "checkingOrphans": "Comprobando personas huérfanas...",
     "orphanWarningNote": "Nota: Eliminar a esta persona dejará a otras sin ninguna relación, mostrándolas como nodos aislados en el gráfico de red:",
     "deleteToo": "Eliminarlas también",
+    "deleteFromCardDavServer": "También eliminar del servidor CardDAV",
+    "deleteFromCardDavServerDescription": "Si no se marca, el contacto se eliminará de Nametag pero permanecerá en tu servidor CardDAV y podrá ser reimportado más tarde.",
     "youLabel": "(tú)",
     "createPerson": "Crear \"{name}\"",
     "noPersonFound": "No se encontraron personas que coincidan con \"{searchTerm}\"",
