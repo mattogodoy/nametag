@@ -164,7 +164,7 @@ export async function syncFromServer(
               },
             });
 
-            result.imported++;
+            result.updated++;
           }
           // If only local changed, we'll push in syncToServer
         } else {
@@ -180,6 +180,7 @@ export async function syncFromServer(
               connectionId: connection.id,
               uid: parsedData.uid,
               href: vCard.url,
+              etag: vCard.etag,
               vCardData: vCard.data,
               displayName: parsedData.name || parsedData.surname || 'Unknown',
               discoveredAt: new Date(),
@@ -187,6 +188,7 @@ export async function syncFromServer(
             update: {
               vCardData: vCard.data,
               displayName: parsedData.name || parsedData.surname || 'Unknown',
+              etag: vCard.etag,
             },
           });
           result.pendingImports = (result.pendingImports || 0) + 1;
