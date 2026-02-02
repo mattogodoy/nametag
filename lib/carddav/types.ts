@@ -52,7 +52,6 @@ export interface ParsedVCardData {
   // Professional
   organization?: string;
   jobTitle?: string;
-  role?: string;
 
   // Other
   photo?: string;
@@ -67,26 +66,23 @@ export interface ParsedVCardData {
   phoneNumbers: {
     type: string;
     number: string;
-    isPrimary: boolean;
   }[];
   emails: {
     type: string;
     email: string;
-    isPrimary: boolean;
   }[];
   addresses: {
     type: string;
-    street?: string;
+    streetLine1?: string;
+    streetLine2?: string;
     locality?: string;
     region?: string;
     postalCode?: string;
     country?: string;
-    isPrimary: boolean;
   }[];
   urls: {
     type: string;
     url: string;
-    label?: string;
   }[];
   imHandles: {
     protocol: string;
@@ -96,7 +92,6 @@ export interface ParsedVCardData {
     type: string;
     latitude: number;
     longitude: number;
-    label?: string;
   }[];
 
   // Important dates (from BDAY and ANNIVERSARY properties)

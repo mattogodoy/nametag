@@ -72,7 +72,6 @@ export const PUT = withAuth(async (request, session, context) => {
       uid,
       organization,
       jobTitle,
-      role,
       photo,
       gender,
       anniversary,
@@ -162,7 +161,6 @@ export const PUT = withAuth(async (request, session, context) => {
     // Professional fields
     if (organization !== undefined) updateData.organization = organization || null;
     if (jobTitle !== undefined) updateData.jobTitle = jobTitle || null;
-    if (role !== undefined) updateData.role = role || null;
 
     // Other vCard fields
     if (photo !== undefined) updateData.photo = photo || null;
@@ -191,14 +189,25 @@ export const PUT = withAuth(async (request, session, context) => {
     if (importantDates !== undefined) {
       updateData.importantDates = {
         deleteMany: {},
-        create: importantDates.map((date) => ({
-          title: date.title,
-          date: new Date(date.date),
-          reminderEnabled: date.reminderEnabled ?? false,
-          reminderType: date.reminderEnabled ? date.reminderType : null,
-          reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
-          reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
-        })),
+        create: importantDates.map((date) => {
+          // If yearUnknown is true, set the year to 1900
+          const dateValue = date.yearUnknown
+            ? (() => {
+                const d = new Date(date.date);
+                d.setFullYear(1900);
+                return d;
+              })()
+            : new Date(date.date);
+
+          return {
+            title: date.title,
+            date: dateValue,
+            reminderEnabled: date.reminderEnabled ?? false,
+            reminderType: date.reminderEnabled ? date.reminderType : null,
+            reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
+            reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+          };
+        }),
       };
     }
 
@@ -209,7 +218,6 @@ export const PUT = withAuth(async (request, session, context) => {
         create: phoneNumbers.map((phone) => ({
           type: phone.type,
           number: phone.number,
-          isPrimary: phone.isPrimary ?? false,
         })),
       };
     }
@@ -220,7 +228,6 @@ export const PUT = withAuth(async (request, session, context) => {
         create: emails.map((email) => ({
           type: email.type,
           email: email.email,
-          isPrimary: email.isPrimary ?? false,
         })),
       };
     }
@@ -230,12 +237,12 @@ export const PUT = withAuth(async (request, session, context) => {
         deleteMany: {},
         create: addresses.map((addr) => ({
           type: addr.type,
-          street: addr.street || null,
+          streetLine1: addr.streetLine1 || null,
+          streetLine2: addr.streetLine2 || null,
           locality: addr.locality || null,
           region: addr.region || null,
           postalCode: addr.postalCode || null,
           country: addr.country || null,
-          isPrimary: addr.isPrimary ?? false,
         })),
       };
     }
@@ -246,7 +253,6 @@ export const PUT = withAuth(async (request, session, context) => {
         create: urls.map((url) => ({
           type: url.type,
           url: url.url,
-          label: url.label || null,
         })),
       };
     }
@@ -268,7 +274,6 @@ export const PUT = withAuth(async (request, session, context) => {
           type: loc.type,
           latitude: loc.latitude,
           longitude: loc.longitude,
-          label: loc.label || null,
         })),
       };
     }

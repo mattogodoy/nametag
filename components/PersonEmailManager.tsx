@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import TypeComboBox from './TypeComboBox';
 
 interface PersonEmail {
   id?: string;
-  type: 'work' | 'home' | 'other';
+  type: string;
   email: string;
-  isPrimary?: boolean;
 }
 
 interface PersonEmailManagerProps {
@@ -16,9 +16,8 @@ interface PersonEmailManagerProps {
 }
 
 const defaultNewEmail: PersonEmail = {
-  type: 'home',
+  type: 'Personal',
   email: '',
-  isPrimary: false,
 };
 
 export default function PersonEmailManager({
@@ -85,16 +84,11 @@ export default function PersonEmailManager({
     }
   };
 
-  const handleSetPrimary = (index: number) => {
-    const updatedEmails = emails.map((email, i) => ({
-      ...email,
-      isPrimary: i === index,
-    }));
-    setEmails(updatedEmails);
-    if (onChange) {
-      onChange(updatedEmails);
-    }
-  };
+  const typeOptions = [
+    { value: 'Personal', label: t('types.personal') },
+    { value: 'Work', label: t('types.work') },
+    { value: 'Other', label: t('types.other') },
+  ];
 
   return (
     <div className="space-y-3">
@@ -122,20 +116,18 @@ export default function PersonEmailManager({
           >
             {editingIndex === index && editingEmail ? (
               <>
-                <select
+                <TypeComboBox
                   value={editingEmail.type}
-                  onChange={(e) =>
+                  onChange={(newType) =>
                     setEditingEmail({
                       ...editingEmail,
-                      type: e.target.value as PersonEmail['type'],
+                      type: newType,
                     })
                   }
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0"
-                >
-                  <option value="home">{t('types.home')}</option>
-                  <option value="work">{t('types.work')}</option>
-                  <option value="other">{t('types.other')}</option>
-                </select>
+                  options={typeOptions}
+                  placeholder={t('typePlaceholder')}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0 w-32"
+                />
                 <input
                   type="email"
                   value={editingEmail.email}
@@ -165,27 +157,13 @@ export default function PersonEmailManager({
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded">
-                      {t(`types.${email.type}`)}
+                      {email.type}
                     </span>
-                    {email.isPrimary && (
-                      <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
-                        {t('primary')}
-                      </span>
-                    )}
                   </div>
                   <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
                     {email.email}
                   </p>
                 </div>
-                {!email.isPrimary && (
-                  <button
-                    type="button"
-                    onClick={() => handleSetPrimary(index)}
-                    className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                  >
-                    {t('setPrimary')}
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => handleStartEdit(index)}
@@ -209,20 +187,18 @@ export default function PersonEmailManager({
       {/* Add new email */}
       {isAdding && (
         <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-200 dark:border-purple-800">
-          <select
+          <TypeComboBox
             value={newEmail.type}
-            onChange={(e) =>
+            onChange={(newType) =>
               setNewEmail({
                 ...newEmail,
-                type: e.target.value as PersonEmail['type'],
+                type: newType,
               })
             }
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0"
-          >
-            <option value="home">{t('types.home')}</option>
-            <option value="work">{t('types.work')}</option>
-            <option value="other">{t('types.other')}</option>
-          </select>
+            options={typeOptions}
+            placeholder={t('typePlaceholder')}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0 w-32"
+          />
           <input
             type="email"
             value={newEmail.email}
@@ -231,19 +207,6 @@ export default function PersonEmailManager({
             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             autoFocus
           />
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={newEmail.isPrimary}
-              onChange={(e) =>
-                setNewEmail({ ...newEmail, isPrimary: e.target.checked })
-              }
-              className="rounded border-gray-300 dark:border-gray-600"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {t('primary')}
-            </span>
-          </label>
           <button
             type="button"
             onClick={handleAdd}

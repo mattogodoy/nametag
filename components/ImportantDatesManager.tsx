@@ -11,6 +11,7 @@ interface ImportantDate {
   id?: string;
   title: string;
   date: string; // ISO date string
+  yearUnknown?: boolean;
   reminderEnabled?: boolean;
   reminderType?: ReminderType | null;
   reminderInterval?: number | null;
@@ -35,6 +36,7 @@ interface ImportantDatesManagerProps {
 const defaultNewDate: ImportantDate = {
   title: '',
   date: '',
+  yearUnknown: false,
   reminderEnabled: false,
   reminderType: null,
   reminderInterval: 1,
@@ -75,8 +77,18 @@ export default function ImportantDatesManager({
   const handleAdd = () => {
     if (!newDate.title.trim() || !newDate.date) return;
 
+    // If year unknown, set year to 1900
+    let finalDate = newDate.date;
+    if (newDate.yearUnknown && newDate.date) {
+      const dateParts = newDate.date.split('-');
+      if (dateParts.length === 3) {
+        finalDate = `1900-${dateParts[1]}-${dateParts[2]}`;
+      }
+    }
+
     const dateToAdd: ImportantDate = {
       ...newDate,
+      date: finalDate,
       id: undefined,
       // Clear reminder fields if not enabled
       reminderType: newDate.reminderEnabled ? newDate.reminderType : null,
@@ -95,10 +107,13 @@ export default function ImportantDatesManager({
 
   const handleStartEdit = (index: number) => {
     setEditingIndex(index);
+    const dateToEdit = dates[index];
+    const yearUnknown = dateToEdit.date.startsWith('1900-');
     setEditingDate({
-      ...dates[index],
-      reminderInterval: dates[index].reminderInterval ?? 1,
-      reminderIntervalUnit: dates[index].reminderIntervalUnit ?? 'YEARS',
+      ...dateToEdit,
+      yearUnknown,
+      reminderInterval: dateToEdit.reminderInterval ?? 1,
+      reminderIntervalUnit: dateToEdit.reminderIntervalUnit ?? 'YEARS',
     });
   };
 
@@ -106,8 +121,18 @@ export default function ImportantDatesManager({
     if (!editingDate || editingIndex === null) return;
     if (!editingDate.title.trim() || !editingDate.date) return;
 
+    // If year unknown, set year to 1900
+    let finalDate = editingDate.date;
+    if (editingDate.yearUnknown && editingDate.date) {
+      const dateParts = editingDate.date.split('-');
+      if (dateParts.length === 3) {
+        finalDate = `1900-${dateParts[1]}-${dateParts[2]}`;
+      }
+    }
+
     const dateToSave: ImportantDate = {
       ...editingDate,
+      date: finalDate,
       reminderType: editingDate.reminderEnabled ? editingDate.reminderType : null,
       reminderInterval: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderInterval : null,
       reminderIntervalUnit: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderIntervalUnit : null,
@@ -354,6 +379,17 @@ export default function ImportantDatesManager({
                     onChange={(e) => setEditingDate({ ...editingDate, date: e.target.value })}
                     className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <label className="flex items-center mt-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editingDate.yearUnknown}
+                      onChange={(e) => setEditingDate({ ...editingDate, yearUnknown: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-xs text-muted">
+                      {t('yearUnknown')}
+                    </span>
+                  </label>
                 </div>
                 <ReminderFields
                   date={editingDate}
@@ -386,11 +422,16 @@ export default function ImportantDatesManager({
                     {date.title}
                   </div>
                   <div className="text-xs text-muted">
-                    {parseAsLocalDate(date.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    {date.date.startsWith('1900-')
+                      ? parseAsLocalDate(date.date).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                        })
+                      : parseAsLocalDate(date.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
                   </div>
                   {getReminderDescription(date) && (
                     <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
@@ -473,6 +514,17 @@ export default function ImportantDatesManager({
                 onChange={(e) => setNewDate({ ...newDate, date: e.target.value })}
                 className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <label className="flex items-center mt-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newDate.yearUnknown}
+                  onChange={(e) => setNewDate({ ...newDate, yearUnknown: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-xs text-muted">
+                  {t('yearUnknown')}
+                </span>
+              </label>
             </div>
             <ReminderFields
               date={newDate}

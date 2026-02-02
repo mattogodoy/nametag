@@ -22,7 +22,6 @@ describe('vCard Transformation', () => {
         uid: 'test-uid-123',
         organization: null,
         jobTitle: null,
-        role: null,
         photo: null,
         gender: null,
         anniversary: null,
@@ -72,7 +71,6 @@ describe('vCard Transformation', () => {
         uid: null,
         organization: null,
         jobTitle: null,
-        role: null,
         photo: null,
         gender: null,
         anniversary: null,
@@ -119,7 +117,6 @@ describe('vCard Transformation', () => {
         uid: 'test-uid',
         organization: null,
         jobTitle: null,
-        role: null,
         photo: null,
         gender: null,
         anniversary: null,
@@ -139,7 +136,6 @@ describe('vCard Transformation', () => {
             personId: 'test-1',
             type: 'mobile',
             number: '+1234567890',
-            isPrimary: true,
             createdAt: new Date(),
           },
         ],
@@ -149,7 +145,6 @@ describe('vCard Transformation', () => {
             personId: 'test-1',
             type: 'work',
             email: 'john@example.com',
-            isPrimary: true,
             createdAt: new Date(),
           },
         ],
@@ -165,8 +160,8 @@ describe('vCard Transformation', () => {
 
       const vcard = personToVCard(person);
 
-      expect(vcard).toContain('TEL;TYPE=MOBILE;PREF=1:+1234567890');
-      expect(vcard).toContain('EMAIL;TYPE=WORK;PREF=1:john@example.com');
+      expect(vcard).toContain('TEL;TYPE=MOBILE:+1234567890');
+      expect(vcard).toContain('EMAIL;TYPE=WORK:john@example.com');
     });
 
     it('should include professional information', () => {
@@ -183,7 +178,6 @@ describe('vCard Transformation', () => {
         uid: 'test-uid',
         organization: 'Acme Corp',
         jobTitle: 'Software Engineer',
-        role: 'Developer',
         photo: null,
         gender: null,
         anniversary: null,
@@ -213,7 +207,6 @@ describe('vCard Transformation', () => {
 
       expect(vcard).toContain('ORG:Acme Corp');
       expect(vcard).toContain('TITLE:Software Engineer');
-      expect(vcard).toContain('ROLE:Developer');
     });
 
     it('should include birthday from important dates', () => {
@@ -230,7 +223,6 @@ describe('vCard Transformation', () => {
         uid: 'test-uid',
         organization: null,
         jobTitle: null,
-        role: null,
         photo: null,
         gender: null,
         anniversary: null,
@@ -290,7 +282,6 @@ describe('vCard Transformation', () => {
         uid: 'test-uid',
         organization: null,
         jobTitle: null,
-        role: null,
         photo: null,
         gender: null,
         anniversary: null,
@@ -388,8 +379,8 @@ VERSION:4.0
 UID:test-uid
 FN:John Doe
 N:Doe;John;;;
-TEL;TYPE=MOBILE;PREF=1:+1234567890
-EMAIL;TYPE=WORK;PREF=1:john@example.com
+TEL;TYPE=mobile:+1234567890
+EMAIL;TYPE=work:john@example.com
 END:VCARD`;
 
       const person = vCardToPerson(vcard);
@@ -397,12 +388,10 @@ END:VCARD`;
       expect(person.phoneNumbers).toHaveLength(1);
       expect(person.phoneNumbers[0].type).toBe('mobile');
       expect(person.phoneNumbers[0].number).toBe('+1234567890');
-      expect(person.phoneNumbers[0].isPrimary).toBe(true);
 
       expect(person.emails).toHaveLength(1);
       expect(person.emails[0].type).toBe('work');
       expect(person.emails[0].email).toBe('john@example.com');
-      expect(person.emails[0].isPrimary).toBe(true);
     });
 
     it('should parse professional information', () => {
@@ -413,14 +402,12 @@ FN:John Doe
 N:Doe;John;;;
 ORG:Acme Corp
 TITLE:Software Engineer
-ROLE:Developer
 END:VCARD`;
 
       const person = vCardToPerson(vcard);
 
       expect(person.organization).toBe('Acme Corp');
       expect(person.jobTitle).toBe('Software Engineer');
-      expect(person.role).toBe('Developer');
     });
 
     it('should parse birthday', () => {
@@ -486,7 +473,6 @@ END:VCARD`;
         uid: 'test-uid-123',
         organization: 'Acme Corp',
         jobTitle: 'Engineer',
-        role: 'Developer',
         photo: 'https://example.com/photo.jpg',
         gender: 'M',
         anniversary: null,
@@ -506,7 +492,6 @@ END:VCARD`;
             personId: 'test-1',
             type: 'mobile',
             number: '+1234567890',
-            isPrimary: true,
             createdAt: new Date(),
           },
         ],
@@ -516,7 +501,6 @@ END:VCARD`;
             personId: 'test-1',
             type: 'work',
             email: 'john@example.com',
-            isPrimary: true,
             createdAt: new Date(),
           },
         ],
@@ -542,7 +526,6 @@ END:VCARD`;
       expect(parsed.suffix).toBe(original.suffix);
       expect(parsed.organization).toBe(original.organization);
       expect(parsed.jobTitle).toBe(original.jobTitle);
-      expect(parsed.role).toBe(original.role);
       expect(parsed.photo).toBe(original.photo);
       expect(parsed.gender).toBe(original.gender);
       expect(parsed.notes).toBe(original.notes);
