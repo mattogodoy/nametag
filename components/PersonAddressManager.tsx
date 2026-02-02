@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import TypeComboBox from './TypeComboBox';
+import { countries, getCountryName } from '@/lib/countries';
 
 interface PersonAddress {
   id?: string;
-  type: 'work' | 'home' | 'other';
-  street?: string;
-  locality?: string; // City
-  region?: string; // State/Province
-  postalCode?: string;
-  country?: string;
-  isPrimary?: boolean;
+  type: string;
+  streetLine1?: string | null;
+  streetLine2?: string | null;
+  locality?: string | null; // City
+  region?: string | null; // State/Province
+  postalCode?: string | null;
+  country?: string | null;
 }
 
 interface PersonAddressManagerProps {
@@ -20,13 +22,13 @@ interface PersonAddressManagerProps {
 }
 
 const defaultNewAddress: PersonAddress = {
-  type: 'home',
-  street: '',
+  type: 'Home',
+  streetLine1: '',
+  streetLine2: '',
   locality: '',
   region: '',
   postalCode: '',
   country: '',
-  isPrimary: false,
 };
 
 export default function PersonAddressManager({
@@ -42,18 +44,19 @@ export default function PersonAddressManager({
 
   const formatAddress = (addr: PersonAddress): string => {
     const parts = [
-      addr.street,
+      addr.streetLine1,
+      addr.streetLine2,
       addr.locality,
       addr.region,
       addr.postalCode,
-      addr.country,
+      getCountryName(addr.country) || addr.country,
     ].filter(Boolean);
     return parts.join(', ') || t('noAddressData');
   };
 
   const handleAdd = () => {
     // At least one field must be filled
-    if (!newAddress.street && !newAddress.locality && !newAddress.region && !newAddress.postalCode && !newAddress.country) {
+    if (!newAddress.streetLine1 && !newAddress.streetLine2 && !newAddress.locality && !newAddress.region && !newAddress.postalCode && !newAddress.country) {
       return;
     }
 
@@ -106,16 +109,11 @@ export default function PersonAddressManager({
     }
   };
 
-  const handleSetPrimary = (index: number) => {
-    const updatedAddresses = addresses.map((addr, i) => ({
-      ...addr,
-      isPrimary: i === index,
-    }));
-    setAddresses(updatedAddresses);
-    if (onChange) {
-      onChange(updatedAddresses);
-    }
-  };
+  const typeOptions = [
+    { value: 'Home', label: t('types.home') },
+    { value: 'Work', label: t('types.work') },
+    { value: 'Other', label: t('types.other') },
+  ];
 
   const renderAddressForm = (
     address: PersonAddress,
@@ -123,26 +121,31 @@ export default function PersonAddressManager({
   ) => (
     <div className="space-y-2">
       <div className="flex gap-2">
-        <select
+        <TypeComboBox
           value={address.type}
-          onChange={(e) =>
+          onChange={(newType) =>
             onChange({
               ...address,
-              type: e.target.value as PersonAddress['type'],
+              type: newType,
             })
           }
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-        >
-          <option value="home">{t('types.home')}</option>
-          <option value="work">{t('types.work')}</option>
-          <option value="other">{t('types.other')}</option>
-        </select>
+          options={typeOptions}
+          placeholder={t('typePlaceholder')}
+          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 w-32"
+        />
       </div>
       <input
         type="text"
-        value={address.street || ''}
-        onChange={(e) => onChange({ ...address, street: e.target.value })}
-        placeholder={t('streetPlaceholder')}
+        value={address.streetLine1 || ''}
+        onChange={(e) => onChange({ ...address, streetLine1: e.target.value })}
+        placeholder={t('streetLine1Placeholder')}
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+      />
+      <input
+        type="text"
+        value={address.streetLine2 || ''}
+        onChange={(e) => onChange({ ...address, streetLine2: e.target.value })}
+        placeholder={t('streetLine2Placeholder')}
         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
       />
       <div className="grid grid-cols-2 gap-2">
@@ -169,13 +172,18 @@ export default function PersonAddressManager({
           placeholder={t('postalCodePlaceholder')}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         />
-        <input
-          type="text"
+        <select
           value={address.country || ''}
           onChange={(e) => onChange({ ...address, country: e.target.value })}
-          placeholder={t('countryPlaceholder')}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-        />
+        >
+          <option value="">{t('countryPlaceholder')}</option>
+          {countries.map((country) => (
+            <option key={country.code} value={country.code}>
+              {country.name}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
@@ -229,24 +237,10 @@ export default function PersonAddressManager({
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded">
-                      {t(`types.${address.type}`)}
+                      {address.type}
                     </span>
-                    {address.isPrimary && (
-                      <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
-                        {t('primary')}
-                      </span>
-                    )}
                   </div>
                   <div className="flex gap-2">
-                    {!address.isPrimary && (
-                      <button
-                        type="button"
-                        onClick={() => handleSetPrimary(index)}
-                        className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                      >
-                        {t('setPrimary')}
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => handleStartEdit(index)}
@@ -277,19 +271,6 @@ export default function PersonAddressManager({
         <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border-2 border-orange-200 dark:border-orange-800 space-y-3">
           {renderAddressForm(newAddress, setNewAddress)}
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newAddress.isPrimary}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, isPrimary: e.target.checked })
-                }
-                className="rounded border-gray-300 dark:border-gray-600"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {t('primary')}
-              </span>
-            </label>
             <div className="flex-1" />
             <button
               type="button"

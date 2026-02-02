@@ -9,6 +9,10 @@ import PersonAutocomplete from './PersonAutocomplete';
 import GroupsSelector from './GroupsSelector';
 import ImportantDatesManager from './ImportantDatesManager';
 import MarkdownEditor from './MarkdownEditor';
+import PersonPhoneManager from './PersonPhoneManager';
+import PersonEmailManager from './PersonEmailManager';
+import PersonAddressManager from './PersonAddressManager';
+import PersonUrlManager from './PersonUrlManager';
 import { Button } from './ui/Button';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -34,6 +38,10 @@ interface PersonFormProps {
     middleName: string | null;
     secondLastName: string | null;
     nickname: string | null;
+    prefix: string | null;
+    suffix: string | null;
+    organization: string | null;
+    jobTitle: string | null;
     lastContact: Date | null;
     notes: string | null;
     relationshipToUserId: string | null;
@@ -52,6 +60,31 @@ interface PersonFormProps {
       reminderType?: 'ONCE' | 'RECURRING' | null;
       reminderInterval?: number | null;
       reminderIntervalUnit?: ReminderIntervalUnit | null;
+    }>;
+    phoneNumbers?: Array<{
+      id?: string;
+      type: string;
+      number: string;
+    }>;
+    emails?: Array<{
+      id?: string;
+      type: string;
+      email: string;
+    }>;
+    addresses?: Array<{
+      id?: string;
+      type: string;
+      streetLine1?: string | null;
+      streetLine2?: string | null;
+      locality?: string | null;
+      region?: string | null;
+      postalCode?: string | null;
+      country?: string | null;
+    }>;
+    urls?: Array<{
+      id?: string;
+      type: string;
+      url: string;
     }>;
   };
   groups: Array<{
@@ -122,6 +155,10 @@ export default function PersonForm({
     middleName: person?.middleName || '',
     secondLastName: person?.secondLastName || '',
     nickname: person?.nickname || '',
+    prefix: person?.prefix || '',
+    suffix: person?.suffix || '',
+    organization: person?.organization || '',
+    jobTitle: person?.jobTitle || '',
     lastContact: person?.lastContact
       ? new Date(person.lastContact).toISOString().split('T')[0]
       : '',
@@ -152,6 +189,44 @@ export default function PersonForm({
       reminderIntervalUnit: d.reminderIntervalUnit,
     })) || []
   );
+
+  const [phoneNumbers, setPhoneNumbers] = useState<Array<{
+    id?: string;
+    type: string;
+    number: string;
+  }>>(person?.phoneNumbers?.map(p => ({ id: p.id, type: p.type, number: p.number })) || []);
+
+  const [emails, setEmails] = useState<Array<{
+    id?: string;
+    type: string;
+    email: string;
+  }>>(person?.emails?.map(e => ({ id: e.id, type: e.type, email: e.email })) || []);
+
+  const [addresses, setAddresses] = useState<Array<{
+    id?: string;
+    type: string;
+    streetLine1?: string | null;
+    streetLine2?: string | null;
+    locality?: string | null;
+    region?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  }>>(person?.addresses?.map(a => ({
+    id: a.id,
+    type: a.type,
+    streetLine1: a.streetLine1,
+    streetLine2: a.streetLine2,
+    locality: a.locality,
+    region: a.region,
+    postalCode: a.postalCode,
+    country: a.country
+  })) || []);
+
+  const [urls, setUrls] = useState<Array<{
+    id?: string;
+    type: string;
+    url: string;
+  }>>(person?.urls?.map(u => ({ id: u.id, type: u.type, url: u.url })) || []);
 
   // Get the selected base person's groups for inheritance
   const selectedBasePerson = knownThroughId !== 'user'
@@ -211,21 +286,33 @@ export default function PersonForm({
       const url = mode === 'create' ? '/api/people' : `/api/people/${person?.id}`;
       const method = mode === 'create' ? 'POST' : 'PUT';
 
+      const payload = {
+        ...formData,
+        importantDates,
+        phoneNumbers,
+        emails,
+        addresses,
+        urls,
+        ...(mode === 'create' && knownThroughId !== 'user' ? { connectedThroughId: knownThroughId } : {})
+      };
+
+      console.log('Sending payload:', payload);
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          importantDates,
-          ...(mode === 'create' && knownThroughId !== 'user' ? { connectedThroughId: knownThroughId } : {})
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('API Error:', data);
+        if (data.details) {
+          console.error('Validation errors:', data.details);
+        }
         setError(data.error || t('errorSomethingWrong'));
         return;
       }
@@ -288,11 +375,30 @@ export default function PersonForm({
         </div>
       )}
 
-      {/* Details Section */}
+      {/* Personal Information Section */}
       <Section>
-        <SectionHeader>{t('sectionDetails')}</SectionHeader>
+        <SectionHeader>{t('sectionPersonalInfo')}</SectionHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="prefix"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('prefixLabel')}
+              </label>
+              <input
+                type="text"
+                id="prefix"
+                value={formData.prefix}
+                onChange={(e) =>
+                  setFormData({ ...formData, prefix: e.target.value })
+                }
+                placeholder={t('prefixPlaceholder')}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
             <div>
               <label
                 htmlFor="name"
@@ -366,7 +472,7 @@ export default function PersonForm({
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div>
               <label
                 htmlFor="nickname"
                 className="block text-sm font-medium text-muted mb-1"
@@ -380,6 +486,25 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, nickname: e.target.value })
                 }
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="suffix"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('suffixLabel')}
+              </label>
+              <input
+                type="text"
+                id="suffix"
+                value={formData.suffix}
+                onChange={(e) =>
+                  setFormData({ ...formData, suffix: e.target.value })
+                }
+                placeholder={t('suffixPlaceholder')}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -550,26 +675,86 @@ export default function PersonForm({
               </p>
             </div>
           )}
+        </div>
+      </Section>
 
-          <div>
-            <label
-              htmlFor="notes"
-              className="block text-sm font-medium text-muted mb-1"
-            >
-              {t('notesLabel')}
-            </label>
-            <MarkdownEditor
-              id="notes"
-              value={formData.notes}
-              onChange={(notes) => setFormData({ ...formData, notes })}
-              placeholder={t('notesPlaceholder')}
-              rows={4}
-            />
-            <p className="text-xs text-muted mt-1">
-              {t('markdownSupport')}
-            </p>
+      {/* Work Information Section */}
+      <Section>
+        <SectionHeader>{t('sectionWorkInfo')}</SectionHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="organization"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('companyLabel')}
+              </label>
+              <input
+                type="text"
+                id="organization"
+                value={formData.organization}
+                onChange={(e) =>
+                  setFormData({ ...formData, organization: e.target.value })
+                }
+                placeholder={t('companyPlaceholder')}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="jobTitle"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('jobTitleLabel')}
+              </label>
+              <input
+                type="text"
+                id="jobTitle"
+                value={formData.jobTitle}
+                onChange={(e) =>
+                  setFormData({ ...formData, jobTitle: e.target.value })
+                }
+                placeholder={t('jobTitlePlaceholder')}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
           </div>
         </div>
+      </Section>
+
+      {/* Contact Information Section */}
+      <Section>
+        <SectionHeader>{t('sectionContactInfo')}</SectionHeader>
+        <div className="space-y-4">
+          <PersonPhoneManager
+            initialPhones={phoneNumbers}
+            onChange={setPhoneNumbers}
+          />
+          <PersonEmailManager
+            initialEmails={emails}
+            onChange={setEmails}
+          />
+        </div>
+      </Section>
+
+      {/* Location Section */}
+      <Section>
+        <SectionHeader>{t('sectionLocation')}</SectionHeader>
+        <PersonAddressManager
+          initialAddresses={addresses}
+          onChange={setAddresses}
+        />
+      </Section>
+
+      {/* Websites Section */}
+      <Section>
+        <SectionHeader>{t('sectionWebsites')}</SectionHeader>
+        <PersonUrlManager
+          initialUrls={urls}
+          onChange={setUrls}
+        />
       </Section>
 
       {/* Groups Section */}
@@ -718,6 +903,23 @@ export default function PersonForm({
           mode={mode}
           reminderLimit={reminderLimit}
         />
+      </Section>
+
+      {/* Notes Section */}
+      <Section>
+        <SectionHeader>{t('sectionNotes')}</SectionHeader>
+        <div>
+          <MarkdownEditor
+            id="notes"
+            value={formData.notes}
+            onChange={(notes) => setFormData({ ...formData, notes })}
+            placeholder={t('notesPlaceholder')}
+            rows={4}
+          />
+          <p className="text-xs text-muted mt-1">
+            {t('markdownSupport')}
+          </p>
+        </div>
       </Section>
 
       <div className="flex justify-end space-x-4 pt-4">

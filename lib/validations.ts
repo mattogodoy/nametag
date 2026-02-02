@@ -62,6 +62,7 @@ const importantDateSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(100),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+  yearUnknown: z.boolean().optional(),
   reminderEnabled: z.boolean().optional(),
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
@@ -71,34 +72,31 @@ const importantDateSchema = z.object({
 // vCard field schemas
 const phoneNumberSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(['work', 'home', 'mobile', 'fax', 'other']),
+  type: z.string().min(1, 'Type is required').max(50),
   number: z.string().min(1, 'Phone number is required').max(50),
-  isPrimary: z.boolean().optional().default(false),
 });
 
 const emailAddressSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(['work', 'home', 'other']),
+  type: z.string().min(1, 'Type is required').max(50),
   email: emailSchema,
-  isPrimary: z.boolean().optional().default(false),
 });
 
 const addressSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(['work', 'home', 'other']),
-  street: z.string().max(200).nullable().optional(),
+  type: z.string().min(1, 'Type is required').max(50),
+  streetLine1: z.string().max(200).nullable().optional(),
+  streetLine2: z.string().max(200).nullable().optional(),
   locality: z.string().max(100).nullable().optional(), // City
   region: z.string().max(100).nullable().optional(), // State/Province
   postalCode: z.string().max(20).nullable().optional(),
   country: z.string().max(100).nullable().optional(),
-  isPrimary: z.boolean().optional().default(false),
 });
 
 const urlSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(['work', 'home', 'personal', 'other']),
-  url: z.string().url('Invalid URL format').max(500),
-  label: z.string().max(100).nullable().optional(),
+  type: z.string().min(1, 'Type is required').max(50),
+  url: z.string().min(1, 'URL is required').max(500),
 });
 
 const imHandleSchema = z.object({
@@ -137,7 +135,6 @@ export const createPersonSchema = z.object({
   // Professional fields
   organization: z.string().max(200).nullable().optional(),
   jobTitle: z.string().max(200).nullable().optional(),
-  role: z.string().max(200).nullable().optional(),
 
   // Other vCard fields
   photo: z.string().max(1000).nullable().optional(),
@@ -309,6 +306,7 @@ export const importDataSchema = z.object({
 export const updateImportantDateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+  yearUnknown: z.boolean().optional(),
   reminderEnabled: z.boolean().optional(),
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),

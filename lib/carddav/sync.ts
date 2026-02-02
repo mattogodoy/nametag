@@ -472,7 +472,6 @@ async function updatePersonFromVCard(
       nickname: parsedData.nickname,
       organization: parsedData.organization,
       jobTitle: parsedData.jobTitle,
-      role: parsedData.role,
       photo: parsedData.photo,
       gender: parsedData.gender,
       anniversary: parsedData.anniversary,

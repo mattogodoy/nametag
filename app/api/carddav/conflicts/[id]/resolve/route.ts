@@ -117,7 +117,6 @@ export async function POST(request: Request, context: RouteParams) {
           nickname: parsedVCard.nickname,
           organization: parsedVCard.organization,
           jobTitle: parsedVCard.jobTitle,
-          role: parsedVCard.role,
           photo: parsedVCard.photo,
           gender: parsedVCard.gender,
           anniversary: parsedVCard.anniversary,

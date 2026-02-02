@@ -76,9 +76,8 @@ model Person {
   uid                         String?               @unique // Required for sync
 
   // Professional
-  organization                String?               // ORG
+  organization                String?               // ORG (Company)
   jobTitle                    String?               // TITLE
-  role                        String?               // ROLE
 
   // Other vCard fields
   photo                       String?               // URL or base64
@@ -469,9 +468,8 @@ model UnsubscribeToken {
 model PersonPhone {
   id        String   @id @default(cuid())
   personId  String
-  type      String   // "work", "home", "mobile", "fax", "other"
+  type      String   // Any string value (predefined or custom)
   number    String
-  isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
 
   // Relations
@@ -485,9 +483,8 @@ model PersonPhone {
 model PersonEmail {
   id        String   @id @default(cuid())
   personId  String
-  type      String   // "work", "home", "other"
+  type      String   // Any string value (predefined or custom)
   email     String
-  isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
 
   // Relations
@@ -499,16 +496,16 @@ model PersonEmail {
 
 // PersonAddress - Physical addresses
 model PersonAddress {
-  id         String   @id @default(cuid())
-  personId   String
-  type       String   // "work", "home", "other"
-  street     String?
-  locality   String?  // City
-  region     String?  // State/Province
-  postalCode String?
-  country    String?
-  isPrimary  Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  personId    String
+  type        String   // Any string value (predefined or custom)
+  streetLine1 String?  // First line of street address
+  streetLine2 String?  // Second line (apt, suite, etc.)
+  locality    String?  // City
+  region      String?  // State/Province
+  postalCode  String?
+  country     String?
+  createdAt   DateTime @default(now())
 
   // Relations
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
@@ -521,9 +518,8 @@ model PersonAddress {
 model PersonUrl {
   id        String   @id @default(cuid())
   personId  String
-  type      String   // "work", "home", "personal", "other"
+  type      String   // Any string value (predefined or custom)
   url       String
-  label     String?
   createdAt DateTime @default(now())
 
   // Relations

@@ -13,8 +13,8 @@ interface ParsedVCardData {
   nickname?: string;
   organization?: string;
   jobTitle?: string;
-  emails?: Array<{ email: string; type: string; isPrimary: boolean }>;
-  phoneNumbers?: Array<{ number: string; type: string; isPrimary: boolean }>;
+  emails?: Array<{ email: string; type: string }>;
+  phoneNumbers?: Array<{ number: string; type: string }>;
 }
 
 interface PendingImport {

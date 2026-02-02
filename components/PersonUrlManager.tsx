@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import TypeComboBox from './TypeComboBox';
 
 interface PersonUrl {
   id?: string;
-  type: 'work' | 'home' | 'personal' | 'other';
+  type: string;
   url: string;
-  label?: string;
 }
 
 interface PersonUrlManagerProps {
@@ -16,9 +16,8 @@ interface PersonUrlManagerProps {
 }
 
 const defaultNewUrl: PersonUrl = {
-  type: 'personal',
+  type: 'Personal',
   url: '',
-  label: '',
 };
 
 export default function PersonUrlManager({
@@ -38,7 +37,6 @@ export default function PersonUrlManager({
     const urlToAdd: PersonUrl = {
       ...newUrl,
       id: undefined,
-      label: newUrl.label?.trim() || undefined,
     };
 
     const updatedUrls = [...urls, urlToAdd];
@@ -63,7 +61,6 @@ export default function PersonUrlManager({
     updatedUrls[editingIndex] = {
       ...editingUrl,
       id: urls[editingIndex].id,
-      label: editingUrl.label?.trim() || undefined,
     };
 
     setUrls(updatedUrls);
@@ -86,6 +83,12 @@ export default function PersonUrlManager({
       onChange(updatedUrls);
     }
   };
+
+  const typeOptions = [
+    { value: 'Personal', label: t('types.personal') },
+    { value: 'Work', label: t('types.work') },
+    { value: 'Other', label: t('types.other') },
+  ];
 
   return (
     <div className="space-y-3">
@@ -113,21 +116,18 @@ export default function PersonUrlManager({
           >
             {editingIndex === index && editingUrl ? (
               <>
-                <select
+                <TypeComboBox
                   value={editingUrl.type}
-                  onChange={(e) =>
+                  onChange={(newType) =>
                     setEditingUrl({
                       ...editingUrl,
-                      type: e.target.value as PersonUrl['type'],
+                      type: newType,
                     })
                   }
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0"
-                >
-                  <option value="personal">{t('types.personal')}</option>
-                  <option value="work">{t('types.work')}</option>
-                  <option value="home">{t('types.home')}</option>
-                  <option value="other">{t('types.other')}</option>
-                </select>
+                  options={typeOptions}
+                  placeholder={t('typePlaceholder')}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0 w-32"
+                />
                 <input
                   type="url"
                   value={editingUrl.url}
@@ -136,15 +136,6 @@ export default function PersonUrlManager({
                   }
                   placeholder={t('urlPlaceholder')}
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                />
-                <input
-                  type="text"
-                  value={editingUrl.label || ''}
-                  onChange={(e) =>
-                    setEditingUrl({ ...editingUrl, label: e.target.value })
-                  }
-                  placeholder={t('labelPlaceholder')}
-                  className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
                 <button
                   type="button"
@@ -166,13 +157,8 @@ export default function PersonUrlManager({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs px-2 py-1 bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 rounded">
-                      {t(`types.${urlItem.type}`)}
+                      {urlItem.type}
                     </span>
-                    {urlItem.label && (
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        {urlItem.label}
-                      </span>
-                    )}
                   </div>
                   <a
                     href={urlItem.url}
@@ -206,21 +192,18 @@ export default function PersonUrlManager({
       {/* Add new URL */}
       {isAdding && (
         <div className="flex items-center gap-2 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg border-2 border-cyan-200 dark:border-cyan-800">
-          <select
+          <TypeComboBox
             value={newUrl.type}
-            onChange={(e) =>
+            onChange={(newType) =>
               setNewUrl({
                 ...newUrl,
-                type: e.target.value as PersonUrl['type'],
+                type: newType,
               })
             }
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0"
-          >
-            <option value="personal">{t('types.personal')}</option>
-            <option value="work">{t('types.work')}</option>
-            <option value="home">{t('types.home')}</option>
-            <option value="other">{t('types.other')}</option>
-          </select>
+            options={typeOptions}
+            placeholder={t('typePlaceholder')}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0 w-32"
+          />
           <input
             type="url"
             value={newUrl.url}
@@ -228,13 +211,6 @@ export default function PersonUrlManager({
             placeholder={t('urlPlaceholder')}
             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             autoFocus
-          />
-          <input
-            type="text"
-            value={newUrl.label || ''}
-            onChange={(e) => setNewUrl({ ...newUrl, label: e.target.value })}
-            placeholder={t('labelPlaceholder')}
-            className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           />
           <button
             type="button"

@@ -36,6 +36,10 @@ export default async function EditPersonPage({
             date: 'asc',
           },
         },
+        phoneNumbers: true,
+        emails: true,
+        addresses: true,
+        urls: true,
       },
     }),
     prisma.group.findMany({

@@ -17,11 +17,12 @@ interface Conflict {
       organization?: string | null;
       jobTitle?: string | null;
       notes?: string | null;
-      phoneNumbers: Array<{ type: string; number: string; isPrimary: boolean }>;
-      emails: Array<{ type: string; email: string; isPrimary: boolean }>;
+      phoneNumbers: Array<{ type: string; number: string }>;
+      emails: Array<{ type: string; email: string }>;
       addresses: Array<{
         type: string;
-        street: string | null;
+        streetLine1: string | null;
+        streetLine2: string | null;
         locality: string | null;
         region: string | null;
         postalCode: string | null;
@@ -41,7 +42,8 @@ interface PersonData {
   emails?: Array<{ type: string; email: string }>;
   addresses?: Array<{
     type: string;
-    street?: string | null;
+    streetLine1?: string | null;
+    streetLine2?: string | null;
     locality?: string | null;
     region?: string | null;
   }>;
@@ -103,13 +105,14 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
 
   const formatAddresses = (addresses?: Array<{
     type: string;
-    street?: string | null;
+    streetLine1?: string | null;
+    streetLine2?: string | null;
     locality?: string | null;
     region?: string | null;
   }>) => {
     if (!addresses || addresses.length === 0) return t('none');
     return addresses.map(a => {
-      const parts = [a.street, a.locality, a.region].filter(Boolean);
+      const parts = [a.streetLine1, a.streetLine2, a.locality, a.region].filter(Boolean);
       return `${parts.join(', ')} (${a.type})`;
     }).join(' | ');
   };

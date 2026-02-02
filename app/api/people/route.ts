@@ -68,7 +68,6 @@ export const POST = withAuth(async (request, session) => {
       uid,
       organization,
       jobTitle,
-      role,
       photo,
       gender,
       anniversary,
@@ -155,7 +154,6 @@ export const POST = withAuth(async (request, session) => {
       // Professional fields
       organization: organization || null,
       jobTitle: jobTitle || null,
-      role: role || null,
 
       // Other vCard fields
       photo: photo || null,
@@ -176,14 +174,25 @@ export const POST = withAuth(async (request, session) => {
         : undefined,
       importantDates: importantDates && importantDates.length > 0
         ? {
-            create: importantDates.map((date) => ({
-              title: date.title,
-              date: new Date(date.date),
-              reminderEnabled: date.reminderEnabled ?? false,
-              reminderType: date.reminderEnabled ? date.reminderType : null,
-              reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
-              reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
-            })),
+            create: importantDates.map((date) => {
+              // If yearUnknown is true, set the year to 1900
+              const dateValue = date.yearUnknown
+                ? (() => {
+                    const d = new Date(date.date);
+                    d.setFullYear(1900);
+                    return d;
+                  })()
+                : new Date(date.date);
+
+              return {
+                title: date.title,
+                date: dateValue,
+                reminderEnabled: date.reminderEnabled ?? false,
+                reminderType: date.reminderEnabled ? date.reminderType : null,
+                reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
+                reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+              };
+            }),
           }
         : undefined,
       // Multi-value vCard fields
@@ -192,7 +201,6 @@ export const POST = withAuth(async (request, session) => {
             create: phoneNumbers.map((phone) => ({
               type: phone.type,
               number: phone.number,
-              isPrimary: phone.isPrimary ?? false,
             })),
           }
         : undefined,
@@ -201,7 +209,6 @@ export const POST = withAuth(async (request, session) => {
             create: emails.map((email) => ({
               type: email.type,
               email: email.email,
-              isPrimary: email.isPrimary ?? false,
             })),
           }
         : undefined,
@@ -209,12 +216,12 @@ export const POST = withAuth(async (request, session) => {
         ? {
             create: addresses.map((addr) => ({
               type: addr.type,
-              street: addr.street || null,
+              streetLine1: addr.streetLine1 || null,
+              streetLine2: addr.streetLine2 || null,
               locality: addr.locality || null,
               region: addr.region || null,
               postalCode: addr.postalCode || null,
               country: addr.country || null,
-              isPrimary: addr.isPrimary ?? false,
             })),
           }
         : undefined,
@@ -223,7 +230,6 @@ export const POST = withAuth(async (request, session) => {
             create: urls.map((url) => ({
               type: url.type,
               url: url.url,
-              label: url.label || null,
             })),
           }
         : undefined,
@@ -241,7 +247,6 @@ export const POST = withAuth(async (request, session) => {
               type: loc.type,
               latitude: loc.latitude,
               longitude: loc.longitude,
-              label: loc.label || null,
             })),
           }
         : undefined,

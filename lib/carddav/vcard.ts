@@ -84,25 +84,28 @@ export function personToVCard(
   // TEL (Phone numbers)
   person.phoneNumbers.forEach((phone) => {
     const types = phone.type.toUpperCase();
-    const pref = phone.isPrimary ? ';PREF=1' : '';
-    lines.push(`TEL;TYPE=${types}${pref}:${phone.number}`);
+    lines.push(`TEL;TYPE=${types}:${phone.number}`);
   });
 
   // EMAIL
   person.emails.forEach((email) => {
     const types = email.type.toUpperCase();
-    const pref = email.isPrimary ? ';PREF=1' : '';
-    lines.push(`EMAIL;TYPE=${types}${pref}:${email.email}`);
+    lines.push(`EMAIL;TYPE=${types}:${email.email}`);
   });
 
   // ADR (Address) - ;;street;locality;region;postal;country
   person.addresses.forEach((addr) => {
     const types = addr.type.toUpperCase();
-    const pref = addr.isPrimary ? ';PREF=1' : '';
+
+    // Combine streetLine1 and streetLine2 with newline separator
+    const streetValue = [addr.streetLine1, addr.streetLine2]
+      .filter(Boolean)
+      .join('\n');
+
     const adrValue = [
       '', // Post office box (not used)
       '', // Extended address (not used)
-      addr.street || '',
+      streetValue,
       addr.locality || '',
       addr.region || '',
       addr.postalCode || '',
@@ -110,14 +113,13 @@ export function personToVCard(
     ]
       .map(escapeVCardText)
       .join(';');
-    lines.push(`ADR;TYPE=${types}${pref}:${adrValue}`);
+    lines.push(`ADR;TYPE=${types}:${adrValue}`);
   });
 
   // URL
   person.urls.forEach((url) => {
     const types = url.type.toUpperCase();
-    const label = url.label ? `;LABEL="${escapeVCardText(url.label)}"` : '';
-    lines.push(`URL;TYPE=${types}${label}:${url.url}`);
+    lines.push(`URL;TYPE=${types}:${url.url}`);
   });
 
   // IMPP (Instant Messaging)
@@ -129,8 +131,7 @@ export function personToVCard(
   // GEO (Geographic location)
   person.locations.forEach((loc) => {
     const types = loc.type.toUpperCase();
-    const label = loc.label ? `;LABEL="${escapeVCardText(loc.label)}"` : '';
-    lines.push(`GEO;TYPE=${types}${label}:geo:${loc.latitude},${loc.longitude}`);
+    lines.push(`GEO;TYPE=${types}:geo:${loc.latitude},${loc.longitude}`);
   });
 
   // ORG (Organization)
@@ -141,11 +142,6 @@ export function personToVCard(
   // TITLE (Job title)
   if (person.jobTitle) {
     lines.push(`TITLE:${escapeVCardText(person.jobTitle)}`);
-  }
-
-  // ROLE
-  if (person.role) {
-    lines.push(`ROLE:${escapeVCardText(person.role)}`);
   }
 
   // PHOTO
@@ -297,40 +293,43 @@ export function vCardToPerson(vCardText: string): ParsedVCardData {
       }
 
       case 'TEL': {
-        const type = (params.TYPE || 'other').toLowerCase();
-        const isPrimary = params.PREF === '1';
-        data.phoneNumbers.push({ type, number: value, isPrimary });
+        const type = params.TYPE || 'other';
+        data.phoneNumbers.push({ type, number: value });
         break;
       }
 
       case 'EMAIL': {
-        const type = (params.TYPE || 'other').toLowerCase();
-        const isPrimary = params.PREF === '1';
-        data.emails.push({ type, email: value, isPrimary });
+        const type = params.TYPE || 'other';
+        data.emails.push({ type, email: value });
         break;
       }
 
       case 'ADR': {
         // ADR = ;;street;locality;region;postal;country
         const parts = value.split(';');
-        const type = (params.TYPE || 'other').toLowerCase();
-        const isPrimary = params.PREF === '1';
+        const type = params.TYPE || 'other';
+
+        // Split street component on newline to get streetLine1 and streetLine2
+        const streetPart = parts[2] || '';
+        const streetLines = streetPart.split('\n');
+        const streetLine1 = streetLines[0] || undefined;
+        const streetLine2 = streetLines[1] || undefined;
+
         data.addresses.push({
           type,
-          street: parts[2] || undefined,
+          streetLine1,
+          streetLine2,
           locality: parts[3] || undefined,
           region: parts[4] || undefined,
           postalCode: parts[5] || undefined,
           country: parts[6] || undefined,
-          isPrimary,
         });
         break;
       }
 
       case 'URL': {
-        const type = (params.TYPE || 'personal').toLowerCase();
-        const label = params.LABEL;
-        data.urls.push({ type, url: value, label });
+        const type = params.TYPE || 'personal';
+        data.urls.push({ type, url: value });
         break;
       }
 
@@ -349,28 +348,25 @@ export function vCardToPerson(vCardText: string): ParsedVCardData {
         // GEO = geo:lat,lon
         const geoMatch = value.match(/geo:([-\d.]+),([-\d.]+)/);
         if (geoMatch) {
-          const type = (params.TYPE || 'other').toLowerCase();
-          const label = params.LABEL;
+          const type = params.TYPE || 'other';
           data.locations.push({
             type,
             latitude: parseFloat(geoMatch[1]),
             longitude: parseFloat(geoMatch[2]),
-            label,
           });
         }
         break;
       }
 
-      case 'ORG':
-        data.organization = value;
+      case 'ORG': {
+        // ORG = CompanyName (just use first component)
+        const parts = value.split(';');
+        data.organization = parts[0] || undefined;
         break;
+      }
 
       case 'TITLE':
         data.jobTitle = value;
-        break;
-
-      case 'ROLE':
-        data.role = value;
         break;
 
       case 'PHOTO':

@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import TypeComboBox from './TypeComboBox';
 
 interface PersonPhone {
   id?: string;
-  type: 'work' | 'home' | 'mobile' | 'fax' | 'other';
+  type: string;
   number: string;
-  isPrimary?: boolean;
 }
 
 interface PersonPhoneManagerProps {
@@ -16,9 +16,8 @@ interface PersonPhoneManagerProps {
 }
 
 const defaultNewPhone: PersonPhone = {
-  type: 'mobile',
+  type: 'Mobile',
   number: '',
-  isPrimary: false,
 };
 
 export default function PersonPhoneManager({
@@ -85,16 +84,13 @@ export default function PersonPhoneManager({
     }
   };
 
-  const handleSetPrimary = (index: number) => {
-    const updatedPhones = phones.map((phone, i) => ({
-      ...phone,
-      isPrimary: i === index,
-    }));
-    setPhones(updatedPhones);
-    if (onChange) {
-      onChange(updatedPhones);
-    }
-  };
+  const typeOptions = [
+    { value: 'Mobile', label: t('types.mobile') },
+    { value: 'Home', label: t('types.home') },
+    { value: 'Work', label: t('types.work') },
+    { value: 'Fax', label: t('types.fax') },
+    { value: 'Other', label: t('types.other') },
+  ];
 
   return (
     <div className="space-y-3">
@@ -122,22 +118,18 @@ export default function PersonPhoneManager({
           >
             {editingIndex === index && editingPhone ? (
               <>
-                <select
+                <TypeComboBox
                   value={editingPhone.type}
-                  onChange={(e) =>
+                  onChange={(newType) =>
                     setEditingPhone({
                       ...editingPhone,
-                      type: e.target.value as PersonPhone['type'],
+                      type: newType,
                     })
                   }
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0"
-                >
-                  <option value="mobile">{t('types.mobile')}</option>
-                  <option value="home">{t('types.home')}</option>
-                  <option value="work">{t('types.work')}</option>
-                  <option value="fax">{t('types.fax')}</option>
-                  <option value="other">{t('types.other')}</option>
-                </select>
+                  options={typeOptions}
+                  placeholder={t('typePlaceholder')}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0 w-32"
+                />
                 <input
                   type="tel"
                   value={editingPhone.number}
@@ -167,27 +159,13 @@ export default function PersonPhoneManager({
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">
-                      {t(`types.${phone.type}`)}
+                      {phone.type}
                     </span>
-                    {phone.isPrimary && (
-                      <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
-                        {t('primary')}
-                      </span>
-                    )}
                   </div>
                   <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
                     {phone.number}
                   </p>
                 </div>
-                {!phone.isPrimary && (
-                  <button
-                    type="button"
-                    onClick={() => handleSetPrimary(index)}
-                    className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                  >
-                    {t('setPrimary')}
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => handleStartEdit(index)}
@@ -211,22 +189,18 @@ export default function PersonPhoneManager({
       {/* Add new phone */}
       {isAdding && (
         <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-          <select
+          <TypeComboBox
             value={newPhone.type}
-            onChange={(e) =>
+            onChange={(newType) =>
               setNewPhone({
                 ...newPhone,
-                type: e.target.value as PersonPhone['type'],
+                type: newType,
               })
             }
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0"
-          >
-            <option value="mobile">{t('types.mobile')}</option>
-            <option value="home">{t('types.home')}</option>
-            <option value="work">{t('types.work')}</option>
-            <option value="fax">{t('types.fax')}</option>
-            <option value="other">{t('types.other')}</option>
-          </select>
+            options={typeOptions}
+            placeholder={t('typePlaceholder')}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 flex-shrink-0 w-32"
+          />
           <input
             type="tel"
             value={newPhone.number}
@@ -235,19 +209,6 @@ export default function PersonPhoneManager({
             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             autoFocus
           />
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={newPhone.isPrimary}
-              onChange={(e) =>
-                setNewPhone({ ...newPhone, isPrimary: e.target.checked })
-              }
-              className="rounded border-gray-300 dark:border-gray-600"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {t('primary')}
-            </span>
-          </label>
           <button
             type="button"
             onClick={handleAdd}
