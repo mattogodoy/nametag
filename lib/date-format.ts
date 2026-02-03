@@ -40,6 +40,28 @@ export function formatDate(date: Date | string, format: DateFormat): string {
   }
 }
 
+export function formatDateWithoutYear(date: Date | string, format: DateFormat): string {
+  const d = parseAsLocalDate(date);
+
+  if (isNaN(d.getTime())) {
+    return 'Invalid Date';
+  }
+
+  const day = d.getDate();
+  const monthName = d.toLocaleDateString(undefined, { month: 'long' });
+
+  // For DMY format, show "day Month" (e.g., "5 January")
+  // For MDY and YMD formats, show "Month day" (e.g., "January 5")
+  switch (format) {
+    case 'DMY':
+      return `${day} ${monthName}`;
+    case 'MDY':
+    case 'YMD':
+    default:
+      return `${monthName} ${day}`;
+  }
+}
+
 export function getDateFormatLabel(format: DateFormat): string {
   switch (format) {
     case 'MDY':

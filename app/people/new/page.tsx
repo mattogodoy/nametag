@@ -23,10 +23,16 @@ export default async function NewPersonPage({
   const params = await searchParams;
 
   // Check if user can create more people and reminders
-  const [usageCheck, reminderCheck] = await Promise.all([
+  const [usageCheck, reminderCheck, user] = await Promise.all([
     canCreateResource(session.user.id, 'people'),
     canEnableReminder(session.user.id),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { dateFormat: true },
+    }),
   ]);
+
+  const dateFormat = user?.dateFormat || 'MDY';
 
   const [groups, relationshipTypes, people] = await Promise.all([
     prisma.group.findMany({
@@ -100,6 +106,7 @@ export default async function NewPersonPage({
                 availablePeople={people}
                 userName={session.user.name || session.user.email || 'You'}
                 mode="create"
+                dateFormat={dateFormat}
                 initialName={params.name}
                 initialKnownThrough={params.knownThrough}
                 initialRelationshipType={params.relationshipType}

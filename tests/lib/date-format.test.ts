@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, getDateFormatLabel, getDateFormatExample, parseAsLocalDate } from '@/lib/date-format';
+import { formatDate, formatDateWithoutYear, getDateFormatLabel, getDateFormatExample, parseAsLocalDate } from '@/lib/date-format';
 
 describe('date-format', () => {
   describe('parseAsLocalDate', () => {
@@ -210,6 +210,80 @@ describe('date-format', () => {
 
     it('should return example for YMD', () => {
       expect(getDateFormatExample('YMD')).toBe('2024-12-31');
+    });
+  });
+
+  describe('formatDateWithoutYear', () => {
+    const testDate = new Date(1900, 2, 15); // March 15, 1900 (year unknown)
+
+    describe('with Date object', () => {
+      it('should format as "Month day" for MDY', () => {
+        expect(formatDateWithoutYear(testDate, 'MDY')).toBe('March 15');
+      });
+
+      it('should format as "day Month" for DMY', () => {
+        expect(formatDateWithoutYear(testDate, 'DMY')).toBe('15 March');
+      });
+
+      it('should format as "Month day" for YMD', () => {
+        expect(formatDateWithoutYear(testDate, 'YMD')).toBe('March 15');
+      });
+    });
+
+    describe('with string date', () => {
+      it('should format string date for MDY', () => {
+        expect(formatDateWithoutYear('1900-03-15', 'MDY')).toBe('March 15');
+      });
+
+      it('should format string date for DMY', () => {
+        expect(formatDateWithoutYear('1900-03-15', 'DMY')).toBe('15 March');
+      });
+
+      it('should format string date for YMD', () => {
+        expect(formatDateWithoutYear('1900-03-15', 'YMD')).toBe('March 15');
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should handle single digit days', () => {
+        const date = new Date(1900, 0, 5); // January 5
+        expect(formatDateWithoutYear(date, 'MDY')).toBe('January 5');
+        expect(formatDateWithoutYear(date, 'DMY')).toBe('5 January');
+      });
+
+      it('should handle all months correctly', () => {
+        const months = [
+          { date: new Date(1900, 0, 1), mdyExpected: 'January 1', dmyExpected: '1 January' },
+          { date: new Date(1900, 1, 1), mdyExpected: 'February 1', dmyExpected: '1 February' },
+          { date: new Date(1900, 2, 1), mdyExpected: 'March 1', dmyExpected: '1 March' },
+          { date: new Date(1900, 11, 31), mdyExpected: 'December 31', dmyExpected: '31 December' },
+        ];
+
+        months.forEach(({ date, mdyExpected, dmyExpected }) => {
+          expect(formatDateWithoutYear(date, 'MDY')).toBe(mdyExpected);
+          expect(formatDateWithoutYear(date, 'DMY')).toBe(dmyExpected);
+        });
+      });
+
+      it('should handle leap year date (Feb 29)', () => {
+        const date = new Date(2024, 1, 29); // February 29 (2024 is a leap year)
+        expect(formatDateWithoutYear(date, 'MDY')).toBe('February 29');
+        expect(formatDateWithoutYear(date, 'DMY')).toBe('29 February');
+      });
+
+      it('should return Invalid Date for invalid string', () => {
+        expect(formatDateWithoutYear('not-a-date', 'MDY')).toBe('Invalid Date');
+      });
+
+      it('should return Invalid Date for invalid Date object', () => {
+        expect(formatDateWithoutYear(new Date('invalid'), 'MDY')).toBe('Invalid Date');
+      });
+
+      it('should work with any year, not just 1900', () => {
+        const date = new Date(2024, 11, 25); // December 25, 2024
+        expect(formatDateWithoutYear(date, 'MDY')).toBe('December 25');
+        expect(formatDateWithoutYear(date, 'DMY')).toBe('25 December');
+      });
     });
   });
 });

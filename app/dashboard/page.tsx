@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
-import { formatDate, parseAsLocalDate } from '@/lib/date-format';
+import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import { getTranslations } from 'next-intl/server';
 
@@ -16,6 +16,7 @@ interface UpcomingEvent {
   title: string;
   date: Date;
   daysUntil: number;
+  isYearUnknown?: boolean;
 }
 
 function getNextOccurrence(
@@ -166,15 +167,17 @@ export default async function DashboardPage() {
   // Process important dates
   for (const importantDate of importantDates) {
     let eventDate: Date;
+    const originalDate = parseAsLocalDate(importantDate.date);
+    const isYearUnknown = originalDate.getFullYear() === 1900;
 
     if (importantDate.reminderType === 'ONCE') {
-      eventDate = parseAsLocalDate(importantDate.date);
+      eventDate = originalDate;
     } else {
       // Recurring - get next occurrence based on interval
       const interval = importantDate.reminderInterval || 1;
       const intervalUnit = importantDate.reminderIntervalUnit || 'YEARS';
       eventDate = getNextOccurrence(
-        parseAsLocalDate(importantDate.date),
+        originalDate,
         today,
         interval,
         intervalUnit,
@@ -193,6 +196,7 @@ export default async function DashboardPage() {
         title: importantDate.title,
         date: eventDate,
         daysUntil,
+        isYearUnknown,
       });
     }
   }
@@ -296,7 +300,9 @@ export default async function DashboardPage() {
                         {event.daysUntil < 0 ? t('overdue') : formatDaysUntil(event.daysUntil)}
                       </div>
                       <div className="text-xs text-muted/80">
-                        {formatDate(event.date, dateFormat)}
+                        {event.isYearUnknown
+                          ? formatDateWithoutYear(event.date, dateFormat)
+                          : formatDate(event.date, dateFormat)}
                       </div>
                     </div>
                   </Link>
