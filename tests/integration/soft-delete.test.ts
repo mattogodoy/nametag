@@ -62,6 +62,8 @@ const mocks = vi.hoisted(() => ({
   // CronJobLog operations
   cronJobLogCreate: vi.fn(),
   cronJobLogUpdate: vi.fn(),
+  // CardDavMapping operations
+  cardDavMappingDeleteMany: vi.fn(),
 }));
 
 // Hoist mockEnv so it's available for vi.mock
@@ -116,6 +118,9 @@ vi.mock('../../lib/prisma', () => ({
     cronJobLog: {
       create: mocks.cronJobLogCreate,
       update: mocks.cronJobLogUpdate,
+    },
+    cardDavMapping: {
+      deleteMany: mocks.cardDavMappingDeleteMany,
     },
   },
   withDeleted: vi.fn(() => {
@@ -228,6 +233,7 @@ describe('Soft Delete Integration', () => {
 
       mocks.personFindUnique.mockResolvedValue(person);
       mocks.personUpdate.mockResolvedValue({ ...person, deletedAt: new Date() });
+      mocks.cardDavMappingDeleteMany.mockResolvedValue({ count: 0 });
 
       const request = new Request('http://localhost/api/people/person-1', {
         method: 'DELETE',
@@ -264,6 +270,7 @@ describe('Soft Delete Integration', () => {
       mocks.personFindUnique.mockResolvedValue(person);
       mocks.personUpdate.mockResolvedValue({ ...person, deletedAt: new Date() });
       mocks.personUpdateMany.mockResolvedValue({ count: 2 });
+      mocks.cardDavMappingDeleteMany.mockResolvedValue({ count: 0 });
 
       const request = new Request('http://localhost/api/people/person-1', {
         method: 'DELETE',
