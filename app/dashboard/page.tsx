@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
-import { formatDate } from '@/lib/date-format';
+import { formatDate, formatDateWithoutYear } from '@/lib/date-format';
 import { getUpcomingEvents } from '@/lib/upcoming-events';
 import { getTranslations } from 'next-intl/server';
 
@@ -101,7 +101,9 @@ export default async function DashboardPage() {
                         {event.daysUntil < 0 ? t('overdue') : formatDaysUntil(event.daysUntil)}
                       </div>
                       <div className="text-xs text-muted/80">
-                        {formatDate(event.date, dateFormat)}
+                        {event.isYearUnknown
+                          ? formatDateWithoutYear(event.date, dateFormat)
+                          : formatDate(event.date, dateFormat)}
                       </div>
                     </div>
                   </Link>

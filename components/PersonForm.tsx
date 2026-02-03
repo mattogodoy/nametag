@@ -108,6 +108,7 @@ interface PersonFormProps {
   }>;
   userName?: string;
   mode: 'create' | 'edit';
+  dateFormat?: 'MDY' | 'DMY' | 'YMD';
   initialName?: string;
   initialKnownThrough?: string;
   initialRelationshipType?: string;
@@ -125,6 +126,7 @@ export default function PersonForm({
   relationshipTypes,
   availablePeople = [],
   mode,
+  dateFormat = 'MDY',
   initialName,
   initialKnownThrough,
   initialRelationshipType,
@@ -901,6 +903,7 @@ export default function PersonForm({
           initialDates={importantDates}
           onChange={setImportantDates}
           mode={mode}
+          dateFormat={dateFormat}
           reminderLimit={reminderLimit}
         />
       </Section>
