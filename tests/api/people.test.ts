@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   relationshipTypeFindUnique: vi.fn(),
   relationshipCreate: vi.fn(),
   importantDateCount: vi.fn(),
+  cardDavMappingDeleteMany: vi.fn(),
 }));
 
 // Mock Prisma
@@ -36,6 +37,9 @@ vi.mock('../../lib/prisma', () => ({
     },
     importantDate: {
       count: mocks.importantDateCount,
+    },
+    cardDavMapping: {
+      deleteMany: mocks.cardDavMappingDeleteMany,
     },
   },
 }));
@@ -354,6 +358,7 @@ describe('People API', () => {
 
       mocks.personFindUnique.mockResolvedValue(existingPerson);
       mocks.personUpdate.mockResolvedValue({ ...existingPerson, deletedAt: new Date() });
+      mocks.cardDavMappingDeleteMany.mockResolvedValue({ count: 0 });
 
       const request = new Request('http://localhost/api/people/person-1', {
         method: 'DELETE',
@@ -397,6 +402,7 @@ describe('People API', () => {
       mocks.personFindUnique.mockResolvedValue(existingPerson);
       mocks.personUpdate.mockResolvedValue({ ...existingPerson, deletedAt: new Date() });
       mocks.personUpdateMany.mockResolvedValue({ count: 2 });
+      mocks.cardDavMappingDeleteMany.mockResolvedValue({ count: 0 });
 
       const request = new Request('http://localhost/api/people/person-1', {
         method: 'DELETE',
