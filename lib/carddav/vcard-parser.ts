@@ -462,7 +462,8 @@ function processProperty(
     case 'PHOTO': {
       // Handle both URLs and base64 encoded images
       const encoding = prop.params.ENCODING;
-      const type = prop.params.TYPE;
+      const typeParam = prop.params.TYPE;
+      const type = Array.isArray(typeParam) ? typeParam[0] : typeParam;
 
       if (prop.value.startsWith('http://') || prop.value.startsWith('https://')) {
         // Already a URL
