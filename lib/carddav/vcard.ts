@@ -508,7 +508,7 @@ function formatVCardDate(date: Date): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
 
-  // If year is before 1900, omit it (year unknown)
+  // If year is before 1900, omit it (year unknown - we use 1604 as marker)
   if (year < 1900) {
     return `--${month}-${day}`;
   }
@@ -528,8 +528,8 @@ function parseVCardDate(dateStr: string): Date | null {
     if (parts.length === 2) {
       const month = parseInt(parts[0], 10);
       const day = parseInt(parts[1], 10);
-      // Use year 1900 to indicate unknown year
-      return new Date(1900, month - 1, day);
+      // Use year 1604 to indicate unknown year (matches Apple convention)
+      return new Date(1604, month - 1, day);
     }
   }
 
