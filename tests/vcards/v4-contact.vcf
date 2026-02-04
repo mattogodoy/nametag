@@ -1,0 +1,32 @@
+BEGIN:VCARD
+VERSION:4.0
+FN:Taylor Example
+N:Example;Taylor;;Dr.;PhD
+NICKNAME:Tay,Tex
+PHOTO:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAA
+ AHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==
+BDAY:19940203
+ANNIVERSARY:20150808T143000Z
+GENDER:O
+LANG;PREF=1:en
+LANG;PREF=2:es
+ORG;TYPE=work:Example Corp;Platform;Developer Experience
+TITLE;TYPE=work:Senior Software Engineer
+ROLE;TYPE=work:Tech Lead
+ADR;TYPE=home:;;123 Home St;Hometown;CA;90210;USA
+ADR;TYPE=work:;Suite 450;456 Market Ave;Metropolis;NY;10001;USA
+TEL;VALUE=uri;TYPE="work,voice";PREF=1:tel:+1-555-0100;ext=123
+TEL;VALUE=uri;TYPE="home,cell,text";PREF=2:tel:+1-555-0199
+EMAIL;TYPE=work;PREF=1:taylor.example@corp.example
+EMAIL;TYPE=home;PREF=2:taylor@example.net
+URL;TYPE=work;PREF=1:https://example.com/team/taylor
+URL;TYPE=home;PREF=2:https://example.net/~taylor
+IMPP;TYPE=work;PREF=1:im:slack:taylor_example
+IMPP;TYPE=home;PREF=2:im:telegram:taylor_example
+GEO;TYPE=work:geo:40.748817,-73.985428
+TZ:-0500
+CATEGORIES:ENGINEERING,PLATFORM
+KEY;TYPE=work:https://example.com/keys/taylor.asc
+PRODID:-//Example Corp//vcard4 CodePen Demo//EN
+REV:20260204T120000Z
+END:VCARD
