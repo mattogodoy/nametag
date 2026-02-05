@@ -10,7 +10,7 @@ npm run mcp:dev
 
 By default the MCP server listens on `http://127.0.0.1:3333/mcp`.
 
-The `mcp:dev` script enables proxy mode by default; set `MCP_PROXY_API=false` to disable it. When `MCP_PROXY_API=true`, you must also run the Nametag HTTP API (e.g. `npm run dev`) and configure `MCP_API_BASE_URL` to point at it.
+The MCP server proxies requests to the Nametag HTTP API. Run the API locally (e.g. `npm run dev`) and configure `MCP_API_BASE_URL` if needed.
 
 ### Optional environment variables
 
@@ -18,21 +18,16 @@ The `mcp:dev` script enables proxy mode by default; set `MCP_PROXY_API=false` to
 | --- | --- | --- |
 | `MCP_PORT` | Port for the MCP HTTP server | `3333` |
 | `MCP_HOST` | Host interface to bind | `127.0.0.1` |
-| `MCP_PROXY_API` | Proxy MCP tool calls to the Nametag HTTP API | `false` (true in `mcp:dev`) |
 | `MCP_API_BASE_URL` | Base URL for the Nametag HTTP API | `http://127.0.0.1:3000` |
-| `MCP_AUTH_TOKEN` | Shared bearer token for single-user/dev usage | _unset_ |
-| `MCP_DEFAULT_USER_ID` | Default user ID for single-user/dev usage | _unset_ |
 | `MCP_REQUIRE_AUTH` | Force auth ("true"/"false") | `true` in production, otherwise `false` |
 
 ### Authentication
 
-Preferred: send a NextAuth session token in the `Authorization` header. When `MCP_PROXY_API=true`, the MCP server forwards this token to the HTTP API and the API enforces user scoping.
+Preferred: send a NextAuth session token in the `Authorization` header. The MCP server forwards this token to the HTTP API and the API enforces user scoping.
 
 ```
 Authorization: Bearer <nextauth-session-token>
 ```
-
-If you want a simple single-user/local setup without running the HTTP API, you can set both `MCP_AUTH_TOKEN` and `MCP_DEFAULT_USER_ID`, then send `Authorization: Bearer <MCP_AUTH_TOKEN>` (only when `MCP_PROXY_API=false`).
 
 All tools are scoped to the authenticated user. Relationship type tools return only non-deleted types and enforce inverse pairing within the same user.
 

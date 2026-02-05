@@ -8,10 +8,8 @@ type ToolResult = {
 };
 
 type NametagMcpServerOptions = {
-  userId: string | null;
   apiBaseUrl: string;
   authHeader?: string;
-  proxyApi?: boolean;
 };
 
 type ApiResult<T> = {
@@ -132,10 +130,8 @@ function createApiClient(baseUrl: string, authHeader?: string) {
 
 export function createNametagMcpServer(
   options: NametagMcpServerOptions = {
-    userId: null,
     apiBaseUrl: 'http://127.0.0.1:3000',
     authHeader: undefined,
-    proxyApi: true,
   }
 ): McpServer {
   const { apiBaseUrl, authHeader } = options;

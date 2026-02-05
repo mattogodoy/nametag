@@ -1,15 +1,10 @@
 import http, { IncomingMessage, ServerResponse } from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createNametagMcpServer } from './server';
-import { resolveMcpAuth } from './auth';
-
 type McpHttpServerOptions = {
-  authToken?: string;
-  defaultUserId?: string;
   path?: string;
   requireAuth?: boolean;
   apiBaseUrl?: string;
-  proxyApi?: boolean;
 };
 
 async function readJsonBody(req: IncomingMessage): Promise<unknown> {
@@ -32,15 +27,10 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
 
 export function createMcpHttpServer(options: McpHttpServerOptions = {}): http.Server {
   const path = options.path ?? '/mcp';
-  const authToken = options.authToken;
-  const defaultUserId = options.defaultUserId ?? process.env.MCP_DEFAULT_USER_ID;
   const apiBaseUrl = options.apiBaseUrl ?? process.env.MCP_API_BASE_URL ?? 'http://127.0.0.1:3000';
-  const proxyApi = options.proxyApi ?? process.env.MCP_PROXY_API === 'true';
   const requireAuth =
     options.requireAuth ??
-    (process.env.MCP_REQUIRE_AUTH === 'true' ||
-      process.env.NODE_ENV === 'production' ||
-      Boolean(authToken));
+    (process.env.MCP_REQUIRE_AUTH === 'true' || process.env.NODE_ENV === 'production');
 
   return http.createServer(async (req: IncomingMessage, res: ServerResponse) => {
     if (!req.url || !req.url.startsWith(path)) {
@@ -50,34 +40,10 @@ export function createMcpHttpServer(options: McpHttpServerOptions = {}): http.Se
     }
 
     const authHeader = req.headers.authorization;
-    let userId: string | null = null;
-
-    if (proxyApi) {
-      if (!authHeader && requireAuth) {
-        res.statusCode = 401;
-        res.end('Unauthorized');
-        return;
-      }
-    } else {
-      const authContext = await resolveMcpAuth(req, {
-        authToken,
-        defaultUserId,
-        requireAuth,
-      });
-
-      if (authContext.error) {
-        res.statusCode = 500;
-        res.end(authContext.error);
-        return;
-      }
-
-      if (!authContext.userId && requireAuth) {
-        res.statusCode = 401;
-        res.end('Unauthorized');
-        return;
-      }
-
-      userId = authContext.userId;
+    if (!authHeader && requireAuth) {
+      res.statusCode = 401;
+      res.end('Unauthorized');
+      return;
     }
 
     if (req.method !== 'POST') {
@@ -108,10 +74,8 @@ export function createMcpHttpServer(options: McpHttpServerOptions = {}): http.Se
       sessionIdGenerator: undefined,
     });
     const server = createNametagMcpServer({
-      userId,
       apiBaseUrl,
       authHeader: authHeader ?? undefined,
-      proxyApi,
     });
 
     try {

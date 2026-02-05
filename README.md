@@ -410,7 +410,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed setup instructions, code gui
 
 Nametag includes an MCP server for AI integrations (tools/resources for people, groups, relationships, and relationship types).
 See [docs/mcp.md](docs/mcp.md) for setup, environment variables, and client configuration.
-All MCP tools are scoped to the authenticated user; provide a NextAuth session token or set `MCP_DEFAULT_USER_ID` for local development.
+All MCP tools are scoped to the authenticated user; provide a NextAuth session token for local development.
 
 ## Contributing
 
