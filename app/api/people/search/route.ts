@@ -4,6 +4,8 @@ import { apiResponse, withAuth } from '@/lib/api-utils';
 export const GET = withAuth(async (request, session) => {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q') || '';
+  const limitParam = searchParams.get('limit');
+  const limit = limitParam ? Number(limitParam) : 20;
 
   // Only search if query is at least 1 character
   if (query.length === 0) {
@@ -57,7 +59,7 @@ export const GET = withAuth(async (request, session) => {
     orderBy: {
       name: 'asc',
     },
-    take: 20, // Limit to 20 results
+    take: Number.isFinite(limit) ? limit : 20,
   });
 
   return apiResponse.ok({ people });

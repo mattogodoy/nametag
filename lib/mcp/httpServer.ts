@@ -8,6 +8,8 @@ type McpHttpServerOptions = {
   defaultUserId?: string;
   path?: string;
   requireAuth?: boolean;
+  apiBaseUrl?: string;
+  proxyApi?: boolean;
 };
 
 async function readJsonBody(req: IncomingMessage): Promise<unknown> {
@@ -32,6 +34,8 @@ export function createMcpHttpServer(options: McpHttpServerOptions = {}): http.Se
   const path = options.path ?? '/mcp';
   const authToken = options.authToken;
   const defaultUserId = options.defaultUserId ?? process.env.MCP_DEFAULT_USER_ID;
+  const apiBaseUrl = options.apiBaseUrl ?? process.env.MCP_API_BASE_URL ?? 'http://127.0.0.1:3000';
+  const proxyApi = options.proxyApi ?? process.env.MCP_PROXY_API === 'true';
   const requireAuth =
     options.requireAuth ??
     (process.env.MCP_REQUIRE_AUTH === 'true' ||
@@ -45,22 +49,35 @@ export function createMcpHttpServer(options: McpHttpServerOptions = {}): http.Se
       return;
     }
 
-    const authContext = await resolveMcpAuth(req, {
-      authToken,
-      defaultUserId,
-      requireAuth,
-    });
+    const authHeader = req.headers.authorization;
+    let userId: string | null = null;
 
-    if (authContext.error) {
-      res.statusCode = 500;
-      res.end(authContext.error);
-      return;
-    }
+    if (proxyApi) {
+      if (!authHeader && requireAuth) {
+        res.statusCode = 401;
+        res.end('Unauthorized');
+        return;
+      }
+    } else {
+      const authContext = await resolveMcpAuth(req, {
+        authToken,
+        defaultUserId,
+        requireAuth,
+      });
 
-    if (!authContext.userId && requireAuth) {
-      res.statusCode = 401;
-      res.end('Unauthorized');
-      return;
+      if (authContext.error) {
+        res.statusCode = 500;
+        res.end(authContext.error);
+        return;
+      }
+
+      if (!authContext.userId && requireAuth) {
+        res.statusCode = 401;
+        res.end('Unauthorized');
+        return;
+      }
+
+      userId = authContext.userId;
     }
 
     if (req.method !== 'POST') {
@@ -90,7 +107,12 @@ export function createMcpHttpServer(options: McpHttpServerOptions = {}): http.Se
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
-    const server = createNametagMcpServer({ userId: authContext.userId });
+    const server = createNametagMcpServer({
+      userId,
+      apiBaseUrl,
+      authHeader: authHeader ?? undefined,
+      proxyApi,
+    });
 
     try {
       await server.connect(transport);

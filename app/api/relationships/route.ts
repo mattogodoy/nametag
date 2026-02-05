@@ -2,6 +2,83 @@ import { prisma } from '@/lib/prisma';
 import { createRelationshipSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
+// GET /api/relationships - List relationships (filtered)
+export const GET = withAuth(async (request, session) => {
+  try {
+    const { searchParams } = new URL(request.url);
+    const personId = searchParams.get('personId') || undefined;
+    const relatedPersonId = searchParams.get('relatedPersonId') || undefined;
+    const relationshipTypeId = searchParams.get('relationshipTypeId') || undefined;
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam ? Number(limitParam) : undefined;
+
+    const where: {
+      deletedAt: null;
+      relationshipTypeId: { not: null } | string;
+      person: { userId: string; deletedAt: null };
+      relatedPerson: { userId: string; deletedAt: null };
+      relationshipType: { userId: string; deletedAt: null };
+      OR?: Array<{ personId?: string; relatedPersonId?: string }>;
+      personId?: string;
+      relatedPersonId?: string;
+    } = {
+      deletedAt: null,
+      relationshipTypeId: relationshipTypeId ?? { not: null },
+      person: { userId: session.user.id, deletedAt: null },
+      relatedPerson: { userId: session.user.id, deletedAt: null },
+      relationshipType: { userId: session.user.id, deletedAt: null },
+    };
+
+    if (personId && relatedPersonId) {
+      where.OR = [
+        { personId, relatedPersonId },
+        { personId: relatedPersonId, relatedPersonId: personId },
+      ];
+    } else if (personId) {
+      where.personId = personId;
+    } else if (relatedPersonId) {
+      where.relatedPersonId = relatedPersonId;
+    }
+
+    const relationships = await prisma.relationship.findMany({
+      where,
+      orderBy: { updatedAt: 'desc' },
+      take: Number.isFinite(limit) ? limit : undefined,
+      include: {
+        relationshipType: {
+          select: {
+            id: true,
+            name: true,
+            label: true,
+            color: true,
+            inverseId: true,
+          },
+        },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            nickname: true,
+          },
+        },
+        relatedPerson: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            nickname: true,
+          },
+        },
+      },
+    });
+
+    return apiResponse.ok({ relationships });
+  } catch (error) {
+    return handleApiError(error, 'relationships-list');
+  }
+});
+
 // POST /api/relationships - Create a new relationship (bidirectional)
 export const POST = withAuth(async (request, session) => {
   try {

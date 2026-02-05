@@ -4,10 +4,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   relationshipFindUnique: vi.fn(),
   relationshipFindFirst: vi.fn(),
+  relationshipFindMany: vi.fn(),
   relationshipCreate: vi.fn(),
   relationshipUpdate: vi.fn(),
   relationshipDelete: vi.fn(),
   personFindUnique: vi.fn(),
+  personFindMany: vi.fn(),
   relationshipTypeFindFirst: vi.fn(),
 }));
 
@@ -17,12 +19,14 @@ vi.mock('../../lib/prisma', () => ({
     relationship: {
       findUnique: mocks.relationshipFindUnique,
       findFirst: mocks.relationshipFindFirst,
+      findMany: mocks.relationshipFindMany,
       create: mocks.relationshipCreate,
       update: mocks.relationshipUpdate,
       delete: mocks.relationshipDelete,
     },
     person: {
       findUnique: mocks.personFindUnique,
+      findMany: mocks.personFindMany,
     },
     relationshipType: {
       findFirst: mocks.relationshipTypeFindFirst,
@@ -40,8 +44,9 @@ vi.mock('../../lib/auth', () => ({
 }));
 
 // Import after mocking
-import { POST } from '../../app/api/relationships/route';
+import { GET, POST } from '../../app/api/relationships/route';
 import { PUT, DELETE } from '../../app/api/relationships/[id]/route';
+import { GET as GETToUser } from '../../app/api/relationships/to-user/route';
 
 describe('Relationships API', () => {
   beforeEach(() => {
@@ -193,6 +198,72 @@ describe('Relationships API', () => {
 
       // Should create both the primary and inverse relationship
       expect(mocks.relationshipCreate).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('GET /api/relationships', () => {
+    it('should list relationships with filters', async () => {
+      const relationships = [
+        {
+          id: 'rel-1',
+          personId: 'person-1',
+          relatedPersonId: 'person-2',
+          relationshipTypeId: 'rel-type-1',
+        },
+      ];
+
+      mocks.relationshipFindMany.mockResolvedValue(relationships);
+
+      const request = new Request(
+        'http://localhost/api/relationships?personId=person-1&relationshipTypeId=rel-type-1&limit=5'
+      );
+
+      const response = await GET(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.relationships).toEqual(relationships);
+      expect(mocks.relationshipFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            personId: 'person-1',
+            relationshipTypeId: 'rel-type-1',
+          }),
+          take: 5,
+        })
+      );
+    });
+  });
+
+  describe('GET /api/relationships/to-user', () => {
+    it('should list relationships to user', async () => {
+      const people = [
+        {
+          id: 'person-1',
+          name: 'John',
+          relationshipToUser: { id: 'rel-type-1', label: 'Friend' },
+        },
+      ];
+
+      mocks.personFindMany.mockResolvedValue(people);
+
+      const request = new Request(
+        'http://localhost/api/relationships/to-user?relationshipTypeName=friend&limit=10'
+      );
+
+      const response = await GETToUser(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.people).toEqual(people);
+      expect(mocks.personFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            relationshipToUserId: { not: null },
+          }),
+          take: 10,
+        })
+      );
     });
   });
 

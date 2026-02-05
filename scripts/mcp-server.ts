@@ -6,11 +6,14 @@ const host = process.env.MCP_HOST ?? '127.0.0.1';
 const authToken = process.env.MCP_AUTH_TOKEN;
 const requireAuthEnv = process.env.MCP_REQUIRE_AUTH;
 const requireAuth = requireAuthEnv ? requireAuthEnv === 'true' : undefined;
+const proxyApiEnv = process.env.MCP_PROXY_API;
+const proxyApi = proxyApiEnv ? proxyApiEnv === 'true' : true;
 
 const server = createMcpHttpServer({
   authToken,
   path: '/mcp',
   requireAuth,
+  proxyApi,
 });
 
 server.listen(port, host, (error?: Error) => {
