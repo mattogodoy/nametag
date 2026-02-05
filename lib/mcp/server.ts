@@ -1035,7 +1035,7 @@ export function createNametagMcpServer(
     {
       title: 'List relationships',
       description:
-        'List relationships with relationship type details and minimal person info for investigation.',
+        'List person-to-person relationships (edges) with relationship type details and minimal person info.',
       inputSchema: {
         personId: z.string().optional().describe('Filter by outgoing personId.'),
         relatedPersonId: z.string().optional().describe('Filter by incoming relatedPersonId.'),
@@ -1118,6 +1118,88 @@ export function createNametagMcpServer(
           {
             type: 'text',
             text: JSON.stringify(relationships, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  server.registerTool(
+    'list_relationships_to_user',
+    {
+      title: 'List relationships to user',
+      description:
+        'List person-to-user relationship edges (relationshipToUser) with relationship type details.',
+      inputSchema: {
+        relationshipTypeId: z.string().optional().describe('Filter by relationship type ID.'),
+        relationshipTypeName: z
+          .string()
+          .optional()
+          .describe('Filter by relationship type name (case-insensitive).'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(MAX_LIST_LIMIT)
+          .default(DEFAULT_LIST_LIMIT)
+          .describe('Maximum number of relationships to return'),
+      },
+    },
+    async ({ relationshipTypeId, relationshipTypeName, limit }): Promise<ToolResult> => {
+      const resolvedUserId = requireUserId(userId);
+      if (!resolvedUserId) {
+        return errorResult('Unauthorized: missing user context.');
+      }
+
+      const relationshipTypeFilter: {
+        userId: string;
+        deletedAt: null;
+        id?: string;
+        name?: { equals: string; mode: 'insensitive' };
+      } = {
+        userId: resolvedUserId,
+        deletedAt: null,
+      };
+
+      if (relationshipTypeId) {
+        relationshipTypeFilter.id = relationshipTypeId;
+      }
+
+      if (relationshipTypeName) {
+        relationshipTypeFilter.name = { equals: relationshipTypeName, mode: 'insensitive' };
+      }
+
+      const people = await prisma.person.findMany({
+        where: {
+          userId: resolvedUserId,
+          deletedAt: null,
+          relationshipToUserId: { not: null },
+          relationshipToUser: relationshipTypeFilter,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          nickname: true,
+          relationshipToUser: {
+            select: {
+              id: true,
+              name: true,
+              label: true,
+              color: true,
+              inverseId: true,
+            },
+          },
+        },
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(people, null, 2),
           },
         ],
       };
