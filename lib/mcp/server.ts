@@ -1729,12 +1729,24 @@ export function createNametagMcpServer(
         return errorResult('Relationship type is required.');
       }
 
-      const relationshipType = await prisma.relationshipType.findFirst({
-        where: {
-          id: relationshipTypeId,
-          userId: resolvedUserId,
-        },
-      });
+      const [currentType, relationshipType] = await Promise.all([
+        prisma.relationshipType.findFirst({
+          where: {
+            id: existing.relationshipTypeId,
+            userId: resolvedUserId,
+          },
+        }),
+        prisma.relationshipType.findFirst({
+          where: {
+            id: relationshipTypeId,
+            userId: resolvedUserId,
+          },
+        }),
+      ]);
+
+      if (!currentType) {
+        return errorResult('Relationship type not found.');
+      }
 
       if (!relationshipType) {
         return errorResult('Relationship type not found.');
@@ -1748,18 +1760,22 @@ export function createNametagMcpServer(
         },
       });
 
+      const currentInverseId = currentType.inverseId ?? currentType.id;
       const inverse = await prisma.relationship.findFirst({
         where: {
           personId: existing.relatedPersonId,
           relatedPersonId: existing.personId,
+          relationshipTypeId: currentInverseId,
+          person: { userId: resolvedUserId },
         },
       });
 
-      if (inverse && relationshipType.inverseId) {
+      if (inverse) {
+        const newInverseId = relationshipType.inverseId ?? relationshipTypeId;
         await prisma.relationship.update({
           where: { id: inverse.id },
           data: {
-            relationshipTypeId: relationshipType.inverseId,
+            relationshipTypeId: newInverseId,
             notes: notes || null,
           },
         });
@@ -1813,10 +1829,24 @@ export function createNametagMcpServer(
         },
       });
 
+      const currentType = await prisma.relationshipType.findFirst({
+        where: {
+          id: existing.relationshipTypeId,
+          userId: resolvedUserId,
+        },
+      });
+
+      if (!currentType) {
+        return errorResult('Relationship type not found.');
+      }
+
+      const currentInverseId = currentType.inverseId ?? currentType.id;
       const inverse = await prisma.relationship.findFirst({
         where: {
           personId: existing.relatedPersonId,
           relatedPersonId: existing.personId,
+          relationshipTypeId: currentInverseId,
+          person: { userId: resolvedUserId },
         },
       });
 
