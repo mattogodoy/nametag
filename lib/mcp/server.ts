@@ -1031,6 +1031,100 @@ export function createNametagMcpServer(
   );
 
   server.registerTool(
+    'list_relationships',
+    {
+      title: 'List relationships',
+      description:
+        'List relationships with relationship type details and minimal person info for investigation.',
+      inputSchema: {
+        personId: z.string().optional().describe('Filter by outgoing personId.'),
+        relatedPersonId: z.string().optional().describe('Filter by incoming relatedPersonId.'),
+        relationshipTypeId: z.string().optional().describe('Filter by relationship type ID.'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(MAX_LIST_LIMIT)
+          .default(DEFAULT_LIST_LIMIT)
+          .describe('Maximum number of relationships to return'),
+      },
+    },
+    async ({ personId, relatedPersonId, relationshipTypeId, limit }): Promise<ToolResult> => {
+      const resolvedUserId = requireUserId(userId);
+      if (!resolvedUserId) {
+        return errorResult('Unauthorized: missing user context.');
+      }
+
+      const where: {
+        deletedAt: null;
+        relationshipTypeId: { not: null } | string;
+        person: { userId: string; deletedAt: null };
+        relatedPerson: { userId: string; deletedAt: null };
+        relationshipType: { userId: string; deletedAt: null };
+        OR?: Array<{ personId?: string; relatedPersonId?: string }>;
+        personId?: string;
+        relatedPersonId?: string;
+      } = {
+        deletedAt: null,
+        relationshipTypeId: relationshipTypeId ?? { not: null },
+        person: { userId: resolvedUserId, deletedAt: null },
+        relatedPerson: { userId: resolvedUserId, deletedAt: null },
+        relationshipType: { userId: resolvedUserId, deletedAt: null },
+      };
+
+      if (personId && relatedPersonId) {
+        where.OR = [{ personId }, { relatedPersonId }];
+      } else if (personId) {
+        where.personId = personId;
+      } else if (relatedPersonId) {
+        where.relatedPersonId = relatedPersonId;
+      }
+
+      const relationships = await prisma.relationship.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        take: limit,
+        include: {
+          relationshipType: {
+            select: {
+              id: true,
+              name: true,
+              label: true,
+              color: true,
+              inverseId: true,
+            },
+          },
+          person: {
+            select: {
+              id: true,
+              name: true,
+              surname: true,
+              nickname: true,
+            },
+          },
+          relatedPerson: {
+            select: {
+              id: true,
+              name: true,
+              surname: true,
+              nickname: true,
+            },
+          },
+        },
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(relationships, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  server.registerTool(
     'create_relationship_type',
     {
       title: 'Create relationship type',

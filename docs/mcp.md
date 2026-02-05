@@ -40,6 +40,7 @@ Read tools:
 - `get_person` — fetch a person record with groups and important dates
 - `list_groups` — list groups
 - `list_relationship_types` — list relationship types
+- `list_relationships` — list relationships with relationship type and minimal person info (filters: `personId`, `relatedPersonId`, `relationshipTypeId`)
 
 Write tools:
 - `create_person`, `update_person`, `delete_person`
