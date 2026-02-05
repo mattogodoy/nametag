@@ -406,6 +406,11 @@ Faster iteration and better debugging experience.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed setup instructions, code guidelines, and how to submit pull requests.
 
+## AI Integrations (MCP)
+
+Nametag includes an MCP server for AI integrations (tools/resources for people, groups, relationships, and relationship types).
+See [docs/mcp.md](docs/mcp.md) for setup, environment variables, and client configuration.
+
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.

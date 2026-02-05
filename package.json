@@ -15,6 +15,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
+    "mcp:dev": "tsx scripts/mcp-server.ts",
+    "mcp:smoke": "tsx scripts/mcp-smoke.ts",
     "verify": "npm run lint && npm run typecheck && npm run test:run && npm run build",
     "verify:all": "npm run lint && npm run typecheck && npm run test:run && npm run test:e2e && npm run build",
     "seed:dev": "node_modules/.bin/tsx prisma/seed.ts",
@@ -27,6 +29,7 @@
     "changelog": "auto-changelog -p"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
     "@tailwindcss/typography": "^0.5.19",
