@@ -83,6 +83,14 @@ function createApiClient(baseUrl: string, authHeader?: string) {
 
     if (authHeader) {
       headers.Authorization = authHeader;
+
+      // NextAuth/Auth.js uses an httpOnly session cookie (commonly `authjs.session-token`).
+      // Our MCP clients pass the session token via Authorization: Bearer <token>.
+      // The Nametag HTTP API expects the cookie, so we also forward it.
+      const match = authHeader.match(/^Bearer\s+(.+)$/i);
+      if (match?.[1]) {
+        headers.Cookie = `authjs.session-token=${match[1]}`;
+      }
     }
 
     let body: string | undefined;
@@ -278,7 +286,30 @@ export function createNametagMcpServer(
       const authError = requireAuthHeader();
       if (authError) return authError;
 
-      const response = await apiRequest<{ person: unknown }>('POST', '/api/people', { body: input });
+      // The UI allows creating a person without explicitly choosing a "relationship to user".
+      // The HTTP API, however, currently requires `relationshipToUserId` for direct connections.
+      // To match the UI behavior, we default to the built-in "OTHER" relationship type when omitted.
+      let body: Record<string, unknown> = { ...input };
+
+      if (!body.relationshipToUserId && !body.connectedThroughId) {
+        const typesResponse = await apiRequest<{ relationshipTypes: Array<{ id: string; name: string }> }>(
+          'GET',
+          '/api/relationship-types'
+        );
+
+        if (!typesResponse.ok) {
+          return errorResult(typesResponse.error ?? 'Failed to load relationship types for defaulting.');
+        }
+
+        const other = typesResponse.data?.relationshipTypes?.find((t) => t.name?.toUpperCase() === 'OTHER');
+        if (!other) {
+          return errorResult('Could not find default relationship type OTHER.');
+        }
+
+        body.relationshipToUserId = other.id;
+      }
+
+      const response = await apiRequest<{ person: unknown }>('POST', '/api/people', { body });
       if (!response.ok) {
         return errorResult(response.error ?? 'Failed to create person.');
       }
