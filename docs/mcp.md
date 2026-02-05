@@ -30,6 +30,8 @@ Authorization: Bearer <nextauth-session-token>
 
 If you want a simple single-user/local setup, you can set both `MCP_AUTH_TOKEN` and `MCP_DEFAULT_USER_ID`, then send `Authorization: Bearer <MCP_AUTH_TOKEN>`.
 
+All tools are scoped to the authenticated user. Relationship type tools return only non-deleted types and enforce inverse pairing within the same user.
+
 ## Tools
 
 Read tools:

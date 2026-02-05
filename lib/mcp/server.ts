@@ -1006,7 +1006,7 @@ export function createNametagMcpServer(
       }
 
       const relationshipTypes = await prisma.relationshipType.findMany({
-        where: { userId: resolvedUserId },
+        where: { userId: resolvedUserId, deletedAt: null },
         orderBy: { name: 'asc' },
         include: {
           inverse: {
@@ -1056,6 +1056,7 @@ export function createNametagMcpServer(
         where: {
           userId: resolvedUserId,
           name: { equals: normalizedName, mode: 'insensitive' },
+          deletedAt: null,
         },
       });
 
@@ -1104,6 +1105,7 @@ export function createNametagMcpServer(
           where: {
             id: inverseId,
             userId: resolvedUserId,
+            deletedAt: null,
           },
         });
 
@@ -1127,6 +1129,7 @@ export function createNametagMcpServer(
           where: {
             userId: resolvedUserId,
             name: { equals: inverseName, mode: 'insensitive' },
+            deletedAt: null,
           },
         });
 
@@ -1166,8 +1169,8 @@ export function createNametagMcpServer(
       });
 
       if (finalInverseId) {
-        await prisma.relationshipType.update({
-          where: { id: finalInverseId },
+        await prisma.relationshipType.updateMany({
+          where: { id: finalInverseId, userId: resolvedUserId },
           data: { inverseId: relationshipType.id },
         });
       }
@@ -1208,6 +1211,7 @@ export function createNametagMcpServer(
         where: {
           id: relationshipTypeId,
           userId: resolvedUserId,
+          deletedAt: null,
         },
       });
 
@@ -1222,6 +1226,7 @@ export function createNametagMcpServer(
           userId: resolvedUserId,
           name: { equals: normalizedName, mode: 'insensitive' },
           id: { not: relationshipTypeId },
+          deletedAt: null,
         },
       });
 
@@ -1234,16 +1239,13 @@ export function createNametagMcpServer(
       if (symmetric) {
         finalInverseId = relationshipTypeId;
       } else if (inverseLabel && !inverseId) {
-        const inverseName = inverseLabel
-          .toUpperCase()
-          .trim()
-          .replace(/[^A-Z0-9\s]/g, '')
-          .replace(/\s+/g, '_');
+        const inverseName = normalizeRelationshipName(inverseLabel);
 
         const existingInverseType = await prisma.relationshipType.findFirst({
           where: {
             userId: resolvedUserId,
             name: { equals: inverseName, mode: 'insensitive' },
+            deletedAt: null,
           },
         });
 
@@ -1267,6 +1269,7 @@ export function createNametagMcpServer(
           where: {
             id: inverseId,
             userId: resolvedUserId,
+            deletedAt: null,
           },
         });
 
@@ -1318,8 +1321,8 @@ export function createNametagMcpServer(
       }
 
       if (finalInverseId && finalInverseId !== relationshipTypeId) {
-        await prisma.relationshipType.update({
-          where: { id: finalInverseId },
+        await prisma.relationshipType.updateMany({
+          where: { id: finalInverseId, userId: resolvedUserId },
           data: {
             inverseId: relationshipTypeId,
             color: color || null,
@@ -1357,6 +1360,7 @@ export function createNametagMcpServer(
         where: {
           id: relationshipTypeId,
           userId: resolvedUserId,
+          deletedAt: null,
         },
       });
 
@@ -1374,6 +1378,10 @@ export function createNametagMcpServer(
       const inUseCount = await prisma.relationship.count({
         where: {
           relationshipTypeId: { in: ids },
+          deletedAt: null,
+          person: {
+            userId: resolvedUserId,
+          },
         },
       });
 
