@@ -1073,7 +1073,10 @@ export function createNametagMcpServer(
       };
 
       if (personId && relatedPersonId) {
-        where.OR = [{ personId }, { relatedPersonId }];
+        where.OR = [
+          { personId, relatedPersonId },
+          { personId: relatedPersonId, relatedPersonId: personId },
+        ];
       } else if (personId) {
         where.personId = personId;
       } else if (relatedPersonId) {
@@ -1614,6 +1617,9 @@ export function createNametagMcpServer(
           personId,
           relatedPersonId,
           relationshipTypeId,
+          deletedAt: null,
+          person: { userId: resolvedUserId },
+          relatedPerson: { userId: resolvedUserId },
         },
       });
 

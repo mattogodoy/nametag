@@ -32,13 +32,19 @@ export async function resolveMcpAuth(
   req: IncomingMessage,
   options: McpAuthOptions
 ): Promise<McpAuthContext> {
-  const nextAuthToken = await getToken({
-    req: req as unknown as Request,
-    secret: env.NEXTAUTH_SECRET,
-  });
+  if (env.NEXTAUTH_SECRET) {
+    try {
+      const nextAuthToken = await getToken({
+        req: req as unknown as Request,
+        secret: env.NEXTAUTH_SECRET,
+      });
 
-  if (nextAuthToken && typeof nextAuthToken.id === 'string') {
-    return { userId: nextAuthToken.id, method: 'nextauth' };
+      if (nextAuthToken && typeof nextAuthToken.id === 'string') {
+        return { userId: nextAuthToken.id, method: 'nextauth' };
+      }
+    } catch {
+      // Fall through to other auth methods when NextAuth token decoding fails.
+    }
   }
 
   const bearer = getBearerToken(req);
