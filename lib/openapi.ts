@@ -92,7 +92,7 @@ export function generateOpenAPISpec() {
           type: 'object',
           description: 'A person (contact) in your network',
           properties: {
-            id: { type: 'string', format: 'cuid' },
+            id: { type: 'string', description: 'CUID identifier' },
             name: { type: 'string', description: 'First name' },
             surname: { type: 'string', nullable: true },
             middleName: { type: 'string', nullable: true },
@@ -122,7 +122,7 @@ export function generateOpenAPISpec() {
           type: 'object',
           description: 'A user-defined group for organizing people',
           properties: {
-            id: { type: 'string', format: 'cuid' },
+            id: { type: 'string', description: 'CUID identifier' },
             name: { type: 'string' },
             description: { type: 'string', nullable: true },
             color: { type: 'string', nullable: true, description: 'Hex color, e.g. #FF5733' },
@@ -135,10 +135,10 @@ export function generateOpenAPISpec() {
           type: 'object',
           description: 'A directional connection between two people',
           properties: {
-            id: { type: 'string', format: 'cuid' },
-            personId: { type: 'string', format: 'cuid' },
-            relatedPersonId: { type: 'string', format: 'cuid' },
-            relationshipTypeId: { type: 'string', format: 'cuid', nullable: true },
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string', description: 'CUID identifier' },
+            relatedPersonId: { type: 'string', description: 'CUID identifier' },
+            relationshipTypeId: { type: 'string', description: 'CUID identifier', nullable: true },
             notes: { type: 'string', nullable: true },
             person: { $ref: '#/components/schemas/PersonSummary' },
             relatedPerson: { $ref: '#/components/schemas/PersonSummary' },
@@ -152,11 +152,11 @@ export function generateOpenAPISpec() {
           type: 'object',
           description: 'A custom type for categorizing relationships (e.g. Parent/Child, Friend)',
           properties: {
-            id: { type: 'string', format: 'cuid' },
+            id: { type: 'string', description: 'CUID identifier' },
             name: { type: 'string', description: 'Internal name (UPPER_SNAKE_CASE)' },
             label: { type: 'string', description: 'Human-readable display label' },
             color: { type: 'string', nullable: true, description: 'Hex color' },
-            inverseId: { type: 'string', format: 'cuid', nullable: true, description: 'ID of the inverse type (e.g. Child for Parent)' },
+            inverseId: { type: 'string', nullable: true, description: 'CUID – ID of the inverse type (e.g. Child for Parent)' },
             inverse: { $ref: '#/components/schemas/RelationshipTypeSummary' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
@@ -167,7 +167,7 @@ export function generateOpenAPISpec() {
           type: 'object',
           nullable: true,
           properties: {
-            id: { type: 'string', format: 'cuid' },
+            id: { type: 'string', description: 'CUID identifier' },
             name: { type: 'string' },
             label: { type: 'string' },
             color: { type: 'string', nullable: true },
@@ -176,7 +176,7 @@ export function generateOpenAPISpec() {
         PersonSummary: {
           type: 'object',
           properties: {
-            id: { type: 'string', format: 'cuid' },
+            id: { type: 'string', description: 'CUID identifier' },
             name: { type: 'string' },
             surname: { type: 'string', nullable: true },
             nickname: { type: 'string', nullable: true },
@@ -187,8 +187,8 @@ export function generateOpenAPISpec() {
           type: 'object',
           description: 'A significant date for a person, with optional recurring reminders',
           properties: {
-            id: { type: 'string', format: 'cuid' },
-            personId: { type: 'string', format: 'cuid' },
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string', description: 'CUID identifier' },
             title: { type: 'string', description: 'Label for this date (e.g. Birthday, Anniversary)' },
             date: { type: 'string', format: 'date-time' },
             reminderEnabled: { type: 'boolean' },
@@ -205,7 +205,7 @@ export function generateOpenAPISpec() {
           description: 'An upcoming event computed from important dates and contact reminders',
           properties: {
             id: { type: 'string' },
-            personId: { type: 'string', format: 'cuid' },
+            personId: { type: 'string', description: 'CUID identifier' },
             personName: { type: 'string' },
             type: { type: 'string', enum: ['important_date', 'contact_reminder'] },
             title: { type: 'string' },
@@ -238,7 +238,7 @@ export function generateOpenAPISpec() {
         UserProfile: {
           type: 'object',
           properties: {
-            id: { type: 'string', format: 'cuid' },
+            id: { type: 'string', description: 'CUID identifier' },
             email: { type: 'string', format: 'email' },
             name: { type: 'string' },
             surname: { type: 'string', nullable: true },
