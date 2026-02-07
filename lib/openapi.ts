@@ -1612,6 +1612,19 @@ export function generateOpenAPISpec() {
           },
         },
       },
+      '/api/docs': {
+        get: {
+          tags: ['System'],
+          summary: 'Swagger UI',
+          description: 'Interactive API documentation powered by Swagger UI.',
+          responses: {
+            '200': {
+              description: 'HTML page',
+              content: { 'text/html': { schema: { type: 'string' } } },
+            },
+          },
+        },
+      },
     },
   } as any;
 }
