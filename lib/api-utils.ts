@@ -193,6 +193,19 @@ export function getClientIp(request: Request): string {
 }
 
 /**
+ * Normalize email address to lowercase for consistent storage and lookup
+ * Prevents case-sensitivity issues where Bob@test.com and bob@test.com
+ * would be treated as different users
+ *
+ * @example
+ * normalizeEmail('Bob@Test.COM') // returns 'bob@test.com'
+ * normalizeEmail('user@DOMAIN.com') // returns 'user@domain.com'
+ */
+export function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+/**
  * Session with guaranteed user (for authenticated handlers)
  */
 export interface AuthenticatedSession extends Session {

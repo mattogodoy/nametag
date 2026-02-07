@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { registerSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit-redis';
-import { handleApiError, parseRequestBody } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, normalizeEmail } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { createFreeSubscription } from '@/lib/billing';
 import { createPreloadedRelationshipTypes } from '@/lib/relationship-types';
@@ -44,7 +44,10 @@ export async function POST(request: Request) {
       return validation.response;
     }
 
-    const { email, password, name, surname, nickname } = validation.data;
+    const { password, name, surname, nickname } = validation.data;
+
+    // Normalize email to lowercase to prevent case-sensitivity issues
+    const email = normalizeEmail(validation.data.email);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
