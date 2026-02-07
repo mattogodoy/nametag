@@ -2,6 +2,33 @@ import { prisma } from '@/lib/prisma';
 import { createRelationshipSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
+// GET /api/relationships - List all relationships for the current user
+export const GET = withAuth(async (_request, session) => {
+  try {
+    const relationships = await prisma.relationship.findMany({
+      where: {
+        person: { userId: session.user.id },
+      },
+      include: {
+        person: {
+          select: { id: true, name: true, surname: true, nickname: true },
+        },
+        relatedPerson: {
+          select: { id: true, name: true, surname: true, nickname: true },
+        },
+        relationshipType: {
+          select: { id: true, name: true, label: true, color: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return apiResponse.ok({ relationships });
+  } catch (error) {
+    return handleApiError(error, 'relationships-list');
+  }
+});
+
 // POST /api/relationships - Create a new relationship (bidirectional)
 export const POST = withAuth(async (request, session) => {
   try {
