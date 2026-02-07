@@ -1,21 +1,13 @@
 import { prisma } from '@/lib/prisma';
-import { formatGraphName } from '@/lib/nameUtils';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
-
-interface GraphNode {
-  id: string;
-  label: string;
-  groups: string[];
-  colors: string[];
-  isCenter: boolean;
-}
-
-interface GraphEdge {
-  source: string;
-  target: string;
-  type: string;
-  color: string;
-}
+import type { GraphNode, GraphEdge } from '@/lib/graph-utils';
+import {
+  userToGraphNode,
+  personToGraphNode,
+  relationshipsWithUserToGraphEdges,
+  relationshipToGraphEdge,
+  inverseRelationshipToGraphEdge,
+} from '@/lib/graph-utils';
 
 export const GET = withAuth(async (_request, session, context) => {
   try {
@@ -29,6 +21,13 @@ export const GET = withAuth(async (_request, session, context) => {
       },
       include: {
         relationshipToUser: {
+          include: {
+            inverse: {
+              where: {
+                deletedAt: null,
+              },
+            },
+          },
           where: {
             deletedAt: null,
           },
@@ -54,6 +53,13 @@ export const GET = withAuth(async (_request, session, context) => {
             relatedPerson: {
               include: {
                 relationshipToUser: {
+                  include: {
+                    inverse: {
+                      where: {
+                        deletedAt: null,
+                      },
+                    },
+                  },
                   where: {
                     deletedAt: null,
                   },
@@ -120,129 +126,74 @@ export const GET = withAuth(async (_request, session, context) => {
     const nodeIds = new Set<string>();
 
     // Add center node (the person we're viewing)
-    nodes.push({
-      id: person.id,
-      label: formatGraphName(person),
-      groups: person.groups.map((pg) => pg.group.name),
-      colors: person.groups.map((pg) => pg.group.color || '#3B82F6'),
-      isCenter: true,
-    });
+    nodes.push(personToGraphNode(person, true));
     nodeIds.add(person.id);
 
     // Add user as a node
     const userId = `user-${session.user.id}`;
-    nodes.push({
-      id: userId,
-      label: 'You',
-      groups: [],
-      colors: [],
-      isCenter: false,
-    });
+    nodes.push(userToGraphNode(userId));
     nodeIds.add(userId);
 
-    // Add edge from person to user (their relationship to you) if direct relationship exists
-    if (person.relationshipToUser) {
-      edges.push({
-        source: person.id,
-        target: userId,
-        type: person.relationshipToUser.label,
-        color: person.relationshipToUser.color || '#9CA3AF',
-      });
-    }
+    // if person has direct relationship to user, add them
+    edges.push(...relationshipsWithUserToGraphEdges(person, userId));
 
     // Add related people as nodes
     person.relationshipsFrom.forEach((rel) => {
-      if (!nodeIds.has(rel.relatedPersonId)) {
-        nodes.push({
-          id: rel.relatedPersonId,
-          label: formatGraphName(rel.relatedPerson),
-          groups: rel.relatedPerson.groups.map((pg) => pg.group.name),
-          colors: rel.relatedPerson.groups.map((pg) => pg.group.color || '#3B82F6'),
-          isCenter: false,
-        });
-        nodeIds.add(rel.relatedPersonId);
-      }
+      nodes.push(personToGraphNode(rel.relatedPerson));
+      nodeIds.add(rel.relatedPersonId);
 
-      // If the related person has a direct relationship to the user, add that edge
-      if (rel.relatedPerson.relationshipToUser) {
-        edges.push({
-          source: rel.relatedPersonId,
-          target: userId,
-          type: rel.relatedPerson.relationshipToUser.label,
-          color: rel.relatedPerson.relationshipToUser.color || '#9CA3AF',
-        });
-      }
+      // If the related person has direct relationship to the user, add them
+      edges.push(
+        ...relationshipsWithUserToGraphEdges(rel.relatedPerson, userId),
+      );
     });
 
-    // Build edges with deduplication (same logic as dashboard)
-    const addedEdges = new Set<string>();
+    // Build edges with deduplication
+    const dedupedEdges = new Map<string, GraphEdge>();
 
     // Add edges from center person to related people
-    person.relationshipsFrom.forEach((rel) => {
-      if (nodeIds.has(rel.relatedPersonId)) {
-        // Use lexicographic ordering to deduplicate bidirectional relationships
-        const isSwapped = person.id > rel.relatedPersonId;
-        const sourceId = isSwapped ? rel.relatedPersonId : person.id;
-        const targetId = isSwapped ? person.id : rel.relatedPersonId;
-        const edgeKey = `${sourceId}-${targetId}`;
+    person.relationshipsFrom
+      .map(relationshipToGraphEdge)
+      .filter((e) => e !== undefined)
+      .forEach((e) => {
+          dedupedEdges.set(`${e.source}-${e.target}`, e);
+      });
 
-        // Only add if we haven't already added this edge
-        if (!addedEdges.has(edgeKey)) {
-          addedEdges.add(edgeKey);
-
-          // If we swapped the direction, use the inverse relationship label
-          const relationshipLabel = isSwapped && rel.relationshipType?.inverse
-            ? rel.relationshipType.inverse.label
-            : (rel.relationshipType?.label || 'Unknown');
-
-          const relationshipColor = isSwapped && rel.relationshipType?.inverse
-            ? rel.relationshipType.inverse.color
-            : (rel.relationshipType?.color || '#999999');
-
-          edges.push({
-            source: sourceId,
-            target: targetId,
-            type: relationshipLabel,
-            color: relationshipColor || '#999999',
-          });
-        }
-      }
-    });
+    // include the inverse relationships too
+    person.relationshipsFrom
+      .map(inverseRelationshipToGraphEdge)
+      .filter((e) => e !== undefined)
+      .forEach((e) => {
+          dedupedEdges.set(`${e.source}-${e.target}`, e);
+      });
 
     // Add edges between related people (relationships within the network)
     person.relationshipsFrom.forEach((rel) => {
-      rel.relatedPerson.relationshipsFrom?.forEach((subRel) => {
-        // Only add edges where both nodes exist in our network
-        if (nodeIds.has(subRel.relatedPersonId)) {
-          // Use lexicographic ordering to deduplicate bidirectional relationships
-          const isSwapped = rel.relatedPersonId > subRel.relatedPersonId;
-          const sourceId = isSwapped ? subRel.relatedPersonId : rel.relatedPersonId;
-          const targetId = isSwapped ? rel.relatedPersonId : subRel.relatedPersonId;
-          const edgeKey = `${sourceId}-${targetId}`;
+      if (!rel.relatedPerson.relationshipsFrom) {
+        return;
+      }
 
-          // Only add if we haven't already added this edge
-          if (!addedEdges.has(edgeKey)) {
-            addedEdges.add(edgeKey);
+      // Find relationships from this related person to other related people
+      // and add edge only if this other related person's already in the graph
+      rel.relatedPerson.relationshipsFrom
+        .filter((r) => nodeIds.has(r.relatedPersonId))
+        .map(relationshipToGraphEdge)
+        .filter((e) => e !== undefined)
+        .forEach((e) => {
+          dedupedEdges.set(`${e.source}-${e.target}`, e);
+        });
 
-            // If we swapped the direction, use the inverse relationship label
-            const relationshipLabel = isSwapped && subRel.relationshipType?.inverse
-              ? subRel.relationshipType.inverse.label
-              : (subRel.relationshipType?.label || 'Unknown');
-
-            const relationshipColor = isSwapped && subRel.relationshipType?.inverse
-              ? subRel.relationshipType.inverse.color
-              : (subRel.relationshipType?.color || '#999999');
-
-            edges.push({
-              source: sourceId,
-              target: targetId,
-              type: relationshipLabel,
-              color: relationshipColor || '#999999',
-            });
-          }
-        }
-      });
+      // include the inverse relationships too
+      rel.relatedPerson.relationshipsFrom
+        .filter((r) => nodeIds.has(r.relatedPersonId))
+        .map(inverseRelationshipToGraphEdge)
+        .filter((e) => e !== undefined)
+        .forEach((e) => {
+          dedupedEdges.set(`${e.source}-${e.target}`, e);
+        });
     });
+
+    edges.push(...dedupedEdges.values());
 
     return apiResponse.ok({ nodes, edges });
   } catch (error) {

@@ -1,6 +1,13 @@
 import { prisma } from '@/lib/prisma';
-import { formatGraphName } from '@/lib/nameUtils';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import type { GraphNode, GraphEdge } from '@/lib/graph-utils';
+import {
+  userToGraphNode,
+  personToGraphNode,
+  relationshipsWithUserToGraphEdges,
+  relationshipToGraphEdge,
+  inverseRelationshipToGraphEdge,
+} from '@/lib/graph-utils';
 
 type DashboardGraphPerson = {
   id: string;
@@ -10,6 +17,10 @@ type DashboardGraphPerson = {
   relationshipToUser: {
     label: string;
     color: string | null;
+    inverse: {
+      label: string;
+      color: string | null;
+    } | null;
   } | null;
   groups: Array<{
     group: {
@@ -18,34 +29,18 @@ type DashboardGraphPerson = {
     };
   }>;
   relationshipsFrom: Array<{
+    personId: string;
     relatedPersonId: string;
-    relationshipType:
-      | {
-          label: string;
-          color: string | null;
-          inverse: {
-            label: string;
-            color: string | null;
-          } | null;
-        }
-      | null;
+    relationshipType: {
+      label: string;
+      color: string | null;
+      inverse: {
+        label: string;
+        color: string | null;
+      } | null;
+    } | null;
   }>;
 };
-
-interface GraphNode {
-  id: string;
-  label: string;
-  groups: string[];
-  colors: string[];
-  isCenter: boolean;
-}
-
-interface GraphEdge {
-  source: string;
-  target: string;
-  type: string;
-  color: string;
-}
 
 export const GET = withAuth(async (request, session) => {
   try {
@@ -88,6 +83,15 @@ export const GET = withAuth(async (request, session) => {
           select: {
             label: true,
             color: true,
+            inverse: {
+              where: {
+                deletedAt: null,
+              },
+              select: {
+                label: true,
+                color: true,
+              },
+            },
           },
         },
         groups: {
@@ -113,6 +117,7 @@ export const GET = withAuth(async (request, session) => {
             },
           },
           select: {
+            personId: true,
             relatedPersonId: true,
             relationshipType: {
               where: {
@@ -148,73 +153,42 @@ export const GET = withAuth(async (request, session) => {
 
     // Add user as the center node
     const userId = `user-${session.user.id}`;
-    nodes.push({
-      id: userId,
-      label: 'You',
-      groups: [],
-      colors: [],
-      isCenter: true,
-    });
+    nodes.push(userToGraphNode(userId, true));
     nodeIds.add(userId);
 
     // Add all people as nodes
     people.forEach((person) => {
-      nodes.push({
-        id: person.id,
-        label: formatGraphName(person),
-        groups: person.groups.map((pg) => pg.group.name),
-        colors: person.groups.map((pg) => pg.group.color || '#3B82F6'),
-        isCenter: false,
-      });
+      nodes.push(personToGraphNode(person));
       nodeIds.add(person.id);
 
       // Connect each person to the user with their specific relationship (if they have a direct one)
-      if (person.relationshipToUser) {
-        edges.push({
-          source: userId,
-          target: person.id,
-          type: person.relationshipToUser.label,
-          color: person.relationshipToUser.color || '#9CA3AF',
-        });
-      }
+      edges.push(...relationshipsWithUserToGraphEdges(person, userId));
     });
 
     // Add all relationships between people as edges (deduplicated)
-    const addedEdges = new Set<string>();
+    const dedupedEdges = new Map<string, GraphEdge>();
 
     people.forEach((person) => {
-      person.relationshipsFrom.forEach((rel) => {
-        // Only add edges where both nodes exist
-        if (nodeIds.has(rel.relatedPersonId)) {
-          // Use lexicographic ordering to deduplicate bidirectional relationships
-          const isSwapped = person.id > rel.relatedPersonId;
-          const sourceId = isSwapped ? rel.relatedPersonId : person.id;
-          const targetId = isSwapped ? person.id : rel.relatedPersonId;
-          const edgeKey = `${sourceId}-${targetId}`;
+      // only add edges when both people are present in the graph
+      person.relationshipsFrom
+        .filter((r) => nodeIds.has(r.relatedPersonId))
+        .map(relationshipToGraphEdge)
+        .filter((e) => e !== undefined)
+        .forEach((e) => {
+          dedupedEdges.set(`${e.source}-${e.target}`, e);
+        });
 
-          // Only add if we haven't already added this edge
-          if (!addedEdges.has(edgeKey)) {
-            addedEdges.add(edgeKey);
-
-            // If we swapped the direction, use the inverse relationship label
-            const relationshipLabel = isSwapped && rel.relationshipType?.inverse
-              ? rel.relationshipType.inverse.label
-              : (rel.relationshipType?.label || 'Unknown');
-
-            const relationshipColor = isSwapped && rel.relationshipType?.inverse
-              ? rel.relationshipType.inverse.color
-              : (rel.relationshipType?.color || '#999999');
-
-            edges.push({
-              source: sourceId,
-              target: targetId,
-              type: relationshipLabel,
-              color: relationshipColor || '#999999',
-            });
-          }
-        }
-      });
+      // include the inverse relationships too
+      person.relationshipsFrom
+        .filter((r) => nodeIds.has(r.relatedPersonId))
+        .map(inverseRelationshipToGraphEdge)
+        .filter((e) => e !== undefined)
+        .forEach((e) => {
+          dedupedEdges.set(`${e.source}-${e.target}`, e);
+        });
     });
+
+    edges.push(...dedupedEdges.values());
 
     return apiResponse.ok({ nodes, edges });
   } catch (error) {

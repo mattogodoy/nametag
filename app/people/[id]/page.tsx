@@ -122,6 +122,13 @@ export default async function PersonDetailsPage({
       },
       include: {
         relationshipToUser: {
+          include: {
+            inverse: {
+              where: {
+                deletedAt: null,
+              },
+            },
+          },
           where: {
             deletedAt: null,
           },
@@ -203,6 +210,12 @@ export default async function PersonDetailsPage({
   const availablePeople = allPeople.filter(
     (p) => !relatedPersonIds.has(p.id)
   );
+
+  // As other people's relationship to the person in question
+  // is listed, the user's relationship to the person needs to
+  // be shown which is the inverse of the person's relationship
+  // to the user.
+  const relationshipToUser = person.relationshipToUser?.inverse;
 
   return (
     <div className="min-h-screen bg-background">
@@ -367,7 +380,7 @@ export default async function PersonDetailsPage({
                 </h3>
 
                 {/* Relationship to user */}
-                {person.relationshipToUser && (
+                {relationshipToUser && (
                   <div className="mb-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -378,13 +391,13 @@ export default async function PersonDetailsPage({
                         <span
                           className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                           style={{
-                            backgroundColor: person.relationshipToUser.color
-                              ? `${person.relationshipToUser.color}20`
+                            backgroundColor: relationshipToUser.color
+                              ? `${relationshipToUser.color}20`
                               : '#E5E7EB',
-                            color: person.relationshipToUser.color || '#374151',
+                            color: relationshipToUser.color || '#374151',
                           }}
                         >
-                          {person.relationshipToUser.label}
+                          {relationshipToUser.label}
                         </span>
                       </div>
                       <div className="flex gap-3">
