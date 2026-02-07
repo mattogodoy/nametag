@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   relationshipTypeFindUnique: vi.fn(),
   relationshipCreate: vi.fn(),
   importantDateCount: vi.fn(),
+  importantDateCreate: vi.fn(),
 }));
 
 // Mock Prisma
@@ -36,6 +37,7 @@ vi.mock('../../lib/prisma', () => ({
     },
     importantDate: {
       count: mocks.importantDateCount,
+      create: mocks.importantDateCreate,
     },
   },
 }));
@@ -58,7 +60,9 @@ vi.mock('../../lib/billing', () => ({
 
 // Import after mocking
 import { GET, POST } from '../../app/api/people/route';
+import { GET as searchPeople } from '../../app/api/people/search/route';
 import { GET as getPerson, PUT, DELETE } from '../../app/api/people/[id]/route';
+import { POST as addImportantDate } from '../../app/api/people/[id]/important-dates/route';
 
 describe('People API', () => {
   beforeEach(() => {
@@ -112,6 +116,35 @@ describe('People API', () => {
             relationshipToUser: true,
             groups: expect.any(Object),
           }),
+        })
+      );
+    });
+
+    it('should support updatedAt ordering and limits', async () => {
+      mocks.personFindMany.mockResolvedValue([]);
+
+      const request = new Request('http://localhost/api/people?orderBy=updatedAt&order=desc&limit=5');
+      await GET(request);
+
+      expect(mocks.personFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { updatedAt: 'desc' },
+          take: 5,
+        })
+      );
+    });
+  });
+
+  describe('GET /api/people/search', () => {
+    it('should respect limit parameter', async () => {
+      mocks.personFindMany.mockResolvedValue([]);
+
+      const request = new Request('http://localhost/api/people/search?q=john&limit=10');
+      await searchPeople(request);
+
+      expect(mocks.personFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 10,
         })
       );
     });
@@ -264,6 +297,58 @@ describe('People API', () => {
         expect.objectContaining({
           where: { id: 'other-user-person', userId: 'user-123' },
         })
+      );
+    });
+
+    it('should include important dates', async () => {
+      mocks.personFindUnique.mockResolvedValue({
+        id: 'person-1',
+        name: 'John',
+        userId: 'user-123',
+        groups: [],
+        relationshipsFrom: [],
+        importantDates: [],
+      });
+
+      const request = new Request('http://localhost/api/people/person-1');
+      const context = { params: Promise.resolve({ id: 'person-1' }) };
+      await getPerson(request, context);
+
+      expect(mocks.personFindUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            importantDates: { where: { deletedAt: null } },
+          }),
+        })
+      );
+    });
+  });
+
+  describe('POST /api/people/[id]/important-dates', () => {
+    it('should create an important date', async () => {
+      mocks.personFindUnique.mockResolvedValue({ id: 'person-1', userId: 'user-123' });
+      mocks.importantDateCreate.mockResolvedValue({
+        id: 'date-1',
+        personId: 'person-1',
+        title: 'Birthday',
+      });
+
+      const request = new Request('http://localhost/api/people/person-1/important-dates', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: 'Birthday',
+          date: '2024-01-01',
+        }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const context = { params: Promise.resolve({ id: 'person-1' }) };
+
+      const response = await addImportantDate(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(201);
+      expect(body.importantDate).toEqual(
+        expect.objectContaining({ id: 'date-1', personId: 'person-1', title: 'Birthday' })
       );
     });
   });

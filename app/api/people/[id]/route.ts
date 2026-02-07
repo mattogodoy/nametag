@@ -21,6 +21,11 @@ export const GET = withAuth(async (_request, session, context) => {
             group: true,
           },
         },
+        importantDates: {
+          where: {
+            deletedAt: null,
+          },
+        },
         relationshipsFrom: {
           include: {
             relatedPerson: true,

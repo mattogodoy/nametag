@@ -5,8 +5,23 @@ import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canCreateResource, canEnableReminder } from '@/lib/billing';
 
 // GET /api/people - List all people for the current user
-export const GET = withAuth(async (_request, session) => {
+export const GET = withAuth(async (request, session) => {
   try {
+    const { searchParams } = new URL(request.url);
+    const orderByParam = searchParams.get('orderBy');
+    const orderParam = searchParams.get('order');
+    const limitParam = searchParams.get('limit');
+
+    const orderDirection = orderParam === 'asc' ? 'asc' : 'desc';
+    const orderBy =
+      orderByParam === 'updatedAt'
+        ? { updatedAt: orderDirection }
+        : orderByParam === 'name'
+          ? { name: orderDirection }
+          : { name: 'asc' };
+
+    const limit = limitParam ? Number(limitParam) : undefined;
+
     const people = await prisma.person.findMany({
       where: {
         userId: session.user.id,
@@ -19,9 +34,8 @@ export const GET = withAuth(async (_request, session) => {
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy,
+      take: Number.isFinite(limit) ? limit : undefined,
     });
 
     return apiResponse.ok({ people });
