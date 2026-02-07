@@ -123,7 +123,11 @@ export default async function PersonDetailsPage({
       include: {
         relationshipToUser: {
           include: {
-            inverse: true,
+            inverse: {
+              where: {
+                deletedAt: null,
+              },
+            },
           },
           where: {
             deletedAt: null,
