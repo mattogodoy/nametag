@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkVerificationSchema, validateRequest } from '@/lib/validations';
-import { parseRequestBody } from '@/lib/api-utils';
+import { parseRequestBody, normalizeEmail } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,8 @@ export async function POST(request: Request) {
       return validation.response;
     }
 
-    const { email } = validation.data;
+    // Normalize email to lowercase for case-insensitive lookup
+    const email = normalizeEmail(validation.data.email);
 
     const user = await prisma.user.findUnique({
       where: { email },

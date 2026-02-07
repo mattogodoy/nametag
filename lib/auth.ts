@@ -18,14 +18,18 @@ const providers = [
         const { prisma } = await import('@/lib/prisma');
         const bcrypt = await import('bcryptjs');
         const { isFeatureEnabled } = await import('@/lib/features');
+        const { normalizeEmail } = await import('@/lib/api-utils');
 
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
+        // Normalize email to lowercase for case-insensitive lookup
+        const email = normalizeEmail(credentials.email as string);
+
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email as string,
+            email,
           },
         });
 
@@ -90,10 +94,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { prisma } = await import('@/lib/prisma');
         const { createFreeSubscription } = await import('@/lib/billing');
         const { createPreloadedRelationshipTypes } = await import('@/lib/relationship-types');
+        const { normalizeEmail } = await import('@/lib/api-utils');
+
+        // Normalize email to lowercase for case-insensitive lookup
+        const email = normalizeEmail(user.email!);
 
         // Check if user exists with this email
         const existingUser = await prisma.user.findUnique({
-          where: { email: user.email! },
+          where: { email },
         });
 
         if (existingUser) {
@@ -114,7 +122,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Create new user with OAuth
           const newUser = await prisma.user.create({
             data: {
-              email: user.email!,
+              email,
               name: profile.given_name || user.name || 'User',
               surname: profile.family_name || null,
               provider: account.provider,

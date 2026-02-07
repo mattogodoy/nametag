@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { forgotPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { handleApiError, parseRequestBody } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, normalizeEmail } from '@/lib/api-utils';
 import { getAppUrl } from '@/lib/env';
 
 const TOKEN_EXPIRY_HOURS = 1;
@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       return validation.response;
     }
 
-    const { email } = validation.data;
+    // Normalize email to lowercase for case-insensitive lookup
+    const email = normalizeEmail(validation.data.email);
 
     // Find user
     const user = await prisma.user.findUnique({
