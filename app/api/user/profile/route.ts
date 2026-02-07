@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { updateProfileSchema, validateRequest } from '@/lib/validations';
-import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withAuth, normalizeEmail } from '@/lib/api-utils';
 import { getAppUrl } from '@/lib/env';
 
 const TOKEN_EXPIRY_HOURS = 24;
@@ -20,7 +20,10 @@ export const PUT = withAuth(async (request, session) => {
       return validation.response;
     }
 
-    const { name, surname, nickname, email } = validation.data;
+    const { name, surname, nickname } = validation.data;
+
+    // Normalize email to lowercase for case-insensitive lookup
+    const email = normalizeEmail(validation.data.email);
 
     // Check if email is already taken by another user
     const existingUser = await prisma.user.findUnique({

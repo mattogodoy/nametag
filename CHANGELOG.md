@@ -6,41 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.17.0](https://github.com/mattogodoy/nametag/compare/v0.16.6...v0.17.0) (2026-02-07)
-
-### Features
-
-* both relationship directions for person-centric graph ([a7e2b0b](https://github.com/mattogodoy/nametag/commit/a7e2b0b08ec833e8206754c5b36c43e1196f0f10))
-* show arrows only when highlighting edges ([f36bb85](https://github.com/mattogodoy/nametag/commit/f36bb85f4fcbd70a71a60d103b36b54ccd015240))
-* show both relationship direction in dashboard if available ([23a9853](https://github.com/mattogodoy/nametag/commit/23a98537fb257ed37ebf1fcab46f1b58017d22e0))
+## [0.17.1](https://github.com/mattogodoy/nametag/compare/v0.17.0...v0.17.1) (2026-02-07)
 
 ### Bug Fixes
 
-* add back missing opacity ([742389c](https://github.com/mattogodoy/nametag/commit/742389c72070dde2132b495e8da2f37bfcdd0ab9))
-* exclude deleted relationship ([591dc2b](https://github.com/mattogodoy/nametag/commit/591dc2bfc33d2a493999df1eef2610cd6ebc8044))
-* only add edges when both people present ([1bb030d](https://github.com/mattogodoy/nametag/commit/1bb030dfa7948c7b0f968bbc3d945e2b44398b24))
-* only include edges between existing people in the network ([5629e3a](https://github.com/mattogodoy/nametag/commit/5629e3ae10a01fd0da3ead97d4245c1966ec2594))
-* person-centric relationship to user ([f5a1bbb](https://github.com/mattogodoy/nametag/commit/f5a1bbbb44f3af1352d71fb93b2e1bf85e43350d))
-* string keys to track edges instead of objects ([9af9554](https://github.com/mattogodoy/nametag/commit/9af955436bc85e89c5a66b980c197e67ce53d7d4))
-* use map to dedup edges ([ff4bc23](https://github.com/mattogodoy/nametag/commit/ff4bc23a30da6a9edafbaff0d4c0ee325b6f20f7))
-
-### Documentation
-
-* describe utility functions ([45b12f2](https://github.com/mattogodoy/nametag/commit/45b12f255fcfa7c4ec90bcccf24366130300e2a5))
-* explanation for choosing inverse of the relationship to user ([a4ee867](https://github.com/mattogodoy/nametag/commit/a4ee867b75e4ee4f2c7832652610f65c0554f45c))
-* more meaningful name for function ([c06d138](https://github.com/mattogodoy/nametag/commit/c06d138ad99fb343dccad977087c66ee13695e85))
+* Make email to be case-insensitive ([cf5b65d](https://github.com/mattogodoy/nametag/commit/cf5b65de312be714fcb4e7b7d0b7b26716f475c1))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.17.1](https://github.com/mattogodoy/nametag/compare/v0.17.0...v0.17.1)
+
+- Make email to be case-insensitive [`#69`](https://github.com/mattogodoy/nametag/pull/69)
+- 🐛 Fix: Make email to be case-insensitive [`cf5b65d`](https://github.com/mattogodoy/nametag/commit/cf5b65de312be714fcb4e7b7d0b7b26716f475c1)
+
 #### [v0.17.0](https://github.com/mattogodoy/nametag/compare/v0.16.6...v0.17.0)
+
+> 7 February 2026
 
 - 🐛 Fix: person-centric relationship to user [`#34`](https://github.com/mattogodoy/nametag/pull/34)
 - ✅ Test: graph edge deduplication [`886f4b4`](https://github.com/mattogodoy/nametag/commit/886f4b4a71c48bdfbc9bd0e72301a7c1aa3e184d)
 - ✅ Test: remove unnecessary describe block [`29a916f`](https://github.com/mattogodoy/nametag/commit/29a916f6ae522fa5e2b2ec476a2d6b038f023e13)
 - ✨ Feature: both relationship directions for person-centric graph [`a7e2b0b`](https://github.com/mattogodoy/nametag/commit/a7e2b0b08ec833e8206754c5b36c43e1196f0f10)
 - ✨ Feature: show both relationship direction in dashboard if available [`23a9853`](https://github.com/mattogodoy/nametag/commit/23a98537fb257ed37ebf1fcab46f1b58017d22e0)
+- 🔧 Chore: release v0.17.0 [`3e7d1a8`](https://github.com/mattogodoy/nametag/commit/3e7d1a885021ad8cb4e807f42449110c9c55f003)
 - ✨ Feature: show arrows only when highlighting edges [`f36bb85`](https://github.com/mattogodoy/nametag/commit/f36bb85f4fcbd70a71a60d103b36b54ccd015240)
 - 🐛 Fix: string keys to track edges instead of objects [`9af9554`](https://github.com/mattogodoy/nametag/commit/9af955436bc85e89c5a66b980c197e67ce53d7d4)
 - 🐛 Fix: use map to dedup edges [`ff4bc23`](https://github.com/mattogodoy/nametag/commit/ff4bc23a30da6a9edafbaff0d4c0ee325b6f20f7)

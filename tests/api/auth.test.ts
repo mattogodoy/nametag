@@ -614,6 +614,103 @@ describe('Auth API', () => {
         expect(mocks.checkRateLimitAsync).toHaveBeenCalled();
       });
     });
+
+    describe('Email Case Sensitivity', () => {
+      it('should normalize email to lowercase during registration', async () => {
+        mocks.userFindUnique.mockResolvedValue(null);
+        mocks.userCreate.mockResolvedValue({
+          id: 'user-123',
+          email: 'test@example.com',
+          name: 'Test User',
+        });
+
+        const request = new Request('http://localhost/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: 'Bob@Test.COM',
+            password: 'ValidPassword123!',
+            name: 'Test User',
+          }),
+          headers: { 'content-type': 'application/json' },
+        });
+
+        await register(request);
+
+        // Check that email was normalized before lookup
+        expect(mocks.userFindUnique).toHaveBeenCalledWith({
+          where: { email: 'bob@test.com' },
+        });
+
+        // Check that email was normalized before storage
+        expect(mocks.userCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              email: 'bob@test.com',
+            }),
+          })
+        );
+      });
+
+      it('should prevent duplicate registration with different email case', async () => {
+        // Simulate existing user with lowercase email
+        mocks.userFindUnique.mockResolvedValue({
+          id: 'existing-user',
+          email: 'test@example.com',
+        });
+
+        const request = new Request('http://localhost/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: 'Test@Example.COM',
+            password: 'ValidPassword123!',
+            name: 'Test User',
+          }),
+          headers: { 'content-type': 'application/json' },
+        });
+
+        const response = await register(request);
+        const body = await response.json();
+
+        expect(response.status).toBe(400);
+        expect(body.error).toContain('already exists');
+        expect(mocks.userFindUnique).toHaveBeenCalledWith({
+          where: { email: 'test@example.com' },
+        });
+      });
+
+      it('should handle all uppercase email', async () => {
+        mocks.userFindUnique.mockResolvedValue(null);
+        mocks.userCreate.mockResolvedValue({
+          id: 'user-123',
+          email: 'user@example.com',
+          name: 'Test User',
+        });
+
+        const request = new Request('http://localhost/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: 'USER@EXAMPLE.COM',
+            password: 'ValidPassword123!',
+            name: 'Test User',
+          }),
+          headers: { 'content-type': 'application/json' },
+        });
+
+        await register(request);
+
+        // Should normalize to lowercase
+        expect(mocks.userFindUnique).toHaveBeenCalledWith({
+          where: { email: 'user@example.com' },
+        });
+        expect(mocks.userCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              email: 'user@example.com',
+            }),
+          })
+        );
+      });
+    });
   });
 
   describe('POST /api/auth/forgot-password', () => {
@@ -738,6 +835,55 @@ describe('Auth API', () => {
       const response = await forgotPassword(request);
 
       expect(response.status).toBe(400);
+    });
+
+    describe('Email Case Sensitivity', () => {
+      it('should normalize email to lowercase when looking up user', async () => {
+        mocks.userFindUnique.mockResolvedValue({
+          id: 'user-123',
+          passwordResetSentAt: null,
+        });
+        mocks.userUpdate.mockResolvedValue({});
+
+        const request = new Request('http://localhost/api/auth/forgot-password', {
+          method: 'POST',
+          body: JSON.stringify({ email: 'Test@Example.COM' }),
+          headers: { 'content-type': 'application/json' },
+        });
+
+        await forgotPassword(request);
+
+        // Check that email was normalized before lookup
+        expect(mocks.userFindUnique).toHaveBeenCalledWith({
+          where: { email: 'test@example.com' },
+          select: {
+            id: true,
+            passwordResetSentAt: true,
+          },
+        });
+      });
+
+      it('should send reset email to normalized address', async () => {
+        mocks.userFindUnique.mockResolvedValue({
+          id: 'user-123',
+          passwordResetSentAt: null,
+        });
+        mocks.userUpdate.mockResolvedValue({});
+
+        const request = new Request('http://localhost/api/auth/forgot-password', {
+          method: 'POST',
+          body: JSON.stringify({ email: 'Admin@Company.COM' }),
+          headers: { 'content-type': 'application/json' },
+        });
+
+        await forgotPassword(request);
+
+        expect(mocks.sendEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'admin@company.com',
+          })
+        );
+      });
     });
   });
 });
