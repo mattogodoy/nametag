@@ -239,7 +239,12 @@ export function generateOpenAPISpec() {
             title: { type: 'string', description: 'Label for this date (e.g. Birthday, Anniversary)' },
             date: { type: 'string', format: 'date-time' },
             reminderEnabled: { type: 'boolean' },
-            reminderType: { type: ['string', 'null'], enum: ['ONCE', 'RECURRING'] },
+            reminderType: {
+              oneOf: [
+                { type: 'string', enum: ['ONCE', 'RECURRING'] },
+                { type: 'null' },
+              ],
+            },
             reminderInterval: { type: ['integer', 'null'], minimum: 1, maximum: 99 },
             reminderIntervalUnit: {
               oneOf: [
@@ -262,7 +267,12 @@ export function generateOpenAPISpec() {
             personName: { type: 'string' },
             type: { type: 'string', enum: ['important_date', 'contact_reminder'] },
             title: { type: ['string', 'null'] },
-            titleKey: { type: ['string', 'null'], enum: ['timeToCatchUp', null] },
+            titleKey: {
+              oneOf: [
+                { type: 'string', enum: ['timeToCatchUp'] },
+                { type: 'null' },
+              ],
+            },
             date: { type: 'string', format: 'date-time' },
             daysUntil: { type: 'integer', description: 'Number of days until this event (negative = overdue)' },
           },
@@ -307,8 +317,8 @@ export function generateOpenAPISpec() {
           required: ['id', 'email', 'name', 'theme', 'dateFormat', 'language', 'createdAt', 'updatedAt'],
         },
         ReminderIntervalUnit: {
-          type: ['string', 'null'],
-          enum: ['DAYS', 'WEEKS', 'MONTHS', 'YEARS', null],
+          type: 'string',
+          enum: ['DAYS', 'WEEKS', 'MONTHS', 'YEARS'],
         },
         ImportantDateInput: {
           type: 'object',
@@ -317,7 +327,12 @@ export function generateOpenAPISpec() {
             title: { type: 'string', maxLength: 100 },
             date: { type: 'string', format: 'date', description: 'ISO 8601 date string' },
             reminderEnabled: { type: 'boolean' },
-            reminderType: { type: ['string', 'null'], enum: ['ONCE', 'RECURRING'] },
+            reminderType: {
+              oneOf: [
+                { type: 'string', enum: ['ONCE', 'RECURRING'] },
+                { type: 'null' },
+              ],
+            },
             reminderInterval: { type: ['integer', 'null'], minimum: 1, maximum: 99, description: 'How many units between reminders' },
             reminderIntervalUnit: {
               oneOf: [
@@ -1702,7 +1717,6 @@ function pathParam(name: string, description: string) {
 }
 
 function jsonBody(schema: any) {
-  // Add ImportantDateInput to component schemas if referenced
   return {
     required: true,
     content: {

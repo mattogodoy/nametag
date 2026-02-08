@@ -235,14 +235,7 @@ export const createImportantDateSchema = z.object({
   reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
 });
 
-export const updateImportantDateSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(100),
-  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
-  reminderEnabled: z.boolean().optional(),
-  reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
-  reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
-  reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
-});
+export const updateImportantDateSchema = createImportantDateSchema;
 
 // ============================================
 // Helper function for API validation

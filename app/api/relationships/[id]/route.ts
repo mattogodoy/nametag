@@ -7,13 +7,16 @@ export const GET = withAuth(async (_request, session, context) => {
   try {
     const { id } = await context!.params;
 
-    const relationship = await prisma.relationship.findUnique({
-      where: { id },
+    const relationship = await prisma.relationship.findFirst({
+      where: {
+        id,
+        person: { userId: session.user.id, deletedAt: null },
+        relatedPerson: { deletedAt: null },
+      },
       include: {
         person: {
           select: {
             id: true,
-            userId: true,
             name: true,
             surname: true,
             middleName: true,
@@ -28,11 +31,10 @@ export const GET = withAuth(async (_request, session, context) => {
             lastContactReminderSent: true,
             createdAt: true,
             updatedAt: true,
-            deletedAt: true,
           },
         },
         relatedPerson: {
-          select: { id: true, name: true, surname: true, nickname: true, deletedAt: true },
+          select: { id: true, name: true, surname: true, nickname: true },
         },
         relationshipType: {
           where: { deletedAt: null },
@@ -42,15 +44,6 @@ export const GET = withAuth(async (_request, session, context) => {
     });
 
     if (!relationship) {
-      return apiResponse.notFound('Relationship not found');
-    }
-
-    // Verify the person belongs to the user
-    if (relationship.person.userId !== session.user.id) {
-      return apiResponse.unauthorized();
-    }
-
-    if (relationship.person.deletedAt || relationship.relatedPerson.deletedAt) {
       return apiResponse.notFound('Relationship not found');
     }
 
