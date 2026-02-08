@@ -100,8 +100,9 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
   const [importantDates, peopleWithContactReminders] = await Promise.all([
     prisma.importantDate.findMany({
       where: {
-        person: { userId },
+        person: { userId, deletedAt: null },
         reminderEnabled: true,
+        deletedAt: null,
       },
       include: {
         person: {
@@ -118,6 +119,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
       where: {
         userId,
         contactReminderEnabled: true,
+        deletedAt: null,
       },
       select: {
         id: true,
