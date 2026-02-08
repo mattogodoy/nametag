@@ -29,8 +29,15 @@ export default async function RelationshipTypesPage() {
       },
       _count: {
         select: {
-          relationships: true,
-          peopleWithRelation: true,
+          relationships: {
+            where: {
+              person: { deletedAt: null },
+              relatedPerson: { deletedAt: null },
+            },
+          },
+          peopleWithRelation: {
+            where: { deletedAt: null },
+          },
         },
       },
     },
