@@ -226,7 +226,7 @@ export const importDataSchema = z.object({
 // Important Date schemas
 // ============================================
 
-export const updateImportantDateSchema = z.object({
+export const createImportantDateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
   reminderEnabled: z.boolean().optional(),
@@ -234,6 +234,8 @@ export const updateImportantDateSchema = z.object({
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
 });
+
+export const updateImportantDateSchema = createImportantDateSchema;
 
 // ============================================
 // Helper function for API validation

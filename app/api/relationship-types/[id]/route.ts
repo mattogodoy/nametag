@@ -177,9 +177,13 @@ export const DELETE = withAuth(async (_request, session, context) => {
       return apiResponse.notFound('Relationship type not found');
     }
 
-    // Check if type is in use
+    // Check if type is in use by active (non-deleted) people
     const inUseCount = await prisma.relationship.count({
-      where: { relationshipTypeId: id },
+      where: {
+        relationshipTypeId: id,
+        person: { deletedAt: null },
+        relatedPerson: { deletedAt: null },
+      },
     });
 
     if (inUseCount > 0) {
