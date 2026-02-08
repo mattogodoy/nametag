@@ -86,7 +86,7 @@ export default async function DashboardPage() {
                           {event.personName}
                         </div>
                         <div className="text-sm text-muted">
-                          {event.title}
+                          {event.titleKey ? t(event.titleKey) : event.title}
                         </div>
                       </div>
                     </div>

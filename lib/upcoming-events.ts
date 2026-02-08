@@ -7,7 +7,8 @@ export interface UpcomingEvent {
   personId: string;
   personName: string;
   type: 'important_date' | 'contact_reminder';
-  title: string;
+  title: string | null;
+  titleKey: 'timeToCatchUp' | null;
   date: Date;
   daysUntil: number;
 }
@@ -159,6 +160,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         personName: formatFullName(importantDate.person),
         type: 'important_date',
         title: importantDate.title,
+        titleKey: null,
         date: eventDate,
         daysUntil,
       });
@@ -185,7 +187,8 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
           personId: person.id,
           personName: formatFullName(person),
           type: 'contact_reminder',
-          title: 'Time to catch up',
+          title: null,
+          titleKey: 'timeToCatchUp',
           date: reminderDueDate,
           daysUntil,
         });

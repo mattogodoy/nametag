@@ -7,7 +7,12 @@ export const GET = withAuth(async (_request, session) => {
   try {
     const relationships = await prisma.relationship.findMany({
       where: {
-        person: { userId: session.user.id },
+        person: { userId: session.user.id, deletedAt: null },
+        relatedPerson: { deletedAt: null },
+        OR: [
+          { relationshipTypeId: null },
+          { relationshipType: { deletedAt: null } },
+        ],
       },
       include: {
         person: {
