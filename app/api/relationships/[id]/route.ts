@@ -12,6 +12,10 @@ export const GET = withAuth(async (_request, session, context) => {
         id,
         person: { userId: session.user.id, deletedAt: null },
         relatedPerson: { deletedAt: null },
+        OR: [
+          { relationshipTypeId: null },
+          { relationshipType: { deletedAt: null } },
+        ],
       },
       include: {
         person: {

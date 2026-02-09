@@ -1,12 +1,21 @@
 import packageJson from '../package.json';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // OpenAPI 3.1.0 specification generator for the Nametag API.
 // This is hand-crafted to avoid external dependencies while keeping
 // the spec close to the actual route handlers.
 
-export function generateOpenAPISpec() {
+type JsonSchema = Record<string, unknown>;
+
+export interface OpenAPISpec {
+  openapi: string;
+  info: { title: string; version: string; description: string; license: { name: string; url: string } };
+  servers: Array<{ url: string; description: string }>;
+  tags: Array<{ name: string; description: string }>;
+  components: Record<string, unknown>;
+  paths: Record<string, Record<string, unknown>>;
+}
+
+export function generateOpenAPISpec(): OpenAPISpec {
   return {
     openapi: '3.1.0',
     info: {
@@ -1699,7 +1708,7 @@ export function generateOpenAPISpec() {
         },
       },
     },
-  } as any;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -1716,7 +1725,7 @@ function pathParam(name: string, description: string) {
   };
 }
 
-function jsonBody(schema: any) {
+function jsonBody(schema: JsonSchema) {
   return {
     required: true,
     content: {
@@ -1725,7 +1734,7 @@ function jsonBody(schema: any) {
   };
 }
 
-function jsonResponse(description: string, schema: any) {
+function jsonResponse(description: string, schema: JsonSchema) {
   return {
     description,
     content: {

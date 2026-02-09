@@ -79,6 +79,10 @@ describe('GET /api/relationships/[id]', () => {
           id: 'rel-1',
           person: { userId: 'user-123', deletedAt: null },
           relatedPerson: { deletedAt: null },
+          OR: [
+            { relationshipTypeId: null },
+            { relationshipType: { deletedAt: null } },
+          ],
         }),
       })
     );

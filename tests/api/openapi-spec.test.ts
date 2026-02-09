@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { generateOpenAPISpec } from '../../lib/openapi';
 
 describe('OpenAPI Specification', () => {
-  const spec = generateOpenAPISpec();
+  // Cast to Record for deep property access — the test validates the shape at runtime
+  const spec = generateOpenAPISpec() as Record<string, any>;
 
   it('should be valid OpenAPI 3.1.0', () => {
     expect(spec.openapi).toBe('3.1.0');
