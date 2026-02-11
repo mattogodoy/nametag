@@ -7,6 +7,8 @@ import DeleteUserRelationshipButton from '@/components/DeleteUserRelationshipBut
 import RelationshipManager from '@/components/RelationshipManager';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import Navigation from '@/components/Navigation';
+import PersonVCardExport from '@/components/PersonVCardExport';
+import PersonVCardRawView from '@/components/PersonVCardRawView';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -167,6 +169,21 @@ export default async function PersonDetailsPage({
             date: 'asc',
           },
         },
+        phoneNumbers: true,
+        emails: true,
+        addresses: true,
+        urls: true,
+        imHandles: true,
+        locations: true,
+        customFields: true,
+        relationshipsFrom: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            relatedPerson: true,
+          },
+        },
         cardDavMapping: true,
       },
     }),
@@ -268,6 +285,7 @@ export default async function PersonDetailsPage({
                 )}
               </div>
               <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
+                <PersonVCardExport person={person} />
                 <Link
                   href={`/people/${person.id}/edit`}
                   className="flex-1 sm:flex-none px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 text-center"
@@ -334,7 +352,7 @@ export default async function PersonDetailsPage({
                     {person.importantDates.map((date) => {
                       const reminderDesc = getReminderDescription(date, t);
                       const dateObj = parseAsLocalDate(date.date);
-                      const isYearUnknown = dateObj.getFullYear() === 1900;
+                      const isYearUnknown = dateObj.getFullYear() === 1604;
                       const yearsAgo = !isYearUnknown ? getYearsAgo(dateObj, t) : null;
                       return (
                         <div
@@ -384,6 +402,9 @@ export default async function PersonDetailsPage({
                   {t('graphHelp')}
                 </p>
               </div>
+
+              {/* Raw vCard Viewer (Development Only) */}
+              <PersonVCardRawView person={person} />
 
               {/* Relationships Section */}
               <div className="border border-border rounded-lg p-4">

@@ -190,11 +190,11 @@ export const PUT = withAuth(async (request, session, context) => {
       updateData.importantDates = {
         deleteMany: {},
         create: importantDates.map((date) => {
-          // If yearUnknown is true, set the year to 1900
+          // If yearUnknown is true, set the year to 1604 (Apple's convention)
           const dateValue = date.yearUnknown
             ? (() => {
                 const d = new Date(date.date);
-                d.setFullYear(1900);
+                d.setFullYear(1604);
                 return d;
               })()
             : new Date(date.date);

@@ -6,12 +6,33 @@ import { canCreateResource, canEnableReminder } from '@/lib/billing';
 import { autoExportPerson } from '@/lib/carddav/auto-export';
 
 // GET /api/people - List all people for the current user
-export const GET = withAuth(async (_request, session) => {
+export const GET = withAuth(async (request, session) => {
   try {
+    const { searchParams } = new URL(request.url);
+    const includeAll = searchParams.get('includeAll') === 'true';
+    const groupIdsParam = searchParams.get('groupIds');
+
+    // Build where clause
+    const where: { userId: string; groups?: { some: { groupId: { in: string[] } } } } = {
+      userId: session.user.id,
+    };
+
+    // Filter by groups if specified
+    if (groupIdsParam) {
+      const groupIds = groupIdsParam.split(',').filter(Boolean);
+      if (groupIds.length > 0) {
+        where.groups = {
+          some: {
+            groupId: {
+              in: groupIds,
+            },
+          },
+        };
+      }
+    }
+
     const people = await prisma.person.findMany({
-      where: {
-        userId: session.user.id,
-      },
+      where,
       include: {
         relationshipToUser: true,
         groups: {
@@ -26,6 +47,25 @@ export const GET = withAuth(async (_request, session) => {
         imHandles: true,
         locations: true,
         customFields: true,
+        // Include these additional fields when includeAll=true (for export)
+        ...(includeAll && {
+          importantDates: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              date: 'asc',
+            },
+          },
+          relationshipsFrom: {
+            where: {
+              deletedAt: null,
+            },
+            include: {
+              relatedPerson: true,
+            },
+          },
+        }),
       },
       orderBy: {
         name: 'asc',
@@ -175,11 +215,11 @@ export const POST = withAuth(async (request, session) => {
       importantDates: importantDates && importantDates.length > 0
         ? {
             create: importantDates.map((date) => {
-              // If yearUnknown is true, set the year to 1900
+              // If yearUnknown is true, set the year to 1604 (Apple's convention)
               const dateValue = date.yearUnknown
                 ? (() => {
                     const d = new Date(date.date);
-                    d.setFullYear(1900);
+                    d.setFullYear(1604);
                     return d;
                   })()
                 : new Date(date.date);

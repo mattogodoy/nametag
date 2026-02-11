@@ -259,8 +259,8 @@ function formatVCardDate(date: Date): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
 
-  // If year is before 1900, omit it (year unknown - we use 1604 as marker)
-  if (year < 1900) {
+  // If year is 1604 or earlier, omit it (year unknown - Apple uses 1604 as marker)
+  if (year <= 1604) {
     return `--${month}-${day}`;
   }
 
