@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { personToVCardV3 } from '@/lib/vcard-v3';
-import { addPhotoToVCardV3, downloadVcf, generateVcfFilename } from '@/lib/vcard-v3-helpers';
+import { personToVCard } from '@/lib/vcard';
+import { addPhotoToVCardFromUrl, downloadVcf, generateVcfFilename } from '@/lib/vcard-helpers';
 import type { PersonWithRelations } from '@/lib/carddav/types';
 import { toast } from 'sonner';
 
@@ -20,7 +20,7 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
 
     try {
       // Generate base vCard
-      let vcard = personToVCardV3(person, {
+      let vcard = personToVCard(person, {
         includePhoto: false, // Will add separately
         includeCustomFields: true,
         stripMarkdown: false,
@@ -28,7 +28,7 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
 
       // Add photo if present
       if (person.photo) {
-        vcard = await addPhotoToVCardV3(vcard, person.photo);
+        vcard = await addPhotoToVCardFromUrl(vcard, person.photo);
       }
 
       // Generate filename from person's name

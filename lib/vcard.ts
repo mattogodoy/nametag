@@ -1,26 +1,27 @@
 /**
- * vCard 3.0 transformation utilities
- * Export Nametag Person model to vCard 3.0 format for maximum compatibility
+ * vCard transformation utilities
+ * Bidirectional conversion between Nametag Person model and vCard 3.0 format
  *
- * RFC 2426: vCard MIME Directory Profile
+ * RFC 2426: vCard MIME Directory Profile (v3.0)
  * https://datatracker.ietf.org/doc/html/rfc2426
  *
- * Key differences from v4.0:
+ * vCard 3.0 format details:
  * - Date format: YYYYMMDD (not YYYY-MM-DD)
  * - Photo encoding: ENCODING=b parameter (not data URI)
  * - Special dates: Both X-ABDATE (Apple) and X-ANNIVERSARY (Android) for compatibility
  * - Line folding: 75 character limit with CRLF + SPACE continuation
  */
 
-import type { PersonWithRelations } from './carddav/types';
+import type { PersonWithRelations, ParsedVCardData } from './carddav/types';
+import { parseVCard } from './carddav/vcard-parser';
 
-export interface VCardV3Options {
+export interface VCardOptions {
   includePhoto?: boolean; // Default: true (requires base64 encoding)
   includeCustomFields?: boolean; // Default: true (X- properties)
   stripMarkdown?: boolean; // Default: false
 }
 
-const DEFAULT_OPTIONS: VCardV3Options = {
+const DEFAULT_OPTIONS: VCardOptions = {
   includePhoto: true,
   includeCustomFields: true,
   stripMarkdown: false,
@@ -29,9 +30,9 @@ const DEFAULT_OPTIONS: VCardV3Options = {
 /**
  * Convert Person model to vCard 3.0 string
  */
-export function personToVCardV3(
+export function personToVCard(
   person: PersonWithRelations,
-  options: VCardV3Options = {}
+  options: VCardOptions = {}
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const lines: string[] = [];
@@ -224,15 +225,23 @@ export function personToVCardV3(
 }
 
 /**
- * Convert multiple people to combined vCard 3.0 file
+ * Convert multiple people to combined vCard file
  */
-export function peopleToVCardV3(
+export function peopleToVCard(
   people: PersonWithRelations[],
-  options: VCardV3Options = {}
+  options: VCardOptions = {}
 ): string {
   return people
-    .map(person => personToVCardV3(person, options))
+    .map(person => personToVCard(person, options))
     .join('\r\n');
+}
+
+/**
+ * Parse vCard string to Person data structure
+ * Uses the enhanced parser which handles both v3.0 and v4.0, vendor extensions, etc.
+ */
+export function vCardToPerson(vCardText: string): ParsedVCardData {
+  return parseVCard(vCardText);
 }
 
 /**

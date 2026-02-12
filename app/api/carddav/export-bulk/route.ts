@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from '@/lib/carddav/client';
-import { personToVCard } from '@/lib/carddav/vcard';
+import { personToVCard } from '@/lib/vcard';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 

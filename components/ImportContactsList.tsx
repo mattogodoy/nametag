@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { vCardToPerson } from '@/lib/carddav/vcard';
+import { vCardToPerson } from '@/lib/vcard';
 import CompactContactRow from './CompactContactRow';
 
 interface PendingImport {

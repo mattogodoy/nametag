@@ -8,13 +8,13 @@ import { Button } from './ui/Button';
 import { useTranslations } from 'next-intl';
 import { importDataSchema } from '@/lib/validations';
 import { z } from 'zod';
-import { personToVCardV3 } from '@/lib/vcard-v3';
+import { personToVCard } from '@/lib/vcard';
 import {
-  addPhotoToVCardV3,
+  addPhotoToVCardFromUrl,
   downloadVcf,
   generateBulkVcfFilename,
   exportPeopleWithProgress,
-} from '@/lib/vcard-v3-helpers';
+} from '@/lib/vcard-helpers';
 import { toast } from 'sonner';
 
 interface Group {
@@ -154,7 +154,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
         const person = people[i];
 
         // Generate base vCard
-        let vcard = personToVCardV3(person, {
+        let vcard = personToVCard(person, {
           includePhoto: false,
           includeCustomFields: true,
           stripMarkdown: false,
@@ -163,7 +163,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
         // Add photo if present
         if (person.photo) {
           try {
-            vcard = await addPhotoToVCardV3(vcard, person.photo);
+            vcard = await addPhotoToVCardFromUrl(vcard, person.photo);
           } catch (error) {
             console.warn(`Failed to add photo for ${person.name}:`, error);
           }

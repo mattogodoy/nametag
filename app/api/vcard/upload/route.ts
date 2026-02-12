@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { vCardToPerson } from '@/lib/carddav/vcard';
+import { vCardToPerson } from '@/lib/vcard';
 
 /**
  * POST /api/vcard/upload
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       try {
         // Parse vCard to get display name
         const parsedData = vCardToPerson(vcard);
-        const displayName = [parsedData.prefix, parsedData.name, parsedData.middleName, parsedData.surname, parsedData.suffix]
+        const displayName = [parsedData.prefix, parsedData.name, parsedData.middleName, parsedData.surname, parsedData.secondLastName, parsedData.suffix]
           .filter(Boolean)
           .join(' ') || parsedData.nickname || 'Unknown Contact';
 

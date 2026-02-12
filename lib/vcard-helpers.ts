@@ -1,9 +1,9 @@
 /**
- * Client-side utilities for vCard 3.0 export
+ * Client-side utilities for vCard export
  * Handles photo fetching, base64 encoding, and file downloads
  */
 
-import { addPhotoToVCard } from './vcard-v3';
+import { addPhotoToVCard } from './vcard';
 
 export interface PhotoData {
   base64: string;
@@ -65,9 +65,9 @@ export async function fetchPhotoAsBase64(photoUrl: string): Promise<PhotoData> {
 }
 
 /**
- * Add photo to vCard with proper base64 encoding and line folding
+ * Fetch photo from URL and add to vCard with proper base64 encoding and line folding
  */
-export async function addPhotoToVCardV3(
+export async function addPhotoToVCardFromUrl(
   vcard: string,
   photoUrl: string
 ): Promise<string> {

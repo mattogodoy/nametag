@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { personToVCardV3 } from '@/lib/vcard-v3';
-import { copyToClipboard } from '@/lib/vcard-v3-helpers';
+import { personToVCard } from '@/lib/vcard';
+import { copyToClipboard } from '@/lib/vcard-helpers';
 import type { PersonWithRelations } from '@/lib/carddav/types';
 
 interface PersonVCardRawViewProps {
@@ -22,7 +22,7 @@ export default function PersonVCardRawView({ person }: PersonVCardRawViewProps) 
 
   const handleCopy = async () => {
     try {
-      const vcard = personToVCardV3(person, {
+      const vcard = personToVCard(person, {
         includePhoto: false, // Skip photo for raw view
         includeCustomFields: true,
         stripMarkdown: false,
@@ -36,7 +36,7 @@ export default function PersonVCardRawView({ person }: PersonVCardRawViewProps) 
     }
   };
 
-  const vcard = personToVCardV3(person, {
+  const vcard = personToVCard(person, {
     includePhoto: false, // Skip photo for raw view
     includeCustomFields: true,
     stripMarkdown: false,

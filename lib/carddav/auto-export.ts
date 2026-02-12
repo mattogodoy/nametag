@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
-import { personToVCard } from './vcard';
+import { personToVCard } from '@/lib/vcard';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 

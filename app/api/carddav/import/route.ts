@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma, withDeleted } from '@/lib/prisma';
-import { vCardToPerson } from '@/lib/carddav/vcard';
+import { vCardToPerson } from '@/lib/vcard';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {

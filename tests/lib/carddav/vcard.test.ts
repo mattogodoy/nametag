@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { personToVCard, vCardToPerson } from '@/lib/carddav/vcard';
+import { personToVCard, vCardToPerson } from '@/lib/vcard';
 import type { PersonWithRelations } from '@/lib/carddav/types';
 
 describe('vCard Transformation', () => {
@@ -50,7 +50,7 @@ describe('vCard Transformation', () => {
       const vcard = personToVCard(person);
 
       expect(vcard).toContain('BEGIN:VCARD');
-      expect(vcard).toContain('VERSION:4.0');
+      expect(vcard).toContain('VERSION:3.0');
       expect(vcard).toContain('UID:test-uid-123');
       expect(vcard).toContain('FN:John Doe');
       expect(vcard).toContain('N:Doe;John;;;');
@@ -341,7 +341,7 @@ describe('vCard Transformation', () => {
   describe('vCardToPerson', () => {
     it('should parse minimal vCard', () => {
       const vcard = `BEGIN:VCARD
-VERSION:4.0
+VERSION:3.0
 UID:test-uid-123
 FN:John Doe
 N:Doe;John;;;
@@ -356,7 +356,7 @@ END:VCARD`;
 
     it('should parse all name fields', () => {
       const vcard = `BEGIN:VCARD
-VERSION:4.0
+VERSION:3.0
 UID:test-uid
 FN:Dr. John Michael Doe Jr.
 N:Doe;John;Michael;Dr.;Jr.
@@ -375,7 +375,7 @@ END:VCARD`;
 
     it('should parse contact information', () => {
       const vcard = `BEGIN:VCARD
-VERSION:4.0
+VERSION:3.0
 UID:test-uid
 FN:John Doe
 N:Doe;John;;;
@@ -396,7 +396,7 @@ END:VCARD`;
 
     it('should parse professional information', () => {
       const vcard = `BEGIN:VCARD
-VERSION:4.0
+VERSION:3.0
 UID:test-uid
 FN:John Doe
 N:Doe;John;;;
@@ -412,7 +412,7 @@ END:VCARD`;
 
     it('should parse birthday', () => {
       const vcard = `BEGIN:VCARD
-VERSION:4.0
+VERSION:3.0
 UID:test-uid
 FN:John Doe
 N:Doe;John;;;
@@ -428,7 +428,7 @@ END:VCARD`;
 
     it('should parse categories', () => {
       const vcard = `BEGIN:VCARD
-VERSION:4.0
+VERSION:3.0
 UID:test-uid
 FN:John Doe
 N:Doe;John;;;
@@ -442,7 +442,7 @@ END:VCARD`;
 
     it('should handle folded lines', () => {
       const vcard = `BEGIN:VCARD
-VERSION:4.0
+VERSION:3.0
 UID:test-uid
 FN:John Doe
 N:Doe;John;;;
