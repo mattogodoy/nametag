@@ -216,11 +216,8 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
       // Check if it's a vCard file
       if (file.name.endsWith('.vcf') || file.name.endsWith('.vcard') || text.trim().startsWith('BEGIN:VCARD')) {
-        // Handle vCard import
-        setImportMessage(t('vcardImportNote'));
-        setIsValidating(false);
-        // For vCard, we'll import directly without preview
-        await handleVcardImport(text);
+        // Handle vCard upload - redirect to import page
+        await handleVcardUpload(text);
         return;
       }
 
@@ -270,13 +267,13 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
     }
   };
 
-  // Handle vCard import
-  const handleVcardImport = async (vcardText: string) => {
-    setIsImporting(true);
+  // Handle vCard upload and redirect to import page
+  const handleVcardUpload = async (vcardText: string) => {
+    setIsValidating(true);
     setImportMessage('');
 
     try {
-      const response = await fetch('/api/vcard/import', {
+      const response = await fetch('/api/vcard/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'text/vcard',
@@ -288,34 +285,24 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
       if (!response.ok) {
         toast.error(result.error || t('importFailed'));
+        setImportFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
         return;
       }
 
-      const totalProcessed = result.imported + result.skipped + result.errors;
-      if (result.imported > 0) {
-        toast.success(t('vcardImportSuccess', { count: result.imported }));
-      }
-      if (result.skipped > 0) {
-        toast.info(`${result.skipped} contacts skipped (already exist)`);
-      }
-      if (result.errors > 0) {
-        toast.warning(`${result.errors} contacts failed to import`);
-      }
-
+      // Redirect to import page
+      router.push('/carddav/import?source=file');
+    } catch (error) {
+      console.error('vCard upload error:', error);
+      toast.error(t('importFailed'));
       setImportFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-
-      // Refresh the page to show imported data
-      setTimeout(() => {
-        router.refresh();
-      }, 2000);
-    } catch (error) {
-      console.error('vCard import error:', error);
-      toast.error(t('importFailed'));
     } finally {
-      setIsImporting(false);
+      setIsValidating(false);
     }
   };
 

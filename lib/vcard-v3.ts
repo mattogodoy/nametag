@@ -45,8 +45,14 @@ export function personToVCardV3(
   lines.push(buildV3Property('FN', {}, fullName));
 
   // N (Structured Name) - surname;given;middle;prefix;suffix
+  // RFC 2426: Family name field should include all surnames
+  // For Spanish naming: combine surname + secondLastName with space
+  const familyName = [person.surname, person.secondLastName]
+    .filter(Boolean)
+    .join(' ');
+
   const structuredName = [
-    person.surname || '',
+    familyName || '',
     person.name || '',
     person.middleName || '',
     person.prefix || '',
@@ -200,9 +206,11 @@ export function personToVCardV3(
       lines.push(buildV3Property(key, {}, field.value));
     });
 
-    // Store second last name (Spanish naming convention)
+    // Store second last name separately for preservation (Spanish naming convention)
+    // Note: Already included in N property's family-name field per RFC 2426
+    // This extension allows apps to distinguish between surname and secondLastName on re-import
     if (person.secondLastName) {
-      lines.push(buildV3Property('X-SECOND-LASTNAME', {}, person.secondLastName));
+      lines.push(buildV3Property('X-NAMETAG-SECOND-LASTNAME', {}, person.secondLastName));
     }
   }
 

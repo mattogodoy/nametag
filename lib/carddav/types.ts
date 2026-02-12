@@ -43,6 +43,7 @@ export interface ParsedVCardData {
   // Identity
   name: string;
   surname?: string;
+  secondLastName?: string;
   middleName?: string;
   prefix?: string;
   suffix?: string;

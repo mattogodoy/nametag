@@ -557,7 +557,14 @@ function processProperty(
 
         // Nametag-specific extensions
         if (prop.property === 'X-NAMETAG-SECOND-LASTNAME') {
-          data.customFields.push({ key: prop.property, value: prop.value });
+          data.secondLastName = prop.value;
+
+          // If surname was already parsed and contains the secondLastName, remove it
+          // Example: surname = "García López", secondLastName = "López" → surname = "García"
+          if (data.surname && data.surname.endsWith(' ' + prop.value)) {
+            data.surname = data.surname.slice(0, -(prop.value.length + 1)).trim();
+          }
+
           return true;
         }
 

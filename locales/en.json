@@ -262,7 +262,9 @@
       },
       "import": {
         "title": "Import Contacts",
+        "titleFile": "Import Contacts from File",
         "noPending": "No contacts to import",
+        "noPendingFile": "No contacts found in file",
         "noPendingDescription": "All contacts from your CardDAV server have been imported",
         "description": "{count} new contacts found on your CardDAV server",
         "assignToGroups": "Assign to Groups (Optional)",

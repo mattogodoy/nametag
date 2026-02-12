@@ -24,11 +24,13 @@ interface Group {
 interface ImportContactsListProps {
   pendingImports: PendingImport[];
   groups: Group[];
+  isFileImport?: boolean;
 }
 
 export default function ImportContactsList({
   pendingImports,
   groups,
+  isFileImport = false,
 }: ImportContactsListProps) {
   const t = useTranslations('settings.carddav.import');
   const router = useRouter();
@@ -93,12 +95,13 @@ export default function ImportContactsList({
   }, [hasUnsavedChanges]);
 
   const handleCancel = () => {
+    const redirectUrl = isFileImport ? '/people' : '/settings/carddav';
     if (hasUnsavedChanges) {
       if (window.confirm(t('confirmLeave'))) {
-        router.push('/settings/carddav');
+        router.push(redirectUrl);
       }
     } else {
-      router.push('/settings/carddav');
+      router.push(redirectUrl);
     }
   };
 
@@ -142,7 +145,8 @@ export default function ImportContactsList({
         skipped: data.skipped.toString(),
         errors: data.errors.toString(),
       });
-      router.push(`/settings/carddav?${params.toString()}`);
+      const redirectUrl = isFileImport ? '/people' : '/settings/carddav';
+      router.push(`${redirectUrl}?${params.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import contacts');
       setImporting(false);
