@@ -555,6 +555,12 @@ function processProperty(
           return true;
         }
 
+        // Handle X-GENDER (v3.0 doesn't have standard GENDER property)
+        if (prop.property === 'X-GENDER') {
+          data.gender = prop.value;
+          return true;
+        }
+
         // Nametag-specific extensions
         if (prop.property === 'X-NAMETAG-SECOND-LASTNAME') {
           data.secondLastName = prop.value;

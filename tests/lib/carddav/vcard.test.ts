@@ -160,7 +160,7 @@ describe('vCard Transformation', () => {
 
       const vcard = personToVCard(person);
 
-      expect(vcard).toContain('TEL;TYPE=MOBILE:+1234567890');
+      expect(vcard).toContain('TEL;TYPE=CELL:+1234567890'); // v3.0 uses CELL instead of MOBILE
       expect(vcard).toContain('EMAIL;TYPE=WORK:john@example.com');
     });
 
@@ -265,7 +265,7 @@ describe('vCard Transformation', () => {
 
       const vcard = personToVCard(person);
 
-      expect(vcard).toContain('BDAY:1990-05-15');
+      expect(vcard).toContain('BDAY:19900515'); // v3.0 format (YYYYMMDD)
     });
 
     it('should include categories from groups', () => {

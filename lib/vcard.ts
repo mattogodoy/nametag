@@ -41,6 +41,11 @@ export function personToVCard(
   lines.push('BEGIN:VCARD');
   lines.push('VERSION:3.0');
 
+  // UID - optional in v3.0 but required for CardDAV sync
+  if (person.uid) {
+    lines.push(`UID:${person.uid}`);
+  }
+
   // FN (Formatted Name) - required
   const fullName = formatFullName(person);
   lines.push(buildV3Property('FN', {}, fullName));
@@ -170,12 +175,17 @@ export function personToVCard(
     lines.push(buildV3Property('TITLE', {}, person.jobTitle));
   }
 
-  // PHOTO - handled separately due to encoding requirements
-  // Note: Photo base64 encoding should be done before calling this function
-  // The photo field should contain base64 data and mimeType metadata
+  // PHOTO - export as URL if available
+  // vCard 3.0 supports both embedded base64 and external URLs
+  // For URLs, use VALUE=uri parameter
   if (opts.includePhoto && person.photo) {
-    // Skip photo in this version - will be added by client-side helper
-    // that fetches and encodes the photo as base64
+    if (person.photo.startsWith('data:')) {
+      // Skip data URIs for now - would need base64 extraction and line folding
+      // This can be added later via addPhotoToVCard() helper
+    } else {
+      // Export as external URL reference
+      lines.push(buildV3Property('PHOTO', { VALUE: 'uri' }, person.photo));
+    }
   }
 
   // GENDER - v3.0 doesn't have GENDER, use X-GENDER
