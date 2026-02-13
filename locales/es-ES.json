@@ -931,7 +931,13 @@
     "secondLastName": "Segundo Apellido",
     "gender": "Género",
     "anniversary": "Aniversario",
-    "customFields": "Campos Personalizados"
+    "customFields": "Campos Personalizados",
+    "showContactQr": "Mostrar código QR del contacto",
+    "contactQrCode": "Código QR del contacto",
+    "qrCodeInstructions": "Escanea este código QR con la cámara de tu teléfono para guardar este contacto",
+    "qrCodeError": "Error al generar código QR",
+    "close": "Cerrar",
+    "downloadVcardFile": "Descargar archivo vCard"
   },
   "groups": {
     "title": "Grupos",

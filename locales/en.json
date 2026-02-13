@@ -931,7 +931,13 @@
     "secondLastName": "Second Last Name",
     "gender": "Gender",
     "anniversary": "Anniversary",
-    "customFields": "Custom Fields"
+    "customFields": "Custom Fields",
+    "showContactQr": "Show contact QR",
+    "contactQrCode": "Contact QR Code",
+    "qrCodeInstructions": "Scan this QR code with your phone camera to save this contact",
+    "qrCodeError": "Failed to generate QR code",
+    "close": "Close",
+    "downloadVcardFile": "Download vCard file"
   },
   "groups": {
     "title": "Groups",

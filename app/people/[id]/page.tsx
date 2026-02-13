@@ -263,7 +263,9 @@ export default async function PersonDetailsPage({
             <div className="px-6 py-5 border-b border-border flex flex-col sm:flex-row justify-between items-start gap-4">
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
-                  {formatFullName(person)}
+                  {person.name}
+                  {person.nickname && ` '${person.nickname}'`}
+                  {person.surname && ` ${person.surname}`}
                 </h1>
                 {person.groups.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -285,7 +287,6 @@ export default async function PersonDetailsPage({
                 )}
               </div>
               <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
-                <PersonVCardExport person={person} />
                 <Link
                   href={`/people/${person.id}/edit`}
                   className="flex-1 sm:flex-none px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 text-center"
@@ -738,6 +739,11 @@ export default async function PersonDetailsPage({
                   }}
                   hasUserRelationship={!!person.relationshipToUserId}
                 />
+              </div>
+
+              {/* Export VCF Button */}
+              <div className="flex justify-center mt-6">
+                <PersonVCardExport person={person} />
               </div>
             </div>
           </div>
