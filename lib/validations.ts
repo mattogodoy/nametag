@@ -76,8 +76,10 @@ export const createPersonSchema = z.object({
   middleName: z.string().max(100).nullable().optional(),
   secondLastName: z.string().max(100).nullable().optional(),
   nickname: z.string().max(100).nullable().optional(),
-  lastContact: z.iso.date({ error: 'Invalid date' }).nullable().optional()
-    .describe('Date of last contact'),
+  lastContact: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.iso.date({ error: 'Invalid date' }).nullable().optional(),
+  ).describe('Date of last contact'),
   notes: z.string().max(10000).nullable().optional()
     .describe('Markdown-formatted notes'),
   relationshipToUserId: z.string().nullable().optional()
