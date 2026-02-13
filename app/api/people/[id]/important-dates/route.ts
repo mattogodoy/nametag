@@ -18,7 +18,7 @@ export const GET = withAuth(async (_request, session, context) => {
     }
 
     const importantDates = await prisma.importantDate.findMany({
-      where: { personId: id },
+      where: { personId: id, deletedAt: null },
       orderBy: { date: 'asc' },
     });
 

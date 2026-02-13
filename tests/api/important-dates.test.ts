@@ -95,7 +95,7 @@ describe('Important Dates API', () => {
       await GET(request, context);
 
       expect(mocks.importantDateFindMany).toHaveBeenCalledWith({
-        where: { personId: 'person-1' },
+        where: { personId: 'person-1', deletedAt: null },
         orderBy: { date: 'asc' },
       });
     });

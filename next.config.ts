@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
       },
     ];
 
+    // IMPORTANT: Order matters — Next.js uses last-match-wins for duplicate
+    // header keys, so route-specific overrides (e.g. /api/docs CSP) must
+    // come AFTER the catch-all rule.
     return [
       {
         source: '/:path*',

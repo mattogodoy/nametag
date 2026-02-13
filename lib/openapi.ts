@@ -1471,11 +1471,42 @@ export function generateOpenAPISpec(): OpenAPISpec {
             '200': jsonResponse('Subscription details', {
               type: 'object',
               properties: {
-                subscription: { type: 'object' },
-                tierInfo: { type: 'object' },
-                usage: { type: 'object' },
-                limits: { type: 'object' },
-                promotion: { type: ['object', 'null'] },
+                subscription: {
+                  oneOf: [
+                    {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        tier: { type: 'string', enum: ['FREE', 'PERSONAL', 'PRO'] },
+                        status: { type: 'string' },
+                        billingFrequency: { type: 'string', enum: ['MONTHLY', 'YEARLY'] },
+                        tierStartedAt: { type: ['string', 'null'], format: 'date-time' },
+                        currentPeriodStart: { type: ['string', 'null'], format: 'date-time' },
+                        currentPeriodEnd: { type: ['string', 'null'], format: 'date-time' },
+                        cancelAtPeriodEnd: { type: 'boolean' },
+                      },
+                    },
+                    { type: 'null' },
+                  ],
+                },
+                tierInfo: { type: 'object', description: 'Display metadata for the current tier (name, features, pricing)' },
+                usage: { type: 'object', description: 'Current usage counts (people, groups, reminders)' },
+                limits: { type: 'object', description: 'Plan limits for each resource' },
+                promotion: {
+                  oneOf: [
+                    {
+                      type: 'object',
+                      properties: {
+                        code: { type: 'string' },
+                        description: { type: 'string' },
+                        discountPercent: { type: 'number' },
+                        isActive: { type: 'boolean' },
+                        expiresAt: { type: ['string', 'null'], format: 'date-time' },
+                      },
+                    },
+                    { type: 'null' },
+                  ],
+                },
               },
             }),
             '401': ref401(),
@@ -1517,9 +1548,9 @@ export function generateOpenAPISpec(): OpenAPISpec {
             '200': jsonResponse('Usage info', {
               type: 'object',
               properties: {
-                tier: { type: 'string' },
-                usage: { type: 'object' },
-                limits: { type: 'object' },
+                tier: { type: 'string', enum: ['FREE', 'PERSONAL', 'PRO'] },
+                usage: { type: 'object', description: 'Current usage counts (people, groups, reminders)' },
+                limits: { type: 'object', description: 'Plan limits for each resource' },
               },
             }),
             '401': ref401(),
@@ -1535,7 +1566,24 @@ export function generateOpenAPISpec(): OpenAPISpec {
             '200': jsonResponse('Payment history', {
               type: 'object',
               properties: {
-                payments: { type: 'array', items: { type: 'object' } },
+                payments: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      amount: { type: 'number', description: 'Amount in cents' },
+                      currency: { type: 'string', description: 'ISO 4217 currency code (e.g. usd)' },
+                      status: { type: 'string' },
+                      description: { type: 'string' },
+                      originalAmount: { type: 'number' },
+                      discountAmount: { type: 'number' },
+                      promotionCode: { type: ['string', 'null'] },
+                      paidAt: { type: ['string', 'null'], format: 'date-time' },
+                      createdAt: { type: 'string', format: 'date-time' },
+                    },
+                  },
+                },
               },
             }),
             '401': ref401(),
