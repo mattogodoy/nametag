@@ -148,11 +148,25 @@ export function personToVCard(
   });
 
   // IMPP (Instant Messaging) - use item grouping with X-ABLabel
+  // Standard IMPP URI schemes that are interoperable across clients
+  const STANDARD_IMPP_SCHEMES = new Set(['xmpp', 'sip', 'irc', 'skype']);
+
   person.imHandles.forEach((im) => {
     const protocol = im.protocol.toLowerCase();
-    const label = escapeVCardText(im.protocol);
-    lines.push(`item${itemCounter}.IMPP:${protocol}:${escapeVCardText(im.handle)}`);
-    lines.push(`item${itemCounter}.X-ABLabel:${label}`);
+    const escapedHandle = escapeVCardText(im.handle);
+
+    if (STANDARD_IMPP_SCHEMES.has(protocol)) {
+      // Standard protocols: use native URI scheme
+      const label = escapeVCardText(im.protocol);
+      lines.push(`item${itemCounter}.IMPP:${protocol}:${escapedHandle}`);
+      lines.push(`item${itemCounter}.X-ABLabel:${label}`);
+    } else {
+      // Non-standard protocols (telegram, slack, signal, etc.):
+      // Use Apple's x-apple: scheme with X-SERVICE-TYPE for compatibility
+      const serviceType = im.protocol.charAt(0).toUpperCase() + im.protocol.slice(1).toLowerCase();
+      lines.push(`item${itemCounter}.IMPP;X-SERVICE-TYPE=${serviceType}:x-apple:${escapedHandle}`);
+      lines.push(`item${itemCounter}.X-ABLabel:${serviceType}`);
+    }
     itemCounter++;
   });
 

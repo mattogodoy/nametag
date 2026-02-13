@@ -458,6 +458,207 @@ END:VCARD`;
     });
   });
 
+  describe('IMPP export - Apple compatibility', () => {
+    function makePersonWithIM(imHandles: { protocol: string; handle: string }[]): PersonWithRelations {
+      return {
+        id: 'test-1',
+        userId: 'user-1',
+        name: 'John',
+        surname: 'Doe',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        prefix: null,
+        suffix: null,
+        uid: 'test-uid',
+        organization: null,
+        jobTitle: null,
+        photo: null,
+        gender: null,
+        anniversary: null,
+        lastContact: null,
+        notes: null,
+        relationshipToUserId: null,
+        contactReminderEnabled: false,
+        contactReminderInterval: null,
+        contactReminderIntervalUnit: null,
+        lastContactReminderSent: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        phoneNumbers: [],
+        emails: [],
+        addresses: [],
+        urls: [],
+        imHandles: imHandles.map((im, i) => ({
+          id: `im-${i}`,
+          personId: 'test-1',
+          protocol: im.protocol,
+          handle: im.handle,
+          createdAt: new Date(),
+        })),
+        locations: [],
+        customFields: [],
+        importantDates: [],
+        relationshipsFrom: [],
+        groups: [],
+      };
+    }
+
+    it('should export standard protocols with native URI scheme', () => {
+      const person = makePersonWithIM([
+        { protocol: 'xmpp', handle: 'john@jabber.org' },
+        { protocol: 'sip', handle: 'john@sip.example.com' },
+        { protocol: 'irc', handle: 'johndoe' },
+        { protocol: 'skype', handle: 'john.doe' },
+      ]);
+
+      const vcard = personToVCard(person);
+
+      expect(vcard).toContain('IMPP:xmpp:john@jabber.org');
+      expect(vcard).toContain('IMPP:sip:john@sip.example.com');
+      expect(vcard).toContain('IMPP:irc:johndoe');
+      expect(vcard).toContain('IMPP:skype:john.doe');
+      // Standard protocols should NOT use x-apple: scheme
+      expect(vcard).not.toContain('x-apple:john@jabber.org');
+    });
+
+    it('should export non-standard protocols with x-apple: scheme and X-SERVICE-TYPE', () => {
+      const person = makePersonWithIM([
+        { protocol: 'telegram', handle: 'johndoe' },
+        { protocol: 'slack', handle: 'john.doe' },
+        { protocol: 'signal', handle: '+1234567890' },
+        { protocol: 'whatsapp', handle: '+1234567890' },
+      ]);
+
+      const vcard = personToVCard(person);
+
+      expect(vcard).toContain('IMPP;X-SERVICE-TYPE=Telegram:x-apple:johndoe');
+      expect(vcard).toContain('X-ABLabel:Telegram');
+      expect(vcard).toContain('IMPP;X-SERVICE-TYPE=Slack:x-apple:john.doe');
+      expect(vcard).toContain('X-ABLabel:Slack');
+      expect(vcard).toContain('IMPP;X-SERVICE-TYPE=Signal:x-apple:+1234567890');
+      expect(vcard).toContain('X-ABLabel:Signal');
+      expect(vcard).toContain('IMPP;X-SERVICE-TYPE=Whatsapp:x-apple:+1234567890');
+      expect(vcard).toContain('X-ABLabel:Whatsapp');
+    });
+
+    it('should capitalize the first letter of the service type', () => {
+      const person = makePersonWithIM([
+        { protocol: 'Telegram', handle: 'johndoe' },
+      ]);
+
+      const vcard = personToVCard(person);
+
+      // Regardless of input casing, output should be capitalized consistently
+      expect(vcard).toContain('X-SERVICE-TYPE=Telegram');
+      expect(vcard).toContain('X-ABLabel:Telegram');
+    });
+
+    it('should round-trip Apple IMPP format: parse → export → parse preserves protocol and handle', () => {
+      // Simulate an Apple-generated vCard with Telegram IM
+      const appleVCard = `BEGIN:VCARD
+VERSION:3.0
+UID:apple-test-uid
+FN:Doc Emmet
+N:Emmet;Doc;;;
+item1.IMPP;X-SERVICE-TYPE=Telegram:x-apple:docemmet
+item1.X-ABLabel:Telegram
+item2.IMPP;X-SERVICE-TYPE=Slack:x-apple:doc.emmet
+item2.X-ABLabel:Slack
+item3.IMPP:xmpp:doc@jabber.org
+item3.X-ABLabel:xmpp
+END:VCARD`;
+
+      // Step 1: Parse Apple vCard
+      const parsed = vCardToPerson(appleVCard);
+
+      expect(parsed.imHandles).toHaveLength(3);
+
+      // Telegram should be parsed correctly
+      const telegram = parsed.imHandles.find(im => im.protocol === 'telegram');
+      expect(telegram).toBeDefined();
+      expect(telegram!.handle).toBe('docemmet');
+
+      // Slack should be parsed correctly
+      const slack = parsed.imHandles.find(im => im.protocol === 'slack');
+      expect(slack).toBeDefined();
+      expect(slack!.handle).toBe('doc.emmet');
+
+      // XMPP should be parsed correctly
+      const xmpp = parsed.imHandles.find(im => im.protocol === 'xmpp');
+      expect(xmpp).toBeDefined();
+      expect(xmpp!.handle).toBe('doc@jabber.org');
+
+      // Step 2: Re-export as vCard
+      const reExported = personToVCard({
+        id: 'test-1',
+        userId: 'user-1',
+        name: parsed.name,
+        surname: parsed.surname || null,
+        middleName: parsed.middleName || null,
+        secondLastName: null,
+        nickname: parsed.nickname || null,
+        prefix: parsed.prefix || null,
+        suffix: parsed.suffix || null,
+        uid: parsed.uid || null,
+        organization: parsed.organization || null,
+        jobTitle: parsed.jobTitle || null,
+        photo: parsed.photo || null,
+        gender: parsed.gender || null,
+        anniversary: null,
+        lastContact: null,
+        notes: null,
+        relationshipToUserId: null,
+        contactReminderEnabled: false,
+        contactReminderInterval: null,
+        contactReminderIntervalUnit: null,
+        lastContactReminderSent: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        phoneNumbers: [],
+        emails: [],
+        addresses: [],
+        urls: [],
+        imHandles: parsed.imHandles.map((im, i) => ({
+          id: `im-${i}`,
+          personId: 'test-1',
+          protocol: im.protocol,
+          handle: im.handle,
+          createdAt: new Date(),
+        })),
+        locations: [],
+        customFields: [],
+        importantDates: [],
+        relationshipsFrom: [],
+        groups: [],
+      });
+
+      // Step 3: Verify Apple-compatible format in re-exported vCard
+      // Telegram and Slack should use x-apple: scheme with X-SERVICE-TYPE
+      expect(reExported).toContain('IMPP;X-SERVICE-TYPE=Telegram:x-apple:docemmet');
+      expect(reExported).toContain('IMPP;X-SERVICE-TYPE=Slack:x-apple:doc.emmet');
+      // XMPP should use native URI scheme
+      expect(reExported).toContain('IMPP:xmpp:doc@jabber.org');
+
+      // Step 4: Parse the re-exported vCard to verify data integrity
+      const reParsed = vCardToPerson(reExported);
+
+      const reTelegram = reParsed.imHandles.find(im => im.protocol === 'telegram');
+      expect(reTelegram).toBeDefined();
+      expect(reTelegram!.handle).toBe('docemmet');
+
+      const reSlack = reParsed.imHandles.find(im => im.protocol === 'slack');
+      expect(reSlack).toBeDefined();
+      expect(reSlack!.handle).toBe('doc.emmet');
+
+      const reXmpp = reParsed.imHandles.find(im => im.protocol === 'xmpp');
+      expect(reXmpp).toBeDefined();
+      expect(reXmpp!.handle).toBe('doc@jabber.org');
+    });
+  });
+
   describe('Round-trip transformation', () => {
     it('should preserve data through round-trip conversion', () => {
       const original: PersonWithRelations = {
