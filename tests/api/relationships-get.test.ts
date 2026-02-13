@@ -32,23 +32,7 @@ describe('GET /api/relationships/[id]', () => {
       id: 'rel-1',
       personId: 'person-1',
       relatedPersonId: 'person-2',
-      person: {
-        id: 'person-1',
-        name: 'Alice',
-        surname: null,
-        middleName: null,
-        secondLastName: null,
-        nickname: null,
-        lastContact: null,
-        notes: null,
-        relationshipToUserId: null,
-        contactReminderEnabled: false,
-        contactReminderInterval: null,
-        contactReminderIntervalUnit: null,
-        lastContactReminderSent: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
+      person: { id: 'person-1', name: 'Alice', surname: null, nickname: null },
       relatedPerson: { id: 'person-2', name: 'Bob', surname: null, nickname: null },
       relationshipType: { id: 'type-1', name: 'FRIEND', label: 'Friend', color: '#10B981' },
     };
@@ -88,7 +72,7 @@ describe('GET /api/relationships/[id]', () => {
     );
   });
 
-  it('should not include deletedAt in person or relatedPerson select', async () => {
+  it('should use the same select fields for person and relatedPerson', async () => {
     mocks.relationshipFindFirst.mockResolvedValue(null);
 
     const request = new Request('http://localhost/api/relationships/rel-1');
@@ -97,8 +81,8 @@ describe('GET /api/relationships/[id]', () => {
     await GET(request, context);
 
     const callArg = mocks.relationshipFindFirst.mock.calls[0][0];
+    expect(callArg.include.person.select).toEqual(callArg.include.relatedPerson.select);
     expect(callArg.include.person.select).not.toHaveProperty('deletedAt');
-    expect(callArg.include.relatedPerson.select).not.toHaveProperty('deletedAt');
   });
 
   it('should return 404 for non-existent relationship', async () => {

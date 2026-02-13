@@ -8,10 +8,10 @@ export const GET = withAuth(async (_request, session) => {
     const [upcomingEvents, peopleCount, groupsCount] = await Promise.all([
       getUpcomingEvents(session.user.id),
       prisma.person.count({
-        where: { userId: session.user.id },
+        where: { userId: session.user.id, deletedAt: null },
       }),
       prisma.group.count({
-        where: { userId: session.user.id },
+        where: { userId: session.user.id, deletedAt: null },
       }),
     ]);
 

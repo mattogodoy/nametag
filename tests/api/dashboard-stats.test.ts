@@ -84,10 +84,34 @@ describe('GET /api/dashboard/stats', () => {
     await GET(request);
 
     expect(mocks.personCount).toHaveBeenCalledWith({
-      where: { userId: 'user-123' },
+      where: { userId: 'user-123', deletedAt: null },
     });
     expect(mocks.groupCount).toHaveBeenCalledWith({
-      where: { userId: 'user-123' },
+      where: { userId: 'user-123', deletedAt: null },
     });
+  });
+
+  it('should exclude soft-deleted people from the count', async () => {
+    mocks.getUpcomingEvents.mockResolvedValue([]);
+    mocks.personCount.mockResolvedValue(5);
+    mocks.groupCount.mockResolvedValue(2);
+
+    const request = new Request('http://localhost/api/dashboard/stats');
+    await GET(request);
+
+    const personCountArg = mocks.personCount.mock.calls[0][0];
+    expect(personCountArg.where).toHaveProperty('deletedAt', null);
+  });
+
+  it('should exclude soft-deleted groups from the count', async () => {
+    mocks.getUpcomingEvents.mockResolvedValue([]);
+    mocks.personCount.mockResolvedValue(5);
+    mocks.groupCount.mockResolvedValue(2);
+
+    const request = new Request('http://localhost/api/dashboard/stats');
+    await GET(request);
+
+    const groupCountArg = mocks.groupCount.mock.calls[0][0];
+    expect(groupCountArg.where).toHaveProperty('deletedAt', null);
   });
 });

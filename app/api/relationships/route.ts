@@ -22,6 +22,7 @@ export const GET = withAuth(async (_request, session) => {
           select: { id: true, name: true, surname: true, nickname: true },
         },
         relationshipType: {
+          where: { deletedAt: null },
           select: { id: true, name: true, label: true, color: true },
         },
       },

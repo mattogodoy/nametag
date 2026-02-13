@@ -97,4 +97,18 @@ describe('GET /api/relationships', () => {
       })
     );
   });
+
+  it('should filter soft-deleted relationship types in the include', async () => {
+    mocks.relationshipFindMany.mockResolvedValue([]);
+
+    const request = new Request('http://localhost/api/relationships');
+    await GET(request);
+
+    const callArg = mocks.relationshipFindMany.mock.calls[0][0];
+    expect(callArg.include.relationshipType).toEqual(
+      expect.objectContaining({
+        where: { deletedAt: null },
+      })
+    );
+  });
 });

@@ -19,23 +19,7 @@ export const GET = withAuth(async (_request, session, context) => {
       },
       include: {
         person: {
-          select: {
-            id: true,
-            name: true,
-            surname: true,
-            middleName: true,
-            secondLastName: true,
-            nickname: true,
-            lastContact: true,
-            notes: true,
-            relationshipToUserId: true,
-            contactReminderEnabled: true,
-            contactReminderInterval: true,
-            contactReminderIntervalUnit: true,
-            lastContactReminderSent: true,
-            createdAt: true,
-            updatedAt: true,
-          },
+          select: { id: true, name: true, surname: true, nickname: true },
         },
         relatedPerson: {
           select: { id: true, name: true, surname: true, nickname: true },
