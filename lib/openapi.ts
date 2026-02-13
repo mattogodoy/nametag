@@ -1,8 +1,20 @@
+import { z } from 'zod';
 import packageJson from '../package.json';
+import {
+  registerSchema, forgotPasswordSchema, resetPasswordSchema,
+  resendVerificationSchema, checkVerificationSchema,
+  createPersonSchema, updatePersonSchema, deletePersonSchema,
+  createGroupSchema, updateGroupSchema, addGroupMemberSchema,
+  createRelationshipSchema, updateRelationshipSchema,
+  createRelationshipTypeSchema, updateRelationshipTypeSchema,
+  updateProfileSchema, updatePasswordSchema,
+  updateThemeSchema, updateDateFormatSchema,
+  importDataSchema, createImportantDateSchema, updateImportantDateSchema,
+} from './validations';
 
 // OpenAPI 3.1.0 specification generator for the Nametag API.
-// This is hand-crafted to avoid external dependencies while keeping
-// the spec close to the actual route handlers.
+// Request body schemas are generated from Zod validation schemas (single source of truth).
+// Response schemas, component schemas, and endpoint metadata are hand-crafted.
 
 type JsonSchema = Record<string, unknown>;
 
@@ -329,29 +341,6 @@ export function generateOpenAPISpec(): OpenAPISpec {
           type: 'string',
           enum: ['DAYS', 'WEEKS', 'MONTHS', 'YEARS'],
         },
-        ImportantDateInput: {
-          type: 'object',
-          description: 'Payload for creating or updating an important date',
-          properties: {
-            title: { type: 'string', maxLength: 100 },
-            date: { type: 'string', format: 'date', description: 'ISO 8601 date string' },
-            reminderEnabled: { type: 'boolean' },
-            reminderType: {
-              oneOf: [
-                { type: 'string', enum: ['ONCE', 'RECURRING'] },
-                { type: 'null' },
-              ],
-            },
-            reminderInterval: { type: ['integer', 'null'], minimum: 1, maximum: 99, description: 'How many units between reminders' },
-            reminderIntervalUnit: {
-              oneOf: [
-                { $ref: '#/components/schemas/ReminderIntervalUnit' },
-                { type: 'null' },
-              ],
-            },
-          },
-          required: ['title', 'date'],
-        },
       },
     },
     paths: {
@@ -363,17 +352,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Auth'],
           summary: 'Register a new account',
           description: 'Creates a new user account. May send a verification email if email verification is enabled.',
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              email: { type: 'string', format: 'email' },
-              password: { type: 'string', minLength: 8, description: 'Min 8 chars, must include uppercase, lowercase, number, and special character' },
-              name: { type: 'string', maxLength: 100 },
-              surname: { type: ['string', 'null'], maxLength: 100 },
-              nickname: { type: ['string', 'null'], maxLength: 100 },
-            },
-            required: ['email', 'password', 'name'],
-          }),
+          requestBody: zodBody(registerSchema),
           responses: {
             '201': jsonResponse('Account created', {
               type: 'object',
@@ -411,11 +390,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Auth'],
           summary: 'Request password reset',
           description: 'Sends a password reset email to the specified address if the account exists.',
-          requestBody: jsonBody({
-            type: 'object',
-            properties: { email: { type: 'string', format: 'email' } },
-            required: ['email'],
-          }),
+          requestBody: zodBody(forgotPasswordSchema),
           responses: {
             '200': refMessage(),
             '429': resp('Rate limited'),
@@ -427,14 +402,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Auth'],
           summary: 'Reset password with token',
           description: 'Sets a new password using a valid reset token.',
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              token: { type: 'string' },
-              password: { type: 'string', minLength: 8 },
-            },
-            required: ['token', 'password'],
-          }),
+          requestBody: zodBody(resetPasswordSchema),
           responses: {
             '200': refMessage(),
             '400': ref400(),
@@ -446,11 +414,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Auth'],
           summary: 'Check if an email is verified',
           description: 'Returns whether the given email address has been verified.',
-          requestBody: jsonBody({
-            type: 'object',
-            properties: { email: { type: 'string', format: 'email' } },
-            required: ['email'],
-          }),
+          requestBody: zodBody(checkVerificationSchema),
           responses: {
             '200': jsonResponse('Verification status', {
               type: 'object',
@@ -464,11 +428,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Auth'],
           summary: 'Resend verification email',
           description: 'Sends a new verification email to the specified address.',
-          requestBody: jsonBody({
-            type: 'object',
-            properties: { email: { type: 'string', format: 'email' } },
-            required: ['email'],
-          }),
+          requestBody: zodBody(resendVerificationSchema),
           responses: {
             '200': refMessage(),
             '429': resp('Rate limited'),
@@ -537,29 +497,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Create a new person',
           description: 'Adds a new person to your network. Can include group memberships, important dates, and a relationship type to you (or connected through another person).',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              name: { type: 'string', maxLength: 100 },
-              surname: { type: ['string', 'null'], maxLength: 100 },
-              middleName: { type: ['string', 'null'], maxLength: 100 },
-              secondLastName: { type: ['string', 'null'], maxLength: 100 },
-              nickname: { type: ['string', 'null'], maxLength: 100 },
-              lastContact: { type: ['string', 'null'], format: 'date' },
-              notes: { type: ['string', 'null'], maxLength: 10000 },
-              relationshipToUserId: { type: ['string', 'null'], description: 'ID of the relationship type to the user' },
-              groupIds: { type: 'array', items: { type: 'string' }, description: 'Group IDs to add this person to' },
-              connectedThroughId: { type: 'string', description: 'If set, creates a person-to-person relationship instead of person-to-user' },
-              importantDates: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/ImportantDateInput' },
-              },
-              contactReminderEnabled: { type: 'boolean' },
-              contactReminderInterval: { type: ['integer', 'null'], minimum: 1, maximum: 99 },
-              contactReminderIntervalUnit: { $ref: '#/components/schemas/ReminderIntervalUnit' },
-            },
-            required: ['name'],
-          }),
+          requestBody: zodBody(createPersonSchema),
           responses: {
             '201': jsonResponse('Person created', {
               type: 'object',
@@ -593,25 +531,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Updates any fields of an existing person. Group memberships and important dates are replaced in full when provided.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Person ID')],
-          requestBody: jsonBody({
-            type: 'object',
-            description: 'All fields are optional. Only provided fields are updated.',
-            properties: {
-              name: { type: 'string', maxLength: 100 },
-              surname: { type: ['string', 'null'], maxLength: 100 },
-              middleName: { type: ['string', 'null'], maxLength: 100 },
-              secondLastName: { type: ['string', 'null'], maxLength: 100 },
-              nickname: { type: ['string', 'null'], maxLength: 100 },
-              lastContact: { type: ['string', 'null'], format: 'date' },
-              notes: { type: ['string', 'null'], maxLength: 10000 },
-              relationshipToUserId: { type: ['string', 'null'] },
-              groupIds: { type: 'array', items: { type: 'string' } },
-              importantDates: { type: 'array', items: { $ref: '#/components/schemas/ImportantDateInput' } },
-              contactReminderEnabled: { type: 'boolean' },
-              contactReminderInterval: { type: ['integer', 'null'], minimum: 1, maximum: 99 },
-              contactReminderIntervalUnit: { $ref: '#/components/schemas/ReminderIntervalUnit' },
-            },
-          }),
+          requestBody: zodBody(updatePersonSchema),
           responses: {
             '200': jsonResponse('Person updated', {
               type: 'object',
@@ -628,13 +548,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Soft-deletes a person. Optionally also deletes orphaned people who were only connected through this person.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Person ID')],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              deleteOrphans: { type: 'boolean', description: 'Also delete people only connected through this person' },
-              orphanIds: { type: 'array', items: { type: 'string' }, description: 'Specific orphan IDs to delete' },
-            },
-          }),
+          requestBody: zodBody(deletePersonSchema),
           responses: {
             '200': refMessage(),
             '401': ref401(),
@@ -749,7 +663,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Adds a new important date to a person with optional reminder configuration.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Person ID')],
-          requestBody: jsonBody({ $ref: '#/components/schemas/ImportantDateInput' }),
+          requestBody: zodBody(createImportantDateSchema),
           responses: {
             '201': jsonResponse('Important date created', {
               type: 'object',
@@ -769,7 +683,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Updates the title, date, and/or reminder settings for an important date.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Person ID'), pathParam('dateId', 'Important date ID')],
-          requestBody: jsonBody({ $ref: '#/components/schemas/ImportantDateInput' }),
+          requestBody: zodBody(updateImportantDateSchema),
           responses: {
             '200': jsonResponse('Important date updated', {
               type: 'object',
@@ -835,16 +749,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Create a new group',
           description: 'Creates a group with a name, optional description/color, and optional initial members.',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              name: { type: 'string', maxLength: 100 },
-              description: { type: ['string', 'null'], maxLength: 500 },
-              color: { type: ['string', 'null'], description: 'Hex color (e.g. #FF5733)' },
-              peopleIds: { type: 'array', items: { type: 'string' }, description: 'Person IDs to add as initial members' },
-            },
-            required: ['name'],
-          }),
+          requestBody: zodBody(createGroupSchema),
           responses: {
             '201': jsonResponse('Group created', {
               type: 'object',
@@ -878,15 +783,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Updates the name, description, and/or color of a group.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Group ID')],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              name: { type: 'string', maxLength: 100 },
-              description: { type: ['string', 'null'], maxLength: 500 },
-              color: { type: ['string', 'null'] },
-            },
-            required: ['name'],
-          }),
+          requestBody: zodBody(updateGroupSchema),
           responses: {
             '200': jsonResponse('Group updated', {
               type: 'object',
@@ -936,13 +833,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Adds an existing person as a member of the specified group.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Group ID')],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              personId: { type: 'string', description: 'ID of the person to add' },
-            },
-            required: ['personId'],
-          }),
+          requestBody: zodBody(addGroupMemberSchema),
           responses: {
             '200': refSuccess(),
             '400': ref400(),
@@ -989,16 +880,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Create a relationship',
           description: 'Creates a bidirectional relationship between two people. Automatically creates the inverse relationship.',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              personId: { type: 'string', description: 'First person ID' },
-              relatedPersonId: { type: 'string', description: 'Second person ID' },
-              relationshipTypeId: { type: 'string', description: 'Relationship type ID' },
-              notes: { type: ['string', 'null'], maxLength: 1000 },
-            },
-            required: ['personId', 'relatedPersonId', 'relationshipTypeId'],
-          }),
+          requestBody: zodBody(createRelationshipSchema),
           responses: {
             '201': jsonResponse('Relationship created', {
               type: 'object',
@@ -1032,13 +914,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Changes the type and/or notes of an existing relationship. Also updates the inverse relationship.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Relationship ID')],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              relationshipTypeId: { type: 'string' },
-              notes: { type: ['string', 'null'], maxLength: 1000 },
-            },
-          }),
+          requestBody: zodBody(updateRelationshipSchema),
           responses: {
             '200': jsonResponse('Relationship updated', {
               type: 'object',
@@ -1103,18 +979,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Create a relationship type',
           description: 'Creates a new relationship type. Can be symmetric (e.g. Friend <-> Friend) or asymmetric with an inverse (e.g. Parent -> Child). If inverseLabel is provided, the inverse type is auto-created.',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              name: { type: 'string', maxLength: 50, description: 'Internal name (will be upper-cased)' },
-              label: { type: 'string', maxLength: 50, description: 'Display label' },
-              color: { type: ['string', 'null'], description: 'Hex color' },
-              inverseId: { type: ['string', 'null'], description: 'ID of existing inverse type' },
-              inverseLabel: { type: 'string', maxLength: 50, description: 'Label for a new inverse type to auto-create' },
-              symmetric: { type: 'boolean', description: 'If true, the type is its own inverse' },
-            },
-            required: ['name', 'label'],
-          }),
+          requestBody: zodBody(createRelationshipTypeSchema),
           responses: {
             '201': jsonResponse('Relationship type created', {
               type: 'object',
@@ -1146,18 +1011,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           description: 'Updates label, color, inverse, or symmetric status of a relationship type.',
           security: [{ session: [] }],
           parameters: [pathParam('id', 'Relationship type ID')],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              name: { type: 'string', maxLength: 50 },
-              label: { type: 'string', maxLength: 50 },
-              color: { type: ['string', 'null'] },
-              inverseId: { type: ['string', 'null'] },
-              inverseLabel: { type: 'string', maxLength: 50 },
-              symmetric: { type: 'boolean' },
-            },
-            required: ['name', 'label'],
-          }),
+          requestBody: zodBody(updateRelationshipTypeSchema),
           responses: {
             '200': jsonResponse('Relationship type updated', {
               type: 'object',
@@ -1260,16 +1114,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Update user profile',
           description: 'Updates name, surname, nickname, and/or email. If email is changed, a verification email is sent and the account is marked as unverified.',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              name: { type: 'string', maxLength: 100 },
-              surname: { type: ['string', 'null'], maxLength: 100 },
-              nickname: { type: ['string', 'null'], maxLength: 100 },
-              email: { type: 'string', format: 'email' },
-            },
-            required: ['name', 'email'],
-          }),
+          requestBody: zodBody(updateProfileSchema),
           responses: {
             '200': jsonResponse('Profile updated', {
               type: 'object',
@@ -1289,14 +1134,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Change password',
           description: 'Changes the user\'s password. Requires the current password for verification.',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: {
-              currentPassword: { type: 'string' },
-              newPassword: { type: 'string', minLength: 8 },
-            },
-            required: ['currentPassword', 'newPassword'],
-          }),
+          requestBody: zodBody(updatePasswordSchema),
           responses: {
             '200': refMessage(),
             '400': ref400(),
@@ -1309,11 +1147,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['User Settings'],
           summary: 'Update theme preference',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: { theme: { type: 'string', enum: ['LIGHT', 'DARK'] } },
-            required: ['theme'],
-          }),
+          requestBody: zodBody(updateThemeSchema),
           responses: {
             '200': jsonResponse('Theme updated', {
               type: 'object',
@@ -1328,11 +1162,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['User Settings'],
           summary: 'Update date format preference',
           security: [{ session: [] }],
-          requestBody: jsonBody({
-            type: 'object',
-            properties: { dateFormat: { type: 'string', enum: ['MDY', 'DMY', 'YMD'] } },
-            required: ['dateFormat'],
-          }),
+          requestBody: zodBody(updateDateFormatSchema),
           responses: {
             '200': jsonResponse('Date format updated', {
               type: 'object',
@@ -1415,7 +1245,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Import user data',
           description: 'Imports people, groups, relationships, and relationship types from a Nametag export JSON file.',
           security: [{ session: [] }],
-          requestBody: jsonBody({ type: 'object', description: 'Export-format JSON data' }),
+          requestBody: zodBody(importDataSchema),
           responses: {
             '200': jsonResponse('Import result', {
               type: 'object',
@@ -1794,6 +1624,21 @@ function jsonBody(schema: JsonSchema) {
     required: true,
     content: {
       'application/json': { schema },
+    },
+  };
+}
+
+/** Generates an OpenAPI requestBody from a Zod schema via z.toJSONSchema(). */
+function zodBody(schema: z.ZodType) {
+  const jsonSchema = z.toJSONSchema(schema, {
+    io: 'input',
+    unrepresentable: 'throw',
+  }) as Record<string, unknown>;
+  delete jsonSchema.$schema;
+  return {
+    required: true as const,
+    content: {
+      'application/json': { schema: jsonSchema as JsonSchema },
     },
   };
 }
