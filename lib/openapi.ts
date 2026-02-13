@@ -1707,6 +1707,22 @@ export function generateOpenAPISpec(): OpenAPISpec {
           },
         },
       },
+      '/api/version': {
+        get: {
+          tags: ['System'],
+          summary: 'Application version',
+          description: 'Returns the current installed version of the application. Useful for monitoring tools like release-argus.',
+          responses: {
+            '200': jsonResponse('Version info', {
+              type: 'object',
+              properties: {
+                version: { type: 'string', example: '0.17.1' },
+              },
+              required: ['version'],
+            }),
+          },
+        },
+      },
     },
   };
 }
