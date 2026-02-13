@@ -301,43 +301,304 @@ export default async function PersonDetailsPage({
             </div>
 
             <div className="px-6 py-5 space-y-6">
-              {/* Details Section */}
-              {(person.lastContact || person.notes) && (
+              {/* Photo */}
+              {person.photo && (
+                <div className="border border-border rounded-lg p-4">
+                  <div className="flex justify-center">
+                    <img
+                      src={person.photo}
+                      alt={formatFullName(person)}
+                      className="w-32 h-32 rounded-full object-cover shadow-lg"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Personal Details */}
+              <div className="border border-border rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-foreground mb-4">
+                  {t('personalDetails')}
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted mb-1">
+                      {t('fullName')}
+                    </h4>
+                    <p className="text-foreground">
+                      {[
+                        person.prefix,
+                        person.name,
+                        person.middleName,
+                        person.surname,
+                        person.secondLastName,
+                        person.suffix,
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    </p>
+                  </div>
+
+                  {person.nickname && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted mb-1">
+                        {t('nickname')}
+                      </h4>
+                      <p className="text-foreground">{person.nickname}</p>
+                    </div>
+                  )}
+
+                  {person.gender && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted mb-1">
+                        {t('gender')}
+                      </h4>
+                      <p className="text-foreground">{person.gender}</p>
+                    </div>
+                  )}
+
+                  {person.anniversary && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted mb-1">
+                        {t('anniversary')}
+                      </h4>
+                      <p className="text-foreground">
+                        {formatDate(new Date(person.anniversary), dateFormat)}
+                        {getYearsAgo(new Date(person.anniversary), t) && (
+                          <span className="text-sm text-muted ml-1">
+                            ({getYearsAgo(new Date(person.anniversary), t)})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {person.lastContact && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted mb-1">
+                        {t('lastTimeTalked')}
+                      </h4>
+                      <p className="text-foreground">
+                        {formatDate(new Date(person.lastContact), dateFormat)}{' '}
+                        <span className="text-sm text-muted">
+                          ({getRelativeTime(new Date(person.lastContact), t)})
+                        </span>
+                      </p>
+                      {getContactReminderDescription(person, t) && (
+                        <div className="text-xs text-primary mt-1 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                          </svg>
+                          {getContactReminderDescription(person, t)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Professional Information */}
+              {(person.organization || person.jobTitle) && (
                 <div className="border border-border rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-foreground mb-4">
-                    {t('details')}
+                    {t('professional')}
                   </h3>
-                  <div className="space-y-4">
-                    {person.lastContact && (
+                  <div className="space-y-3">
+                    {person.organization && (
                       <div>
                         <h4 className="text-sm font-medium text-muted mb-1">
-                          {t('lastTimeTalked')}
+                          {t('organization')}
                         </h4>
-                        <p className="text-foreground">
-                          {formatDate(new Date(person.lastContact), dateFormat)}{' '}
-                          <span className="text-sm text-muted">
-                            ({getRelativeTime(new Date(person.lastContact), t)})
-                          </span>
-                        </p>
-                        {getContactReminderDescription(person, t) && (
-                          <div className="text-xs text-primary mt-1 flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            {getContactReminderDescription(person, t)}
-                          </div>
-                        )}
+                        <p className="text-foreground">{person.organization}</p>
+                      </div>
+                    )}
+                    {person.jobTitle && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted mb-1">
+                          {t('jobTitle')}
+                        </h4>
+                        <p className="text-foreground">{person.jobTitle}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Information */}
+              {(person.phoneNumbers.length > 0 || person.emails.length > 0 || person.addresses.length > 0) && (
+                <div className="border border-border rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    {t('contactInformation')}
+                  </h3>
+                  <div className="space-y-4">
+                    {person.phoneNumbers.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted mb-2">
+                          {t('phoneNumbers')}
+                        </h4>
+                        <div className="space-y-2">
+                          {person.phoneNumbers.map((phone) => (
+                            <div key={phone.id} className="flex items-center gap-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface-elevated text-muted capitalize">
+                                {phone.type}
+                              </span>
+                              <a
+                                href={`tel:${phone.number}`}
+                                className="text-primary hover:underline"
+                              >
+                                {phone.number}
+                              </a>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 
-                    {person.notes && (
+                    {person.emails.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-muted mb-1">
-                          {t('notes')}
+                        <h4 className="text-sm font-medium text-muted mb-2">
+                          {t('emailAddresses')}
                         </h4>
-                        <MarkdownRenderer content={person.notes} />
+                        <div className="space-y-2">
+                          {person.emails.map((email) => (
+                            <div key={email.id} className="flex items-center gap-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface-elevated text-muted capitalize">
+                                {email.type}
+                              </span>
+                              <a
+                                href={`mailto:${email.email}`}
+                                className="text-primary hover:underline"
+                              >
+                                {email.email}
+                              </a>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
+
+                    {person.addresses.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted mb-2">
+                          {t('addresses')}
+                        </h4>
+                        <div className="space-y-3">
+                          {person.addresses.map((address) => (
+                            <div key={address.id} className="p-3 bg-surface-elevated rounded-lg">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface text-muted capitalize mb-2">
+                                {address.type}
+                              </span>
+                              <div className="text-sm text-foreground space-y-1">
+                                {address.streetLine1 && <div>{address.streetLine1}</div>}
+                                {address.streetLine2 && <div>{address.streetLine2}</div>}
+                                <div>
+                                  {[address.locality, address.region, address.postalCode]
+                                    .filter(Boolean)
+                                    .join(', ')}
+                                </div>
+                                {address.country && <div>{address.country}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Online Presence */}
+              {(person.urls.length > 0 || person.imHandles.length > 0) && (
+                <div className="border border-border rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    {t('onlinePresence')}
+                  </h3>
+                  <div className="space-y-4">
+                    {person.urls.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted mb-2">
+                          {t('websites')}
+                        </h4>
+                        <div className="space-y-2">
+                          {person.urls.map((url) => (
+                            <div key={url.id} className="flex items-center gap-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface-elevated text-muted capitalize">
+                                {url.type}
+                              </span>
+                              <a
+                                href={url.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline flex items-center gap-1"
+                              >
+                                {url.url}
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {person.imHandles.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted mb-2">
+                          {t('instantMessaging')}
+                        </h4>
+                        <div className="space-y-2">
+                          {person.imHandles.map((im) => (
+                            <div key={im.id} className="flex items-center gap-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface-elevated text-muted capitalize">
+                                {im.protocol}
+                              </span>
+                              <span className="text-foreground">{im.handle}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Locations */}
+              {person.locations.length > 0 && (
+                <div className="border border-border rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    {t('locations')}
+                  </h3>
+                  <div className="space-y-2">
+                    {person.locations.map((location) => {
+                      const lat = Number(location.latitude);
+                      const lng = Number(location.longitude);
+                      return (
+                        <div key={location.id} className="p-3 bg-surface-elevated rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface text-muted capitalize mb-1">
+                                {location.type}
+                              </span>
+                              <div className="text-sm text-foreground">
+                                {lat}, {lng}
+                              </div>
+                            </div>
+                            <a
+                              href={`https://www.google.com/maps?q=${lat},${lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary-dark transition-colors"
+                              title={t('viewOnMap')}
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -382,6 +643,16 @@ export default async function PersonDetailsPage({
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {person.notes && (
+                <div className="border border-border rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    {t('notes')}
+                  </h3>
+                  <MarkdownRenderer content={person.notes} />
                 </div>
               )}
 
