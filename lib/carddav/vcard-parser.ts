@@ -432,7 +432,9 @@ function processProperty(
 
     case 'IMPP': {
       // IMPP = protocol:handle
-      const parsed = parseIMPP(prop.value);
+      // Apple uses x-apple: scheme with the real protocol in the item group's X-ABLabel
+      const groupLabel = prop.group ? getItemGroupLabel(prop.group, itemGroups) : undefined;
+      const parsed = parseIMPP(prop.value, groupLabel);
       if (parsed) {
         data.imHandles.push(parsed);
       }
@@ -638,15 +640,35 @@ function getParamType(params: Record<string, string | string[]>): string | undef
 
 /**
  * Parse IMPP value (protocol:handle)
+ * Handles Apple's x-apple: scheme in two forms:
+ * 1. URL-encoded: x-apple:slack%3Ataylor_example → { protocol: "slack", handle: "taylor_example" }
+ * 2. Label-based: x-apple:taylor_example with groupLabel="Slack" → { protocol: "slack", handle: "taylor_example" }
  */
-function parseIMPP(value: string): { protocol: string; handle: string } | null {
+function parseIMPP(value: string, groupLabel?: string): { protocol: string; handle: string } | null {
   const colonIndex = value.indexOf(':');
   if (colonIndex === -1) {
     return null;
   }
 
-  const protocol = value.substring(0, colonIndex);
-  const handle = value.substring(colonIndex + 1);
+  let protocol = value.substring(0, colonIndex);
+  let handle = value.substring(colonIndex + 1);
+
+  // Apple wraps IMPP values as x-apple:<payload>
+  if (protocol === 'x-apple') {
+    const decoded = decodeURIComponent(handle);
+    const innerColon = decoded.indexOf(':');
+    if (innerColon !== -1) {
+      // Form 1: protocol is URL-encoded in the value (e.g., slack%3Ataylor)
+      protocol = decoded.substring(0, innerColon);
+      handle = decoded.substring(innerColon + 1);
+    } else if (groupLabel && groupLabel.toLowerCase() !== 'x-apple') {
+      // Form 2: protocol is in the item group's X-ABLabel (e.g., "Slack")
+      protocol = groupLabel.toLowerCase();
+      handle = decoded;
+    } else {
+      handle = decoded;
+    }
+  }
 
   return { protocol, handle };
 }

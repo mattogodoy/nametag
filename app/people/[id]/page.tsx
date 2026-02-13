@@ -225,6 +225,14 @@ export default async function PersonDetailsPage({
     notFound();
   }
 
+  // Convert Prisma Decimal objects to plain numbers for client components
+  const serializedLocations = person.locations.map((loc) => ({
+    ...loc,
+    latitude: Number(loc.latitude),
+    longitude: Number(loc.longitude),
+  }));
+  const serializedPerson = { ...person, locations: serializedLocations };
+
   // Filter out people who already have a relationship
   const relatedPersonIds = new Set(
     person.relationshipsTo.map((r) => r.personId)
@@ -676,7 +684,7 @@ export default async function PersonDetailsPage({
               </div>
 
               {/* Raw vCard Viewer (Development Only) */}
-              <PersonVCardRawView person={person} />
+              <PersonVCardRawView person={serializedPerson} />
 
               {/* Relationships Section */}
               <div className="border border-border rounded-lg p-4">
@@ -743,7 +751,7 @@ export default async function PersonDetailsPage({
 
               {/* Export VCF Button */}
               <div className="flex justify-center mt-6">
-                <PersonVCardExport person={person} />
+                <PersonVCardExport person={serializedPerson} />
               </div>
             </div>
           </div>

@@ -72,12 +72,15 @@ export default function ConnectionModal({
     setError('');
     setTestResult(null);
 
+    const normalizedUrl = normalizeUrl(serverUrl);
+    setServerUrl(normalizedUrl);
+
     try {
       const response = await fetch('/api/carddav/connection/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          serverUrl,
+          serverUrl: normalizedUrl,
           username,
           password: password || undefined,
         }),
@@ -110,12 +113,14 @@ export default function ConnectionModal({
     setIsSaving(true);
     setError('');
 
+    const normalizedUrl = normalizeUrl(serverUrl);
+
     try {
       const response = await fetch('/api/carddav/connection', {
         method: existingConnection ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          serverUrl,
+          serverUrl: normalizedUrl,
           username,
           password: password || undefined,
           provider: provider !== 'custom' ? provider : null,
@@ -135,6 +140,14 @@ export default function ConnectionModal({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const normalizeUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (trimmed && !/^https?:\/\//i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
   };
 
   const isFormComplete = serverUrl && username && (password || existingConnection);

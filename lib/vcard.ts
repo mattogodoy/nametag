@@ -157,7 +157,13 @@ export function personToVCard(
   });
 
   // GEO (Geographic location) - use item grouping with X-ABLabel
+  // Deduplicate by lat/lon/type to avoid repeated entries from import
+  const seenLocations = new Set<string>();
   person.locations.forEach((loc) => {
+    const locKey = `${loc.latitude};${loc.longitude};${loc.type}`;
+    if (seenLocations.has(locKey)) return;
+    seenLocations.add(locKey);
+
     const label = escapeVCardText(loc.type);
     // vCard 3.0 format: GEO:latitude;longitude (not geo: URI)
     lines.push(`item${itemCounter}.GEO:${loc.latitude};${loc.longitude}`);
@@ -211,9 +217,15 @@ export function personToVCard(
   }
 
   // Custom fields (X- properties)
+  // Deduplicate by normalized key+value to avoid duplicates from imports
+  // (e.g., both ROLE and X-ROLE stored as custom fields produce the same X-ROLE output)
   if (opts.includeCustomFields) {
+    const seenCustomFields = new Set<string>();
     person.customFields.forEach((field) => {
       const key = field.key.startsWith('X-') ? field.key : `X-${field.key}`;
+      const dedupKey = `${key}:${field.value}`;
+      if (seenCustomFields.has(dedupKey)) return;
+      seenCustomFields.add(dedupKey);
       lines.push(buildV3Property(key, {}, field.value));
     });
 
