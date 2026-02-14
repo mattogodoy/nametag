@@ -2,6 +2,45 @@ import { prisma } from '@/lib/prisma';
 import { updateRelationshipSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
+// GET /api/relationships/[id] - Get a single relationship
+export const GET = withAuth(async (_request, session, context) => {
+  try {
+    const { id } = await context!.params;
+
+    const relationship = await prisma.relationship.findFirst({
+      where: {
+        id,
+        person: { userId: session.user.id, deletedAt: null },
+        relatedPerson: { deletedAt: null },
+        OR: [
+          { relationshipTypeId: null },
+          { relationshipType: { deletedAt: null } },
+        ],
+      },
+      include: {
+        person: {
+          select: { id: true, name: true, surname: true, nickname: true },
+        },
+        relatedPerson: {
+          select: { id: true, name: true, surname: true, nickname: true },
+        },
+        relationshipType: {
+          where: { deletedAt: null },
+          select: { id: true, name: true, label: true, color: true },
+        },
+      },
+    });
+
+    if (!relationship) {
+      return apiResponse.notFound('Relationship not found');
+    }
+
+    return apiResponse.ok({ relationship });
+  } catch (error) {
+    return handleApiError(error, 'relationships-get');
+  }
+});
+
 // PUT /api/relationships/[id] - Update a relationship
 export const PUT = withAuth(async (request, session, context) => {
   try {

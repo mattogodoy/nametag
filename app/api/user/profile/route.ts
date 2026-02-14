@@ -11,6 +11,37 @@ function generateVerificationToken(): string {
   return randomBytes(32).toString('hex');
 }
 
+// GET /api/user/profile - Get the current user's profile
+export const GET = withAuth(async (_request, session) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        surname: true,
+        nickname: true,
+        theme: true,
+        dateFormat: true,
+        language: true,
+        emailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      return apiResponse.notFound('User not found');
+    }
+
+    return apiResponse.ok({ user });
+  } catch (error) {
+    return handleApiError(error, 'user-profile-get');
+  }
+});
+
+// PUT /api/user/profile - Update the current user's profile
 export const PUT = withAuth(async (request, session) => {
   try {
     const body = await parseRequestBody(request);

@@ -13,7 +13,8 @@ export const passwordSchema = z
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character (!@#$%^&*)');
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character (!@#$%^&*)')
+  .describe('Min 8 chars, must include uppercase, lowercase, number, and special character');
 
 export const cuidSchema = z.string().cuid('Invalid ID format');
 
@@ -21,7 +22,8 @@ export const hexColorSchema = z
   .string()
   .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format')
   .nullable()
-  .optional();
+  .optional()
+  .describe('Hex color, e.g. #FF5733');
 
 // ============================================
 // Auth schemas
@@ -61,7 +63,7 @@ const reminderIntervalUnitSchema = z.enum(['DAYS', 'WEEKS', 'MONTHS', 'YEARS']);
 const importantDateSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(100),
-  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+  date: z.iso.date({ error: 'Invalid date' }),
   reminderEnabled: z.boolean().optional(),
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
@@ -74,11 +76,18 @@ export const createPersonSchema = z.object({
   middleName: z.string().max(100).nullable().optional(),
   secondLastName: z.string().max(100).nullable().optional(),
   nickname: z.string().max(100).nullable().optional(),
-  lastContact: z.string().refine((val) => !val || !isNaN(Date.parse(val)), 'Invalid date').nullable().optional(),
-  notes: z.string().max(10000).nullable().optional(),
-  relationshipToUserId: z.string().nullable().optional(),
-  groupIds: z.array(z.string()).optional(),
-  connectedThroughId: z.string().optional(),
+  lastContact: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.iso.date({ error: 'Invalid date' }).nullable().optional(),
+  ).describe('Date of last contact'),
+  notes: z.string().max(10000).nullable().optional()
+    .describe('Markdown-formatted notes'),
+  relationshipToUserId: z.string().nullable().optional()
+    .describe('ID of the relationship type to the user'),
+  groupIds: z.array(z.string()).optional()
+    .describe('Group IDs to add this person to'),
+  connectedThroughId: z.string().optional()
+    .describe('If set, creates a person-to-person relationship instead of person-to-user'),
   importantDates: z.array(importantDateSchema).optional(),
   contactReminderEnabled: z.boolean().optional(),
   contactReminderInterval: z.number().int().min(1).max(99).nullable().optional(),
@@ -88,8 +97,10 @@ export const createPersonSchema = z.object({
 export const updatePersonSchema = createPersonSchema.partial();
 
 export const deletePersonSchema = z.object({
-  deleteOrphans: z.boolean().optional(),
-  orphanIds: z.array(z.string()).optional(),
+  deleteOrphans: z.boolean().optional()
+    .describe('Also delete people only connected through this person'),
+  orphanIds: z.array(z.string()).optional()
+    .describe('Specific orphan IDs to delete'),
 });
 
 // ============================================
@@ -100,7 +111,8 @@ export const createGroupSchema = z.object({
   name: z.string().min(1, 'Group name is required').max(100),
   description: z.string().max(500).nullable().optional(),
   color: hexColorSchema,
-  peopleIds: z.array(z.string()).optional(), // Optional array of person IDs to add to the group
+  peopleIds: z.array(z.string()).optional()
+    .describe('Person IDs to add as initial members'),
 });
 
 export const updateGroupSchema = z.object({
@@ -118,9 +130,12 @@ export const addGroupMemberSchema = z.object({
 // ============================================
 
 export const createRelationshipSchema = z.object({
-  personId: z.string().min(1, 'Person ID is required'),
-  relatedPersonId: z.string().min(1, 'Related person ID is required'),
-  relationshipTypeId: z.string().nullable().optional(),
+  personId: z.string().min(1, 'Person ID is required')
+    .describe('First person ID'),
+  relatedPersonId: z.string().min(1, 'Related person ID is required')
+    .describe('Second person ID'),
+  relationshipTypeId: z.string().nullable().optional()
+    .describe('Relationship type ID'),
   notes: z.string().max(1000).nullable().optional(),
 });
 
@@ -134,12 +149,17 @@ export const updateRelationshipSchema = z.object({
 // ============================================
 
 export const createRelationshipTypeSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(50),
-  label: z.string().min(1, 'Label is required').max(50),
+  name: z.string().min(1, 'Name is required').max(50)
+    .describe('Internal name (will be upper-cased)'),
+  label: z.string().min(1, 'Label is required').max(50)
+    .describe('Display label'),
   color: hexColorSchema,
-  inverseId: z.string().nullable().optional(),
-  inverseLabel: z.string().max(50).optional(),
-  symmetric: z.boolean().optional(),
+  inverseId: z.string().nullable().optional()
+    .describe('ID of existing inverse type'),
+  inverseLabel: z.string().max(50).optional()
+    .describe('Label for a new inverse type to auto-create'),
+  symmetric: z.boolean().optional()
+    .describe('If true, the type is its own inverse'),
 });
 
 export const updateRelationshipTypeSchema = createRelationshipTypeSchema;
@@ -226,14 +246,16 @@ export const importDataSchema = z.object({
 // Important Date schemas
 // ============================================
 
-export const updateImportantDateSchema = z.object({
+export const createImportantDateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
-  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+  date: z.iso.date({ error: 'Invalid date' }),
   reminderEnabled: z.boolean().optional(),
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
 });
+
+export const updateImportantDateSchema = createImportantDateSchema;
 
 // ============================================
 // Helper function for API validation
