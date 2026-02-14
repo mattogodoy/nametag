@@ -8,11 +8,12 @@ import crypto from 'crypto';
 interface SyncResult {
   imported: number;
   exported: number;
-  updated: number;
+  updatedLocally: number;  // Contacts updated in Nametag from server changes
+  updatedRemotely: number; // Contacts updated on server from Nametag changes
   conflicts: number;
   errors: number;
   errorMessages: string[];
-  pendingImports?: number; // New contacts discovered and added to pending imports
+  pendingImports?: number;
 }
 
 /**
@@ -33,7 +34,8 @@ export async function syncFromServer(
   const result: SyncResult = {
     imported: 0,
     exported: 0,
-    updated: 0,
+    updatedLocally: 0,
+    updatedRemotely: 0,
     conflicts: 0,
     errors: 0,
     errorMessages: [],
@@ -50,9 +52,6 @@ export async function syncFromServer(
       throw new Error('CardDAV connection not found');
     }
 
-    if (!connection.syncEnabled) {
-      throw new Error('Sync is disabled for this connection');
-    }
 
     // Create CardDAV client
     const client = await createCardDavClient(connection);
@@ -141,9 +140,17 @@ export async function syncFromServer(
               },
             });
 
+            // Update etag so the next sync won't detect the same remote change.
+            // This is critical: without updating the etag, resolving the conflict
+            // and syncing again would recreate the same conflict because
+            // mapping.etag would still differ from the server's etag.
             await prisma.cardDavMapping.update({
               where: { id: mapping.id },
-              data: { syncStatus: 'conflict' },
+              data: {
+                syncStatus: 'conflict',
+                etag: vCard.etag,
+                href: vCard.url,
+              },
             });
 
             result.conflicts++;
@@ -164,7 +171,7 @@ export async function syncFromServer(
               },
             });
 
-            result.updated++;
+            result.updatedLocally++;
           }
           // If only local changed, we'll push in syncToServer
         } else {
@@ -213,6 +220,12 @@ export async function syncFromServer(
       },
     });
 
+    // Return the total pending imports count (not just new ones from this sync)
+    const totalPending = await prisma.cardDavPendingImport.count({
+      where: { connectionId: connection.id },
+    });
+    result.pendingImports = totalPending;
+
     return result;
   } catch (error) {
     console.error('Sync from server failed:', error);
@@ -251,7 +264,8 @@ export async function syncToServer(
   const result: SyncResult = {
     imported: 0,
     exported: 0,
-    updated: 0,
+    updatedLocally: 0,
+    updatedRemotely: 0,
     conflicts: 0,
     errors: 0,
     errorMessages: [],
@@ -268,9 +282,6 @@ export async function syncToServer(
       throw new Error('CardDAV connection not found');
     }
 
-    if (!connection.syncEnabled) {
-      throw new Error('Sync is disabled for this connection');
-    }
 
     // Create CardDAV client
     const client = await createCardDavClient(connection);
@@ -340,7 +351,7 @@ export async function syncToServer(
             () => client.updateVCard(vCard, vCardData),
             { maxAttempts: 3 }
           );
-          result.updated++;
+          result.updatedRemotely++;
         } else {
           // Create new vCard with retry
           const filename = `${mapping.uid || uuidv4()}.vcf`;
@@ -389,6 +400,78 @@ export async function syncToServer(
       }
     }
 
+    // Export unmapped contacts (created in Nametag before connecting to CardDAV)
+    const mappedPersonIds = await prisma.cardDavMapping.findMany({
+      where: { connectionId: connection.id },
+      select: { personId: true },
+    });
+    const mappedIds = mappedPersonIds.map((m) => m.personId);
+
+    const unmappedPersons = await prisma.person.findMany({
+      where: {
+        userId,
+        ...(mappedIds.length > 0 ? { id: { notIn: mappedIds } } : {}),
+      },
+      include: {
+        phoneNumbers: true,
+        emails: true,
+        addresses: true,
+        urls: true,
+        imHandles: true,
+        locations: true,
+        customFields: true,
+        importantDates: true,
+        relationshipsFrom: {
+          include: { relatedPerson: true },
+        },
+        groups: {
+          include: { group: true },
+        },
+      },
+    });
+
+    for (const person of unmappedPersons) {
+      try {
+        const vCardData = personToVCard(person);
+        const uid = person.uid || uuidv4();
+        const filename = `${uid}.vcf`;
+
+        const created = await withRetry(
+          () => client.createVCard(addressBook, vCardData, filename),
+          { maxAttempts: 3 }
+        );
+
+        // Ensure person has a UID
+        if (!person.uid) {
+          await prisma.person.update({
+            where: { id: person.id },
+            data: { uid },
+          });
+        }
+
+        // Create mapping
+        await prisma.cardDavMapping.create({
+          data: {
+            connectionId: connection.id,
+            personId: person.id,
+            uid,
+            href: created.url,
+            etag: created.etag,
+            syncStatus: 'synced',
+            lastSyncedAt: new Date(),
+          },
+        });
+
+        result.exported++;
+      } catch (error) {
+        console.error('Error exporting unmapped contact:', error);
+        result.errors++;
+        result.errorMessages.push(
+          `Failed to export ${person.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+    }
+
     return result;
   } catch (error) {
     console.error('Sync to server failed:', error);
@@ -431,7 +514,8 @@ export async function bidirectionalSync(userId: string): Promise<SyncResult> {
   return {
     imported: pullResult.imported,
     exported: pushResult.exported,
-    updated: pullResult.updated + pushResult.updated,
+    updatedLocally: pullResult.updatedLocally + pushResult.updatedLocally,
+    updatedRemotely: pullResult.updatedRemotely + pushResult.updatedRemotely,
     conflicts: pullResult.conflicts + pushResult.conflicts,
     errors: pullResult.errors + pushResult.errors,
     errorMessages: [

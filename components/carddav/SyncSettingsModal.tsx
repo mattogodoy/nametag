@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 interface CardDavConnection {
   id: string;
@@ -35,9 +34,7 @@ export default function SyncSettingsModal({
   const [importMode, setImportMode] = useState(currentSettings?.importMode || 'manual');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [disconnectError, setDisconnectError] = useState<string | null>(null);
+
 
   // Reset form when modal opens or settings change
   useEffect(() => {
@@ -81,32 +78,7 @@ export default function SyncSettingsModal({
     }
   };
 
-  const handleDisconnect = async () => {
-    setIsDisconnecting(true);
-    setDisconnectError(null);
-
-    try {
-      const response = await fetch('/api/carddav/connection', {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setDisconnectError(data.error || t('disconnectFailed'));
-      } else {
-        router.refresh();
-        setShowDisconnectConfirm(false);
-        onClose();
-      }
-    } catch (_err) {
-      setDisconnectError(t('disconnectError'));
-    } finally {
-      setIsDisconnecting(false);
-    }
-  };
-
   return (
-    <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
@@ -226,41 +198,7 @@ export default function SyncSettingsModal({
             </Button>
           </div>
 
-          {/* Disconnect section */}
-          <div className="pt-4 border-t border-border">
-            <Button
-              type="button"
-              onClick={() => setShowDisconnectConfirm(true)}
-              disabled={isSaving}
-              variant="danger"
-              fullWidth
-            >
-              {t('disconnectButton')}
-            </Button>
-          </div>
         </div>
       </Modal>
-
-      {/* Disconnect confirmation modal */}
-      <ConfirmationModal
-        isOpen={showDisconnectConfirm}
-        onClose={() => {
-          setShowDisconnectConfirm(false);
-          setDisconnectError(null);
-        }}
-        onConfirm={handleDisconnect}
-        title={t('disconnectConfirmTitle')}
-        confirmText={t('disconnect')}
-        cancelText={t('cancel')}
-        isLoading={isDisconnecting}
-        loadingText={t('saving')}
-        error={disconnectError}
-        variant="danger"
-      >
-        <p className="text-muted">
-          {t('disconnectConfirmMessage')}
-        </p>
-      </ConfirmationModal>
-    </>
   );
 }

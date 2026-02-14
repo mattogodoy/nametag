@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { CARDDAV_PROVIDERS } from '@/lib/carddav/types';
+import ConnectionWizard from './ConnectionWizard';
 
 interface CardDavConnection {
   id: string;
@@ -31,24 +33,51 @@ export default function ConnectionModal({
   onClose,
   existingConnection,
 }: ConnectionModalProps) {
+  // Use wizard for new connections
+  if (!existingConnection) {
+    return <ConnectionWizard isOpen={isOpen} onClose={onClose} />;
+  }
+
+  // Edit flow uses the original single-form modal
+  return (
+    <ConnectionEditModal
+      isOpen={isOpen}
+      onClose={onClose}
+      existingConnection={existingConnection}
+    />
+  );
+}
+
+function ConnectionEditModal({
+  isOpen,
+  onClose,
+  existingConnection,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  existingConnection: CardDavConnection;
+}) {
   const t = useTranslations('settings.carddav');
   const router = useRouter();
 
-  const [provider, setProvider] = useState(existingConnection?.provider || 'custom');
-  const [serverUrl, setServerUrl] = useState(existingConnection?.serverUrl || '');
-  const [username, setUsername] = useState(existingConnection?.username || '');
+  const [provider, setProvider] = useState(existingConnection.provider || 'custom');
+  const [serverUrl, setServerUrl] = useState(existingConnection.serverUrl || '');
+  const [username, setUsername] = useState(existingConnection.username || '');
   const [password, setPassword] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [error, setError] = useState('');
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
 
   // Reset form when modal opens/closes or connection changes
   useEffect(() => {
     if (isOpen) {
-      setProvider(existingConnection?.provider || 'custom');
-      setServerUrl(existingConnection?.serverUrl || '');
-      setUsername(existingConnection?.username || '');
+      setProvider(existingConnection.provider || 'custom');
+      setServerUrl(existingConnection.serverUrl || '');
+      setUsername(existingConnection.username || '');
       setPassword('');
       setTestResult(null);
       setError('');
@@ -117,7 +146,7 @@ export default function ConnectionModal({
 
     try {
       const response = await fetch('/api/carddav/connection', {
-        method: existingConnection ? 'PUT' : 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serverUrl: normalizedUrl,
@@ -150,14 +179,39 @@ export default function ConnectionModal({
     return trimmed;
   };
 
+  const handleDisconnect = async () => {
+    setIsDisconnecting(true);
+    setDisconnectError(null);
+
+    try {
+      const response = await fetch('/api/carddav/connection', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setDisconnectError(data.error || t('disconnectFailed'));
+      } else {
+        router.refresh();
+        setShowDisconnectConfirm(false);
+        onClose();
+      }
+    } catch (_err) {
+      setDisconnectError(t('disconnectError'));
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
   const isFormComplete = serverUrl && username && (password || existingConnection);
   const canSave = testResult?.success === true && !isSaving;
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={existingConnection ? t('connectionModalEditTitle') : t('connectionModalTitle')}
+      title={t('connectionModalEditTitle')}
       size="lg"
     >
       <div className="space-y-6">
@@ -180,18 +234,6 @@ export default function ConnectionModal({
           </select>
         </div>
 
-        {/* How to connect instructions (always visible) */}
-        {provider !== 'custom' && CARDDAV_PROVIDERS[provider] && (
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-              {t('howToConnect')}
-            </h3>
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              {CARDDAV_PROVIDERS[provider].help}
-            </p>
-          </div>
-        )}
-
         {/* Server URL */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -206,7 +248,7 @@ export default function ConnectionModal({
             }}
             placeholder="https://carddav.example.com"
             required
-            disabled={provider !== 'custom' && provider !== 'nextcloud'}
+            disabled={provider !== 'custom'}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -233,11 +275,9 @@ export default function ConnectionModal({
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             {t('passwordLabel')}
-            {existingConnection && (
-              <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                ({t('leaveBlankToKeep')})
-              </span>
-            )}
+            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+              ({t('leaveBlankToKeep')})
+            </span>
           </label>
           <input
             type="password"
@@ -247,12 +287,11 @@ export default function ConnectionModal({
               setTestResult(null);
             }}
             placeholder={t('passwordPlaceholder')}
-            required={!existingConnection}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {CARDDAV_PROVIDERS[provider]?.requiresAppPassword && (
             <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
-              ⚠️ {t('appPasswordRequired')}
+              {t('appPasswordRequired')}
             </p>
           )}
         </div>
@@ -267,7 +306,7 @@ export default function ConnectionModal({
             }`}
           >
             <p className="font-medium">
-              {testResult.success ? '✓' : '✗'} {testResult.message}
+              {testResult.success ? '\u2713' : '\u2717'} {testResult.message}
             </p>
           </div>
         )}
@@ -277,15 +316,6 @@ export default function ConnectionModal({
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {t('fillAllFields')}
-            </p>
-          </div>
-        )}
-
-        {/* Save disabled message */}
-        {isFormComplete && !testResult?.success && (
-          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              {t('saveDisabledMessage')}
             </p>
           </div>
         )}
@@ -313,7 +343,7 @@ export default function ConnectionModal({
             onClick={handleSave}
             disabled={!canSave}
           >
-            {isSaving ? t('saving') : existingConnection ? t('update') : t('save')}
+            {isSaving ? t('saving') : t('update')}
           </Button>
 
           <Button
@@ -324,7 +354,41 @@ export default function ConnectionModal({
             {t('cancel')}
           </Button>
         </div>
+
+        {/* Disconnect section */}
+        <div className="pt-4 border-t border-border">
+          <Button
+            type="button"
+            onClick={() => setShowDisconnectConfirm(true)}
+            disabled={isSaving}
+            variant="danger"
+            fullWidth
+          >
+            {t('disconnectButton')}
+          </Button>
+        </div>
       </div>
     </Modal>
+
+    <ConfirmationModal
+      isOpen={showDisconnectConfirm}
+      onClose={() => {
+        setShowDisconnectConfirm(false);
+        setDisconnectError(null);
+      }}
+      onConfirm={handleDisconnect}
+      title={t('disconnectConfirmTitle')}
+      confirmText={t('disconnect')}
+      cancelText={t('cancel')}
+      isLoading={isDisconnecting}
+      loadingText={t('saving')}
+      error={disconnectError}
+      variant="danger"
+    >
+      <p className="text-muted">
+        {t('disconnectConfirmMessage')}
+      </p>
+    </ConfirmationModal>
+    </>
   );
 }

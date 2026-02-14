@@ -112,6 +112,39 @@ export async function POST(request: Request) {
           }
         }
 
+        // Check if an active (non-deleted) person with this UID already exists
+        // This handles reconnection: same server contacts, new connection ID
+        if (parsedData.uid) {
+          const existingPerson = await prisma.person.findFirst({
+            where: {
+              uid: parsedData.uid,
+              userId: session.user.id,
+            },
+          });
+
+          if (existingPerson) {
+            // Person already exists — just create a new mapping and clean up
+            await prisma.cardDavMapping.create({
+              data: {
+                connectionId: connection.id,
+                personId: existingPerson.id,
+                uid: parsedData.uid,
+                href: pendingImport.href,
+                etag: pendingImport.etag,
+                syncStatus: 'synced',
+                lastSyncedAt: new Date(),
+              },
+            });
+
+            await prisma.cardDavPendingImport.delete({
+              where: { id: pendingImport.id },
+            });
+
+            results.skipped++;
+            continue;
+          }
+        }
+
         // Check if a soft-deleted person with this UID exists (O(1) lookup)
         const softDeletedPerson = parsedData.uid
           ? softDeletedMap.get(parsedData.uid) ?? null

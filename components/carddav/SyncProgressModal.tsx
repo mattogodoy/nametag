@@ -15,7 +15,8 @@ interface SyncProgressModalProps {
 interface SyncResult {
   imported: number;
   exported: number;
-  updated: number;
+  updatedLocally: number;
+  updatedRemotely: number;
   conflicts: number;
   errors: number;
   pendingImports: number;
@@ -65,12 +66,13 @@ export default function SyncProgressModal({
         setError(data.error || t('syncFailed'));
       } else {
         setSyncResult({
-          imported: data.imported || 0,
-          exported: data.exported || 0,
-          updated: data.updated || 0,
-          conflicts: data.conflicts || 0,
-          errors: data.errors || 0,
-          pendingImports: data.pendingImports || 0,
+          imported: Number(data.imported) || 0,
+          exported: Number(data.exported) || 0,
+          updatedLocally: Number(data.updatedLocally) || 0,
+          updatedRemotely: Number(data.updatedRemotely) || 0,
+          conflicts: Number(data.conflicts) || 0,
+          errors: Number(data.errors) || 0,
+          pendingImports: Number(data.pendingImports) || 0,
         });
         router.refresh();
       }
@@ -130,21 +132,39 @@ export default function SyncProgressModal({
 
               <div className="space-y-3">
                 {/* Imported */}
-                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-muted">{t('importedCount', { count: syncResult.imported })}</span>
-                  <span className="text-lg font-bold text-foreground">{syncResult.imported}</span>
+                <div className="flex justify-between items-start p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted">{t('importedCount', { count: syncResult.imported })}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('importedTooltip')}</p>
+                  </div>
+                  <span className="text-lg font-bold text-foreground ml-4">{syncResult.imported}</span>
                 </div>
 
                 {/* Exported */}
-                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-muted">{t('exportedCount', { count: syncResult.exported })}</span>
-                  <span className="text-lg font-bold text-foreground">{syncResult.exported}</span>
+                <div className="flex justify-between items-start p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted">{t('exportedCount', { count: syncResult.exported })}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('exportedTooltip')}</p>
+                  </div>
+                  <span className="text-lg font-bold text-foreground ml-4">{syncResult.exported}</span>
                 </div>
 
-                {/* Updated */}
-                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-muted">{t('updatedCount', { count: syncResult.updated })}</span>
-                  <span className="text-lg font-bold text-foreground">{syncResult.updated}</span>
+                {/* Updated locally (from server) */}
+                <div className="flex justify-between items-start p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted">{t('updatedLocallyCount', { count: syncResult.updatedLocally })}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('updatedLocallyTooltip')}</p>
+                  </div>
+                  <span className="text-lg font-bold text-foreground ml-4">{syncResult.updatedLocally}</span>
+                </div>
+
+                {/* Updated remotely (to server) */}
+                <div className="flex justify-between items-start p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted">{t('updatedRemotelyCount', { count: syncResult.updatedRemotely })}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('updatedRemotelyTooltip')}</p>
+                  </div>
+                  <span className="text-lg font-bold text-foreground ml-4">{syncResult.updatedRemotely}</span>
                 </div>
 
                 {/* Conflicts */}

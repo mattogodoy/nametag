@@ -169,8 +169,7 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
     where: { userId: person.userId },
   });
 
-  if (!connection || !connection.syncEnabled || !connection.autoExportNew) {
-    // Auto-update not enabled, skip
+  if (!connection) {
     return;
   }
 
@@ -180,8 +179,25 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
   });
 
   if (!mapping) {
-    // Not exported yet, try auto-export
-    await autoExportPerson(personId);
+    // No mapping — mark lastLocalChange for sync to pick up later,
+    // or auto-export if enabled
+    if (connection.autoExportNew) {
+      await autoExportPerson(personId);
+    }
+    return;
+  }
+
+  // Always mark as locally changed so manual sync can pick it up
+  await prisma.cardDavMapping.update({
+    where: { id: mapping.id },
+    data: {
+      lastLocalChange: new Date(),
+      syncStatus: 'pending',
+    },
+  });
+
+  // If auto-sync is disabled, the change will be pushed on next manual sync
+  if (!connection.syncEnabled) {
     return;
   }
 
@@ -223,7 +239,6 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
         etag: updated.etag,
         syncStatus: 'synced',
         lastSyncedAt: new Date(),
-        lastLocalChange: new Date(),
         localVersion: localHash,
       },
     });

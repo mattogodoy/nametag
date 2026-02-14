@@ -25,16 +25,27 @@ export interface CardDavClientInterface {
 }
 
 /**
- * Create a CardDAV client for a given connection
+ * Resolve a potentially relative URL against a base server URL.
  */
+function resolveUrl(base: string, path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  // Strip trailing slash from base, ensure path starts with /
+  const origin = new URL(base).origin;
+  const resolved = path.startsWith('/') ? path : `/${path}`;
+  return `${origin}${resolved}`;
+}
+
 export async function createCardDavClient(
   connection: CardDavConnection
 ): Promise<CardDavClientInterface> {
   // Decrypt the password from database
   const password = decryptPassword(connection.password);
+  const serverUrl = connection.serverUrl;
 
   const client = await createDAVClient({
-    serverUrl: connection.serverUrl,
+    serverUrl,
     credentials: {
       username: connection.username,
       password,
@@ -46,13 +57,18 @@ export async function createCardDavClient(
   return {
     async fetchAddressBooks(): Promise<AddressBook[]> {
       const addressBooks = await client.fetchAddressBooks();
-      return addressBooks.map((ab: DAVAddressBook) => ({
-        url: ab.url,
-        displayName: typeof ab.displayName === 'string' ? ab.displayName : undefined,
-        description: ab.description,
-        syncToken: ab.syncToken,
-        raw: ab,
-      }));
+      return addressBooks.map((ab: DAVAddressBook) => {
+        // Ensure address book URL is absolute for downstream use
+        const absoluteUrl = resolveUrl(serverUrl, ab.url);
+        const resolvedAb = { ...ab, url: absoluteUrl };
+        return {
+          url: absoluteUrl,
+          displayName: typeof ab.displayName === 'string' ? ab.displayName : undefined,
+          description: ab.description,
+          syncToken: ab.syncToken,
+          raw: resolvedAb,
+        };
+      });
     },
 
     async fetchVCards(addressBook: AddressBook): Promise<VCard[]> {
@@ -61,7 +77,8 @@ export async function createCardDavClient(
       });
 
       return vCards.map((vc: DAVVCard) => ({
-        url: vc.url,
+        // Ensure vCard URL is absolute
+        url: resolveUrl(serverUrl, vc.url),
         etag: vc.etag || '',
         data: vc.data || '',
       }));
@@ -72,34 +89,37 @@ export async function createCardDavClient(
       vCardData: string,
       filename: string
     ): Promise<VCard> {
+      // Use tsdav's high-level createVCard which handles auth headers correctly.
+      // The address book URL is already absolute from fetchAddressBooks.
       const response = await client.createVCard({
         addressBook: addressBook.raw,
-        filename,
         vCardString: vCardData,
+        filename,
       });
 
-      // Extract URL and etag from response
-      const url = response.url;
-      const etag = response.headers.get('etag') || '';
+      const etag = response.headers?.get('etag') || '';
+      // Reconstruct the vCard URL the same way tsdav does
+      const vcardUrl = new URL(filename, addressBook.raw.url).href;
 
       return {
-        url,
+        url: vcardUrl,
         etag,
         data: vCardData,
       };
     },
 
     async updateVCard(vCard: VCard, newData: string): Promise<VCard> {
+      // Use tsdav's high-level updateVCard which handles auth headers correctly.
+      const absoluteUrl = resolveUrl(serverUrl, vCard.url);
       const response = await client.updateVCard({
         vCard: {
-          url: vCard.url,
+          url: absoluteUrl,
           etag: vCard.etag,
-          data: newData, // Updated vCard data
-        },
+          data: newData,
+        } as DAVVCard,
       });
 
-      // Extract etag from response
-      const etag = response.headers.get('etag') || vCard.etag;
+      const etag = response.headers?.get('etag') || vCard.etag;
 
       return {
         url: vCard.url,
@@ -109,12 +129,13 @@ export async function createCardDavClient(
     },
 
     async deleteVCard(vCard: VCard): Promise<void> {
+      const absoluteUrl = resolveUrl(serverUrl, vCard.url);
       await client.deleteVCard({
         vCard: {
-          url: vCard.url,
+          url: absoluteUrl,
           etag: vCard.etag,
-          data: vCard.data,
-        },
+          data: '',
+        } as DAVVCard,
       });
     },
   };

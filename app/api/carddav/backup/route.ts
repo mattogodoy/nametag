@@ -1,0 +1,90 @@
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { createDAVClient } from 'tsdav';
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { serverUrl, username, password } = body;
+
+    if (!serverUrl || !username || !password) {
+      return NextResponse.json(
+        { error: 'Server URL, username, and password are required' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const client = await createDAVClient({
+        serverUrl,
+        credentials: {
+          username,
+          password,
+        },
+        authMethod: 'Basic',
+        defaultAccountType: 'carddav',
+      });
+
+      const addressBooks = await client.fetchAddressBooks();
+
+      const allVCards: string[] = [];
+
+      for (const addressBook of addressBooks) {
+        const vcards = await client.fetchVCards({
+          addressBook,
+        });
+
+        for (const vcard of vcards) {
+          if (vcard.data) {
+            allVCards.push(vcard.data);
+          }
+        }
+      }
+
+      const vcfContent = allVCards.join('\r\n');
+
+      return new Response(vcfContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/vcard; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="nametag-backup.vcf"',
+          'X-Contact-Count': String(allVCards.length),
+        },
+      });
+    } catch (error) {
+      console.error('CardDAV backup failed:', error);
+
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('unauthorized')) {
+          return NextResponse.json(
+            { error: 'Authentication failed. Please check your credentials.' },
+            { status: 401 }
+          );
+        }
+        if (error.message.includes('404') || error.message.includes('not found')) {
+          return NextResponse.json(
+            { error: 'Server not found. Please check the server URL.' },
+            { status: 404 }
+          );
+        }
+      }
+
+      return NextResponse.json(
+        { error: 'Failed to fetch contacts from server.' },
+        { status: 500 }
+      );
+    }
+  } catch (error) {
+    console.error('Error in CardDAV backup:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

@@ -13,21 +13,6 @@ interface Conflict {
     person: {
       name?: string | null;
       surname?: string | null;
-      nickname?: string | null;
-      organization?: string | null;
-      jobTitle?: string | null;
-      notes?: string | null;
-      phoneNumbers: Array<{ type: string; number: string }>;
-      emails: Array<{ type: string; email: string }>;
-      addresses: Array<{
-        type: string;
-        streetLine1: string | null;
-        streetLine2: string | null;
-        locality: string | null;
-        region: string | null;
-        postalCode: string | null;
-        country: string | null;
-      }>;
     };
   };
 }
@@ -35,9 +20,18 @@ interface Conflict {
 interface PersonData {
   name?: string | null;
   surname?: string | null;
+  middleName?: string | null;
+  prefix?: string | null;
+  suffix?: string | null;
+  secondLastName?: string | null;
   nickname?: string | null;
   organization?: string | null;
   jobTitle?: string | null;
+  gender?: string | null;
+  birthday?: string | null;
+  anniversary?: string | null;
+  photo?: string | null;
+  notes?: string | null;
   phoneNumbers?: Array<{ type: string; number: string }>;
   emails?: Array<{ type: string; email: string }>;
   addresses?: Array<{
@@ -46,16 +40,41 @@ interface PersonData {
     streetLine2?: string | null;
     locality?: string | null;
     region?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
   }>;
-  notes?: string | null;
+  urls?: Array<{ type: string; url: string }>;
+  imHandles?: Array<{ protocol: string; handle: string }>;
+  locations?: Array<{ type: string; latitude: number; longitude: number }>;
+  customFields?: Array<{ key: string; value: string }>;
 }
 
 interface ConflictListProps {
   conflicts: Conflict[];
 }
 
+type ScalarFieldKey = 'name' | 'surname' | 'middleName' | 'prefix' | 'suffix' |
+  'secondLastName' | 'nickname' | 'organization' | 'jobTitle' | 'gender' |
+  'birthday' | 'anniversary' | 'notes';
+
+const SCALAR_FIELDS: Array<{ key: ScalarFieldKey; label: string }> = [
+  { key: 'name', label: 'name' },
+  { key: 'surname', label: 'surname' },
+  { key: 'middleName', label: 'middleName' },
+  { key: 'prefix', label: 'prefix' },
+  { key: 'suffix', label: 'suffix' },
+  { key: 'secondLastName', label: 'secondLastName' },
+  { key: 'nickname', label: 'nickname' },
+  { key: 'organization', label: 'organization' },
+  { key: 'jobTitle', label: 'jobTitle' },
+  { key: 'gender', label: 'gender' },
+  { key: 'birthday', label: 'birthday' },
+  { key: 'anniversary', label: 'anniversary' },
+  { key: 'notes', label: 'notes' },
+];
+
 export default function ConflictList({ conflicts }: ConflictListProps) {
-  const t = useTranslations('carddav.conflicts');
+  const t = useTranslations('settings.carddav.conflicts');
   const router = useRouter();
   const [resolving, setResolving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +95,6 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
         throw new Error(data.error || 'Failed to resolve conflict');
       }
 
-      // Refresh the page to show updated list
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resolve conflict');
@@ -93,28 +111,98 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
     }
   };
 
-  const formatPhones = (phones?: Array<{ type: string; number: string }>) => {
-    if (!phones || phones.length === 0) return t('none');
+  const formatScalar = (value: string | null | undefined): string => {
+    if (value === null || value === undefined || value === '') return '';
+    // Format date strings
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+      try {
+        return new Date(value).toLocaleDateString();
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  };
+
+  const formatPhones = (phones?: Array<{ type: string; number: string }>): string => {
+    if (!phones || phones.length === 0) return '';
     return phones.map(p => `${p.number} (${p.type})`).join(', ');
   };
 
-  const formatEmails = (emails?: Array<{ type: string; email: string }>) => {
-    if (!emails || emails.length === 0) return t('none');
+  const formatEmails = (emails?: Array<{ type: string; email: string }>): string => {
+    if (!emails || emails.length === 0) return '';
     return emails.map(e => `${e.email} (${e.type})`).join(', ');
   };
 
-  const formatAddresses = (addresses?: Array<{
-    type: string;
-    streetLine1?: string | null;
-    streetLine2?: string | null;
-    locality?: string | null;
-    region?: string | null;
-  }>) => {
-    if (!addresses || addresses.length === 0) return t('none');
+  const formatAddresses = (addresses?: PersonData['addresses']): string => {
+    if (!addresses || addresses.length === 0) return '';
     return addresses.map(a => {
-      const parts = [a.streetLine1, a.streetLine2, a.locality, a.region].filter(Boolean);
+      const parts = [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country].filter(Boolean);
       return `${parts.join(', ')} (${a.type})`;
     }).join(' | ');
+  };
+
+  const formatUrls = (urls?: Array<{ type: string; url: string }>): string => {
+    if (!urls || urls.length === 0) return '';
+    return urls.map(u => `${u.url} (${u.type})`).join(', ');
+  };
+
+  const formatImHandles = (handles?: Array<{ protocol: string; handle: string }>): string => {
+    if (!handles || handles.length === 0) return '';
+    return handles.map(h => `${h.handle} (${h.protocol})`).join(', ');
+  };
+
+  const formatLocations = (locations?: Array<{ type: string; latitude: number; longitude: number }>): string => {
+    if (!locations || locations.length === 0) return '';
+    return locations.map(l => `${l.latitude}, ${l.longitude} (${l.type})`).join(', ');
+  };
+
+  const formatCustomFields = (fields?: Array<{ key: string; value: string }>): string => {
+    if (!fields || fields.length === 0) return '';
+    return fields.map(f => `${f.key}: ${f.value}`).join(', ');
+  };
+
+  type MultiValueField = {
+    label: string;
+    format: (data: PersonData) => string;
+  };
+
+  const MULTI_VALUE_FIELDS: MultiValueField[] = [
+    { label: 'phones', format: (d) => formatPhones(d.phoneNumbers) },
+    { label: 'emails', format: (d) => formatEmails(d.emails) },
+    { label: 'addresses', format: (d) => formatAddresses(d.addresses) },
+    { label: 'urls', format: (d) => formatUrls(d.urls) },
+    { label: 'imHandles', format: (d) => formatImHandles(d.imHandles) },
+    { label: 'locations', format: (d) => formatLocations(d.locations) },
+    { label: 'customFields', format: (d) => formatCustomFields(d.customFields) },
+  ];
+
+  const renderFieldRow = (
+    label: string,
+    localValue: string,
+    remoteValue: string,
+  ) => {
+    // Skip rows where both sides are empty
+    if (!localValue && !remoteValue) return null;
+
+    const isDifferent = localValue !== remoteValue;
+
+    return (
+      <tr key={label} className={isDifferent ? 'bg-amber-50 dark:bg-amber-900/10' : ''}>
+        <td className="px-3 py-2 text-sm font-medium text-muted whitespace-nowrap border-r border-gray-200 dark:border-gray-700">
+          {t(label)}
+          {isDifferent && (
+            <span className="ml-1.5 inline-block w-2 h-2 bg-amber-500 rounded-full" title={t('changed')} />
+          )}
+        </td>
+        <td className="px-3 py-2 text-sm text-foreground border-r border-gray-200 dark:border-gray-700 break-words">
+          {localValue || <span className="text-gray-400">{t('empty')}</span>}
+        </td>
+        <td className="px-3 py-2 text-sm text-foreground break-words">
+          {remoteValue || <span className="text-gray-400">{t('empty')}</span>}
+        </td>
+      </tr>
+    );
   };
 
   return (
@@ -146,144 +234,42 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-gray-700">
-              {/* Local Version */}
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <h4 className="font-semibold text-foreground">{t('localVersion')}</h4>
-                </div>
-
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="font-medium text-muted">{t('name')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {local.name} {local.surname}
-                    </span>
-                  </div>
-
-                  {local.nickname && (
-                    <div>
-                      <span className="font-medium text-muted">{t('nickname')}:</span>
-                      <span className="ml-2 text-foreground">{local.nickname}</span>
-                    </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="px-3 py-2 text-left text-xs font-medium text-muted uppercase border-r border-gray-200 dark:border-gray-700 w-36"></th>
+                    <th className="px-3 py-2 text-left text-xs font-medium border-r border-gray-200 dark:border-gray-700 w-1/2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                        <span className="text-blue-700 dark:text-blue-300">{t('localVersion')}</span>
+                      </div>
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium w-1/2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                        <span className="text-green-700 dark:text-green-300">{t('remoteVersion')}</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {SCALAR_FIELDS.map(({ key, label }) =>
+                    renderFieldRow(
+                      label,
+                      formatScalar(local[key]),
+                      formatScalar(remote[key]),
+                    )
                   )}
-
-                  {local.organization && (
-                    <div>
-                      <span className="font-medium text-muted">{t('organization')}:</span>
-                      <span className="ml-2 text-foreground">{local.organization}</span>
-                    </div>
+                  {MULTI_VALUE_FIELDS.map(({ label, format }) =>
+                    renderFieldRow(
+                      label,
+                      format(local),
+                      format(remote),
+                    )
                   )}
-
-                  {local.jobTitle && (
-                    <div>
-                      <span className="font-medium text-muted">{t('jobTitle')}:</span>
-                      <span className="ml-2 text-foreground">{local.jobTitle}</span>
-                    </div>
-                  )}
-
-                  <div>
-                    <span className="font-medium text-muted">{t('phones')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {formatPhones(local.phoneNumbers)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-muted">{t('emails')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {formatEmails(local.emails)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-muted">{t('addresses')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {formatAddresses(local.addresses)}
-                    </span>
-                  </div>
-
-                  {local.notes && (
-                    <div>
-                      <span className="font-medium text-muted">{t('notes')}:</span>
-                      <p className="ml-2 text-foreground mt-1 whitespace-pre-wrap">
-                        {local.notes.substring(0, 200)}
-                        {local.notes.length > 200 && '...'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Remote Version */}
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <h4 className="font-semibold text-foreground">{t('remoteVersion')}</h4>
-                </div>
-
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="font-medium text-muted">{t('name')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {remote.name} {remote.surname}
-                    </span>
-                  </div>
-
-                  {remote.nickname && (
-                    <div>
-                      <span className="font-medium text-muted">{t('nickname')}:</span>
-                      <span className="ml-2 text-foreground">{remote.nickname}</span>
-                    </div>
-                  )}
-
-                  {remote.organization && (
-                    <div>
-                      <span className="font-medium text-muted">{t('organization')}:</span>
-                      <span className="ml-2 text-foreground">{remote.organization}</span>
-                    </div>
-                  )}
-
-                  {remote.jobTitle && (
-                    <div>
-                      <span className="font-medium text-muted">{t('jobTitle')}:</span>
-                      <span className="ml-2 text-foreground">{remote.jobTitle}</span>
-                    </div>
-                  )}
-
-                  <div>
-                    <span className="font-medium text-muted">{t('phones')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {formatPhones(remote.phoneNumbers)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-muted">{t('emails')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {formatEmails(remote.emails)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-muted">{t('addresses')}:</span>
-                    <span className="ml-2 text-foreground">
-                      {formatAddresses(remote.addresses)}
-                    </span>
-                  </div>
-
-                  {remote.notes && (
-                    <div>
-                      <span className="font-medium text-muted">{t('notes')}:</span>
-                      <p className="ml-2 text-foreground mt-1 whitespace-pre-wrap">
-                        {remote.notes.substring(0, 200)}
-                        {remote.notes.length > 200 && '...'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                </tbody>
+              </table>
             </div>
 
             {/* Action Buttons */}

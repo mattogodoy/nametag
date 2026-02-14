@@ -165,7 +165,6 @@ export default function ConnectionStatus({
       <div className="flex flex-wrap gap-3">
         <Button
           onClick={onSyncClick}
-          disabled={!connection.syncEnabled}
           className="bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-green-600/50"
         >
           {t('syncNow')}
@@ -184,11 +183,6 @@ export default function ConnectionStatus({
         </Button>
       </div>
 
-      {!connection.syncEnabled && (
-        <p className="text-sm text-amber-600 dark:text-amber-400">
-          ⚠️ {t('syncDisabledWarning')}
-        </p>
-      )}
     </div>
   );
 }

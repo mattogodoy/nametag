@@ -155,11 +155,4 @@ export const CARDDAV_PROVIDERS: Record<string, CardDavProvider> = {
     help: 'Use email and password',
     requiresAppPassword: false,
   },
-  nextcloud: {
-    id: 'nextcloud',
-    name: 'Nextcloud/Radicale',
-    serverUrl: '', // User provides
-    help: 'Enter your server URL',
-    requiresAppPassword: false,
-  },
 };

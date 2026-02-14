@@ -79,7 +79,8 @@ export async function GET(request: Request) {
           connectionId: connection.id,
           imported: result.imported,
           exported: result.exported,
-          updated: result.updated,
+          updatedLocally: result.updatedLocally,
+          updatedRemotely: result.updatedRemotely,
           conflicts: result.conflicts,
           errors: result.errors,
         });
