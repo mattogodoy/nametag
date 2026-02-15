@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { personToVCard, vCardToPerson } from '@/lib/vcard';
 import { withRetry, categorizeError } from './retry';
+
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
@@ -432,22 +433,23 @@ export async function syncToServer(
 
     for (const person of unmappedPersons) {
       try {
-        const vCardData = personToVCard(person);
+        // Ensure person has a UID before generating vCard (CardDAV requires UID)
         const uid = person.uid || uuidv4();
+        if (!person.uid) {
+          await prisma.person.update({
+            where: { id: person.id },
+            data: { uid },
+          });
+          person.uid = uid;
+        }
+
+        const vCardData = personToVCard(person);
         const filename = `${uid}.vcf`;
 
         const created = await withRetry(
           () => client.createVCard(addressBook, vCardData, filename),
           { maxAttempts: 3 }
         );
-
-        // Ensure person has a UID
-        if (!person.uid) {
-          await prisma.person.update({
-            where: { id: person.id },
-            data: { uid },
-          });
-        }
 
         // Create mapping
         await prisma.cardDavMapping.create({

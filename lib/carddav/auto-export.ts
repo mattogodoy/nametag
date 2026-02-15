@@ -69,13 +69,14 @@ export async function autoExportPerson(personId: string): Promise<void> {
 
     const addressBook = addressBooks[0];
 
-    // Ensure person has a UID
+    // Ensure person has a UID before generating vCard (CardDAV requires UID)
     const uid: string = person.uid || uuidv4();
     if (!person.uid) {
       await prisma.person.update({
         where: { id: person.id },
         data: { uid },
       });
+      person.uid = uid;
     }
 
     // Convert to vCard
