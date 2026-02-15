@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
+import { syncToServer } from '@/lib/carddav/sync';
 
 interface RouteParams {
   params: Promise<{
@@ -182,6 +183,13 @@ export async function POST(request: Request, context: RouteParams) {
           syncStatus: 'pending',
           lastLocalChange: new Date(),
         },
+      });
+    }
+
+    // Push pending changes to server in the background
+    if (resolution === 'keep_local' || resolution === 'merged') {
+      syncToServer(session.user.id).catch((error) => {
+        console.error('Background sync after conflict resolution failed:', error);
       });
     }
 
