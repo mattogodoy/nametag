@@ -195,13 +195,17 @@ export function personToVCard(
     lines.push(buildV3Property('TITLE', {}, person.jobTitle));
   }
 
-  // PHOTO - export as URL if available
+  // PHOTO - export as embedded base64 or URL
   // vCard 3.0 supports both embedded base64 and external URLs
-  // For URLs, use VALUE=uri parameter
   if (opts.includePhoto && person.photo) {
     if (person.photo.startsWith('data:')) {
-      // Skip data URIs for now - would need base64 extraction and line folding
-      // This can be added later via addPhotoToVCard() helper
+      // Extract mime type and base64 data from data URI
+      const dataUriMatch = person.photo.match(/^data:(image\/[^;]+);base64,([\s\S]+)$/);
+      if (dataUriMatch) {
+        const type = dataUriMatch[1].split('/')[1].toUpperCase();
+        const base64Data = dataUriMatch[2].replace(/\s/g, '');
+        lines.push(`PHOTO;ENCODING=b;TYPE=${type}:${base64Data}`);
+      }
     } else {
       // Export as external URL reference
       lines.push(buildV3Property('PHOTO', { VALUE: 'uri' }, person.photo));
