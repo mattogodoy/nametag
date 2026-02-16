@@ -348,10 +348,19 @@ export async function syncToServer(
             etag: mapping.etag || '',
             data: '',
           };
-          await withRetry(
+          const updated = await withRetry(
             () => client.updateVCard(vCard, vCardData),
             { maxAttempts: 3 }
           );
+
+          // Store the new etag so the next sync doesn't see a false "remote changed"
+          await prisma.cardDavMapping.update({
+            where: { id: mapping.id },
+            data: {
+              etag: updated.etag,
+            },
+          });
+
           result.updatedRemotely++;
         } else {
           // Create new vCard with retry
