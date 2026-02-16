@@ -76,6 +76,9 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY --from=builder /app/node_modules/.prisma/ ./node_modules/.prisma/
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
+# Create photo storage directory with correct ownership
+RUN mkdir -p /app/data/photos && chown -R nextjs:nodejs /app/data
+
 # Copy and setup entrypoint script (as root before switching users)
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod 755 /usr/local/bin/docker-entrypoint.sh

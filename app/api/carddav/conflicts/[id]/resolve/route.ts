@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
 import { syncToServer } from '@/lib/carddav/sync';
+import { savePhoto } from '@/lib/photo-storage';
 
 interface RouteParams {
   params: Promise<{
@@ -147,6 +148,21 @@ export async function POST(request: Request, context: RouteParams) {
             : undefined,
         },
       });
+
+      // Save photo as file if present
+      if (parsedVCard.photo) {
+        const photoFilename = await savePhoto(
+          session.user.id,
+          conflict.mapping.personId,
+          parsedVCard.photo
+        );
+        if (photoFilename) {
+          await prisma.person.update({
+            where: { id: conflict.mapping.personId },
+            data: { photo: photoFilename },
+          });
+        }
+      }
 
       await prisma.cardDavConflict.update({
         where: { id },

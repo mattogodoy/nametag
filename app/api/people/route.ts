@@ -4,6 +4,7 @@ import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/a
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canCreateResource, canEnableReminder } from '@/lib/billing';
 import { autoExportPerson } from '@/lib/carddav/auto-export';
+import { savePhoto } from '@/lib/photo-storage';
 
 // GET /api/people - List all people for the current user
 export const GET = withAuth(async (request, session) => {
@@ -315,6 +316,18 @@ export const POST = withAuth(async (request, session) => {
         },
       },
     });
+
+    // Save photo as file if it's a data URI or URL
+    if (photo && (photo.startsWith('data:') || photo.startsWith('http://') || photo.startsWith('https://'))) {
+      const photoFilename = await savePhoto(session.user.id, person.id, photo);
+      if (photoFilename) {
+        await prisma.person.update({
+          where: { id: person.id },
+          data: { photo: photoFilename },
+        });
+        (person as Record<string, unknown>).photo = photoFilename;
+      }
+    }
 
     // If connected through another person, create bidirectional relationship
     if (connectedThroughId) {

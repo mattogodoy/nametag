@@ -5,6 +5,7 @@ import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canEnableReminder } from '@/lib/billing';
 import { autoUpdatePerson } from '@/lib/carddav/auto-export';
 import { deleteFromCardDav as deleteContactFromCardDav } from '@/lib/carddav/delete-contact';
+import { savePhoto, deletePersonPhotos, isPhotoFilename } from '@/lib/photo-storage';
 
 // GET /api/people/[id] - Get a single person
 export const GET = withAuth(async (_request, session, context) => {
@@ -163,7 +164,24 @@ export const PUT = withAuth(async (request, session, context) => {
     if (jobTitle !== undefined) updateData.jobTitle = jobTitle || null;
 
     // Other vCard fields
-    if (photo !== undefined) updateData.photo = photo || null;
+    if (photo !== undefined) {
+      if (photo === null || photo === '') {
+        // Photo being removed — delete old file
+        if (existingPerson.photo && isPhotoFilename(existingPerson.photo)) {
+          deletePersonPhotos(session.user.id, id).catch((err) =>
+            console.error('Failed to delete old photo:', err)
+          );
+        }
+        updateData.photo = null;
+      } else if (photo.startsWith('data:') || photo.startsWith('http://') || photo.startsWith('https://')) {
+        // New photo data — save as file
+        const photoFilename = await savePhoto(session.user.id, id, photo);
+        updateData.photo = photoFilename || photo;
+      } else {
+        // Already a filename or other value — keep as-is
+        updateData.photo = photo;
+      }
+    }
     if (gender !== undefined) updateData.gender = gender || null;
     if (anniversary !== undefined) updateData.anniversary = anniversary ? new Date(anniversary) : null;
 

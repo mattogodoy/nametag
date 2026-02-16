@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma, withDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
+import { savePhoto } from '@/lib/photo-storage';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
@@ -255,6 +256,17 @@ export async function POST(request: Request) {
                 : undefined,
             },
           });
+        }
+
+        // Save photo as file if present
+        if (parsedData.photo && person.id) {
+          const photoFilename = await savePhoto(session.user.id, person.id, parsedData.photo);
+          if (photoFilename) {
+            await prisma.person.update({
+              where: { id: person.id },
+              data: { photo: photoFilename },
+            });
+          }
         }
 
         // Create mapping

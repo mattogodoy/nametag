@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { personToVCard } from '@/lib/vcard';
+import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
@@ -79,8 +80,15 @@ export async function autoExportPerson(personId: string): Promise<void> {
       person.uid = uid;
     }
 
+    // Load photo from file for export if needed
+    let photoDataUri: string | undefined;
+    if (person.photo && isPhotoFilename(person.photo)) {
+      const loaded = await readPhotoForExport(person.userId, person.photo);
+      if (loaded) photoDataUri = loaded;
+    }
+
     // Convert to vCard
-    const vCardData = personToVCard(person);
+    const vCardData = personToVCard(person, { photoDataUri });
 
     // Create vCard on server
     const filename = `${uid}.vcf`;
@@ -206,8 +214,15 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
     // Create CardDAV client
     const client = await createCardDavClient(connection);
 
+    // Load photo from file for export if needed
+    let updatePhotoDataUri: string | undefined;
+    if (person.photo && isPhotoFilename(person.photo)) {
+      const loaded = await readPhotoForExport(person.userId, person.photo);
+      if (loaded) updatePhotoDataUri = loaded;
+    }
+
     // Convert to vCard
-    const vCardData = personToVCard(person);
+    const vCardData = personToVCard(person, { photoDataUri: updatePhotoDataUri });
 
     // Update vCard on server
     const vCard = {

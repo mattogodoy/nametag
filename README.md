@@ -110,6 +110,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    volumes:
+      - photo_data:/app/data/photos
     depends_on:
       - db
 
@@ -130,6 +132,7 @@ services:
 
 volumes:
   postgres_data:
+  photo_data:
 ```
 
 3. Create a `.env` file with required variables:

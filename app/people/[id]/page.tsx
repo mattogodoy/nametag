@@ -13,6 +13,7 @@ import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-
 import { formatFullName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { getTranslations } from 'next-intl/server';
+import { getPhotoUrl } from '@/lib/photo-url';
 
 // Type for translation function
 type TranslationFn = (key: string, values?: Record<string, string | number | Date>) => string;
@@ -311,11 +312,11 @@ export default async function PersonDetailsPage({
 
             <div className="px-6 py-5 space-y-6">
               {/* Photo */}
-              {person.photo && (
+              {person.photo && getPhotoUrl(person.id, person.photo) && (
                 <div className="border border-border rounded-lg p-4">
                   <div className="flex justify-center">
                     <img
-                      src={person.photo}
+                      src={getPhotoUrl(person.id, person.photo)!}
                       alt={formatFullName(person)}
                       className="w-32 h-32 rounded-full object-cover shadow-lg"
                     />

@@ -47,6 +47,8 @@ services:
       - 3000:3000
     env_file:
       - .env
+    volumes:
+      - photo_data:/app/data/photos
     depends_on:
       db:
         condition: service_healthy
@@ -107,6 +109,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data: # Optional. Comment out to disable Redis. See README.md for more details.
+    driver: local
+  photo_data:
     driver: local
 
 networks:

@@ -19,6 +19,7 @@ export interface VCardOptions {
   includePhoto?: boolean; // Default: true (requires base64 encoding)
   includeCustomFields?: boolean; // Default: true (X- properties)
   stripMarkdown?: boolean; // Default: false
+  photoDataUri?: string; // Pre-loaded photo data URI for file-based photos
 }
 
 const DEFAULT_OPTIONS: VCardOptions = {
@@ -197,18 +198,23 @@ export function personToVCard(
 
   // PHOTO - export as embedded base64 or URL
   // vCard 3.0 supports both embedded base64 and external URLs
-  if (opts.includePhoto && person.photo) {
-    if (person.photo.startsWith('data:')) {
+  if (opts.includePhoto && (opts.photoDataUri || person.photo)) {
+    // Use pre-loaded photo data URI if provided (for file-based photos)
+    const photoSource = opts.photoDataUri || person.photo;
+    if (photoSource && photoSource.startsWith('data:')) {
       // Extract mime type and base64 data from data URI
-      const dataUriMatch = person.photo.match(/^data:(image\/[^;]+);base64,([\s\S]+)$/);
+      const dataUriMatch = photoSource.match(/^data:(image\/[^;]+);base64,([\s\S]+)$/);
       if (dataUriMatch) {
         const type = dataUriMatch[1].split('/')[1].toUpperCase();
         const base64Data = dataUriMatch[2].replace(/\s/g, '');
         lines.push(`PHOTO;ENCODING=b;TYPE=${type}:${base64Data}`);
       }
-    } else {
-      // Export as external URL reference
-      lines.push(buildV3Property('PHOTO', { VALUE: 'uri' }, person.photo));
+    } else if (photoSource && !photoSource.startsWith('data:')) {
+      // Export as external URL reference (only for actual URLs, not filenames)
+      if (photoSource.startsWith('http://') || photoSource.startsWith('https://')) {
+        lines.push(buildV3Property('PHOTO', { VALUE: 'uri' }, photoSource));
+      }
+      // File-based photos without pre-loaded data are skipped
     }
   }
 

@@ -139,7 +139,7 @@ export const createPersonSchema = z.object({
   jobTitle: z.string().max(200).nullable().optional(),
 
   // Other vCard fields
-  photo: z.string().max(1000).nullable().optional(),
+  photo: z.string().nullable().optional(),
   gender: z.string().max(50).nullable().optional(),
   anniversary: z.preprocess(
     (val) => (val === '' ? null : val),

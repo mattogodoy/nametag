@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { personToVCard, vCardToPerson } from '@/lib/vcard';
 import { withRetry, categorizeError } from './retry';
+import { savePhoto, readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -158,7 +159,7 @@ export async function syncFromServer(
             continue;
           } else if (remoteChanged) {
             // Only remote changed - update local
-            await updatePersonFromVCard(mapping.personId, parsedData);
+            await updatePersonFromVCard(mapping.personId, parsedData, userId);
 
             await prisma.cardDavMapping.update({
               where: { id: mapping.id },
@@ -339,7 +340,15 @@ export async function syncToServer(
           relationshipsFrom: [],
           groups: [],
         };
-        const vCardData = personToVCard(personWithAllRelations);
+
+        // Load photo from file for export if needed
+        let photoDataUri: string | undefined;
+        if (mapping.person.photo && isPhotoFilename(mapping.person.photo)) {
+          const loaded = await readPhotoForExport(userId, mapping.person.photo);
+          if (loaded) photoDataUri = loaded;
+        }
+
+        const vCardData = personToVCard(personWithAllRelations, { photoDataUri });
 
         if (mapping.href) {
           // Update existing vCard with retry
@@ -452,7 +461,14 @@ export async function syncToServer(
           person.uid = uid;
         }
 
-        const vCardData = personToVCard(person);
+        // Load photo from file for export if needed
+        let unmappedPhotoDataUri: string | undefined;
+        if (person.photo && isPhotoFilename(person.photo)) {
+          const loaded = await readPhotoForExport(userId, person.photo);
+          if (loaded) unmappedPhotoDataUri = loaded;
+        }
+
+        const vCardData = personToVCard(person, { photoDataUri: unmappedPhotoDataUri });
         const filename = `${uid}.vcf`;
 
         const created = await withRetry(
@@ -542,7 +558,8 @@ export async function bidirectionalSync(userId: string): Promise<SyncResult> {
  */
 async function updatePersonFromVCard(
   personId: string,
-  parsedData: ReturnType<typeof vCardToPerson>
+  parsedData: ReturnType<typeof vCardToPerson>,
+  userId: string
 ): Promise<void> {
   // Delete all multi-value fields
   await prisma.$transaction([
@@ -554,6 +571,16 @@ async function updatePersonFromVCard(
     prisma.personLocation.deleteMany({ where: { personId } }),
     prisma.personCustomField.deleteMany({ where: { personId } }),
   ]);
+
+  // Save photo as file if present
+  let photoValue = parsedData.photo;
+  if (photoValue) {
+    const filename = await savePhoto(userId, personId, photoValue);
+    if (filename) {
+      photoValue = filename;
+    }
+    // If savePhoto fails, keep the original value as fallback
+  }
 
   // Update person with new data
   await prisma.person.update({
@@ -567,7 +594,7 @@ async function updatePersonFromVCard(
       nickname: parsedData.nickname,
       organization: parsedData.organization,
       jobTitle: parsedData.jobTitle,
-      photo: parsedData.photo,
+      photo: photoValue,
       gender: parsedData.gender,
       anniversary: parsedData.anniversary,
       notes: parsedData.notes,

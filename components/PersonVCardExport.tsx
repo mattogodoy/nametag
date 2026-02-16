@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { personToVCard } from '@/lib/vcard';
 import { addPhotoToVCardFromUrl, downloadVcf, generateVcfFilename } from '@/lib/vcard-helpers';
 import type { PersonWithRelations } from '@/lib/carddav/types';
+import { getPhotoUrl } from '@/lib/photo-url';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -56,8 +57,9 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
       });
 
       // Add photo if present
-      if (person.photo) {
-        vcard = await addPhotoToVCardFromUrl(vcard, person.photo);
+      const photoUrl = getPhotoUrl(person.id, person.photo);
+      if (photoUrl) {
+        vcard = await addPhotoToVCardFromUrl(vcard, photoUrl);
       }
 
       // Generate filename from person's name

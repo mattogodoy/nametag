@@ -15,6 +15,7 @@ import {
   generateBulkVcfFilename,
   exportPeopleWithProgress,
 } from '@/lib/vcard-helpers';
+import { getPhotoUrl } from '@/lib/photo-url';
 import { toast } from 'sonner';
 
 interface Group {
@@ -161,9 +162,10 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
         });
 
         // Add photo if present
-        if (person.photo) {
+        const photoUrl = getPhotoUrl(person.id, person.photo);
+        if (photoUrl) {
           try {
-            vcard = await addPhotoToVCardFromUrl(vcard, person.photo);
+            vcard = await addPhotoToVCardFromUrl(vcard, photoUrl);
           } catch (error) {
             console.warn(`Failed to add photo for ${person.name}:`, error);
           }

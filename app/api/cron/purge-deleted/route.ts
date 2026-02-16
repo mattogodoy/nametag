@@ -3,6 +3,7 @@ import { withDeleted, prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { handleApiError, getClientIp } from '@/lib/api-utils';
 import { logger, securityLogger } from '@/lib/logger';
+import { deletePersonPhotos } from '@/lib/photo-storage';
 
 const RETENTION_DAYS = 30;
 
@@ -58,9 +59,14 @@ export async function GET(request: Request) {
     // 2. Get IDs of persons to be purged (for cleaning up related data)
     const personsToDelete = await prismaWithDeleted.person.findMany({
       where: { deletedAt: { not: null, lt: cutoffDate } },
-      select: { id: true },
+      select: { id: true, userId: true },
     });
     const personIds = personsToDelete.map((p: { id: string }) => p.id);
+
+    // Delete photo files for persons being purged
+    for (const person of personsToDelete as { id: string; userId: string }[]) {
+      await deletePersonPhotos(person.userId, person.id);
+    }
 
     // 3. Delete PersonGroups for persons being purged
     if (personIds.length > 0) {
