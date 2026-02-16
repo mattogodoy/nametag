@@ -81,8 +81,12 @@ export default function SyncProgressModal({
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || t('syncFailed'));
+        try {
+          const data = await response.json();
+          setError(data.error || t('syncFailed'));
+        } catch {
+          setError(t('syncFailed'));
+        }
         setIsSyncing(false);
         return;
       }
