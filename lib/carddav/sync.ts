@@ -114,26 +114,53 @@ export async function syncFromServer(
           continue;
         }
 
-        // Check if mapping exists
-        const mapping = await prisma.cardDavMapping.findFirst({
+        // Check if mapping exists (by UID first, then by href as fallback)
+        const mappingInclude = {
+          person: {
+            include: {
+              phoneNumbers: true,
+              emails: true,
+              addresses: true,
+              urls: true,
+              imHandles: true,
+              locations: true,
+              customFields: true,
+            },
+          },
+        };
+
+        let mapping = await prisma.cardDavMapping.findFirst({
           where: {
             connectionId: connection.id,
             uid: parsedData.uid,
           },
-          include: {
-            person: {
-              include: {
-                phoneNumbers: true,
-                emails: true,
-                addresses: true,
-                urls: true,
-                imHandles: true,
-                locations: true,
-                customFields: true,
-              },
-            },
-          },
+          include: mappingInclude,
         });
+
+        // Fallback: match by href (server URL) when UID lookup fails.
+        // This handles cases where the server assigns a different UID
+        // than what we uploaded (e.g., Google Contacts rewrites UIDs).
+        if (!mapping && vCard.url) {
+          mapping = await prisma.cardDavMapping.findFirst({
+            where: {
+              connectionId: connection.id,
+              href: vCard.url,
+            },
+            include: mappingInclude,
+          });
+
+          // Update the mapping and person UID to match the server's UID
+          if (mapping && parsedData.uid) {
+            await prisma.cardDavMapping.update({
+              where: { id: mapping.id },
+              data: { uid: parsedData.uid },
+            });
+            await prisma.person.update({
+              where: { id: mapping.personId },
+              data: { uid: parsedData.uid },
+            });
+          }
+        }
 
         if (mapping) {
           // Existing contact - check for conflicts
