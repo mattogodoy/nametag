@@ -92,7 +92,8 @@ export async function syncFromServer(
     );
 
     // Process each vCard
-    for (const vCard of vCards) {
+    for (let i = 0; i < vCards.length; i++) {
+      const vCard = vCards[i];
       try {
         // Parse vCard
         const parsedData = vCardToPerson(vCard.data);
@@ -100,7 +101,7 @@ export async function syncFromServer(
         onProgress?.({
           phase: 'pull',
           step: 'processing',
-          current: vCards.indexOf(vCard) + 1,
+          current: i + 1,
           total: vCards.length,
           contact: parsedData.name
             ? `${parsedData.name}${parsedData.surname ? ` ${parsedData.surname}` : ''}`
@@ -349,8 +350,19 @@ export async function syncToServer(
       },
     });
 
-    for (const mapping of mappings) {
+    for (let i = 0; i < mappings.length; i++) {
+      const mapping = mappings[i];
       try {
+        onProgress?.({
+          phase: 'push',
+          step: 'processing',
+          current: i + 1,
+          total: mappings.length,
+          contact: mapping.person.name
+            ? `${mapping.person.name}${mapping.person.surname ? ` ${mapping.person.surname}` : ''}`
+            : mapping.person.surname || 'Unknown',
+        });
+
         // Check if local changed since last sync
         const localChanged = mapping.lastLocalChange &&
           mapping.lastSyncedAt &&
@@ -360,16 +372,6 @@ export async function syncToServer(
           // No local changes, skip
           continue;
         }
-
-        onProgress?.({
-          phase: 'push',
-          step: 'processing',
-          current: mappings.indexOf(mapping) + 1,
-          total: mappings.length,
-          contact: mapping.person.name
-            ? `${mapping.person.name}${mapping.person.surname ? ` ${mapping.person.surname}` : ''}`
-            : mapping.person.surname || 'Unknown',
-        });
 
         // Convert person to vCard
         const personWithAllRelations = {
@@ -487,12 +489,13 @@ export async function syncToServer(
       },
     });
 
-    for (const person of unmappedPersons) {
+    for (let i = 0; i < unmappedPersons.length; i++) {
+      const person = unmappedPersons[i];
       try {
         onProgress?.({
           phase: 'push',
           step: 'processing',
-          current: unmappedPersons.indexOf(person) + 1,
+          current: i + 1,
           total: unmappedPersons.length,
           contact: person.name
             ? `${person.name}${person.surname ? ` ${person.surname}` : ''}`
