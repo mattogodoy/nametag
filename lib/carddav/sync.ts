@@ -18,6 +18,16 @@ interface SyncResult {
   pendingImports?: number;
 }
 
+export interface SyncProgressEvent {
+  phase: 'pull' | 'push';
+  step: 'connecting' | 'fetching' | 'processing';
+  current?: number;
+  total?: number;
+  contact?: string;
+}
+
+export type SyncProgressCallback = (event: SyncProgressEvent) => void;
+
 /**
  * Generate a hash of person data for conflict detection
  */
@@ -31,7 +41,8 @@ function generatePersonHash(personData: unknown): string {
  * Sync from CardDAV server to local database
  */
 export async function syncFromServer(
-  userId: string
+  userId: string,
+  onProgress?: SyncProgressCallback
 ): Promise<SyncResult> {
   const result: SyncResult = {
     imported: 0,
@@ -54,9 +65,12 @@ export async function syncFromServer(
       throw new Error('CardDAV connection not found');
     }
 
+    onProgress?.({ phase: 'pull', step: 'connecting' });
 
     // Create CardDAV client
     const client = await createCardDavClient(connection);
+
+    onProgress?.({ phase: 'pull', step: 'fetching' });
 
     // Get address books with retry
     const addressBooks = await withRetry(
@@ -82,6 +96,16 @@ export async function syncFromServer(
       try {
         // Parse vCard
         const parsedData = vCardToPerson(vCard.data);
+
+        onProgress?.({
+          phase: 'pull',
+          step: 'processing',
+          current: vCards.indexOf(vCard) + 1,
+          total: vCards.length,
+          contact: parsedData.name
+            ? `${parsedData.name}${parsedData.surname ? ` ${parsedData.surname}` : ''}`
+            : parsedData.surname || 'Unknown',
+        });
 
         if (!parsedData.uid) {
           console.warn('vCard missing UID, skipping');
@@ -261,7 +285,8 @@ export async function syncFromServer(
  * Sync to CardDAV server from local database
  */
 export async function syncToServer(
-  userId: string
+  userId: string,
+  onProgress?: SyncProgressCallback
 ): Promise<SyncResult> {
   const result: SyncResult = {
     imported: 0,
@@ -284,6 +309,7 @@ export async function syncToServer(
       throw new Error('CardDAV connection not found');
     }
 
+    onProgress?.({ phase: 'push', step: 'connecting' });
 
     // Create CardDAV client
     const client = await createCardDavClient(connection);
@@ -299,6 +325,8 @@ export async function syncToServer(
     }
 
     const addressBook = addressBooks[0];
+
+    onProgress?.({ phase: 'push', step: 'fetching' });
 
     // Find all mappings with pending local changes
     const mappings = await prisma.cardDavMapping.findMany({
@@ -332,6 +360,16 @@ export async function syncToServer(
           // No local changes, skip
           continue;
         }
+
+        onProgress?.({
+          phase: 'push',
+          step: 'processing',
+          current: mappings.indexOf(mapping) + 1,
+          total: mappings.length,
+          contact: mapping.person.name
+            ? `${mapping.person.name}${mapping.person.surname ? ` ${mapping.person.surname}` : ''}`
+            : mapping.person.surname || 'Unknown',
+        });
 
         // Convert person to vCard
         const personWithAllRelations = {
@@ -451,6 +489,16 @@ export async function syncToServer(
 
     for (const person of unmappedPersons) {
       try {
+        onProgress?.({
+          phase: 'push',
+          step: 'processing',
+          current: unmappedPersons.indexOf(person) + 1,
+          total: unmappedPersons.length,
+          contact: person.name
+            ? `${person.name}${person.surname ? ` ${person.surname}` : ''}`
+            : person.surname || 'Unknown',
+        });
+
         // Ensure person has a UID before generating vCard (CardDAV requires UID)
         const uid = person.uid || uuidv4();
         if (!person.uid) {
@@ -531,12 +579,12 @@ export async function syncToServer(
 /**
  * Bidirectional sync
  */
-export async function bidirectionalSync(userId: string): Promise<SyncResult> {
+export async function bidirectionalSync(userId: string, onProgress?: SyncProgressCallback): Promise<SyncResult> {
   // First, pull from server
-  const pullResult = await syncFromServer(userId);
+  const pullResult = await syncFromServer(userId, onProgress);
 
   // Then, push to server
-  const pushResult = await syncToServer(userId);
+  const pushResult = await syncToServer(userId, onProgress);
 
   return {
     imported: pullResult.imported,
