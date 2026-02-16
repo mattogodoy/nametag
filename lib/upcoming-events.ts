@@ -11,6 +11,7 @@ export interface UpcomingEvent {
   titleKey: 'timeToCatchUp' | null;
   date: Date;
   daysUntil: number;
+  isYearUnknown: boolean;
 }
 
 export function getNextOccurrence(
@@ -165,6 +166,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         titleKey: null,
         date: eventDate,
         daysUntil,
+        isYearUnknown: parseAsLocalDate(importantDate.date).getFullYear() <= 1604,
       });
     }
   }
@@ -193,6 +195,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
           titleKey: 'timeToCatchUp',
           date: reminderDueDate,
           daysUntil,
+          isYearUnknown: false,
         });
       }
     }

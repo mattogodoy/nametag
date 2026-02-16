@@ -296,8 +296,9 @@ export function generateOpenAPISpec(): OpenAPISpec {
             },
             date: { type: 'string', format: 'date-time' },
             daysUntil: { type: 'integer', description: 'Number of days until this event (negative = overdue)' },
+            isYearUnknown: { type: 'boolean', description: 'Whether the original date has an unknown year (e.g. birthday without year)' },
           },
-          required: ['id', 'personId', 'personName', 'type', 'title', 'titleKey', 'date', 'daysUntil'],
+          required: ['id', 'personId', 'personName', 'type', 'title', 'titleKey', 'date', 'daysUntil', 'isYearUnknown'],
         },
         GraphNode: {
           type: 'object',

@@ -47,6 +47,7 @@ describe('GET /api/dashboard/stats', () => {
         titleKey: null,
         date: new Date(),
         daysUntil: 5,
+        isYearUnknown: false,
       },
     ];
 

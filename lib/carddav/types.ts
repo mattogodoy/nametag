@@ -15,6 +15,11 @@ import type {
   Relationship,
   Group,
 } from '@prisma/client';
+/** PersonLocation with latitude/longitude accepting both Prisma Decimal and plain number (serialized for client components) */
+type SerializablePersonLocation = Omit<PersonLocation, 'latitude' | 'longitude'> & {
+  latitude: PersonLocation['latitude'] | number;
+  longitude: PersonLocation['longitude'] | number;
+};
 
 /**
  * Person with all relations loaded (for vCard export)
@@ -25,7 +30,7 @@ export interface PersonWithRelations extends Person {
   addresses: PersonAddress[];
   urls: PersonUrl[];
   imHandles: PersonIM[];
-  locations: PersonLocation[];
+  locations: SerializablePersonLocation[];
   customFields: PersonCustomField[];
   importantDates: ImportantDate[];
   relationshipsFrom: (Relationship & {
