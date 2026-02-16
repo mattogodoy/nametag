@@ -52,7 +52,7 @@ export default async function ImportPage({
       connectionId: connection.id,
     },
     orderBy: {
-      discoveredAt: 'desc',
+      displayName: 'asc',
     },
   });
 
