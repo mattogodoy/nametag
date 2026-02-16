@@ -126,10 +126,7 @@ Changes made in Nametag are pushed to your CardDAV server, and changes made on y
 
 ### Automatic Sync
 
-Background sync runs automatically based on your configured interval:
-- Default: Every 5 minutes
-- Configurable: 1 minute to 24 hours
-- Can be disabled if you prefer manual sync
+Background sync runs automatically three times a day (at 2:00, 10:00, and 18:00 UTC). You can also sync manually at any time from the CardDAV settings page. Automatic sync can be disabled if you prefer manual-only sync.
 
 ### Import Modes
 
@@ -184,9 +181,8 @@ To sync immediately:
 
 Configure sync behavior in **Settings → CardDAV**:
 
-- **Enable automatic sync**: Toggle background sync on/off
+- **Enable automatic sync**: Toggle background sync on/off (syncs three times a day when enabled)
 - **Auto-export new contacts**: Automatically push new Nametag contacts to CardDAV
-- **Sync interval**: How often to check for changes (1 min to 24 hours)
 - **Import mode**: How to handle new contacts from server
 
 ### Resolving Conflicts
@@ -229,8 +225,7 @@ When conflicts are detected:
 
 **Solutions**:
 1. Check that "Enable automatic sync" is turned on
-2. Verify the sync interval isn't too long
-3. Click "Sync Now" to trigger a manual sync
+2. Click "Sync Now" to trigger a manual sync
 4. Check for conflicts that need resolution
 5. Review the "Last Sync" time in settings
 
@@ -262,8 +257,7 @@ When conflicts are detected:
 
 **Solutions**:
 1. Wait a few minutes before trying again
-2. Reduce sync frequency in settings
-3. Export/import in smaller batches
+2. Export/import in smaller batches
 4. The system automatically retries with exponential backoff
 
 ### Malformed Data
@@ -335,7 +329,7 @@ Nametag implements vCard 4.0 (RFC 6350) for maximum compatibility.
 ```
 
 **Sync Process**:
-1. Background cron job runs every N minutes (configurable)
+1. Background cron job runs three times a day (at 2:00, 10:00, and 18:00 UTC)
 2. Fetches changes from CardDAV server using sync tokens (incremental)
 3. Compares local and remote changes using ETags and timestamps
 4. Detects conflicts when both changed since last sync
