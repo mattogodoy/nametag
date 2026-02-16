@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
@@ -22,6 +22,14 @@ interface SyncResult {
   pendingImports: number;
 }
 
+interface SyncProgress {
+  phase: 'pull' | 'push';
+  step: 'connecting' | 'fetching' | 'processing';
+  current?: number;
+  total?: number;
+  contact?: string;
+}
+
 export default function SyncProgressModal({
   isOpen,
   onClose,
@@ -32,6 +40,8 @@ export default function SyncProgressModal({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState<SyncProgress | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Auto-start sync when modal opens
   useEffect(() => {
@@ -47,6 +57,11 @@ export default function SyncProgressModal({
       setIsSyncing(false);
       setSyncResult(null);
       setError('');
+      setProgress(null);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
     }
   }, [isOpen]);
 
@@ -54,33 +69,117 @@ export default function SyncProgressModal({
     setIsSyncing(true);
     setError('');
     setSyncResult(null);
+    setProgress(null);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
       const response = await fetch('/api/carddav/sync', {
         method: 'POST',
+        signal: abortController.signal,
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json();
         setError(data.error || t('syncFailed'));
-      } else {
-        setSyncResult({
-          imported: Number(data.imported) || 0,
-          exported: Number(data.exported) || 0,
-          updatedLocally: Number(data.updatedLocally) || 0,
-          updatedRemotely: Number(data.updatedRemotely) || 0,
-          conflicts: Number(data.conflicts) || 0,
-          errors: Number(data.errors) || 0,
-          pendingImports: Number(data.pendingImports) || 0,
-        });
-        router.refresh();
+        setIsSyncing(false);
+        return;
       }
-    } catch (_err) {
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        setError(t('syncError'));
+        setIsSyncing(false);
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const events = buffer.split('\n\n');
+        // Keep the last incomplete chunk in the buffer
+        buffer = events.pop() || '';
+
+        for (const eventBlock of events) {
+          if (!eventBlock.trim()) continue;
+
+          const lines = eventBlock.split('\n');
+          let eventType = '';
+          let eventData = '';
+
+          for (const line of lines) {
+            if (line.startsWith('event: ')) {
+              eventType = line.slice(7);
+            } else if (line.startsWith('data: ')) {
+              eventData = line.slice(6);
+            }
+          }
+
+          if (!eventType || !eventData) continue;
+
+          try {
+            const parsed = JSON.parse(eventData);
+
+            if (eventType === 'progress') {
+              setProgress(parsed as SyncProgress);
+            } else if (eventType === 'complete') {
+              setSyncResult({
+                imported: Number(parsed.imported) || 0,
+                exported: Number(parsed.exported) || 0,
+                updatedLocally: Number(parsed.updatedLocally) || 0,
+                updatedRemotely: Number(parsed.updatedRemotely) || 0,
+                conflicts: Number(parsed.conflicts) || 0,
+                errors: Number(parsed.errors) || 0,
+                pendingImports: Number(parsed.pendingImports) || 0,
+              });
+              router.refresh();
+            } else if (eventType === 'error') {
+              setError(parsed.error || t('syncFailed'));
+            }
+          } catch {
+            // Skip malformed events
+          }
+        }
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return; // Modal was closed, ignore
+      }
       setError(t('syncError'));
     } finally {
       setIsSyncing(false);
+      abortControllerRef.current = null;
     }
+  };
+
+  const getProgressMessage = (): string => {
+    if (!progress) return t('syncInProgress');
+
+    if (progress.step === 'connecting') {
+      return t('syncConnecting');
+    }
+
+    if (progress.step === 'fetching') {
+      if (progress.phase === 'pull') return t('syncFetchingContacts');
+      return t('syncPushingChanges');
+    }
+
+    if (progress.step === 'processing' && progress.current != null && progress.total != null) {
+      if (progress.phase === 'pull') {
+        return t('syncProcessingPull', { current: progress.current, total: progress.total });
+      }
+      return t('syncProcessingPush', { current: progress.current, total: progress.total });
+    }
+
+    return t('syncInProgress');
   };
 
   const handleClose = () => {
@@ -102,8 +201,13 @@ export default function SyncProgressModal({
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
             <p className="text-muted">
-              {t('syncInProgress')}
+              {getProgressMessage()}
             </p>
+            {progress?.step === 'processing' && progress.contact && (
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2 truncate max-w-xs mx-auto">
+                {progress.contact}
+              </p>
+            )}
           </div>
         )}
 
