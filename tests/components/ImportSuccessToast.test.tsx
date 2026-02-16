@@ -51,10 +51,10 @@ describe('ImportSuccessToast', () => {
     });
 
     // Mock window.location for URL construction
-    delete (window as { location?: unknown }).location;
-    window.location = {
-      href: 'http://localhost/people?importSuccess=true&imported=5&skipped=2&errors=0',
-    } as Location;
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: new URL('http://localhost/people?importSuccess=true&imported=5&skipped=2&errors=0'),
+    });
   });
 
   describe('Success toast', () => {
@@ -152,9 +152,10 @@ describe('ImportSuccessToast', () => {
 
     it('should preserve other query parameters', () => {
       // Mock URL with additional params
-      window.location = {
-        href: 'http://localhost/people?importSuccess=true&imported=1&skipped=0&errors=0&sortBy=name&page=2',
-      } as Location;
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: new URL('http://localhost/people?importSuccess=true&imported=1&skipped=0&errors=0&sortBy=name&page=2'),
+      });
 
       mockSearchParams.set('importSuccess', 'true');
       mockSearchParams.set('imported', '1');
