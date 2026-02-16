@@ -215,7 +215,7 @@ export async function syncFromServer(
     await prisma.cardDavConnection.update({
       where: { id: connection.id },
       data: {
-        syncToken: addressBook.syncToken || null,
+        syncToken: typeof addressBook.syncToken === 'string' ? addressBook.syncToken : null,
         lastSyncAt: new Date(),
         lastError: null,
         lastErrorAt: null,
