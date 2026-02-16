@@ -91,6 +91,19 @@ export async function syncFromServer(
       { maxAttempts: 3 }
     );
 
+    // Pre-load all mappings for this connection in a single query.
+    // Index by UID and href for O(1) lookups instead of per-vCard DB queries.
+    const allMappings = await prisma.cardDavMapping.findMany({
+      where: { connectionId: connection.id },
+    });
+
+    const mappingByUid = new Map<string, typeof allMappings[number]>();
+    const mappingByHref = new Map<string, typeof allMappings[number]>();
+    for (const m of allMappings) {
+      if (m.uid) mappingByUid.set(m.uid, m);
+      if (m.href) mappingByHref.set(m.href, m);
+    }
+
     // Process each vCard
     for (let i = 0; i < vCards.length; i++) {
       const vCard = vCards[i];
@@ -114,78 +127,85 @@ export async function syncFromServer(
           continue;
         }
 
-        // Check if mapping exists (by UID first, then by href as fallback)
-        const mappingInclude = {
-          person: {
-            include: {
-              phoneNumbers: true,
-              emails: true,
-              addresses: true,
-              urls: true,
-              imHandles: true,
-              locations: true,
-              customFields: true,
-            },
-          },
-        };
+        // O(1) in-memory lookup: try UID first, then href as fallback.
+        // The href fallback handles servers that rewrite vCard UIDs
+        // (e.g., Google Contacts assigns its own UID after export).
+        let mapping = mappingByUid.get(parsedData.uid) ?? null;
+        let matchedByHref = false;
 
-        let mapping = await prisma.cardDavMapping.findFirst({
-          where: {
-            connectionId: connection.id,
-            uid: parsedData.uid,
-          },
-          include: mappingInclude,
-        });
-
-        // Fallback: match by href (server URL) when UID lookup fails.
-        // This handles cases where the server assigns a different UID
-        // than what we uploaded (e.g., Google Contacts rewrites UIDs).
         if (!mapping && vCard.url) {
-          mapping = await prisma.cardDavMapping.findFirst({
-            where: {
-              connectionId: connection.id,
-              href: vCard.url,
-            },
-            include: mappingInclude,
-          });
-
-          // Update the mapping and person UID to match the server's UID
-          if (mapping && parsedData.uid) {
-            await prisma.cardDavMapping.update({
-              where: { id: mapping.id },
-              data: { uid: parsedData.uid },
-            });
-            await prisma.person.update({
-              where: { id: mapping.personId },
-              data: { uid: parsedData.uid },
-            });
+          mapping = mappingByHref.get(vCard.url) ?? null;
+          if (mapping) {
+            matchedByHref = true;
           }
         }
 
-        if (mapping) {
-          // Existing contact - check for conflicts
-          const localData = {
-            ...mapping.person,
-            phoneNumbers: mapping.person.phoneNumbers,
-            emails: mapping.person.emails,
-            addresses: mapping.person.addresses,
-            urls: mapping.person.urls,
-            imHandles: mapping.person.imHandles,
-            locations: mapping.person.locations,
-            customFields: mapping.person.customFields,
-          };
+        // When matched by href, update the stored UID to match the server's
+        // so future syncs can match by UID directly.
+        if (matchedByHref && mapping && parsedData.uid) {
+          await prisma.cardDavMapping.update({
+            where: { id: mapping.id },
+            data: { uid: parsedData.uid },
+          });
+          await prisma.person.update({
+            where: { id: mapping.personId },
+            data: { uid: parsedData.uid },
+          });
+          // Update in-memory index so subsequent vCards can find it by UID
+          mappingByUid.set(parsedData.uid, mapping);
+        }
 
-          const remoteHash = generatePersonHash(parsedData);
+        if (mapping) {
+          const remoteChanged = mapping.etag !== vCard.etag;
 
           // Check if both local and remote changed since last sync
           const localChanged = mapping.lastLocalChange &&
             mapping.lastSyncedAt &&
             mapping.lastLocalChange > mapping.lastSyncedAt;
 
-          const remoteChanged = mapping.etag !== vCard.etag;
+          if (!remoteChanged && !localChanged) {
+            // Nothing changed - skip without any DB queries
+            continue;
+          }
+
+          // Only load full person data when we actually need it
+          // (conflict detection or local update)
+          const fullMapping = await prisma.cardDavMapping.findFirst({
+            where: { id: mapping.id },
+            include: {
+              person: {
+                include: {
+                  phoneNumbers: true,
+                  emails: true,
+                  addresses: true,
+                  urls: true,
+                  imHandles: true,
+                  locations: true,
+                  customFields: true,
+                },
+              },
+            },
+          });
+
+          if (!fullMapping) {
+            continue;
+          }
+
+          const remoteHash = generatePersonHash(parsedData);
 
           if (localChanged && remoteChanged) {
             // CONFLICT - both changed
+            const localData = {
+              ...fullMapping.person,
+              phoneNumbers: fullMapping.person.phoneNumbers,
+              emails: fullMapping.person.emails,
+              addresses: fullMapping.person.addresses,
+              urls: fullMapping.person.urls,
+              imHandles: fullMapping.person.imHandles,
+              locations: fullMapping.person.locations,
+              customFields: fullMapping.person.customFields,
+            };
+
             await prisma.cardDavConflict.create({
               data: {
                 mappingId: mapping.id,
@@ -211,7 +231,7 @@ export async function syncFromServer(
             continue;
           } else if (remoteChanged) {
             // Only remote changed - update local
-            await updatePersonFromVCard(mapping.personId, parsedData, userId);
+            await updatePersonFromVCard(fullMapping.personId, parsedData, userId);
 
             await prisma.cardDavMapping.update({
               where: { id: mapping.id },

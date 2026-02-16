@@ -1,9 +1,11 @@
 /**
  * Unit tests for CardDAV sync engine (lib/carddav/sync.ts)
  *
- * Focuses on the syncFromServer mapping lookup logic, including
- * the href-based fallback when UID-based lookup fails (e.g., when
- * the server rewrites vCard UIDs after export).
+ * Focuses on:
+ * - Batch mapping pre-load with in-memory UID/href lookup
+ * - href-based fallback when server rewrites vCard UIDs
+ * - Conflict detection and local updates
+ * - Unmapped contact export
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -174,9 +176,8 @@ function makeParsedVCard(uid: string, name: string) {
   };
 }
 
-function makeMapping(
-  overrides: Record<string, unknown> = {}
-) {
+/** Lightweight mapping (as returned by findMany without includes) */
+function makeLightMapping(overrides: Record<string, unknown> = {}) {
   return {
     id: 'mapping-1',
     connectionId: CONNECTION_ID,
@@ -190,12 +191,21 @@ function makeMapping(
     lastRemoteChange: null,
     localVersion: null,
     remoteVersion: null,
+    ...overrides,
+  };
+}
+
+/** Full mapping with person includes (as returned by findFirst with include) */
+function makeFullMapping(overrides: Record<string, unknown> = {}) {
+  const light = makeLightMapping(overrides);
+  return {
+    ...light,
     person: {
-      id: 'person-1',
+      id: light.personId,
       userId: USER_ID,
       name: 'John',
       surname: 'Doe',
-      uid: 'local-uid-1',
+      uid: light.uid,
       phoneNumbers: [],
       emails: [],
       addresses: [],
@@ -203,8 +213,8 @@ function makeMapping(
       imHandles: [],
       locations: [],
       customFields: [],
+      ...(typeof overrides.person === 'object' ? overrides.person : {}),
     },
-    ...overrides,
   };
 }
 
@@ -230,7 +240,7 @@ describe('CardDAV Sync Engine', () => {
     mocks.cardDavPendingImportUpsert.mockResolvedValue({});
     mocks.personUpdate.mockResolvedValue({});
 
-    // Default: no unmapped persons for syncToServer
+    // Default: no existing mappings (for both syncFromServer pre-load and syncToServer)
     mocks.cardDavMappingFindMany.mockResolvedValue([]);
     mocks.personFindMany.mockResolvedValue([]);
 
@@ -239,90 +249,103 @@ describe('CardDAV Sync Engine', () => {
   });
 
   describe('syncFromServer', () => {
+    describe('batch mapping pre-load', () => {
+      it('should load all mappings in a single query before processing vCards', async () => {
+        mocks.fetchVCards.mockResolvedValue([]);
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+
+        await syncFromServer(USER_ID);
+
+        // Should call findMany exactly once for the pre-load
+        expect(mocks.cardDavMappingFindMany).toHaveBeenCalledTimes(1);
+        expect(mocks.cardDavMappingFindMany).toHaveBeenCalledWith({
+          where: { connectionId: CONNECTION_ID },
+        });
+      });
+
+      it('should not make per-vCard findFirst calls for unchanged contacts', async () => {
+        const uid = 'existing-uid';
+        const etag = 'same-etag';
+
+        // Pre-loaded mapping with same etag as server vCard → no change
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({ uid, etag }),
+        ]);
+
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(uid, '/contacts/1.vcf', etag, 'Alice'),
+        ]);
+        mocks.vCardToPerson.mockReturnValue(makeParsedVCard(uid, 'Alice'));
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+
+        await syncFromServer(USER_ID);
+
+        // Should NOT call findFirst at all — no DB lookups per vCard
+        expect(mocks.cardDavMappingFindFirst).not.toHaveBeenCalled();
+        // Should NOT create pending imports
+        expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
+      });
+    });
+
     describe('mapping lookup', () => {
       it('should find mapping by UID and not create a pending import', async () => {
-        const serverUid = 'server-uid-1';
-        const vCard = makeVCard(serverUid, '/contacts/1.vcf', 'etag-1', 'Alice');
-        mocks.fetchVCards.mockResolvedValue([vCard]);
-        mocks.vCardToPerson.mockReturnValue(makeParsedVCard(serverUid, 'Alice'));
+        const uid = 'server-uid-1';
+        const etag = 'same-etag';
 
-        // UID lookup succeeds on first call
-        const mapping = makeMapping({ uid: serverUid, etag: 'etag-1' });
-        mocks.cardDavMappingFindFirst.mockResolvedValue(mapping);
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({ uid, etag }),
+        ]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(uid, '/contacts/1.vcf', etag, 'Alice'),
+        ]);
+        mocks.vCardToPerson.mockReturnValue(makeParsedVCard(uid, 'Alice'));
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
 
         const result = await syncFromServer(USER_ID);
 
-        // Should not create a pending import
         expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
         expect(result.errors).toBe(0);
       });
 
-      it('should fall back to href lookup when UID lookup fails', async () => {
+      it('should fall back to href lookup when UID does not match any mapping', async () => {
         const localUid = 'local-uid-1';
         const serverUid = 'google-rewritten-uid';
         const href = 'https://carddav.example.com/contacts/local-uid-1.vcf';
+        const etag = 'same-etag';
 
-        const vCard = makeVCard(serverUid, href, 'etag-new', 'Bob');
-        mocks.fetchVCards.mockResolvedValue([vCard]);
+        // Pre-loaded mapping has localUid (not serverUid), but href matches
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({ uid: localUid, href, etag }),
+        ]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(serverUid, href, etag, 'Bob'),
+        ]);
         mocks.vCardToPerson.mockReturnValue(makeParsedVCard(serverUid, 'Bob'));
-
-        const mapping = makeMapping({ uid: localUid, href, etag: 'etag-new' });
-
-        // First call (UID lookup) → no match
-        // Second call (href fallback) → match found
-        mocks.cardDavMappingFindFirst
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce(mapping);
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
 
         const result = await syncFromServer(USER_ID);
 
-        // Should have made two findFirst calls
-        expect(mocks.cardDavMappingFindFirst).toHaveBeenCalledTimes(2);
-
-        // First call: lookup by UID
-        expect(mocks.cardDavMappingFindFirst).toHaveBeenNthCalledWith(
-          1,
-          expect.objectContaining({
-            where: { connectionId: CONNECTION_ID, uid: serverUid },
-          })
-        );
-
-        // Second call: lookup by href
-        expect(mocks.cardDavMappingFindFirst).toHaveBeenNthCalledWith(
-          2,
-          expect.objectContaining({
-            where: { connectionId: CONNECTION_ID, href },
-          })
-        );
-
-        // Should NOT create a pending import
+        // Should NOT create a pending import (matched by href)
         expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
         expect(result.errors).toBe(0);
       });
 
-      it('should update mapping and person UID when href fallback matches', async () => {
+      it('should update mapping and person UID when matched by href', async () => {
         const localUid = 'local-uid-1';
         const serverUid = 'google-rewritten-uid';
         const href = 'https://carddav.example.com/contacts/local-uid-1.vcf';
         const mappingId = 'mapping-42';
         const personId = 'person-42';
+        const etag = 'same-etag';
 
-        const vCard = makeVCard(serverUid, href, 'etag-same', 'Carol');
-        mocks.fetchVCards.mockResolvedValue([vCard]);
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({ id: mappingId, personId, uid: localUid, href, etag }),
+        ]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(serverUid, href, etag, 'Carol'),
+        ]);
         mocks.vCardToPerson.mockReturnValue(makeParsedVCard(serverUid, 'Carol'));
-
-        const mapping = makeMapping({
-          id: mappingId,
-          personId,
-          uid: localUid,
-          href,
-          etag: 'etag-same',
-        });
-
-        // UID lookup fails, href lookup succeeds
-        mocks.cardDavMappingFindFirst
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce(mapping);
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
 
         await syncFromServer(USER_ID);
 
@@ -343,24 +366,20 @@ describe('CardDAV Sync Engine', () => {
         );
       });
 
-      it('should create pending import when both UID and href lookups fail', async () => {
+      it('should create pending import when neither UID nor href matches', async () => {
         const serverUid = 'completely-new-uid';
         const href = 'https://carddav.example.com/contacts/new.vcf';
 
-        const vCard = makeVCard(serverUid, href, 'etag-1', 'Dave');
-        mocks.fetchVCards.mockResolvedValue([vCard]);
+        // No mappings at all
+        mocks.cardDavMappingFindMany.mockResolvedValue([]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(serverUid, href, 'etag-1', 'Dave'),
+        ]);
         mocks.vCardToPerson.mockReturnValue(makeParsedVCard(serverUid, 'Dave'));
-
-        // Both lookups fail
-        mocks.cardDavMappingFindFirst
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce(null);
-
         mocks.cardDavPendingImportCount.mockResolvedValue(1);
 
         const result = await syncFromServer(USER_ID);
 
-        // Should create a pending import
         expect(mocks.cardDavPendingImportUpsert).toHaveBeenCalledWith(
           expect.objectContaining({
             where: {
@@ -377,22 +396,20 @@ describe('CardDAV Sync Engine', () => {
             }),
           })
         );
-
         expect(result.pendingImports).toBe(1);
       });
 
       it('should skip vCards with no UID', async () => {
-        const vCard = makeVCard('', '/contacts/no-uid.vcf', 'etag-1', 'NoUid');
-        mocks.fetchVCards.mockResolvedValue([vCard]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard('', '/contacts/no-uid.vcf', 'etag-1', 'NoUid'),
+        ]);
         mocks.vCardToPerson.mockReturnValue(
           makeParsedVCard(undefined as unknown as string, 'NoUid')
         );
-
         mocks.cardDavPendingImportCount.mockResolvedValue(0);
 
         const result = await syncFromServer(USER_ID);
 
-        expect(mocks.cardDavMappingFindFirst).not.toHaveBeenCalled();
         expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
         expect(result.errors).toBe(1);
       });
@@ -401,17 +418,33 @@ describe('CardDAV Sync Engine', () => {
     describe('conflict detection', () => {
       it('should detect conflict when both local and remote changed', async () => {
         const uid = 'conflict-uid';
-        const vCard = makeVCard(uid, '/contacts/conflict.vcf', 'etag-new', 'Eve');
-        mocks.fetchVCards.mockResolvedValue([vCard]);
+        const mappingId = 'mapping-conflict';
+
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({
+            id: mappingId,
+            uid,
+            etag: 'etag-old',
+            lastLocalChange: new Date('2025-02-01'),
+            lastSyncedAt: new Date('2025-01-01'),
+          }),
+        ]);
+
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(uid, '/contacts/conflict.vcf', 'etag-new', 'Eve'),
+        ]);
         mocks.vCardToPerson.mockReturnValue(makeParsedVCard(uid, 'Eve'));
 
-        const mapping = makeMapping({
-          uid,
-          etag: 'etag-old', // different from vCard → remote changed
-          lastLocalChange: new Date('2025-02-01'), // after lastSyncedAt → local changed
-          lastSyncedAt: new Date('2025-01-01'),
-        });
-        mocks.cardDavMappingFindFirst.mockResolvedValue(mapping);
+        // findFirst called to load full person data for conflict record
+        mocks.cardDavMappingFindFirst.mockResolvedValue(
+          makeFullMapping({
+            id: mappingId,
+            uid,
+            etag: 'etag-old',
+            lastLocalChange: new Date('2025-02-01'),
+            lastSyncedAt: new Date('2025-01-01'),
+          })
+        );
         mocks.cardDavConflictCreate.mockResolvedValue({});
         mocks.cardDavPendingImportCount.mockResolvedValue(0);
 
@@ -423,17 +456,33 @@ describe('CardDAV Sync Engine', () => {
 
       it('should update locally when only remote changed', async () => {
         const uid = 'update-uid';
-        const vCard = makeVCard(uid, '/contacts/update.vcf', 'etag-new', 'Frank');
-        mocks.fetchVCards.mockResolvedValue([vCard]);
+        const mappingId = 'mapping-update';
+
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({
+            id: mappingId,
+            uid,
+            etag: 'etag-old',
+            lastLocalChange: null,
+            lastSyncedAt: new Date('2025-01-01'),
+          }),
+        ]);
+
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(uid, '/contacts/update.vcf', 'etag-new', 'Frank'),
+        ]);
         mocks.vCardToPerson.mockReturnValue(makeParsedVCard(uid, 'Frank'));
 
-        const mapping = makeMapping({
-          uid,
-          etag: 'etag-old', // different → remote changed
-          lastLocalChange: null, // no local changes
-          lastSyncedAt: new Date('2025-01-01'),
-        });
-        mocks.cardDavMappingFindFirst.mockResolvedValue(mapping);
+        // findFirst called to load full person data for update
+        mocks.cardDavMappingFindFirst.mockResolvedValue(
+          makeFullMapping({
+            id: mappingId,
+            uid,
+            etag: 'etag-old',
+            lastLocalChange: null,
+            lastSyncedAt: new Date('2025-01-01'),
+          })
+        );
         mocks.$transaction.mockResolvedValue([]);
         mocks.cardDavPendingImportCount.mockResolvedValue(0);
 
@@ -442,50 +491,55 @@ describe('CardDAV Sync Engine', () => {
         expect(result.updatedLocally).toBe(1);
         expect(mocks.cardDavConflictCreate).not.toHaveBeenCalled();
       });
+
+      it('should skip DB queries entirely when neither local nor remote changed', async () => {
+        const uid = 'unchanged-uid';
+        const etag = 'same-etag';
+
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({ uid, etag, lastLocalChange: null }),
+        ]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(uid, '/contacts/same.vcf', etag, 'Unchanged'),
+        ]);
+        mocks.vCardToPerson.mockReturnValue(makeParsedVCard(uid, 'Unchanged'));
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+
+        const result = await syncFromServer(USER_ID);
+
+        // No full-data fetch needed
+        expect(mocks.cardDavMappingFindFirst).not.toHaveBeenCalled();
+        // No updates, conflicts, or imports
+        expect(mocks.cardDavMappingUpdate).not.toHaveBeenCalled();
+        expect(mocks.cardDavConflictCreate).not.toHaveBeenCalled();
+        expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
+        expect(result.updatedLocally).toBe(0);
+        expect(result.conflicts).toBe(0);
+      });
     });
 
     describe('exported contacts scenario', () => {
       it('should not re-import contacts that were just exported (UID rewrite)', async () => {
-        // Simulate: 2 server contacts + 1 exported contact with rewritten UID
-        const serverVCards = [
+        // Pre-loaded mapping: exported contact with local UID and known href
+        const exportedHref = 'https://carddav.example.com/contacts/exported.vcf';
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({
+            uid: 'original-local-uid',
+            href: exportedHref,
+            etag: 'etag-exported',
+          }),
+        ]);
+
+        // Server returns: 2 new + 1 exported (with rewritten UID)
+        mocks.fetchVCards.mockResolvedValue([
           makeVCard('server-uid-1', '/contacts/s1.vcf', 'etag-s1', 'ServerContact1'),
           makeVCard('server-uid-2', '/contacts/s2.vcf', 'etag-s2', 'ServerContact2'),
-          makeVCard(
-            'google-rewritten-uid',
-            'https://carddav.example.com/contacts/exported.vcf',
-            'etag-exported',
-            'ExportedContact'
-          ),
-        ];
-        mocks.fetchVCards.mockResolvedValue(serverVCards);
-
+          makeVCard('google-rewritten-uid', exportedHref, 'etag-exported', 'ExportedContact'),
+        ]);
         mocks.vCardToPerson
           .mockReturnValueOnce(makeParsedVCard('server-uid-1', 'ServerContact1'))
           .mockReturnValueOnce(makeParsedVCard('server-uid-2', 'ServerContact2'))
           .mockReturnValueOnce(makeParsedVCard('google-rewritten-uid', 'ExportedContact'));
-
-        const exportedMapping = makeMapping({
-          uid: 'original-local-uid',
-          href: 'https://carddav.example.com/contacts/exported.vcf',
-          etag: 'etag-exported',
-        });
-
-        // For server-uid-1: UID lookup fails, href lookup fails → pending import
-        // For server-uid-2: UID lookup fails, href lookup fails → pending import
-        // For google-rewritten-uid: UID lookup fails, href lookup SUCCEEDS → not a pending import
-        mocks.cardDavMappingFindFirst
-          // server-uid-1: UID lookup
-          .mockResolvedValueOnce(null)
-          // server-uid-1: href lookup
-          .mockResolvedValueOnce(null)
-          // server-uid-2: UID lookup
-          .mockResolvedValueOnce(null)
-          // server-uid-2: href lookup
-          .mockResolvedValueOnce(null)
-          // google-rewritten-uid: UID lookup
-          .mockResolvedValueOnce(null)
-          // google-rewritten-uid: href lookup → match!
-          .mockResolvedValueOnce(exportedMapping);
 
         mocks.cardDavPendingImportCount.mockResolvedValue(2);
 
@@ -494,6 +548,40 @@ describe('CardDAV Sync Engine', () => {
         // Only 2 pending imports (the genuine server contacts), not 3
         expect(mocks.cardDavPendingImportUpsert).toHaveBeenCalledTimes(2);
         expect(result.pendingImports).toBe(2);
+      });
+    });
+
+    describe('performance', () => {
+      it('should use O(1) lookups for large contact lists', async () => {
+        const mappingCount = 100;
+        const mappings = Array.from({ length: mappingCount }, (_, i) =>
+          makeLightMapping({
+            id: `mapping-${i}`,
+            uid: `uid-${i}`,
+            href: `/contacts/${i}.vcf`,
+            etag: `etag-${i}`,
+          })
+        );
+        mocks.cardDavMappingFindMany.mockResolvedValue(mappings);
+
+        // All vCards match existing mappings with same etag (no changes)
+        const vCards = Array.from({ length: mappingCount }, (_, i) =>
+          makeVCard(`uid-${i}`, `/contacts/${i}.vcf`, `etag-${i}`, `Contact${i}`)
+        );
+        mocks.fetchVCards.mockResolvedValue(vCards);
+        vCards.forEach((_, i) => {
+          mocks.vCardToPerson.mockReturnValueOnce(
+            makeParsedVCard(`uid-${i}`, `Contact${i}`)
+          );
+        });
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+
+        await syncFromServer(USER_ID);
+
+        // Only 1 findMany call for pre-load, zero findFirst calls
+        expect(mocks.cardDavMappingFindMany).toHaveBeenCalledTimes(1);
+        expect(mocks.cardDavMappingFindFirst).not.toHaveBeenCalled();
+        expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
       });
     });
 
@@ -515,7 +603,6 @@ describe('CardDAV Sync Engine', () => {
   describe('syncToServer', () => {
     describe('unmapped contacts export', () => {
       it('should export unmapped persons and create mappings', async () => {
-        // No existing mappings
         mocks.cardDavMappingFindMany.mockResolvedValue([]);
 
         const unmappedPerson = {
@@ -546,7 +633,6 @@ describe('CardDAV Sync Engine', () => {
 
         const result = await syncToServer(USER_ID);
 
-        // Should have assigned a UID
         expect(mocks.personUpdate).toHaveBeenCalledWith(
           expect.objectContaining({
             where: { id: 'person-new' },
@@ -554,7 +640,6 @@ describe('CardDAV Sync Engine', () => {
           })
         );
 
-        // Should have created a mapping
         expect(mocks.cardDavMappingCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
@@ -601,7 +686,7 @@ describe('CardDAV Sync Engine', () => {
 
         await syncToServer(USER_ID);
 
-        // Should NOT update person (uid already exists)
+        // Should NOT update person UID (already exists)
         expect(mocks.personUpdate).not.toHaveBeenCalledWith(
           expect.objectContaining({
             where: { id: 'person-existing-uid' },
@@ -609,7 +694,6 @@ describe('CardDAV Sync Engine', () => {
           })
         );
 
-        // Should use existing UID in mapping
         expect(mocks.cardDavMappingCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
@@ -623,7 +707,9 @@ describe('CardDAV Sync Engine', () => {
 
   describe('bidirectionalSync', () => {
     it('should run pull then push and combine results', async () => {
-      // Pull: 2 new server contacts
+      // Pull: 2 new server contacts (no mappings)
+      mocks.cardDavMappingFindMany.mockResolvedValue([]);
+
       const serverVCards = [
         makeVCard('uid-1', '/contacts/1.vcf', 'etag-1', 'Contact1'),
         makeVCard('uid-2', '/contacts/2.vcf', 'etag-2', 'Contact2'),
@@ -633,17 +719,9 @@ describe('CardDAV Sync Engine', () => {
         .mockReturnValueOnce(makeParsedVCard('uid-1', 'Contact1'))
         .mockReturnValueOnce(makeParsedVCard('uid-2', 'Contact2'));
 
-      // No existing mappings for any vCard
-      mocks.cardDavMappingFindFirst
-        .mockResolvedValueOnce(null) // uid-1 UID lookup
-        .mockResolvedValueOnce(null) // uid-1 href lookup
-        .mockResolvedValueOnce(null) // uid-2 UID lookup
-        .mockResolvedValueOnce(null); // uid-2 href lookup
-
       mocks.cardDavPendingImportCount.mockResolvedValue(2);
 
       // Push: 1 unmapped local contact
-      mocks.cardDavMappingFindMany.mockResolvedValue([]);
       const localPerson = {
         id: 'local-1',
         userId: USER_ID,
