@@ -24,7 +24,7 @@ export async function POST(_request: Request) {
       }
 
       const onProgress = (event: SyncProgressEvent) => {
-        sendEvent('progress', event as unknown as Record<string, unknown>);
+        sendEvent('progress', { ...event });
       };
 
       try {
