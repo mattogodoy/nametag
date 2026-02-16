@@ -13,7 +13,6 @@ export interface WizardData {
   testPassed: boolean;
   backupDownloaded: boolean;
   syncEnabled: boolean;
-  autoSyncInterval: number;
 }
 
 interface Step1ServerConfigProps {

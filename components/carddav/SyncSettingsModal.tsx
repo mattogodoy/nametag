@@ -30,7 +30,6 @@ export default function SyncSettingsModal({
 
   const [syncEnabled, setSyncEnabled] = useState(currentSettings?.syncEnabled ?? true);
   const [autoExportNew, setAutoExportNew] = useState(currentSettings?.autoExportNew ?? true);
-  const [autoSyncInterval, setAutoSyncInterval] = useState(currentSettings?.autoSyncInterval || 300);
   const [importMode, setImportMode] = useState(currentSettings?.importMode || 'manual');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +40,6 @@ export default function SyncSettingsModal({
     if (isOpen && currentSettings) {
       setSyncEnabled(currentSettings.syncEnabled);
       setAutoExportNew(currentSettings.autoExportNew);
-      setAutoSyncInterval(currentSettings.autoSyncInterval);
       setImportMode(currentSettings.importMode);
       setError('');
     }
@@ -58,7 +56,6 @@ export default function SyncSettingsModal({
         body: JSON.stringify({
           syncEnabled,
           autoExportNew,
-          autoSyncInterval,
           importMode,
         }),
       });
@@ -105,6 +102,9 @@ export default function SyncSettingsModal({
               <label htmlFor="syncEnabled" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('syncEnabledLabel')}
               </label>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {t('syncEnabledHelp')}
+              </p>
             </div>
           </div>
 
@@ -123,32 +123,10 @@ export default function SyncSettingsModal({
               <label htmlFor="autoExportNew" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('autoExportNewLabel')}
               </label>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {t('autoExportNewHelp')}
+              </p>
             </div>
-          </div>
-
-          {/* Sync Interval */}
-          <div>
-            <label htmlFor="autoSyncInterval" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('syncIntervalLabel')}
-            </label>
-            <select
-              id="autoSyncInterval"
-              value={autoSyncInterval}
-              onChange={(e) => setAutoSyncInterval(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value={60}>{t('interval1min')}</option>
-              <option value={300}>{t('interval5min')}</option>
-              <option value={600}>{t('interval10min')}</option>
-              <option value={1800}>{t('interval30min')}</option>
-              <option value={3600}>{t('interval1hour')}</option>
-              <option value={21600}>{t('interval6hours')}</option>
-              <option value={43200}>{t('interval12hours')}</option>
-              <option value={86400}>{t('interval24hours')}</option>
-            </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {t('syncIntervalHelp')}
-            </p>
           </div>
 
           {/* Import Mode */}

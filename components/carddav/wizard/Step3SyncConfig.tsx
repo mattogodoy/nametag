@@ -13,17 +13,6 @@ interface Step3SyncConfigProps {
   onClose: () => void;
 }
 
-const SYNC_INTERVALS = [
-  { value: 60, key: 'interval1min' },
-  { value: 300, key: 'interval5min' },
-  { value: 600, key: 'interval10min' },
-  { value: 1800, key: 'interval30min' },
-  { value: 3600, key: 'interval1hour' },
-  { value: 21600, key: 'interval6hours' },
-  { value: 43200, key: 'interval12hours' },
-  { value: 86400, key: 'interval24hours' },
-] as const;
-
 export default function Step3SyncConfig({
   data,
   onUpdate,
@@ -51,7 +40,6 @@ export default function Step3SyncConfig({
           password: data.password,
           provider: data.provider !== 'custom' ? data.provider : null,
           syncEnabled: data.syncEnabled,
-          autoSyncInterval: data.autoSyncInterval,
           autoExportNew: true,
           importMode: 'manual',
         }),
@@ -84,6 +72,9 @@ export default function Step3SyncConfig({
           <label htmlFor="sync-enabled" className="text-sm font-medium text-foreground">
             {t('syncEnabledLabel')}
           </label>
+          <p className="mt-1 text-xs text-muted">
+            {t('syncEnabledHelp')}
+          </p>
         </div>
         <button
           id="sync-enabled"
@@ -112,25 +103,6 @@ export default function Step3SyncConfig({
           {tw('manualSyncExplanation')}
         </p>
       </div>
-
-      {data.syncEnabled && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {t('syncIntervalLabel')}
-          </label>
-          <select
-            value={data.autoSyncInterval}
-            onChange={(e) => onUpdate({ autoSyncInterval: parseInt(e.target.value, 10) })}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {SYNC_INTERVALS.map(({ value, key }) => (
-              <option key={value} value={value}>
-                {t(key)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
 
       {/* Can change later note */}
       <p className="text-xs text-muted">

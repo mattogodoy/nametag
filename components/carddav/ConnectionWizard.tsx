@@ -21,7 +21,6 @@ const INITIAL_DATA: WizardData = {
   testPassed: false,
   backupDownloaded: false,
   syncEnabled: false,
-  autoSyncInterval: 300,
 };
 
 const STEPS = ['stepServer', 'stepBackup', 'stepSync'] as const;

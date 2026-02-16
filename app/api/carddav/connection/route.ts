@@ -76,7 +76,7 @@ export async function POST(request: Request) {
         provider: provider || null,
         syncEnabled: syncEnabled ?? true,
         autoExportNew: autoExportNew ?? true,
-        autoSyncInterval: autoSyncInterval ?? 300, // Default: 5 minutes
+        autoSyncInterval: autoSyncInterval ?? 43200, // Default: 12 hours
         importMode: importMode ?? 'manual', // Default: manual
       },
     });
