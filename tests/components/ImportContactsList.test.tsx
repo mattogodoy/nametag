@@ -292,10 +292,14 @@ END:VCARD`,
       const checkbox = screen.getAllByRole('checkbox')[1];
       fireEvent.click(checkbox);
 
-      // Select group (implementation depends on UI)
-      // This is simplified - actual implementation may vary
-      const groupButton = screen.getByText('Friends');
-      fireEvent.click(groupButton);
+      // Select group via GroupsSelector (PillSelector)
+      const groupInput = screen.getByPlaceholderText('placeholder');
+      fireEvent.focus(groupInput);
+
+      await waitFor(() => {
+        const groupOption = screen.getByText('Friends');
+        fireEvent.click(groupOption);
+      });
 
       const importButton = screen.getByText(/importSelected/);
       fireEvent.click(importButton);

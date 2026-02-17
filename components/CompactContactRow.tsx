@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { formatDateTime } from '@/lib/date-format';
+import GroupsSelector from './GroupsSelector';
 
 interface ParsedVCardData {
   name?: string;
@@ -39,6 +40,7 @@ interface CompactContactRowProps {
   availableGroups: Group[];
   selectedGroupIds: string[];
   onGroupsChange: (contactId: string, groupIds: string[]) => void;
+  onGroupCreated?: (group: Group) => void;
   parsedData: ParsedVCardData | null;
 }
 
@@ -49,11 +51,11 @@ export default function CompactContactRow({
   availableGroups,
   selectedGroupIds,
   onGroupsChange,
+  onGroupCreated,
   parsedData,
 }: CompactContactRowProps) {
   const t = useTranslations('settings.carddav.import');
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showGroupDropdown, setShowGroupDropdown] = useState(false);
 
   // Format full name from parsed vCard data
   const formatFullName = (parsed: ParsedVCardData | null): string => {
@@ -77,13 +79,6 @@ export default function CompactContactRow({
   };
 
   const fullName = formatFullName(parsedData);
-
-  const handleGroupToggle = (groupId: string) => {
-    const newGroupIds = selectedGroupIds.includes(groupId)
-      ? selectedGroupIds.filter((id) => id !== groupId)
-      : [...selectedGroupIds, groupId];
-    onGroupsChange(pendingImport.id, newGroupIds);
-  };
 
   return (
     <div
@@ -130,104 +125,74 @@ export default function CompactContactRow({
           {fullName}
         </div>
 
-        {/* Groups dropdown */}
-        <div className="relative flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowGroupDropdown(!showGroupDropdown)}
-            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"
-          >
-            <span className="text-muted">
-              {selectedGroupIds.length === 0
-                ? t('noGroups')
-                : t('groupsCount', { count: selectedGroupIds.length })}
-            </span>
-            <svg
-              className={`w-4 h-4 transition-transform ${showGroupDropdown ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {/* Dropdown menu */}
-          {showGroupDropdown && (
-            <>
-              {/* Backdrop to close dropdown */}
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowGroupDropdown(false)}
-              />
-
-              {/* Dropdown content */}
-              <div className="absolute right-0 mt-2 w-64 bg-surface border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
-                {availableGroups.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-muted">
-                    {t('noGroups')}
-                  </div>
-                ) : (
-                  <div className="py-2">
-                    {availableGroups.map((group) => (
-                      <label
-                        key={group.id}
-                        className="flex items-center gap-3 px-4 py-2 hover:bg-surface-elevated cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedGroupIds.includes(group.id)}
-                          onChange={() => handleGroupToggle(group.id)}
-                          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-foreground flex-1">{group.name}</span>
-                        {group.color && (
-                          <div
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: group.color }}
-                          />
-                        )}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        {/* Group pills (read-only display) */}
+        {selectedGroupIds.length > 0 && (
+          <div className="flex flex-wrap gap-1 flex-shrink-0">
+            {selectedGroupIds.map((groupId) => {
+              const group = availableGroups.find((g) => g.id === groupId);
+              if (!group) return null;
+              return (
+                <span
+                  key={groupId}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-elevated rounded-full text-xs font-medium text-foreground"
+                >
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: group.color || '#9CA3AF' }}
+                  />
+                  {group.name}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Expanded details */}
-      {isExpanded && parsedData && (
+      {isExpanded && (
         <div className="px-3 pb-3 pt-0 border-t border-gray-200 dark:border-gray-700 mt-2">
-          <div className="mt-2 space-y-1 text-sm text-muted">
-            {parsedData.organization && (
-              <p>
-                <span className="font-medium">{t('organization')}:</span>{' '}
-                {parsedData.organization}
+          {parsedData && (
+            <div className="mt-2 space-y-1 text-sm text-muted">
+              {parsedData.organization && (
+                <p>
+                  <span className="font-medium">{t('organization')}:</span>{' '}
+                  {parsedData.organization}
+                </p>
+              )}
+              {parsedData.jobTitle && (
+                <p>
+                  <span className="font-medium">{t('jobTitle')}:</span>{' '}
+                  {parsedData.jobTitle}
+                </p>
+              )}
+              {parsedData.emails && parsedData.emails.length > 0 && (
+                <p>
+                  <span className="font-medium">{t('email')}:</span>{' '}
+                  {parsedData.emails[0].email}
+                </p>
+              )}
+              {parsedData.phoneNumbers && parsedData.phoneNumbers.length > 0 && (
+                <p>
+                  <span className="font-medium">{t('phone')}:</span>{' '}
+                  {parsedData.phoneNumbers[0].number}
+                </p>
+              )}
+              <p className="text-xs">
+                {t('discovered')}: {formatDateTime(pendingImport.discoveredAt)}
               </p>
-            )}
-            {parsedData.jobTitle && (
-              <p>
-                <span className="font-medium">{t('jobTitle')}:</span>{' '}
-                {parsedData.jobTitle}
-              </p>
-            )}
-            {parsedData.emails && parsedData.emails.length > 0 && (
-              <p>
-                <span className="font-medium">{t('email')}:</span>{' '}
-                {parsedData.emails[0].email}
-              </p>
-            )}
-            {parsedData.phoneNumbers && parsedData.phoneNumbers.length > 0 && (
-              <p>
-                <span className="font-medium">{t('phone')}:</span>{' '}
-                {parsedData.phoneNumbers[0].number}
-              </p>
-            )}
-            <p className="text-xs">
-              {t('discovered')}: {formatDateTime(pendingImport.discoveredAt)}
-            </p>
+            </div>
+          )}
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-foreground mb-1">
+              {t('contactGroups')}
+            </label>
+            <GroupsSelector
+              availableGroups={availableGroups}
+              selectedGroupIds={selectedGroupIds}
+              onChange={(groupIds) => onGroupsChange(pendingImport.id, groupIds)}
+              onGroupCreated={onGroupCreated}
+              showCreateHint={false}
+            />
           </div>
         </div>
       )}

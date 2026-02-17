@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { vCardToPerson } from '@/lib/vcard';
 import CompactContactRow from './CompactContactRow';
+import GroupsSelector from './GroupsSelector';
 
 interface PendingImport {
   id: string;
@@ -37,6 +38,7 @@ export default function ImportContactsList({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [perContactGroups, setPerContactGroups] = useState<Map<string, string[]>>(new Map());
+  const [availableGroups, setAvailableGroups] = useState<Group[]>(groups);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,12 +60,11 @@ export default function ImportContactsList({
     }
   };
 
-  const handleToggleGroup = (groupId: string) => {
-    if (selectedGroupIds.includes(groupId)) {
-      setSelectedGroupIds(selectedGroupIds.filter((id) => id !== groupId));
-    } else {
-      setSelectedGroupIds([...selectedGroupIds, groupId]);
-    }
+  const handleGroupCreated = (group: Group) => {
+    setAvailableGroups((prev) => {
+      if (prev.some((g) => g.id === group.id)) return prev;
+      return [...prev, group];
+    });
   };
 
   const handlePerContactGroupsChange = (contactId: string, groupIds: string[]) => {
@@ -166,32 +167,20 @@ export default function ImportContactsList({
   return (
     <div className="space-y-6">
       {/* Group Selection */}
-      {groups.length > 0 && (
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          <h3 className="font-semibold text-foreground mb-3">
-            {t('assignToGroups')}
-          </h3>
-          <p className="text-sm text-muted mb-3">
-            {t('assignToGroupsDescription')}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {groups.map((group) => (
-              <button
-                key={group.id}
-                type="button"
-                onClick={() => handleToggleGroup(group.id)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedGroupIds.includes(group.id)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {group.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h3 className="font-semibold text-foreground mb-3">
+          {t('assignToGroups')}
+        </h3>
+        <p className="text-sm text-muted mb-3">
+          {t('assignToGroupsDescription')}
+        </p>
+        <GroupsSelector
+          availableGroups={availableGroups}
+          selectedGroupIds={selectedGroupIds}
+          onChange={setSelectedGroupIds}
+          onGroupCreated={handleGroupCreated}
+        />
+      </div>
 
       {/* Error */}
       {error && (
@@ -230,9 +219,10 @@ export default function ImportContactsList({
               pendingImport={pendingImport}
               isSelected={isSelected}
               onToggle={handleToggleContact}
-              availableGroups={groups}
+              availableGroups={availableGroups}
               selectedGroupIds={contactGroupIds}
               onGroupsChange={handlePerContactGroupsChange}
+              onGroupCreated={handleGroupCreated}
               parsedData={parsed}
             />
           );
