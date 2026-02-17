@@ -346,6 +346,35 @@ describe('People API', () => {
         })
       );
     });
+
+    it('should not override other fields when updating a single field', async () => {
+      const existingPerson = {
+        id: 'person-1',
+        name: 'John',
+        surname: 'Doe',
+        middleName: 'Michael',
+        nickname: 'Johnny',
+        userId: 'user-123',
+        contactReminderEnabled: false,
+      };
+      const updatedPerson = { ...existingPerson, name: 'John Updated' };
+
+      mocks.personFindUnique.mockResolvedValue(existingPerson);
+      mocks.importantDateCount.mockResolvedValue(0);
+      mocks.personUpdate.mockResolvedValue(updatedPerson);
+
+      const request = new Request('http://localhost/api/people/person-1', {
+        method: 'PUT',
+        body: JSON.stringify({ name: 'John Updated' }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const context = { params: Promise.resolve({ id: 'person-1' }) };
+      await PUT(request, context);
+
+      // Ensure other properties are NOT in the update data
+      const updateCall = mocks.personUpdate.mock.calls[0][0];
+      expect(updateCall.data).toStrictEqual({ name: 'John Updated' });
+    });
   });
 
   describe('DELETE /api/people/[id]', () => {

@@ -119,46 +119,61 @@ export const PUT = withAuth(async (request, session, context) => {
     const sanitizedNickname = nickname ? sanitizeName(nickname) : null;
     const sanitizedNotes = notes ? sanitizeNotes(notes) : null;
 
-    // Build update data
-    const updateData = {
-      name: sanitizedName,
-      surname: sanitizedSurname,
-      middleName: sanitizedMiddleName,
-      secondLastName: sanitizedSecondLastName,
-      nickname: sanitizedNickname,
-      lastContact: lastContact ? new Date(lastContact) : null,
-      notes: sanitizedNotes,
-      contactReminderEnabled: contactReminderEnabled ?? false,
-      contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
-      contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
-      groups: groupIds
-        ? {
-            deleteMany: {},
-            create: groupIds.map((groupId) => ({
-              groupId,
-            })),
-          }
-        : undefined,
-      importantDates: importantDates
-        ? {
-            deleteMany: {},
-            create: importantDates.map((date) => ({
-              title: date.title,
-              date: new Date(date.date),
-              reminderEnabled: date.reminderEnabled ?? false,
-              reminderType: date.reminderEnabled ? date.reminderType : null,
-              reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
-              reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
-            })),
-          }
-        : undefined,
-      // Only update relationshipToUserId if it's provided
-      relationshipToUser: relationshipToUserId !== undefined
-        ? relationshipToUserId
-          ? { connect: { id: relationshipToUserId } }
-          : { disconnect: true }
-        : undefined,
-    };
+    // Build update data - only include fields that were provided in the request
+    const updateData: Parameters<typeof prisma.person.update>[0]['data'] = {};
+
+    if (name !== undefined) {
+      updateData.name = sanitizedName;
+    }
+    if (surname !== undefined) {
+      updateData.surname = sanitizedSurname;
+    }
+    if (middleName !== undefined) {
+      updateData.middleName = sanitizedMiddleName;
+    }
+    if (secondLastName !== undefined) {
+      updateData.secondLastName = sanitizedSecondLastName;
+    }
+    if (nickname !== undefined) {
+      updateData.nickname = sanitizedNickname;
+    }
+    if (lastContact !== undefined) {
+      updateData.lastContact = lastContact ? new Date(lastContact) : null;
+    }
+    if (notes !== undefined) {
+      updateData.notes = sanitizedNotes;
+    }
+    if (contactReminderEnabled !== undefined) {
+      updateData.contactReminderEnabled = contactReminderEnabled;
+      updateData.contactReminderInterval = contactReminderEnabled ? contactReminderInterval : null;
+      updateData.contactReminderIntervalUnit = contactReminderEnabled ? contactReminderIntervalUnit : null;
+    }
+    if (groupIds !== undefined) {
+      updateData.groups = {
+        deleteMany: {},
+        create: groupIds.map((groupId) => ({
+          groupId,
+        })),
+      };
+    }
+    if (importantDates !== undefined) {
+      updateData.importantDates = {
+        deleteMany: {},
+        create: importantDates.map((date) => ({
+          title: date.title,
+          date: new Date(date.date),
+          reminderEnabled: date.reminderEnabled ?? false,
+          reminderType: date.reminderEnabled ? date.reminderType : null,
+          reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
+          reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+        })),
+      };
+    }
+    if (relationshipToUserId !== undefined) {
+      updateData.relationshipToUser = relationshipToUserId
+        ? { connect: { id: relationshipToUserId } }
+        : { disconnect: true };
+    }
 
     // Update person and handle group associations
     const person = await prisma.person.update({
