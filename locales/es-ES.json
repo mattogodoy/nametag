@@ -132,6 +132,8 @@
     "carddav": {
       "title": "Sincronización CardDAV",
       "description": "Conectar a servidores de contactos",
+      "betaLabel": "Beta",
+      "betaBanner": "La sincronización CardDAV está actualmente en fase beta. Algunas funciones pueden cambiar o tener un comportamiento inesperado. Recomendamos hacer una copia de seguridad de tus contactos antes de conectarte a un servidor CardDAV.",
       "pageDescription": "Sincroniza tus contactos con servidores CardDAV como Google Contacts, iCloud o Nextcloud.",
       "providerLabel": "Proveedor",
       "customProvider": "Servidor personalizado",

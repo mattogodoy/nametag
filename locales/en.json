@@ -132,6 +132,8 @@
     "carddav": {
       "title": "CardDAV Sync",
       "description": "Connect to contact servers",
+      "betaLabel": "Beta",
+      "betaBanner": "CardDAV Sync is currently in beta. Some features may change or have unexpected behavior. We recommend backing up your contacts before connecting to a CardDAV server.",
       "pageDescription": "Sync your contacts with CardDAV servers like Google Contacts, iCloud, or Nextcloud.",
       "providerLabel": "Provider",
       "customProvider": "Custom Server",
