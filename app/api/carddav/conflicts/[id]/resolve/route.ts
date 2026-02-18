@@ -96,60 +96,79 @@ export async function POST(request: Request, context: RouteParams) {
       const remoteData = JSON.parse(conflict.remoteVersion);
       const parsedVCard = vCardToPerson(remoteData.vCardData || '');
 
-      // Delete all multi-value fields
-      await prisma.$transaction([
-        prisma.personPhone.deleteMany({ where: { personId: conflict.mapping.personId } }),
-        prisma.personEmail.deleteMany({ where: { personId: conflict.mapping.personId } }),
-        prisma.personAddress.deleteMany({ where: { personId: conflict.mapping.personId } }),
-        prisma.personUrl.deleteMany({ where: { personId: conflict.mapping.personId } }),
-        prisma.personIM.deleteMany({ where: { personId: conflict.mapping.personId } }),
-        prisma.personLocation.deleteMany({ where: { personId: conflict.mapping.personId } }),
-        prisma.personCustomField.deleteMany({ where: { personId: conflict.mapping.personId } }),
-      ]);
+      // Wrap all operations in a single interactive transaction for atomicity
+      await prisma.$transaction(async (tx) => {
+        // Delete all multi-value fields
+        await tx.personPhone.deleteMany({ where: { personId: conflict.mapping.personId } });
+        await tx.personEmail.deleteMany({ where: { personId: conflict.mapping.personId } });
+        await tx.personAddress.deleteMany({ where: { personId: conflict.mapping.personId } });
+        await tx.personUrl.deleteMany({ where: { personId: conflict.mapping.personId } });
+        await tx.personIM.deleteMany({ where: { personId: conflict.mapping.personId } });
+        await tx.personLocation.deleteMany({ where: { personId: conflict.mapping.personId } });
+        await tx.personCustomField.deleteMany({ where: { personId: conflict.mapping.personId } });
 
-      // Update person with remote data
-      await prisma.person.update({
-        where: { id: conflict.mapping.personId },
-        data: {
-          name: parsedVCard.name,
-          surname: parsedVCard.surname,
-          middleName: parsedVCard.middleName,
-          prefix: parsedVCard.prefix,
-          suffix: parsedVCard.suffix,
-          nickname: parsedVCard.nickname,
-          organization: parsedVCard.organization,
-          jobTitle: parsedVCard.jobTitle,
-          photo: parsedVCard.photo,
-          gender: parsedVCard.gender,
-          anniversary: parsedVCard.anniversary,
-          notes: parsedVCard.notes,
-          uid: parsedVCard.uid,
+        // Update person with remote data
+        await tx.person.update({
+          where: { id: conflict.mapping.personId },
+          data: {
+            name: parsedVCard.name,
+            surname: parsedVCard.surname,
+            middleName: parsedVCard.middleName,
+            prefix: parsedVCard.prefix,
+            suffix: parsedVCard.suffix,
+            nickname: parsedVCard.nickname,
+            organization: parsedVCard.organization,
+            jobTitle: parsedVCard.jobTitle,
+            photo: parsedVCard.photo,
+            gender: parsedVCard.gender,
+            anniversary: parsedVCard.anniversary,
+            notes: parsedVCard.notes,
+            uid: parsedVCard.uid,
 
-          phoneNumbers: parsedVCard.phoneNumbers
-            ? { create: parsedVCard.phoneNumbers }
-            : undefined,
-          emails: parsedVCard.emails
-            ? { create: parsedVCard.emails }
-            : undefined,
-          addresses: parsedVCard.addresses
-            ? { create: parsedVCard.addresses }
-            : undefined,
-          urls: parsedVCard.urls
-            ? { create: parsedVCard.urls }
-            : undefined,
-          imHandles: parsedVCard.imHandles
-            ? { create: parsedVCard.imHandles }
-            : undefined,
-          locations: parsedVCard.locations
-            ? { create: parsedVCard.locations }
-            : undefined,
-          customFields: parsedVCard.customFields
-            ? { create: parsedVCard.customFields }
-            : undefined,
-        },
+            phoneNumbers: parsedVCard.phoneNumbers
+              ? { create: parsedVCard.phoneNumbers }
+              : undefined,
+            emails: parsedVCard.emails
+              ? { create: parsedVCard.emails }
+              : undefined,
+            addresses: parsedVCard.addresses
+              ? { create: parsedVCard.addresses }
+              : undefined,
+            urls: parsedVCard.urls
+              ? { create: parsedVCard.urls }
+              : undefined,
+            imHandles: parsedVCard.imHandles
+              ? { create: parsedVCard.imHandles }
+              : undefined,
+            locations: parsedVCard.locations
+              ? { create: parsedVCard.locations }
+              : undefined,
+            customFields: parsedVCard.customFields
+              ? { create: parsedVCard.customFields }
+              : undefined,
+          },
+        });
+
+        await tx.cardDavConflict.update({
+          where: { id },
+          data: {
+            resolvedAt: new Date(),
+            resolution: 'keep_remote',
+            resolvedBy: 'user',
+          },
+        });
+
+        await tx.cardDavMapping.update({
+          where: { id: conflict.mappingId },
+          data: {
+            syncStatus: 'synced',
+            lastRemoteChange: new Date(),
+            lastSyncedAt: new Date(),
+          },
+        });
       });
 
-      // Save photo as file if present
+      // Save photo as file if present (outside transaction - file I/O)
       if (parsedVCard.photo) {
         const photoFilename = await savePhoto(
           session.user.id,
@@ -163,24 +182,6 @@ export async function POST(request: Request, context: RouteParams) {
           });
         }
       }
-
-      await prisma.cardDavConflict.update({
-        where: { id },
-        data: {
-          resolvedAt: new Date(),
-          resolution: 'keep_remote',
-          resolvedBy: 'user',
-        },
-      });
-
-      await prisma.cardDavMapping.update({
-        where: { id: conflict.mappingId },
-        data: {
-          syncStatus: 'synced',
-          lastRemoteChange: new Date(),
-          lastSyncedAt: new Date(),
-        },
-      });
     } else if (resolution === 'merged') {
       // For merged, we expect the client to send the merged data
       // This is handled separately - for now just mark as resolved

@@ -75,18 +75,20 @@ export async function POST(request: Request) {
 
     // Use withDeleted() to bypass soft-delete filtering and find soft-deleted records
     const rawClient = withDeleted();
-    const softDeletedPersons = allUIDs.length > 0
-      ? await rawClient.person.findMany({
-          where: {
-            uid: { in: allUIDs },
-            userId: session.user.id,
-            deletedAt: { not: null },
-          },
-        })
-      : [];
-
-    // Disconnect the raw client to avoid connection leaks
-    await rawClient.$disconnect();
+    let softDeletedPersons: Awaited<ReturnType<typeof rawClient.person.findMany>> = [];
+    try {
+      softDeletedPersons = allUIDs.length > 0
+        ? await rawClient.person.findMany({
+            where: {
+              uid: { in: allUIDs },
+              userId: session.user.id,
+              deletedAt: { not: null },
+            },
+          })
+        : [];
+    } finally {
+      await rawClient.$disconnect();
+    }
 
     // Create a Map for O(1) lookup during import
     const softDeletedMap = new Map(

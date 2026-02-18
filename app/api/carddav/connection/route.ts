@@ -209,21 +209,21 @@ export async function DELETE(_request: Request) {
       );
     }
 
-    // Delete all related data first
-    // Delete mappings (cascade will handle related conflicts)
-    await prisma.cardDavMapping.deleteMany({
-      where: { connectionId: existingConnection.id },
-    });
-
-    // Delete pending imports
-    await prisma.cardDavPendingImport.deleteMany({
-      where: { connectionId: existingConnection.id },
-    });
-
-    // Delete the connection
-    await prisma.cardDavConnection.delete({
-      where: { userId: session.user.id },
-    });
+    // Delete all related data and the connection in a single transaction
+    await prisma.$transaction([
+      // Delete mappings (cascade will handle related conflicts)
+      prisma.cardDavMapping.deleteMany({
+        where: { connectionId: existingConnection.id },
+      }),
+      // Delete pending imports
+      prisma.cardDavPendingImport.deleteMany({
+        where: { connectionId: existingConnection.id },
+      }),
+      // Delete the connection
+      prisma.cardDavConnection.delete({
+        where: { userId: session.user.id },
+      }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
