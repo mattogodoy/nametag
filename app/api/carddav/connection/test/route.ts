@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { createDAVClient } from 'tsdav';
+import { validateServerUrl } from '@/lib/carddav/url-validation';
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,16 @@ export async function POST(request: Request) {
     if (!serverUrl || !username || !password) {
       return NextResponse.json(
         { error: 'Server URL, username, and password are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate URL to prevent SSRF attacks
+    try {
+      validateServerUrl(serverUrl);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid server URL' },
         { status: 400 }
       );
     }

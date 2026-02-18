@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { encryptPassword } from '@/lib/carddav/encryption';
+import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { z } from 'zod';
 
 const connectionSchema = z.object({
@@ -43,6 +44,16 @@ export async function POST(request: Request) {
       autoSyncInterval,
       importMode,
     } = validationResult.data;
+
+    // Validate URL to prevent SSRF attacks
+    try {
+      validateServerUrl(serverUrl);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid server URL' },
+        { status: 400 }
+      );
+    }
 
     if (!password) {
       return NextResponse.json(
@@ -122,6 +133,16 @@ export async function PUT(request: Request) {
       autoSyncInterval,
       importMode,
     } = validationResult.data;
+
+    // Validate URL to prevent SSRF attacks
+    try {
+      validateServerUrl(serverUrl);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid server URL' },
+        { status: 400 }
+      );
+    }
 
     // Check if connection exists
     const existingConnection = await prisma.cardDavConnection.findUnique({

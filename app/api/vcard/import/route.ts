@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
 import { savePhoto } from '@/lib/photo-storage';
+import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -41,6 +42,15 @@ export async function POST(request: Request) {
       try {
         // Parse vCard
         const parsedData = vCardToPerson(vcard);
+
+        // Sanitize imported data to prevent XSS attacks
+        parsedData.name = sanitizeName(parsedData.name) || parsedData.name;
+        parsedData.surname = parsedData.surname ? sanitizeName(parsedData.surname) ?? parsedData.surname : parsedData.surname;
+        parsedData.middleName = parsedData.middleName ? sanitizeName(parsedData.middleName) ?? parsedData.middleName : parsedData.middleName;
+        parsedData.nickname = parsedData.nickname ? sanitizeName(parsedData.nickname) ?? parsedData.nickname : parsedData.nickname;
+        parsedData.notes = parsedData.notes ? sanitizeNotes(parsedData.notes) ?? parsedData.notes : parsedData.notes;
+        parsedData.organization = parsedData.organization ? sanitizeName(parsedData.organization) ?? parsedData.organization : parsedData.organization;
+        parsedData.jobTitle = parsedData.jobTitle ? sanitizeName(parsedData.jobTitle) ?? parsedData.jobTitle : parsedData.jobTitle;
 
         // Check for duplicates by UID (skip if already exists)
         if (parsedData.uid) {
