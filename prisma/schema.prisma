@@ -73,7 +73,7 @@ model Person {
   suffix                      String?               // Honorific suffix (Jr., III)
 
   // vCard UID for CardDAV
-  uid                         String?               @unique // Required for sync
+  uid                         String?               // Required for sync
 
   // Professional
   organization                String?               // ORG (Company)
@@ -110,6 +110,7 @@ model Person {
   @@index([userId, nickname]) // For nickname sorting/search
   @@index([contactReminderEnabled, lastContact]) // For contact reminder queries
   @@index([userId, deletedAt]) // For soft delete filtering
+  @@unique([userId, uid])
   @@map("people")
 }
 
