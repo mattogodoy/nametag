@@ -64,8 +64,8 @@ describe('PersonAddressManager', () => {
 
     await user.click(screen.getByText('+ Add'));
 
-    // Find the country select element
-    const countrySelect = screen.getByRole('combobox');
+    // Find the country select element (it's a <select> element, not the TypeComboBox)
+    const countrySelect = screen.getByRole('combobox', { name: 'Country' });
     expect(countrySelect).toBeInTheDocument();
 
     // Should have option with Spain
@@ -87,7 +87,7 @@ describe('PersonAddressManager', () => {
     await user.type(streetInput, 'Calle Mayor 1');
 
     // Select country
-    const countrySelect = screen.getByRole('combobox');
+    const countrySelect = screen.getByRole('combobox', { name: 'Country' });
     await user.selectOptions(countrySelect, 'ES');
 
     await user.click(screen.getByRole('button', { name: 'Add' }));
@@ -158,7 +158,7 @@ describe('PersonAddressManager', () => {
 
     await user.click(screen.getByText('+ Add'));
 
-    const countrySelect = screen.getByRole('combobox');
+    const countrySelect = screen.getByRole('combobox', { name: 'Country' });
     const options = within(countrySelect).getAllByRole('option');
     const optionTexts = options.map(opt => opt.textContent);
 

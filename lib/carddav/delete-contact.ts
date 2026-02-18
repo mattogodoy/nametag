@@ -49,7 +49,7 @@ export async function deleteFromCardDav(personId: string): Promise<boolean> {
     logger.info(`Successfully deleted contact from CardDAV server: ${mapping.href}`);
     return true;
   } catch (error) {
-    logger.error('Failed to delete contact from CardDAV server:', error);
+    logger.error('Failed to delete contact from CardDAV server', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }
