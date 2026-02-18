@@ -549,6 +549,10 @@ export async function syncToServer(
       },
     });
 
+    // Process unmapped persons in batches to avoid overwhelming the CardDAV server
+    const BATCH_SIZE = 50;
+    const BATCH_DELAY_MS = 100;
+
     for (let i = 0; i < unmappedPersons.length; i++) {
       const person = unmappedPersons[i];
       try {
@@ -608,6 +612,11 @@ export async function syncToServer(
           `Failed to export ${person.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
       }
+
+      // Add delay between batches to respect server rate limits
+      if ((i + 1) % BATCH_SIZE === 0 && i + 1 < unmappedPersons.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+      }
     }
 
     return result;
@@ -640,9 +649,14 @@ export async function syncToServer(
 }
 
 /**
- * Bidirectional sync
+ * Bidirectional sync with overall timeout protection.
+ * Default timeout is 5 minutes to prevent slow servers from blocking the cron queue.
  */
-export async function bidirectionalSync(userId: string, onProgress?: SyncProgressCallback): Promise<SyncResult> {
+export async function bidirectionalSync(
+  userId: string,
+  onProgress?: SyncProgressCallback,
+  timeoutMs: number = 5 * 60 * 1000
+): Promise<SyncResult> {
   const lockAcquired = await acquireSyncLock(userId);
   if (!lockAcquired) {
     logger.info('Sync already in progress, skipping', { userId });
@@ -658,9 +672,22 @@ export async function bidirectionalSync(userId: string, onProgress?: SyncProgres
     };
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
+    // Check for abort before pulling from server
+    if (controller.signal.aborted) {
+      throw new Error('Sync timed out');
+    }
+
     // First, pull from server
     const pullResult = await syncFromServer(userId, onProgress);
+
+    // Check for abort before pushing to server
+    if (controller.signal.aborted) {
+      throw new Error('Sync timed out');
+    }
 
     // Then, push to server
     const pushResult = await syncToServer(userId, onProgress);
@@ -679,6 +706,7 @@ export async function bidirectionalSync(userId: string, onProgress?: SyncProgres
       pendingImports: (pullResult.pendingImports || 0) + (pushResult.pendingImports || 0),
     };
   } finally {
+    clearTimeout(timeoutId);
     await releaseSyncLock(userId);
   }
 }
