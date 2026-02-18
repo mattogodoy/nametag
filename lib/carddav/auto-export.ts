@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { personToVCard } from '@/lib/vcard';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
+import { withRetry } from './retry';
+import { logger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
@@ -92,7 +94,7 @@ export async function autoExportPerson(personId: string): Promise<void> {
 
     // Create vCard on server
     const filename = `${uid}.vcf`;
-    const created = await client.createVCard(addressBook, vCardData, filename);
+    const created = await withRetry(() => client.createVCard(addressBook, vCardData, filename));
 
     // Create mapping
     const localData = {
@@ -123,9 +125,9 @@ export async function autoExportPerson(personId: string): Promise<void> {
       },
     });
 
-    console.log(`Auto-exported person ${person.id} to CardDAV`);
+    logger.info('Auto-exported person to CardDAV', { personId: person.id });
   } catch (error) {
-    console.error('Auto-export failed:', error);
+    logger.error('Auto-export failed', { error: error instanceof Error ? error.message : String(error) });
 
     // Update connection with error
     await prisma.cardDavConnection.update({
@@ -231,7 +233,7 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
       data: '',
     };
 
-    const updated = await client.updateVCard(vCard, vCardData);
+    const updated = await withRetry(() => client.updateVCard(vCard, vCardData));
 
     // Update mapping
     const localData = {
@@ -259,9 +261,9 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
       },
     });
 
-    console.log(`Auto-updated person ${person.id} on CardDAV`);
+    logger.info('Auto-updated person on CardDAV', { personId: person.id });
   } catch (error) {
-    console.error('Auto-update failed:', error);
+    logger.error('Auto-update failed', { error: error instanceof Error ? error.message : String(error) });
 
     // Update connection with error
     await prisma.cardDavConnection.update({
