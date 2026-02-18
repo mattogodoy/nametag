@@ -5,7 +5,15 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
-export default function ImportSuccessToast() {
+interface ImportSuccessToastProps {
+  redirectPath?: string;
+  errorLevel?: 'error' | 'warning';
+}
+
+export default function ImportSuccessToast({
+  redirectPath,
+  errorLevel = 'error',
+}: ImportSuccessToastProps = {}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('settings.carddav.import');
@@ -30,7 +38,8 @@ export default function ImportSuccessToast() {
       const errorsCount = parseInt(errors || '0', 10);
 
       if (errorsCount > 0) {
-        toast.error(
+        const errorToast = errorLevel === 'warning' ? toast.warning : toast.error;
+        errorToast(
           t('importCompleteWithErrors', {
             imported: importedCount,
             errors: errorsCount,
@@ -46,14 +55,18 @@ export default function ImportSuccessToast() {
       }
 
       // Clean up URL parameters after showing toast
-      const url = new URL(window.location.href);
-      url.searchParams.delete('importSuccess');
-      url.searchParams.delete('imported');
-      url.searchParams.delete('skipped');
-      url.searchParams.delete('errors');
-      router.replace(url.pathname + url.search, { scroll: false });
+      if (redirectPath) {
+        router.replace(redirectPath, { scroll: false });
+      } else {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('importSuccess');
+        url.searchParams.delete('imported');
+        url.searchParams.delete('skipped');
+        url.searchParams.delete('errors');
+        router.replace(url.pathname + url.search, { scroll: false });
+      }
     }
-  }, [searchParams, router, t]);
+  }, [searchParams, router, t, redirectPath, errorLevel]);
 
   return null;
 }

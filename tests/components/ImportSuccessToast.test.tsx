@@ -19,6 +19,7 @@ vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
+    warning: vi.fn(),
   },
 }));
 
@@ -251,6 +252,45 @@ describe('ImportSuccessToast', () => {
       const { container } = render(<ImportSuccessToast />);
 
       expect(container.firstChild).toBeNull();
+    });
+  });
+
+  describe('redirectPath prop', () => {
+    it('should redirect to specified path instead of cleaning URL params', () => {
+      mockSearchParams.set('importSuccess', 'true');
+      mockSearchParams.set('imported', '3');
+      mockSearchParams.set('skipped', '0');
+      mockSearchParams.set('errors', '0');
+
+      render(<ImportSuccessToast redirectPath="/settings/carddav" />);
+
+      expect(mockReplace).toHaveBeenCalledWith('/settings/carddav', { scroll: false });
+    });
+  });
+
+  describe('errorLevel prop', () => {
+    it('should use toast.warning when errorLevel is warning', () => {
+      mockSearchParams.set('importSuccess', 'true');
+      mockSearchParams.set('imported', '2');
+      mockSearchParams.set('skipped', '0');
+      mockSearchParams.set('errors', '3');
+
+      render(<ImportSuccessToast errorLevel="warning" />);
+
+      expect(toast.warning).toHaveBeenCalledWith('2 imported, 3 errors');
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    it('should default to toast.error when errorLevel is not specified', () => {
+      mockSearchParams.set('importSuccess', 'true');
+      mockSearchParams.set('imported', '2');
+      mockSearchParams.set('skipped', '0');
+      mockSearchParams.set('errors', '3');
+
+      render(<ImportSuccessToast />);
+
+      expect(toast.error).toHaveBeenCalledWith('2 imported, 3 errors');
+      expect(toast.warning).not.toHaveBeenCalled();
     });
   });
 });

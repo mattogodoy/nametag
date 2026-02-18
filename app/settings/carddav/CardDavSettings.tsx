@@ -6,7 +6,7 @@ import ConnectionStatus from '@/components/carddav/ConnectionStatus';
 import ConnectionModal from '@/components/carddav/ConnectionModal';
 import SyncSettingsModal from '@/components/carddav/SyncSettingsModal';
 import SyncProgressModal from '@/components/carddav/SyncProgressModal';
-import ImportSuccessToast from '@/components/carddav/ImportSuccessToast';
+import ImportSuccessToast from '@/components/ImportSuccessToast';
 
 interface CardDavConnection {
   id: string;
@@ -39,7 +39,7 @@ export default function CardDavSettings({
 
   return (
     <>
-      <ImportSuccessToast />
+      <ImportSuccessToast redirectPath="/settings/carddav" errorLevel="warning" />
 
       <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
         <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
