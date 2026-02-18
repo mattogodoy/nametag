@@ -176,118 +176,14 @@ export async function POST(request: Request) {
 
         if (softDeletedPerson) {
           // Restore and update the soft-deleted person
-          person = await prisma.person.update({
-            where: { id: softDeletedPerson.id },
-            data: {
-              // Restore the person
-              deletedAt: null,
-
-              // Update with latest data from CardDAV
-              name: parsedData.name || '',
-              surname: parsedData.surname,
-              middleName: parsedData.middleName,
-              prefix: parsedData.prefix,
-              suffix: parsedData.suffix,
-              nickname: parsedData.nickname,
-              organization: parsedData.organization,
-              jobTitle: parsedData.jobTitle,
-              photo: parsedData.photo,
-              gender: parsedData.gender,
-              anniversary: parsedData.anniversary,
-              notes: parsedData.notes,
-
-              // Update multi-value fields (deleteMany + create pattern)
-              phoneNumbers: parsedData.phoneNumbers
-                ? { deleteMany: {}, create: parsedData.phoneNumbers }
-                : undefined,
-              emails: parsedData.emails
-                ? { deleteMany: {}, create: parsedData.emails }
-                : undefined,
-              addresses: parsedData.addresses
-                ? { deleteMany: {}, create: parsedData.addresses }
-                : undefined,
-              urls: parsedData.urls
-                ? { deleteMany: {}, create: parsedData.urls }
-                : undefined,
-              imHandles: parsedData.imHandles
-                ? { deleteMany: {}, create: parsedData.imHandles }
-                : undefined,
-              locations: parsedData.locations
-                ? { deleteMany: {}, create: parsedData.locations }
-                : undefined,
-              customFields: parsedData.customFields
-                ? { deleteMany: {}, create: parsedData.customFields }
-                : undefined,
-              importantDates: parsedData.importantDates
-                ? { deleteMany: {}, create: parsedData.importantDates.map((date) => ({
-                    title: date.title,
-                    date: date.date,
-                    reminderEnabled: false,
-                  }))}
-                : undefined,
-            },
-          });
+          person = await restorePersonFromVCardData(
+            session.user.id,
+            softDeletedPerson.id,
+            parsedData,
+          );
         } else {
           // Create a new person
-          person = await prisma.person.create({
-            data: {
-              userId: session.user.id,
-              name: parsedData.name || '',
-              surname: parsedData.surname,
-              middleName: parsedData.middleName,
-              prefix: parsedData.prefix,
-              suffix: parsedData.suffix,
-              nickname: parsedData.nickname,
-              organization: parsedData.organization,
-              jobTitle: parsedData.jobTitle,
-              photo: parsedData.photo,
-              gender: parsedData.gender,
-              anniversary: parsedData.anniversary,
-              notes: parsedData.notes,
-              uid: parsedData.uid || uuidv4(),
-
-              // Create multi-value fields
-              phoneNumbers: parsedData.phoneNumbers
-                ? { create: parsedData.phoneNumbers }
-                : undefined,
-              emails: parsedData.emails
-                ? { create: parsedData.emails }
-                : undefined,
-              addresses: parsedData.addresses
-                ? { create: parsedData.addresses }
-                : undefined,
-              urls: parsedData.urls
-                ? { create: parsedData.urls }
-                : undefined,
-              imHandles: parsedData.imHandles
-                ? { create: parsedData.imHandles }
-                : undefined,
-              locations: parsedData.locations
-                ? { create: parsedData.locations }
-                : undefined,
-              customFields: parsedData.customFields
-                ? { create: parsedData.customFields }
-                : undefined,
-              importantDates: parsedData.importantDates
-                ? { create: parsedData.importantDates.map((date) => ({
-                    title: date.title,
-                    date: date.date,
-                    reminderEnabled: false,
-                  }))}
-                : undefined,
-            },
-          });
-        }
-
-        // Save photo as file if present
-        if (parsedData.photo && person.id) {
-          const photoFilename = await savePhoto(session.user.id, person.id, parsedData.photo);
-          if (photoFilename) {
-            await prisma.person.update({
-              where: { id: person.id },
-              data: { photo: photoFilename },
-            });
-          }
+          person = await createPersonFromVCardData(session.user.id, parsedData);
         }
 
         // Create mapping

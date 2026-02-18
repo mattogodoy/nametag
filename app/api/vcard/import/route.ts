@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
-import { savePhoto } from '@/lib/photo-storage';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
-import { v4 as uuidv4 } from 'uuid';
+import { createPersonFromVCardData } from '@/lib/carddav/person-from-vcard';
 
 /**
  * POST /api/vcard/import
@@ -67,68 +66,8 @@ export async function POST(request: Request) {
           }
         }
 
-        // Create a new person
-        const person = await prisma.person.create({
-          data: {
-            userId: session.user.id,
-            name: parsedData.name || 'Unknown',
-            surname: parsedData.surname,
-            middleName: parsedData.middleName,
-            prefix: parsedData.prefix,
-            suffix: parsedData.suffix,
-            nickname: parsedData.nickname,
-            organization: parsedData.organization,
-            jobTitle: parsedData.jobTitle,
-            photo: parsedData.photo,
-            gender: parsedData.gender,
-            anniversary: parsedData.anniversary,
-            notes: parsedData.notes,
-            uid: parsedData.uid || uuidv4(),
-
-            // Create multi-value fields
-            phoneNumbers: parsedData.phoneNumbers && parsedData.phoneNumbers.length > 0
-              ? { create: parsedData.phoneNumbers }
-              : undefined,
-            emails: parsedData.emails && parsedData.emails.length > 0
-              ? { create: parsedData.emails }
-              : undefined,
-            addresses: parsedData.addresses && parsedData.addresses.length > 0
-              ? { create: parsedData.addresses }
-              : undefined,
-            urls: parsedData.urls && parsedData.urls.length > 0
-              ? { create: parsedData.urls }
-              : undefined,
-            imHandles: parsedData.imHandles && parsedData.imHandles.length > 0
-              ? { create: parsedData.imHandles }
-              : undefined,
-            locations: parsedData.locations && parsedData.locations.length > 0
-              ? { create: parsedData.locations }
-              : undefined,
-            customFields: parsedData.customFields && parsedData.customFields.length > 0
-              ? { create: parsedData.customFields }
-              : undefined,
-            importantDates: parsedData.importantDates && parsedData.importantDates.length > 0
-              ? {
-                  create: parsedData.importantDates.map((date) => ({
-                    title: date.title,
-                    date: date.date,
-                    reminderEnabled: false,
-                  }))
-                }
-              : undefined,
-          },
-        });
-
-        // Save photo as file if present
-        if (parsedData.photo) {
-          const photoFilename = await savePhoto(session.user.id, person.id, parsedData.photo);
-          if (photoFilename) {
-            await prisma.person.update({
-              where: { id: person.id },
-              data: { photo: photoFilename },
-            });
-          }
-        }
+        // Create a new person (includes photo saving)
+        await createPersonFromVCardData(session.user.id, parsedData);
 
         results.imported++;
       } catch (error) {

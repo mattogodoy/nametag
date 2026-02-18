@@ -2,7 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { personToVCard, vCardToPerson } from '@/lib/vcard';
 import { withRetry, categorizeError } from './retry';
-import { savePhoto, readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
+import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
+import { updatePersonFromVCard } from './person-from-vcard';
 
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -710,81 +711,3 @@ export async function bidirectionalSync(userId: string, onProgress?: SyncProgres
   }
 }
 
-/**
- * Helper: Update person from vCard data
- */
-async function updatePersonFromVCard(
-  personId: string,
-  parsedData: ReturnType<typeof vCardToPerson>,
-  userId: string
-): Promise<void> {
-  // Delete all multi-value fields
-  await prisma.$transaction([
-    prisma.personPhone.deleteMany({ where: { personId } }),
-    prisma.personEmail.deleteMany({ where: { personId } }),
-    prisma.personAddress.deleteMany({ where: { personId } }),
-    prisma.personUrl.deleteMany({ where: { personId } }),
-    prisma.personIM.deleteMany({ where: { personId } }),
-    prisma.personLocation.deleteMany({ where: { personId } }),
-    prisma.personCustomField.deleteMany({ where: { personId } }),
-    prisma.importantDate.deleteMany({ where: { personId } }),
-  ]);
-
-  // Save photo as file if present
-  let photoValue = parsedData.photo;
-  if (photoValue) {
-    const filename = await savePhoto(userId, personId, photoValue);
-    if (filename) {
-      photoValue = filename;
-    }
-    // If savePhoto fails, keep the original value as fallback
-  }
-
-  // Update person with new data
-  await prisma.person.update({
-    where: { id: personId },
-    data: {
-      name: parsedData.name,
-      surname: parsedData.surname,
-      secondLastName: parsedData.secondLastName,
-      middleName: parsedData.middleName,
-      prefix: parsedData.prefix,
-      suffix: parsedData.suffix,
-      nickname: parsedData.nickname,
-      organization: parsedData.organization,
-      jobTitle: parsedData.jobTitle,
-      photo: photoValue,
-      gender: parsedData.gender,
-      anniversary: parsedData.anniversary,
-      lastContact: parsedData.lastContact,
-      notes: parsedData.notes,
-      uid: parsedData.uid,
-
-      // Create new multi-value fields
-      phoneNumbers: parsedData.phoneNumbers
-        ? { create: parsedData.phoneNumbers }
-        : undefined,
-      emails: parsedData.emails
-        ? { create: parsedData.emails }
-        : undefined,
-      addresses: parsedData.addresses
-        ? { create: parsedData.addresses }
-        : undefined,
-      urls: parsedData.urls
-        ? { create: parsedData.urls }
-        : undefined,
-      imHandles: parsedData.imHandles
-        ? { create: parsedData.imHandles }
-        : undefined,
-      locations: parsedData.locations
-        ? { create: parsedData.locations }
-        : undefined,
-      customFields: parsedData.customFields
-        ? { create: parsedData.customFields }
-        : undefined,
-      importantDates: parsedData.importantDates?.length
-        ? { create: parsedData.importantDates }
-        : undefined,
-    },
-  });
-}
