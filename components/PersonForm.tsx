@@ -298,8 +298,6 @@ export default function PersonForm({
         ...(mode === 'create' && knownThroughId !== 'user' ? { connectedThroughId: knownThroughId } : {})
       };
 
-      console.log('Sending payload:', payload);
-
       const response = await fetch(url, {
         method,
         headers: {

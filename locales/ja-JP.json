@@ -532,48 +532,6 @@
       "deleteFailed": "アカウントの削除に失敗しました",
       "importDataFailed": "データのインポートに失敗しました"
     },
-    "vcardTest": {
-      "title": "vCardパーサーテスト",
-      "description": "vCardの解析テスト（開発用のみ）",
-      "pageTitle": "vCardパーサーテスト",
-      "pageDescription": "vCardファイルをアップロードして解析動作をプレビューします。このページは開発モードでのみ利用可能です。",
-      "upload": "vCardファイルをアップロード",
-      "uploadDescription": "解析テスト用の.vcfまたは.vcardファイルを選択",
-      "dropzone": "vCardファイルをここにドロップ、またはクリックして選択",
-      "fileSelected": "ファイル選択済み",
-      "clickToChooseDifferent": "別のファイルを選択するにはクリック",
-      "rawTitle": "生のvCardコンテンツ",
-      "rawDescription": "元のvCardファイルの内容",
-      "copyToClipboard": "クリップボードにコピー",
-      "copied": "コピーしました！",
-      "parsedTitle": "解析された人物データ",
-      "parsedDescription": "このvCardがNametagでどのように解釈されるか",
-      "unknownTitle": "不明なプロパティ",
-      "unknownDescription": "Nametagのフィールドにマッピングできなかったプロパティ（メモに保存されます）",
-      "noUnknown": "すべてのプロパティが正常にマッピングされました",
-      "version": "vCardバージョン",
-      "preview": {
-        "identity": "ID情報",
-        "professional": "職業",
-        "contact": "連絡先情報",
-        "phones": "電話番号",
-        "emails": "メールアドレス",
-        "addresses": "住所",
-        "urls": "ウェブサイト",
-        "imHandles": "インスタントメッセージ",
-        "locations": "所在地",
-        "dates": "重要な日付",
-        "other": "その他の情報",
-        "groups": "グループ",
-        "customFields": "カスタムフィールド",
-        "noData": "{field}が見つかりません"
-      },
-      "errors": {
-        "invalidFile": "有効な.vcfまたは.vcardファイルをアップロードしてください",
-        "parseFailed": "vCardファイルの解析に失敗しました",
-        "readFailed": "ファイルの読み取りに失敗しました"
-      }
-    },
     "about": {
       "title": "概要",
       "description": "バージョンと情報",

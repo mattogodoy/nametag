@@ -532,48 +532,6 @@
       "deleteFailed": "Konto konnte nicht gelöscht werden",
       "importDataFailed": "Daten konnten nicht importiert werden"
     },
-    "vcardTest": {
-      "title": "vCard-Parser-Test",
-      "description": "vCard-Parsing testen (nur Entwicklung)",
-      "pageTitle": "vCard-Parser-Test",
-      "pageDescription": "Lade vCard-Dateien hoch und teste das Parsing-Verhalten. Diese Seite ist nur im Entwicklungsmodus verfügbar.",
-      "upload": "vCard-Datei hochladen",
-      "uploadDescription": "Wähle eine .vcf- oder .vcard-Datei zum Testen des Parsings",
-      "dropzone": "vCard-Datei hierher ziehen oder klicken, um auszuwählen",
-      "fileSelected": "Datei ausgewählt",
-      "clickToChooseDifferent": "Klicke, um eine andere Datei auszuwählen",
-      "rawTitle": "Roher vCard-Inhalt",
-      "rawDescription": "Originaler vCard-Dateiinhalt",
-      "copyToClipboard": "In Zwischenablage kopieren",
-      "copied": "Kopiert!",
-      "parsedTitle": "Geparste Personendaten",
-      "parsedDescription": "Wie diese vCard von Nametag interpretiert wird",
-      "unknownTitle": "Unbekannte Eigenschaften",
-      "unknownDescription": "Eigenschaften, die nicht auf Nametag-Felder zugeordnet werden konnten (in Notizen beibehalten)",
-      "noUnknown": "Alle Eigenschaften wurden erfolgreich zugeordnet",
-      "version": "vCard-Version",
-      "preview": {
-        "identity": "Identität",
-        "professional": "Beruflich",
-        "contact": "Kontaktinformationen",
-        "phones": "Telefonnummern",
-        "emails": "E-Mail-Adressen",
-        "addresses": "Adressen",
-        "urls": "Websites",
-        "imHandles": "Instant Messaging",
-        "locations": "Standorte",
-        "dates": "Wichtige Termine",
-        "other": "Sonstige Informationen",
-        "groups": "Gruppen",
-        "customFields": "Benutzerdefinierte Felder",
-        "noData": "Keine {field} gefunden"
-      },
-      "errors": {
-        "invalidFile": "Bitte eine gültige .vcf- oder .vcard-Datei hochladen",
-        "parseFailed": "vCard-Datei konnte nicht geparst werden",
-        "readFailed": "Datei konnte nicht gelesen werden"
-      }
-    },
     "about": {
       "title": "Über",
       "description": "Version und Informationen",

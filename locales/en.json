@@ -532,48 +532,6 @@
       "deleteFailed": "Failed to delete account",
       "importDataFailed": "Failed to import data"
     },
-    "vcardTest": {
-      "title": "vCard Parser Test",
-      "description": "Test vCard parsing (dev only)",
-      "pageTitle": "vCard Parser Testing",
-      "pageDescription": "Upload and test vCard files to preview parsing behavior. This page is only available in development mode.",
-      "upload": "Upload vCard File",
-      "uploadDescription": "Select a .vcf or .vcard file to test parsing",
-      "dropzone": "Drop vCard file here, or click to select",
-      "fileSelected": "File selected",
-      "clickToChooseDifferent": "Click to choose a different file",
-      "rawTitle": "Raw vCard Content",
-      "rawDescription": "Original vCard file contents",
-      "copyToClipboard": "Copy to clipboard",
-      "copied": "Copied!",
-      "parsedTitle": "Parsed Person Data",
-      "parsedDescription": "How this vCard will be interpreted by Nametag",
-      "unknownTitle": "Unknown Properties",
-      "unknownDescription": "Properties that couldn't be mapped to Nametag fields (preserved in notes)",
-      "noUnknown": "All properties were successfully mapped",
-      "version": "vCard Version",
-      "preview": {
-        "identity": "Identity",
-        "professional": "Professional",
-        "contact": "Contact Information",
-        "phones": "Phone Numbers",
-        "emails": "Email Addresses",
-        "addresses": "Addresses",
-        "urls": "Websites",
-        "imHandles": "Instant Messaging",
-        "locations": "Locations",
-        "dates": "Important Dates",
-        "other": "Other Information",
-        "groups": "Groups",
-        "customFields": "Custom Fields",
-        "noData": "No {field} found"
-      },
-      "errors": {
-        "invalidFile": "Please upload a valid .vcf or .vcard file",
-        "parseFailed": "Failed to parse vCard file",
-        "readFailed": "Failed to read file"
-      }
-    },
     "about": {
       "title": "About",
       "description": "Version and information",

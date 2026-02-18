@@ -532,48 +532,6 @@
       "deleteFailed": "Kunne ikke slette kontoen",
       "importDataFailed": "Kunne ikke importere data"
     },
-    "vcardTest": {
-      "title": "vCard-parsertest",
-      "description": "Test vCard-parsing (kun utvikling)",
-      "pageTitle": "vCard-parsertest",
-      "pageDescription": "Last opp og test vCard-filer for å forhåndsvise parsingadferd. Denne siden er bare tilgjengelig i utviklingsmodus.",
-      "upload": "Last opp vCard-fil",
-      "uploadDescription": "Velg en .vcf- eller .vcard-fil for å teste parsing",
-      "dropzone": "Slipp vCard-fil her, eller klikk for å velge",
-      "fileSelected": "Fil valgt",
-      "clickToChooseDifferent": "Klikk for å velge en annen fil",
-      "rawTitle": "Rå vCard-innhold",
-      "rawDescription": "Originalt vCard-filinnhold",
-      "copyToClipboard": "Kopier til utklippstavlen",
-      "copied": "Kopiert!",
-      "parsedTitle": "Parsed persondata",
-      "parsedDescription": "Slik vil dette vCard bli tolket av Nametag",
-      "unknownTitle": "Ukjente egenskaper",
-      "unknownDescription": "Egenskaper som ikke kunne tilordnes til Nametag-felter (beholdt i notater)",
-      "noUnknown": "Alle egenskaper ble tilordnet",
-      "version": "vCard-versjon",
-      "preview": {
-        "identity": "Identitet",
-        "professional": "Profesjonell",
-        "contact": "Kontaktinformasjon",
-        "phones": "Telefonnumre",
-        "emails": "E-postadresser",
-        "addresses": "Adresser",
-        "urls": "Nettsider",
-        "imHandles": "Direktemeldinger",
-        "locations": "Steder",
-        "dates": "Viktige datoer",
-        "other": "Annen informasjon",
-        "groups": "Grupper",
-        "customFields": "Egendefinerte felter",
-        "noData": "Ingen {field} funnet"
-      },
-      "errors": {
-        "invalidFile": "Last opp en gyldig .vcf- eller .vcard-fil",
-        "parseFailed": "Kunne ikke parse vCard-fil",
-        "readFailed": "Kunne ikke lese fil"
-      }
-    },
     "about": {
       "title": "Om",
       "description": "Versjon og informasjon",

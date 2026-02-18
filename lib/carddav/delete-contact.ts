@@ -5,6 +5,7 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { withRetry } from './retry';
+import { logger } from '@/lib/logger';
 
 /**
  * Delete a contact from CardDAV server
@@ -26,7 +27,7 @@ export async function deleteFromCardDav(personId: string): Promise<boolean> {
     });
 
     if (!person || !person.cardDavMapping) {
-      console.log(`No CardDAV mapping found for person ${personId}`);
+      logger.info(`No CardDAV mapping found for person ${personId}`);
       return false;
     }
 
@@ -35,16 +36,6 @@ export async function deleteFromCardDav(personId: string): Promise<boolean> {
 
     // Create CardDAV client
     const client = await createCardDavClient(connection);
-
-    // Fetch address books
-    const addressBooks = await client.fetchAddressBooks();
-    if (addressBooks.length === 0) {
-      console.error('No address books found');
-      return false;
-    }
-
-    // Use the first address book (most CardDAV servers have only one)
-    const addressBook = addressBooks[0];
 
     // Delete the vCard from server with retry logic
     await withRetry(async () => {
@@ -55,10 +46,10 @@ export async function deleteFromCardDav(personId: string): Promise<boolean> {
       });
     });
 
-    console.log(`Successfully deleted contact from CardDAV server: ${mapping.href}`);
+    logger.info(`Successfully deleted contact from CardDAV server: ${mapping.href}`);
     return true;
   } catch (error) {
-    console.error('Failed to delete contact from CardDAV server:', error);
+    logger.error('Failed to delete contact from CardDAV server:', error);
     return false;
   }
 }

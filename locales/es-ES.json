@@ -532,48 +532,6 @@
       "deleteFailed": "Error al eliminar la cuenta",
       "importDataFailed": "Error al importar los datos"
     },
-    "vcardTest": {
-      "title": "Prueba de Analizador vCard",
-      "description": "Probar análisis de vCard (solo desarrollo)",
-      "pageTitle": "Prueba de Analizador vCard",
-      "pageDescription": "Carga y prueba archivos vCard para previsualizar el comportamiento del análisis. Esta página solo está disponible en modo de desarrollo.",
-      "upload": "Cargar Archivo vCard",
-      "uploadDescription": "Selecciona un archivo .vcf o .vcard para probar el análisis",
-      "dropzone": "Suelta el archivo vCard aquí, o haz clic para seleccionar",
-      "fileSelected": "Archivo seleccionado",
-      "clickToChooseDifferent": "Haz clic para elegir un archivo diferente",
-      "rawTitle": "Contenido vCard Sin Procesar",
-      "rawDescription": "Contenido original del archivo vCard",
-      "copyToClipboard": "Copiar al portapapeles",
-      "copied": "¡Copiado!",
-      "parsedTitle": "Datos de Persona Analizados",
-      "parsedDescription": "Cómo será interpretado este vCard por Nametag",
-      "unknownTitle": "Propiedades Desconocidas",
-      "unknownDescription": "Propiedades que no se pudieron mapear a campos de Nametag (preservadas en notas)",
-      "noUnknown": "Todas las propiedades se mapearon exitosamente",
-      "version": "Versión vCard",
-      "preview": {
-        "identity": "Identidad",
-        "professional": "Profesional",
-        "contact": "Información de Contacto",
-        "phones": "Números de Teléfono",
-        "emails": "Direcciones de Correo Electrónico",
-        "addresses": "Direcciones",
-        "urls": "Sitios Web",
-        "imHandles": "Mensajería Instantánea",
-        "locations": "Ubicaciones",
-        "dates": "Fechas Importantes",
-        "other": "Otra Información",
-        "groups": "Grupos",
-        "customFields": "Campos Personalizados",
-        "noData": "No se encontraron {field}"
-      },
-      "errors": {
-        "invalidFile": "Por favor carga un archivo .vcf o .vcard válido",
-        "parseFailed": "Error al analizar el archivo vCard",
-        "readFailed": "Error al leer el archivo"
-      }
-    },
     "about": {
       "title": "Acerca de",
       "description": "Versión e información",
