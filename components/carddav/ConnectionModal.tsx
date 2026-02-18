@@ -291,7 +291,17 @@ function ConnectionEditModal({
           />
           {CARDDAV_PROVIDERS[provider]?.requiresAppPassword && (
             <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
-              {t('appPasswordRequired')}
+              {t('appPasswordRequired')}{' '}
+              {CARDDAV_PROVIDERS[provider]?.appPasswordUrl && (
+                <a
+                  href={CARDDAV_PROVIDERS[provider].appPasswordUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-amber-700 dark:hover:text-amber-300"
+                >
+                  {t('appPasswordCreateLink')}
+                </a>
+              )}
             </p>
           )}
         </div>

@@ -136,6 +136,7 @@ export interface CardDavProvider {
   serverUrl: string;
   help: string;
   requiresAppPassword?: boolean;
+  appPasswordUrl?: string;
 }
 
 export const CARDDAV_PROVIDERS: Record<string, CardDavProvider> = {
@@ -145,6 +146,7 @@ export const CARDDAV_PROVIDERS: Record<string, CardDavProvider> = {
     serverUrl: 'https://www.googleapis.com/.well-known/carddav',
     help: 'Use Gmail address and app-specific password',
     requiresAppPassword: true,
+    appPasswordUrl: 'https://myaccount.google.com/apppasswords',
   },
   icloud: {
     id: 'icloud',
@@ -152,6 +154,7 @@ export const CARDDAV_PROVIDERS: Record<string, CardDavProvider> = {
     serverUrl: 'https://contacts.icloud.com/',
     help: 'Use Apple ID and app-specific password',
     requiresAppPassword: true,
+    appPasswordUrl: 'https://appleid.apple.com/account/manage/section/security',
   },
   outlook: {
     id: 'outlook',

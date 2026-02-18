@@ -175,7 +175,17 @@ export default function Step1ServerConfig({
         />
         {CARDDAV_PROVIDERS[data.provider]?.requiresAppPassword && (
           <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
-            {t('appPasswordRequired')}
+            {t('appPasswordRequired')}{' '}
+            {CARDDAV_PROVIDERS[data.provider]?.appPasswordUrl && (
+              <a
+                href={CARDDAV_PROVIDERS[data.provider].appPasswordUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-amber-700 dark:hover:text-amber-300"
+              >
+                {t('appPasswordCreateLink')}
+              </a>
+            )}
           </p>
         )}
       </div>
