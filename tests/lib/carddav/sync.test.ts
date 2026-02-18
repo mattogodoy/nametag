@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   // Prisma
   cardDavConnectionFindUnique: vi.fn(),
   cardDavConnectionUpdate: vi.fn(),
+  cardDavConnectionUpdateMany: vi.fn(),
   cardDavMappingFindFirst: vi.fn(),
   cardDavMappingFindMany: vi.fn(),
   cardDavMappingCreate: vi.fn(),
@@ -50,6 +51,7 @@ vi.mock('@/lib/prisma', () => ({
     cardDavConnection: {
       findUnique: mocks.cardDavConnectionFindUnique,
       update: mocks.cardDavConnectionUpdate,
+      updateMany: mocks.cardDavConnectionUpdateMany,
     },
     cardDavMapping: {
       findFirst: mocks.cardDavMappingFindFirst,
@@ -108,6 +110,15 @@ vi.mock('@/lib/photo-storage', () => ({
   savePhoto: vi.fn(),
   readPhotoForExport: vi.fn(),
   isPhotoFilename: vi.fn(() => false),
+}));
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 vi.mock('uuid', () => ({
@@ -227,6 +238,7 @@ describe('CardDAV Sync Engine', () => {
     // Default: connection exists
     mocks.cardDavConnectionFindUnique.mockResolvedValue(makeConnection());
     mocks.cardDavConnectionUpdate.mockResolvedValue({});
+    mocks.cardDavConnectionUpdateMany.mockResolvedValue({ count: 1 });
 
     // Default: one address book
     mocks.fetchAddressBooks.mockResolvedValue([makeAddressBook()]);

@@ -6,6 +6,43 @@ import { savePhoto, readPhotoForExport, isPhotoFilename } from '@/lib/photo-stor
 
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { logger } from '@/lib/logger';
+
+/**
+ * Acquire a sync lock for a user. Returns true if lock was acquired.
+ * Uses optimistic locking: only updates if syncInProgress is false.
+ * Breaks stale locks older than 10 minutes.
+ */
+async function acquireSyncLock(userId: string): Promise<boolean> {
+  const staleThreshold = 10 * 60 * 1000; // 10 minutes
+  const now = new Date();
+
+  const result = await prisma.cardDavConnection.updateMany({
+    where: {
+      userId,
+      OR: [
+        { syncInProgress: false },
+        { syncStartedAt: { lt: new Date(now.getTime() - staleThreshold) } },
+      ],
+    },
+    data: {
+      syncInProgress: true,
+      syncStartedAt: now,
+    },
+  });
+
+  return result.count > 0;
+}
+
+async function releaseSyncLock(userId: string): Promise<void> {
+  await prisma.cardDavConnection.updateMany({
+    where: { userId },
+    data: {
+      syncInProgress: false,
+      syncStartedAt: null,
+    },
+  });
+}
 
 interface SyncResult {
   imported: number;
@@ -630,25 +667,44 @@ export async function syncToServer(
  * Bidirectional sync
  */
 export async function bidirectionalSync(userId: string, onProgress?: SyncProgressCallback): Promise<SyncResult> {
-  // First, pull from server
-  const pullResult = await syncFromServer(userId, onProgress);
+  const lockAcquired = await acquireSyncLock(userId);
+  if (!lockAcquired) {
+    logger.info('Sync already in progress, skipping', { userId });
+    return {
+      imported: 0,
+      exported: 0,
+      updatedLocally: 0,
+      updatedRemotely: 0,
+      conflicts: 0,
+      errors: 0,
+      errorMessages: [],
+      pendingImports: 0,
+    };
+  }
 
-  // Then, push to server
-  const pushResult = await syncToServer(userId, onProgress);
+  try {
+    // First, pull from server
+    const pullResult = await syncFromServer(userId, onProgress);
 
-  return {
-    imported: pullResult.imported,
-    exported: pushResult.exported,
-    updatedLocally: pullResult.updatedLocally + pushResult.updatedLocally,
-    updatedRemotely: pullResult.updatedRemotely + pushResult.updatedRemotely,
-    conflicts: pullResult.conflicts + pushResult.conflicts,
-    errors: pullResult.errors + pushResult.errors,
-    errorMessages: [
-      ...pullResult.errorMessages,
-      ...pushResult.errorMessages,
-    ],
-    pendingImports: (pullResult.pendingImports || 0) + (pushResult.pendingImports || 0),
-  };
+    // Then, push to server
+    const pushResult = await syncToServer(userId, onProgress);
+
+    return {
+      imported: pullResult.imported,
+      exported: pushResult.exported,
+      updatedLocally: pullResult.updatedLocally + pushResult.updatedLocally,
+      updatedRemotely: pullResult.updatedRemotely + pushResult.updatedRemotely,
+      conflicts: pullResult.conflicts + pushResult.conflicts,
+      errors: pullResult.errors + pushResult.errors,
+      errorMessages: [
+        ...pullResult.errorMessages,
+        ...pushResult.errorMessages,
+      ],
+      pendingImports: (pullResult.pendingImports || 0) + (pushResult.pendingImports || 0),
+    };
+  } finally {
+    await releaseSyncLock(userId);
+  }
 }
 
 /**

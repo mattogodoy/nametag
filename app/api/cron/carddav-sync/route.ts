@@ -130,7 +130,7 @@ export async function GET(request: Request) {
       await prisma.cronJobLog.update({
         where: { id: cronLogId },
         data: {
-          status: errorCount > 0 ? 'completed' : 'completed',
+          status: errorCount > 0 ? 'completed_with_errors' : 'completed',
           duration,
           message: `Synced ${syncedCount} users, skipped ${skippedCount}, ${errorCount} errors`,
         },

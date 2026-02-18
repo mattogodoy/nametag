@@ -607,6 +607,10 @@ model CardDavConnection {
   lastError        String?
   lastErrorAt      DateTime?
 
+  // Sync locking
+  syncInProgress   Boolean   @default(false)
+  syncStartedAt    DateTime?
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
