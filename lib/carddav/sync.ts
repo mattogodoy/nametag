@@ -6,7 +6,7 @@ import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { updatePersonFromVCard } from './person-from-vcard';
 
 import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
+import { buildLocalHash } from './hash';
 import { logger } from '@/lib/logger';
 
 /**
@@ -65,15 +65,6 @@ export interface SyncProgressEvent {
 }
 
 export type SyncProgressCallback = (event: SyncProgressEvent) => void;
-
-/**
- * Generate a hash of person data for conflict detection
- */
-function generatePersonHash(personData: unknown): string {
-  const hash = crypto.createHash('sha256');
-  hash.update(JSON.stringify(personData));
-  return hash.digest('hex');
-}
 
 /**
  * Sync from CardDAV server to local database
@@ -229,7 +220,7 @@ export async function syncFromServer(
             continue;
           }
 
-          const remoteHash = generatePersonHash(parsedData);
+          const remoteHash = buildLocalHash(parsedData);
 
           if (localChanged && remoteChanged) {
             // CONFLICT - both changed
@@ -519,22 +510,11 @@ export async function syncToServer(
         }
 
         // Update mapping
-        const localData = {
-          ...mapping.person,
-          phoneNumbers: mapping.person.phoneNumbers,
-          emails: mapping.person.emails,
-          addresses: mapping.person.addresses,
-          urls: mapping.person.urls,
-          imHandles: mapping.person.imHandles,
-          locations: mapping.person.locations,
-          customFields: mapping.person.customFields,
-        };
-
         await prisma.cardDavMapping.update({
           where: { id: mapping.id },
           data: {
             lastSyncedAt: new Date(),
-            localVersion: generatePersonHash(localData),
+            localVersion: buildLocalHash(mapping.person),
             syncStatus: 'synced',
           },
         });

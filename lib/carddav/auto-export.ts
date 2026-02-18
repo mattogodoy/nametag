@@ -3,9 +3,9 @@ import { createCardDavClient } from './client';
 import { personToVCard } from '@/lib/vcard';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { withRetry } from './retry';
+import { buildLocalHash } from './hash';
 import { logger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
 
 /**
  * Auto-export a person to CardDAV server
@@ -97,20 +97,7 @@ export async function autoExportPerson(personId: string): Promise<void> {
     const created = await withRetry(() => client.createVCard(addressBook, vCardData, filename));
 
     // Create mapping
-    const localData = {
-      ...person,
-      phoneNumbers: person.phoneNumbers,
-      emails: person.emails,
-      addresses: person.addresses,
-      urls: person.urls,
-      imHandles: person.imHandles,
-      locations: person.locations,
-      customFields: person.customFields,
-    };
-
-    const localHash = crypto.createHash('sha256')
-      .update(JSON.stringify(localData))
-      .digest('hex');
+    const localHash = buildLocalHash(person);
 
     await prisma.cardDavMapping.create({
       data: {
@@ -236,20 +223,7 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
     const updated = await withRetry(() => client.updateVCard(vCard, vCardData));
 
     // Update mapping
-    const localData = {
-      ...person,
-      phoneNumbers: person.phoneNumbers,
-      emails: person.emails,
-      addresses: person.addresses,
-      urls: person.urls,
-      imHandles: person.imHandles,
-      locations: person.locations,
-      customFields: person.customFields,
-    };
-
-    const localHash = crypto.createHash('sha256')
-      .update(JSON.stringify(localData))
-      .digest('hex');
+    const localHash = buildLocalHash(person);
 
     await prisma.cardDavMapping.update({
       where: { id: mapping.id },
