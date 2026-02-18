@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
   personIMDeleteMany: vi.fn(),
   personLocationDeleteMany: vi.fn(),
   personCustomFieldDeleteMany: vi.fn(),
+  importantDateDeleteMany: vi.fn(),
   $transaction: vi.fn(),
 
   // CardDAV client
@@ -77,6 +78,7 @@ vi.mock('@/lib/prisma', () => ({
     personIM: { deleteMany: mocks.personIMDeleteMany },
     personLocation: { deleteMany: mocks.personLocationDeleteMany },
     personCustomField: { deleteMany: mocks.personCustomFieldDeleteMany },
+    importantDate: { deleteMany: mocks.importantDateDeleteMany },
     $transaction: mocks.$transaction,
   },
 }));

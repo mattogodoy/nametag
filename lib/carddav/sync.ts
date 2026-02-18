@@ -429,6 +429,9 @@ export async function syncToServer(
             imHandles: true,
             locations: true,
             customFields: true,
+            importantDates: true,
+            groups: { include: { group: true } },
+            relationshipsFrom: { include: { relatedPerson: true } },
           },
         },
       },
@@ -460,9 +463,9 @@ export async function syncToServer(
         // Convert person to vCard
         const personWithAllRelations = {
           ...mapping.person,
-          importantDates: [],
-          relationshipsFrom: [],
-          groups: [],
+          importantDates: mapping.person.importantDates || [],
+          relationshipsFrom: mapping.person.relationshipsFrom || [],
+          groups: mapping.person.groups || [],
         };
 
         // Load photo from file for export if needed
@@ -724,6 +727,7 @@ async function updatePersonFromVCard(
     prisma.personIM.deleteMany({ where: { personId } }),
     prisma.personLocation.deleteMany({ where: { personId } }),
     prisma.personCustomField.deleteMany({ where: { personId } }),
+    prisma.importantDate.deleteMany({ where: { personId } }),
   ]);
 
   // Save photo as file if present
@@ -742,6 +746,7 @@ async function updatePersonFromVCard(
     data: {
       name: parsedData.name,
       surname: parsedData.surname,
+      secondLastName: parsedData.secondLastName,
       middleName: parsedData.middleName,
       prefix: parsedData.prefix,
       suffix: parsedData.suffix,
@@ -751,6 +756,7 @@ async function updatePersonFromVCard(
       photo: photoValue,
       gender: parsedData.gender,
       anniversary: parsedData.anniversary,
+      lastContact: parsedData.lastContact,
       notes: parsedData.notes,
       uid: parsedData.uid,
 
@@ -775,6 +781,9 @@ async function updatePersonFromVCard(
         : undefined,
       customFields: parsedData.customFields
         ? { create: parsedData.customFields }
+        : undefined,
+      importantDates: parsedData.importantDates?.length
+        ? { create: parsedData.importantDates }
         : undefined,
     },
   });
