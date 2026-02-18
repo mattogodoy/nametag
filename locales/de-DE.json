@@ -282,7 +282,8 @@
         "keepRemote": "Server-Version behalten",
         "resolving": "Wird aufgelöst...",
         "cancel": "Abbrechen",
-        "backToSettings": "Zurück zu Einstellungen"
+        "backToSettings": "Zurück zu Einstellungen",
+        "resolveFailed": "Konflikt konnte nicht aufgelöst werden"
       },
       "import": {
         "title": "Kontakte importieren",
@@ -318,7 +319,8 @@
         "selectGroups": "Gruppen auswählen...",
         "groupsCount": "{count, plural, =0 {Keine Gruppen} =1 {1 Gruppe} other {# Gruppen}}",
         "importSuccessToast": "{imported, plural, =1 {1 Kontakt erfolgreich importiert} other {# Kontakte erfolgreich importiert}}{skipped, plural, =0 {} =1 {, 1 Duplikat übersprungen} other {, # Duplikate übersprungen}}",
-        "importCompleteWithErrors": "{imported, plural, =0 {Keine Kontakte importiert} =1 {1 Kontakt importiert} other {# Kontakte importiert}}, {errors, plural, =1 {1 Fehler aufgetreten} other {# Fehler aufgetreten}}"
+        "importCompleteWithErrors": "{imported, plural, =0 {Keine Kontakte importiert} =1 {1 Kontakt importiert} other {# Kontakte importiert}}, {errors, plural, =1 {1 Fehler aufgetreten} other {# Fehler aufgetreten}}",
+        "importFailed": "Kontakte konnten nicht importiert werden"
       },
       "notifications": {
         "newContactsFound": "{count} neue Kontakte gefunden",
@@ -347,7 +349,8 @@
         "skipped": "{count} bereits exportiert",
         "errors": "{count} Fehler",
         "errorDetails": "Fehlerdetails",
-        "noContactsSelected": "Bitte wähle mindestens einen Kontakt zum Exportieren aus"
+        "noContactsSelected": "Bitte wähle mindestens einen Kontakt zum Exportieren aus",
+        "exportFailed": "Kontakte konnten nicht exportiert werden"
       },
       "wizard": {
         "step1Title": "Server-Konfiguration",
@@ -525,7 +528,9 @@
       "deleting": "Wird gelöscht...",
       "cancel": "Abbrechen",
       "deleteError": "Bitte tippe DELETE zur Bestätigung",
-      "passwordRequired": "Passwort ist erforderlich"
+      "passwordRequired": "Passwort ist erforderlich",
+      "deleteFailed": "Konto konnte nicht gelöscht werden",
+      "importDataFailed": "Daten konnten nicht importiert werden"
     },
     "vcardTest": {
       "title": "vCard-Parser-Test",
@@ -709,6 +714,8 @@
     "deleteToo": "Diese auch löschen",
     "deleteFromCardDavServer": "Auch vom CardDAV-Server löschen",
     "deleteFromCardDavServerDescription": "Wenn deaktiviert, wird der Kontakt aus Nametag entfernt, bleibt aber auf deinem CardDAV-Server erhalten und kann später erneut importiert werden.",
+    "deletePersonFailed": "Person konnte nicht gelöscht werden. Bitte versuche es erneut.",
+    "connectionError": "Keine Verbindung zum Server möglich. Bitte überprüfe deine Verbindung und versuche es erneut.",
     "youLabel": "(du)",
     "createPerson": "\"{name}\" erstellen",
     "noPersonFound": "Keine Personen gefunden, die \"{searchTerm}\" entsprechen",

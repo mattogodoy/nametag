@@ -89,7 +89,7 @@ export default function BulkExportList({ people }: BulkExportListProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to export contacts');
+        throw new Error(data.error || t('exportFailed'));
       }
 
       const data = await response.json();
@@ -103,7 +103,7 @@ export default function BulkExportList({ people }: BulkExportListProps) {
         }, 2000);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to export contacts');
+      setError(err instanceof Error ? err.message : t('exportFailed'));
       setProgress(null);
     } finally {
       setExporting(false);

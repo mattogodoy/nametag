@@ -282,7 +282,8 @@
         "keepRemote": "Behold ekstern",
         "resolving": "Løser...",
         "cancel": "Avbryt",
-        "backToSettings": "Tilbake til innstillinger"
+        "backToSettings": "Tilbake til innstillinger",
+        "resolveFailed": "Kunne ikke løse konflikten"
       },
       "import": {
         "title": "Importer kontakter",
@@ -318,7 +319,8 @@
         "selectGroups": "Velg grupper...",
         "groupsCount": "{count, plural, =0 {Ingen grupper} =1 {1 gruppe} other {# grupper}}",
         "importSuccessToast": "{imported, plural, =1 {1 kontakt importert} other {# kontakter importert}}{skipped, plural, =0 {} =1 {, 1 duplikat hoppet over} other {, # duplikater hoppet over}}",
-        "importCompleteWithErrors": "{imported, plural, =0 {Ingen kontakter importert} =1 {1 kontakt importert} other {# kontakter importert}}, {errors, plural, =1 {1 feil oppstod} other {# feil oppstod}}"
+        "importCompleteWithErrors": "{imported, plural, =0 {Ingen kontakter importert} =1 {1 kontakt importert} other {# kontakter importert}}, {errors, plural, =1 {1 feil oppstod} other {# feil oppstod}}",
+        "importFailed": "Kunne ikke importere kontakter"
       },
       "notifications": {
         "newContactsFound": "{count} nye kontakter funnet",
@@ -347,7 +349,8 @@
         "skipped": "{count} allerede eksportert",
         "errors": "{count} feil",
         "errorDetails": "Feildetaljer",
-        "noContactsSelected": "Velg minst én kontakt å eksportere"
+        "noContactsSelected": "Velg minst én kontakt å eksportere",
+        "exportFailed": "Kunne ikke eksportere kontakter"
       },
       "wizard": {
         "step1Title": "Serverkonfigurasjon",
@@ -525,7 +528,9 @@
       "deleting": "Sletter...",
       "cancel": "Avbryt",
       "deleteError": "Skriv DELETE for å bekrefte",
-      "passwordRequired": "Passord er påkrevd"
+      "passwordRequired": "Passord er påkrevd",
+      "deleteFailed": "Kunne ikke slette kontoen",
+      "importDataFailed": "Kunne ikke importere data"
     },
     "vcardTest": {
       "title": "vCard-parsertest",
@@ -709,6 +714,8 @@
     "deleteToo": "Slett dem også",
     "deleteFromCardDavServer": "Slett også fra CardDAV-server",
     "deleteFromCardDavServerDescription": "Hvis avkrysset er fjernet, vil kontakten bli fjernet fra Nametag, men forblir på CardDAV-serveren og kan importeres på nytt senere.",
+    "deletePersonFailed": "Kunne ikke slette personen. Vennligst prøv igjen.",
+    "connectionError": "Kunne ikke koble til serveren. Sjekk tilkoblingen din og prøv igjen.",
     "youLabel": "(du)",
     "createPerson": "Opprett \"{name}\"",
     "noPersonFound": "Ingen personer som samsvarer med \"{searchTerm}\" ble funnet",

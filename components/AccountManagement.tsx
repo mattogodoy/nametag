@@ -48,6 +48,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
   const [isImporting, setIsImporting] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [importMessage, setImportMessage] = useState('');
+  const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importData, setImportData] = useState<ImportData | null>(null);
   const [importPreview, setImportPreview] = useState<{
@@ -207,6 +208,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
     setImportFile(file);
     setImportMessage('');
+    setImportStatus(null);
     setImportValidation(null);
     setImportData(null);
     setImportMode('all');
@@ -249,18 +251,21 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           setImportValidation(validationResult);
         } else {
           setImportMessage(t('importFailed'));
+          setImportStatus('error');
           setImportFile(null);
           setImportData(null);
           setImportPreview(null);
         }
       } else {
         setImportMessage(t('invalidFileFormat'));
+        setImportStatus('error');
         setImportFile(null);
         setImportData(null);
         setImportPreview(null);
       }
     } catch {
       setImportMessage(t('invalidJSON'));
+      setImportStatus('error');
       setImportFile(null);
       setImportData(null);
       setImportPreview(null);
@@ -273,6 +278,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
   const handleVcardUpload = async (vcardText: string) => {
     setIsValidating(true);
     setImportMessage('');
+    setImportStatus(null);
 
     try {
       const response = await fetch('/api/vcard/upload', {
@@ -314,6 +320,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
     setIsImporting(true);
     setImportMessage('');
+    setImportStatus(null);
 
     try {
       // Build the request body
@@ -335,7 +342,8 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       const result = await response.json();
 
       if (!response.ok) {
-        setImportMessage(result.error || 'Failed to import data');
+        setImportMessage(result.error || t('importDataFailed'));
+        setImportStatus('error');
         return;
       }
 
@@ -346,6 +354,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           types: result.imported.relationshipTypes || 0
         })
       );
+      setImportStatus('success');
       setImportFile(null);
       setImportData(null);
       setImportPreview(null);
@@ -361,6 +370,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       }, 2000);
     } catch {
       setImportMessage(t('importFailed'));
+      setImportStatus('error');
     } finally {
       setIsImporting(false);
     }
@@ -396,14 +406,14 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       const data = await response.json();
 
       if (!response.ok) {
-        setDeleteError(data.error || t('importFailed'));
+        setDeleteError(data.error || t('deleteFailed'));
         return;
       }
 
       // Sign out and redirect to login
       await signOut({ redirect: true, callbackUrl: '/login' });
     } catch {
-      setDeleteError(t('importFailed'));
+      setDeleteError(t('deleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -769,7 +779,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           {importMessage && (
             <p
               className={`text-sm ${
-                importMessage.includes('Success')
+                importStatus === 'success'
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}

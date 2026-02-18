@@ -282,7 +282,8 @@
         "keepRemote": "Keep Remote",
         "resolving": "Resolving...",
         "cancel": "Cancel",
-        "backToSettings": "Back to Settings"
+        "backToSettings": "Back to Settings",
+        "resolveFailed": "Failed to resolve conflict"
       },
       "import": {
         "title": "Import Contacts",
@@ -318,7 +319,8 @@
         "selectGroups": "Select groups...",
         "groupsCount": "{count, plural, =0 {No groups} =1 {1 group} other {# groups}}",
         "importSuccessToast": "{imported, plural, =1 {1 contact imported successfully} other {# contacts imported successfully}}{skipped, plural, =0 {} =1 {, 1 duplicate skipped} other {, # duplicates skipped}}",
-        "importCompleteWithErrors": "{imported, plural, =0 {No contacts imported} =1 {1 contact imported} other {# contacts imported}}, {errors, plural, =1 {1 error occurred} other {# errors occurred}}"
+        "importCompleteWithErrors": "{imported, plural, =0 {No contacts imported} =1 {1 contact imported} other {# contacts imported}}, {errors, plural, =1 {1 error occurred} other {# errors occurred}}",
+        "importFailed": "Failed to import contacts"
       },
       "notifications": {
         "newContactsFound": "{count} new contacts found",
@@ -347,7 +349,8 @@
         "skipped": "{count} already exported",
         "errors": "{count} errors",
         "errorDetails": "Error details",
-        "noContactsSelected": "Please select at least one contact to export"
+        "noContactsSelected": "Please select at least one contact to export",
+        "exportFailed": "Failed to export contacts"
       },
       "wizard": {
         "step1Title": "Server Configuration",
@@ -525,7 +528,9 @@
       "deleting": "Deleting...",
       "cancel": "Cancel",
       "deleteError": "Please type DELETE to confirm",
-      "passwordRequired": "Password is required"
+      "passwordRequired": "Password is required",
+      "deleteFailed": "Failed to delete account",
+      "importDataFailed": "Failed to import data"
     },
     "vcardTest": {
       "title": "vCard Parser Test",
@@ -709,6 +714,8 @@
     "deleteToo": "Delete them too",
     "deleteFromCardDavServer": "Also delete from CardDAV server",
     "deleteFromCardDavServerDescription": "If unchecked, the contact will be removed from Nametag but will remain on your CardDAV server and can be re-imported later.",
+    "deletePersonFailed": "Failed to delete person. Please try again.",
+    "connectionError": "Unable to connect to server. Please check your connection and try again.",
     "youLabel": "(you)",
     "createPerson": "Create \"{name}\"",
     "noPersonFound": "No people found matching \"{searchTerm}\"",

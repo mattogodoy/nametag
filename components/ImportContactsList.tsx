@@ -134,7 +134,7 @@ export default function ImportContactsList({
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to import contacts');
+        throw new Error(data.error || t('importFailed'));
       }
 
       const data = await response.json();
@@ -149,7 +149,7 @@ export default function ImportContactsList({
       const redirectUrl = isFileImport ? '/people' : '/settings/carddav';
       router.push(`${redirectUrl}?${params.toString()}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import contacts');
+      setError(err instanceof Error ? err.message : t('importFailed'));
       setImporting(false);
     }
   };

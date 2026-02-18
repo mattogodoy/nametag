@@ -92,12 +92,12 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to resolve conflict');
+        throw new Error(data.error || t('resolveFailed'));
       }
 
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resolve conflict');
+      setError(err instanceof Error ? err.message : t('resolveFailed'));
     } finally {
       setResolving(null);
     }

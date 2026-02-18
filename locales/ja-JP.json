@@ -282,7 +282,8 @@
         "keepRemote": "リモートを保持",
         "resolving": "解決中...",
         "cancel": "キャンセル",
-        "backToSettings": "設定に戻る"
+        "backToSettings": "設定に戻る",
+        "resolveFailed": "競合の解決に失敗しました"
       },
       "import": {
         "title": "連絡先のインポート",
@@ -318,7 +319,8 @@
         "selectGroups": "グループを選択...",
         "groupsCount": "{count, plural, =0 {グループなし} =1 {1グループ} other {#グループ}}",
         "importSuccessToast": "{imported, plural, =1 {1件の連絡先を正常にインポート} other {#件の連絡先を正常にインポート}}{skipped, plural, =0 {} =1 {、1件の重複をスキップ} other {、#件の重複をスキップ}}",
-        "importCompleteWithErrors": "{imported, plural, =0 {インポートされた連絡先なし} =1 {1件の連絡先をインポート} other {#件の連絡先をインポート}}、{errors, plural, =1 {1件のエラーが発生} other {#件のエラーが発生}}"
+        "importCompleteWithErrors": "{imported, plural, =0 {インポートされた連絡先なし} =1 {1件の連絡先をインポート} other {#件の連絡先をインポート}}、{errors, plural, =1 {1件のエラーが発生} other {#件のエラーが発生}}",
+        "importFailed": "連絡先のインポートに失敗しました"
       },
       "notifications": {
         "newContactsFound": "{count}件の新しい連絡先が見つかりました",
@@ -347,7 +349,8 @@
         "skipped": "{count}件はエクスポート済み",
         "errors": "{count}件のエラー",
         "errorDetails": "エラーの詳細",
-        "noContactsSelected": "エクスポートする連絡先を少なくとも1つ選択してください"
+        "noContactsSelected": "エクスポートする連絡先を少なくとも1つ選択してください",
+        "exportFailed": "連絡先のエクスポートに失敗しました"
       },
       "wizard": {
         "step1Title": "サーバー設定",
@@ -525,7 +528,9 @@
       "deleting": "削除中...",
       "cancel": "キャンセル",
       "deleteError": "確認するにはDELETEと入力してください",
-      "passwordRequired": "パスワードが必要です"
+      "passwordRequired": "パスワードが必要です",
+      "deleteFailed": "アカウントの削除に失敗しました",
+      "importDataFailed": "データのインポートに失敗しました"
     },
     "vcardTest": {
       "title": "vCardパーサーテスト",
@@ -709,6 +714,8 @@
     "deleteToo": "それらも削除する",
     "deleteFromCardDavServer": "CardDAVサーバーからも削除",
     "deleteFromCardDavServerDescription": "チェックを外すと、連絡先はNametagから削除されますが、CardDAVサーバーには残り、後で再インポートできます。",
+    "deletePersonFailed": "人物の削除に失敗しました。もう一度お試しください。",
+    "connectionError": "サーバーに接続できません。接続を確認して、もう一度お試しください。",
     "youLabel": "（あなた）",
     "createPerson": "\"{name}\"を作成",
     "noPersonFound": "\"{searchTerm}\"に一致する人物は見つかりませんでした",

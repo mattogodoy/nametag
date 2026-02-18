@@ -84,11 +84,11 @@ export default function DeletePersonButton({
         router.refresh();
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to delete person. Please try again.');
+        setError(data.error || t('deletePersonFailed'));
         setIsDeleting(false);
       }
     } catch {
-      setError('Unable to connect to server. Please check your connection and try again.');
+      setError(t('connectionError'));
       setIsDeleting(false);
     }
   };
