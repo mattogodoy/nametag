@@ -38,10 +38,6 @@ export default function BulkExportList({ people }: BulkExportListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<{
-    current: number;
-    total: number;
-  } | null>(null);
   const [result, setResult] = useState<{
     exported: number;
     skipped: number;
@@ -76,7 +72,6 @@ export default function BulkExportList({ people }: BulkExportListProps) {
     setExporting(true);
     setError(null);
     setResult(null);
-    setProgress({ current: 0, total: selectedIds.size });
 
     try {
       const response = await fetch('/api/carddav/export-bulk', {
@@ -94,7 +89,6 @@ export default function BulkExportList({ people }: BulkExportListProps) {
 
       const data = await response.json();
       setResult(data);
-      setProgress(null);
 
       // Refresh after successful export
       if (data.exported > 0) {
@@ -104,7 +98,6 @@ export default function BulkExportList({ people }: BulkExportListProps) {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('exportFailed'));
-      setProgress(null);
     } finally {
       setExporting(false);
     }
@@ -115,19 +108,16 @@ export default function BulkExportList({ people }: BulkExportListProps) {
   return (
     <div className="space-y-6">
       {/* Progress */}
-      {progress && (
+      {exporting && (
         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-lg">
           <p className="font-medium mb-2">{t('exporting')}</p>
-          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{
-                width: `${(progress.current / progress.total) * 100}%`,
-              }}
+              className="bg-blue-600 h-2 rounded-full animate-pulse w-full"
             />
           </div>
           <p className="text-sm mt-2">
-            {progress.current} / {progress.total}
+            {selectedIds.size} {t('selected')}
           </p>
         </div>
       )}

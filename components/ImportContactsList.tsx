@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { vCardToPerson } from '@/lib/vcard';
@@ -154,13 +154,19 @@ export default function ImportContactsList({
     }
   };
 
-  const parseVCard = (vCardData: string) => {
-    try {
-      return vCardToPerson(vCardData);
-    } catch {
-      return null;
-    }
-  };
+  const parsedVCards = useMemo(
+    () =>
+      new Map(
+        pendingImports.map((pi) => {
+          try {
+            return [pi.id, vCardToPerson(pi.vCardData)] as const;
+          } catch {
+            return [pi.id, null] as const;
+          }
+        })
+      ),
+    [pendingImports]
+  );
 
   const allSelected = selectedIds.size === pendingImports.length;
 
@@ -209,7 +215,7 @@ export default function ImportContactsList({
         </div>
 
         {pendingImports.map((pendingImport) => {
-          const parsed = parseVCard(pendingImport.vCardData);
+          const parsed = parsedVCards.get(pendingImport.id) ?? null;
           const isSelected = selectedIds.has(pendingImport.id);
           const contactGroupIds = perContactGroups.get(pendingImport.id) || [];
 
