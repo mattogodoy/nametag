@@ -7,25 +7,13 @@ import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { CARDDAV_PROVIDERS } from '@/lib/carddav/types';
+import type { CardDavConnectionResponse } from '@/lib/carddav/types';
 import ConnectionWizard from './ConnectionWizard';
-
-interface CardDavConnection {
-  id: string;
-  serverUrl: string;
-  username: string;
-  provider: string | null;
-  syncEnabled: boolean;
-  autoExportNew: boolean;
-  autoSyncInterval: number;
-  importMode: string;
-  lastSyncAt: Date | null;
-  lastError: string | null;
-}
 
 interface ConnectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  existingConnection: CardDavConnection | null;
+  existingConnection: CardDavConnectionResponse | null;
 }
 
 export default function ConnectionModal({
@@ -55,7 +43,7 @@ function ConnectionEditModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  existingConnection: CardDavConnection;
+  existingConnection: CardDavConnectionResponse;
 }) {
   const t = useTranslations('settings.carddav');
   const router = useRouter();

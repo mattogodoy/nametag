@@ -7,22 +7,10 @@ import ConnectionModal from '@/components/carddav/ConnectionModal';
 import SyncSettingsModal from '@/components/carddav/SyncSettingsModal';
 import SyncProgressModal from '@/components/carddav/SyncProgressModal';
 import ImportSuccessToast from '@/components/ImportSuccessToast';
-
-interface CardDavConnection {
-  id: string;
-  serverUrl: string;
-  username: string;
-  provider: string | null;
-  syncEnabled: boolean;
-  autoExportNew: boolean;
-  autoSyncInterval: number;
-  importMode: string;
-  lastSyncAt: Date | null;
-  lastError: string | null;
-}
+import type { CardDavConnectionResponse } from '@/lib/carddav/types';
 
 interface CardDavSettingsProps {
-  connection: CardDavConnection | null;
+  connection: CardDavConnectionResponse | null;
   pendingImportsCount: number;
   syncedContactsCount: number;
 }

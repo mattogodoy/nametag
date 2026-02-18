@@ -5,19 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-
-interface CardDavConnection {
-  id: string;
-  syncEnabled: boolean;
-  autoExportNew: boolean;
-  autoSyncInterval: number;
-  importMode: string;
-}
+import type { CardDavConnectionResponse } from '@/lib/carddav/types';
 
 interface SyncSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentSettings: CardDavConnection | null;
+  currentSettings: CardDavConnectionResponse | null;
 }
 
 export default function SyncSettingsModal({

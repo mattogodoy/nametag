@@ -5,22 +5,10 @@ import EmptyState from '@/components/EmptyState';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { formatDateTime } from '@/lib/date-format';
-
-interface CardDavConnection {
-  id: string;
-  serverUrl: string;
-  username: string;
-  provider: string | null;
-  syncEnabled: boolean;
-  autoExportNew: boolean;
-  autoSyncInterval: number;
-  importMode: string;
-  lastSyncAt: Date | null;
-  lastError: string | null;
-}
+import type { CardDavConnectionResponse } from '@/lib/carddav/types';
 
 interface ConnectionStatusProps {
-  connection: CardDavConnection | null;
+  connection: CardDavConnectionResponse | null;
   pendingImportsCount: number;
   syncedContactsCount: number;
   onConnectClick: () => void;

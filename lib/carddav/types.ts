@@ -118,13 +118,28 @@ export interface ParsedVCardData {
 }
 
 /**
- * vCard builder options
+ * CardDAV connection response (without encrypted password).
+ * Canonical type used by all UI components.
+ * Date fields are serialized as strings when passed from server to client components.
  */
-export interface VCardOptions {
-  version?: '4.0' | '3.0'; // Default: 4.0
-  includeNametag?: boolean; // Include Nametag-specific X- properties (default: true)
-  includeRelationships?: boolean; // Include relationships as RELATED properties (default: true)
-  stripMarkdown?: boolean; // Strip markdown from notes (default: false)
+export interface CardDavConnectionResponse {
+  id: string;
+  userId: string;
+  serverUrl: string;
+  username: string;
+  provider: string | null;
+  syncEnabled: boolean;
+  autoSyncInterval: number;
+  lastSyncAt: string | Date | null;
+  syncToken: string | null;
+  autoExportNew: boolean;
+  importMode: string;
+  lastError: string | null;
+  lastErrorAt: string | Date | null;
+  syncInProgress: boolean;
+  syncStartedAt: string | Date | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 /**
