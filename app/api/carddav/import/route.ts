@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma, withDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
-import { savePhoto } from '@/lib/photo-storage';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
-import { v4 as uuidv4 } from 'uuid';
+import { createPersonFromVCardData, restorePersonFromVCardData } from '@/lib/carddav/person-from-vcard';
+import { z } from 'zod';
+
+const importSchema = z.object({
+  importIds: z.array(z.string()).min(1, 'No contacts selected for import'),
+  groupIds: z.array(z.string()).optional(),
+  globalGroupIds: z.array(z.string()).optional(),
+  perContactGroups: z.record(z.string(), z.array(z.string())).optional(),
+});
 
 export async function POST(request: Request) {
   try {
@@ -15,18 +22,20 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { importIds, groupIds, globalGroupIds, perContactGroups } = body;
+    const validationResult = importSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: validationResult.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { importIds, groupIds, globalGroupIds, perContactGroups } = validationResult.data;
 
     // Support both old and new API formats
     const globalGroups = globalGroupIds || groupIds || [];
     const contactGroups = perContactGroups || {};
-
-    if (!importIds || !Array.isArray(importIds) || importIds.length === 0) {
-      return NextResponse.json(
-        { error: 'No contacts selected for import' },
-        { status: 400 }
-      );
-    }
 
     // Get connection
     const connection = await prisma.cardDavConnection.findUnique({

@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
+import { z } from 'zod';
+
+const backupSchema = z.object({
+  serverUrl: z.string().url(),
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
 
 export async function POST(request: Request) {
   try {
@@ -12,14 +19,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { serverUrl, username, password } = body;
+    const validationResult = backupSchema.safeParse(body);
 
-    if (!serverUrl || !username || !password) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Server URL, username, and password are required' },
+        { error: 'Invalid input', details: validationResult.error.issues },
         { status: 400 }
       );
     }
+
+    const { serverUrl, username, password } = validationResult.data;
 
     // Validate URL to prevent SSRF attacks
     try {

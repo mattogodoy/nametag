@@ -5,6 +5,11 @@ import { createCardDavClient } from '@/lib/carddav/client';
 import { personToVCard } from '@/lib/vcard';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { z } from 'zod';
+
+const exportBulkSchema = z.object({
+  personIds: z.array(z.string()).min(1, 'No contacts selected for export'),
+});
 
 export async function POST(request: Request) {
   try {
@@ -15,14 +20,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { personIds } = body; // Array of person IDs to export
+    const validationResult = exportBulkSchema.safeParse(body);
 
-    if (!personIds || !Array.isArray(personIds) || personIds.length === 0) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'No contacts selected for export' },
+        { error: 'Invalid input', details: validationResult.error.issues },
         { status: 400 }
       );
     }
+
+    const { personIds } = validationResult.data;
 
     // Get connection
     const connection = await prisma.cardDavConnection.findUnique({
