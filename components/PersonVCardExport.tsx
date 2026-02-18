@@ -8,6 +8,7 @@ import type { PersonWithRelations } from '@/lib/carddav/types';
 import { getPhotoUrl } from '@/lib/photo-url';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
+import Modal from '@/components/ui/Modal';
 
 interface PersonVCardExportProps {
   person: PersonWithRelations;
@@ -142,58 +143,33 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
       </div>
 
       {/* QR Code Modal */}
-      {showQrModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowQrModal(false)}
-        >
-          <div
-            className="bg-surface rounded-lg shadow-2xl max-w-md w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-foreground">
-                {t('contactQrCode')}
-              </h3>
-              <button
-                onClick={() => setShowQrModal(false)}
-                className="text-muted hover:text-foreground transition-colors"
-                title={t('close')}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="bg-white p-4 rounded-lg">
-                <QRCodeSVG
-                  value={vCardData}
-                  size={256}
-                  level="M"
-                  includeMargin={true}
-                />
-              </div>
-              <p className="text-sm text-muted mt-4 text-center">
-                {t('qrCodeInstructions')}
-              </p>
-              <p className="text-xs text-muted mt-2 text-center">
-                {[person.name, person.surname].filter(Boolean).join(' ')}
-              </p>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setShowQrModal(false)}
-                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
-              >
-                {t('close')}
-              </button>
-            </div>
+      <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)} title={t('contactQrCode')}>
+        <div className="flex flex-col items-center">
+          <div className="bg-white p-4 rounded-lg">
+            <QRCodeSVG
+              value={vCardData}
+              size={256}
+              level="M"
+              includeMargin={true}
+            />
           </div>
+          <p className="text-sm text-muted mt-4 text-center">
+            {t('qrCodeInstructions')}
+          </p>
+          <p className="text-xs text-muted mt-2 text-center">
+            {[person.name, person.surname].filter(Boolean).join(' ')}
+          </p>
         </div>
-      )}
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={() => setShowQrModal(false)}
+            className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+          >
+            {t('close')}
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }
