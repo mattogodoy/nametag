@@ -99,6 +99,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Pre-fetch all existing mappings for the requested person IDs in one query
+    // to avoid N+1 per-person queries in the export loop.
+    const existingMappings = await prisma.cardDavMapping.findMany({
+      where: { personId: { in: personIds } },
+      select: { personId: true },
+    });
+    const alreadyMappedPersonIds = new Set(existingMappings.map((m) => m.personId));
+
     const results = {
       exported: 0,
       skipped: 0,
@@ -113,12 +121,8 @@ export async function POST(request: Request) {
 
       for (const person of batch) {
         try {
-          // Check if already exported
-          const existingMapping = await prisma.cardDavMapping.findUnique({
-            where: { personId: person.id },
-          });
-
-          if (existingMapping) {
+          // Check if already exported (O(1) set lookup instead of per-person query)
+          if (alreadyMappedPersonIds.has(person.id)) {
             results.skipped++;
             continue; // Already exported
           }

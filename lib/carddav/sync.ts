@@ -405,11 +405,13 @@ export async function syncToServer(
 
     onProgress?.({ phase: 'push', step: 'fetching' });
 
-    // Find all mappings with pending local changes
+    // Only fetch mappings with pending local changes.
+    // When local edits occur, syncStatus is set to 'pending', so we can
+    // skip the much larger set of unchanged 'synced' mappings entirely.
     const mappings = await prisma.cardDavMapping.findMany({
       where: {
         connectionId: connection.id,
-        syncStatus: { in: ['pending', 'synced'] },
+        syncStatus: 'pending',
       },
       include: {
         person: {
@@ -441,16 +443,6 @@ export async function syncToServer(
             ? `${mapping.person.name}${mapping.person.surname ? ` ${mapping.person.surname}` : ''}`
             : mapping.person.surname || 'Unknown',
         });
-
-        // Check if local changed since last sync
-        const localChanged = mapping.lastLocalChange &&
-          mapping.lastSyncedAt &&
-          mapping.lastLocalChange > mapping.lastSyncedAt;
-
-        if (!localChanged && mapping.syncStatus === 'synced') {
-          // No local changes, skip
-          continue;
-        }
 
         // Convert person to vCard
         const personWithAllRelations = {

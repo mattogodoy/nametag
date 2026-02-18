@@ -12,6 +12,9 @@ export const GET = withAuth(async (request, session) => {
     const { searchParams } = new URL(request.url);
     const includeAll = searchParams.get('includeAll') === 'true';
     const groupIdsParam = searchParams.get('groupIds');
+    // When includeDetails=false, skip multi-value relations (phones, emails, etc.)
+    // for lighter list-view responses. Defaults to true for backward compatibility.
+    const includeDetails = searchParams.get('includeDetails') !== 'false';
 
     // Build where clause
     const where: { userId: string; groups?: { some: { groupId: { in: string[] } } } } = {
@@ -41,13 +44,17 @@ export const GET = withAuth(async (request, session) => {
             group: true,
           },
         },
-        phoneNumbers: true,
-        emails: true,
-        addresses: true,
-        urls: true,
-        imHandles: true,
-        locations: true,
-        customFields: true,
+        // Multi-value relations are conditionally included.
+        // Pass ?includeDetails=false for lightweight list views.
+        ...(includeDetails && {
+          phoneNumbers: true,
+          emails: true,
+          addresses: true,
+          urls: true,
+          imHandles: true,
+          locations: true,
+          customFields: true,
+        }),
         // Include these additional fields when includeAll=true (for export)
         ...(includeAll && {
           importantDates: {

@@ -71,8 +71,8 @@ export async function POST(request: Request) {
       errorMessages: [] as string[],
     };
 
-    // Performance optimization: Fetch all soft-deleted persons with matching UIDs upfront
-    // This prevents N+1 query problem when importing many contacts
+    // Performance optimization: Pre-fetch all data needed in the loop upfront
+    // to eliminate N+1 query patterns when importing many contacts.
     const allUIDs = pendingImports
       .map((p) => {
         try {
@@ -82,6 +82,34 @@ export async function POST(request: Request) {
         }
       })
       .filter((uid): uid is string => Boolean(uid));
+
+    // Pre-fetch existing mappings for this connection to avoid per-contact queries
+    const existingMappingsForConnection = allUIDs.length > 0
+      ? await prisma.cardDavMapping.findMany({
+          where: {
+            connectionId: connection.id,
+            uid: { in: allUIDs },
+          },
+          select: { uid: true, personId: true },
+        })
+      : [];
+    const existingMappingsByUid = new Map(
+      existingMappingsForConnection.map((m) => [m.uid, m])
+    );
+
+    // Pre-fetch existing active persons with matching UIDs to avoid per-contact queries
+    const existingActivePersons = allUIDs.length > 0
+      ? await prisma.person.findMany({
+          where: {
+            uid: { in: allUIDs },
+            userId: session.user.id,
+          },
+          select: { id: true, uid: true },
+        })
+      : [];
+    const existingPersonsByUid = new Map(
+      existingActivePersons.map((p) => [p.uid, p])
+    );
 
     // Use withDeleted() to bypass soft-delete filtering and find soft-deleted records
     const rawClient = withDeleted();
@@ -119,14 +147,9 @@ export async function POST(request: Request) {
         parsedData.organization = parsedData.organization ? sanitizeName(parsedData.organization) ?? parsedData.organization : parsedData.organization;
         parsedData.jobTitle = parsedData.jobTitle ? sanitizeName(parsedData.jobTitle) ?? parsedData.jobTitle : parsedData.jobTitle;
 
-        // Check for duplicates by UID
+        // Check for duplicates by UID (O(1) map lookup instead of per-contact query)
         if (parsedData.uid) {
-          const existingMapping = await prisma.cardDavMapping.findFirst({
-            where: {
-              connectionId: connection.id,
-              uid: parsedData.uid,
-            },
-          });
+          const existingMapping = existingMappingsByUid.get(parsedData.uid);
 
           if (existingMapping) {
             results.skipped++;
@@ -136,13 +159,9 @@ export async function POST(request: Request) {
 
         // Check if an active (non-deleted) person with this UID already exists
         // This handles reconnection: same server contacts, new connection ID
+        // (O(1) map lookup instead of per-contact query)
         if (parsedData.uid) {
-          const existingPerson = await prisma.person.findFirst({
-            where: {
-              uid: parsedData.uid,
-              userId: session.user.id,
-            },
-          });
+          const existingPerson = existingPersonsByUid.get(parsedData.uid);
 
           if (existingPerson) {
             // Person already exists — just create a new mapping and clean up
