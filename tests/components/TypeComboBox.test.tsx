@@ -31,7 +31,7 @@ describe('TypeComboBox', () => {
       currentValue = newValue;
     });
 
-    const { rerender } = render(
+    render(
       <TypeComboBox
         value={currentValue}
         onChange={onChange}

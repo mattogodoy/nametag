@@ -27,7 +27,6 @@ const STEPS = ['stepServer', 'stepBackup', 'stepSync'] as const;
 
 export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardProps) {
   const tw = useTranslations('settings.carddav.wizard');
-  const t = useTranslations('settings.carddav');
 
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<WizardData>(INITIAL_DATA);
@@ -35,8 +34,10 @@ export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardPr
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect -- resetting state when modal opens is intentional */
       setCurrentStep(1);
       setData(INITIAL_DATA);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen]);
 

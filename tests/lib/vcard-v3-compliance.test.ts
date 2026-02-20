@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { personToVCard, formatVCardV3Date, foldLine } from '@/lib/vcard';
+import { personToVCard } from '@/lib/vcard';
 import type { PersonWithRelations } from '@/lib/carddav/types';
 
 describe('vCard v3.0 Compliance (RFC 2426)', () => {

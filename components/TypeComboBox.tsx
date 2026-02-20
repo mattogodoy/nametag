@@ -40,6 +40,7 @@ export default function TypeComboBox({
   // Reset highlighted index when dropdown closes
   useEffect(() => {
     if (!isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting UI state when dropdown closes is intentional
       setHighlightedIndex(-1);
     }
   }, [isOpen]);

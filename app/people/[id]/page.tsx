@@ -315,6 +315,7 @@ export default async function PersonDetailsPage({
               {person.photo && getPhotoUrl(person.id, person.photo) && (
                 <div className="border border-border rounded-lg p-4">
                   <div className="flex justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={getPhotoUrl(person.id, person.photo)!}
                       alt={formatFullName(person)}

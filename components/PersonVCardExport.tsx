@@ -36,7 +36,7 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
 
   const generateVCard = async (): Promise<string> => {
     // Generate base vCard
-    let vcard = personToVCard(person, {
+    const vcard = personToVCard(person, {
       includePhoto: false, // Photos make QR codes too large
       includeCustomFields: true,
       stripMarkdown: false,

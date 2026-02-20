@@ -39,7 +39,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
   // Export state
   const [isExportingJson, setIsExportingJson] = useState(false);
   const [isExportingVcard, setIsExportingVcard] = useState(false);
-  const [exportMessage, setExportMessage] = useState('');
+  const [_exportMessage, setExportMessage] = useState('');
   const [exportMode, setExportMode] = useState<'all' | 'groups'>('all');
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [vcardProgress, setVcardProgress] = useState<{ current: number; total: number } | null>(null);

@@ -217,7 +217,7 @@ function parsePropertyLine(line: string, version: '3.0' | '4.0'): ParsedProperty
  */
 function parseParameters(
   paramsStr: string,
-  version: '3.0' | '4.0'
+  _version: '3.0' | '4.0'
 ): Record<string, string | string[]> {
   const params: Record<string, string | string[]> = {};
 
@@ -693,7 +693,7 @@ function parseGEO(value: string): { latitude: number; longitude: number } | null
  */
 function parseSocialProfile(
   value: string,
-  params: Record<string, string | string[]>
+  _params: Record<string, string | string[]>
 ): { protocol: string; handle: string } | null {
   // X-SOCIALPROFILE can have the URL in value and type in params
   // For now, extract domain as protocol and full URL as handle
