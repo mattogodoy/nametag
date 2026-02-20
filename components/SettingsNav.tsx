@@ -85,12 +85,9 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
   const router = useRouter();
   const t = useTranslations();
 
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
   // Filter out SaaS-only items when not in SaaS mode
-  // Filter out dev-only items when not in development
   const settingsNavItems = allSettingsNavItems.filter(
-    (item) => (!item.saasOnly || isSaasMode) && (!item.devOnly || isDevelopment)
+    (item) => !item.saasOnly || isSaasMode
   );
 
   // Find current active item
