@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { formatDateTime } from '@/lib/date-format';
 import GroupsSelector from './GroupsSelector';
 
 interface ParsedVCardData {
@@ -177,9 +176,6 @@ export default function CompactContactRow({
                   {parsedData.phoneNumbers[0].number}
                 </p>
               )}
-              <p className="text-xs">
-                {t('discovered')}: {formatDateTime(pendingImport.discoveredAt)}
-              </p>
             </div>
           )}
           <div className="mt-3">
