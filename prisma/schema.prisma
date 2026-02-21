@@ -64,6 +64,7 @@ model Person {
   contactReminderInterval     Int?
   contactReminderIntervalUnit ReminderIntervalUnit?
   lastContactReminderSent     DateTime?
+  cardDavSyncEnabled          Boolean               @default(true)
   createdAt                   DateTime              @default(now())
   updatedAt                   DateTime              @updatedAt
   deletedAt                   DateTime?

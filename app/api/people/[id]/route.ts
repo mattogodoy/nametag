@@ -3,7 +3,7 @@ import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/v
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canEnableReminder } from '@/lib/billing';
-import { autoUpdatePerson } from '@/lib/carddav/auto-export';
+import { autoUpdatePerson, autoExportPerson } from '@/lib/carddav/auto-export';
 import { deleteFromCardDav as deleteContactFromCardDav } from '@/lib/carddav/delete-contact';
 import { savePhoto, deletePersonPhotos, isPhotoFilename } from '@/lib/photo-storage';
 
@@ -84,6 +84,7 @@ export const PUT = withAuth(async (request, session, context) => {
       contactReminderEnabled,
       contactReminderInterval,
       contactReminderIntervalUnit,
+      cardDavSyncEnabled,
       phoneNumbers,
       emails,
       addresses,
@@ -191,6 +192,9 @@ export const PUT = withAuth(async (request, session, context) => {
       updateData.contactReminderEnabled = contactReminderEnabled;
       updateData.contactReminderInterval = contactReminderEnabled ? contactReminderInterval : null;
       updateData.contactReminderIntervalUnit = contactReminderEnabled ? contactReminderIntervalUnit : null;
+    }
+    if (cardDavSyncEnabled !== undefined) {
+      updateData.cardDavSyncEnabled = cardDavSyncEnabled;
     }
 
     // Groups (deleteMany + create pattern)
@@ -337,11 +341,26 @@ export const PUT = withAuth(async (request, session, context) => {
       },
     });
 
-    // Auto-update on CardDAV if enabled (don't await - let it run in background)
-    autoUpdatePerson(person.id).catch((error) => {
-      console.error('Auto-update failed:', error);
-      // Don't fail the request if auto-update fails
-    });
+    // CardDAV sync logic based on toggle state changes
+    if (cardDavSyncEnabled === false && existingPerson.cardDavSyncEnabled === true) {
+      // Un-sync: delete from CardDAV server, then remove mapping
+      // Must be sequential — deleteContactFromCardDav reads the mapping to find the server URL
+      deleteContactFromCardDav(id)
+        .then(() => prisma.cardDavMapping.deleteMany({ where: { personId: id } }))
+        .catch((error) => {
+          console.error('Failed to delete from CardDAV during un-sync:', error);
+        });
+    } else if (cardDavSyncEnabled === true && existingPerson.cardDavSyncEnabled !== true) {
+      // Re-sync: export to server
+      autoExportPerson(id).catch((error) => {
+        console.error('Auto-export after sync enable failed:', error);
+      });
+    } else if (cardDavSyncEnabled !== false) {
+      // Normal update path
+      autoUpdatePerson(person.id).catch((error) => {
+        console.error('Auto-update failed:', error);
+      });
+    }
 
     return apiResponse.ok({ person });
   } catch (error) {

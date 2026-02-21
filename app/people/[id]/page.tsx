@@ -294,6 +294,22 @@ export default async function PersonDetailsPage({
                     ))}
                   </div>
                 )}
+                {cardDavConnection && (
+                  <div className="flex items-center gap-1.5 mt-2" title={person.cardDavSyncEnabled ? t('cardDavSynced') : t('cardDavNotSynced')}>
+                    {person.cardDavSyncEnabled ? (
+                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
+                    )}
+                    <span className={`text-xs ${person.cardDavSyncEnabled ? 'text-green-500' : 'text-muted'}`}>
+                      {person.cardDavSyncEnabled ? t('cardDavSynced') : t('cardDavNotSynced')}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
                 <Link

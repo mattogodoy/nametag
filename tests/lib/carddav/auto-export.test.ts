@@ -112,6 +112,7 @@ function makePerson(overrides: Record<string, unknown> = {}) {
     surname: 'Doe',
     uid: 'existing-uid-123',
     photo: null,
+    cardDavSyncEnabled: true,
     phoneNumbers: [],
     emails: [],
     addresses: [],
@@ -237,6 +238,16 @@ describe('CardDAV Auto-Export', () => {
       mocks.personFindUnique.mockResolvedValue(null);
 
       await expect(autoExportPerson(PERSON_ID)).rejects.toThrow('Person not found');
+    });
+
+    it('should return early when cardDavSyncEnabled is false', async () => {
+      mocks.personFindUnique.mockResolvedValue(makePerson({ cardDavSyncEnabled: false }));
+
+      await autoExportPerson(PERSON_ID);
+
+      expect(mocks.cardDavConnectionFindUnique).not.toHaveBeenCalled();
+      expect(mocks.createVCard).not.toHaveBeenCalled();
+      expect(mocks.cardDavMappingCreate).not.toHaveBeenCalled();
     });
 
     it('should return early when no CardDAV connection exists', async () => {
@@ -403,6 +414,16 @@ describe('CardDAV Auto-Export', () => {
       mocks.personFindUnique.mockResolvedValue(null);
 
       await expect(autoUpdatePerson(PERSON_ID)).rejects.toThrow('Person not found');
+    });
+
+    it('should return early when cardDavSyncEnabled is false', async () => {
+      mocks.personFindUnique.mockResolvedValue(makePerson({ cardDavSyncEnabled: false }));
+
+      await autoUpdatePerson(PERSON_ID);
+
+      expect(mocks.cardDavConnectionFindUnique).not.toHaveBeenCalled();
+      expect(mocks.updateVCard).not.toHaveBeenCalled();
+      expect(mocks.cardDavMappingUpdate).not.toHaveBeenCalled();
     });
 
     it('should return early when no connection exists', async () => {

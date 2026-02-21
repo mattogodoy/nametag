@@ -669,6 +669,22 @@ describe('CardDAV Sync Engine', () => {
         expect(result.exported).toBe(1);
       });
 
+      it('should filter unmapped persons by cardDavSyncEnabled: true', async () => {
+        mocks.cardDavMappingFindMany.mockResolvedValue([]);
+        mocks.personFindMany.mockResolvedValue([]);
+
+        await syncToServer(USER_ID);
+
+        expect(mocks.personFindMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({
+              userId: USER_ID,
+              cardDavSyncEnabled: true,
+            }),
+          })
+        );
+      });
+
       it('should use existing UID when person already has one', async () => {
         mocks.cardDavMappingFindMany.mockResolvedValue([]);
 

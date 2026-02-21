@@ -172,6 +172,12 @@ export async function POST(request: Request) {
             },
           });
 
+          // Ensure ongoing sync is enabled for explicitly exported persons
+          await prisma.person.update({
+            where: { id: person.id },
+            data: { cardDavSyncEnabled: true },
+          });
+
           results.exported++;
         } catch (error) {
           console.error('Error exporting contact:', error);

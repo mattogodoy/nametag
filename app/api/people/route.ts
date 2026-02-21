@@ -128,6 +128,7 @@ export const POST = withAuth(async (request, session) => {
       contactReminderEnabled,
       contactReminderInterval,
       contactReminderIntervalUnit,
+      cardDavSyncEnabled,
       phoneNumbers,
       emails,
       addresses,
@@ -213,6 +214,7 @@ export const POST = withAuth(async (request, session) => {
       contactReminderEnabled: contactReminderEnabled ?? false,
       contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
       contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
+      cardDavSyncEnabled: cardDavSyncEnabled ?? true,
       groups: groupIds
         ? {
             create: groupIds.map((groupId) => ({
@@ -365,10 +367,12 @@ export const POST = withAuth(async (request, session) => {
     }
 
     // Auto-export to CardDAV if enabled (don't await - let it run in background)
-    autoExportPerson(person.id).catch((error) => {
-      console.error('Auto-export failed:', error);
-      // Don't fail the request if auto-export fails
-    });
+    if (cardDavSyncEnabled !== false) {
+      autoExportPerson(person.id).catch((error) => {
+        console.error('Auto-export failed:', error);
+        // Don't fail the request if auto-export fails
+      });
+    }
 
     return apiResponse.created({ person });
   } catch (error) {

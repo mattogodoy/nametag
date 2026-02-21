@@ -529,6 +529,7 @@ export async function syncToServer(
     const unmappedPersons = await prisma.person.findMany({
       where: {
         userId,
+        cardDavSyncEnabled: true,
         ...(mappedIds.length > 0 ? { id: { notIn: mappedIds } } : {}),
       },
       include: {

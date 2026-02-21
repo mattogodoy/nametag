@@ -40,6 +40,10 @@ export async function autoExportPerson(personId: string): Promise<void> {
     throw new Error('Person not found');
   }
 
+  if (!person.cardDavSyncEnabled) {
+    return;
+  }
+
   // Get user's CardDAV connection
   const connection = await prisma.cardDavConnection.findUnique({
     where: { userId: person.userId },
@@ -160,6 +164,10 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
 
   if (!person) {
     throw new Error('Person not found');
+  }
+
+  if (!person.cardDavSyncEnabled) {
+    return;
   }
 
   // Get user's CardDAV connection
