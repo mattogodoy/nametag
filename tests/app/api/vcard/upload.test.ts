@@ -383,14 +383,14 @@ END:VCARD`;
       expect(data.count).toBe(2);
       expect(prisma.cardDavPendingImport.create).toHaveBeenCalledTimes(2);
 
-      const calls = (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mock.calls;
-      const uids = calls.map((c: [{ data: { uid: string } }]) => c[0].data.uid);
+      const calls = (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mock.calls as Array<[{ data: { uid: string; displayName: string } }]>;
+      const uids = calls.map((c) => c[0].data.uid);
       expect(uids).toContain('uid-alice');
       expect(uids).toContain('uid-bob');
 
       // The last occurrence (Alicia) should be the one kept
-      const aliceCall = calls.find((c: [{ data: { uid: string } }]) => c[0].data.uid === 'uid-alice');
-      expect(aliceCall[0].data.displayName).toBe('Alicia');
+      const aliceCall = calls.find((c) => c[0].data.uid === 'uid-alice');
+      expect(aliceCall![0].data.displayName).toBe('Alicia');
     });
   });
 
