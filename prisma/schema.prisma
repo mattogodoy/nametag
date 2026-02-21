@@ -662,10 +662,13 @@ model CardDavMapping {
 // CardDavPendingImport - New contacts discovered on CardDAV server or uploaded via file
 model CardDavPendingImport {
   id           String   @id @default(cuid())
-  connectionId String
 
-  // Direct user ownership — required for file imports where the global
-  // FILE_IMPORT connection is shared across users.
+  // For CardDAV-discovered contacts, points to the user's connection.
+  // NULL for file imports (no CardDAV connection involved).
+  connectionId String?
+
+  // Direct user ownership — used for file imports and as a denormalized
+  // convenience for CardDAV imports.
   uploadedByUserId String?
 
   uid          String
@@ -678,8 +681,8 @@ model CardDavPendingImport {
   notifiedAt   DateTime?
 
   // Relations
-  connection   CardDavConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  uploadedBy   User?             @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  connection   CardDavConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  uploadedBy   User?              @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
 
   @@unique([connectionId, uid])
   @@index([connectionId])

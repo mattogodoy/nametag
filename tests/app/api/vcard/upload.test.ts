@@ -12,10 +12,6 @@ import { prisma } from '@/lib/prisma';
 vi.mock('@/lib/auth');
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    cardDavConnection: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
     cardDavPendingImport: {
       deleteMany: vi.fn(),
       create: vi.fn(),
@@ -34,6 +30,10 @@ describe('POST /api/vcard/upload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (auth as ReturnType<typeof vi.fn>).mockResolvedValue(mockSession);
+    (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'import-1',
+    });
   });
 
   describe('secondLastName in displayName', () => {
@@ -44,19 +44,6 @@ FN:Mauro Belluco De La Rosa
 N:Belluco De La Rosa;Mauro;;;
 X-NAMETAG-SECOND-LASTNAME:De La Rosa
 END:VCARD`;
-
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-
-      const mockCreatedImport = {
-        id: 'import-1',
-        displayName: 'Mauro Belluco De La Rosa',
-      };
-
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockCreatedImport);
 
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
@@ -83,15 +70,6 @@ N:García López;Juan;;;
 X-NAMETAG-SECOND-LASTNAME:López
 END:VCARD`;
 
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'import-1',
-      });
-
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
         body: vcardSpanish,
@@ -110,15 +88,6 @@ FN:John Smith
 N:Smith;John;;;
 END:VCARD`;
 
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'import-1',
-      });
-
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
         body: vcardSimple,
@@ -136,15 +105,6 @@ VERSION:3.0
 FN:Dr. John Smith Jr.
 N:Smith;John;;Dr.;Jr.
 END:VCARD`;
-
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'import-1',
-      });
 
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
@@ -165,15 +125,6 @@ N:;;;;
 NICKNAME:Johnny
 END:VCARD`;
 
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'import-1',
-      });
-
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
         body: vcardNickname,
@@ -191,15 +142,6 @@ VERSION:3.0
 FN:
 N:;;;;
 END:VCARD`;
-
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'import-1',
-      });
 
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
@@ -226,11 +168,6 @@ FN:Jane Smith
 N:Smith;Jane;;;
 END:VCARD`;
 
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
       (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ id: 'import-1' })
         .mockResolvedValueOnce({ id: 'import-2' });
@@ -260,11 +197,6 @@ FN:Jane Smith
 N:Smith;Jane;;;
 END:VCARD`;
 
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
       (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ id: 'import-1' })
         .mockResolvedValueOnce({ id: 'import-2' });
@@ -283,22 +215,13 @@ END:VCARD`;
     });
   });
 
-  describe('Special file import connection', () => {
-    it('should use special connection ID for file imports', async () => {
+  describe('File import user scoping', () => {
+    it('should create pending imports with uploadedByUserId and no connectionId', async () => {
       const vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:Test User
 N:User;Test;;;
 END:VCARD`;
-
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-      (prisma.cardDavConnection.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'import-1',
-      });
 
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
@@ -308,35 +231,21 @@ END:VCARD`;
       const response = await POST(request);
       const data = await response.json();
 
-      expect(data.connectionId).toBe('00000000-0000-0000-0000-000000000001');
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
 
-      // Verify connection was created with correct ID
-      expect(prisma.cardDavConnection.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          id: '00000000-0000-0000-0000-000000000001',
-          userId: 'user-123',
-          serverUrl: 'file-import',
-          username: 'file-import',
-          syncEnabled: false,
-          autoExportNew: false,
-        }),
-      });
+      // Verify pending import is created with user ownership and no connectionId
+      const createCall = (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(createCall.data.uploadedByUserId).toBe('user-123');
+      expect(createCall.data.connectionId).toBeUndefined();
     });
 
-    it('should delete existing pending imports before creating new ones', async () => {
+    it('should delete existing file imports for this user before creating new ones', async () => {
       const vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:Test User
 N:User;Test;;;
 END:VCARD`;
-
-      (prisma.cardDavConnection.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: '00000000-0000-0000-0000-000000000001',
-      });
-      (prisma.cardDavPendingImport.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'import-1',
-      });
 
       const request = new Request('http://localhost/api/vcard/upload', {
         method: 'POST',
@@ -347,10 +256,28 @@ END:VCARD`;
 
       expect(prisma.cardDavPendingImport.deleteMany).toHaveBeenCalledWith({
         where: {
-          connectionId: '00000000-0000-0000-0000-000000000001',
           uploadedByUserId: 'user-123',
+          connectionId: null,
         },
       });
+    });
+
+    it('should not return connectionId in response', async () => {
+      const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test User
+N:User;Test;;;
+END:VCARD`;
+
+      const request = new Request('http://localhost/api/vcard/upload', {
+        method: 'POST',
+        body: vcard,
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(data.connectionId).toBeUndefined();
     });
   });
 

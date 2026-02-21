@@ -25,34 +25,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get or create a special "File Import" connection marker
-    // We use a consistent ID so all file imports share the same connection
-    const FILE_IMPORT_CONNECTION_ID = '00000000-0000-0000-0000-000000000001';
-
-    let fileImportConnection = await prisma.cardDavConnection.findUnique({
-      where: { id: FILE_IMPORT_CONNECTION_ID },
-    });
-
-    if (!fileImportConnection) {
-      // Create the special file import connection
-      fileImportConnection = await prisma.cardDavConnection.create({
-        data: {
-          id: FILE_IMPORT_CONNECTION_ID,
-          userId: session.user.id,
-          serverUrl: 'file-import',
-          username: 'file-import',
-          password: '', // Not used for file imports
-          syncEnabled: false,
-          autoExportNew: false,
-        },
-      });
-    }
-
-    // Delete any existing pending imports for this user from file imports
+    // Delete any existing pending file imports for this user
     await prisma.cardDavPendingImport.deleteMany({
       where: {
-        connectionId: FILE_IMPORT_CONNECTION_ID,
         uploadedByUserId: session.user.id,
+        connectionId: null, // File imports have no connection
       },
     });
 
@@ -71,13 +48,12 @@ export async function POST(request: Request) {
           .filter(Boolean)
           .join(' ') || parsedData.nickname || 'Unknown Contact';
 
-        // Create pending import
+        // Create pending import — no connectionId needed for file imports
         const pendingImport = await prisma.cardDavPendingImport.create({
           data: {
-            connectionId: FILE_IMPORT_CONNECTION_ID,
             uploadedByUserId: session.user.id,
             uid: parsedData.uid || `file-import-${Date.now()}-${i}`,
-            href: `file-import-${Date.now()}-${i}`, // Unique identifier
+            href: `file-import-${Date.now()}-${i}`,
             etag: `file-${Date.now()}`,
             displayName,
             vCardData: vcard,
@@ -94,7 +70,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       count: createdImports.length,
-      connectionId: FILE_IMPORT_CONNECTION_ID,
     });
   } catch (error) {
     console.error('vCard upload failed:', error);

@@ -29,33 +29,39 @@ export default async function ImportPage({
   });
 
   const isFileImport = params.source === 'file';
-  const FILE_IMPORT_CONNECTION_ID = '00000000-0000-0000-0000-000000000001';
 
-  // Get CardDAV connection or file import connection
-  const connection = isFileImport
-    ? await prisma.cardDavConnection.findUnique({
-        where: { id: FILE_IMPORT_CONNECTION_ID },
-      })
-    : await prisma.cardDavConnection.findUnique({
-        where: { userId: session.user.id },
-      });
+  if (!isFileImport) {
+    // CardDAV import: verify user has a connection
+    const connection = await prisma.cardDavConnection.findUnique({
+      where: { userId: session.user.id },
+    });
 
-  if (!connection) {
-    // For file imports, if no pending imports exist, redirect to account
-    // For CardDAV, redirect to setup
-    redirect(isFileImport ? '/settings/account' : '/settings/carddav');
+    if (!connection) {
+      redirect('/settings/carddav');
+    }
   }
 
-  // Get pending imports — for file imports, scope to current user
+  // Get pending imports scoped to this user
   const pendingImports = await prisma.cardDavPendingImport.findMany({
-    where: {
-      connectionId: connection.id,
-      ...(isFileImport ? { uploadedByUserId: session.user.id } : {}),
-    },
+    where: isFileImport
+      ? {
+          // File imports: owned by user, no connection
+          uploadedByUserId: session.user.id,
+          connectionId: null,
+        }
+      : {
+          // CardDAV imports: scoped via connection
+          connection: { userId: session.user.id },
+        },
     orderBy: {
       displayName: 'asc',
     },
   });
+
+  // If file import with no pending imports, redirect back
+  if (isFileImport && pendingImports.length === 0) {
+    redirect('/settings/account');
+  }
 
   // Get user's groups for assignment
   const groups = await prisma.group.findMany({

@@ -673,6 +673,9 @@ export async function bidirectionalSync(
     };
   }
 
+  let timedOut = false;
+  let timerId: ReturnType<typeof setTimeout> | undefined;
+
   try {
     const syncOperation = async (): Promise<SyncResult> => {
       const pullResult = await syncFromServer(userId, onProgress);
@@ -694,13 +697,32 @@ export async function bidirectionalSync(
     };
 
     return await Promise.race([
-      syncOperation(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Sync timed out')), timeoutMs)
-      ),
+      syncOperation().finally(() => {
+        clearTimeout(timerId);
+        // If we timed out, the finally block below skipped lock release.
+        // Release it now that the in-flight operation has actually finished.
+        if (timedOut) {
+          releaseSyncLock(userId).catch((err) =>
+            logger.error('Failed to release sync lock after timed-out operation completed', { error: String(err) })
+          );
+        }
+      }),
+      new Promise<never>((_, reject) => {
+        timerId = setTimeout(() => {
+          timedOut = true;
+          reject(new Error('Sync timed out'));
+        }, timeoutMs);
+      }),
     ]);
   } finally {
-    await releaseSyncLock(userId);
+    clearTimeout(timerId);
+    // Only release the lock if the sync completed (success or error).
+    // On timeout, the sync operation is still running — releasing the lock
+    // would allow overlapping syncs. The stale lock detection (10min threshold
+    // in acquireSyncLock) will break the lock if the operation never finishes.
+    if (!timedOut) {
+      await releaseSyncLock(userId);
+    }
   }
 }
 
