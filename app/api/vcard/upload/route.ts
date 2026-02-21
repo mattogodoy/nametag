@@ -18,6 +18,10 @@ export async function POST(request: Request) {
     // Read raw vCard text
     const vcardText = await request.text();
 
+    if (vcardText.length > 2 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 2MB.' }, { status: 413 });
+    }
+
     if (!vcardText || !vcardText.trim().startsWith('BEGIN:VCARD')) {
       return NextResponse.json(
         { error: 'Invalid vCard file' },

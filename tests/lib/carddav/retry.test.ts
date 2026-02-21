@@ -352,7 +352,7 @@ describe('categorizeError', () => {
       expect(result.category).toBe(ErrorCategory.AUTH);
       expect(result.message).toBe('unauthorized');
       expect(result.originalError).toBeDefined();
-      expect(result.userMessage).toContain('Authentication failed');
+      expect(result.userMessage).toBe('carddav.errors.authFailed');
     });
 
     it('categorizes 403 as AUTH', () => {
@@ -360,7 +360,7 @@ describe('categorizeError', () => {
         Object.assign(new Error('forbidden'), { status: 403 })
       );
       expect(result.category).toBe(ErrorCategory.AUTH);
-      expect(result.userMessage).toContain('app-specific password');
+      expect(result.userMessage).toBe('carddav.errors.authFailed');
     });
   });
 
@@ -370,7 +370,7 @@ describe('categorizeError', () => {
         Object.assign(new Error('too many requests'), { status: 429 })
       );
       expect(result.category).toBe(ErrorCategory.RATE_LIMIT);
-      expect(result.userMessage).toContain('Too many requests');
+      expect(result.userMessage).toBe('carddav.errors.rateLimited');
     });
   });
 
@@ -380,7 +380,7 @@ describe('categorizeError', () => {
         Object.assign(new Error('internal server error'), { status: 500 })
       );
       expect(result.category).toBe(ErrorCategory.SERVER);
-      expect(result.userMessage).toContain('server is experiencing issues');
+      expect(result.userMessage).toBe('carddav.errors.serverError');
     });
 
     it('categorizes 502 as SERVER', () => {
@@ -404,7 +404,7 @@ describe('categorizeError', () => {
         Object.assign(new Error('not found'), { status: 404 })
       );
       expect(result.category).toBe(ErrorCategory.NOT_FOUND);
-      expect(result.userMessage).toContain('not found');
+      expect(result.userMessage).toBe('carddav.errors.notFound');
     });
   });
 
@@ -414,7 +414,7 @@ describe('categorizeError', () => {
         new Error('connect ECONNREFUSED 127.0.0.1:443')
       );
       expect(result.category).toBe(ErrorCategory.NETWORK);
-      expect(result.userMessage).toContain('Network error');
+      expect(result.userMessage).toBe('carddav.errors.networkError');
     });
 
     it('categorizes ENOTFOUND as NETWORK', () => {
@@ -444,7 +444,7 @@ describe('categorizeError', () => {
     it('categorizes parse errors as MALFORMED', () => {
       const result = categorizeError(new Error('Failed to parse vCard'));
       expect(result.category).toBe(ErrorCategory.MALFORMED);
-      expect(result.userMessage).toContain('Invalid data');
+      expect(result.userMessage).toBe('carddav.errors.malformedData');
     });
 
     it('categorizes malformed data as MALFORMED', () => {
@@ -462,7 +462,7 @@ describe('categorizeError', () => {
     it('categorizes unknown errors as UNKNOWN', () => {
       const result = categorizeError(new Error('something unexpected'));
       expect(result.category).toBe(ErrorCategory.UNKNOWN);
-      expect(result.userMessage).toContain('unexpected error');
+      expect(result.userMessage).toBe('carddav.errors.unknown');
     });
 
     it('handles non-Error objects', () => {

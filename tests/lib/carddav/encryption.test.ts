@@ -25,8 +25,8 @@ describe('encryptPassword / decryptPassword', () => {
     const encrypted = encryptPassword('test');
     const parts = encrypted.split(':');
     expect(parts).toHaveLength(3);
-    // IV is 16 bytes = 32 hex chars
-    expect(parts[0]).toMatch(/^[0-9a-f]{32}$/);
+    // IV is 12 bytes = 24 hex chars (96-bit per NIST GCM spec)
+    expect(parts[0]).toMatch(/^[0-9a-f]{24}$/);
     // Auth tag is 16 bytes = 32 hex chars
     expect(parts[1]).toMatch(/^[0-9a-f]{32}$/);
     // Encrypted data is hex

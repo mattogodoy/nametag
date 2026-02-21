@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import BulkExportList from '@/components/BulkExportList';
+import Navigation from '@/components/Navigation';
 
 export default async function ExportPage() {
   const session = await auth();
@@ -11,6 +12,16 @@ export default async function ExportPage() {
   if (!session?.user) {
     redirect('/login');
   }
+
+  // Get user for navigation
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      email: true,
+      name: true,
+      nickname: true,
+    },
+  });
 
   // Get CardDAV connection
   const connection = await prisma.cardDavConnection.findUnique({
@@ -61,6 +72,14 @@ export default async function ExportPage() {
   });
 
   return (
+    <>
+      <Navigation
+        userEmail={user?.email}
+        userName={user?.name}
+        userNickname={user?.nickname}
+        currentPath="/carddav/export"
+      />
+
     <div className="container mx-auto px-4 py-8">
       <div className="bg-surface shadow rounded-lg p-6">
         <h1 className="text-2xl font-bold text-foreground mb-4">
@@ -88,5 +107,6 @@ export default async function ExportPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

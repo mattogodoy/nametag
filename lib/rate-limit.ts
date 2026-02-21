@@ -64,6 +64,11 @@ export const rateLimitConfigs = {
     maxAttempts: 5,
     windowMs: 5 * 60 * 1000,
   },
+  // CardDAV backup: 5 attempts per 15 minutes
+  carddavBackup: {
+    maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+  },
 } as const;
 
 export type RateLimitType = keyof typeof rateLimitConfigs;

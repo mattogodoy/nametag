@@ -15,6 +15,15 @@ interface PersonUrlManagerProps {
   onChange?: (urls: PersonUrl[]) => void;
 }
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
 const defaultNewUrl: PersonUrl = {
   type: 'Personal',
   url: '',
@@ -111,7 +120,7 @@ export default function PersonUrlManager({
       <div className="space-y-2">
         {urls.map((urlItem, index) => (
           <div
-            key={index}
+            key={urlItem.id || `new-${index}`}
             className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
           >
             {editingIndex === index && editingUrl ? (
@@ -160,14 +169,20 @@ export default function PersonUrlManager({
                       {urlItem.type}
                     </span>
                   </div>
-                  <a
-                    href={urlItem.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
-                  >
-                    {urlItem.url}
-                  </a>
+                  {isSafeUrl(urlItem.url) ? (
+                    <a
+                      href={urlItem.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+                    >
+                      {urlItem.url}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-900 dark:text-gray-100 break-all">
+                      {urlItem.url}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"

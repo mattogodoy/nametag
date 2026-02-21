@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { z } from 'zod';
-
-const backupSchema = z.object({
-  serverUrl: z.string().url(),
-  username: z.string().min(1),
-  password: z.string().min(1),
-});
+import { decryptPassword } from '@/lib/carddav/encryption';
 
 export async function POST(request: Request) {
   try {
@@ -19,20 +14,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const rateLimitResponse = checkRateLimit(request, 'carddavTest', session.user.id);
+    const rateLimitResponse = checkRateLimit(request, 'carddavBackup', session.user.id);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const body = await request.json();
-    const validationResult = backupSchema.safeParse(body);
+    // Look up the user's stored CardDAV connection
+    const connection = await prisma.cardDavConnection.findUnique({
+      where: { userId: session.user.id },
+    });
 
-    if (!validationResult.success) {
+    if (!connection) {
       return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.issues },
-        { status: 400 }
+        { error: 'No CardDAV connection found. Please set up a connection first.' },
+        { status: 404 }
       );
     }
 
-    const { serverUrl, username, password } = validationResult.data;
+    const serverUrl = connection.serverUrl;
+    const username = connection.username;
+    const password = decryptPassword(connection.password);
 
     // Validate URL to prevent SSRF attacks
     try {

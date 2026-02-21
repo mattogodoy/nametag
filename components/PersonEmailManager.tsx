@@ -111,7 +111,7 @@ export default function PersonEmailManager({
       <div className="space-y-2">
         {emails.map((email, index) => (
           <div
-            key={index}
+            key={email.id || `new-${index}`}
             className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
           >
             {editingIndex === index && editingEmail ? (

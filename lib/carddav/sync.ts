@@ -151,7 +151,7 @@ export async function syncFromServer(
         });
 
         if (!parsedData.uid) {
-          console.warn('vCard missing UID, skipping');
+          logger.warn('vCard missing UID, skipping');
           result.errors++;
           continue;
         }
@@ -304,7 +304,7 @@ export async function syncFromServer(
           result.pendingImports = (result.pendingImports || 0) + 1;
         }
       } catch (error) {
-        console.error('Error processing vCard:', error);
+        logger.error('Error processing vCard', { error: error instanceof Error ? error.message : String(error) });
         result.errors++;
         result.errorMessages.push(
           error instanceof Error ? error.message : 'Unknown error'
@@ -331,7 +331,7 @@ export async function syncFromServer(
 
     return result;
   } catch (error) {
-    console.error('Sync from server failed:', error);
+    logger.error('Sync from server failed', { error: error instanceof Error ? error.message : String(error) });
 
     // Categorize error for better user feedback
     const categorized = categorizeError(error);
@@ -511,7 +511,7 @@ export async function syncToServer(
           },
         });
       } catch (error) {
-        console.error('Error pushing vCard:', error);
+        logger.error('Error pushing vCard', { error: error instanceof Error ? error.message : String(error) });
         result.errors++;
         result.errorMessages.push(
           error instanceof Error ? error.message : 'Unknown error'
@@ -607,7 +607,7 @@ export async function syncToServer(
 
         result.exported++;
       } catch (error) {
-        console.error('Error exporting unmapped contact:', error);
+        logger.error('Error exporting unmapped contact', { error: error instanceof Error ? error.message : String(error) });
         result.errors++;
         result.errorMessages.push(
           `Failed to export ${person.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -622,7 +622,7 @@ export async function syncToServer(
 
     return result;
   } catch (error) {
-    console.error('Sync to server failed:', error);
+    logger.error('Sync to server failed', { error: error instanceof Error ? error.message : String(error) });
 
     // Categorize error for better user feedback
     const categorized = categorizeError(error);

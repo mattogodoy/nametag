@@ -210,7 +210,7 @@ export default function PersonAddressManager({
       <div className="space-y-2">
         {addresses.map((address, index) => (
           <div
-            key={index}
+            key={address.id || `new-${index}`}
             className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
           >
             {editingIndex === index && editingAddress ? (

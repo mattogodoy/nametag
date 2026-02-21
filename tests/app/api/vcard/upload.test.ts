@@ -209,9 +209,11 @@ END:VCARD`;
       const response = await POST(request);
       const data = await response.json();
 
-      // Should still import the valid ones
+      // Should still import the valid ones — the split produces two chunks
+      // (the invalid data is appended after END:VCARD in the first chunk,
+      // which doesn't prevent parsing), so both vCards are imported.
       expect(data.success).toBe(true);
-      expect(data.count).toBeGreaterThan(0);
+      expect(data.count).toBe(2);
     });
   });
 

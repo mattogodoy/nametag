@@ -137,7 +137,7 @@ export default function PersonCustomFieldManager({
       <div className="space-y-2">
         {fields.map((field, index) => (
           <div
-            key={index}
+            key={field.id || `new-${index}`}
             className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
           >
             {editingIndex === index && editingField ? (

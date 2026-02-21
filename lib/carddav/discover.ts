@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { vCardToPerson } from '@/lib/vcard';
+import { logger } from '@/lib/logger';
 
 interface DiscoveryResult {
   discovered: number;
@@ -79,7 +80,7 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
         // (e.g. UID;VALUE=uri:...) so we use the full parser.
         const parsed = vCardToPerson(vCard.data);
         if (!parsed.uid) {
-          console.warn('vCard missing UID, skipping');
+          logger.warn('vCard missing UID, skipping');
           continue;
         }
 
@@ -100,6 +101,7 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
             connectionId: connection.id,
             uid,
             href: vCard.url,
+            etag: vCard.etag,
             vCardData: vCard.data,
             displayName,
             discoveredAt: new Date(),
@@ -108,7 +110,7 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
 
         result.discovered++;
       } catch (error) {
-        console.error('Error processing vCard:', error);
+        logger.error('Error processing vCard', { error: error instanceof Error ? error.message : String(error) });
         result.errors++;
         result.errorMessages.push(
           error instanceof Error ? error.message : 'Unknown error'
@@ -128,7 +130,7 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
 
     return result;
   } catch (error) {
-    console.error('Discovery failed:', error);
+    logger.error('Discovery failed', { error: error instanceof Error ? error.message : String(error) });
 
     // Update connection with error
     const connection = await prisma.cardDavConnection.findUnique({

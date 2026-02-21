@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import ConflictList from '@/components/ConflictList';
+import Navigation from '@/components/Navigation';
 
 export default async function ConflictsPage() {
   const session = await auth();
@@ -12,6 +13,16 @@ export default async function ConflictsPage() {
   if (!session?.user) {
     redirect('/login');
   }
+
+  // Get user for navigation
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      email: true,
+      name: true,
+      nickname: true,
+    },
+  });
 
   // Get CardDAV connection
   const connection = await prisma.cardDavConnection.findUnique({
@@ -65,6 +76,14 @@ export default async function ConflictsPage() {
   });
 
   return (
+    <>
+      <Navigation
+        userEmail={user?.email}
+        userName={user?.name}
+        userNickname={user?.nickname}
+        currentPath="/carddav/conflicts"
+      />
+
     <div className="container mx-auto px-4 py-8">
       <div className="bg-surface shadow rounded-lg p-6">
         <h1 className="text-2xl font-bold text-foreground mb-4">
@@ -109,5 +128,6 @@ export default async function ConflictsPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

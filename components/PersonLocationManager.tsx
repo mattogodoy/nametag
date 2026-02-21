@@ -118,7 +118,7 @@ export default function PersonLocationManager({
       <div className="space-y-2">
         {locations.map((location, index) => (
           <div
-            key={index}
+            key={location.id || `new-${index}`}
             className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
           >
             {editingIndex === index && editingLocation ? (

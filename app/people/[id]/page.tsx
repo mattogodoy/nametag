@@ -15,6 +15,15 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { getTranslations } from 'next-intl/server';
 import { getPhotoUrl } from '@/lib/photo-url';
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
 // Type for translation function
 type TranslationFn = (key: string, values?: Record<string, string | number | Date>) => string;
 
@@ -551,17 +560,23 @@ export default async function PersonDetailsPage({
                               <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface-elevated text-muted capitalize">
                                 {url.type}
                               </span>
-                              <a
-                                href={url.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline flex items-center gap-1"
-                              >
-                                {url.url}
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                              </a>
+                              {isSafeUrl(url.url) ? (
+                                <a
+                                  href={url.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline flex items-center gap-1"
+                                >
+                                  {url.url}
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                </a>
+                              ) : (
+                                <span className="text-muted flex items-center gap-1">
+                                  {url.url}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>

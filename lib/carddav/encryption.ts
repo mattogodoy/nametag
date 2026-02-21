@@ -7,7 +7,8 @@ import { env } from '@/lib/env';
  */
 
 const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;
+// AES-256-GCM requires a 96-bit (12-byte) IV per NIST SP 800-38D
+const IV_LENGTH = 12;
 
 /**
  * Get encryption key from NEXTAUTH_SECRET

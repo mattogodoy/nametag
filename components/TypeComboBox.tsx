@@ -8,6 +8,7 @@ interface TypeComboBoxProps {
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
   className?: string;
+  toggleAriaLabel?: string;
 }
 
 export default function TypeComboBox({
@@ -16,6 +17,7 @@ export default function TypeComboBox({
   options,
   placeholder = '',
   className = '',
+  toggleAriaLabel,
 }: TypeComboBoxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -125,7 +127,7 @@ export default function TypeComboBox({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          aria-label="Toggle options"
+          aria-label={toggleAriaLabel || 'Toggle options'}
           tabIndex={-1}
         >
           <svg

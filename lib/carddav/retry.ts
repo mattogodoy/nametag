@@ -123,8 +123,7 @@ export function categorizeError(error: unknown): CategorizedError {
         category: ErrorCategory.AUTH,
         message: errorMessage,
         originalError: error,
-        userMessage:
-          'Authentication failed. Please check your username and password. For Google and iCloud, make sure you are using an app-specific password.',
+        userMessage: 'carddav.errors.authFailed',
       };
     }
 
@@ -134,8 +133,7 @@ export function categorizeError(error: unknown): CategorizedError {
         category: ErrorCategory.RATE_LIMIT,
         message: errorMessage,
         originalError: error,
-        userMessage:
-          'Too many requests. Please wait a moment and try again.',
+        userMessage: 'carddav.errors.rateLimited',
       };
     }
 
@@ -145,8 +143,7 @@ export function categorizeError(error: unknown): CategorizedError {
         category: ErrorCategory.SERVER,
         message: errorMessage,
         originalError: error,
-        userMessage:
-          'The CardDAV server is experiencing issues. Please try again later.',
+        userMessage: 'carddav.errors.serverError',
       };
     }
 
@@ -156,8 +153,7 @@ export function categorizeError(error: unknown): CategorizedError {
         category: ErrorCategory.NOT_FOUND,
         message: errorMessage,
         originalError: error,
-        userMessage:
-          'The requested resource was not found. Please check your server URL.',
+        userMessage: 'carddav.errors.notFound',
       };
     }
   }
@@ -175,8 +171,7 @@ export function categorizeError(error: unknown): CategorizedError {
       category: ErrorCategory.NETWORK,
       message: errorMessage,
       originalError: error,
-      userMessage:
-        'Network error. Please check your internet connection and server URL.',
+      userMessage: 'carddav.errors.networkError',
     };
   }
 
@@ -190,8 +185,7 @@ export function categorizeError(error: unknown): CategorizedError {
       category: ErrorCategory.MALFORMED,
       message: errorMessage,
       originalError: error,
-      userMessage:
-        'Invalid data received from server. The contact may be corrupted.',
+      userMessage: 'carddav.errors.malformedData',
     };
   }
 
@@ -200,7 +194,6 @@ export function categorizeError(error: unknown): CategorizedError {
     category: ErrorCategory.UNKNOWN,
     message: errorMessage,
     originalError: error,
-    userMessage:
-      'An unexpected error occurred. Please try again or contact support.',
+    userMessage: 'carddav.errors.unknown',
   };
 }

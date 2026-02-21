@@ -2,24 +2,28 @@ import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import dns from 'dns';
 
-// Mock dns.promises.resolve4 to avoid real DNS lookups in tests
+// Mock dns.promises.resolve4 and resolve6 to avoid real DNS lookups in tests
 vi.mock('dns', () => ({
   default: {
     promises: {
       resolve4: vi.fn(),
+      resolve6: vi.fn(),
     },
   },
   promises: {
     resolve4: vi.fn(),
+    resolve6: vi.fn(),
   },
 }));
 
 const mockResolve4 = dns.promises.resolve4 as ReturnType<typeof vi.fn>;
+const mockResolve6 = dns.promises.resolve6 as ReturnType<typeof vi.fn>;
 
 describe('validateServerUrl', () => {
   beforeEach(() => {
-    // Default: resolve to a safe public IP
+    // Default: resolve to a safe public IP (v4), no AAAA records (v6)
     mockResolve4.mockResolvedValue(['93.184.216.34']);
+    mockResolve6.mockRejectedValue(new Error('ENODATA'));
   });
 
   // --- Valid URLs ---
@@ -150,6 +154,7 @@ describe('validateServerUrl', () => {
 
   it('rejects unresolvable hostnames', async () => {
     mockResolve4.mockRejectedValue(new Error('ENOTFOUND'));
+    mockResolve6.mockRejectedValue(new Error('ENOTFOUND'));
     await expect(validateServerUrl('https://nonexistent.example.com')).rejects.toThrow('Could not resolve server hostname');
   });
 

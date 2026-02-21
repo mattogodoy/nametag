@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { personToVCard } from '@/lib/vcard';
 import { copyToClipboard } from '@/lib/vcard-helpers';
@@ -15,6 +15,12 @@ export default function PersonVCardRawView({ person }: PersonVCardRawViewProps) 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
+  const vcard = useMemo(() => personToVCard(person, {
+    includePhoto: false, // Skip photo for raw view
+    includeCustomFields: true,
+    stripMarkdown: false,
+  }), [person]);
+
   // Only render in development mode
   if (process.env.NODE_ENV !== 'development') {
     return null;
@@ -22,12 +28,6 @@ export default function PersonVCardRawView({ person }: PersonVCardRawViewProps) 
 
   const handleCopy = async () => {
     try {
-      const vcard = personToVCard(person, {
-        includePhoto: false, // Skip photo for raw view
-        includeCustomFields: true,
-        stripMarkdown: false,
-      });
-
       await copyToClipboard(vcard);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
@@ -35,12 +35,6 @@ export default function PersonVCardRawView({ person }: PersonVCardRawViewProps) 
       console.error('Failed to copy vCard:', error);
     }
   };
-
-  const vcard = personToVCard(person, {
-    includePhoto: false, // Skip photo for raw view
-    includeCustomFields: true,
-    stripMarkdown: false,
-  });
 
   return (
     <div className="border border-border rounded-lg p-4 bg-muted/30">

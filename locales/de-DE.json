@@ -373,6 +373,15 @@
         "manualSyncExplanation": "Du kannst jederzeit eine manuelle Synchronisation von der CardDAV-Einstellungsseite aus starten, unabhängig von dieser Einstellung.",
         "canChangeLater": "Du kannst diese Einstellungen später auf der CardDAV-Einstellungsseite ändern.",
         "savingConnection": "Verbindung wird gespeichert..."
+      },
+      "errors": {
+        "authFailed": "Authentication failed. Please check your username and password. For Google and iCloud, make sure you are using an app-specific password.",
+        "networkError": "Network error. Please check your internet connection and server URL.",
+        "serverError": "The CardDAV server is experiencing issues. Please try again later.",
+        "rateLimited": "Too many requests. Please wait a moment and try again.",
+        "malformedData": "Invalid data received from server. The contact may be corrupted.",
+        "notFound": "The requested resource was not found. Please check your server URL.",
+        "unknown": "An unexpected error occurred. Please try again or contact support."
       }
     },
     "billing": {

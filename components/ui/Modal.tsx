@@ -8,6 +8,7 @@ export interface ModalProps {
   title: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  closeAriaLabel?: string;
 }
 
 export default function Modal({
@@ -16,6 +17,7 @@ export default function Modal({
   title,
   children,
   size = 'md',
+  closeAriaLabel,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -109,7 +111,7 @@ export default function Modal({
           <button
             onClick={onClose}
             className="text-muted hover:text-foreground transition-colors p-1 rounded-lg hover:bg-surface-elevated"
-            aria-label="Close modal"
+            aria-label={closeAriaLabel || 'Close modal'}
           >
             <svg
               className="w-6 h-6"

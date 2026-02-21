@@ -116,6 +116,9 @@ describe('POST /api/carddav/import — duplicate UID handling', () => {
     mocks.deletePending.mockResolvedValue({});
   });
 
+  // This test also covers the concurrent-safety scenario: if two imports with
+  // the same importIds run, the in-memory map update after the first create
+  // ensures the second pending import with the same UID is skipped.
   it('should import only one person when two pending imports share the same UID', async () => {
     const pending = [
       makePendingImport('p-1', 'shared-uid', 'Alice V1'),
@@ -253,6 +256,46 @@ describe('POST /api/carddav/import — duplicate UID handling', () => {
     expect(data.imported).toBe(1);
     expect(mocks.restorePersonFromVCardData).toHaveBeenCalledTimes(1);
     expect(mocks.createPersonFromVCardData).not.toHaveBeenCalled();
+  });
+
+  it('should import vCard without UID unconditionally and skip mapping creation', async () => {
+    const noUidVCard = 'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:No UID Person\r\nN:;No UID Person;;;\r\nEND:VCARD';
+    const pending = [
+      {
+        id: 'p-no-uid',
+        connectionId: null,
+        uploadedByUserId: 'user-1',
+        uid: null,
+        href: 'file-import-no-uid',
+        etag: 'etag',
+        vCardData: noUidVCard,
+        displayName: 'No UID Person',
+        discoveredAt: new Date(),
+        notifiedAt: null,
+      },
+    ];
+    mocks.findManyPending.mockResolvedValue(pending);
+
+    mocks.createPersonFromVCardData.mockResolvedValueOnce({
+      id: 'person-no-uid',
+      uid: null,
+    });
+
+    const res = await postImport(['p-no-uid']);
+    const data = await res.json();
+
+    // Should import successfully with no dedup check
+    expect(data.imported).toBe(1);
+    expect(data.skipped).toBe(0);
+    expect(mocks.createPersonFromVCardData).toHaveBeenCalledTimes(1);
+
+    // No mapping should be created (file import with no UID to track)
+    expect(mocks.createMapping).not.toHaveBeenCalled();
+
+    // Pending import should be cleaned up
+    expect(mocks.deletePending).toHaveBeenCalledWith({
+      where: { id: 'p-no-uid' },
+    });
   });
 
   it('should return 404 when no pending imports match', async () => {

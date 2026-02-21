@@ -4,6 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/person-from-vcard';
 import type { ParsedVCardData } from '@/lib/carddav/types';
+import { z } from 'zod';
+
+const resolveSchema = z.object({
+  resolution: z.enum(['keep_local', 'keep_remote', 'merged']),
+});
 
 interface RouteParams {
   params: Promise<{
@@ -20,15 +25,16 @@ export async function POST(request: Request, context: RouteParams) {
     }
 
     const { id } = await context.params;
-    const body = await request.json();
-    const { resolution } = body; // "keep_local", "keep_remote", or "merged"
+    const validationResult = resolveSchema.safeParse(await request.json());
 
-    if (!['keep_local', 'keep_remote', 'merged'].includes(resolution)) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Invalid resolution type' },
+        { error: 'Invalid resolution type', details: validationResult.error.issues },
         { status: 400 }
       );
     }
+
+    const { resolution } = validationResult.data;
 
     // Get conflict
     const conflict = await prisma.cardDavConflict.findUnique({

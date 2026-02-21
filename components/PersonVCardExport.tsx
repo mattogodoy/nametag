@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { personToVCard } from '@/lib/vcard';
 import { addPhotoToVCardFromUrl, downloadVcf, generateVcfFilename } from '@/lib/vcard-helpers';
@@ -21,6 +21,7 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
   const [showQrModal, setShowQrModal] = useState(false);
   const [vCardData, setVCardData] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -33,6 +34,15 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleDropdownKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape' && showDropdown) {
+      event.preventDefault();
+      event.stopPropagation();
+      setShowDropdown(false);
+      triggerButtonRef.current?.focus();
+    }
+  }, [showDropdown]);
 
   const generateVCard = async (): Promise<string> => {
     // Generate base vCard
@@ -97,8 +107,9 @@ export default function PersonVCardExport({ person }: PersonVCardExportProps) {
 
   return (
     <>
-      <div className="relative" ref={dropdownRef}>
+      <div className="relative" ref={dropdownRef} onKeyDown={handleDropdownKeyDown}>
         <button
+          ref={triggerButtonRef}
           onClick={() => setShowDropdown(!showDropdown)}
           disabled={isExporting}
           className="px-4 py-2 bg-secondary text-foreground rounded-lg font-semibold hover:bg-secondary/80 transition-colors shadow-lg hover:shadow-secondary/50 text-center disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
