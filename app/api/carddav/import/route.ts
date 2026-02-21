@@ -208,6 +208,12 @@ export async function POST(request: Request) {
           person = await createPersonFromVCardData(session.user.id, parsedData);
         }
 
+        // Update the lookup map so subsequent pending imports with the same UID
+        // are treated as duplicates rather than triggering another create.
+        if (parsedData.uid) {
+          existingPersonsByUid.set(parsedData.uid, { id: person.id, uid: parsedData.uid });
+        }
+
         // Create CardDAV mapping only for CardDAV imports (not file imports)
         const isFileImport = pendingImport.uploadedByUserId !== null;
         if (!isFileImport && connection) {

@@ -33,16 +33,27 @@ export async function POST(request: Request) {
       },
     });
 
-    // Split into individual vCards
-    const vcards = vcardText.split(/(?=BEGIN:VCARD)/g).filter(v => v.trim());
+    // Split into individual vCards and deduplicate by UID (last occurrence wins).
+    // Without dedup, NULL connectionId means @@unique([connectionId, uid]) won't
+    // prevent duplicate rows, which then fail during import.
+    const rawVcards = vcardText.split(/(?=BEGIN:VCARD)/g).filter(v => v.trim());
+    const deduped = new Map<string, { vcard: string; index: number }>();
+
+    for (let i = 0; i < rawVcards.length; i++) {
+      const vcard = rawVcards[i];
+      try {
+        const parsedData = vCardToPerson(vcard);
+        const uid = parsedData.uid || `file-import-${Date.now()}-${i}`;
+        deduped.set(uid, { vcard, index: i });
+      } catch (error) {
+        console.error('Error parsing vCard:', error);
+      }
+    }
 
     const createdImports = [];
 
-    for (let i = 0; i < vcards.length; i++) {
-      const vcard = vcards[i];
-
+    for (const [uid, { vcard, index }] of deduped) {
       try {
-        // Parse vCard to get display name
         const parsedData = vCardToPerson(vcard);
         const displayName = [parsedData.prefix, parsedData.name, parsedData.middleName, parsedData.surname, parsedData.secondLastName, parsedData.suffix]
           .filter(Boolean)
@@ -52,8 +63,8 @@ export async function POST(request: Request) {
         const pendingImport = await prisma.cardDavPendingImport.create({
           data: {
             uploadedByUserId: session.user.id,
-            uid: parsedData.uid || `file-import-${Date.now()}-${i}`,
-            href: `file-import-${Date.now()}-${i}`,
+            uid,
+            href: `file-import-${Date.now()}-${index}`,
             etag: `file-${Date.now()}`,
             displayName,
             vCardData: vcard,
@@ -62,8 +73,7 @@ export async function POST(request: Request) {
 
         createdImports.push(pendingImport);
       } catch (error) {
-        console.error('Error parsing vCard:', error);
-        // Continue with other vCards even if one fails
+        console.error('Error creating pending import:', error);
       }
     }
 
