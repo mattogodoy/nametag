@@ -471,10 +471,11 @@ describe('categorizeError', () => {
       expect(result.message).toBe('string error');
     });
 
-    it('throws on null input (no null guard in source)', () => {
-      // categorizeError casts the input to { status?: number } and accesses
-      // .status without a null check, so null/undefined inputs will throw.
-      expect(() => categorizeError(null)).toThrow();
+    it('handles null input gracefully', () => {
+      // With proper type guards, null no longer crashes — it returns UNKNOWN
+      const result = categorizeError(null);
+      expect(result.category).toBe(ErrorCategory.UNKNOWN);
+      expect(result.message).toBe('null');
     });
 
     it('handles numeric errors', () => {

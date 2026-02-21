@@ -54,6 +54,16 @@ export const rateLimitConfigs = {
     maxAttempts: 3,
     windowMs: 15 * 60 * 1000,
   },
+  // CardDAV connection test: 10 attempts per 15 minutes
+  carddavTest: {
+    maxAttempts: 10,
+    windowMs: 15 * 60 * 1000,
+  },
+  // CardDAV sync: 5 attempts per 5 minutes
+  carddavSync: {
+    maxAttempts: 5,
+    windowMs: 5 * 60 * 1000,
+  },
 } as const;
 
 export type RateLimitType = keyof typeof rateLimitConfigs;

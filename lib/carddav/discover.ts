@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
+import { vCardToPerson } from '@/lib/vcard';
 
 interface DiscoveryResult {
   discovered: number;
@@ -73,23 +74,25 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
     // Process each vCard
     for (const vCard of vCards) {
       try {
-        // Extract UID from vCard
-        const uidMatch = vCard.data.match(/^UID:(.+)$/m);
-        if (!uidMatch) {
+        // Parse vCard to reliably extract UID and display name.
+        // Regex extraction is fragile with line folding and parameters
+        // (e.g. UID;VALUE=uri:...) so we use the full parser.
+        const parsed = vCardToPerson(vCard.data);
+        if (!parsed.uid) {
           console.warn('vCard missing UID, skipping');
           continue;
         }
 
-        const uid = uidMatch[1].trim();
+        const uid = parsed.uid;
 
         // Skip if already imported or already pending
         if (existingUids.has(uid) || pendingUids.has(uid)) {
           continue;
         }
 
-        // Extract display name (FN property)
-        const fnMatch = vCard.data.match(/^FN:(.+)$/m);
-        const displayName = fnMatch ? fnMatch[1].trim() : 'Unknown';
+        const displayName = parsed.name
+          ? `${parsed.name}${parsed.surname ? ` ${parsed.surname}` : ''}`
+          : parsed.surname || 'Unknown';
 
         // Add to pending imports
         await prisma.cardDavPendingImport.create({

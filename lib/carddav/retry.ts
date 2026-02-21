@@ -10,6 +10,14 @@ export interface RetryOptions {
   shouldRetry?: (error: unknown) => boolean;
 }
 
+/**
+ * Type guard: check if an error has an HTTP status code.
+ */
+function hasHttpStatus(error: unknown): error is { status: number } {
+  return typeof error === 'object' && error !== null && 'status' in error
+    && typeof (error as Record<string, unknown>).status === 'number';
+}
+
 const DEFAULT_OPTIONS: Required<RetryOptions> = {
   maxAttempts: 3,
   initialDelay: 1000, // 1 second
@@ -30,11 +38,10 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
       }
     }
 
-    // Check for HTTP status codes (if error has status property)
-    const httpError = error as { status?: number };
-    if (httpError.status) {
+    // Check for HTTP status codes
+    if (hasHttpStatus(error)) {
       // Retry on 5xx server errors and 429 rate limiting
-      return httpError.status >= 500 || httpError.status === 429;
+      return error.status >= 500 || error.status === 429;
     }
 
     return false;
@@ -105,52 +112,54 @@ export interface CategorizedError {
  * Categorize an error for user-friendly display
  */
 export function categorizeError(error: unknown): CategorizedError {
-  const httpError = error as { status?: number; message?: string };
   const errorMessage =
     error instanceof Error ? error.message : String(error);
 
-  // Authentication errors
-  if (httpError.status === 401 || httpError.status === 403) {
-    return {
-      category: ErrorCategory.AUTH,
-      message: errorMessage,
-      originalError: error,
-      userMessage:
-        'Authentication failed. Please check your username and password. For Google and iCloud, make sure you are using an app-specific password.',
-    };
-  }
+  // Check for HTTP status codes
+  if (hasHttpStatus(error)) {
+    // Authentication errors
+    if (error.status === 401 || error.status === 403) {
+      return {
+        category: ErrorCategory.AUTH,
+        message: errorMessage,
+        originalError: error,
+        userMessage:
+          'Authentication failed. Please check your username and password. For Google and iCloud, make sure you are using an app-specific password.',
+      };
+    }
 
-  // Rate limiting
-  if (httpError.status === 429) {
-    return {
-      category: ErrorCategory.RATE_LIMIT,
-      message: errorMessage,
-      originalError: error,
-      userMessage:
-        'Too many requests. Please wait a moment and try again.',
-    };
-  }
+    // Rate limiting
+    if (error.status === 429) {
+      return {
+        category: ErrorCategory.RATE_LIMIT,
+        message: errorMessage,
+        originalError: error,
+        userMessage:
+          'Too many requests. Please wait a moment and try again.',
+      };
+    }
 
-  // Server errors
-  if (httpError.status && httpError.status >= 500) {
-    return {
-      category: ErrorCategory.SERVER,
-      message: errorMessage,
-      originalError: error,
-      userMessage:
-        'The CardDAV server is experiencing issues. Please try again later.',
-    };
-  }
+    // Server errors
+    if (error.status >= 500) {
+      return {
+        category: ErrorCategory.SERVER,
+        message: errorMessage,
+        originalError: error,
+        userMessage:
+          'The CardDAV server is experiencing issues. Please try again later.',
+      };
+    }
 
-  // Not found
-  if (httpError.status === 404) {
-    return {
-      category: ErrorCategory.NOT_FOUND,
-      message: errorMessage,
-      originalError: error,
-      userMessage:
-        'The requested resource was not found. Please check your server URL.',
-    };
+    // Not found
+    if (error.status === 404) {
+      return {
+        category: ErrorCategory.NOT_FOUND,
+        message: errorMessage,
+        originalError: error,
+        userMessage:
+          'The requested resource was not found. Please check your server URL.',
+      };
+    }
   }
 
   // Network errors

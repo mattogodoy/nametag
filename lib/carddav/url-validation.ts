@@ -5,16 +5,20 @@
  * - Uses only HTTP or HTTPS protocols
  * - Does not point to private/internal IP ranges
  * - Does not point to loopback or link-local addresses
+ * - Resolves DNS to non-private IPs (prevents DNS rebinding)
  * - Is a well-formed URL
  */
 
+import dns from 'dns';
+
 /**
  * Validate a server URL to prevent SSRF attacks.
- * Rejects private IPs, loopback addresses, and non-HTTP protocols.
+ * Rejects private IPs, loopback addresses, non-HTTP protocols,
+ * and domains that resolve to private/internal IPs.
  *
  * @throws {Error} If the URL is invalid, uses a non-HTTP protocol, or targets an internal address
  */
-export function validateServerUrl(url: string): void {
+export async function validateServerUrl(url: string): Promise<void> {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -40,9 +44,30 @@ export function validateServerUrl(url: string): void {
     throw new Error('Internal addresses are not allowed');
   }
 
-  // Reject private/internal IPv4 ranges
+  // Reject private/internal IPv4 ranges (string check)
   if (isPrivateIP(cleanHostname)) {
     throw new Error('Internal addresses are not allowed');
+  }
+
+  // DNS resolution check: resolve hostname and verify IPs aren't private.
+  // Skip for raw IP addresses (already checked above).
+  const isRawIP = /^\d+\.\d+\.\d+\.\d+$/.test(cleanHostname) || cleanHostname === '::1';
+  if (!isRawIP) {
+    try {
+      const addresses = await dns.promises.resolve4(cleanHostname);
+      for (const ip of addresses) {
+        if (isPrivateIP(ip)) {
+          throw new Error('Internal addresses are not allowed');
+        }
+      }
+    } catch (error) {
+      // Re-throw our own SSRF errors
+      if (error instanceof Error && error.message === 'Internal addresses are not allowed') {
+        throw error;
+      }
+      // DNS resolution failure — host doesn't exist or DNS is unreachable
+      throw new Error('Could not resolve server hostname');
+    }
   }
 }
 
@@ -57,7 +82,7 @@ export function validateServerUrl(url: string): void {
  * - 169.254.0.0/16 (Link-local)
  * - 0.0.0.0/8 (Current network)
  */
-function isPrivateIP(hostname: string): boolean {
+export function isPrivateIP(hostname: string): boolean {
   // IPv6 loopback
   if (hostname === '::1') return true;
 

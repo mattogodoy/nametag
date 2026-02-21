@@ -1,8 +1,58 @@
 import crypto from 'crypto';
 
 /**
+ * Normalize a value for stable JSON serialization.
+ * - Converts Date objects to ISO strings
+ * - Converts Prisma Decimal types (objects with .toString()) to strings
+ * - Recursively normalizes arrays and plain objects
+ * - Sorts object keys for deterministic output
+ */
+function normalizeValue(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'object' && 'toFixed' in (value as Record<string, unknown>)) {
+    // Prisma Decimal — has toFixed, toString, etc.
+    return String(value);
+  }
+  if (Array.isArray(value)) return value.map(normalizeValue);
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(obj).sort()) {
+      sorted[key] = normalizeValue(obj[key]);
+    }
+    return sorted;
+  }
+  return value;
+}
+
+/**
+ * Sort array items by a stable key for order-independent hashing.
+ * Uses 'id' if available, otherwise falls back to 'value', 'number', 'email', 'url', 'handle', 'key'.
+ */
+function sortArray(arr: unknown[]): unknown[] {
+  const stableKeys = ['id', 'value', 'number', 'email', 'url', 'handle', 'key'];
+  return [...arr].sort((a, b) => {
+    if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+      return JSON.stringify(a) < JSON.stringify(b) ? -1 : 1;
+    }
+    const aObj = a as Record<string, unknown>;
+    const bObj = b as Record<string, unknown>;
+    for (const key of stableKeys) {
+      if (key in aObj && key in bObj) {
+        return String(aObj[key]) < String(bObj[key]) ? -1 : 1;
+      }
+    }
+    return JSON.stringify(a) < JSON.stringify(b) ? -1 : 1;
+  });
+}
+
+/**
  * Build a consistent hash of person data for sync change detection.
  * All multi-value relations must be included for accurate comparison.
+ *
+ * Normalizes Dates to ISO strings, Decimals to strings, and sorts
+ * arrays by stable keys to avoid order-dependent hash changes.
  */
 export function buildLocalHash(person: {
   name?: string | null;
@@ -39,18 +89,18 @@ export function buildLocalHash(person: {
     organization: person.organization,
     jobTitle: person.jobTitle,
     gender: person.gender,
-    anniversary: person.anniversary,
+    anniversary: normalizeValue(person.anniversary),
     notes: person.notes,
     photo: person.photo,
-    lastContact: person.lastContact,
-    phoneNumbers: person.phoneNumbers || [],
-    emails: person.emails || [],
-    addresses: person.addresses || [],
-    urls: person.urls || [],
-    imHandles: person.imHandles || [],
-    locations: person.locations || [],
-    customFields: person.customFields || [],
-    importantDates: person.importantDates || [],
+    lastContact: normalizeValue(person.lastContact),
+    phoneNumbers: sortArray((person.phoneNumbers || []).map(normalizeValue)),
+    emails: sortArray((person.emails || []).map(normalizeValue)),
+    addresses: sortArray((person.addresses || []).map(normalizeValue)),
+    urls: sortArray((person.urls || []).map(normalizeValue)),
+    imHandles: sortArray((person.imHandles || []).map(normalizeValue)),
+    locations: sortArray((person.locations || []).map(normalizeValue)),
+    customFields: sortArray((person.customFields || []).map(normalizeValue)),
+    importantDates: sortArray((person.importantDates || []).map(normalizeValue)),
   };
 
   return crypto.createHash('sha256')

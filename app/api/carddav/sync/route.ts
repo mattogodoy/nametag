@@ -1,8 +1,9 @@
 import { auth } from '@/lib/auth';
 import { bidirectionalSync } from '@/lib/carddav/sync';
 import type { SyncProgressEvent } from '@/lib/carddav/sync';
+import { checkRateLimit } from '@/lib/rate-limit';
 
-export async function POST(_request: Request) {
+export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user) {
@@ -11,6 +12,9 @@ export async function POST(_request: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
+
+  const rateLimitResponse = checkRateLimit(request, 'carddavSync', session.user.id);
+  if (rateLimitResponse) return rateLimitResponse;
 
   const userId = session.user.id;
   const encoder = new TextEncoder();

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from '@/lib/carddav/client';
 import { personToVCard } from '@/lib/vcard';
 import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
+import { buildLocalHash } from '@/lib/carddav/hash';
 import { z } from 'zod';
 
 const exportBulkSchema = z.object({
@@ -144,20 +144,7 @@ export async function POST(request: Request) {
           const created = await client.createVCard(addressBook, vCardData, filename);
 
           // Create mapping
-          const localData = {
-            ...person,
-            phoneNumbers: person.phoneNumbers,
-            emails: person.emails,
-            addresses: person.addresses,
-            urls: person.urls,
-            imHandles: person.imHandles,
-            locations: person.locations,
-            customFields: person.customFields,
-          };
-
-          const localHash = crypto.createHash('sha256')
-            .update(JSON.stringify(localData))
-            .digest('hex');
+          const localHash = buildLocalHash(person);
 
           await prisma.cardDavMapping.create({
             data: {

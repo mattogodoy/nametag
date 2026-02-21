@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 const backupSchema = z.object({
@@ -18,6 +19,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const rateLimitResponse = checkRateLimit(request, 'carddavTest', session.user.id);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await request.json();
     const validationResult = backupSchema.safeParse(body);
 
@@ -32,7 +36,7 @@ export async function POST(request: Request) {
 
     // Validate URL to prevent SSRF attacks
     try {
-      validateServerUrl(serverUrl);
+      await validateServerUrl(serverUrl);
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Invalid server URL' },
@@ -78,7 +82,7 @@ export async function POST(request: Request) {
         },
       });
     } catch (error) {
-      console.error('CardDAV backup failed:', error);
+      console.error('CardDAV backup failed:', error instanceof Error ? error.message : 'Unknown error');
 
       if (error instanceof Error) {
         if (error.message.includes('401') || error.message.includes('unauthorized')) {
@@ -101,7 +105,7 @@ export async function POST(request: Request) {
       );
     }
   } catch (error) {
-    console.error('Error in CardDAV backup:', error);
+    console.error('Error in CardDAV backup:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

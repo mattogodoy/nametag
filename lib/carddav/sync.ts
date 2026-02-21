@@ -673,41 +673,33 @@ export async function bidirectionalSync(
     };
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    // Check for abort before pulling from server
-    if (controller.signal.aborted) {
-      throw new Error('Sync timed out');
-    }
+    const syncOperation = async (): Promise<SyncResult> => {
+      const pullResult = await syncFromServer(userId, onProgress);
+      const pushResult = await syncToServer(userId, onProgress);
 
-    // First, pull from server
-    const pullResult = await syncFromServer(userId, onProgress);
-
-    // Check for abort before pushing to server
-    if (controller.signal.aborted) {
-      throw new Error('Sync timed out');
-    }
-
-    // Then, push to server
-    const pushResult = await syncToServer(userId, onProgress);
-
-    return {
-      imported: pullResult.imported,
-      exported: pushResult.exported,
-      updatedLocally: pullResult.updatedLocally + pushResult.updatedLocally,
-      updatedRemotely: pullResult.updatedRemotely + pushResult.updatedRemotely,
-      conflicts: pullResult.conflicts + pushResult.conflicts,
-      errors: pullResult.errors + pushResult.errors,
-      errorMessages: [
-        ...pullResult.errorMessages,
-        ...pushResult.errorMessages,
-      ],
-      pendingImports: (pullResult.pendingImports || 0) + (pushResult.pendingImports || 0),
+      return {
+        imported: pullResult.imported,
+        exported: pushResult.exported,
+        updatedLocally: pullResult.updatedLocally + pushResult.updatedLocally,
+        updatedRemotely: pullResult.updatedRemotely + pushResult.updatedRemotely,
+        conflicts: pullResult.conflicts + pushResult.conflicts,
+        errors: pullResult.errors + pushResult.errors,
+        errorMessages: [
+          ...pullResult.errorMessages,
+          ...pushResult.errorMessages,
+        ],
+        pendingImports: (pullResult.pendingImports || 0) + (pushResult.pendingImports || 0),
+      };
     };
+
+    return await Promise.race([
+      syncOperation(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Sync timed out')), timeoutMs)
+      ),
+    ]);
   } finally {
-    clearTimeout(timeoutId);
     await releaseSyncLock(userId);
   }
 }

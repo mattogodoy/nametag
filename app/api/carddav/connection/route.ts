@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     // Validate URL to prevent SSRF attacks
     try {
-      validateServerUrl(serverUrl);
+      await validateServerUrl(serverUrl);
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Invalid server URL' },
@@ -136,7 +136,7 @@ export async function PUT(request: Request) {
 
     // Validate URL to prevent SSRF attacks
     try {
-      validateServerUrl(serverUrl);
+      await validateServerUrl(serverUrl);
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Invalid server URL' },

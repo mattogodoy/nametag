@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { vCardToPerson } from '@/lib/vcard';
 import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/person-from-vcard';
+import type { ParsedVCardData } from '@/lib/carddav/types';
 
 interface RouteParams {
   params: Promise<{
@@ -92,9 +92,10 @@ export async function POST(request: Request, context: RouteParams) {
         },
       });
     } else if (resolution === 'keep_remote') {
-      // Keep remote version - update person with remote data
-      const remoteData = JSON.parse(conflict.remoteVersion);
-      const parsedVCard = vCardToPerson(remoteData.vCardData || '');
+      // Keep remote version - update person with remote data.
+      // remoteVersion is already ParsedVCardData (stored by syncFromServer),
+      // not raw vCard text, so use it directly.
+      const remoteData = JSON.parse(conflict.remoteVersion) as ParsedVCardData;
 
       // Wrap all operations in a single interactive transaction for atomicity
       await prisma.$transaction(async (tx) => {
@@ -102,7 +103,7 @@ export async function POST(request: Request, context: RouteParams) {
         await updatePersonFromVCardInTransaction(
           tx,
           conflict.mapping.personId,
-          parsedVCard,
+          remoteData,
         );
 
         await tx.cardDavConflict.update({
@@ -125,11 +126,11 @@ export async function POST(request: Request, context: RouteParams) {
       });
 
       // Save photo as file if present (outside transaction - file I/O)
-      if (parsedVCard.photo) {
+      if (remoteData.photo) {
         await savePhotoForPerson(
           session.user.id,
           conflict.mapping.personId,
-          parsedVCard.photo,
+          remoteData.photo,
         );
       }
     } else if (resolution === 'merged') {
