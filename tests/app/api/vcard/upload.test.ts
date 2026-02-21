@@ -281,6 +281,119 @@ END:VCARD`;
     });
   });
 
+  describe('Duplicate UID deduplication', () => {
+    it('should deduplicate vCards with the same UID, keeping the last occurrence', async () => {
+      const vcardDuplicateUids = `BEGIN:VCARD
+VERSION:3.0
+FN:John Doe
+N:Doe;John;;;
+UID:same-uid-123
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Johnny Doe
+N:Doe;Johnny;;;
+UID:same-uid-123
+END:VCARD`;
+
+      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ id: 'import-1' });
+
+      const request = new Request('http://localhost/api/vcard/upload', {
+        method: 'POST',
+        body: vcardDuplicateUids,
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      // Only one pending import should be created (deduped)
+      expect(data.count).toBe(1);
+      expect(prisma.cardDavPendingImport.create).toHaveBeenCalledTimes(1);
+
+      // The last occurrence should win
+      const createCall = (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(createCall.data.uid).toBe('same-uid-123');
+      expect(createCall.data.displayName).toBe('Johnny Doe');
+    });
+
+    it('should keep distinct UIDs as separate imports', async () => {
+      const vcardDistinctUids = `BEGIN:VCARD
+VERSION:3.0
+FN:Alice
+N:;Alice;;;
+UID:uid-alice
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Bob
+N:;Bob;;;
+UID:uid-bob
+END:VCARD`;
+
+      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ id: 'import-1' })
+        .mockResolvedValueOnce({ id: 'import-2' });
+
+      const request = new Request('http://localhost/api/vcard/upload', {
+        method: 'POST',
+        body: vcardDistinctUids,
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(data.count).toBe(2);
+      expect(prisma.cardDavPendingImport.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle mix of duplicate and unique UIDs', async () => {
+      const vcardMixed = `BEGIN:VCARD
+VERSION:3.0
+FN:Alice
+N:;Alice;;;
+UID:uid-alice
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Bob
+N:;Bob;;;
+UID:uid-bob
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Alicia
+N:;Alicia;;;
+UID:uid-alice
+END:VCARD`;
+
+      (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ id: 'import-1' })
+        .mockResolvedValueOnce({ id: 'import-2' });
+
+      const request = new Request('http://localhost/api/vcard/upload', {
+        method: 'POST',
+        body: vcardMixed,
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      // uid-alice deduped (Alicia wins) + uid-bob = 2 imports
+      expect(data.count).toBe(2);
+      expect(prisma.cardDavPendingImport.create).toHaveBeenCalledTimes(2);
+
+      const calls = (prisma.cardDavPendingImport.create as ReturnType<typeof vi.fn>).mock.calls;
+      const uids = calls.map((c: [{ data: { uid: string } }]) => c[0].data.uid);
+      expect(uids).toContain('uid-alice');
+      expect(uids).toContain('uid-bob');
+
+      // The last occurrence (Alicia) should be the one kept
+      const aliceCall = calls.find((c: [{ data: { uid: string } }]) => c[0].data.uid === 'uid-alice');
+      expect(aliceCall[0].data.displayName).toBe('Alicia');
+    });
+  });
+
   describe('Error handling', () => {
     it('should return 401 if not authenticated', async () => {
       (auth as ReturnType<typeof vi.fn>).mockResolvedValue(null);
