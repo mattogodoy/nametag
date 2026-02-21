@@ -30,6 +30,7 @@ describe('vCard v3.0 Compliance (RFC 2426)', () => {
     contactReminderInterval: null,
     contactReminderIntervalUnit: null,
     lastContactReminderSent: null,
+    cardDavSyncEnabled: true,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
