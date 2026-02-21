@@ -46,10 +46,11 @@ export default async function ImportPage({
     redirect(isFileImport ? '/settings/account' : '/settings/carddav');
   }
 
-  // Get pending imports
+  // Get pending imports — for file imports, scope to current user
   const pendingImports = await prisma.cardDavPendingImport.findMany({
     where: {
       connectionId: connection.id,
+      ...(isFileImport ? { uploadedByUserId: session.user.id } : {}),
     },
     orderBy: {
       displayName: 'asc',

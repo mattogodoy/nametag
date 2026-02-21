@@ -52,9 +52,7 @@ export async function POST(request: Request) {
     await prisma.cardDavPendingImport.deleteMany({
       where: {
         connectionId: FILE_IMPORT_CONNECTION_ID,
-        connection: {
-          userId: session.user.id,
-        },
+        uploadedByUserId: session.user.id,
       },
     });
 
@@ -77,6 +75,7 @@ export async function POST(request: Request) {
         const pendingImport = await prisma.cardDavPendingImport.create({
           data: {
             connectionId: FILE_IMPORT_CONNECTION_ID,
+            uploadedByUserId: session.user.id,
             uid: parsedData.uid || `file-import-${Date.now()}-${i}`,
             href: `file-import-${Date.now()}-${i}`, // Unique identifier
             etag: `file-${Date.now()}`,

@@ -343,10 +343,15 @@ export const PUT = withAuth(async (request, session, context) => {
 
     // CardDAV sync logic based on toggle state changes
     if (cardDavSyncEnabled === false && existingPerson.cardDavSyncEnabled === true) {
-      // Un-sync: delete from CardDAV server, then remove mapping
+      // Un-sync: delete from CardDAV server, then remove mapping only if remote delete succeeded
       // Must be sequential — deleteContactFromCardDav reads the mapping to find the server URL
       deleteContactFromCardDav(id)
-        .then(() => prisma.cardDavMapping.deleteMany({ where: { personId: id } }))
+        .then((deleted) => {
+          if (deleted) {
+            return prisma.cardDavMapping.deleteMany({ where: { personId: id } });
+          }
+          console.warn(`Remote delete failed for person ${id}, keeping local mapping for reconciliation`);
+        })
         .catch((error) => {
           console.error('Failed to delete from CardDAV during un-sync:', error);
         });

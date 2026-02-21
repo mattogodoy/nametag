@@ -41,8 +41,9 @@ model User {
   groups            Group[]
   relationshipTypes RelationshipType[]
   subscription      Subscription?
-  unsubscribeTokens UnsubscribeToken[]
-  cardDavConnection CardDavConnection?
+  unsubscribeTokens      UnsubscribeToken[]
+  cardDavConnection      CardDavConnection?
+  cardDavPendingImports  CardDavPendingImport[]
 
   @@unique([provider, providerAccountId])
   @@map("users")
@@ -658,10 +659,14 @@ model CardDavMapping {
   @@map("carddav_mappings")
 }
 
-// CardDavPendingImport - New contacts discovered on CardDAV server
+// CardDavPendingImport - New contacts discovered on CardDAV server or uploaded via file
 model CardDavPendingImport {
   id           String   @id @default(cuid())
   connectionId String
+
+  // Direct user ownership — required for file imports where the global
+  // FILE_IMPORT connection is shared across users.
+  uploadedByUserId String?
 
   uid          String
   href         String
@@ -673,10 +678,12 @@ model CardDavPendingImport {
   notifiedAt   DateTime?
 
   // Relations
-  connection CardDavConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  connection   CardDavConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  uploadedBy   User?             @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
 
   @@unique([connectionId, uid])
   @@index([connectionId])
+  @@index([uploadedByUserId])
   @@map("carddav_pending_imports")
 }
 

@@ -37,23 +37,22 @@ export async function POST(request: Request) {
     const globalGroups = globalGroupIds || groupIds || [];
     const contactGroups = perContactGroups || {};
 
-    // Get connection
+    // Get the user's CardDAV connection (may not exist for file-only imports)
     const connection = await prisma.cardDavConnection.findUnique({
       where: { userId: session.user.id },
     });
 
-    if (!connection) {
-      return NextResponse.json(
-        { error: 'CardDAV connection not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get pending imports
+    // Get pending imports that belong to this user — either via their
+    // CardDAV connection OR via direct ownership (file imports)
     const pendingImports = await prisma.cardDavPendingImport.findMany({
       where: {
         id: { in: importIds },
-        connectionId: connection.id,
+        OR: [
+          // CardDAV imports: pending imports under the user's connection
+          ...(connection ? [{ connectionId: connection.id }] : []),
+          // File imports: pending imports uploaded by this user
+          { uploadedByUserId: session.user.id },
+        ],
       },
     });
 
@@ -84,7 +83,8 @@ export async function POST(request: Request) {
       .filter((uid): uid is string => Boolean(uid));
 
     // Pre-fetch existing mappings for this connection to avoid per-contact queries
-    const existingMappingsForConnection = allUIDs.length > 0
+    // Only relevant when user has a CardDAV connection (not for file-only imports)
+    const existingMappingsForConnection = allUIDs.length > 0 && connection
       ? await prisma.cardDavMapping.findMany({
           where: {
             connectionId: connection.id,
@@ -164,18 +164,21 @@ export async function POST(request: Request) {
           const existingPerson = existingPersonsByUid.get(parsedData.uid);
 
           if (existingPerson) {
-            // Person already exists — just create a new mapping and clean up
-            await prisma.cardDavMapping.create({
-              data: {
-                connectionId: connection.id,
-                personId: existingPerson.id,
-                uid: parsedData.uid,
-                href: pendingImport.href,
-                etag: pendingImport.etag,
-                syncStatus: 'synced',
-                lastSyncedAt: new Date(),
-              },
-            });
+            // Person already exists — create a CardDAV mapping (if applicable) and clean up
+            const isFileImport = pendingImport.uploadedByUserId !== null;
+            if (!isFileImport && connection) {
+              await prisma.cardDavMapping.create({
+                data: {
+                  connectionId: connection.id,
+                  personId: existingPerson.id,
+                  uid: parsedData.uid,
+                  href: pendingImport.href,
+                  etag: pendingImport.etag,
+                  syncStatus: 'synced',
+                  lastSyncedAt: new Date(),
+                },
+              });
+            }
 
             await prisma.cardDavPendingImport.delete({
               where: { id: pendingImport.id },
@@ -205,18 +208,21 @@ export async function POST(request: Request) {
           person = await createPersonFromVCardData(session.user.id, parsedData);
         }
 
-        // Create mapping
-        await prisma.cardDavMapping.create({
-          data: {
-            connectionId: connection.id,
-            personId: person.id,
-            uid: parsedData.uid || person.uid!,
-            href: pendingImport.href,
-            etag: pendingImport.etag,
-            syncStatus: 'synced',
-            lastSyncedAt: new Date(),
-          },
-        });
+        // Create CardDAV mapping only for CardDAV imports (not file imports)
+        const isFileImport = pendingImport.uploadedByUserId !== null;
+        if (!isFileImport && connection) {
+          await prisma.cardDavMapping.create({
+            data: {
+              connectionId: connection.id,
+              personId: person.id,
+              uid: parsedData.uid || person.uid!,
+              href: pendingImport.href,
+              etag: pendingImport.etag,
+              syncStatus: 'synced',
+              lastSyncedAt: new Date(),
+            },
+          });
+        }
 
         // Assign to groups - merge global groups + per-contact groups
         const contactSpecificGroups = contactGroups[pendingImport.id] || [];

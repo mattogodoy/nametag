@@ -34,16 +34,25 @@ function sortArray(arr: unknown[]): unknown[] {
   const stableKeys = ['id', 'value', 'number', 'email', 'url', 'handle', 'key'];
   return [...arr].sort((a, b) => {
     if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
-      return JSON.stringify(a) < JSON.stringify(b) ? -1 : 1;
+      const aStr = JSON.stringify(a);
+      const bStr = JSON.stringify(b);
+      if (aStr === bStr) return 0;
+      return aStr < bStr ? -1 : 1;
     }
     const aObj = a as Record<string, unknown>;
     const bObj = b as Record<string, unknown>;
     for (const key of stableKeys) {
       if (key in aObj && key in bObj) {
-        return String(aObj[key]) < String(bObj[key]) ? -1 : 1;
+        const aVal = String(aObj[key]);
+        const bVal = String(bObj[key]);
+        if (aVal === bVal) continue;
+        return aVal < bVal ? -1 : 1;
       }
     }
-    return JSON.stringify(a) < JSON.stringify(b) ? -1 : 1;
+    const aStr = JSON.stringify(a);
+    const bStr = JSON.stringify(b);
+    if (aStr === bStr) return 0;
+    return aStr < bStr ? -1 : 1;
   });
 }
 

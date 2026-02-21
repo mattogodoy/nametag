@@ -206,19 +206,7 @@ export async function updatePersonFromVCard(
   parsedData: ParsedVCardData,
   userId: string,
 ): Promise<void> {
-  // Delete all multi-value fields in a batch transaction first
-  await prisma.$transaction([
-    prisma.personPhone.deleteMany({ where: { personId } }),
-    prisma.personEmail.deleteMany({ where: { personId } }),
-    prisma.personAddress.deleteMany({ where: { personId } }),
-    prisma.personUrl.deleteMany({ where: { personId } }),
-    prisma.personIM.deleteMany({ where: { personId } }),
-    prisma.personLocation.deleteMany({ where: { personId } }),
-    prisma.personCustomField.deleteMany({ where: { personId } }),
-    prisma.importantDate.deleteMany({ where: { personId } }),
-  ]);
-
-  // Save photo as file if present
+  // Save photo as file if present (outside transaction since it's filesystem I/O)
   let photoValue = parsedData.photo;
   if (photoValue) {
     const filename = await savePhoto(userId, personId, photoValue);
@@ -228,40 +216,52 @@ export async function updatePersonFromVCard(
     // If savePhoto fails, keep the original value as fallback
   }
 
-  // Update person with new data
-  await prisma.person.update({
-    where: { id: personId },
-    data: {
-      ...buildScalarPersonData(parsedData),
-      photo: photoValue,
-      uid: parsedData.uid,
+  // Delete all multi-value fields and update person in a single atomic transaction
+  // to prevent partial data loss if either step fails
+  await prisma.$transaction(async (tx) => {
+    await tx.personPhone.deleteMany({ where: { personId } });
+    await tx.personEmail.deleteMany({ where: { personId } });
+    await tx.personAddress.deleteMany({ where: { personId } });
+    await tx.personUrl.deleteMany({ where: { personId } });
+    await tx.personIM.deleteMany({ where: { personId } });
+    await tx.personLocation.deleteMany({ where: { personId } });
+    await tx.personCustomField.deleteMany({ where: { personId } });
+    await tx.importantDate.deleteMany({ where: { personId } });
 
-      // Create new multi-value fields
-      phoneNumbers: parsedData.phoneNumbers
-        ? { create: parsedData.phoneNumbers }
-        : undefined,
-      emails: parsedData.emails
-        ? { create: parsedData.emails }
-        : undefined,
-      addresses: parsedData.addresses
-        ? { create: parsedData.addresses }
-        : undefined,
-      urls: parsedData.urls
-        ? { create: parsedData.urls }
-        : undefined,
-      imHandles: parsedData.imHandles
-        ? { create: parsedData.imHandles }
-        : undefined,
-      locations: parsedData.locations
-        ? { create: parsedData.locations }
-        : undefined,
-      customFields: parsedData.customFields
-        ? { create: parsedData.customFields }
-        : undefined,
-      importantDates: parsedData.importantDates?.length
-        ? { create: parsedData.importantDates }
-        : undefined,
-    },
+    await tx.person.update({
+      where: { id: personId },
+      data: {
+        ...buildScalarPersonData(parsedData),
+        photo: photoValue,
+        uid: parsedData.uid,
+
+        // Create new multi-value fields
+        phoneNumbers: parsedData.phoneNumbers
+          ? { create: parsedData.phoneNumbers }
+          : undefined,
+        emails: parsedData.emails
+          ? { create: parsedData.emails }
+          : undefined,
+        addresses: parsedData.addresses
+          ? { create: parsedData.addresses }
+          : undefined,
+        urls: parsedData.urls
+          ? { create: parsedData.urls }
+          : undefined,
+        imHandles: parsedData.imHandles
+          ? { create: parsedData.imHandles }
+          : undefined,
+        locations: parsedData.locations
+          ? { create: parsedData.locations }
+          : undefined,
+        customFields: parsedData.customFields
+          ? { create: parsedData.customFields }
+          : undefined,
+        importantDates: parsedData.importantDates?.length
+          ? { create: parsedData.importantDates }
+          : undefined,
+      },
+    });
   });
 }
 

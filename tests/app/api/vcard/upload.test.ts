@@ -348,9 +348,7 @@ END:VCARD`;
       expect(prisma.cardDavPendingImport.deleteMany).toHaveBeenCalledWith({
         where: {
           connectionId: '00000000-0000-0000-0000-000000000001',
-          connection: {
-            userId: 'user-123',
-          },
+          uploadedByUserId: 'user-123',
         },
       });
     });
