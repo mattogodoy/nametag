@@ -1,15 +1,27 @@
 #!/bin/bash
 # Database Backup & Restore Test Script
-# 
+#
 # This script tests the complete backup and restore cycle:
 # 1. Creates a backup of the current database
 # 2. Inserts test data
 # 3. Restores from backup
 # 4. Verifies original data is restored
 #
-# Usage: ./scripts/test-backup-restore.sh
+# Usage: ./scripts/test-backup-restore.sh [--yes|-y]
+#   --yes, -y   Skip interactive prompts (for CI/automation)
 
 set -e
+
+# Parse flags
+AUTO_CONFIRM=false
+for arg in "$@"; do
+    case $arg in
+        --yes|-y)
+            AUTO_CONFIRM=true
+            shift
+            ;;
+    esac
+done
 
 # Colors
 RED='\033[0;31m'
@@ -29,7 +41,7 @@ echo ""
 # Configuration
 BACKUP_DIR="./backups/test"
 TEST_BACKUP_FILE="$BACKUP_DIR/test-backup-$(date +%Y%m%d-%H%M%S).sql"
-DOCKER_DB_CONTAINER="nametag-db-prod"
+DOCKER_DB_CONTAINER="nametag-db"
 DB_USER="${DB_USER:-nametag}"
 DB_NAME="${DB_NAME:-nametag_db}"
 
@@ -141,8 +153,13 @@ echo ""
 echo -e "${YELLOW}⚠️  This will restore the database to the backup state${NC}"
 echo -e "${YELLOW}   The test user we just added will be removed${NC}"
 echo ""
-read -p "Continue with restore? (y/N): " -n 1 -r
-echo ""
+
+if [ "$AUTO_CONFIRM" = false ]; then
+    read -p "Continue with restore? (y/N): " -n 1 -r
+    echo ""
+else
+    REPLY="y"
+fi
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}Restore cancelled. Cleaning up...${NC}"
@@ -157,8 +174,8 @@ fi
 echo "Restoring database from backup..."
 
 # Drop and recreate database
-docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -c "DROP DATABASE IF EXISTS ${DB_NAME}_restore_test;" > /dev/null 2>&1
-docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -c "CREATE DATABASE ${DB_NAME}_restore_test;" > /dev/null 2>&1
+docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d postgres -c "DROP DATABASE IF EXISTS ${DB_NAME}_restore_test;" > /dev/null 2>&1
+docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d postgres -c "CREATE DATABASE ${DB_NAME}_restore_test;" > /dev/null 2>&1
 
 # Restore backup to test database
 cat "$TEST_BACKUP_FILE" | docker exec -i $DOCKER_DB_CONTAINER psql -U $DB_USER -d ${DB_NAME}_restore_test > /dev/null 2>&1
@@ -178,7 +195,7 @@ else
 fi
 
 # Clean up test database
-docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -c "DROP DATABASE ${DB_NAME}_restore_test;" > /dev/null 2>&1
+docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d postgres -c "DROP DATABASE ${DB_NAME}_restore_test;" > /dev/null 2>&1
 
 # Remove test user from main database
 docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d $DB_NAME -c "DELETE FROM \"User\" WHERE email = 'backup-test@example.com';" > /dev/null 2>&1
