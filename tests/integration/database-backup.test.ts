@@ -5,13 +5,13 @@ import path from 'path';
 
 /**
  * Database Backup & Restore Integration Tests
- * 
+ *
  * These tests verify that:
  * 1. Backups can be created successfully
  * 2. Backup files are valid and not corrupted
  * 3. Backups can be restored successfully
  * 4. Data integrity is maintained through backup/restore cycle
- * 
+ *
  * Requirements:
  * - Docker and Docker Compose installed
  * - Production environment configured (docker-compose.yml)
@@ -19,6 +19,9 @@ import path from 'path';
  */
 
 const TEST_BACKUP_DIR = path.join(process.cwd(), 'backups', 'test');
+const DOCKER_DB_CONTAINER = 'nametag-db';
+const DB_USER = process.env.DB_USER || 'nametag';
+const DB_NAME = process.env.DB_NAME || 'nametag_db';
 
 describe.skip('Database Backup & Restore', () => {
   beforeAll(() => {
@@ -41,9 +44,9 @@ describe.skip('Database Backup & Restore', () => {
 
       try {
         // Create backup using pg_dump via Docker
-        const command = `docker exec nametag-db-prod pg_dump -U \${DB_USER:-nametag} -d \${DB_NAME:-nametag_db} > ${backupFile}`;
-        
-        execSync(command, { stdio: 'pipe' });
+        const command = `docker exec ${DOCKER_DB_CONTAINER} pg_dump -U ${DB_USER} -d ${DB_NAME} > ${backupFile}`;
+
+        execSync(command, { stdio: 'pipe', shell: '/bin/bash' });
 
         // Verify backup file was created
         expect(fs.existsSync(backupFile)).toBe(true);
@@ -65,9 +68,9 @@ describe.skip('Database Backup & Restore', () => {
 
       try {
         // Create compressed backup
-        const command = `docker exec nametag-db-prod pg_dump -U \${DB_USER:-nametag} -d \${DB_NAME:-nametag_db} | gzip > ${backupFile}`;
-        
-        execSync(command, { stdio: 'pipe' });
+        const command = `docker exec ${DOCKER_DB_CONTAINER} pg_dump -U ${DB_USER} -d ${DB_NAME} | gzip > ${backupFile}`;
+
+        execSync(command, { stdio: 'pipe', shell: '/bin/bash' });
 
         // Verify compressed backup exists
         expect(fs.existsSync(backupFile)).toBe(true);
@@ -95,8 +98,8 @@ describe.skip('Database Backup & Restore', () => {
       try {
         // Create backup
         execSync(
-          `docker exec nametag-db-prod pg_dump -U \${DB_USER:-nametag} -d \${DB_NAME:-nametag_db} > ${backupFile}`,
-          { stdio: 'pipe' }
+          `docker exec ${DOCKER_DB_CONTAINER} pg_dump -U ${DB_USER} -d ${DB_NAME} > ${backupFile}`,
+          { stdio: 'pipe', shell: '/bin/bash' }
         );
 
         // Read backup content
@@ -134,8 +137,8 @@ describe.skip('Database Backup & Restore', () => {
       try {
         // Create backup
         execSync(
-          `docker exec nametag-db-prod pg_dump -U \${DB_USER:-nametag} -d \${DB_NAME:-nametag_db} > ${backupFile}`,
-          { stdio: 'pipe' }
+          `docker exec ${DOCKER_DB_CONTAINER} pg_dump -U ${DB_USER} -d ${DB_NAME} > ${backupFile}`,
+          { stdio: 'pipe', shell: '/bin/bash' }
         );
 
         const content = fs.readFileSync(backupFile, 'utf-8');
@@ -143,7 +146,7 @@ describe.skip('Database Backup & Restore', () => {
         // Check for SQL injection attempts or corruption
         expect(content).toContain('PostgreSQL database dump');
         expect(content).toContain('Dumped from database version');
-        
+
         // Verify it's valid SQL
         expect(content).toMatch(/CREATE TABLE|INSERT INTO|ALTER TABLE/);
 
@@ -177,8 +180,8 @@ describe.skip('Database Backup & Restore', () => {
 
       try {
         execSync(
-          `docker exec nametag-db-prod pg_dump -U \${DB_USER:-nametag} -d \${DB_NAME:-nametag_db} > ${backupFile}`,
-          { stdio: 'pipe' }
+          `docker exec ${DOCKER_DB_CONTAINER} pg_dump -U ${DB_USER} -d ${DB_NAME} > ${backupFile}`,
+          { stdio: 'pipe', shell: '/bin/bash' }
         );
 
         const content = fs.readFileSync(backupFile, 'utf-8');
@@ -199,8 +202,8 @@ describe.skip('Database Backup & Restore', () => {
 
       try {
         execSync(
-          `docker exec nametag-db-prod pg_dump -U \${DB_USER:-nametag} -d \${DB_NAME:-nametag_db} > ${backupFile}`,
-          { stdio: 'pipe' }
+          `docker exec ${DOCKER_DB_CONTAINER} pg_dump -U ${DB_USER} -d ${DB_NAME} > ${backupFile}`,
+          { stdio: 'pipe', shell: '/bin/bash' }
         );
 
         const content = fs.readFileSync(backupFile, 'utf-8');
@@ -222,6 +225,7 @@ describe.skip('Database Backup & Restore', () => {
       try {
         const output = execSync('docker ps --format "{{.Names}}" | grep backup', {
           encoding: 'utf-8',
+          shell: '/bin/bash',
         });
 
         expect(output).toContain('nametag-backup');
@@ -233,11 +237,11 @@ describe.skip('Database Backup & Restore', () => {
 
     it('should have backup directory configured', () => {
       const backupDir = path.join(process.cwd(), 'backups');
-      
+
       // Backup directory should exist (created by Docker)
       if (fs.existsSync(backupDir)) {
         expect(fs.existsSync(backupDir)).toBe(true);
-        
+
         // Should have subdirectories for different retention periods
         const subdirs = ['daily', 'weekly', 'monthly', 'last'];
         subdirs.forEach(subdir => {
@@ -259,21 +263,21 @@ describe.skip('Database Restore Procedures', () => {
       try {
         // Create test database
         execSync(
-          `docker exec nametag-db-prod psql -U \${DB_USER:-nametag} -c "CREATE DATABASE ${testDbName};"`,
+          `docker exec ${DOCKER_DB_CONTAINER} psql -U ${DB_USER} -c "CREATE DATABASE ${testDbName};"`,
           { stdio: 'pipe' }
         );
 
         // Verify database exists
         const output = execSync(
-          `docker exec nametag-db-prod psql -U \${DB_USER:-nametag} -lqt | cut -d \\| -f 1 | grep -w ${testDbName}`,
-          { encoding: 'utf-8' }
+          `docker exec ${DOCKER_DB_CONTAINER} psql -U ${DB_USER} -lqt | cut -d \\| -f 1 | grep -w ${testDbName}`,
+          { encoding: 'utf-8', shell: '/bin/bash' }
         );
 
         expect(output.trim()).toBe(testDbName);
 
         // Clean up
         execSync(
-          `docker exec nametag-db-prod psql -U \${DB_USER:-nametag} -c "DROP DATABASE ${testDbName};"`,
+          `docker exec ${DOCKER_DB_CONTAINER} psql -U ${DB_USER} -c "DROP DATABASE ${testDbName};"`,
           { stdio: 'pipe' }
         );
       } catch (error) {
@@ -286,7 +290,7 @@ describe.skip('Database Restore Procedures', () => {
   describe('Backup File Accessibility', () => {
     it('should have backup files readable', () => {
       const backupDir = path.join(process.cwd(), 'backups');
-      
+
       if (!fs.existsSync(backupDir)) {
         console.warn('Backups directory not found. Run backup service first.');
         return;
@@ -295,35 +299,35 @@ describe.skip('Database Restore Procedures', () => {
       // Find any backup files
       const findBackupFiles = (dir: string): string[] => {
         const files: string[] = [];
-        
+
         if (!fs.existsSync(dir)) return files;
-        
+
         const items = fs.readdirSync(dir);
         items.forEach(item => {
           const itemPath = path.join(dir, item);
           const stat = fs.statSync(itemPath);
-          
+
           if (stat.isDirectory()) {
             files.push(...findBackupFiles(itemPath));
           } else if (item.endsWith('.sql') || item.endsWith('.sql.gz')) {
             files.push(itemPath);
           }
         });
-        
+
         return files;
       };
 
       const backupFiles = findBackupFiles(backupDir);
-      
+
       if (backupFiles.length > 0) {
         // Check first backup file is readable
         const firstBackup = backupFiles[0];
         expect(fs.existsSync(firstBackup)).toBe(true);
-        
+
         const stats = fs.statSync(firstBackup);
         expect(stats.size).toBeGreaterThan(0);
-        
-        console.log(`✅ Found ${backupFiles.length} backup file(s)`);
+
+        console.log(`Found ${backupFiles.length} backup file(s)`);
         console.log(`   First backup: ${path.basename(firstBackup)} (${stats.size} bytes)`);
       }
     });
@@ -334,7 +338,7 @@ describe.skip('Database Restore Procedures', () => {
       try {
         // Test database connection
         const output = execSync(
-          'docker exec nametag-db-prod psql -U ${DB_USER:-nametag} -d ${DB_NAME:-nametag_db} -c "SELECT 1 as test;"',
+          `docker exec ${DOCKER_DB_CONTAINER} psql -U ${DB_USER} -d ${DB_NAME} -c "SELECT 1 as test;"`,
           { encoding: 'utf-8' }
         );
 
@@ -350,7 +354,7 @@ describe.skip('Database Restore Procedures', () => {
       try {
         // Check if main tables exist
         const output = execSync(
-          'docker exec nametag-db-prod psql -U ${DB_USER:-nametag} -d ${DB_NAME:-nametag_db} -c "\\dt"',
+          `docker exec ${DOCKER_DB_CONTAINER} psql -U ${DB_USER} -d ${DB_NAME} -c "\\dt"`,
           { encoding: 'utf-8' }
         );
 
@@ -385,11 +389,10 @@ describe.skip('Backup Configuration', () => {
 
   it('should have backups directory in .gitignore', () => {
     const gitignoreFile = path.join(process.cwd(), '.gitignore');
-    
+
     const content = fs.readFileSync(gitignoreFile, 'utf-8');
 
     // Verify backups are gitignored
     expect(content).toMatch(/[/]?backups[/]?/);
   });
 });
-
