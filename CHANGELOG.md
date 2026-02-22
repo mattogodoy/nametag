@@ -6,35 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.18.0](https://github.com/mattogodoy/nametag/compare/v0.17.1...v0.18.0) (2026-02-14)
-
-### Features
-
-* add public /api/version endpoint for release monitoring ([1fe066b](https://github.com/mattogodoy/nametag/commit/1fe066be9579a313befc4fe52353fc8c44737c02))
-* add Swagger UI docs page at /api/docs ([dde3564](https://github.com/mattogodoy/nametag/commit/dde3564c38a167765d89728bf46cab2c8744e075))
-* complete API coverage and add OpenAPI spec endpoint ([b850288](https://github.com/mattogodoy/nametag/commit/b85028841450aec33ee03f15894e73a0c5b59dda))
-* generate OpenAPI request body schemas from Zod validations ([e08f23d](https://github.com/mattogodoy/nametag/commit/e08f23df254adfd59710a70021ee02b82f68b912))
+## [0.18.1](https://github.com/mattogodoy/nametag/compare/v0.18.0...v0.18.1) (2026-02-22)
 
 ### Bug Fixes
 
-* allow unpkg.com in CSP for Swagger UI CDN resources ([8f1653c](https://github.com/mattogodoy/nametag/commit/8f1653c42b1dd9dc35fd8621062f20c1c150f80c))
-* exclude soft-deleted people from dashboard upcoming events ([edcadb2](https://github.com/mattogodoy/nametag/commit/edcadb2308ac5eaad01bfb776de3029d00a62734))
-* exclude soft-deleted people from relationship type in-use check ([19e1256](https://github.com/mattogodoy/nametag/commit/19e125648a648d7feb8a705c2c8d0d664652b54f)), closes [mattogodoy/nametag#73](https://github.com/mattogodoy/nametag/issues/73)
-* exclude soft-deleted people from relationship type usage count in UI ([98e3f93](https://github.com/mattogodoy/nametag/commit/98e3f93ef0c45e8c4302efcc603411e751908b35))
-* exclude soft-deleted records from stats, align relationship selects ([00a5ec6](https://github.com/mattogodoy/nametag/commit/00a5ec650250b03e436bf1f69965418bc74a25db)), closes [#70](https://github.com/mattogodoy/nametag/issues/70)
-* filter soft-deleted entities from relationship queries and fix i18n regression ([cff3320](https://github.com/mattogodoy/nametag/commit/cff3320d61aa3d9c37c0c2db847d0e4af84d00a3))
-* **openapi:** fix validation errors for MCP/FastMCP compatibility ([3e93b16](https://github.com/mattogodoy/nametag/commit/3e93b16a500767bd3b467364ca27dc55d588d95a))
-* pin Swagger UI CDN, filter deleted important dates, type billing schemas ([e3a9b90](https://github.com/mattogodoy/nametag/commit/e3a9b90a43c72534d94a8183aa30a936e1905b1b))
-* preprocess empty string to null for lastContact validation ([71bf8f3](https://github.com/mattogodoy/nametag/commit/71bf8f3bdc17ec26273bf6ca99a18d16fa909b6d))
-* remove duplicate CSP, align soft-delete filter, type OpenAPI spec ([406a5de](https://github.com/mattogodoy/nametag/commit/406a5de84d6e45527427d040c533cf1c8f420108))
-* replace non-standard `format: cuid` with description in OpenAPI spec ([73ba51b](https://github.com/mattogodoy/nametag/commit/73ba51b3f1d78415121c9b63562a8da6d0654fc3))
-* scope CSP to /api/docs, harden relationship endpoint, add tests ([4e5a62b](https://github.com/mattogodoy/nametag/commit/4e5a62b4fa5bd4a3f2a97e1c69a247f32d047d58))
+* Update database scripts ([655a426](https://github.com/mattogodoy/nametag/commit/655a426fb9a2e5e8072ec45405b9b330815d26a2))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.18.1](https://github.com/mattogodoy/nametag/compare/v0.18.0...v0.18.1)
+
+- Update database scripts [`#83`](https://github.com/mattogodoy/nametag/pull/83)
+- 🐛 Fix: Update database scripts [`655a426`](https://github.com/mattogodoy/nametag/commit/655a426fb9a2e5e8072ec45405b9b330815d26a2)
+
 #### [v0.18.0](https://github.com/mattogodoy/nametag/compare/v0.17.1...v0.18.0)
+
+> 14 February 2026
 
 - ✨ Feature: complete API coverage, OpenAPI spec, Swagger UI, and soft-delete consistency fixes [`#70`](https://github.com/mattogodoy/nametag/pull/70)
 - ✨ Feature: complete API coverage and add OpenAPI spec endpoint [`b850288`](https://github.com/mattogodoy/nametag/commit/b85028841450aec33ee03f15894e73a0c5b59dda)
@@ -45,6 +34,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - 🐛 Fix: pin Swagger UI CDN, filter deleted important dates, type billing schemas [`e3a9b90`](https://github.com/mattogodoy/nametag/commit/e3a9b90a43c72534d94a8183aa30a936e1905b1b)
 - 🐛 Fix: allow unpkg.com in CSP for Swagger UI CDN resources [`8f1653c`](https://github.com/mattogodoy/nametag/commit/8f1653c42b1dd9dc35fd8621062f20c1c150f80c)
 - ✨ Feature: add Swagger UI docs page at /api/docs [`dde3564`](https://github.com/mattogodoy/nametag/commit/dde3564c38a167765d89728bf46cab2c8744e075)
+- 🔧 Chore: release v0.18.0 [`38c47cc`](https://github.com/mattogodoy/nametag/commit/38c47cc95d85f023df24ba89353ee2301fee8b6b)
 - 🐛 Fix: filter soft-deleted entities from relationship queries and fix i18n regression [`cff3320`](https://github.com/mattogodoy/nametag/commit/cff3320d61aa3d9c37c0c2db847d0e4af84d00a3)
 - 🐛 Fix: remove duplicate CSP, align soft-delete filter, type OpenAPI spec [`406a5de`](https://github.com/mattogodoy/nametag/commit/406a5de84d6e45527427d040c533cf1c8f420108)
 - ✨ Feature: add public /api/version endpoint for release monitoring [`1fe066b`](https://github.com/mattogodoy/nametag/commit/1fe066be9579a313befc4fe52353fc8c44737c02)
