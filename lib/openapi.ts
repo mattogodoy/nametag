@@ -59,6 +59,10 @@ export function generateOpenAPISpec(): OpenAPISpec {
       { name: 'User Settings', description: 'Profile, preferences, data export/import, and account management' },
       { name: 'Billing', description: 'Subscription management, checkout, and payment history (SaaS mode only)' },
       { name: 'Deleted Items', description: 'View and restore soft-deleted items' },
+      { name: 'CardDAV', description: 'CardDAV server connection, bidirectional sync, import/export, and conflict resolution' },
+      { name: 'vCard', description: 'Direct vCard file import and upload for preview' },
+      { name: 'Photos', description: 'Person photo retrieval' },
+      { name: 'Cron', description: 'Background jobs authenticated via CRON_SECRET bearer token' },
       { name: 'System', description: 'Health checks and system endpoints' },
     ],
     components: {
@@ -68,6 +72,11 @@ export function generateOpenAPISpec(): OpenAPISpec {
           in: 'cookie',
           name: 'authjs.session-token',
           description: 'NextAuth.js session cookie obtained after login via /api/auth/callback/credentials',
+        },
+        cronBearer: {
+          type: 'http',
+          scheme: 'bearer',
+          description: 'Bearer token matching the CRON_SECRET environment variable. Used by background cron jobs.',
         },
       },
       schemas: {
@@ -138,7 +147,23 @@ export function generateOpenAPISpec(): OpenAPISpec {
               ],
             },
             lastContactReminderSent: { type: ['string', 'null'], format: 'date-time' },
+            cardDavSyncEnabled: { type: 'boolean' },
+            prefix: { type: ['string', 'null'], description: 'Honorific prefix (Dr., Mr.)' },
+            suffix: { type: ['string', 'null'], description: 'Honorific suffix (Jr., III)' },
+            uid: { type: ['string', 'null'], description: 'vCard UID for CardDAV sync' },
+            organization: { type: ['string', 'null'], description: 'Company / organization' },
+            jobTitle: { type: ['string', 'null'], description: 'Job title' },
+            photo: { type: ['string', 'null'], description: 'Photo URL or file reference' },
+            gender: { type: ['string', 'null'] },
+            anniversary: { type: ['string', 'null'], format: 'date-time' },
             deletedAt: { type: ['string', 'null'], format: 'date-time' },
+            phoneNumbers: { type: 'array', items: { $ref: '#/components/schemas/PersonPhone' } },
+            emails: { type: 'array', items: { $ref: '#/components/schemas/PersonEmail' } },
+            addresses: { type: 'array', items: { $ref: '#/components/schemas/PersonAddress' } },
+            urls: { type: 'array', items: { $ref: '#/components/schemas/PersonUrl' } },
+            imHandles: { type: 'array', items: { $ref: '#/components/schemas/PersonIM' } },
+            locations: { type: 'array', items: { $ref: '#/components/schemas/PersonLocation' } },
+            customFields: { type: 'array', items: { $ref: '#/components/schemas/PersonCustomField' } },
             groups: {
               type: 'array',
               items: {
@@ -341,6 +366,112 @@ export function generateOpenAPISpec(): OpenAPISpec {
         ReminderIntervalUnit: {
           type: 'string',
           enum: ['DAYS', 'WEEKS', 'MONTHS', 'YEARS'],
+        },
+        PersonPhone: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string' },
+            type: { type: 'string', description: 'Phone type (e.g. home, work, mobile, custom)' },
+            number: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'personId', 'type', 'number'],
+        },
+        PersonEmail: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string' },
+            type: { type: 'string', description: 'Email type (e.g. home, work, custom)' },
+            email: { type: 'string', format: 'email' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'personId', 'type', 'email'],
+        },
+        PersonAddress: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string' },
+            type: { type: 'string', description: 'Address type (e.g. home, work, custom)' },
+            streetLine1: { type: ['string', 'null'] },
+            streetLine2: { type: ['string', 'null'] },
+            locality: { type: ['string', 'null'], description: 'City' },
+            region: { type: ['string', 'null'], description: 'State/Province' },
+            postalCode: { type: ['string', 'null'] },
+            country: { type: ['string', 'null'] },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'personId', 'type'],
+        },
+        PersonUrl: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string' },
+            type: { type: 'string', description: 'URL type (e.g. homepage, blog, custom)' },
+            url: { type: 'string', format: 'uri' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'personId', 'type', 'url'],
+        },
+        PersonIM: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string' },
+            protocol: { type: 'string', description: 'IM protocol (e.g. skype, whatsapp, telegram, signal, other)' },
+            handle: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'personId', 'protocol', 'handle'],
+        },
+        PersonLocation: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string' },
+            type: { type: 'string', description: 'Location type (e.g. home, work, other)' },
+            latitude: { type: 'number', format: 'double' },
+            longitude: { type: 'number', format: 'double' },
+            label: { type: ['string', 'null'], description: 'Optional label (e.g. Main Office)' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'personId', 'type', 'latitude', 'longitude'],
+        },
+        PersonCustomField: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            personId: { type: 'string' },
+            key: { type: 'string', description: 'Field key (e.g. X-SPOUSE)' },
+            value: { type: 'string' },
+            type: { type: ['string', 'null'] },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'personId', 'key', 'value'],
+        },
+        CardDavConnection: {
+          type: 'object',
+          description: 'A CardDAV server connection (password excluded from responses)',
+          properties: {
+            id: { type: 'string', description: 'CUID identifier' },
+            userId: { type: 'string' },
+            serverUrl: { type: 'string', format: 'uri' },
+            username: { type: 'string' },
+            provider: { type: ['string', 'null'], description: 'Provider hint: google, icloud, outlook, nextcloud, custom' },
+            syncEnabled: { type: 'boolean' },
+            autoSyncInterval: { type: 'integer', description: 'Sync interval in seconds (60–86400)' },
+            lastSyncAt: { type: ['string', 'null'], format: 'date-time' },
+            autoExportNew: { type: 'boolean' },
+            importMode: { type: 'string', enum: ['manual', 'notify', 'auto'] },
+            lastError: { type: ['string', 'null'] },
+            lastErrorAt: { type: ['string', 'null'], format: 'date-time' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'userId', 'serverUrl', 'username', 'syncEnabled', 'autoExportNew', 'importMode', 'createdAt', 'updatedAt'],
         },
       },
     },
@@ -1500,6 +1631,421 @@ export function generateOpenAPISpec(): OpenAPISpec {
               },
             }),
             '400': ref400(),
+            '401': ref401(),
+          },
+        },
+      },
+
+      // =====================================================
+      // CardDAV
+      // =====================================================
+      '/api/carddav/connection': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Create CardDAV connection',
+          description: 'Creates a new CardDAV server connection for the authenticated user. Only one connection per user is allowed.',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              serverUrl: { type: 'string', format: 'uri' },
+              username: { type: 'string', minLength: 1 },
+              password: { type: 'string', minLength: 1 },
+              provider: { type: ['string', 'null'], description: 'Provider hint: google, icloud, outlook, nextcloud, custom' },
+              syncEnabled: { type: 'boolean' },
+              autoExportNew: { type: 'boolean' },
+              autoSyncInterval: { type: 'integer', minimum: 60, maximum: 86400, description: 'Sync interval in seconds' },
+              importMode: { type: 'string', enum: ['manual', 'notify', 'auto'] },
+            },
+            required: ['serverUrl', 'username', 'password'],
+          }),
+          responses: {
+            '201': jsonResponse('Connection created', {
+              type: 'object',
+              properties: { connection: { $ref: '#/components/schemas/CardDavConnection' } },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '409': resp('Connection already exists'),
+          },
+        },
+        put: {
+          tags: ['CardDAV'],
+          summary: 'Update CardDAV connection',
+          description: 'Updates the existing CardDAV connection settings. Password is optional (only updated if provided).',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              serverUrl: { type: 'string', format: 'uri' },
+              username: { type: 'string', minLength: 1 },
+              password: { type: 'string', minLength: 1 },
+              provider: { type: ['string', 'null'] },
+              syncEnabled: { type: 'boolean' },
+              autoExportNew: { type: 'boolean' },
+              autoSyncInterval: { type: 'integer', minimum: 60, maximum: 86400 },
+              importMode: { type: 'string', enum: ['manual', 'notify', 'auto'] },
+            },
+            required: ['serverUrl', 'username'],
+          }),
+          responses: {
+            '200': jsonResponse('Connection updated', {
+              type: 'object',
+              properties: { connection: { $ref: '#/components/schemas/CardDavConnection' } },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+        delete: {
+          tags: ['CardDAV'],
+          summary: 'Delete CardDAV connection',
+          description: 'Disconnects and deletes the CardDAV connection, removing all sync mappings and pending imports.',
+          security: [{ session: [] }],
+          responses: {
+            '200': refSuccess(),
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+      },
+      '/api/carddav/connection/test': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Test CardDAV credentials',
+          description: 'Tests connectivity to a CardDAV server with the given credentials without saving them.',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              serverUrl: { type: 'string', format: 'uri' },
+              username: { type: 'string', minLength: 1 },
+              password: { type: 'string', minLength: 1 },
+            },
+            required: ['serverUrl', 'username', 'password'],
+          }),
+          responses: {
+            '200': jsonResponse('Connection successful', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean', enum: [true] },
+                message: { type: 'string' },
+              },
+            }),
+            '400': ref400(),
+            '401': resp('Authentication failed'),
+            '404': resp('Server not found'),
+            '408': resp('Connection timeout'),
+          },
+        },
+      },
+      '/api/carddav/sync': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Manual bidirectional sync',
+          description:
+            'Triggers a full bidirectional sync with the CardDAV server. Returns a Server-Sent Events stream with progress updates. ' +
+            'Event types: `progress` (sync progress updates), `complete` (final results with counts), `error` (error message). ' +
+            'The `complete` event data includes: imported, exported, updatedLocally, updatedRemotely, conflicts, errors, errorMessages, pendingImports.',
+          security: [{ session: [] }],
+          responses: {
+            '200': {
+              description: 'SSE stream of sync progress',
+              content: {
+                'text/event-stream': {
+                  schema: { type: 'string', description: 'Server-Sent Events stream' },
+                },
+              },
+            },
+            '401': ref401(),
+          },
+        },
+      },
+      '/api/carddav/import': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Import selected contacts',
+          description: 'Imports previously discovered pending contacts into Nametag. Supports assigning groups globally or per-contact.',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              importIds: { type: 'array', items: { type: 'string' }, minItems: 1, description: 'IDs of pending imports to import' },
+              globalGroupIds: { type: 'array', items: { type: 'string' }, description: 'Group IDs to assign to all imported contacts' },
+              perContactGroups: {
+                type: 'object',
+                additionalProperties: { type: 'array', items: { type: 'string' } },
+                description: 'Map of import ID to group IDs for per-contact assignment',
+              },
+            },
+            required: ['importIds'],
+          }),
+          responses: {
+            '200': jsonResponse('Import result', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                imported: { type: 'integer' },
+                skipped: { type: 'integer' },
+                errors: { type: 'integer' },
+                errorMessages: { type: 'array', items: { type: 'string' } },
+              },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '404': resp('No pending imports found'),
+          },
+        },
+      },
+      '/api/carddav/export-bulk': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Bulk export contacts',
+          description: 'Exports selected Nametag contacts to the connected CardDAV server. Processes in batches of 50.',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              personIds: { type: 'array', items: { type: 'string' }, minItems: 1, description: 'IDs of people to export' },
+            },
+            required: ['personIds'],
+          }),
+          responses: {
+            '200': jsonResponse('Export result', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                exported: { type: 'integer' },
+                skipped: { type: 'integer' },
+                errors: { type: 'integer' },
+                errorMessages: { type: 'array', items: { type: 'string' } },
+              },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+      },
+      '/api/carddav/conflicts/{id}/resolve': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Resolve a sync conflict',
+          description: 'Resolves a bidirectional sync conflict by keeping the local version, remote version, or a merged result.',
+          security: [{ session: [] }],
+          parameters: [pathParam('id', 'Conflict ID')],
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              resolution: { type: 'string', enum: ['keep_local', 'keep_remote', 'merged'] },
+            },
+            required: ['resolution'],
+          }),
+          responses: {
+            '200': refSuccess(),
+            '400': ref400(),
+            '401': ref401(),
+            '403': resp('Forbidden'),
+            '404': ref404(),
+          },
+        },
+      },
+      '/api/carddav/discover': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Discover new contacts',
+          description: 'Scans the CardDAV server for contacts not yet imported and creates pending import records.',
+          security: [{ session: [] }],
+          responses: {
+            '200': jsonResponse('Discovery result', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                discovered: { type: 'integer' },
+                errors: { type: 'integer' },
+                errorMessages: { type: 'array', items: { type: 'string' } },
+              },
+            }),
+            '401': ref401(),
+          },
+        },
+      },
+      '/api/carddav/pending-count': {
+        get: {
+          tags: ['CardDAV'],
+          summary: 'Get pending import count',
+          description: 'Returns the number of contacts discovered on the CardDAV server but not yet imported.',
+          security: [{ session: [] }],
+          responses: {
+            '200': jsonResponse('Pending count', {
+              type: 'object',
+              properties: {
+                count: { type: 'integer' },
+              },
+            }),
+            '401': ref401(),
+          },
+        },
+      },
+      '/api/carddav/backup': {
+        post: {
+          tags: ['CardDAV'],
+          summary: 'Download vCard backup',
+          description: 'Downloads all contacts from the connected CardDAV server as a single .vcf file.',
+          security: [{ session: [] }],
+          responses: {
+            '200': {
+              description: 'vCard file download',
+              headers: {
+                'Content-Disposition': { schema: { type: 'string', example: 'attachment; filename="nametag-backup.vcf"' } },
+                'X-Contact-Count': { schema: { type: 'string', description: 'Number of contacts in the backup' } },
+              },
+              content: {
+                'text/vcard': { schema: { type: 'string', description: 'Concatenated vCard data' } },
+              },
+            },
+            '400': ref400(),
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+      },
+
+      // =====================================================
+      // vCard
+      // =====================================================
+      '/api/vcard/import': {
+        post: {
+          tags: ['vCard'],
+          summary: 'Import vCard file',
+          description: 'Parses and directly imports contacts from raw vCard data into Nametag. Maximum file size: 2 MB.',
+          security: [{ session: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'text/plain': { schema: { type: 'string', description: 'Raw vCard file content' } },
+              'text/vcard': { schema: { type: 'string', description: 'Raw vCard file content' } },
+            },
+          },
+          responses: {
+            '200': jsonResponse('Import result', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                imported: { type: 'integer' },
+                skipped: { type: 'integer' },
+                errors: { type: 'integer' },
+                errorMessages: { type: 'array', items: { type: 'string' } },
+              },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '413': resp('File too large (max 2 MB)'),
+          },
+        },
+      },
+      '/api/vcard/upload': {
+        post: {
+          tags: ['vCard'],
+          summary: 'Upload vCard for preview',
+          description: 'Parses vCard data and creates pending import records for review before importing. Maximum file size: 2 MB.',
+          security: [{ session: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'text/plain': { schema: { type: 'string', description: 'Raw vCard file content' } },
+              'text/vcard': { schema: { type: 'string', description: 'Raw vCard file content' } },
+            },
+          },
+          responses: {
+            '200': jsonResponse('Upload result', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                count: { type: 'integer', description: 'Number of pending imports created' },
+              },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '413': resp('File too large (max 2 MB)'),
+          },
+        },
+      },
+
+      // =====================================================
+      // Photos
+      // =====================================================
+      '/api/photos/{personId}': {
+        get: {
+          tags: ['Photos'],
+          summary: 'Get person photo',
+          description: 'Returns the photo image for a person. Served from disk with appropriate MIME type and caching headers.',
+          security: [{ session: [] }],
+          parameters: [pathParam('personId', 'Person ID')],
+          responses: {
+            '200': {
+              description: 'Photo image',
+              content: {
+                'image/*': { schema: { type: 'string', format: 'binary' } },
+              },
+            },
+            '404': ref404(),
+          },
+        },
+      },
+
+      // =====================================================
+      // Cron
+      // =====================================================
+      '/api/cron/carddav-sync': {
+        get: {
+          tags: ['Cron'],
+          summary: 'Background CardDAV sync',
+          description: 'Syncs all users with CardDAV connections that have sync enabled and are due for a sync. Processes users with a 200 ms delay between each.',
+          security: [{ cronBearer: [] }],
+          responses: {
+            '200': jsonResponse('Sync results', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                total: { type: 'integer', description: 'Total connections processed' },
+                synced: { type: 'integer' },
+                skipped: { type: 'integer' },
+                errors: { type: 'integer' },
+                errorMessages: { type: 'array', items: { type: 'string' } },
+              },
+            }),
+            '401': ref401(),
+          },
+        },
+      },
+      '/api/cron/purge-deleted': {
+        get: {
+          tags: ['Cron'],
+          summary: 'Purge old deleted records',
+          description: 'Permanently deletes soft-deleted records older than the 30-day retention period. Deletes in foreign-key order and removes photo files from disk.',
+          security: [{ cronBearer: [] }],
+          responses: {
+            '200': jsonResponse('Purge results', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                purged: {
+                  type: 'object',
+                  properties: {
+                    importantDates: { type: 'integer' },
+                    personGroups: { type: 'integer' },
+                    relationships: { type: 'integer' },
+                    groups: { type: 'integer' },
+                    relationshipTypes: { type: 'integer' },
+                    people: { type: 'integer' },
+                  },
+                },
+                retentionDays: { type: 'integer' },
+                cutoffDate: { type: 'string', format: 'date-time' },
+              },
+            }),
             '401': ref401(),
           },
         },
