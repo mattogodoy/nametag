@@ -7,6 +7,7 @@
 set -e
 
 # Colors
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
@@ -21,7 +22,7 @@ echo "╚═══════════════════════�
 echo ""
 
 # Configuration
-DOCKER_DB_CONTAINER="nametag-db-prod"
+DOCKER_DB_CONTAINER="nametag-db"
 DB_USER="${DB_USER:-nametag}"
 DB_NAME="${DB_NAME:-nametag_db}"
 BACKUP_DIR="./backups/manual"

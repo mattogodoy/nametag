@@ -46,7 +46,7 @@ if [ ! -f "$BACKUP_FILE" ]; then
 fi
 
 # Configuration
-DOCKER_DB_CONTAINER="nametag-db-prod"
+DOCKER_DB_CONTAINER="nametag-db"
 DB_USER="${DB_USER:-nametag}"
 DB_NAME="${DB_NAME:-nametag_db}"
 
@@ -128,14 +128,19 @@ echo "1. Stopping application..."
 docker-compose stop app cron 2>/dev/null || true
 echo -e "${GREEN}   ✅ Application stopped${NC}"
 
-# Step 2: Drop existing database
+# Step 2: Terminate active connections and drop database
 echo "2. Dropping existing database..."
-docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1
+docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d postgres -c "
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();
+" > /dev/null 2>&1 || true
+docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1
 echo -e "${GREEN}   ✅ Database dropped${NC}"
 
 # Step 3: Create new database
 echo "3. Creating fresh database..."
-docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -c "CREATE DATABASE $DB_NAME;" > /dev/null 2>&1
+docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d postgres -c "CREATE DATABASE $DB_NAME;" > /dev/null 2>&1
 echo -e "${GREEN}   ✅ Database created${NC}"
 
 # Step 4: Restore from backup
@@ -149,8 +154,12 @@ echo -e "${GREEN}   ✅ Database restored${NC}"
 
 # Step 5: Verify restoration
 echo "5. Verifying restoration..."
-RESTORED_USER_COUNT=$(docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d $DB_NAME -t -c "SELECT COUNT(*) FROM \"User\";" | tr -d ' ')
-echo -e "${GREEN}   ✅ Restored user count: $RESTORED_USER_COUNT${NC}"
+RESTORED_USER_COUNT=$(docker exec $DOCKER_DB_CONTAINER psql -U $DB_USER -d $DB_NAME -t -c "SELECT COUNT(*) FROM \"User\";" 2>/dev/null | tr -d ' ' || echo "0")
+if [ -z "$RESTORED_USER_COUNT" ] || [ "$RESTORED_USER_COUNT" = "0" ]; then
+    echo -e "${YELLOW}   ⚠️  Restored user count: $RESTORED_USER_COUNT (verify data is correct)${NC}"
+else
+    echo -e "${GREEN}   ✅ Restored user count: $RESTORED_USER_COUNT${NC}"
+fi
 
 # Step 6: Restart application
 echo "6. Restarting application..."
