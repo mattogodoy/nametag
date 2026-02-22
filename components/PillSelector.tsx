@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent, ReactNode } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent, ReactNode } from 'react';
 
 interface PillItem {
   id: string;
@@ -50,9 +50,18 @@ export default function PillSelector<T extends PillItem>({
   allSelectedMessage = 'All items are already selected',
 }: PillSelectorProps<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Get selected item IDs for quick lookup
   const selectedIds = new Set(selectedItems.map((item) => item.id));
@@ -223,7 +232,7 @@ export default function PillSelector<T extends PillItem>({
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => {
                 // Delay to allow clicking on suggestions
-                setTimeout(() => setShowSuggestions(false), 200);
+                blurTimeoutRef.current = setTimeout(() => setShowSuggestions(false), 200);
               }}
               onKeyDown={handleKeyDown}
               placeholder={
