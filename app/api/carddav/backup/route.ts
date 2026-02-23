@@ -17,21 +17,36 @@ export async function POST(request: Request) {
     const rateLimitResponse = checkRateLimit(request, 'carddavBackup', session.user.id);
     if (rateLimitResponse) return rateLimitResponse;
 
-    // Look up the user's stored CardDAV connection
-    const connection = await prisma.cardDavConnection.findUnique({
-      where: { userId: session.user.id },
-    });
+    // Support both: credentials from request body (wizard flow) or saved connection
+    const body = await request.json().catch(() => ({}));
+    const bodyCredentials = body as { serverUrl?: string; username?: string; password?: string };
 
-    if (!connection) {
-      return NextResponse.json(
-        { error: 'No CardDAV connection found. Please set up a connection first.' },
-        { status: 404 }
-      );
+    let serverUrl: string;
+    let username: string;
+    let password: string;
+
+    if (bodyCredentials.serverUrl && bodyCredentials.username && bodyCredentials.password) {
+      // Wizard flow: credentials provided directly in request body
+      serverUrl = bodyCredentials.serverUrl;
+      username = bodyCredentials.username;
+      password = bodyCredentials.password;
+    } else {
+      // Post-setup flow: look up saved connection
+      const connection = await prisma.cardDavConnection.findUnique({
+        where: { userId: session.user.id },
+      });
+
+      if (!connection) {
+        return NextResponse.json(
+          { error: 'No CardDAV connection found. Please set up a connection first.' },
+          { status: 404 }
+        );
+      }
+
+      serverUrl = connection.serverUrl;
+      username = connection.username;
+      password = decryptPassword(connection.password);
     }
-
-    const serverUrl = connection.serverUrl;
-    const username = connection.username;
-    const password = decryptPassword(connection.password);
 
     // Validate URL to prevent SSRF attacks
     try {
