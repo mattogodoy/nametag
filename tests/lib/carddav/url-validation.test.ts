@@ -2,6 +2,11 @@ import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import dns from 'dns';
 
+// Use vi.hoisted to create mocks before hoisting
+const mocks = vi.hoisted(() => ({
+  isSaasMode: vi.fn(),
+}));
+
 // Mock dns.promises.resolve4 and resolve6 to avoid real DNS lookups in tests
 vi.mock('dns', () => ({
   default: {
@@ -16,11 +21,18 @@ vi.mock('dns', () => ({
   },
 }));
 
+// Mock features
+vi.mock('@/lib/features', () => ({
+  isSaasMode: mocks.isSaasMode,
+}));
+
 const mockResolve4 = dns.promises.resolve4 as ReturnType<typeof vi.fn>;
 const mockResolve6 = dns.promises.resolve6 as ReturnType<typeof vi.fn>;
 
 describe('validateServerUrl', () => {
   beforeEach(() => {
+    // Default: SaaS mode enabled (strictest validation)
+    mocks.isSaasMode.mockReturnValue(true);
     // Default: resolve to a safe public IP (v4), no AAAA records (v6)
     mockResolve4.mockResolvedValue(['93.184.216.34']);
     mockResolve6.mockRejectedValue(new Error('ENODATA'));
@@ -166,5 +178,46 @@ describe('validateServerUrl', () => {
   it('rejects if any resolved IP is private', async () => {
     mockResolve4.mockResolvedValue(['93.184.216.34', '10.0.0.1']);
     await expect(validateServerUrl('https://dual-homed.example.com')).rejects.toThrow('Internal addresses are not allowed');
+  });
+
+  // --- Self-hosted mode (private IPs allowed) ---
+
+  describe('in self-hosted mode', () => {
+    beforeEach(() => {
+      mocks.isSaasMode.mockReturnValue(false);
+    });
+
+    it('allows private IP 192.168.x.x', async () => {
+      await expect(validateServerUrl('https://192.168.1.1')).resolves.toBeUndefined();
+    });
+
+    it('allows private IP 10.x.x.x', async () => {
+      await expect(validateServerUrl('https://10.0.0.1')).resolves.toBeUndefined();
+    });
+
+    it('allows localhost', async () => {
+      await expect(validateServerUrl('https://localhost')).resolves.toBeUndefined();
+    });
+
+    it('allows loopback 127.0.0.1', async () => {
+      await expect(validateServerUrl('https://127.0.0.1')).resolves.toBeUndefined();
+    });
+
+    it('allows IPv6 loopback', async () => {
+      await expect(validateServerUrl('https://[::1]')).resolves.toBeUndefined();
+    });
+
+    it('allows domains resolving to private IPs', async () => {
+      mockResolve4.mockResolvedValue(['192.168.1.100']);
+      await expect(validateServerUrl('https://radicale.local')).resolves.toBeUndefined();
+    });
+
+    it('still rejects non-HTTP protocols', async () => {
+      await expect(validateServerUrl('ftp://192.168.1.1')).rejects.toThrow('Only HTTP and HTTPS protocols are allowed');
+    });
+
+    it('still rejects invalid URLs', async () => {
+      await expect(validateServerUrl('not-a-url')).rejects.toThrow('Invalid URL format');
+    });
   });
 });

@@ -10,13 +10,17 @@
  */
 
 import dns from 'dns';
+import { isSaasMode } from '@/lib/features';
 
 /**
  * Validate a server URL to prevent SSRF attacks.
- * Rejects private IPs, loopback addresses, non-HTTP protocols,
+ * Rejects non-HTTP protocols and malformed URLs in all modes.
+ * In SaaS mode, also rejects private IPs, loopback addresses,
  * and domains that resolve to private/internal IPs.
+ * In self-hosted mode, private/internal addresses are allowed
+ * so users can connect to local network services (e.g., Radicale).
  *
- * @throws {Error} If the URL is invalid, uses a non-HTTP protocol, or targets an internal address
+ * @throws {Error} If the URL is invalid, uses a non-HTTP protocol, or (in SaaS mode) targets an internal address
  */
 export async function validateServerUrl(url: string): Promise<void> {
   let parsed: URL;
@@ -31,50 +35,54 @@ export async function validateServerUrl(url: string): Promise<void> {
     throw new Error('Only HTTP and HTTPS protocols are allowed');
   }
 
-  const hostname = parsed.hostname.toLowerCase();
+  // Private/internal IP checks only apply in SaaS mode.
+  // Self-hosted users need to reach local network services (e.g., Radicale, Nextcloud).
+  if (isSaasMode()) {
+    const hostname = parsed.hostname.toLowerCase();
 
-  // Reject localhost
-  if (hostname === 'localhost') {
-    throw new Error('Internal addresses are not allowed');
-  }
-
-  // Reject IPv6 loopback (::1) - hostname may be with or without brackets
-  const cleanHostname = hostname.replace(/^\[|\]$/g, '');
-  if (cleanHostname === '::1') {
-    throw new Error('Internal addresses are not allowed');
-  }
-
-  // Reject private/internal IPv4 ranges (string check)
-  if (isPrivateIP(cleanHostname)) {
-    throw new Error('Internal addresses are not allowed');
-  }
-
-  // DNS resolution check: resolve hostname and verify IPs aren't private.
-  // Skip for raw IP addresses (already checked above).
-  const isRawIP = /^\d+\.\d+\.\d+\.\d+$/.test(cleanHostname) || cleanHostname === '::1';
-  if (!isRawIP) {
-    // Resolve both IPv4 (A) and IPv6 (AAAA) records to prevent SSRF via IPv6
-    const [v4Result, v6Result] = await Promise.allSettled([
-      dns.promises.resolve4(cleanHostname),
-      dns.promises.resolve6(cleanHostname),
-    ]);
-
-    const allAddresses: string[] = [];
-
-    if (v4Result.status === 'fulfilled') {
-      allAddresses.push(...v4Result.value);
-    }
-    if (v6Result.status === 'fulfilled') {
-      allAddresses.push(...v6Result.value);
+    // Reject localhost
+    if (hostname === 'localhost') {
+      throw new Error('Internal addresses are not allowed');
     }
 
-    if (allAddresses.length === 0) {
-      throw new Error('Could not resolve server hostname');
+    // Reject IPv6 loopback (::1) - hostname may be with or without brackets
+    const cleanHostname = hostname.replace(/^\[|\]$/g, '');
+    if (cleanHostname === '::1') {
+      throw new Error('Internal addresses are not allowed');
     }
 
-    for (const ip of allAddresses) {
-      if (isPrivateIP(ip)) {
-        throw new Error('Internal addresses are not allowed');
+    // Reject private/internal IPv4 ranges (string check)
+    if (isPrivateIP(cleanHostname)) {
+      throw new Error('Internal addresses are not allowed');
+    }
+
+    // DNS resolution check: resolve hostname and verify IPs aren't private.
+    // Skip for raw IP addresses (already checked above).
+    const isRawIP = /^\d+\.\d+\.\d+\.\d+$/.test(cleanHostname) || cleanHostname === '::1';
+    if (!isRawIP) {
+      // Resolve both IPv4 (A) and IPv6 (AAAA) records to prevent SSRF via IPv6
+      const [v4Result, v6Result] = await Promise.allSettled([
+        dns.promises.resolve4(cleanHostname),
+        dns.promises.resolve6(cleanHostname),
+      ]);
+
+      const allAddresses: string[] = [];
+
+      if (v4Result.status === 'fulfilled') {
+        allAddresses.push(...v4Result.value);
+      }
+      if (v6Result.status === 'fulfilled') {
+        allAddresses.push(...v6Result.value);
+      }
+
+      if (allAddresses.length === 0) {
+        throw new Error('Could not resolve server hostname');
+      }
+
+      for (const ip of allAddresses) {
+        if (isPrivateIP(ip)) {
+          throw new Error('Internal addresses are not allowed');
+        }
       }
     }
   }
