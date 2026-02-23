@@ -164,7 +164,7 @@ export function handleApiError(
 
   // Detect database connection errors - return friendly message in all environments
   const isDbConnectionError =
-    ('code' in (error as Record<string, unknown>) &&
+    (typeof error === 'object' && error !== null && 'code' in error &&
       ((error as Record<string, unknown>).code === 'ECONNREFUSED' ||
         (error as Record<string, unknown>).code === 'ETIMEDOUT' ||
         (error as Record<string, unknown>).code === 'ENOTFOUND')) ||
