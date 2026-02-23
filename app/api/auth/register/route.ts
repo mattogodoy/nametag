@@ -25,18 +25,18 @@ export async function POST(request: Request) {
     return rateLimitResponse;
   }
 
-  // Check if registration is disabled
-  if (process.env.DISABLE_REGISTRATION === 'true') {
-    const userCount = await prisma.user.count();
-    if (userCount > 0) {
-      return NextResponse.json(
-        { error: 'Registration is currently disabled' },
-        { status: 403 }
-      );
-    }
-  }
-
   try {
+    // Check if registration is disabled
+    if (process.env.DISABLE_REGISTRATION === 'true') {
+      const userCount = await prisma.user.count();
+      if (userCount > 0) {
+        return NextResponse.json(
+          { error: 'Registration is currently disabled' },
+          { status: 403 }
+        );
+      }
+    }
+
     const body = await parseRequestBody(request);
     const validation = validateRequest(registerSchema, body);
 
