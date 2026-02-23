@@ -12,6 +12,7 @@ import PersonVCardRawView from '@/components/PersonVCardRawView';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import PersonPhoto from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
 import { getPhotoUrl } from '@/lib/photo-url';
 
@@ -340,11 +341,9 @@ export default async function PersonDetailsPage({
               {person.photo && getPhotoUrl(person.id, person.photo) && (
                 <div className="border border-border rounded-lg p-4">
                   <div className="flex justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <PersonPhoto
                       src={getPhotoUrl(person.id, person.photo)!}
-                      alt={formatFullName(person)}
-                      className="w-32 h-32 rounded-full object-cover shadow-lg"
+                      name={formatFullName(person)}
                     />
                   </div>
                 </div>
