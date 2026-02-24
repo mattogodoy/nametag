@@ -16,8 +16,6 @@ jobs:
     if: github.repository == 'mattogodoy/nametag'
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      version: ${{ steps.release.outputs.version }}
       pr: ${{ steps.release.outputs.pr }}
     steps:
       - uses: googleapis/release-please-action@v4
@@ -36,10 +34,11 @@ jobs:
 
       - name: Get PR number
         id: pr-info
+        env:
+          PR_JSON: ${{ needs.release-please.outputs.pr }}
         run: |
-          PR_JSON='${{ needs.release-please.outputs.pr }}'
           PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
-          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
 
       - name: Get commits since last tag
         id: commits
@@ -50,14 +49,16 @@ jobs:
           else
             COMMIT_LOG=$(git log ${LAST_TAG}..HEAD --oneline --no-merges)
           fi
-          # Filter to meaningful commits only
           FILTERED=$(echo "$COMMIT_LOG" | grep -E "^[a-f0-9]+ (feat|fix|perf)" || echo "No notable changes")
-          # Write to file to avoid shell escaping issues
-          echo "$FILTERED" > /tmp/commits.txt
-          echo "commits_file=/tmp/commits.txt" >> $GITHUB_OUTPUT
+          {
+            echo "commit_log<<EOF"
+            echo "$FILTERED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Generate AI release summary
         id: ai-notes
+        continue-on-error: true
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o-mini
@@ -66,7 +67,7 @@ jobs:
 
             Here are the commits since the last release:
             ---
-            $(cat /tmp/commits.txt)
+            ${{ steps.commits.outputs.commit_log }}
             ---
 
             Write a concise release summary for end users. Rules:
@@ -80,32 +81,25 @@ jobs:
             - Use markdown formatting
 
       - name: Update PR body with AI summary
+        if: steps.ai-notes.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          AI_SUMMARY: ${{ steps.ai-notes.outputs.response }}
+          PR_NUMBER: ${{ steps.pr-info.outputs.pr_number }}
         run: |
-          PR_NUMBER="${{ steps.pr-info.outputs.pr_number }}"
-
-          # Get current PR body (release-please's changelog)
           CURRENT_BODY=$(gh pr view "$PR_NUMBER" --json body -q '.body')
 
-          # Build new body with AI summary on top
-          AI_SUMMARY='${{ steps.ai-notes.outputs.response }}'
+          echo "## Release Summary" > /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "$AI_SUMMARY" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "---" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "<details>" >> /tmp/pr-body.md
+          echo "<summary>Detailed Changelog</summary>" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "$CURRENT_BODY" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "</details>" >> /tmp/pr-body.md
 
-          NEW_BODY=$(cat <<PREOF
-          ## Release Summary
-
-          ${AI_SUMMARY}
-
-          ---
-
-          <details>
-          <summary>Detailed Changelog</summary>
-
-          ${CURRENT_BODY}
-
-          </details>
-          PREOF
-          )
-
-          # Update the PR
-          gh pr edit "$PR_NUMBER" --body "$NEW_BODY"
+          gh pr edit "$PR_NUMBER" --body-file /tmp/pr-body.md
