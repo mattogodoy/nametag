@@ -41,7 +41,9 @@ model User {
   groups            Group[]
   relationshipTypes RelationshipType[]
   subscription      Subscription?
-  unsubscribeTokens UnsubscribeToken[]
+  unsubscribeTokens      UnsubscribeToken[]
+  cardDavConnection      CardDavConnection?
+  cardDavPendingImports  CardDavPendingImport[]
 
   @@unique([provider, providerAccountId])
   @@map("users")
@@ -63,17 +65,42 @@ model Person {
   contactReminderInterval     Int?
   contactReminderIntervalUnit ReminderIntervalUnit?
   lastContactReminderSent     DateTime?
+  cardDavSyncEnabled          Boolean               @default(true)
   createdAt                   DateTime              @default(now())
   updatedAt                   DateTime              @updatedAt
   deletedAt                   DateTime?
 
+  // vCard Identification
+  prefix                      String?               // Honorific prefix (Dr., Mr.)
+  suffix                      String?               // Honorific suffix (Jr., III)
+
+  // vCard UID for CardDAV
+  uid                         String?               // Required for sync
+
+  // Professional
+  organization                String?               // ORG (Company)
+  jobTitle                    String?               // TITLE
+
+  // Other vCard fields
+  photo                       String?               // URL or base64
+  gender                      String?               // GENDER
+  anniversary                 DateTime?             // ANNIVERSARY
+
   // Relations
-  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  relationshipToUser RelationshipType? @relation("UserRelationship", fields: [relationshipToUserId], references: [id])
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relationshipToUser RelationshipType?      @relation("UserRelationship", fields: [relationshipToUserId], references: [id])
   groups             PersonGroup[]
-  relationshipsFrom  Relationship[]    @relation("PersonRelationships")
-  relationshipsTo    Relationship[]    @relation("RelatedPersonRelationships")
+  relationshipsFrom  Relationship[]         @relation("PersonRelationships")
+  relationshipsTo    Relationship[]         @relation("RelatedPersonRelationships")
   importantDates     ImportantDate[]
+  phoneNumbers       PersonPhone[]
+  emails             PersonEmail[]
+  addresses          PersonAddress[]
+  urls               PersonUrl[]
+  imHandles          PersonIM[]
+  locations          PersonLocation[]
+  customFields       PersonCustomField[]
+  cardDavMapping     CardDavMapping?
 
   @@index([userId])
   @@index([relationshipToUserId])
@@ -85,6 +112,7 @@ model Person {
   @@index([userId, nickname]) // For nickname sorting/search
   @@index([contactReminderEnabled, lastContact]) // For contact reminder queries
   @@index([userId, deletedAt]) // For soft delete filtering
+  @@unique([userId, uid])
   @@map("people")
 }
 
@@ -433,4 +461,255 @@ model UnsubscribeToken {
   @@index([entityId, reminderType])
   @@index([expiresAt])
   @@map("unsubscribe_tokens")
+}
+
+// ============================================
+// CARDDAV MULTI-VALUE CONTACT TABLES
+// ============================================
+
+// PersonPhone - Phone numbers (work, home, mobile, fax)
+model PersonPhone {
+  id        String   @id @default(cuid())
+  personId  String
+  type      String   // Any string value (predefined or custom)
+  number    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("person_phones")
+}
+
+// PersonEmail - Email addresses
+model PersonEmail {
+  id        String   @id @default(cuid())
+  personId  String
+  type      String   // Any string value (predefined or custom)
+  email     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("person_emails")
+}
+
+// PersonAddress - Physical addresses
+model PersonAddress {
+  id          String   @id @default(cuid())
+  personId    String
+  type        String   // Any string value (predefined or custom)
+  streetLine1 String?  // First line of street address
+  streetLine2 String?  // Second line (apt, suite, etc.)
+  locality    String?  // City
+  region      String?  // State/Province
+  postalCode  String?
+  country     String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("person_addresses")
+}
+
+// PersonUrl - URLs
+model PersonUrl {
+  id        String   @id @default(cuid())
+  personId  String
+  type      String   // Any string value (predefined or custom)
+  url       String
+  createdAt DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("person_urls")
+}
+
+// PersonIM - Instant messaging handles
+model PersonIM {
+  id        String   @id @default(cuid())
+  personId  String
+  protocol  String   // "skype", "whatsapp", "telegram", "signal", "other"
+  handle    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("person_im_handles")
+}
+
+// PersonLocation - Geographic locations (GEO property)
+model PersonLocation {
+  id        String   @id @default(cuid())
+  personId  String
+  type      String   // "home", "work", "other"
+  latitude  Decimal  @db.Decimal(10, 8) // e.g., 37.386013
+  longitude Decimal  @db.Decimal(11, 8) // e.g., -122.082932
+  label     String?  // Optional label (e.g., "Main Office")
+  createdAt DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("person_locations")
+}
+
+// PersonCustomField - Custom fields (X- properties)
+model PersonCustomField {
+  id        String   @id @default(cuid())
+  personId  String
+  key       String   // e.g., "X-SPOUSE"
+  value     String   @db.Text
+  type      String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("person_custom_fields")
+}
+
+// ============================================
+// CARDDAV SYNC METADATA TABLES
+// ============================================
+
+// CardDavConnection - User's CardDAV server connection
+model CardDavConnection {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+
+  // Server config
+  serverUrl        String
+  username         String
+  password         String   // Encrypted with AES-256-GCM
+  provider         String?  // "google", "icloud", "outlook", "nextcloud", "custom"
+
+  // Sync config
+  syncEnabled      Boolean  @default(true)
+  autoSyncInterval Int      @default(43200) // 12 hours in seconds
+  lastSyncAt       DateTime?
+  syncToken        String?  // For incremental sync
+
+  // Behavior
+  autoExportNew    Boolean  @default(true)
+  importMode       String   @default("manual") // "manual", "notify", "auto"
+
+  // Error tracking
+  lastError        String?
+  lastErrorAt      DateTime?
+
+  // Sync locking
+  syncInProgress   Boolean   @default(false)
+  syncStartedAt    DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  user             User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mappings         CardDavMapping[]
+  pendingImports   CardDavPendingImport[]
+
+  @@map("carddav_connections")
+}
+
+// CardDavMapping - Mapping between Nametag Person and CardDAV vCard
+model CardDavMapping {
+  id               String   @id @default(cuid())
+  connectionId     String
+  personId         String   @unique
+
+  // CardDAV identifiers
+  uid              String   // vCard UID
+  href             String   // Resource URL
+  etag             String?  // For optimistic locking
+
+  // Sync state
+  lastSyncedAt     DateTime?
+  lastLocalChange  DateTime?
+  lastRemoteChange DateTime?
+  syncStatus       String   @default("synced") // "synced", "pending", "conflict"
+
+  // For conflict detection
+  localVersion     String?  // Hash of local data
+  remoteVersion    String?  // Hash of remote data
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  connection CardDavConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  person     Person             @relation(fields: [personId], references: [id], onDelete: Cascade)
+  conflicts  CardDavConflict[]
+
+  @@unique([connectionId, uid])
+  @@index([connectionId])
+  @@index([syncStatus])
+  @@map("carddav_mappings")
+}
+
+// CardDavPendingImport - New contacts discovered on CardDAV server or uploaded via file
+model CardDavPendingImport {
+  id           String   @id @default(cuid())
+
+  // For CardDAV-discovered contacts, points to the user's connection.
+  // NULL for file imports (no CardDAV connection involved).
+  connectionId String?
+
+  // Direct user ownership — used for file imports and as a denormalized
+  // convenience for CardDAV imports.
+  uploadedByUserId String?
+
+  uid          String
+  href         String
+  etag         String?  // ETag from server for tracking changes
+  vCardData    String   @db.Text
+  displayName  String   // For UI preview
+
+  discoveredAt DateTime @default(now())
+  notifiedAt   DateTime?
+
+  // Relations
+  connection   CardDavConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  uploadedBy   User?              @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, uid])
+  @@index([connectionId])
+  @@index([uploadedByUserId])
+  @@map("carddav_pending_imports")
+}
+
+// CardDavConflict - Conflict resolution history
+model CardDavConflict {
+  id            String   @id @default(cuid())
+  mappingId     String
+
+  // Conflict data
+  localVersion  String   @db.Text // JSON snapshot
+  remoteVersion String   @db.Text // JSON snapshot
+
+  // Resolution
+  resolvedAt    DateTime?
+  resolution    String?  // "keep_local", "keep_remote", "merged"
+  resolvedBy    String?  // "user", "auto"
+
+  createdAt     DateTime @default(now())
+
+  // Relations
+  mapping CardDavMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+
+  @@index([mappingId])
+  @@index([resolvedAt])
+  @@map("carddav_conflicts")
 }

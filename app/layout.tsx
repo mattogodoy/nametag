@@ -27,12 +27,16 @@ export default async function RootLayout({
   // Get user's theme preference from database
   let initialTheme: 'LIGHT' | 'DARK' = 'DARK';
   if (session?.user?.id) {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { theme: true },
-    });
-    if (user?.theme) {
-      initialTheme = user.theme;
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { theme: true },
+      });
+      if (user?.theme) {
+        initialTheme = user.theme;
+      }
+    } catch {
+      // Fall back to default theme if DB is unavailable
     }
   }
 

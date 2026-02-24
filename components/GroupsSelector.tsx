@@ -16,6 +16,8 @@ interface GroupsSelectorProps {
   selectedGroupIds: string[];
   onChange: (groupIds: string[]) => void;
   allowCreate?: boolean;
+  showCreateHint?: boolean;
+  onGroupCreated?: (group: Group) => void;
   placeholder?: string;
 }
 
@@ -35,8 +37,11 @@ export default function GroupsSelector({
   selectedGroupIds,
   onChange,
   allowCreate = true,
+  showCreateHint,
+  onGroupCreated,
   placeholder,
 }: GroupsSelectorProps) {
+  const shouldShowHint = showCreateHint ?? allowCreate;
   const t = useTranslations('people.form.groups');
   // Track newly created groups that aren't in the original list
   const [createdGroups, setCreatedGroups] = useState<Group[]>([]);
@@ -99,6 +104,9 @@ export default function GroupsSelector({
       // Auto-select the newly created group
       onChange([...selectedGroupIds, newGroup.id]);
 
+      // Notify parent about the new group
+      onGroupCreated?.(newGroup);
+
       toast.success(t('groupCreated', { name }));
     } catch {
       toast.error(t('errorCreate'));
@@ -148,7 +156,7 @@ export default function GroupsSelector({
 
   return (
     <div>
-      {allowCreate && (
+      {shouldShowHint && (
         <div className="mb-2 flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <svg
             className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"

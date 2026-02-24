@@ -1,6 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
+// Construct DATABASE_URL from individual DB_* variables if not set
+if (!process.env.DATABASE_URL) {
+  const { DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD } = process.env;
+  if (DB_HOST && DB_PORT && DB_NAME && DB_USER) {
+    const password = DB_PASSWORD ? `:${DB_PASSWORD}` : '';
+    process.env.DATABASE_URL = `postgresql://${DB_USER}${password}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
+  }
+}
+
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
 });

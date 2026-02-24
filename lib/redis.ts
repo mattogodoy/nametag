@@ -188,12 +188,15 @@ export async function disconnectRedis(): Promise<void> {
   }
 }
 
-// Graceful shutdown handlers
-process.on('SIGINT', async () => {
-  await disconnectRedis();
-});
-
-process.on('SIGTERM', async () => {
-  await disconnectRedis();
-});
+// Graceful shutdown handlers - guarded to prevent duplicate registration during hot reload
+const globalForRedisShutdown = globalThis as unknown as { __redisShutdownRegistered?: boolean };
+if (!globalForRedisShutdown.__redisShutdownRegistered) {
+  globalForRedisShutdown.__redisShutdownRegistered = true;
+  process.on('SIGINT', async () => {
+    await disconnectRedis();
+  });
+  process.on('SIGTERM', async () => {
+    await disconnectRedis();
+  });
+}
 

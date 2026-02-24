@@ -110,6 +110,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    volumes:
+      - photo_data:/app/data/photos
     depends_on:
       - db
 
@@ -120,6 +122,7 @@ services:
       sh -c "
         echo '0 8 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/send-reminders > /proc/1/fd/1 2>&1' > /etc/crontabs/root &&
         echo '0 3 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/purge-deleted > /proc/1/fd/1 2>&1' >> /etc/crontabs/root &&
+        echo '0 2,10,18 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/carddav-sync > /proc/1/fd/1 2>&1' >> /etc/crontabs/root &&
         crond -f -l 2
       "
     environment:
@@ -129,6 +132,7 @@ services:
 
 volumes:
   postgres_data:
+  photo_data:
 ```
 
 3. Create a `.env` file with required variables:

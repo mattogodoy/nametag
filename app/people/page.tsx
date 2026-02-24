@@ -1,9 +1,11 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
 import EmptyState from '@/components/EmptyState';
+import ImportSuccessToast from '@/components/ImportSuccessToast';
 import { formatDate } from '@/lib/date-format';
 import { canCreateResource } from '@/lib/billing/subscription';
 import { getTranslations } from 'next-intl/server';
@@ -152,6 +154,9 @@ export default async function PeoplePage({
         userNickname={session.user.nickname}
         currentPath="/people"
       />
+      <Suspense>
+        <ImportSuccessToast />
+      </Suspense>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">

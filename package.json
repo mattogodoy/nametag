@@ -41,12 +41,14 @@
     "next-intl": "^4.7.0",
     "nodemailer": "^7.0.7",
     "pg": "^8.16.3",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-markdown": "^10.1.0",
     "resend": "^6.5.2",
     "sonner": "^2.0.7",
     "stripe": "^20.0.0",
+    "tsdav": "^2.1.6",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -61,6 +63,7 @@
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.1.1",
     "auto-changelog": "^2.5.0",
     "dotenv": "^17.2.3",

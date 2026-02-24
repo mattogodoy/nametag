@@ -8,6 +8,15 @@ import { Button } from './ui/Button';
 import { useTranslations } from 'next-intl';
 import { importDataSchema } from '@/lib/validations';
 import { z } from 'zod';
+import { personToVCard } from '@/lib/vcard';
+import {
+  addPhotoToVCardFromUrl,
+  downloadVcf,
+  generateBulkVcfFilename,
+  exportPeopleWithProgress,
+} from '@/lib/vcard-helpers';
+import { getPhotoUrl } from '@/lib/photo-url';
+import { toast } from 'sonner';
 
 interface Group {
   id: string;
@@ -28,15 +37,18 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Export state
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportMessage, setExportMessage] = useState('');
+  const [isExportingJson, setIsExportingJson] = useState(false);
+  const [isExportingVcard, setIsExportingVcard] = useState(false);
+  const [_exportMessage, setExportMessage] = useState('');
   const [exportMode, setExportMode] = useState<'all' | 'groups'>('all');
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [vcardProgress, setVcardProgress] = useState<{ current: number; total: number } | null>(null);
 
   // Import state
   const [isImporting, setIsImporting] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [importMessage, setImportMessage] = useState('');
+  const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importData, setImportData] = useState<ImportData | null>(null);
   const [importPreview, setImportPreview] = useState<{
@@ -64,9 +76,9 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Export data
-  const handleExport = async () => {
-    setIsExporting(true);
+  // Export JSON data
+  const handleExportJson = async () => {
+    setIsExportingJson(true);
     setExportMessage('');
 
     try {
@@ -95,12 +107,97 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      setExportMessage(t('exportSuccess'));
-      setTimeout(() => setExportMessage(''), 3000);
+      toast.success(t('exportSuccess'));
     } catch {
-      setExportMessage(t('exportFailed'));
+      toast.error(t('exportFailed'));
     } finally {
-      setIsExporting(false);
+      setIsExportingJson(false);
+    }
+  };
+
+  // Export vCard data
+  const handleExportVcard = async () => {
+    setIsExportingVcard(true);
+    setVcardProgress(null);
+
+    try {
+      // Build API endpoint based on export mode
+      let endpoint = '/api/people?includeAll=true';
+
+      if (exportMode === 'groups') {
+        if (selectedGroupIds.length === 0) {
+          toast.error(t('selectGroups'));
+          setIsExportingVcard(false);
+          return;
+        }
+
+        endpoint = `/api/people?groupIds=${selectedGroupIds.join(',')}&includeAll=true`;
+      }
+
+      // Fetch people data
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error('Failed to fetch contacts');
+      }
+
+      const data = await response.json();
+      const people = data.people || [];
+
+      if (!people || people.length === 0) {
+        toast.error(t('noDataToExport'));
+        setIsExportingVcard(false);
+        return;
+      }
+
+      // Convert to vCards
+      const vcards: string[] = [];
+
+      for (let i = 0; i < people.length; i++) {
+        const person = people[i];
+
+        // Generate base vCard
+        let vcard = personToVCard(person, {
+          includePhoto: false,
+          includeCustomFields: true,
+          stripMarkdown: false,
+        });
+
+        // Add photo if present
+        const photoUrl = getPhotoUrl(person.id, person.photo);
+        if (photoUrl) {
+          try {
+            vcard = await addPhotoToVCardFromUrl(vcard, photoUrl);
+          } catch (error) {
+            console.warn(`Failed to add photo for ${person.name}:`, error);
+          }
+        }
+
+        vcards.push(vcard);
+
+        // Update progress every 5 contacts
+        if (i % 5 === 0 || i === people.length - 1) {
+          setVcardProgress({ current: i + 1, total: people.length });
+        }
+      }
+
+      // Combine vcards with progress updates
+      const combinedVcf = await exportPeopleWithProgress(vcards, (prog) => {
+        setVcardProgress(prog);
+      });
+
+      // Generate filename
+      const filename = generateBulkVcfFilename(people.length);
+
+      // Download file
+      downloadVcf(combinedVcf, filename);
+
+      toast.success(t('vcardExportSuccess', { count: people.length }));
+    } catch (error) {
+      console.error('Failed to export vCard:', error);
+      toast.error(t('exportFailed'));
+    } finally {
+      setIsExportingVcard(false);
+      setVcardProgress(null);
     }
   };
 
@@ -111,6 +208,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
     setImportFile(file);
     setImportMessage('');
+    setImportStatus(null);
     setImportValidation(null);
     setImportData(null);
     setImportMode('all');
@@ -119,6 +217,15 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
     try {
       const text = await file.text();
+
+      // Check if it's a vCard file
+      if (file.name.endsWith('.vcf') || file.name.endsWith('.vcard') || text.trim().startsWith('BEGIN:VCARD')) {
+        // Handle vCard upload - redirect to import page
+        await handleVcardUpload(text);
+        return;
+      }
+
+      // Otherwise, try to parse as JSON
       const data = JSON.parse(text);
 
       // Validate file format
@@ -144,21 +251,64 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           setImportValidation(validationResult);
         } else {
           setImportMessage(t('importFailed'));
+          setImportStatus('error');
           setImportFile(null);
           setImportData(null);
           setImportPreview(null);
         }
       } else {
         setImportMessage(t('invalidFileFormat'));
+        setImportStatus('error');
         setImportFile(null);
         setImportData(null);
         setImportPreview(null);
       }
     } catch {
       setImportMessage(t('invalidJSON'));
+      setImportStatus('error');
       setImportFile(null);
       setImportData(null);
       setImportPreview(null);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  // Handle vCard upload and redirect to import page
+  const handleVcardUpload = async (vcardText: string) => {
+    setIsValidating(true);
+    setImportMessage('');
+    setImportStatus(null);
+
+    try {
+      const response = await fetch('/api/vcard/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/vcard',
+        },
+        body: vcardText,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.error || t('importFailed'));
+        setImportFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+
+      // Redirect to import page
+      router.push('/carddav/import?source=file');
+    } catch (error) {
+      console.error('vCard upload error:', error);
+      toast.error(t('importFailed'));
+      setImportFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } finally {
       setIsValidating(false);
     }
@@ -170,6 +320,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
 
     setIsImporting(true);
     setImportMessage('');
+    setImportStatus(null);
 
     try {
       // Build the request body
@@ -191,7 +342,8 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       const result = await response.json();
 
       if (!response.ok) {
-        setImportMessage(result.error || 'Failed to import data');
+        setImportMessage(result.error || t('importDataFailed'));
+        setImportStatus('error');
         return;
       }
 
@@ -202,6 +354,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           types: result.imported.relationshipTypes || 0
         })
       );
+      setImportStatus('success');
       setImportFile(null);
       setImportData(null);
       setImportPreview(null);
@@ -217,6 +370,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       }, 2000);
     } catch {
       setImportMessage(t('importFailed'));
+      setImportStatus('error');
     } finally {
       setIsImporting(false);
     }
@@ -252,14 +406,14 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
       const data = await response.json();
 
       if (!response.ok) {
-        setDeleteError(data.error || t('importFailed'));
+        setDeleteError(data.error || t('deleteFailed'));
         return;
       }
 
       // Sign out and redirect to login
       await signOut({ redirect: true, callbackUrl: '/login' });
     } catch {
-      setDeleteError(t('importFailed'));
+      setDeleteError(t('deleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -275,6 +429,21 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
         <p className="text-sm text-muted mb-4">
           {t('exportDescription')}
         </p>
+
+        {/* Export Format Explanation */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">
+            {t('exportFormats')}
+          </h4>
+          <div className="space-y-2 text-sm text-blue-800 dark:text-blue-400">
+            <div>
+              <span className="font-medium">{t('jsonFormat')}</span>: {t('jsonFormatDescription')}
+            </div>
+            <div>
+              <span className="font-medium">{t('vcardFormat')}</span>: {t('vcardFormatDescription')}
+            </div>
+          </div>
+        </div>
 
         {/* Export Mode Toggle */}
         <div className="mb-4 space-y-3">
@@ -330,16 +499,32 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           )}
         </div>
 
-        <Button
-          onClick={handleExport}
-          disabled={
-            isExporting ||
-            (exportMode === 'groups' && selectedGroupIds.length === 0) ||
-            (exportMode === 'all' && peopleCount === 0 && groups.length === 0)
-          }
-        >
-          {isExporting ? t('exporting') : t('exportButton')}
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={handleExportJson}
+            disabled={
+              isExportingJson ||
+              isExportingVcard ||
+              (exportMode === 'groups' && selectedGroupIds.length === 0) ||
+              (exportMode === 'all' && peopleCount === 0 && groups.length === 0)
+            }
+          >
+            {isExportingJson ? t('exporting') : t('exportJson')}
+          </Button>
+
+          <Button
+            onClick={handleExportVcard}
+            disabled={
+              isExportingJson ||
+              isExportingVcard ||
+              (exportMode === 'groups' && selectedGroupIds.length === 0) ||
+              (exportMode === 'all' && peopleCount === 0)
+            }
+            variant="secondary"
+          >
+            {isExportingVcard ? (vcardProgress ? t('exportingProgress', { current: vcardProgress.current, total: vcardProgress.total }) : t('exporting')) : t('exportVcard')}
+          </Button>
+        </div>
 
         {/* Show helpful message when no data to export */}
         {exportMode === 'all' && peopleCount === 0 && groups.length === 0 && (
@@ -348,16 +533,21 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           </p>
         )}
 
-        {exportMessage && (
-          <p
-            className={`mt-2 text-sm ${
-              exportMessage.includes('success')
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
-            }`}
-          >
-            {exportMessage}
-          </p>
+        {/* Progress indicator for vCard export */}
+        {vcardProgress && (
+          <div className="mt-3 space-y-2">
+            <div className="w-full bg-surface-elevated rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-primary h-full transition-all duration-300"
+                style={{
+                  width: `${(vcardProgress.current / vcardProgress.total) * 100}%`,
+                }}
+              />
+            </div>
+            <p className="text-sm text-muted text-center">
+              {t('exportingProgress', { current: vcardProgress.current, total: vcardProgress.total })}
+            </p>
+          </div>
         )}
       </div>
 
@@ -370,11 +560,26 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           {t('importDescription')}
         </p>
 
+        {/* Import Format Explanation */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">
+            {t('importFormats')}
+          </h4>
+          <div className="space-y-2 text-sm text-blue-800 dark:text-blue-400">
+            <div>
+              <span className="font-medium">{t('jsonFormat')}</span>: {t('jsonImportDescription')}
+            </div>
+            <div>
+              <span className="font-medium">{t('vcardFormat')}</span>: {t('vcardImportDescription')}
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-4">
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json"
+            accept=".json,.vcf,.vcard"
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -574,7 +779,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
           {importMessage && (
             <p
               className={`text-sm ${
-                importMessage.includes('Success')
+                importStatus === 'success'
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}

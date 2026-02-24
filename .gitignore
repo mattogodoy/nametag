@@ -41,6 +41,9 @@ PRODUCTION_SECRETS.txt
 /backups
 /backups/
 
+# Photo storage
+/data/photos
+
 # Claude Code local settings
 .claude/settings.local.json
 

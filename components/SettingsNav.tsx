@@ -36,6 +36,17 @@ const allSettingsNavItems = [
     ),
   },
   {
+    href: '/settings/carddav',
+    labelKey: 'settings.carddav.title',
+    descriptionKey: 'settings.carddav.description',
+    badgeKey: 'settings.carddav.betaLabel',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+      </svg>
+    ),
+  },
+  {
     href: '/settings/billing',
     labelKey: 'settings.billing.title',
     descriptionKey: 'settings.billing.description',
@@ -105,7 +116,7 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
           >
             {settingsNavItems.map((item) => (
               <option key={item.href} value={item.href}>
-                {t(item.labelKey)} - {t(item.descriptionKey)}
+                {t(item.labelKey)}{item.badgeKey ? ` (${t(item.badgeKey)})` : ''} - {t(item.descriptionKey)}
               </option>
             ))}
           </select>
@@ -139,6 +150,11 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
                   <div className="min-w-0">
                     <p className={`font-medium ${isActive ? 'text-blue-700 dark:text-blue-400' : ''}`}>
                       {t(item.labelKey)}
+                      {item.badgeKey && (
+                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                          {t(item.badgeKey)}
+                        </span>
+                      )}
                     </p>
                     <p className="text-sm text-muted truncate">
                       {t(item.descriptionKey)}

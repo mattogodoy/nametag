@@ -3,14 +3,40 @@ import { createPersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canCreateResource, canEnableReminder } from '@/lib/billing';
+import { autoExportPerson } from '@/lib/carddav/auto-export';
+import { savePhoto } from '@/lib/photo-storage';
 
 // GET /api/people - List all people for the current user
-export const GET = withAuth(async (_request, session) => {
+export const GET = withAuth(async (request, session) => {
   try {
+    const { searchParams } = new URL(request.url);
+    const includeAll = searchParams.get('includeAll') === 'true';
+    const groupIdsParam = searchParams.get('groupIds');
+    // When includeDetails=false, skip multi-value relations (phones, emails, etc.)
+    // for lighter list-view responses. Defaults to true for backward compatibility.
+    const includeDetails = searchParams.get('includeDetails') !== 'false';
+
+    // Build where clause
+    const where: { userId: string; groups?: { some: { groupId: { in: string[] } } } } = {
+      userId: session.user.id,
+    };
+
+    // Filter by groups if specified
+    if (groupIdsParam) {
+      const groupIds = groupIdsParam.split(',').filter(Boolean);
+      if (groupIds.length > 0) {
+        where.groups = {
+          some: {
+            groupId: {
+              in: groupIds,
+            },
+          },
+        };
+      }
+    }
+
     const people = await prisma.person.findMany({
-      where: {
-        userId: session.user.id,
-      },
+      where,
       include: {
         relationshipToUser: true,
         groups: {
@@ -18,6 +44,36 @@ export const GET = withAuth(async (_request, session) => {
             group: true,
           },
         },
+        // Multi-value relations are conditionally included.
+        // Pass ?includeDetails=false for lightweight list views.
+        ...(includeDetails && {
+          phoneNumbers: true,
+          emails: true,
+          addresses: true,
+          urls: true,
+          imHandles: true,
+          locations: true,
+          customFields: true,
+        }),
+        // Include these additional fields when includeAll=true (for export)
+        ...(includeAll && {
+          importantDates: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              date: 'asc',
+            },
+          },
+          relationshipsFrom: {
+            where: {
+              deletedAt: null,
+            },
+            include: {
+              relatedPerson: true,
+            },
+          },
+        }),
       },
       orderBy: {
         name: 'asc',
@@ -55,6 +111,14 @@ export const POST = withAuth(async (request, session) => {
       middleName,
       secondLastName,
       nickname,
+      prefix,
+      suffix,
+      uid,
+      organization,
+      jobTitle,
+      photo,
+      gender,
+      anniversary,
       lastContact,
       notes,
       relationshipToUserId,
@@ -64,6 +128,14 @@ export const POST = withAuth(async (request, session) => {
       contactReminderEnabled,
       contactReminderInterval,
       contactReminderIntervalUnit,
+      cardDavSyncEnabled,
+      phoneNumbers,
+      emails,
+      addresses,
+      urls,
+      imHandles,
+      locations,
+      customFields,
     } = validation.data;
 
     // Relationship type is always required when creating a person
@@ -122,11 +194,27 @@ export const POST = withAuth(async (request, session) => {
       middleName: sanitizedMiddleName,
       secondLastName: sanitizedSecondLastName,
       nickname: sanitizedNickname,
+
+      // vCard identification fields
+      prefix: prefix || null,
+      suffix: suffix || null,
+      uid: uid || null,
+
+      // Professional fields
+      organization: organization || null,
+      jobTitle: jobTitle || null,
+
+      // Other vCard fields
+      photo: photo || null,
+      gender: gender || null,
+      anniversary: anniversary ? new Date(anniversary) : null,
+
       lastContact: lastContact ? new Date(lastContact) : null,
       notes: sanitizedNotes,
       contactReminderEnabled: contactReminderEnabled ?? false,
       contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
       contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
+      cardDavSyncEnabled: cardDavSyncEnabled ?? true,
       groups: groupIds
         ? {
             create: groupIds.map((groupId) => ({
@@ -136,13 +224,88 @@ export const POST = withAuth(async (request, session) => {
         : undefined,
       importantDates: importantDates && importantDates.length > 0
         ? {
-            create: importantDates.map((date) => ({
-              title: date.title,
-              date: new Date(date.date),
-              reminderEnabled: date.reminderEnabled ?? false,
-              reminderType: date.reminderEnabled ? date.reminderType : null,
-              reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
-              reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+            create: importantDates.map((date) => {
+              // If yearUnknown is true, set the year to 1604 (Apple's convention)
+              const dateValue = date.yearUnknown
+                ? (() => {
+                    const d = new Date(date.date);
+                    d.setFullYear(1604);
+                    return d;
+                  })()
+                : new Date(date.date);
+
+              return {
+                title: date.title,
+                date: dateValue,
+                reminderEnabled: date.reminderEnabled ?? false,
+                reminderType: date.reminderEnabled ? date.reminderType : null,
+                reminderInterval: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
+                reminderIntervalUnit: date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+              };
+            }),
+          }
+        : undefined,
+      // Multi-value vCard fields
+      phoneNumbers: phoneNumbers && phoneNumbers.length > 0
+        ? {
+            create: phoneNumbers.map((phone) => ({
+              type: phone.type,
+              number: phone.number,
+            })),
+          }
+        : undefined,
+      emails: emails && emails.length > 0
+        ? {
+            create: emails.map((email) => ({
+              type: email.type,
+              email: email.email,
+            })),
+          }
+        : undefined,
+      addresses: addresses && addresses.length > 0
+        ? {
+            create: addresses.map((addr) => ({
+              type: addr.type,
+              streetLine1: addr.streetLine1 || null,
+              streetLine2: addr.streetLine2 || null,
+              locality: addr.locality || null,
+              region: addr.region || null,
+              postalCode: addr.postalCode || null,
+              country: addr.country || null,
+            })),
+          }
+        : undefined,
+      urls: urls && urls.length > 0
+        ? {
+            create: urls.map((url) => ({
+              type: url.type,
+              url: url.url,
+            })),
+          }
+        : undefined,
+      imHandles: imHandles && imHandles.length > 0
+        ? {
+            create: imHandles.map((im) => ({
+              protocol: im.protocol,
+              handle: im.handle,
+            })),
+          }
+        : undefined,
+      locations: locations && locations.length > 0
+        ? {
+            create: locations.map((loc) => ({
+              type: loc.type,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+            })),
+          }
+        : undefined,
+      customFields: customFields && customFields.length > 0
+        ? {
+            create: customFields.map((field) => ({
+              key: field.key,
+              value: field.value,
+              type: field.type || null,
             })),
           }
         : undefined,
@@ -162,6 +325,18 @@ export const POST = withAuth(async (request, session) => {
         },
       },
     });
+
+    // Save photo as file if it's a data URI or URL
+    if (photo && (photo.startsWith('data:') || photo.startsWith('http://') || photo.startsWith('https://'))) {
+      const photoFilename = await savePhoto(session.user.id, person.id, photo);
+      if (photoFilename) {
+        await prisma.person.update({
+          where: { id: person.id },
+          data: { photo: photoFilename },
+        });
+        (person as Record<string, unknown>).photo = photoFilename;
+      }
+    }
 
     // If connected through another person, create bidirectional relationship
     if (connectedThroughId) {
@@ -188,6 +363,14 @@ export const POST = withAuth(async (request, session) => {
           relatedPersonId: person.id,
           relationshipTypeId: relationshipType?.inverseId || relationshipToUserId,
         },
+      });
+    }
+
+    // Auto-export to CardDAV if enabled (don't await - let it run in background)
+    if (cardDavSyncEnabled !== false) {
+      autoExportPerson(person.id).catch((error) => {
+        console.error('Auto-export failed:', error);
+        // Don't fail the request if auto-export fails
       });
     }
 

@@ -162,6 +162,26 @@ export function handleApiError(
 
   const errorObj = error instanceof Error ? error : new Error(String(error));
 
+  // Detect database connection errors - return friendly message in all environments
+  const isDbConnectionError =
+    (typeof error === 'object' && error !== null && 'code' in error &&
+      ((error as Record<string, unknown>).code === 'ECONNREFUSED' ||
+        (error as Record<string, unknown>).code === 'ETIMEDOUT' ||
+        (error as Record<string, unknown>).code === 'ENOTFOUND')) ||
+    errorObj.message.includes('ECONNREFUSED') ||
+    errorObj.message.includes('Can\'t reach database server');
+
+  if (isDbConnectionError) {
+    logger.error(`Database connection error in ${context}`, {
+      context,
+      ...additionalInfo,
+    }, errorObj);
+    return NextResponse.json(
+      { error: 'Service temporarily unavailable. Please try again later.' },
+      { status: 503 }
+    );
+  }
+
   logger.error(`API Error in ${context}`, {
     context,
     ...additionalInfo,

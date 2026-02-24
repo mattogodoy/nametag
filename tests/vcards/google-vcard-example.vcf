@@ -1,0 +1,33 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Emmetiano Lucas Brown
+N:Brown;Emmetiano;Lucas;;
+NICKNAME:Doc
+EMAIL;TYPE=INTERNET;TYPE=HOME:greatscott@brown.com
+EMAIL;TYPE=INTERNET;TYPE=WORK:doc@bttf.com
+TEL;TYPE=CELL:‭666 555 444‬
+TEL;TYPE=HOME:‭555242526‬
+TEL;TYPE=WORK:‭123456789‬
+ADR;TYPE=HOME:;Cdad. Lineal;C. de Virgen de Nuria\, 19;Madrid;Madrid;28027;
+ ES;C. de Virgen de Nuria\, 19\nCdad. Lineal\n28027 Madrid\nMadrid\nES
+ADR;TYPE=WORK:;;Rio Segre 2;Valdemorillo;Madrid;28210;ES;Rio Segre 2\n28210
+  Valdemorillo\nMadrid\nES
+ORG:BTTF Industries
+TITLE:CEO
+BDAY:--0122
+item1.URL:bttf.com
+item1.X-ABLabel:_$!<HomePage>!$_
+item2.URL:biffsucks.com
+item2.X-ABLabel:Hobbies
+item3.X-ABDATE:20140310
+item3.X-ABLabel:_$!<Anniversary>!$_
+item4.X-ABDATE:--0718
+item4.X-ABLabel:Aniversario de bodas
+item5.X-ABRELATEDNAMES:Marty McFly
+item5.X-ABLabel:_$!<Mother>!$_
+NOTE:This guy can travel in time really fast with a flying car\ntest: test 
+ custom fielld
+PHOTO:https://lh3.googleusercontent.com/contacts/AG6tpzFeg1GbTJJNQNmbRf5K1X
+ UicTKHlbFpp2aAV1bFCUzle7blqDRC
+CATEGORIES:myContacts
+END:VCARD

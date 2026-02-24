@@ -64,10 +64,62 @@ const importantDateSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(100),
   date: z.iso.date({ error: 'Invalid date' }),
+  yearUnknown: z.boolean().optional(),
   reminderEnabled: z.boolean().optional(),
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
+});
+
+// vCard field schemas
+const phoneNumberSchema = z.object({
+  id: z.string().optional(),
+  type: z.string().min(1, 'Type is required').max(50),
+  number: z.string().min(1, 'Phone number is required').max(50),
+});
+
+const emailAddressSchema = z.object({
+  id: z.string().optional(),
+  type: z.string().min(1, 'Type is required').max(50),
+  email: emailSchema,
+});
+
+const addressSchema = z.object({
+  id: z.string().optional(),
+  type: z.string().min(1, 'Type is required').max(50),
+  streetLine1: z.string().max(200).nullable().optional(),
+  streetLine2: z.string().max(200).nullable().optional(),
+  locality: z.string().max(100).nullable().optional(), // City
+  region: z.string().max(100).nullable().optional(), // State/Province
+  postalCode: z.string().max(20).nullable().optional(),
+  country: z.string().max(100).nullable().optional(),
+});
+
+const urlSchema = z.object({
+  id: z.string().optional(),
+  type: z.string().min(1, 'Type is required').max(50),
+  url: z.string().min(1, 'URL is required').max(500),
+});
+
+const imHandleSchema = z.object({
+  id: z.string().optional(),
+  protocol: z.enum(['skype', 'whatsapp', 'telegram', 'signal', 'other']),
+  handle: z.string().min(1, 'Handle is required').max(200),
+});
+
+const locationSchema = z.object({
+  id: z.string().optional(),
+  type: z.enum(['home', 'work', 'other']),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  label: z.string().max(100).nullable().optional(),
+});
+
+const customFieldSchema = z.object({
+  id: z.string().optional(),
+  key: z.string().min(1, 'Key is required').max(100),
+  value: z.string().max(1000),
+  type: z.string().max(50).nullable().optional(),
 });
 
 export const createPersonSchema = z.object({
@@ -76,6 +128,24 @@ export const createPersonSchema = z.object({
   middleName: z.string().max(100).nullable().optional(),
   secondLastName: z.string().max(100).nullable().optional(),
   nickname: z.string().max(100).nullable().optional(),
+
+  // vCard identification fields
+  prefix: z.string().max(50).nullable().optional(),
+  suffix: z.string().max(50).nullable().optional(),
+  uid: z.string().max(100).nullable().optional(),
+
+  // Professional fields
+  organization: z.string().max(200).nullable().optional(),
+  jobTitle: z.string().max(200).nullable().optional(),
+
+  // Other vCard fields
+  photo: z.string().nullable().optional(),
+  gender: z.string().max(50).nullable().optional(),
+  anniversary: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.iso.date({ error: 'Invalid date' }).nullable().optional(),
+  ),
+
   lastContact: z.preprocess(
     (val) => (val === '' ? null : val),
     z.iso.date({ error: 'Invalid date' }).nullable().optional(),
@@ -92,6 +162,16 @@ export const createPersonSchema = z.object({
   contactReminderEnabled: z.boolean().optional(),
   contactReminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   contactReminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
+  cardDavSyncEnabled: z.boolean().optional(),
+
+  // Multi-value vCard fields
+  phoneNumbers: z.array(phoneNumberSchema).optional(),
+  emails: z.array(emailAddressSchema).optional(),
+  addresses: z.array(addressSchema).optional(),
+  urls: z.array(urlSchema).optional(),
+  imHandles: z.array(imHandleSchema).optional(),
+  locations: z.array(locationSchema).optional(),
+  customFields: z.array(customFieldSchema).optional(),
 });
 
 export const updatePersonSchema = createPersonSchema.partial();
@@ -101,6 +181,7 @@ export const deletePersonSchema = z.object({
     .describe('Also delete people only connected through this person'),
   orphanIds: z.array(z.string()).optional()
     .describe('Specific orphan IDs to delete'),
+  deleteFromCardDav: z.boolean().optional(),
 });
 
 // ============================================
@@ -249,6 +330,7 @@ export const importDataSchema = z.object({
 export const createImportantDateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   date: z.iso.date({ error: 'Invalid date' }),
+  yearUnknown: z.boolean().optional(),
   reminderEnabled: z.boolean().optional(),
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),

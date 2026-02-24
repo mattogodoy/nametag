@@ -111,11 +111,14 @@ export function withDeleted(): PrismaClient {
   return createBaseClient();
 }
 
-// Graceful shutdown handlers
-async function gracefulShutdown() {
-  await prisma.$disconnect();
-  process.exit(0);
+// Graceful shutdown handlers - guarded to prevent duplicate registration during hot reload
+const globalForShutdown = globalThis as unknown as { __prismaShutdownRegistered?: boolean };
+if (!globalForShutdown.__prismaShutdownRegistered) {
+  globalForShutdown.__prismaShutdownRegistered = true;
+  const gracefulShutdown = async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  };
+  process.on('SIGINT', gracefulShutdown);
+  process.on('SIGTERM', gracefulShutdown);
 }
-
-process.on('SIGINT', gracefulShutdown);
-process.on('SIGTERM', gracefulShutdown);

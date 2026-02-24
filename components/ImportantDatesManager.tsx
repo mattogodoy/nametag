@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { parseAsLocalDate } from '@/lib/date-format';
+import { parseAsLocalDate, formatDate, formatDateWithoutYear } from '@/lib/date-format';
 
 type ReminderType = 'ONCE' | 'RECURRING';
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -11,6 +11,7 @@ interface ImportantDate {
   id?: string;
   title: string;
   date: string; // ISO date string
+  yearUnknown?: boolean;
   reminderEnabled?: boolean;
   reminderType?: ReminderType | null;
   reminderInterval?: number | null;
@@ -29,12 +30,14 @@ interface ImportantDatesManagerProps {
   initialDates?: ImportantDate[];
   onChange?: (dates: ImportantDate[]) => void;
   mode: 'create' | 'edit';
+  dateFormat?: 'MDY' | 'DMY' | 'YMD';
   reminderLimit?: ReminderLimitInfo;
 }
 
 const defaultNewDate: ImportantDate = {
   title: '',
   date: '',
+  yearUnknown: false,
   reminderEnabled: false,
   reminderType: null,
   reminderInterval: 1,
@@ -46,6 +49,7 @@ export default function ImportantDatesManager({
   initialDates = [],
   onChange,
   mode,
+  dateFormat = 'MDY',
   reminderLimit,
 }: ImportantDatesManagerProps) {
   const t = useTranslations('people.form.importantDates');
@@ -55,6 +59,16 @@ export default function ImportantDatesManager({
   const [newDate, setNewDate] = useState<ImportantDate>({ ...defaultNewDate });
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingDate, setEditingDate] = useState<ImportantDate | null>(null);
+
+  // Helper to extract month/day from yearless date (ignores year)
+  const handleYearlessDateChange = (isoDate: string): string => {
+    const parts = isoDate.split('-');
+    if (parts.length === 3) {
+      // Extract month and day, set year to 1604 (Apple's convention for unknown year)
+      return `1604-${parts[1]}-${parts[2]}`;
+    }
+    return isoDate;
+  };
 
   // Count currently enabled reminders in local state (for new dates being added)
   const newDateHasReminder = newDate.reminderEnabled ? 1 : 0;
@@ -75,8 +89,18 @@ export default function ImportantDatesManager({
   const handleAdd = () => {
     if (!newDate.title.trim() || !newDate.date) return;
 
+    // If year unknown, set year to 1604 (Apple's convention for unknown year)
+    let finalDate = newDate.date;
+    if (newDate.yearUnknown && newDate.date) {
+      const dateParts = newDate.date.split('-');
+      if (dateParts.length === 3) {
+        finalDate = `1604-${dateParts[1]}-${dateParts[2]}`;
+      }
+    }
+
     const dateToAdd: ImportantDate = {
       ...newDate,
+      date: finalDate,
       id: undefined,
       // Clear reminder fields if not enabled
       reminderType: newDate.reminderEnabled ? newDate.reminderType : null,
@@ -95,10 +119,13 @@ export default function ImportantDatesManager({
 
   const handleStartEdit = (index: number) => {
     setEditingIndex(index);
+    const dateToEdit = dates[index];
+    const yearUnknown = dateToEdit.date.startsWith('1604-');
     setEditingDate({
-      ...dates[index],
-      reminderInterval: dates[index].reminderInterval ?? 1,
-      reminderIntervalUnit: dates[index].reminderIntervalUnit ?? 'YEARS',
+      ...dateToEdit,
+      yearUnknown,
+      reminderInterval: dateToEdit.reminderInterval ?? 1,
+      reminderIntervalUnit: dateToEdit.reminderIntervalUnit ?? 'YEARS',
     });
   };
 
@@ -106,8 +133,18 @@ export default function ImportantDatesManager({
     if (!editingDate || editingIndex === null) return;
     if (!editingDate.title.trim() || !editingDate.date) return;
 
+    // If year unknown, set year to 1604 (Apple's convention for unknown year)
+    let finalDate = editingDate.date;
+    if (editingDate.yearUnknown && editingDate.date) {
+      const dateParts = editingDate.date.split('-');
+      if (dateParts.length === 3) {
+        finalDate = `1604-${dateParts[1]}-${dateParts[2]}`;
+      }
+    }
+
     const dateToSave: ImportantDate = {
       ...editingDate,
+      date: finalDate,
       reminderType: editingDate.reminderEnabled ? editingDate.reminderType : null,
       reminderInterval: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderInterval : null,
       reminderIntervalUnit: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderIntervalUnit : null,
@@ -351,9 +388,44 @@ export default function ImportantDatesManager({
                     type="date"
                     id={`edit-date-date-${index}`}
                     value={editingDate.date}
-                    onChange={(e) => setEditingDate({ ...editingDate, date: e.target.value })}
+                    onChange={(e) => {
+                      const value = editingDate.yearUnknown
+                        ? handleYearlessDateChange(e.target.value)
+                        : e.target.value;
+                      setEditingDate({ ...editingDate, date: value });
+                    }}
                     className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <label className="flex items-center mt-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={editingDate.yearUnknown}
+                      onChange={(e) => setEditingDate({ ...editingDate, yearUnknown: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-xs text-muted flex items-center gap-1">
+                      {t('yearUnknown')}
+                      <span className="relative inline-block">
+                        <svg
+                          className="w-3.5 h-3.5 text-muted hover:text-foreground transition-colors cursor-help"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-label={t('yearUnknownTooltip')}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="invisible group-hover:visible absolute left-6 top-1/2 -translate-y-1/2 w-64 px-3 py-2 text-xs text-foreground bg-surface-elevated border border-border rounded-lg shadow-lg z-10 pointer-events-none">
+                          {t('yearUnknownTooltip')}
+                        </span>
+                      </span>
+                    </span>
+                  </label>
                 </div>
                 <ReminderFields
                   date={editingDate}
@@ -386,11 +458,9 @@ export default function ImportantDatesManager({
                     {date.title}
                   </div>
                   <div className="text-xs text-muted">
-                    {parseAsLocalDate(date.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    {date.date.startsWith('1604-')
+                      ? formatDateWithoutYear(parseAsLocalDate(date.date), dateFormat)
+                      : formatDate(parseAsLocalDate(date.date), dateFormat)}
                   </div>
                   {getReminderDescription(date) && (
                     <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
@@ -470,9 +540,44 @@ export default function ImportantDatesManager({
                 type="date"
                 id="new-date-date"
                 value={newDate.date}
-                onChange={(e) => setNewDate({ ...newDate, date: e.target.value })}
+                onChange={(e) => {
+                  const value = newDate.yearUnknown
+                    ? handleYearlessDateChange(e.target.value)
+                    : e.target.value;
+                  setNewDate({ ...newDate, date: value });
+                }}
                 className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <label className="flex items-center mt-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={newDate.yearUnknown}
+                  onChange={(e) => setNewDate({ ...newDate, yearUnknown: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-xs text-muted flex items-center gap-1">
+                  {t('yearUnknown')}
+                  <span className="relative inline-block">
+                    <svg
+                      className="w-3.5 h-3.5 text-muted hover:text-foreground transition-colors cursor-help"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-label={t('yearUnknownTooltip')}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span className="invisible group-hover:visible absolute left-6 top-1/2 -translate-y-1/2 w-64 px-3 py-2 text-xs text-foreground bg-surface-elevated border border-border rounded-lg shadow-lg z-10 pointer-events-none">
+                      {t('yearUnknownTooltip')}
+                    </span>
+                  </span>
+                </span>
+              </label>
             </div>
             <ReminderFields
               date={newDate}

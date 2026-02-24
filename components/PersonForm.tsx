@@ -9,6 +9,10 @@ import PersonAutocomplete from './PersonAutocomplete';
 import GroupsSelector from './GroupsSelector';
 import ImportantDatesManager from './ImportantDatesManager';
 import MarkdownEditor from './MarkdownEditor';
+import PersonPhoneManager from './PersonPhoneManager';
+import PersonEmailManager from './PersonEmailManager';
+import PersonAddressManager from './PersonAddressManager';
+import PersonUrlManager from './PersonUrlManager';
 import { Button } from './ui/Button';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -34,6 +38,10 @@ interface PersonFormProps {
     middleName: string | null;
     secondLastName: string | null;
     nickname: string | null;
+    prefix: string | null;
+    suffix: string | null;
+    organization: string | null;
+    jobTitle: string | null;
     lastContact: Date | null;
     notes: string | null;
     relationshipToUserId: string | null;
@@ -44,6 +52,8 @@ interface PersonFormProps {
     contactReminderEnabled?: boolean;
     contactReminderInterval?: number | null;
     contactReminderIntervalUnit?: ReminderIntervalUnit | null;
+    cardDavSyncEnabled?: boolean;
+    cardDavMapping?: { id: string } | null;
     importantDates?: Array<{
       id: string;
       title: string;
@@ -52,6 +62,31 @@ interface PersonFormProps {
       reminderType?: 'ONCE' | 'RECURRING' | null;
       reminderInterval?: number | null;
       reminderIntervalUnit?: ReminderIntervalUnit | null;
+    }>;
+    phoneNumbers?: Array<{
+      id?: string;
+      type: string;
+      number: string;
+    }>;
+    emails?: Array<{
+      id?: string;
+      type: string;
+      email: string;
+    }>;
+    addresses?: Array<{
+      id?: string;
+      type: string;
+      streetLine1?: string | null;
+      streetLine2?: string | null;
+      locality?: string | null;
+      region?: string | null;
+      postalCode?: string | null;
+      country?: string | null;
+    }>;
+    urls?: Array<{
+      id?: string;
+      type: string;
+      url: string;
     }>;
   };
   groups: Array<{
@@ -75,6 +110,8 @@ interface PersonFormProps {
   }>;
   userName?: string;
   mode: 'create' | 'edit';
+  dateFormat?: 'MDY' | 'DMY' | 'YMD';
+  hasCardDavConnection?: boolean;
   initialName?: string;
   initialKnownThrough?: string;
   initialRelationshipType?: string;
@@ -92,6 +129,8 @@ export default function PersonForm({
   relationshipTypes,
   availablePeople = [],
   mode,
+  dateFormat = 'MDY',
+  hasCardDavConnection,
   initialName,
   initialKnownThrough,
   initialRelationshipType,
@@ -122,6 +161,10 @@ export default function PersonForm({
     middleName: person?.middleName || '',
     secondLastName: person?.secondLastName || '',
     nickname: person?.nickname || '',
+    prefix: person?.prefix || '',
+    suffix: person?.suffix || '',
+    organization: person?.organization || '',
+    jobTitle: person?.jobTitle || '',
     lastContact: person?.lastContact
       ? new Date(person.lastContact).toISOString().split('T')[0]
       : '',
@@ -131,6 +174,7 @@ export default function PersonForm({
     contactReminderEnabled: person?.contactReminderEnabled || false,
     contactReminderInterval: person?.contactReminderInterval || 1,
     contactReminderIntervalUnit: (person?.contactReminderIntervalUnit || 'MONTHS') as ReminderIntervalUnit,
+    cardDavSyncEnabled: person?.cardDavSyncEnabled ?? true,
   });
 
   const [importantDates, setImportantDates] = useState<Array<{
@@ -152,6 +196,44 @@ export default function PersonForm({
       reminderIntervalUnit: d.reminderIntervalUnit,
     })) || []
   );
+
+  const [phoneNumbers, setPhoneNumbers] = useState<Array<{
+    id?: string;
+    type: string;
+    number: string;
+  }>>(person?.phoneNumbers?.map(p => ({ id: p.id, type: p.type, number: p.number })) || []);
+
+  const [emails, setEmails] = useState<Array<{
+    id?: string;
+    type: string;
+    email: string;
+  }>>(person?.emails?.map(e => ({ id: e.id, type: e.type, email: e.email })) || []);
+
+  const [addresses, setAddresses] = useState<Array<{
+    id?: string;
+    type: string;
+    streetLine1?: string | null;
+    streetLine2?: string | null;
+    locality?: string | null;
+    region?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  }>>(person?.addresses?.map(a => ({
+    id: a.id,
+    type: a.type,
+    streetLine1: a.streetLine1,
+    streetLine2: a.streetLine2,
+    locality: a.locality,
+    region: a.region,
+    postalCode: a.postalCode,
+    country: a.country
+  })) || []);
+
+  const [urls, setUrls] = useState<Array<{
+    id?: string;
+    type: string;
+    url: string;
+  }>>(person?.urls?.map(u => ({ id: u.id, type: u.type, url: u.url })) || []);
 
   // Get the selected base person's groups for inheritance
   const selectedBasePerson = knownThroughId !== 'user'
@@ -211,21 +293,31 @@ export default function PersonForm({
       const url = mode === 'create' ? '/api/people' : `/api/people/${person?.id}`;
       const method = mode === 'create' ? 'POST' : 'PUT';
 
+      const payload = {
+        ...formData,
+        importantDates,
+        phoneNumbers,
+        emails,
+        addresses,
+        urls,
+        ...(mode === 'create' && knownThroughId !== 'user' ? { connectedThroughId: knownThroughId } : {})
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          importantDates,
-          ...(mode === 'create' && knownThroughId !== 'user' ? { connectedThroughId: knownThroughId } : {})
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('API Error:', data);
+        if (data.details) {
+          console.error('Validation errors:', data.details);
+        }
         setError(data.error || t('errorSomethingWrong'));
         return;
       }
@@ -288,11 +380,30 @@ export default function PersonForm({
         </div>
       )}
 
-      {/* Details Section */}
+      {/* Personal Information Section */}
       <Section>
-        <SectionHeader>{t('sectionDetails')}</SectionHeader>
+        <SectionHeader>{t('sectionPersonalInfo')}</SectionHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="prefix"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('prefixLabel')}
+              </label>
+              <input
+                type="text"
+                id="prefix"
+                value={formData.prefix}
+                onChange={(e) =>
+                  setFormData({ ...formData, prefix: e.target.value })
+                }
+                placeholder={t('prefixPlaceholder')}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
             <div>
               <label
                 htmlFor="name"
@@ -366,7 +477,7 @@ export default function PersonForm({
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div>
               <label
                 htmlFor="nickname"
                 className="block text-sm font-medium text-muted mb-1"
@@ -380,6 +491,25 @@ export default function PersonForm({
                 onChange={(e) =>
                   setFormData({ ...formData, nickname: e.target.value })
                 }
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="suffix"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('suffixLabel')}
+              </label>
+              <input
+                type="text"
+                id="suffix"
+                value={formData.suffix}
+                onChange={(e) =>
+                  setFormData({ ...formData, suffix: e.target.value })
+                }
+                placeholder={t('suffixPlaceholder')}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -550,26 +680,86 @@ export default function PersonForm({
               </p>
             </div>
           )}
+        </div>
+      </Section>
 
-          <div>
-            <label
-              htmlFor="notes"
-              className="block text-sm font-medium text-muted mb-1"
-            >
-              {t('notesLabel')}
-            </label>
-            <MarkdownEditor
-              id="notes"
-              value={formData.notes}
-              onChange={(notes) => setFormData({ ...formData, notes })}
-              placeholder={t('notesPlaceholder')}
-              rows={4}
-            />
-            <p className="text-xs text-muted mt-1">
-              {t('markdownSupport')}
-            </p>
+      {/* Work Information Section */}
+      <Section>
+        <SectionHeader>{t('sectionWorkInfo')}</SectionHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="organization"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('companyLabel')}
+              </label>
+              <input
+                type="text"
+                id="organization"
+                value={formData.organization}
+                onChange={(e) =>
+                  setFormData({ ...formData, organization: e.target.value })
+                }
+                placeholder={t('companyPlaceholder')}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="jobTitle"
+                className="block text-sm font-medium text-muted mb-1"
+              >
+                {t('jobTitleLabel')}
+              </label>
+              <input
+                type="text"
+                id="jobTitle"
+                value={formData.jobTitle}
+                onChange={(e) =>
+                  setFormData({ ...formData, jobTitle: e.target.value })
+                }
+                placeholder={t('jobTitlePlaceholder')}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
           </div>
         </div>
+      </Section>
+
+      {/* Contact Information Section */}
+      <Section>
+        <SectionHeader>{t('sectionContactInfo')}</SectionHeader>
+        <div className="space-y-4">
+          <PersonPhoneManager
+            initialPhones={phoneNumbers}
+            onChange={setPhoneNumbers}
+          />
+          <PersonEmailManager
+            initialEmails={emails}
+            onChange={setEmails}
+          />
+        </div>
+      </Section>
+
+      {/* Location Section */}
+      <Section>
+        <SectionHeader>{t('sectionLocation')}</SectionHeader>
+        <PersonAddressManager
+          initialAddresses={addresses}
+          onChange={setAddresses}
+        />
+      </Section>
+
+      {/* Websites Section */}
+      <Section>
+        <SectionHeader>{t('sectionWebsites')}</SectionHeader>
+        <PersonUrlManager
+          initialUrls={urls}
+          onChange={setUrls}
+        />
       </Section>
 
       {/* Groups Section */}
@@ -716,9 +906,91 @@ export default function PersonForm({
           initialDates={importantDates}
           onChange={setImportantDates}
           mode={mode}
+          dateFormat={dateFormat}
           reminderLimit={reminderLimit}
         />
       </Section>
+
+      {/* Notes Section */}
+      <Section>
+        <SectionHeader>{t('sectionNotes')}</SectionHeader>
+        <div>
+          <MarkdownEditor
+            id="notes"
+            value={formData.notes}
+            onChange={(notes) => setFormData({ ...formData, notes })}
+            placeholder={t('notesPlaceholder')}
+            rows={4}
+          />
+          <p className="text-xs text-muted mt-1">
+            {t('markdownSupport')}
+          </p>
+        </div>
+      </Section>
+
+      {/* CardDAV Sync Section */}
+      {hasCardDavConnection && (
+        <Section>
+          <SectionHeader>{t('sectionCardDavSync')}</SectionHeader>
+          <div className="p-3 bg-surface-elevated rounded-lg">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                id="carddav-sync-toggle"
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    cardDavSyncEnabled: !formData.cardDavSyncEnabled,
+                  });
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+                  formData.cardDavSyncEnabled
+                    ? 'bg-primary'
+                    : 'bg-muted'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                    formData.cardDavSyncEnabled
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <label
+                htmlFor="carddav-sync-toggle"
+                className="flex items-center gap-1.5 text-sm text-muted"
+              >
+                {t('cardDavSyncLabel')}
+                <div className="group relative inline-block">
+                  <svg
+                    className="w-4 h-4 text-muted cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-surface-elevated text-foreground text-xs rounded-lg whitespace-normal w-64 z-10 pointer-events-none">
+                    {t('cardDavSyncTooltip')}
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-surface-elevated"></div>
+                  </div>
+                </div>
+              </label>
+            </div>
+            {!formData.cardDavSyncEnabled && mode === 'edit' && person?.cardDavMapping && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                {t('cardDavSyncDisableWarning')}
+              </p>
+            )}
+          </div>
+        </Section>
+      )}
 
       <div className="flex justify-end space-x-4 pt-4">
         <Link

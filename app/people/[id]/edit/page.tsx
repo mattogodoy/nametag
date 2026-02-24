@@ -22,7 +22,7 @@ export default async function EditPersonPage({
 
   const { id } = await params;
 
-  const [person, groups, relationshipTypes, reminderCheck] = await Promise.all([
+  const [person, groups, relationshipTypes, reminderCheck, user, cardDavConnection] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -35,6 +35,13 @@ export default async function EditPersonPage({
           orderBy: {
             date: 'asc',
           },
+        },
+        phoneNumbers: true,
+        emails: true,
+        addresses: true,
+        urls: true,
+        cardDavMapping: {
+          select: { id: true },
         },
       },
     }),
@@ -55,11 +62,21 @@ export default async function EditPersonPage({
       },
     }),
     canEnableReminder(session.user.id),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { dateFormat: true },
+    }),
+    prisma.cardDavConnection.findFirst({
+      where: { userId: session.user.id },
+      select: { id: true },
+    }),
   ]);
 
   if (!person) {
     notFound();
   }
+
+  const dateFormat = user?.dateFormat || 'MDY';
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,6 +108,8 @@ export default async function EditPersonPage({
               groups={groups}
               relationshipTypes={relationshipTypes}
               mode="edit"
+              dateFormat={dateFormat}
+              hasCardDavConnection={!!cardDavConnection}
               reminderLimit={{
                 canCreate: reminderCheck.allowed,
                 current: reminderCheck.current,
