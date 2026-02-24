@@ -428,11 +428,8 @@ All PRs automatically run these checks via GitHub Actions. See [docs/PR_WORKFLOW
 
 Future features and improvements, ordered by priority:
 
-- [x] Improve development setup to make contributors' lives easier [[PR #25](https://github.com/mattogodoy/nametag/pull/25)]
-- [ ] Implement CardDAV support [[Issue #15](https://github.com/mattogodoy/nametag/issues/15)]
 - [ ] **[HELP NEEDED]** Mobile app (Native apps for Android and iOS are preferred)
 - [ ] Add journaling capabilities [[Issue #28](https://github.com/mattogodoy/nametag/issues/28)]
-- [ ] API for third-party integrations
 - [ ] Add support for SQLite databases
 - [ ] Implement OIDC [[Issue #10](https://github.com/mattogodoy/nametag/issues/10)]
 - [ ] Add notification support [[Issue #6](https://github.com/mattogodoy/nametag/issues/6)]
@@ -443,7 +440,7 @@ Future features and improvements, ordered by priority:
 - [ ] Immich integration [[Issue #46](https://github.com/mattogodoy/nametag/issues/46)]
 - [ ] **[HELP NEEDED]** Additional language translations (French, German, Portuguese, etc.)
 - [ ] **[HELP NEEDED]** UI/UX improvements and accessibility enhancements
-- [ ] **[HELP NEEDED]** Documentation improvements (API, deployment, functionality, development, etc) [[Issue #29](https://github.com/mattogodoy/nametag/issues/29)]
+- [ ] **[HELP NEEDED]** Documentation improvements (API, deployment, functionality, development, etc)
 
 ### Done
 
@@ -452,6 +449,9 @@ Features and improvements that have already been implemented:
 - [x] ~~SMTP support~~ [[Issue #4](https://github.com/mattogodoy/nametag/issues/4), [PR #21](https://github.com/mattogodoy/nametag/pull/21)]
 - [x] ~~Option to disable registration~~ [[Issue #9](https://github.com/mattogodoy/nametag/issues/9), [PR #17](https://github.com/mattogodoy/nametag/pull/17)]
 - [x] ~~ARM build for docker images~~ [[Issue #14](https://github.com/mattogodoy/nametag/issues/14), [PR #18](https://github.com/mattogodoy/nametag/pull/18)]
+- [x] Improve development setup to make contributors' lives easier [[PR #25](https://github.com/mattogodoy/nametag/pull/25)]
+- [x] Implement CardDAV support [[Issue #15](https://github.com/mattogodoy/nametag/issues/15), [PR #82](https://github.com/mattogodoy/nametag/pull/82)]
+- [x] API for third-party integrations [[Issue #29](https://github.com/mattogodoy/nametag/issues/29), [PR #70](https://github.com/mattogodoy/nametag/pull/70)]
 
 ## License
 
