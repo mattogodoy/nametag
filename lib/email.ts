@@ -5,6 +5,9 @@ import { env, getAppUrl } from "./env";
 import { escapeHtml } from "./sanitize";
 import { getTranslationsForLocale, type SupportedLocale } from "./i18n-utils";
 import { getUserLocale } from "./locale";
+import { createModuleLogger } from "./logger";
+
+const log = createModuleLogger("email");
 
 // Email provider interfaces
 interface EmailSendResult {
@@ -89,7 +92,7 @@ class SmtpEmailProvider implements EmailProvider {
         id: info.messageId
       };
     } catch (err) {
-      console.error("SMTP send error:", err);
+      log.error({ err: err instanceof Error ? err : new Error(String(err)) }, "SMTP send error");
       const errorMessage = err instanceof Error ? err.message : "Failed to send email";
       return {
         success: false,
@@ -139,13 +142,13 @@ class ResendEmailProvider implements EmailProvider {
       });
 
       if (error) {
-        console.error("Failed to send email:", error);
+        log.error({ err: new Error(error.message) }, "Failed to send email via Resend");
         return { success: false, error: error.message };
       }
 
       return { success: true, id: data?.id };
     } catch (err) {
-      console.error("Email send error:", err);
+      log.error({ err: err instanceof Error ? err : new Error(String(err)) }, "Email send error");
       return { success: false, error: "Failed to send email" };
     }
   }
@@ -227,7 +230,7 @@ export async function sendEmail({ to, subject, html, text, from = 'default' }: S
   const provider = getEmailProvider();
 
   if (!provider) {
-    console.warn("Email not configured - skipping email send", { to, subject });
+    log.warn({ to, subject }, "Email not configured - skipping email send");
     return { success: true, skipped: true, message: "Email not configured" };
   }
 

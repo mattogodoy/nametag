@@ -1,5 +1,8 @@
 import { cookies, headers } from 'next/headers';
 import { prisma } from './prisma';
+import { createModuleLogger } from './logger';
+
+const log = createModuleLogger('locale');
 
 /**
  * Supported locales
@@ -73,7 +76,7 @@ export async function getLocaleFromCookie(): Promise<SupportedLocale | null> {
 
     return null;
   } catch (error) {
-    console.error('Error reading locale cookie:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error reading locale cookie');
     return null;
   }
 }
@@ -110,7 +113,7 @@ export async function setLocaleCookie(locale: SupportedLocale): Promise<void> {
 
     cookieStore.set(LOCALE_COOKIE_NAME, locale, cookieOptions);
   } catch (error) {
-    console.error('Error setting locale cookie:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error setting locale cookie');
   }
 }
 
@@ -165,7 +168,7 @@ export async function detectBrowserLocale(): Promise<SupportedLocale> {
 
     return DEFAULT_LOCALE;
   } catch (error) {
-    console.error('Error detecting browser locale:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error detecting browser locale');
     return DEFAULT_LOCALE;
   }
 }
@@ -186,7 +189,7 @@ export async function getUserLanguageFromDB(userId: string): Promise<SupportedLo
 
     return null;
   } catch (error) {
-    console.error('Error getting user language from DB:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error getting user language from DB');
     return null;
   }
 }
@@ -231,7 +234,7 @@ export async function updateUserLanguage(
     });
     return true;
   } catch (error) {
-    console.error('Error updating user language:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error updating user language');
     return false;
   }
 }
