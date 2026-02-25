@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 import { constructWebhookEvent } from '@/lib/billing/stripe';
@@ -33,7 +33,7 @@ function getFrequencyFromMetadata(metadata: Stripe.Metadata): BillingFrequency |
 }
 
 // POST /api/webhooks/stripe - Handle Stripe webhook events
-export const POST = withLogging(async function POST(request: NextRequest) {
+export const POST = withLogging(async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {

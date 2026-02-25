@@ -249,25 +249,31 @@ export type AuthenticatedHandler<T = Response | NextResponse> = (
  * Logs method, path, status, duration, and client IP for every request.
  * On success, logs at info level; on unhandled throw, logs at error level and re-throws.
  *
+ * The generic signature preserves the handler's parameter types so that
+ * Next.js route-type validation (`.next/types/validator.ts`) sees the
+ * original handler shape, not a narrowed `(Request, RouteContext?)` type.
+ *
  * @example
  * export const GET = withLogging(async (request) => {
  *   return NextResponse.json({ ok: true });
  * });
  */
-export function withLogging(
-  handler: (request: Request, context?: RouteContext) => Promise<Response | NextResponse>
-) {
-  return async (
-    request: Request,
-    context?: RouteContext
-  ): Promise<Response | NextResponse> => {
+export function withLogging<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Args extends [Request, ...any[]],
+  R extends Response | NextResponse,
+>(
+  handler: (...args: Args) => Promise<R>
+): (...args: Args) => Promise<R> {
+  return async (...args: Args): Promise<R> => {
+    const request = args[0];
     const start = Date.now();
     const method = request.method;
     const path = new URL(request.url).pathname;
     const ip = getClientIp(request);
 
     try {
-      const response = await handler(request, context);
+      const response = await handler(...args);
       const durationMs = Date.now() - start;
 
       httpLog.info(

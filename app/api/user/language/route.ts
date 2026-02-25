@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isSupportedLocale, setLocaleCookie } from '@/lib/locale';
@@ -9,7 +9,7 @@ import { withLogging } from '@/lib/api-utils';
  * PUT /api/user/language
  * Update user's language preference
  */
-export const PUT = withLogging(async function PUT(request: NextRequest) {
+export const PUT = withLogging(async function PUT(request: Request) {
   try {
     const session = await auth();
 

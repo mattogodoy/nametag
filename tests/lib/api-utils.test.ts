@@ -485,7 +485,7 @@ describe('api-utils', () => {
       const response = await wrapped(request);
 
       expect(response.status).toBe(200);
-      expect(handler).toHaveBeenCalledWith(request, undefined);
+      expect(handler).toHaveBeenCalledWith(request);
       expect(httpLog.info).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
 
@@ -6,7 +6,7 @@ import { withLogging } from '@/lib/api-utils';
  * Client-side error logging endpoint
  * Allows the browser to send errors to the server for logging
  */
-export const POST = withLogging(async function POST(request: NextRequest) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const body = await request.json();
     const { message, stack, digest, url, userAgent } = body;

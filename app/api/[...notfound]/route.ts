@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
 
@@ -6,8 +6,8 @@ import { withLogging } from '@/lib/api-utils';
  * Catch-all route handler for unmatched API routes
  * This helps us log 404s for API endpoints
  */
-export const GET = withLogging(async function GET(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+export const GET = withLogging(async function GET(request: Request) {
+  const pathname = new URL(request.url).pathname;
 
   logger.warn({
     method: 'GET',
@@ -21,8 +21,8 @@ export const GET = withLogging(async function GET(request: NextRequest) {
   );
 });
 
-export const POST = withLogging(async function POST(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+export const POST = withLogging(async function POST(request: Request) {
+  const pathname = new URL(request.url).pathname;
 
   logger.warn({
     method: 'POST',
@@ -36,8 +36,8 @@ export const POST = withLogging(async function POST(request: NextRequest) {
   );
 });
 
-export const PUT = withLogging(async function PUT(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+export const PUT = withLogging(async function PUT(request: Request) {
+  const pathname = new URL(request.url).pathname;
 
   logger.warn({
     method: 'PUT',
@@ -51,8 +51,8 @@ export const PUT = withLogging(async function PUT(request: NextRequest) {
   );
 });
 
-export const DELETE = withLogging(async function DELETE(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+export const DELETE = withLogging(async function DELETE(request: Request) {
+  const pathname = new URL(request.url).pathname;
 
   logger.warn({
     method: 'DELETE',
@@ -66,8 +66,8 @@ export const DELETE = withLogging(async function DELETE(request: NextRequest) {
   );
 });
 
-export const PATCH = withLogging(async function PATCH(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+export const PATCH = withLogging(async function PATCH(request: Request) {
+  const pathname = new URL(request.url).pathname;
 
   logger.warn({
     method: 'PATCH',
