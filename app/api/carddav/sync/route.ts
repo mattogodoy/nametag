@@ -2,6 +2,9 @@ import { auth } from '@/lib/auth';
 import { bidirectionalSync } from '@/lib/carddav/sync';
 import type { SyncProgressEvent } from '@/lib/carddav/sync';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -45,7 +48,7 @@ export async function POST(request: Request) {
           pendingImports: result.pendingImports || 0,
         });
       } catch (error) {
-        console.error('Manual sync failed:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Manual sync failed');
         sendEvent('error', {
           error: error instanceof Error ? error.message : 'Sync failed',
         });

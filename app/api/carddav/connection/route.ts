@@ -3,7 +3,10 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { encryptPassword } from '@/lib/carddav/encryption';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
+import { createModuleLogger } from '@/lib/logger';
 import { z } from 'zod';
+
+const log = createModuleLogger('carddav');
 
 const connectionSchema = z.object({
   serverUrl: z.string().url().min(1),
@@ -97,7 +100,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(safeConnection, { status: 201 });
   } catch (error) {
-    console.error('Error creating CardDAV connection:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error creating CardDAV connection');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -202,7 +205,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(safeConnection);
   } catch (error) {
-    console.error('Error updating CardDAV connection:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error updating CardDAV connection');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -248,7 +251,7 @@ export async function DELETE(_request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting CardDAV connection:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error deleting CardDAV connection');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

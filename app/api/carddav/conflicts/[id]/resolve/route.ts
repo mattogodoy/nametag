@@ -4,7 +4,10 @@ import { prisma } from '@/lib/prisma';
 import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/person-from-vcard';
 import type { ParsedVCardData } from '@/lib/carddav/types';
+import { createModuleLogger } from '@/lib/logger';
 import { z } from 'zod';
+
+const log = createModuleLogger('carddav');
 
 const resolveSchema = z.object({
   resolution: z.enum(['keep_local', 'keep_remote', 'merged']),
@@ -163,13 +166,13 @@ export async function POST(request: Request, context: RouteParams) {
     // Push pending changes to server in the background
     if (resolution === 'keep_local' || resolution === 'merged') {
       syncToServer(session.user.id).catch((error) => {
-        console.error('Background sync after conflict resolution failed:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Background sync after conflict resolution failed');
       });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error resolving conflict:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error resolving conflict');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

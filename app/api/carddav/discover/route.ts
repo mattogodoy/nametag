@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { discoverNewContacts } from '@/lib/carddav/discover';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 
 export async function POST(_request: Request) {
   try {
@@ -20,7 +23,7 @@ export async function POST(_request: Request) {
       errorMessages: result.errorMessages,
     });
   } catch (error) {
-    console.error('Discovery failed:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Discovery failed');
 
     return NextResponse.json(
       {
