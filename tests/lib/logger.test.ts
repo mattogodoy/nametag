@@ -1,169 +1,306 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock pino at the module level
+const mockChild = vi.fn();
+const mockDebug = vi.fn();
+const mockInfo = vi.fn();
+const mockWarn = vi.fn();
+const mockError = vi.fn();
+const mockFatal = vi.fn();
+
+const mockChildDebug = vi.fn();
+const mockChildInfo = vi.fn();
+const mockChildWarn = vi.fn();
+const mockChildError = vi.fn();
+const mockChildFatal = vi.fn();
+const mockChildChild = vi.fn();
+
+const mockChildLogger = {
+  debug: mockChildDebug,
+  info: mockChildInfo,
+  warn: mockChildWarn,
+  error: mockChildError,
+  fatal: mockChildFatal,
+  child: mockChildChild,
+};
+
+mockChild.mockReturnValue(mockChildLogger);
+mockChildChild.mockReturnValue({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+  child: vi.fn(),
+});
+
+const mockPino = vi.fn(() => ({
+  debug: mockDebug,
+  info: mockInfo,
+  warn: mockWarn,
+  error: mockError,
+  fatal: mockFatal,
+  child: mockChild,
+}));
+
+// Attach stdTimeFunctions to the mock
+mockPino.stdTimeFunctions = {
+  isoTime: () => `,"time":"${new Date().toISOString()}"`,
+  epochTime: () => `,"time":${Date.now()}`,
+  unixTime: () => `,"time":${Math.round(Date.now() / 1000)}`,
+  nullTime: () => '',
+};
+
+vi.mock('pino', () => ({
+  default: mockPino,
+}));
 
 describe('logger', () => {
-  let originalEnv: NodeJS.ProcessEnv;
-  let consoleSpy: {
-    log: ReturnType<typeof vi.spyOn>;
-    warn: ReturnType<typeof vi.spyOn>;
-    error: ReturnType<typeof vi.spyOn>;
-  };
-
   beforeEach(() => {
-    originalEnv = { ...process.env };
-    consoleSpy = {
-      log: vi.spyOn(console, 'log').mockImplementation(() => {}),
-      warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
-      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
-    };
+    vi.clearAllMocks();
+    // Reset the child mock to return the mockChildLogger
+    mockChild.mockReturnValue(mockChildLogger);
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
-    vi.restoreAllMocks();
-    vi.resetModules();
+  describe('logger base instance', () => {
+    it('should have debug method', async () => {
+      vi.resetModules();
+      // Re-apply mock after resetModules
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { logger } = await import('@/lib/logger');
+      expect(logger.debug).toBeDefined();
+      expect(typeof logger.debug).toBe('function');
+    });
+
+    it('should have info method', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { logger } = await import('@/lib/logger');
+      expect(logger.info).toBeDefined();
+      expect(typeof logger.info).toBe('function');
+    });
+
+    it('should have warn method', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { logger } = await import('@/lib/logger');
+      expect(logger.warn).toBeDefined();
+      expect(typeof logger.warn).toBe('function');
+    });
+
+    it('should have error method', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { logger } = await import('@/lib/logger');
+      expect(logger.error).toBeDefined();
+      expect(typeof logger.error).toBe('function');
+    });
+
+    it('should call pino info with object and message', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { logger } = await import('@/lib/logger');
+
+      logger.info({ key: 'value' }, 'test message');
+      expect(mockInfo).toHaveBeenCalledWith({ key: 'value' }, 'test message');
+    });
+
+    it('should call pino error with err and message', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { logger } = await import('@/lib/logger');
+
+      const err = new Error('something broke');
+      logger.error({ err }, 'error occurred');
+      expect(mockError).toHaveBeenCalledWith({ err }, 'error occurred');
+    });
   });
 
-  describe('logger functions', () => {
-    it('should log debug messages', async () => {
-      process.env.LOG_LEVEL = 'debug';
+  describe('createModuleLogger', () => {
+    it('should call logger.child with module context', async () => {
       vi.resetModules();
-      const { logger } = await import('@/lib/logger');
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { createModuleLogger } = await import('@/lib/logger');
 
-      logger.debug('Debug message');
-      expect(consoleSpy.log).toHaveBeenCalled();
-      expect(consoleSpy.log.mock.calls[0][0]).toContain('DEBUG');
-      expect(consoleSpy.log.mock.calls[0][0]).toContain('Debug message');
+      createModuleLogger('carddav');
+      expect(mockChild).toHaveBeenCalledWith({ module: 'carddav' });
     });
 
-    it('should log info messages', async () => {
-      process.env.LOG_LEVEL = 'info';
+    it('should return the child logger', async () => {
       vi.resetModules();
-      const { logger } = await import('@/lib/logger');
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { createModuleLogger } = await import('@/lib/logger');
 
-      logger.info('Info message');
-      expect(consoleSpy.log).toHaveBeenCalled();
-      expect(consoleSpy.log.mock.calls[0][0]).toContain('INFO');
-    });
-
-    it('should log warn messages', async () => {
-      process.env.LOG_LEVEL = 'warn';
-      vi.resetModules();
-      const { logger } = await import('@/lib/logger');
-
-      logger.warn('Warning message');
-      expect(consoleSpy.warn).toHaveBeenCalled();
-      expect(consoleSpy.warn.mock.calls[0][0]).toContain('WARN');
-    });
-
-    it('should log error messages', async () => {
-      process.env.LOG_LEVEL = 'error';
-      vi.resetModules();
-      const { logger } = await import('@/lib/logger');
-
-      logger.error('Error message');
-      expect(consoleSpy.error).toHaveBeenCalled();
-      expect(consoleSpy.error.mock.calls[0][0]).toContain('ERROR');
-    });
-
-    it('should include context in log output', async () => {
-      process.env.LOG_LEVEL = 'info';
-      vi.resetModules();
-      const { logger } = await import('@/lib/logger');
-
-      logger.info('Message with context', { userId: '123', action: 'test' });
-      expect(consoleSpy.log.mock.calls[0][0]).toContain('userId');
-      expect(consoleSpy.log.mock.calls[0][0]).toContain('123');
-    });
-
-    it('should include error details in error logs', async () => {
-      process.env.LOG_LEVEL = 'error';
-      vi.resetModules();
-      const { logger } = await import('@/lib/logger');
-
-      const error = new Error('Test error');
-      logger.error('Error occurred', {}, error);
-      expect(consoleSpy.error.mock.calls[0][0]).toContain('Test error');
-    });
-
-    it('should respect log level - not log debug when level is info', async () => {
-      process.env.LOG_LEVEL = 'info';
-      vi.resetModules();
-      const { logger } = await import('@/lib/logger');
-
-      logger.debug('Debug message');
-      expect(consoleSpy.log).not.toHaveBeenCalled();
-    });
-
-    it('should respect log level - log error when level is warn', async () => {
-      process.env.LOG_LEVEL = 'warn';
-      vi.resetModules();
-      const { logger } = await import('@/lib/logger');
-
-      logger.error('Error message');
-      expect(consoleSpy.error).toHaveBeenCalled();
+      const childLogger = createModuleLogger('auth');
+      expect(childLogger).toBe(mockChildLogger);
     });
   });
 
   describe('securityLogger', () => {
-    it('should log rate limit exceeded', async () => {
-      process.env.LOG_LEVEL = 'warn';
+    it('should call warn with correct context for rateLimitExceeded', async () => {
       vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
       const { securityLogger } = await import('@/lib/logger');
 
       securityLogger.rateLimitExceeded('192.168.1.1', '/api/auth/login');
-      expect(consoleSpy.warn).toHaveBeenCalled();
-      expect(consoleSpy.warn.mock.calls[0][0]).toContain('RATE_LIMIT_EXCEEDED');
-      expect(consoleSpy.warn.mock.calls[0][0]).toContain('192.168.1.1');
+      expect(mockChildWarn).toHaveBeenCalledWith(
+        { type: 'RATE_LIMIT_EXCEEDED', ip: '192.168.1.1', endpoint: '/api/auth/login' },
+        'Rate limit exceeded'
+      );
     });
 
-    it('should log auth failure', async () => {
-      process.env.LOG_LEVEL = 'warn';
+    it('should call warn with correct context for authFailure', async () => {
       vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
       const { securityLogger } = await import('@/lib/logger');
 
-      securityLogger.authFailure('192.168.1.1', 'Invalid credentials');
-      expect(consoleSpy.warn).toHaveBeenCalled();
-      expect(consoleSpy.warn.mock.calls[0][0]).toContain('AUTH_FAILURE');
-      expect(consoleSpy.warn.mock.calls[0][0]).toContain('Invalid credentials');
+      securityLogger.authFailure('10.0.0.1', 'Invalid credentials');
+      expect(mockChildWarn).toHaveBeenCalledWith(
+        { type: 'AUTH_FAILURE', ip: '10.0.0.1', reason: 'Invalid credentials' },
+        'Authentication failure'
+      );
     });
 
-    it('should log suspicious activity', async () => {
-      process.env.LOG_LEVEL = 'warn';
+    it('should call warn with correct context for suspiciousActivity', async () => {
       vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
       const { securityLogger } = await import('@/lib/logger');
 
-      securityLogger.suspiciousActivity('192.168.1.1', 'Multiple failed logins');
-      expect(consoleSpy.warn).toHaveBeenCalled();
-      expect(consoleSpy.warn.mock.calls[0][0]).toContain('SUSPICIOUS_ACTIVITY');
+      securityLogger.suspiciousActivity('10.0.0.2', 'Multiple failed logins');
+      expect(mockChildWarn).toHaveBeenCalledWith(
+        { type: 'SUSPICIOUS_ACTIVITY', ip: '10.0.0.2', activity: 'Multiple failed logins' },
+        'Suspicious activity detected'
+      );
     });
 
-    it('should include additional context', async () => {
-      process.env.LOG_LEVEL = 'warn';
+    it('should pass additional context through for rateLimitExceeded', async () => {
       vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
       const { securityLogger } = await import('@/lib/logger');
 
       securityLogger.rateLimitExceeded('192.168.1.1', '/api/auth/login', { attempts: 10 });
-      expect(consoleSpy.warn.mock.calls[0][0]).toContain('attempts');
+      expect(mockChildWarn).toHaveBeenCalledWith(
+        { type: 'RATE_LIMIT_EXCEEDED', ip: '192.168.1.1', endpoint: '/api/auth/login', attempts: 10 },
+        'Rate limit exceeded'
+      );
+    });
+
+    it('should pass additional context through for authFailure', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { securityLogger } = await import('@/lib/logger');
+
+      securityLogger.authFailure('10.0.0.1', 'Invalid token', { userId: 'abc123' });
+      expect(mockChildWarn).toHaveBeenCalledWith(
+        { type: 'AUTH_FAILURE', ip: '10.0.0.1', reason: 'Invalid token', userId: 'abc123' },
+        'Authentication failure'
+      );
+    });
+
+    it('should pass additional context through for suspiciousActivity', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      const { securityLogger } = await import('@/lib/logger');
+
+      securityLogger.suspiciousActivity('10.0.0.2', 'SQL injection attempt', { path: '/api/users' });
+      expect(mockChildWarn).toHaveBeenCalledWith(
+        { type: 'SUSPICIOUS_ACTIVITY', ip: '10.0.0.2', activity: 'SQL injection attempt', path: '/api/users' },
+        'Suspicious activity detected'
+      );
+    });
+
+    it('should use a child logger with module security', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
+
+      // The security logger is created during module initialization
+      // by calling logger.child({ module: 'security' })
+      expect(mockChild).toHaveBeenCalledWith({ module: 'security' });
     });
   });
 
-  describe('production logging', () => {
-    it('should output JSON in production', async () => {
-      (process.env as { NODE_ENV?: string }).NODE_ENV = 'production';
-      process.env.LOG_LEVEL = 'info';
+  describe('pino configuration', () => {
+    it('should default log level to info when LOG_LEVEL is not set', async () => {
       vi.resetModules();
-      const { logger } = await import('@/lib/logger');
+      delete process.env.LOG_LEVEL;
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
 
-      logger.info('Production message', { data: 'test' });
+      expect(mockPino).toHaveBeenCalled();
+      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      expect(options.level).toBe('info');
+    });
 
-      const output = consoleSpy.log.mock.calls[0][0];
-      // Should be valid JSON
-      expect(() => JSON.parse(output)).not.toThrow();
+    it('should use LOG_LEVEL env var when set', async () => {
+      vi.resetModules();
+      process.env.LOG_LEVEL = 'debug';
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
 
-      const parsed = JSON.parse(output);
-      expect(parsed.message).toBe('Production message');
-      expect(parsed.level).toBe('info');
-      expect(parsed.context.data).toBe('test');
+      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      expect(options.level).toBe('debug');
+      delete process.env.LOG_LEVEL;
+    });
+
+    it('should use ISO timestamp format', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
+
+      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      expect(options.timestamp).toBe(mockPino.stdTimeFunctions.isoTime);
+    });
+
+    it('should configure pino-pretty transport in non-production', async () => {
+      vi.resetModules();
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
+
+      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      expect(options.transport).toEqual({
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'SYS:HH:MM:ss.l',
+          ignore: 'pid,hostname',
+        },
+      });
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it('should not configure transport in production', async () => {
+      vi.resetModules();
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
+
+      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      expect(options.transport).toBeUndefined();
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it('should have formatters with level formatter', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
+
+      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      expect(options.formatters).toBeDefined();
+      expect(options.formatters.level).toBeDefined();
+    });
+
+    it('should format level as label string', async () => {
+      vi.resetModules();
+      vi.doMock('pino', () => ({ default: mockPino }));
+      await import('@/lib/logger');
+
+      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      expect(options.formatters.level('info')).toEqual({ level: 'info' });
+      expect(options.formatters.level('error')).toEqual({ level: 'error' });
     });
   });
 });
