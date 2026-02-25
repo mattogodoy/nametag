@@ -3,12 +3,13 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isSupportedLocale, setLocaleCookie } from '@/lib/locale';
 import { logger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 /**
  * PUT /api/user/language
  * Update user's language preference
  */
-export async function PUT(request: NextRequest) {
+export const PUT = withLogging(async function PUT(request: NextRequest) {
   try {
     const session = await auth();
 
@@ -50,4 +51,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 const log = createModuleLogger('carddav');
 
-export async function GET(_request: Request) {
+export const GET = withLogging(async function GET(_request: Request) {
   try {
     const session = await auth();
 
@@ -37,4 +38,4 @@ export async function GET(_request: Request) {
       { status: 500 }
     );
   }
-}
+});

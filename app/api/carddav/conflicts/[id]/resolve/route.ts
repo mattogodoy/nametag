@@ -5,6 +5,7 @@ import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/person-from-vcard';
 import type { ParsedVCardData } from '@/lib/carddav/types';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 import { z } from 'zod';
 
 const log = createModuleLogger('carddav');
@@ -19,7 +20,7 @@ interface RouteParams {
   }>;
 }
 
-export async function POST(request: Request, context: RouteParams) {
+export const POST = withLogging(async function POST(request: Request, context: RouteParams) {
   try {
     const session = await auth();
 
@@ -178,4 +179,4 @@ export async function POST(request: Request, context: RouteParams) {
       { status: 500 }
     );
   }
-}
+});

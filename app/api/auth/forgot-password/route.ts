@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { forgotPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { handleApiError, parseRequestBody, normalizeEmail } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, normalizeEmail, withLogging } from '@/lib/api-utils';
 import { getAppUrl } from '@/lib/env';
 
 const TOKEN_EXPIRY_HOURS = 1;
@@ -14,7 +14,7 @@ function generateResetToken(): string {
   return randomBytes(32).toString('hex');
 }
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   // Check rate limit
   const rateLimitResponse = checkRateLimit(request, 'forgotPassword');
   if (rateLimitResponse) {
@@ -99,4 +99,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'forgot-password');
   }
-}
+});

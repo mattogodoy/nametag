@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withLogging } from '@/lib/api-utils';
 
-export async function GET() {
+export const GET = withLogging(async function GET() {
   try {
     // If registration is not disabled, always allow
     if (process.env.DISABLE_REGISTRATION !== 'true') {
@@ -25,4 +25,4 @@ export async function GET() {
   } catch (error) {
     return handleApiError(error, 'registration-status');
   }
-}
+});

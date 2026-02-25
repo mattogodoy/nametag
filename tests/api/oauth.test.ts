@@ -53,6 +53,17 @@ vi.mock('../../lib/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  createModuleLogger: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
+}));
+
+// Mock api-utils (withLogging is a passthrough so it doesn't affect test behavior)
+vi.mock('../../lib/api-utils', () => ({
+  withLogging: vi.fn((fn: Function) => fn),
 }));
 
 // Import after mocking
@@ -70,7 +81,8 @@ describe('OAuth Authentication', () => {
     it('should return credentials provider in self-hosted mode', async () => {
       mocks.isSaasMode.mockReturnValue(false);
 
-      const response = await availableProviders();
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -86,7 +98,8 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const response = await availableProviders();
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -101,7 +114,8 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const response = await availableProviders();
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -115,7 +129,8 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const response = await availableProviders();
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);

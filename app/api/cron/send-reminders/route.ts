@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { formatFullName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
-import { handleApiError, getClientIp } from '@/lib/api-utils';
+import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
 import { parseAsLocalDate } from '@/lib/date-format';
@@ -11,7 +11,7 @@ import { parseAsLocalDate } from '@/lib/date-format';
 const log = createModuleLogger('cron');
 
 // This endpoint should be called by a cron job
-export async function GET(request: Request) {
+export const GET = withLogging(async function GET(request: Request) {
   const startTime = Date.now();
   let cronLogId: string | null = null;
 
@@ -231,7 +231,7 @@ export async function GET(request: Request) {
     }
     return handleApiError(error, 'cron-send-reminders');
   }
-}
+});
 
 async function shouldSendImportantDateReminder(
   importantDate: {

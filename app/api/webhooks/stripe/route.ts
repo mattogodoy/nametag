@@ -9,6 +9,7 @@ import {
 } from '@/lib/billing/emails';
 import { SubscriptionTier, BillingFrequency, SubscriptionStatus, PaymentStatus } from '@prisma/client';
 import { logger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 // Disable body parsing, we need raw body for webhook signature verification
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ function getFrequencyFromMetadata(metadata: Stripe.Metadata): BillingFrequency |
 }
 
 // POST /api/webhooks/stripe - Handle Stripe webhook events
-export async function POST(request: NextRequest) {
+export const POST = withLogging(async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
     logger.error({ err: error instanceof Error ? error : new Error(String(error)), eventType: event.type }, 'Webhook handler error');
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId;

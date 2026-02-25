@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withDeleted, prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
-import { handleApiError, getClientIp } from '@/lib/api-utils';
+import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { logger, securityLogger } from '@/lib/logger';
 import { deletePersonPhotos } from '@/lib/photo-storage';
 
@@ -9,7 +9,7 @@ const RETENTION_DAYS = 30;
 
 // GET /api/cron/purge-deleted - Permanently delete records older than retention period
 // This endpoint should be called by a cron job daily
-export async function GET(request: Request) {
+export const GET = withLogging(async function GET(request: Request) {
   const prismaWithDeleted = withDeleted();
   const startTime = Date.now();
   let cronLogId: string | null = null;
@@ -210,4 +210,4 @@ export async function GET(request: Request) {
   } finally {
     await prismaWithDeleted.$disconnect();
   }
-}
+});

@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { bidirectionalSync } from '@/lib/carddav/sync';
 import { env } from '@/lib/env';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withLogging } from '@/lib/api-utils';
 import { logger, securityLogger } from '@/lib/logger';
 import { getClientIp } from '@/lib/api-utils';
 
 // This endpoint should be called by a cron job
-export async function GET(request: Request) {
+export const GET = withLogging(async function GET(request: Request) {
   const startTime = Date.now();
   let cronLogId: string | null = null;
 
@@ -160,7 +160,7 @@ export async function GET(request: Request) {
     }
     return handleApiError(error, 'cron-carddav-sync');
   }
-}
+});
 
 /**
  * Determine if sync should run now based on last sync time and interval

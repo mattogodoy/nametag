@@ -5,6 +5,7 @@ import { vCardToPerson } from '@/lib/vcard';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData, restorePersonFromVCardData } from '@/lib/carddav/person-from-vcard';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 import { z } from 'zod';
 
 const log = createModuleLogger('carddav');
@@ -16,7 +17,7 @@ const importSchema = z.object({
   perContactGroups: z.record(z.string(), z.array(z.string())).optional(),
 });
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const session = await auth();
 
@@ -300,4 +301,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

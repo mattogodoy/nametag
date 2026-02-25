@@ -5,6 +5,7 @@ import { vCardToPerson } from '@/lib/vcard';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData } from '@/lib/carddav/person-from-vcard';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 const log = createModuleLogger('vcard');
 
@@ -12,7 +13,7 @@ const log = createModuleLogger('vcard');
  * POST /api/vcard/import
  * Import contacts from raw vCard file content
  */
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const session = await auth();
 
@@ -102,4 +103,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

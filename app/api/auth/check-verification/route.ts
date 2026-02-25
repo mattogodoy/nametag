@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkVerificationSchema, validateRequest } from '@/lib/validations';
-import { parseRequestBody, normalizeEmail } from '@/lib/api-utils';
+import { parseRequestBody, normalizeEmail, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const body = await parseRequestBody(request);
     const validation = validateRequest(checkVerificationSchema, body);
@@ -34,4 +34,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

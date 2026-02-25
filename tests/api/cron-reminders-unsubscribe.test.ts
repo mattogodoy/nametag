@@ -103,6 +103,7 @@ vi.mock('../../lib/api-utils', () => ({
     );
   }),
   getClientIp: vi.fn(() => '127.0.0.1'),
+  withLogging: vi.fn((fn: Function) => fn),
 }));
 
 // Import after mocking
