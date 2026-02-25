@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.21.0](https://github.com/mattogodoy/nametag/compare/v0.20.0...v0.21.0) (2026-02-25)
+
+
+### Features
+
+* build Docker images before publishing releases ([31e63eb](https://github.com/mattogodoy/nametag/commit/31e63ebb802af14ff4590a198a9c4a20de961502))
+* replace homegrown logger with Pino ([bf6bf29](https://github.com/mattogodoy/nametag/commit/bf6bf29a0aceed7a88af591cf60cbfd6a1cfabd3))
+* structured logging with Pino ([8c66d76](https://github.com/mattogodoy/nametag/commit/8c66d76683184aaa97bd9a9f4cd439337d92b879))
+
+
+### Bug Fixes
+
+* allow PUT /api/carddav/connection to update sync settings only ([4467e8d](https://github.com/mattogodoy/nametag/commit/4467e8daeeef42eb54d287dd0639728bf6d2a84e))
+* externalize Pino from Next.js bundle and fix test types ([543a684](https://github.com/mattogodoy/nametag/commit/543a6847d7751945412358d69436201e1db56491))
+* post AI summary as PR comment instead of editing body ([4a3285a](https://github.com/mattogodoy/nametag/commit/4a3285a7efe224c0fc44fca2ab1de954ff920d78))
+* sync settings modal returns 'Invalid Input' ([c0bf292](https://github.com/mattogodoy/nametag/commit/c0bf2928ca185f48d83a37d1170eeb692e11665e))
+
 ## [0.20.0](https://github.com/mattogodoy/nametag/compare/v0.19.0...v0.20.0) (2026-02-25)
 
 
