@@ -61,4 +61,7 @@ next-env.d.ts
 # Playwright MCP screenshots
 .playwright-mcp
 
+# Git worktrees
+.worktrees
+
 /app/generated/prisma

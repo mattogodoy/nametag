@@ -1,0 +1,105 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    if: github.repository == 'mattogodoy/nametag'
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      pr: ${{ steps.release.outputs.pr }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+
+  ai-release-notes:
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: needs.release-please.outputs.pr && !needs.release-please.outputs.release_created
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR number
+        id: pr-info
+        env:
+          PR_JSON: ${{ needs.release-please.outputs.pr }}
+        run: |
+          PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Get commits since last tag
+        id: commits
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMIT_LOG=$(git log --oneline --no-merges)
+          else
+            COMMIT_LOG=$(git log ${LAST_TAG}..HEAD --oneline --no-merges)
+          fi
+          FILTERED=$(echo "$COMMIT_LOG" | grep -E "^[a-f0-9]+ (feat|fix|perf)" || echo "No notable changes")
+          {
+            echo "commit_log<<EOF"
+            echo "$FILTERED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate AI release summary
+        id: ai-notes
+        continue-on-error: true
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          prompt: |
+            You are writing release notes for Nametag, a personal relationships manager web app.
+
+            Here are the commits since the last release:
+            ---
+            ${{ steps.commits.outputs.commit_log }}
+            ---
+
+            Write a concise release summary for end users. Rules:
+            - Group changes by THEME (e.g., "Contact Sync", "UI Polish"), NOT by commit type
+            - Write from the user's perspective: what they gain, what's fixed
+            - 3-8 bullet points total
+            - Start each bullet with a verb (Added, Fixed, Improved, etc.)
+            - If there are breaking changes, put them first under a "Breaking Changes" heading
+            - Do NOT include commit hashes or technical jargon
+            - Do NOT include changes that are invisible to users (refactoring, CI, tests)
+            - Use markdown formatting
+
+      - name: Update PR body with AI summary
+        if: steps.ai-notes.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          AI_SUMMARY: ${{ steps.ai-notes.outputs.response }}
+          PR_NUMBER: ${{ steps.pr-info.outputs.pr_number }}
+        run: |
+          CURRENT_BODY=$(gh pr view "$PR_NUMBER" --json body -q '.body')
+
+          echo "## Release Summary" > /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "$AI_SUMMARY" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "---" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "<details>" >> /tmp/pr-body.md
+          echo "<summary>Detailed Changelog</summary>" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "$CURRENT_BODY" >> /tmp/pr-body.md
+          echo "" >> /tmp/pr-body.md
+          echo "</details>" >> /tmp/pr-body.md
+
+          gh pr edit "$PR_NUMBER" --body-file /tmp/pr-body.md
