@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.22.0](https://github.com/mattogodoy/nametag/compare/v0.21.2...v0.22.0) (2026-02-25)
+
+
+### Features
+
+* add request-level HTTP logging to all API routes ([4b90197](https://github.com/mattogodoy/nametag/commit/4b90197ed0acc20d5593192b6c0fc30df9f10376))
+* add withLogging HOF for request-level HTTP logging ([f66806a](https://github.com/mattogodoy/nametag/commit/f66806a09a114db8a8e7915b977c3f795e6e70c9))
+* integrate withLogging into withAuth for automatic request logging ([08fdec9](https://github.com/mattogodoy/nametag/commit/08fdec97d4ab4538fa49191e169395a17b89b4ee))
+* wrap all non-withAuth routes with withLogging ([d085621](https://github.com/mattogodoy/nametag/commit/d0856211370a9252f956b32264d8970ce86eda66))
+
+
+### Bug Fixes
+
+* replace Function type with explicit signature in test mocks ([d932b3a](https://github.com/mattogodoy/nametag/commit/d932b3aab9925532a66dbc8f3f6d82ca116ca0d4))
+* resolve TypeScript errors in withLogging wrapper ([d896e07](https://github.com/mattogodoy/nametag/commit/d896e07b7b7335be935a1e9fdc8de6b1a43dee63))
+* update logger mocks to include createModuleLogger ([e591461](https://github.com/mattogodoy/nametag/commit/e5914616acce14d7e6901e2e3d2e52c747ee4c85))
+
 ## [0.21.2](https://github.com/mattogodoy/nametag/compare/v0.21.1...v0.21.2) (2026-02-25)
 
 
