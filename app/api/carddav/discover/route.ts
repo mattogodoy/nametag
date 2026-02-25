@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { discoverNewContacts } from '@/lib/carddav/discover';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 const log = createModuleLogger('carddav');
 
-export async function POST(_request: Request) {
+export const POST = withLogging(async function POST(_request: Request) {
   try {
     const session = await auth();
 
@@ -33,4 +34,4 @@ export async function POST(_request: Request) {
       { status: 500 }
     );
   }
-}
+});

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError, parseRequestBody } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const { token } = await parseRequestBody<{ token?: string }>(request);
 
@@ -61,4 +61,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'verify-email');
   }
-}
+});

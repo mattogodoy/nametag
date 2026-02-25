@@ -6,10 +6,11 @@ import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { decryptPassword } from '@/lib/carddav/encryption';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 const log = createModuleLogger('carddav');
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const session = await auth();
 
@@ -128,4 +129,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

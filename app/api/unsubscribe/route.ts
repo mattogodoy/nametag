@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { consumeUnsubscribeToken } from '@/lib/unsubscribe-tokens';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const body = await request.json();
     const { token } = body;
@@ -37,4 +37,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'unsubscribe');
   }
-}
+});

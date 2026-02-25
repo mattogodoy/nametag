@@ -1,7 +1,9 @@
+import { withLogging } from '@/lib/api-utils';
+
 // GET /api/docs - Swagger UI for the OpenAPI specification
 // Intentionally unauthenticated — the docs page is public documentation.
 // CSP for this route is defined in next.config.ts (not here) to keep a single source of truth.
-export async function GET() {
+export const GET = withLogging(async function GET() {
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,4 +40,4 @@ export async function GET() {
       'Cache-Control': 'public, max-age=3600',
     },
   });
-}
+});

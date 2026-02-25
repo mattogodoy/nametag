@@ -6,6 +6,7 @@ import { personToVCard } from '@/lib/vcard';
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from '@/lib/carddav/hash';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 import { z } from 'zod';
 
 const log = createModuleLogger('carddav');
@@ -14,7 +15,7 @@ const exportBulkSchema = z.object({
   personIds: z.array(z.string()).min(1, 'No contacts selected for export'),
 });
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const session = await auth();
 
@@ -210,4 +211,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

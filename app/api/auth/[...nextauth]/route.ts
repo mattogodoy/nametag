@@ -1,13 +1,13 @@
-import { NextRequest } from 'next/server';
 import { handlers } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { withLogging } from '@/lib/api-utils';
 
 export const runtime = 'nodejs';
 
-export const { GET } = handlers;
+export const GET = withLogging(handlers.GET as (request: Request) => Promise<Response>);
 
 // Wrap POST handler to add rate limiting for login attempts
-export async function POST(request: NextRequest) {
+export const POST = withLogging(async function POST(request: Request) {
   // Check rate limit for login attempts
   const rateLimitResponse = checkRateLimit(request, 'login');
   if (rateLimitResponse) {
@@ -15,5 +15,5 @@ export async function POST(request: NextRequest) {
   }
 
   // Call the original NextAuth handler
-  return handlers.POST(request);
-}
+  return handlers.POST(request as unknown as import('next/server').NextRequest);
+});

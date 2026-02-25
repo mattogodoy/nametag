@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { registerSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit-redis';
-import { handleApiError, parseRequestBody, normalizeEmail } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, normalizeEmail, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { createFreeSubscription } from '@/lib/billing';
 import { createPreloadedRelationshipTypes } from '@/lib/relationship-types';
@@ -18,7 +18,7 @@ function generateVerificationToken(): string {
   return randomBytes(32).toString('hex');
 }
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   // Check rate limit (async with Redis)
   const rateLimitResponse = await checkRateLimit(request, 'register');
   if (rateLimitResponse) {
@@ -130,4 +130,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'register');
   }
-}
+});

@@ -29,6 +29,7 @@ vi.mock('../../lib/api-utils', () => ({
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }),
+  withLogging: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
 }));
 
 // Import after mocking

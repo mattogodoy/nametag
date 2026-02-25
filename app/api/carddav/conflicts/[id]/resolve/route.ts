@@ -5,6 +5,7 @@ import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/person-from-vcard';
 import type { ParsedVCardData } from '@/lib/carddav/types';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging, type RouteContext } from '@/lib/api-utils';
 import { z } from 'zod';
 
 const log = createModuleLogger('carddav');
@@ -13,13 +14,7 @@ const resolveSchema = z.object({
   resolution: z.enum(['keep_local', 'keep_remote', 'merged']),
 });
 
-interface RouteParams {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export async function POST(request: Request, context: RouteParams) {
+export const POST = withLogging(async function POST(request: Request, context?: RouteContext) {
   try {
     const session = await auth();
 
@@ -27,7 +22,7 @@ export async function POST(request: Request, context: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await context.params;
+    const { id } = await context!.params;
     const validationResult = resolveSchema.safeParse(await request.json());
 
     if (!validationResult.success) {
@@ -178,4 +173,4 @@ export async function POST(request: Request, context: RouteParams) {
       { status: 500 }
     );
   }
-}
+});

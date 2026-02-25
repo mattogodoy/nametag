@@ -14,6 +14,17 @@ vi.mock('../../lib/prisma', () => ({
   },
 }));
 
+// Mock api-utils (withLogging is a passthrough so it doesn't affect test behavior)
+vi.mock('../../lib/api-utils', () => ({
+  handleApiError: vi.fn((error: Error) => {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }),
+  withLogging: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
+}));
+
 // Import after mocking
 import { GET as registrationStatus } from '../../app/api/auth/registration-status/route';
 
@@ -26,8 +37,8 @@ describe('Registration Status API', () => {
 
   describe('GET /api/auth/registration-status', () => {
     it('should return enabled when DISABLE_REGISTRATION is not set', async () => {
-      const _request = new Request('http://localhost/api/auth/registration-status');
-      const response = await registrationStatus();
+      const request = new Request('http://localhost/api/auth/registration-status');
+      const response = await registrationStatus(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -39,8 +50,8 @@ describe('Registration Status API', () => {
     it('should return enabled when DISABLE_REGISTRATION is false', async () => {
       process.env.DISABLE_REGISTRATION = 'false';
 
-      const _request = new Request('http://localhost/api/auth/registration-status');
-      const response = await registrationStatus();
+      const request = new Request('http://localhost/api/auth/registration-status');
+      const response = await registrationStatus(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -53,8 +64,8 @@ describe('Registration Status API', () => {
       process.env.DISABLE_REGISTRATION = 'true';
       mocks.userCount.mockResolvedValue(0);
 
-      const _request = new Request('http://localhost/api/auth/registration-status');
-      const response = await registrationStatus();
+      const request = new Request('http://localhost/api/auth/registration-status');
+      const response = await registrationStatus(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -67,8 +78,8 @@ describe('Registration Status API', () => {
       process.env.DISABLE_REGISTRATION = 'true';
       mocks.userCount.mockResolvedValue(1);
 
-      const _request = new Request('http://localhost/api/auth/registration-status');
-      const response = await registrationStatus();
+      const request = new Request('http://localhost/api/auth/registration-status');
+      const response = await registrationStatus(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -81,8 +92,8 @@ describe('Registration Status API', () => {
       process.env.DISABLE_REGISTRATION = 'true';
       mocks.userCount.mockResolvedValue(5);
 
-      const _request = new Request('http://localhost/api/auth/registration-status');
-      const response = await registrationStatus();
+      const request = new Request('http://localhost/api/auth/registration-status');
+      const response = await registrationStatus(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
@@ -95,8 +106,8 @@ describe('Registration Status API', () => {
       process.env.DISABLE_REGISTRATION = 'true';
       mocks.userCount.mockRejectedValue(new Error('Database error'));
 
-      const _request = new Request('http://localhost/api/auth/registration-status');
-      const response = await registrationStatus();
+      const request = new Request('http://localhost/api/auth/registration-status');
+      const response = await registrationStatus(request);
 
       expect(response.status).toBe(500);
     });

@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getRedis } from '@/lib/redis';
 import { logger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 /**
  * Development-only endpoint to clear rate limits
- * 
+ *
  * Usage:
  *   DELETE /api/dev/clear-rate-limits?type=register
  *   DELETE /api/dev/clear-rate-limits?all=true
  */
-export async function DELETE(request: Request) {
+export const DELETE = withLogging(async function DELETE(request: Request) {
   // Only allow in development/test or with CRON_SECRET
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -77,5 +78,5 @@ export async function DELETE(request: Request) {
       { status: 500 }
     );
   }
-}
+});
 

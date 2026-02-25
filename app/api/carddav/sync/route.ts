@@ -3,10 +3,11 @@ import { bidirectionalSync } from '@/lib/carddav/sync';
 import type { SyncProgressEvent } from '@/lib/carddav/sync';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 const log = createModuleLogger('carddav');
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user) {
@@ -65,4 +66,4 @@ export async function POST(request: Request) {
       Connection: 'keep-alive',
     },
   });
-}
+});

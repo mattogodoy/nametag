@@ -3,10 +3,10 @@ import * as bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { resetPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { handleApiError, parseRequestBody } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   // Check rate limit
   const rateLimitResponse = checkRateLimit(request, 'resetPassword');
   if (rateLimitResponse) {
@@ -63,4 +63,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleApiError(error, 'reset-password');
   }
-}
+});

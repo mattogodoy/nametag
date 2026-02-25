@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
 import { createModuleLogger } from '@/lib/logger';
+import { withLogging } from '@/lib/api-utils';
 
 const log = createModuleLogger('vcard');
 
@@ -10,7 +11,7 @@ const log = createModuleLogger('vcard');
  * POST /api/vcard/upload
  * Upload vCard file and prepare for import (creates temporary pending imports)
  */
-export async function POST(request: Request) {
+export const POST = withLogging(async function POST(request: Request) {
   try {
     const session = await auth();
 
@@ -95,4 +96,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

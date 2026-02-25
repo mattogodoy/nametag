@@ -14,6 +14,14 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }));
 
+// Mock child logger for createModuleLogger (hoisted so it's available in vi.mock factory)
+const mockHttpLog = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}));
+
 // Mock the logger
 vi.mock('@/lib/logger', () => ({
   logger: {
@@ -22,6 +30,7 @@ vi.mock('@/lib/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  createModuleLogger: vi.fn(() => mockHttpLog),
 }));
 
 describe('api-utils', () => {
@@ -324,6 +333,10 @@ describe('api-utils', () => {
   describe('withAuth', () => {
     beforeEach(() => {
       vi.resetModules();
+      mockHttpLog.debug.mockClear();
+      mockHttpLog.info.mockClear();
+      mockHttpLog.warn.mockClear();
+      mockHttpLog.error.mockClear();
     });
 
     it('should call handler with session when authenticated', async () => {
@@ -395,6 +408,186 @@ describe('api-utils', () => {
       await wrappedHandler(request, context);
 
       expect(handler).toHaveBeenCalledWith(request, mockSession, context);
+    });
+
+    it('should log request with withLogging', async () => {
+      const { auth } = await import('@/lib/auth');
+      const mockSession = {
+        user: { id: 'user-123', email: 'test@example.com', name: 'Test' },
+      };
+      vi.mocked(auth).mockResolvedValue(mockSession as any);
+
+      const { withAuth: freshWithAuth, apiResponse: freshApiResponse } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn().mockResolvedValue(freshApiResponse.ok({ data: 'test' }));
+      const wrappedHandler = freshWithAuth(handler);
+
+      const request = new Request('http://localhost/api/people');
+      await wrappedHandler(request);
+
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: '/api/people',
+          status: 200,
+        }),
+        expect.stringContaining('GET /api/people 200')
+      );
+    });
+
+    it('should log 401 when not authenticated', async () => {
+      const { auth } = await import('@/lib/auth');
+      vi.mocked(auth).mockResolvedValue(null as never);
+
+      const { withAuth: freshWithAuth } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn();
+      const wrappedHandler = freshWithAuth(handler);
+
+      const request = new Request('http://localhost/api/people');
+      await wrappedHandler(request);
+
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: '/api/people',
+          status: 401,
+        }),
+        expect.stringContaining('GET /api/people 401')
+      );
+    });
+  });
+
+  describe('withLogging', () => {
+    beforeEach(() => {
+      vi.resetModules();
+      mockHttpLog.debug.mockClear();
+      mockHttpLog.info.mockClear();
+      mockHttpLog.warn.mockClear();
+      mockHttpLog.error.mockClear();
+    });
+
+    it('should log method, path, status, and duration', async () => {
+      const { withLogging } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 })
+      );
+      const wrapped = withLogging(handler);
+
+      const request = new Request('http://localhost/api/people', { method: 'GET' });
+      const response = await wrapped(request);
+
+      expect(response.status).toBe(200);
+      expect(handler).toHaveBeenCalledWith(request);
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: '/api/people',
+          status: 200,
+        }),
+        expect.stringContaining('GET /api/people 200')
+      );
+    });
+
+    it('should log error status when handler returns error', async () => {
+      const { withLogging, apiResponse: freshApiResponse } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn().mockResolvedValue(freshApiResponse.notFound('Not found'));
+      const wrapped = withLogging(handler);
+
+      const request = new Request('http://localhost/api/people/123', { method: 'GET' });
+      await wrapped(request);
+
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: '/api/people/123',
+          status: 404,
+        }),
+        expect.stringContaining('GET /api/people/123 404')
+      );
+    });
+
+    it('should log 500 and re-throw when handler throws', async () => {
+      const { withLogging } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn().mockRejectedValue(new Error('boom'));
+      const wrapped = withLogging(handler);
+
+      const request = new Request('http://localhost/api/test', { method: 'POST' });
+      await expect(wrapped(request)).rejects.toThrow('boom');
+
+      expect(httpLog.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          path: '/api/test',
+          status: 500,
+        }),
+        expect.stringContaining('POST /api/test 500')
+      );
+    });
+
+    it('should pass context through to handler', async () => {
+      const { withLogging } = await import('@/lib/api-utils');
+
+      const handler = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+      const wrapped = withLogging(handler);
+
+      const request = new Request('http://localhost/api/people/123', { method: 'GET' });
+      const context = { params: Promise.resolve({ id: '123' }) };
+      await wrapped(request, context);
+
+      expect(handler).toHaveBeenCalledWith(request, context);
+    });
+
+    it('should include durationMs in log', async () => {
+      const { withLogging } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+      const wrapped = withLogging(handler);
+
+      const request = new Request('http://localhost/api/test', { method: 'GET' });
+      await wrapped(request);
+
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          durationMs: expect.any(Number),
+        }),
+        expect.any(String)
+      );
+    });
+
+    it('should include IP in log', async () => {
+      const { withLogging } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+      const wrapped = withLogging(handler);
+
+      const request = new Request('http://localhost/api/test', {
+        method: 'GET',
+        headers: { 'x-forwarded-for': '1.2.3.4' },
+      });
+      await wrapped(request);
+
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({ ip: '1.2.3.4' }),
+        expect.any(String)
+      );
     });
   });
 

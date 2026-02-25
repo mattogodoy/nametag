@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Session } from 'next-auth';
 import { auth } from './auth';
-import { logger } from './logger';
+import { logger, createModuleLogger } from './logger';
+
+const httpLog = createModuleLogger('http');
 
 /**
  * Maximum request body size in bytes (1MB default)
@@ -243,6 +245,57 @@ export type AuthenticatedHandler<T = Response | NextResponse> = (
 ) => Promise<T>;
 
 /**
+ * Higher-order function that wraps API handlers with request-level HTTP logging.
+ * Logs method, path, status, duration, and client IP for every request.
+ * On success, logs at info level; on unhandled throw, logs at error level and re-throws.
+ *
+ * The generic signature preserves the handler's parameter types so that
+ * Next.js route-type validation (`.next/types/validator.ts`) sees the
+ * original handler shape, not a narrowed `(Request, RouteContext?)` type.
+ *
+ * @example
+ * export const GET = withLogging(async (request) => {
+ *   return NextResponse.json({ ok: true });
+ * });
+ */
+export function withLogging<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Args extends [Request, ...any[]],
+  R extends Response | NextResponse,
+>(
+  handler: (...args: Args) => Promise<R>
+): (...args: Args) => Promise<R> {
+  return async (...args: Args): Promise<R> => {
+    const request = args[0];
+    const start = Date.now();
+    const method = request.method;
+    const path = new URL(request.url).pathname;
+    const ip = getClientIp(request);
+
+    try {
+      const response = await handler(...args);
+      const durationMs = Date.now() - start;
+
+      httpLog.info(
+        { method, path, status: response.status, durationMs, ip },
+        `${method} ${path} ${response.status}`
+      );
+
+      return response;
+    } catch (error) {
+      const durationMs = Date.now() - start;
+
+      httpLog.error(
+        { method, path, status: 500, durationMs, ip, err: error instanceof Error ? error : new Error(String(error)) },
+        `${method} ${path} 500`
+      );
+
+      throw error;
+    }
+  };
+}
+
+/**
  * Higher-order function that wraps API handlers with authentication
  * Automatically checks for valid session and returns 401 if not authenticated
  *
@@ -262,7 +315,7 @@ export type AuthenticatedHandler<T = Response | NextResponse> = (
  * });
  */
 export function withAuth(handler: AuthenticatedHandler) {
-  return async (
+  return withLogging(async (
     request: Request,
     context?: RouteContext
   ): Promise<Response | NextResponse> => {
@@ -273,5 +326,5 @@ export function withAuth(handler: AuthenticatedHandler) {
     }
 
     return handler(request, session as AuthenticatedSession, context);
-  };
+  });
 }
