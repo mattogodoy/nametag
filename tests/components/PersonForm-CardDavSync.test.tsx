@@ -105,7 +105,6 @@ describe('PersonForm CardDAV Sync Toggle', () => {
       </Wrapper>
     );
 
-    const toggle = screen.getByRole('button', { name: '' });
     // The toggle button with bg-primary class means it's enabled
     const toggleButtons = screen.getAllByRole('button');
     const cardDavToggle = toggleButtons.find(btn => btn.id === 'carddav-sync-toggle');
