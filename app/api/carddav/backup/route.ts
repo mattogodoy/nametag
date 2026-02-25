@@ -5,6 +5,9 @@ import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { decryptPassword } from '@/lib/carddav/encryption';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 
 export async function POST(request: Request) {
   try {
@@ -96,7 +99,7 @@ export async function POST(request: Request) {
         },
       });
     } catch (error) {
-      console.error('CardDAV backup failed:', error instanceof Error ? error.message : 'Unknown error');
+      log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'CardDAV backup failed');
 
       if (error instanceof Error) {
         if (error.message.includes('401') || error.message.includes('unauthorized')) {
@@ -119,7 +122,7 @@ export async function POST(request: Request) {
       );
     }
   } catch (error) {
-    console.error('Error in CardDAV backup:', error instanceof Error ? error.message : 'Unknown error');
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error in CardDAV backup');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

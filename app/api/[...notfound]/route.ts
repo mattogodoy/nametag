@@ -8,11 +8,11 @@ import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  logger.warn('API endpoint not found', {
+  logger.warn({
     method: 'GET',
     path: pathname,
     ip: request.headers.get('x-forwarded-for') || 'unknown',
-  });
+  }, 'API endpoint not found');
 
   return NextResponse.json(
     { error: 'Not Found', path: pathname },
@@ -23,11 +23,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  logger.warn('API endpoint not found', {
+  logger.warn({
     method: 'POST',
     path: pathname,
     ip: request.headers.get('x-forwarded-for') || 'unknown',
-  });
+  }, 'API endpoint not found');
 
   return NextResponse.json(
     { error: 'Not Found', path: pathname },
@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  logger.warn('API endpoint not found', {
+  logger.warn({
     method: 'PUT',
     path: pathname,
     ip: request.headers.get('x-forwarded-for') || 'unknown',
-  });
+  }, 'API endpoint not found');
 
   return NextResponse.json(
     { error: 'Not Found', path: pathname },
@@ -53,11 +53,11 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  logger.warn('API endpoint not found', {
+  logger.warn({
     method: 'DELETE',
     path: pathname,
     ip: request.headers.get('x-forwarded-for') || 'unknown',
-  });
+  }, 'API endpoint not found');
 
   return NextResponse.json(
     { error: 'Not Found', path: pathname },
@@ -68,11 +68,11 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  logger.warn('API endpoint not found', {
+  logger.warn({
     method: 'PATCH',
     path: pathname,
     ip: request.headers.get('x-forwarded-for') || 'unknown',
-  });
+  }, 'API endpoint not found');
 
   return NextResponse.json(
     { error: 'Not Found', path: pathname },

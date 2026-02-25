@@ -3,7 +3,10 @@ import { auth } from '@/lib/auth';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createModuleLogger } from '@/lib/logger';
 import { z } from 'zod';
+
+const log = createModuleLogger('carddav');
 
 const connectionTestSchema = z.object({
   serverUrl: z.string().url(),
@@ -64,7 +67,7 @@ export async function POST(request: Request) {
         message: 'Connection successful',
       });
     } catch (error) {
-      console.error('CardDAV connection test failed:', error instanceof Error ? error.message : 'Unknown error');
+      log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'CardDAV connection test failed');
 
       // Provide more specific error messages
       if (error instanceof Error) {
@@ -94,7 +97,7 @@ export async function POST(request: Request) {
       );
     }
   } catch (error) {
-    console.error('Error testing CardDAV connection:', error instanceof Error ? error.message : 'Unknown error');
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error testing CardDAV connection');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

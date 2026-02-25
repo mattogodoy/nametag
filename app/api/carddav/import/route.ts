@@ -4,7 +4,10 @@ import { prisma, withDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData, restorePersonFromVCardData } from '@/lib/carddav/person-from-vcard';
+import { createModuleLogger } from '@/lib/logger';
 import { z } from 'zod';
+
+const log = createModuleLogger('carddav');
 
 const importSchema = z.object({
   importIds: z.array(z.string()).min(1, 'No contacts selected for import'),
@@ -273,7 +276,7 @@ export async function POST(request: Request) {
 
         results.imported++;
       } catch (error) {
-        console.error('Error importing contact:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), displayName: pendingImport.displayName }, 'Error importing contact');
         results.errors++;
         results.errorMessages.push(
           `Failed to import ${pendingImport.displayName}: ${
@@ -291,7 +294,7 @@ export async function POST(request: Request) {
       errorMessages: results.errorMessages,
     });
   } catch (error) {
-    console.error('Import failed:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Import failed');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

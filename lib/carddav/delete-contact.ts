@@ -5,7 +5,9 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { withRetry } from './retry';
-import { logger } from '@/lib/logger';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 
 /**
  * Delete a contact from CardDAV server
@@ -27,7 +29,7 @@ export async function deleteFromCardDav(personId: string): Promise<boolean> {
     });
 
     if (!person || !person.cardDavMapping) {
-      logger.info(`No CardDAV mapping found for person ${personId}`);
+      log.info({ personId }, 'No CardDAV mapping found for person');
       return false;
     }
 
@@ -46,10 +48,10 @@ export async function deleteFromCardDav(personId: string): Promise<boolean> {
       });
     });
 
-    logger.info(`Successfully deleted contact from CardDAV server: ${mapping.href}`);
+    log.info({ href: mapping.href }, 'Successfully deleted contact from CardDAV server');
     return true;
   } catch (error) {
-    logger.error('Failed to delete contact from CardDAV server', { error: error instanceof Error ? error.message : String(error) });
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Failed to delete contact from CardDAV server');
     return false;
   }
 }

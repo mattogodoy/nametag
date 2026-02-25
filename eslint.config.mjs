@@ -26,6 +26,19 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Prevent console.* usage in server-side code (use structured logger instead)
+  {
+    files: [
+      "app/api/**/*.ts",
+      "app/actions/**/*.ts",
+      "lib/**/*.ts",
+      "instrumentation.ts",
+    ],
+    ignores: ["lib/env.ts", "lib/client-features.ts", "lib/vcard-helpers.ts"],
+    rules: {
+      "no-console": "warn",
+    },
+  },
   // Relax rules for test files
   {
     files: ["**/*.test.ts", "**/*.test.tsx", "tests/**/*"],

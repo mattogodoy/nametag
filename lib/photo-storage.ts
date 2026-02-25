@@ -2,6 +2,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
+import { createModuleLogger } from './logger';
+
+const log = createModuleLogger('photos');
 
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
 const FETCH_TIMEOUT_MS = 15000;
@@ -160,7 +163,7 @@ export async function savePhoto(
 
     // Enforce size limit
     if (buffer.length > MAX_PHOTO_SIZE) {
-      console.warn(`Photo for person ${personId} exceeds ${MAX_PHOTO_SIZE / (1024 * 1024)}MB limit`);
+      log.warn({ personId, maxSizeMB: MAX_PHOTO_SIZE / (1024 * 1024) }, 'Photo exceeds size limit');
       return null;
     }
 
@@ -180,7 +183,7 @@ export async function savePhoto(
 
     return filename;
   } catch (error) {
-    console.error(`Failed to save photo for person ${personId}:`, error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)), personId }, 'Failed to save photo');
     return null;
   }
 }
@@ -195,7 +198,7 @@ export async function deletePhoto(userId: string, filename: string): Promise<voi
   } catch (error) {
     // Ignore ENOENT (file already gone)
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.error(`Failed to delete photo ${filename}:`, error);
+      log.error({ err: error instanceof Error ? error : new Error(String(error)), filename }, 'Failed to delete photo');
     }
   }
 }
@@ -218,7 +221,7 @@ export async function deletePersonPhotos(userId: string, personId: string): Prom
   } catch (error) {
     // Directory may not exist yet
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.error(`Failed to delete photos for person ${personId}:`, error);
+      log.error({ err: error instanceof Error ? error : new Error(String(error)), personId }, 'Failed to delete photos for person');
     }
   }
 }
@@ -241,7 +244,7 @@ export async function readPhotoForExport(
     return `data:${mimeType};base64,${buffer.toString('base64')}`;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.error(`Failed to read photo ${photo}:`, error);
+      log.error({ err: error instanceof Error ? error : new Error(String(error)), photo }, 'Failed to read photo');
     }
     return null;
   }
@@ -265,7 +268,7 @@ export async function readPhotoFile(
     return { buffer, mimeType };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.error(`Failed to read photo file ${photo}:`, error);
+      log.error({ err: error instanceof Error ? error : new Error(String(error)), photo }, 'Failed to read photo file');
     }
     return null;
   }

@@ -6,6 +6,9 @@ import { canEnableReminder } from '@/lib/billing';
 import { autoUpdatePerson, autoExportPerson } from '@/lib/carddav/auto-export';
 import { deleteFromCardDav as deleteContactFromCardDav } from '@/lib/carddav/delete-contact';
 import { savePhoto, deletePersonPhotos, isPhotoFilename } from '@/lib/photo-storage';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('people');
 
 // GET /api/people/[id] - Get a single person
 export const GET = withAuth(async (_request, session, context) => {
@@ -170,7 +173,7 @@ export const PUT = withAuth(async (request, session, context) => {
         // Photo being removed — delete old file
         if (existingPerson.photo && isPhotoFilename(existingPerson.photo)) {
           deletePersonPhotos(session.user.id, id).catch((err) =>
-            console.error('Failed to delete old photo:', err)
+            log.error({ err: err instanceof Error ? err : new Error(String(err)), personId: id }, 'Failed to delete old photo')
           );
         }
         updateData.photo = null;
@@ -350,20 +353,20 @@ export const PUT = withAuth(async (request, session, context) => {
           if (deleted) {
             return prisma.cardDavMapping.deleteMany({ where: { personId: id } });
           }
-          console.warn(`Remote delete failed for person ${id}, keeping local mapping for reconciliation`);
+          log.warn({ personId: id }, 'Remote delete failed, keeping local mapping for reconciliation');
         })
         .catch((error) => {
-          console.error('Failed to delete from CardDAV during un-sync:', error);
+          log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: id }, 'Failed to delete from CardDAV during un-sync');
         });
     } else if (cardDavSyncEnabled === true && existingPerson.cardDavSyncEnabled !== true) {
       // Re-sync: export to server
       autoExportPerson(id).catch((error) => {
-        console.error('Auto-export after sync enable failed:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: id }, 'Auto-export after sync enable failed');
       });
     } else if (cardDavSyncEnabled !== false) {
       // Normal update path
       autoUpdatePerson(person.id).catch((error) => {
-        console.error('Auto-update failed:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: person.id }, 'Auto-update failed');
       });
     }
 
@@ -402,7 +405,7 @@ export const DELETE = withAuth(async (request, session, context) => {
     // If requested, delete from CardDAV server (do this before soft-deleting)
     if (deleteFromCardDav) {
       await deleteContactFromCardDav(id).catch((error) => {
-        console.error('Failed to delete from CardDAV server:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: id }, 'Failed to delete from CardDAV server');
         // Continue with local deletion even if CardDAV delete fails
       });
     }

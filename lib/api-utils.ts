@@ -151,12 +151,12 @@ export function handleApiError(
 ): NextResponse {
   // Handle specific error types with appropriate status codes
   if (error instanceof RequestTooLargeError) {
-    logger.warn(`Request too large in ${context}`, { context, ...additionalInfo });
+    logger.warn({ context, ...additionalInfo }, `Request too large in ${context}`);
     return apiResponse.payloadTooLarge(error.message);
   }
 
   if (error instanceof InvalidJsonError) {
-    logger.warn(`Invalid JSON in ${context}`, { context, ...additionalInfo });
+    logger.warn({ context, ...additionalInfo }, `Invalid JSON in ${context}`);
     return apiResponse.error(error.message);
   }
 
@@ -172,20 +172,14 @@ export function handleApiError(
     errorObj.message.includes('Can\'t reach database server');
 
   if (isDbConnectionError) {
-    logger.error(`Database connection error in ${context}`, {
-      context,
-      ...additionalInfo,
-    }, errorObj);
+    logger.error({ err: errorObj, context, ...additionalInfo }, `Database connection error in ${context}`);
     return NextResponse.json(
       { error: 'Service temporarily unavailable. Please try again later.' },
       { status: 503 }
     );
   }
 
-  logger.error(`API Error in ${context}`, {
-    context,
-    ...additionalInfo,
-  }, errorObj);
+  logger.error({ err: errorObj, context, ...additionalInfo }, `API Error in ${context}`);
 
   // Don't expose internal error details in production
   const message = process.env.NODE_ENV === 'production'

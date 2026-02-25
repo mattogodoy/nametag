@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkVerificationSchema, validateRequest } from '@/lib/validations';
 import { parseRequestBody, normalizeEmail } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ verified: user.emailVerified });
   } catch (error) {
-    console.error('Check verification error:', error);
+    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Check verification error');
     return NextResponse.json(
       { error: 'Something went wrong' },
       { status: 500 }

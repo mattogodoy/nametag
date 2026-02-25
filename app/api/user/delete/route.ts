@@ -40,7 +40,7 @@ export const DELETE = withAuth(async (request, session) => {
       where: { id: session.user.id },
     });
 
-    logger.info('Account deleted', { userId: session.user.id });
+    logger.info({ userId: session.user.id }, 'Account deleted');
 
     return apiResponse.ok({
       message: 'Account deleted successfully',

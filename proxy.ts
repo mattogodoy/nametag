@@ -23,14 +23,14 @@ export function proxy(request: NextRequest) {
   // Log based on status (we'll check this in the response)
   // For now, log all requests in development
   if (process.env.NODE_ENV === 'development') {
-    logger.info(`${method} ${pathname}${search}`, {
+    logger.info({
       method,
       path: pathname,
       query: search,
       ip,
       userAgent,
-      duration: `${duration}ms`,
-    });
+      durationMs: duration,
+    }, `${method} ${pathname}${search}`);
   }
 
   return response;

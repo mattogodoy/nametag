@@ -5,7 +5,10 @@ import { createCardDavClient } from '@/lib/carddav/client';
 import { personToVCard } from '@/lib/vcard';
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from '@/lib/carddav/hash';
+import { createModuleLogger } from '@/lib/logger';
 import { z } from 'zod';
+
+const log = createModuleLogger('carddav');
 
 const exportBulkSchema = z.object({
   personIds: z.array(z.string()).min(1, 'No contacts selected for export'),
@@ -167,7 +170,7 @@ export async function POST(request: Request) {
 
           results.exported++;
         } catch (error) {
-          console.error('Error exporting contact:', error);
+          log.error({ err: error instanceof Error ? error : new Error(String(error)), personName: `${person.name} ${person.surname || ''}`.trim() }, 'Error exporting contact');
           results.errors++;
           results.errorMessages.push(
             `Failed to export ${person.name} ${person.surname || ''}: ${
@@ -201,7 +204,7 @@ export async function POST(request: Request) {
       errorMessages: results.errorMessages,
     });
   } catch (error) {
-    console.error('Bulk export failed:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Bulk export failed');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

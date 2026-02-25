@@ -14,19 +14,19 @@ export async function POST(request: NextRequest) {
                request.headers.get('x-real-ip') || 
                'unknown';
 
-    logger.error('Client-side error', {
+    logger.error({
       message,
       stack,
       digest,
       url,
       userAgent: userAgent || request.headers.get('user-agent'),
       ip,
-    });
+    }, 'Client-side error');
 
     return NextResponse.json({ success: true });
   } catch (error) {
     // If error logging fails, still return success to avoid infinite loops
-    console.error('Failed to log client error:', error);
+    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Failed to log client error');
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }

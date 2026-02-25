@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 
 export async function GET(_request: Request) {
   try {
@@ -28,7 +31,7 @@ export async function GET(_request: Request) {
 
     return NextResponse.json({ count });
   } catch (error) {
-    console.error('Error getting pending count:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error getting pending count');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

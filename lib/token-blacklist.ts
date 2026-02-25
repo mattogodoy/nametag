@@ -1,5 +1,7 @@
 import { getRedis, isRedisConnected } from './redis';
-import { logger } from './logger';
+import { createModuleLogger } from './logger';
+
+const log = createModuleLogger('auth');
 
 /**
  * Token Blacklist
@@ -36,19 +38,19 @@ export async function blacklistToken(tokenId: string, expiresAt: Date): Promise<
       if (redis) {
         // Store in Redis with automatic expiration
         await redis.setex(`blacklist:${tokenId}`, ttlSeconds, '1');
-        logger.info('Token blacklisted in Redis', { tokenId, ttlSeconds });
+        log.info({ tokenId, ttlSeconds }, 'Token blacklisted in Redis');
         return;
       }
     }
 
     // Fallback to in-memory storage
     inMemoryBlacklist.set(tokenId, expiresAtMs);
-    logger.info('Token blacklisted in memory', { tokenId });
+    log.info({ tokenId }, 'Token blacklisted in memory');
 
     // Clean up expired in-memory entries periodically
     cleanupInMemoryBlacklist();
   } catch (error) {
-    logger.error('Failed to blacklist token', { tokenId }, error as Error);
+    log.error({ err: error as Error, tokenId }, 'Failed to blacklist token');
     // Fallback to in-memory even if Redis fails
     inMemoryBlacklist.set(tokenId, expiresAtMs);
   }
@@ -85,7 +87,7 @@ export async function isTokenBlacklisted(tokenId: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    logger.error('Failed to check token blacklist', { tokenId }, error as Error);
+    log.error({ err: error as Error, tokenId }, 'Failed to check token blacklist');
     // Fail open - if we can't check, allow access
     // This prevents blocking all users if Redis fails
     return false;
@@ -110,9 +112,7 @@ function cleanupInMemoryBlacklist(): void {
   }
 
   if (entriesToDelete.length > 0) {
-    logger.debug('Cleaned up expired blacklist entries', {
-      count: entriesToDelete.length,
-    });
+    log.debug({ count: entriesToDelete.length }, 'Cleaned up expired blacklist entries');
   }
 }
 

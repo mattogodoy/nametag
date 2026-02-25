@@ -195,6 +195,12 @@ vi.mock('../../lib/logger', () => ({
     error: vi.fn(),
     warn: vi.fn(),
   },
+  createModuleLogger: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  }),
   securityLogger: {
     authFailure: vi.fn(),
   },

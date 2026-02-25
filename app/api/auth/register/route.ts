@@ -108,11 +108,11 @@ export async function POST(request: Request) {
       });
     }
 
-    logger.info('User registered successfully', {
+    logger.info({
       email,
       userId: user.id,
       emailVerificationRequired: requireEmailVerification,
-    });
+    }, 'User registered successfully');
 
     return NextResponse.json(
       {

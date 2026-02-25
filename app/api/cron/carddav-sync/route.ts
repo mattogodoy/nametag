@@ -67,14 +67,14 @@ export async function GET(request: Request) {
         }
 
         // Perform bidirectional sync
-        logger.info('Starting background sync', {
+        logger.info({
           userId: connection.userId,
           connectionId: connection.id,
-        });
+        }, 'Starting background sync');
 
         const result = await bidirectionalSync(connection.userId);
 
-        logger.info('Background sync completed', {
+        logger.info({
           userId: connection.userId,
           connectionId: connection.id,
           imported: result.imported,
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
           updatedRemotely: result.updatedRemotely,
           conflicts: result.conflicts,
           errors: result.errors,
-        });
+        }, 'Background sync completed');
 
         syncedCount++;
 
@@ -98,11 +98,11 @@ export async function GET(request: Request) {
           error instanceof Error ? error.message : 'Unknown error';
         errors.push(`User ${connection.userId}: ${errorMessage}`);
 
-        logger.error('Background sync failed', {
+        logger.error({
           userId: connection.userId,
           connectionId: connection.id,
-          error: errorMessage,
-        });
+          errorMessage,
+        }, 'Background sync failed');
 
         // Update connection with error
         await prisma.cardDavConnection.update({
@@ -117,12 +117,12 @@ export async function GET(request: Request) {
       }
     }
 
-    logger.info('Background CardDAV sync completed', {
+    logger.info({
       total: connections.length,
       synced: syncedCount,
       skipped: skippedCount,
       errors: errorCount,
-    });
+    }, 'Background CardDAV sync completed');
 
     // Log cron job completion
     if (cronLogId) {

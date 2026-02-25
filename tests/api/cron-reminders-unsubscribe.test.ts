@@ -69,19 +69,30 @@ vi.mock('../../lib/env', () => ({
 }));
 
 // Mock logger
-vi.mock('../../lib/logger', () => ({
-  logger: {
+vi.mock('../../lib/logger', () => {
+  const childLogger = {
     info: mocks.loggerInfo,
     debug: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-  securityLogger: {
-    authFailure: mocks.securityLoggerAuthFailure,
-    rateLimitExceeded: vi.fn(),
-    suspiciousActivity: vi.fn(),
-  },
-}));
+    child: vi.fn(),
+  };
+  return {
+    logger: {
+      info: mocks.loggerInfo,
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      child: vi.fn(() => childLogger),
+    },
+    createModuleLogger: vi.fn(() => childLogger),
+    securityLogger: {
+      authFailure: mocks.securityLoggerAuthFailure,
+      rateLimitExceeded: vi.fn(),
+      suspiciousActivity: vi.fn(),
+    },
+  };
+});
 
 // Mock api-utils
 vi.mock('../../lib/api-utils', () => ({

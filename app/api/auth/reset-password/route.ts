@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       },
     });
 
-    logger.info('Password reset successful', { userId: user.id });
+    logger.info({ userId: user.id }, 'Password reset successful');
 
     return NextResponse.json(
       { message: 'Password has been reset successfully. You can now log in with your new password.' },

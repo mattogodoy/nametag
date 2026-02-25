@@ -1,5 +1,7 @@
 import Redis from 'ioredis';
-import { logger } from './logger';
+import { createModuleLogger } from './logger';
+
+const log = createModuleLogger('redis');
 import { isSaasMode } from './features';
 
 /**
@@ -20,7 +22,7 @@ let connectionPromise: Promise<void> | null = null;
 function createRedisClient(): Redis | null {
   // If no Redis URL configured and not in SaaS mode, skip Redis
   if (!process.env.REDIS_URL && !isSaasMode()) {
-    logger.warn('Redis URL not configured. Using in-memory rate limiting (not recommended for multi-instance deployments)');
+    log.warn('Redis URL not configured. Using in-memory rate limiting (not recommended for multi-instance deployments)');
     return null;
   }
 
@@ -34,7 +36,7 @@ function createRedisClient(): Redis | null {
       maxRetriesPerRequest: 3,
       retryStrategy(times) {
         if (times > 3) {
-          logger.error('Redis connection failed after 3 retries');
+          log.error('Redis connection failed after 3 retries');
           return null; // Stop retrying
         }
         const delay = Math.min(times * 100, 2000);
@@ -50,23 +52,23 @@ function createRedisClient(): Redis | null {
     });
 
     client.on('connect', () => {
-      logger.info('Redis client connected');
+      log.info('Redis client connected');
       isRedisAvailable = true;
     });
 
     client.on('error', (err) => {
-      logger.error('Redis client error', {}, err);
+      log.error({ err }, 'Redis client error');
       isRedisAvailable = false;
     });
 
     client.on('close', () => {
-      logger.warn('Redis connection closed');
+      log.warn('Redis connection closed');
       isRedisAvailable = false;
     });
 
     return client;
   } catch (error) {
-    logger.error('Failed to create Redis client', {}, error as Error);
+    log.error({ err: error as Error }, 'Failed to create Redis client');
 
     // In SaaS mode, fail fast
     if (isSaasMode()) {
@@ -106,7 +108,7 @@ export async function initRedis(): Promise<void> {
 
     // Set a timeout for connection
     const timeout = setTimeout(() => {
-      logger.warn('Redis connection timeout after 5 seconds, continuing without Redis');
+      log.warn('Redis connection timeout after 5 seconds, continuing without Redis');
       isRedisAvailable = false;
       resolve();
     }, 5000);
@@ -116,7 +118,7 @@ export async function initRedis(): Promise<void> {
       clearTimeout(timeout);
       redis?.off('error', onError);
       isRedisAvailable = true;
-      logger.info('Redis initialized and ready');
+      log.info('Redis initialized and ready');
       resolve();
     };
 
@@ -126,10 +128,10 @@ export async function initRedis(): Promise<void> {
       isRedisAvailable = false;
 
       if (isSaasMode()) {
-        logger.error('Redis connection failed in SaaS mode', {}, err);
+        log.error({ err }, 'Redis connection failed in SaaS mode');
         reject(err);
       } else {
-        logger.warn('Redis connection failed, continuing without Redis');
+        log.warn('Redis connection failed, continuing without Redis');
         resolve();
       }
     };
@@ -146,7 +148,7 @@ export async function initRedis(): Promise<void> {
       .then(() => {
         clearTimeout(timeout);
         isRedisAvailable = true;
-        logger.info('Redis already connected');
+        log.info('Redis already connected');
         resolve();
       })
       .catch(() => {
@@ -184,7 +186,7 @@ export async function disconnectRedis(): Promise<void> {
     await redis.quit();
     redis = null;
     isRedisAvailable = false;
-    logger.info('Redis client disconnected');
+    log.info('Redis client disconnected');
   }
 }
 
