@@ -29,7 +29,7 @@ export function proxy(request: NextRequest) {
       query: search,
       ip,
       userAgent,
-      duration: `${duration}ms`,
+      durationMs: duration,
     }, `${method} ${pathname}${search}`);
   }
 

@@ -114,7 +114,7 @@ export async function GET(request: Request) {
           log.info({ personName, dateTitle: importantDate.title, userEmail }, 'Reminder sent');
         } else {
           errorCount++;
-          log.error({ personName, dateTitle: importantDate.title, error: result.error }, 'Failed to send reminder');
+          log.error({ personName, dateTitle: importantDate.title, errorMessage: result.error }, 'Failed to send reminder');
         }
       }
     }
@@ -184,7 +184,7 @@ export async function GET(request: Request) {
           log.info({ personName, userEmail: person.user.email }, 'Contact reminder sent');
         } else {
           errorCount++;
-          log.error({ personName, error: result.error }, 'Failed to send contact reminder');
+          log.error({ personName, errorMessage: result.error }, 'Failed to send contact reminder');
         }
       }
     }
