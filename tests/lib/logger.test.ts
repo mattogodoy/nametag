@@ -34,7 +34,7 @@ mockChildChild.mockReturnValue({
   child: vi.fn(),
 });
 
-const mockPino = vi.fn(() => ({
+const mockPinoFn = vi.fn(() => ({
   debug: mockDebug,
   info: mockInfo,
   warn: mockWarn,
@@ -44,12 +44,14 @@ const mockPino = vi.fn(() => ({
 }));
 
 // Attach stdTimeFunctions to the mock
-mockPino.stdTimeFunctions = {
-  isoTime: () => `,"time":"${new Date().toISOString()}"`,
-  epochTime: () => `,"time":${Date.now()}`,
-  unixTime: () => `,"time":${Math.round(Date.now() / 1000)}`,
-  nullTime: () => '',
-};
+const mockPino = Object.assign(mockPinoFn, {
+  stdTimeFunctions: {
+    isoTime: () => `,"time":"${new Date().toISOString()}"`,
+    epochTime: () => `,"time":${Date.now()}`,
+    unixTime: () => `,"time":${Math.round(Date.now() / 1000)}`,
+    nullTime: () => '',
+  },
+});
 
 vi.mock('pino', () => ({
   default: mockPino,
@@ -221,6 +223,11 @@ describe('logger', () => {
   });
 
   describe('pino configuration', () => {
+    function getLastPinoOptions(): any {
+      const calls = mockPino.mock.calls as any[];
+      return calls[calls.length - 1]?.[0];
+    }
+
     it('should default log level to info when LOG_LEVEL is not set', async () => {
       vi.resetModules();
       delete process.env.LOG_LEVEL;
@@ -228,7 +235,7 @@ describe('logger', () => {
       await import('@/lib/logger');
 
       expect(mockPino).toHaveBeenCalled();
-      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      const options = getLastPinoOptions();
       expect(options.level).toBe('info');
     });
 
@@ -238,7 +245,7 @@ describe('logger', () => {
       vi.doMock('pino', () => ({ default: mockPino }));
       await import('@/lib/logger');
 
-      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      const options = getLastPinoOptions();
       expect(options.level).toBe('debug');
       delete process.env.LOG_LEVEL;
     });
@@ -248,18 +255,18 @@ describe('logger', () => {
       vi.doMock('pino', () => ({ default: mockPino }));
       await import('@/lib/logger');
 
-      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      const options = getLastPinoOptions();
       expect(options.timestamp).toBe(mockPino.stdTimeFunctions.isoTime);
     });
 
     it('should configure pino-pretty transport in non-production', async () => {
       vi.resetModules();
       const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       vi.doMock('pino', () => ({ default: mockPino }));
       await import('@/lib/logger');
 
-      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      const options = getLastPinoOptions();
       expect(options.transport).toEqual({
         target: 'pino-pretty',
         options: {
@@ -268,19 +275,19 @@ describe('logger', () => {
           ignore: 'pid,hostname',
         },
       });
-      process.env.NODE_ENV = originalNodeEnv;
+      (process.env as any).NODE_ENV = originalNodeEnv;
     });
 
     it('should not configure transport in production', async () => {
       vi.resetModules();
       const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       vi.doMock('pino', () => ({ default: mockPino }));
       await import('@/lib/logger');
 
-      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      const options = getLastPinoOptions();
       expect(options.transport).toBeUndefined();
-      process.env.NODE_ENV = originalNodeEnv;
+      (process.env as any).NODE_ENV = originalNodeEnv;
     });
 
     it('should have formatters with level formatter', async () => {
@@ -288,7 +295,7 @@ describe('logger', () => {
       vi.doMock('pino', () => ({ default: mockPino }));
       await import('@/lib/logger');
 
-      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      const options = getLastPinoOptions();
       expect(options.formatters).toBeDefined();
       expect(options.formatters.level).toBeDefined();
     });
@@ -298,7 +305,7 @@ describe('logger', () => {
       vi.doMock('pino', () => ({ default: mockPino }));
       await import('@/lib/logger');
 
-      const options = mockPino.mock.calls[mockPino.mock.calls.length - 1][0];
+      const options = getLastPinoOptions();
       expect(options.formatters.level('info')).toEqual({ level: 'info' });
       expect(options.formatters.level('error')).toEqual({ level: 'error' });
     });
