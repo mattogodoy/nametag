@@ -17,6 +17,9 @@
     { "type": "style", "section": "Styles", "hidden": true }
   ],
   "packages": {
-    ".": {}
+    ".": {
+      "component": "",
+      "include-component-in-tag": false
+    }
   }
 }
