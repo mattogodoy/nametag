@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData } from '@/lib/carddav/person-from-vcard';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('vcard');
 
 /**
  * POST /api/vcard/import
@@ -75,7 +78,7 @@ export async function POST(request: Request) {
 
         results.imported++;
       } catch (error) {
-        console.error('Error importing vCard:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error importing vCard');
         results.errors++;
         results.errorMessages.push(
           `Failed to import contact: ${
@@ -93,7 +96,7 @@ export async function POST(request: Request) {
       errorMessages: results.errorMessages,
     });
   } catch (error) {
-    console.error('vCard import failed:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'vCard import failed');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

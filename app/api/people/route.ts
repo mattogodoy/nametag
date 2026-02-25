@@ -5,6 +5,9 @@ import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { canCreateResource, canEnableReminder } from '@/lib/billing';
 import { autoExportPerson } from '@/lib/carddav/auto-export';
 import { savePhoto } from '@/lib/photo-storage';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('people');
 
 // GET /api/people - List all people for the current user
 export const GET = withAuth(async (request, session) => {
@@ -369,7 +372,7 @@ export const POST = withAuth(async (request, session) => {
     // Auto-export to CardDAV if enabled (don't await - let it run in background)
     if (cardDavSyncEnabled !== false) {
       autoExportPerson(person.id).catch((error) => {
-        console.error('Auto-export failed:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: person.id }, 'Auto-export failed');
         // Don't fail the request if auto-export fails
       });
     }

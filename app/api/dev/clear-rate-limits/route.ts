@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getRedis } from '@/lib/redis';
+import { logger } from '@/lib/logger';
 
 /**
  * Development-only endpoint to clear rate limits
@@ -70,7 +71,7 @@ export async function DELETE(request: Request) {
       keys: keys.slice(0, 10), // Show first 10 keys
     });
   } catch (error) {
-    console.error('Error clearing rate limits:', error);
+    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error clearing rate limits');
     return NextResponse.json(
       { error: 'Failed to clear rate limits', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

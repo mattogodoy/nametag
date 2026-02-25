@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isSupportedLocale, setLocaleCookie } from '@/lib/locale';
+import { logger } from '@/lib/logger';
 
 /**
  * PUT /api/user/language
@@ -43,7 +44,7 @@ export async function PUT(request: NextRequest) {
       language,
     });
   } catch (error) {
-    console.error('Error updating language:', error);
+    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error updating language');
     return NextResponse.json(
       { error: 'Failed to update language' },
       { status: 500 }

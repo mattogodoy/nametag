@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     // If error logging fails, still return success to avoid infinite loops
-    console.error('Failed to log client error:', error);
+    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Failed to log client error');
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }

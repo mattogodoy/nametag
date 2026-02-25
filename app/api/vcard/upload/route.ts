@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/vcard';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('vcard');
 
 /**
  * POST /api/vcard/upload
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
         const uid = parsedData.uid || `file-import-${Date.now()}-${i}`;
         deduped.set(uid, { vcard, index: i });
       } catch (error) {
-        console.error('Error parsing vCard:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), index: i }, 'Error parsing vCard');
       }
     }
 
@@ -77,7 +80,7 @@ export async function POST(request: Request) {
 
         createdImports.push(pendingImport);
       } catch (error) {
-        console.error('Error creating pending import:', error);
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), uid }, 'Error creating pending import');
       }
     }
 
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
       count: createdImports.length,
     });
   } catch (error) {
-    console.error('vCard upload failed:', error);
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'vCard upload failed');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -3,11 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { formatFullName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
-import { handleApiError } from '@/lib/api-utils';
-import { logger, securityLogger } from '@/lib/logger';
-import { getClientIp } from '@/lib/api-utils';
+import { handleApiError, getClientIp } from '@/lib/api-utils';
+import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
 import { parseAsLocalDate } from '@/lib/date-format';
+
+const log = createModuleLogger('cron');
 
 // This endpoint should be called by a cron job
 export async function GET(request: Request) {
@@ -110,14 +111,10 @@ export async function GET(request: Request) {
             data: { lastReminderSent: new Date() },
           });
           sentCount++;
-          console.log(
-            `Sent reminder for ${personName}'s ${importantDate.title} to ${userEmail}`
-          );
+          log.info({ personName, dateTitle: importantDate.title, userEmail }, 'Reminder sent');
         } else {
           errorCount++;
-          console.error(
-            `Failed to send reminder for ${personName}'s ${importantDate.title}: ${result.error}`
-          );
+          log.error({ personName, dateTitle: importantDate.title, error: result.error }, 'Failed to send reminder');
         }
       }
     }
@@ -184,19 +181,15 @@ export async function GET(request: Request) {
             data: { lastContactReminderSent: new Date() },
           });
           sentCount++;
-          console.log(
-            `Sent contact reminder for ${personName} to ${person.user.email}`
-          );
+          log.info({ personName, userEmail: person.user.email }, 'Contact reminder sent');
         } else {
           errorCount++;
-          console.error(
-            `Failed to send contact reminder for ${personName}: ${result.error}`
-          );
+          log.error({ personName, error: result.error }, 'Failed to send contact reminder');
         }
       }
     }
 
-    logger.info({
+    log.info({
       sent: sentCount,
       errors: errorCount,
       processedImportantDates: importantDates.length,
