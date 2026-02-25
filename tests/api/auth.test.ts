@@ -80,6 +80,12 @@ vi.mock('../../lib/logger', () => ({
     authenticationFailure: vi.fn(),
     authenticationSuccess: vi.fn(),
   },
+  createModuleLogger: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
 }));
 
 // Mock billing
