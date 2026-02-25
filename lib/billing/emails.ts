@@ -2,7 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { SubscriptionTier, BillingFrequency } from '@prisma/client';
 import { TIER_INFO } from './constants';
-import { logger } from '@/lib/logger';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('billing');
 
 // Tier ranking for determining upgrade vs downgrade
 const TIER_RANK: Record<SubscriptionTier, number> = {
@@ -109,7 +111,7 @@ export async function sendSubscriptionCreatedEmail(
 ): Promise<void> {
   const email = await getUserEmail(userId);
   if (!email) {
-    logger.warn('Cannot send subscription created email: user email not found', { userId });
+    log.warn({ userId }, 'Cannot send subscription created email: user email not found');
     return;
   }
 
@@ -132,9 +134,9 @@ export async function sendSubscriptionCreatedEmail(
   });
 
   if (result.success) {
-    logger.info('Subscription created email sent', { userId, tier });
+    log.info({ userId, tier }, 'Subscription created email sent');
   } else {
-    logger.error('Failed to send subscription created email', { userId, error: result.error });
+    log.error({ userId, errorMessage: result.error }, 'Failed to send subscription created email');
   }
 }
 
@@ -151,7 +153,7 @@ export async function sendSubscriptionChangedEmail(
 ): Promise<void> {
   const email = await getUserEmail(userId);
   if (!email) {
-    logger.warn('Cannot send subscription changed email: user email not found', { userId });
+    log.warn({ userId }, 'Cannot send subscription changed email: user email not found');
     return;
   }
 
@@ -178,9 +180,9 @@ export async function sendSubscriptionChangedEmail(
   });
 
   if (result.success) {
-    logger.info('Subscription changed email sent', { userId, oldTier, newTier, isUpgrade: tierIsUpgrade });
+    log.info({ userId, oldTier, newTier, isUpgrade: tierIsUpgrade }, 'Subscription changed email sent');
   } else {
-    logger.error('Failed to send subscription changed email', { userId, error: result.error });
+    log.error({ userId, errorMessage: result.error }, 'Failed to send subscription changed email');
   }
 }
 
@@ -195,7 +197,7 @@ export async function sendSubscriptionCanceledEmail(
 ): Promise<void> {
   const email = await getUserEmail(userId);
   if (!email) {
-    logger.warn('Cannot send subscription canceled email: user email not found', { userId });
+    log.warn({ userId }, 'Cannot send subscription canceled email: user email not found');
     return;
   }
 
@@ -217,8 +219,8 @@ export async function sendSubscriptionCanceledEmail(
   });
 
   if (result.success) {
-    logger.info('Subscription canceled email sent', { userId, tier, immediately });
+    log.info({ userId, tier, immediately }, 'Subscription canceled email sent');
   } else {
-    logger.error('Failed to send subscription canceled email', { userId, error: result.error });
+    log.error({ userId, errorMessage: result.error }, 'Failed to send subscription canceled email');
   }
 }

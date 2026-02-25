@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       },
     });
 
-    logger.info('Email verified successfully', { userId: user.id });
+    logger.info({ userId: user.id }, 'Email verified successfully');
 
     return NextResponse.json(
       { message: 'Email verified successfully. You can now log in.' },

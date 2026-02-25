@@ -1,7 +1,9 @@
 import { createDAVClient, DAVAddressBook, DAVVCard } from 'tsdav';
 import { CardDavConnection } from '@prisma/client';
 import { decryptPassword } from './encryption';
-import { logger } from '@/lib/logger';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 
 export interface AddressBook {
   url: string;
@@ -165,7 +167,7 @@ export async function testCardDavConnection(
     await client.fetchAddressBooks();
     return true;
   } catch (error) {
-    logger.error('CardDAV connection test failed', { error: error instanceof Error ? error.message : String(error) });
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'CardDAV connection test failed');
     return false;
   }
 }

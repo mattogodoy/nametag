@@ -4,7 +4,9 @@ import { personToVCard } from '@/lib/vcard';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { withRetry } from './retry';
 import { buildLocalHash } from './hash';
-import { logger } from '@/lib/logger';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -116,9 +118,9 @@ export async function autoExportPerson(personId: string): Promise<void> {
       },
     });
 
-    logger.info('Auto-exported person to CardDAV', { personId: person.id });
+    log.info({ personId: person.id }, 'Auto-exported person to CardDAV');
   } catch (error) {
-    logger.error('Auto-export failed', { error: error instanceof Error ? error.message : String(error) });
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Auto-export failed');
 
     // Update connection with error
     await prisma.cardDavConnection.update({
@@ -243,9 +245,9 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
       },
     });
 
-    logger.info('Auto-updated person on CardDAV', { personId: person.id });
+    log.info({ personId: person.id }, 'Auto-updated person on CardDAV');
   } catch (error) {
-    logger.error('Auto-update failed', { error: error instanceof Error ? error.message : String(error) });
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Auto-update failed');
 
     // Update connection with error
     await prisma.cardDavConnection.update({

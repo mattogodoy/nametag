@@ -14,14 +14,14 @@ export async function POST(request: NextRequest) {
                request.headers.get('x-real-ip') || 
                'unknown';
 
-    logger.error('Client-side error', {
+    logger.error({
       message,
       stack,
       digest,
       url,
       userAgent: userAgent || request.headers.get('user-agent'),
       ip,
-    });
+    }, 'Client-side error');
 
     return NextResponse.json({ success: true });
   } catch (error) {

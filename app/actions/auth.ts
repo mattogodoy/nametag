@@ -35,18 +35,18 @@ export async function handleSignOut() {
           // Blacklist the token
           await blacklistToken(token.jti, expiresAt);
 
-          logger.info('Token blacklisted on logout', {
+          logger.info({
             userId: token.id,
             jti: token.jti,
-          });
+          }, 'Token blacklisted on logout');
         }
       } catch (decodeError) {
-        logger.error('Failed to decode and blacklist token', {}, decodeError as Error);
+        logger.error({ err: decodeError as Error }, 'Failed to decode and blacklist token');
         // Continue with logout even if blacklisting fails
       }
     }
   } catch (error) {
-    logger.error('Error during logout', {}, error as Error);
+    logger.error({ err: error as Error }, 'Error during logout');
     // Continue with logout even if blacklisting fails
   }
 

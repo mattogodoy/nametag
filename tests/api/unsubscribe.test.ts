@@ -136,11 +136,11 @@ describe('POST /api/unsubscribe', () => {
 
       await POST(request);
 
-      expect(mocks.loggerInfo).toHaveBeenCalledWith('Reminder unsubscribed via email', {
+      expect(mocks.loggerInfo).toHaveBeenCalledWith({
         userId: 'user-123',
         reminderType: 'CONTACT',
         entityId: 'person-456',
-      });
+      }, 'Reminder unsubscribed via email');
     });
   });
 

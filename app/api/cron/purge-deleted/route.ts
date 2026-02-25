@@ -176,7 +176,7 @@ export async function GET(request: Request) {
       cutoffDate: cutoffDate.toISOString(),
     };
 
-    logger.info('Purge completed', result);
+    logger.info(result, 'Purge completed');
 
     // Log cron job completion
     if (cronLogId) {

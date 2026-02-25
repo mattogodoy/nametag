@@ -196,12 +196,12 @@ export async function GET(request: Request) {
       }
     }
 
-    logger.info('Reminders processed', {
+    logger.info({
       sent: sentCount,
       errors: errorCount,
       processedImportantDates: importantDates.length,
       processedContactReminders: peopleWithContactReminders.length,
-    });
+    }, 'Reminders processed');
 
     // Log cron job completion
     if (cronLogId) {

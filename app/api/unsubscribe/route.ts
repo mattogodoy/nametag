@@ -24,11 +24,11 @@ export async function POST(request: Request) {
       );
     }
 
-    logger.info('Reminder unsubscribed via email', {
+    logger.info({
       userId: result.user.id,
       reminderType: result.reminderType,
       entityId: result.entityId,
-    });
+    }, 'Reminder unsubscribed via email');
 
     return NextResponse.json({
       success: true,

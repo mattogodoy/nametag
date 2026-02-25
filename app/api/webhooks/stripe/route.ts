@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     event = constructWebhookEvent(body, signature, webhookSecret);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    logger.error('Webhook signature verification failed', { error: message });
+    logger.error({ err: err instanceof Error ? err : new Error(String(err)) }, 'Webhook signature verification failed');
     return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
   }
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Webhook handler error', { error: message, eventType: event.type });
+    logger.error({ err: error instanceof Error ? error : new Error(String(error)), eventType: event.type }, 'Webhook handler error');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -104,14 +104,14 @@ export async function POST(request: NextRequest) {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId;
   if (!userId) {
-    logger.error('No userId in checkout session metadata', { sessionId: session.id });
+    logger.error({ sessionId: session.id }, 'No userId in checkout session metadata');
     return;
   }
 
   const tier = getTierFromMetadata(session.metadata || {});
   const frequency = getFrequencyFromMetadata(session.metadata || {});
 
-  logger.info('Checkout completed', { userId, tier, frequency, sessionId: session.id });
+  logger.info({ userId, tier, frequency, sessionId: session.id }, 'Checkout completed');
 
   // The subscription update will be handled by customer.subscription.created/updated
   // But we ensure the customer ID is saved
@@ -135,10 +135,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     });
 
     if (!existingSubscription) {
-      logger.error('No subscription found for Stripe subscription', {
+      logger.error({
         stripeSubscriptionId: subscription.id,
         customerId,
-      });
+      }, 'No subscription found for Stripe subscription');
       return;
     }
 
@@ -211,7 +211,7 @@ async function updateLocalSubscription(userId: string, stripeSubscription: Strip
     },
   });
 
-  logger.info('Subscription updated', { userId, tier: newTier, status, stripeSubscriptionId: stripeSubscription.id });
+  logger.info({ userId, tier: newTier, status, stripeSubscriptionId: stripeSubscription.id }, 'Subscription updated');
 
   // Send email notifications for tier changes (only for active subscriptions)
   if (status === SubscriptionStatus.ACTIVE && newTier !== 'FREE') {
@@ -233,9 +233,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   });
 
   if (!existingSubscription) {
-    logger.warn('No subscription found for deleted Stripe subscription', {
+    logger.warn({
       stripeSubscriptionId: subscription.id,
-    });
+    }, 'No subscription found for deleted Stripe subscription');
     return;
   }
 
@@ -256,7 +256,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     },
   });
 
-  logger.info('Subscription deleted, downgraded to free', { userId: existingSubscription.userId });
+  logger.info({ userId: existingSubscription.userId }, 'Subscription deleted, downgraded to free');
 
   // Send cancellation email (immediate cancellation since subscription was deleted)
   if (previousTier !== 'FREE') {
@@ -279,7 +279,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   });
 
   if (!existingSubscription) {
-    logger.warn('No subscription found for invoice', { invoiceId: invoice.id });
+    logger.warn({ invoiceId: invoice.id }, 'No subscription found for invoice');
     return;
   }
 
@@ -310,11 +310,11 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     },
   });
 
-  logger.info('Invoice paid recorded', {
+  logger.info({
     userId: existingSubscription.userId,
     invoiceId: invoice.id,
     amount: amountPaid,
-  });
+  }, 'Invoice paid recorded');
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -327,7 +327,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   });
 
   if (!existingSubscription) {
-    logger.warn('No subscription found for failed invoice', { invoiceId: invoice.id });
+    logger.warn({ invoiceId: invoice.id }, 'No subscription found for failed invoice');
     return;
   }
 
@@ -357,8 +357,8 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     },
   });
 
-  logger.warn('Invoice payment failed', {
+  logger.warn({
     userId: existingSubscription.userId,
     invoiceId: invoice.id,
-  });
+  }, 'Invoice payment failed');
 }

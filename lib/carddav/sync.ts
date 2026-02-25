@@ -7,7 +7,9 @@ import { updatePersonFromVCard } from './person-from-vcard';
 
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from './hash';
-import { logger } from '@/lib/logger';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('carddav');
 
 /**
  * Acquire a sync lock for a user. Returns true if lock was acquired.
@@ -151,7 +153,7 @@ export async function syncFromServer(
         });
 
         if (!parsedData.uid) {
-          logger.warn('vCard missing UID, skipping');
+          log.warn('vCard missing UID, skipping');
           result.errors++;
           continue;
         }
@@ -304,7 +306,7 @@ export async function syncFromServer(
           result.pendingImports = (result.pendingImports || 0) + 1;
         }
       } catch (error) {
-        logger.error('Error processing vCard', { error: error instanceof Error ? error.message : String(error) });
+        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error processing vCard');
         result.errors++;
         result.errorMessages.push(
           error instanceof Error ? error.message : 'Unknown error'
@@ -331,7 +333,7 @@ export async function syncFromServer(
 
     return result;
   } catch (error) {
-    logger.error('Sync from server failed', { error: error instanceof Error ? error.message : String(error) });
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Sync from server failed');
 
     // Categorize error for better user feedback
     const categorized = categorizeError(error);
@@ -511,7 +513,7 @@ export async function syncToServer(
           },
         });
       } catch (error) {
-        logger.error('Error pushing vCard', { error: error instanceof Error ? error.message : String(error) });
+        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error pushing vCard');
         result.errors++;
         result.errorMessages.push(
           error instanceof Error ? error.message : 'Unknown error'
@@ -607,7 +609,7 @@ export async function syncToServer(
 
         result.exported++;
       } catch (error) {
-        logger.error('Error exporting unmapped contact', { error: error instanceof Error ? error.message : String(error) });
+        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error exporting unmapped contact');
         result.errors++;
         result.errorMessages.push(
           `Failed to export ${person.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -622,7 +624,7 @@ export async function syncToServer(
 
     return result;
   } catch (error) {
-    logger.error('Sync to server failed', { error: error instanceof Error ? error.message : String(error) });
+    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Sync to server failed');
 
     // Categorize error for better user feedback
     const categorized = categorizeError(error);
@@ -660,7 +662,7 @@ export async function bidirectionalSync(
 ): Promise<SyncResult> {
   const lockAcquired = await acquireSyncLock(userId);
   if (!lockAcquired) {
-    logger.info('Sync already in progress, skipping', { userId });
+    log.info({ userId }, 'Sync already in progress, skipping');
     return {
       imported: 0,
       exported: 0,
@@ -703,7 +705,7 @@ export async function bidirectionalSync(
         // Release it now that the in-flight operation has actually finished.
         if (timedOut) {
           releaseSyncLock(userId).catch((err) =>
-            logger.error('Failed to release sync lock after timed-out operation completed', { error: String(err) })
+            log.error({ err: err instanceof Error ? err : new Error(String(err)) }, 'Failed to release sync lock after timed-out operation completed')
           );
         }
       }),
