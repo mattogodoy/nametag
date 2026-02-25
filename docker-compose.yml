@@ -43,6 +43,8 @@ services:
     image: ghcr.io/mattogodoy/nametag:latest
     container_name: nametag-app
     restart: unless-stopped
+    labels:
+      com.datadoghq.ad.logs: '[{"source": "nodejs", "service": "nametag"}]'
     ports:
       - 3000:3000
     env_file:
