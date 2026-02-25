@@ -63,7 +63,7 @@ vi.mock('../../lib/logger', () => ({
 
 // Mock api-utils (withLogging is a passthrough so it doesn't affect test behavior)
 vi.mock('../../lib/api-utils', () => ({
-  withLogging: vi.fn((fn: Function) => fn),
+  withLogging: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
 }));
 
 // Import after mocking
