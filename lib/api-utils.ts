@@ -309,7 +309,7 @@ export function withLogging(
  * });
  */
 export function withAuth(handler: AuthenticatedHandler) {
-  return async (
+  return withLogging(async (
     request: Request,
     context?: RouteContext
   ): Promise<Response | NextResponse> => {
@@ -320,5 +320,5 @@ export function withAuth(handler: AuthenticatedHandler) {
     }
 
     return handler(request, session as AuthenticatedSession, context);
-  };
+  });
 }

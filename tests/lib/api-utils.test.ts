@@ -333,6 +333,10 @@ describe('api-utils', () => {
   describe('withAuth', () => {
     beforeEach(() => {
       vi.resetModules();
+      mockHttpLog.debug.mockClear();
+      mockHttpLog.info.mockClear();
+      mockHttpLog.warn.mockClear();
+      mockHttpLog.error.mockClear();
     });
 
     it('should call handler with session when authenticated', async () => {
@@ -404,6 +408,57 @@ describe('api-utils', () => {
       await wrappedHandler(request, context);
 
       expect(handler).toHaveBeenCalledWith(request, mockSession, context);
+    });
+
+    it('should log request with withLogging', async () => {
+      const { auth } = await import('@/lib/auth');
+      const mockSession = {
+        user: { id: 'user-123', email: 'test@example.com', name: 'Test' },
+      };
+      vi.mocked(auth).mockResolvedValue(mockSession as any);
+
+      const { withAuth: freshWithAuth, apiResponse: freshApiResponse } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn().mockResolvedValue(freshApiResponse.ok({ data: 'test' }));
+      const wrappedHandler = freshWithAuth(handler);
+
+      const request = new Request('http://localhost/api/people');
+      await wrappedHandler(request);
+
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: '/api/people',
+          status: 200,
+        }),
+        expect.stringContaining('GET /api/people 200')
+      );
+    });
+
+    it('should log 401 when not authenticated', async () => {
+      const { auth } = await import('@/lib/auth');
+      vi.mocked(auth).mockResolvedValue(null as never);
+
+      const { withAuth: freshWithAuth } = await import('@/lib/api-utils');
+      const { createModuleLogger } = await import('@/lib/logger');
+      const httpLog = createModuleLogger('http');
+
+      const handler = vi.fn();
+      const wrappedHandler = freshWithAuth(handler);
+
+      const request = new Request('http://localhost/api/people');
+      await wrappedHandler(request);
+
+      expect(httpLog.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: '/api/people',
+          status: 401,
+        }),
+        expect.stringContaining('GET /api/people 401')
+      );
     });
   });
 
