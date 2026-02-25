@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Session } from 'next-auth';
 import { auth } from './auth';
-import { logger } from './logger';
+import { logger, createModuleLogger } from './logger';
+
+const httpLog = createModuleLogger('http');
 
 /**
  * Maximum request body size in bytes (1MB default)
@@ -241,6 +243,51 @@ export type AuthenticatedHandler<T = Response | NextResponse> = (
   session: AuthenticatedSession,
   context?: RouteContext
 ) => Promise<T>;
+
+/**
+ * Higher-order function that wraps API handlers with request-level HTTP logging.
+ * Logs method, path, status, duration, and client IP for every request.
+ * On success, logs at info level; on unhandled throw, logs at error level and re-throws.
+ *
+ * @example
+ * export const GET = withLogging(async (request) => {
+ *   return NextResponse.json({ ok: true });
+ * });
+ */
+export function withLogging(
+  handler: (request: Request, context?: RouteContext) => Promise<Response | NextResponse>
+) {
+  return async (
+    request: Request,
+    context?: RouteContext
+  ): Promise<Response | NextResponse> => {
+    const start = Date.now();
+    const method = request.method;
+    const path = new URL(request.url).pathname;
+    const ip = getClientIp(request);
+
+    try {
+      const response = await handler(request, context);
+      const durationMs = Date.now() - start;
+
+      httpLog.info(
+        { method, path, status: response.status, durationMs, ip },
+        `${method} ${path} ${response.status}`
+      );
+
+      return response;
+    } catch (error) {
+      const durationMs = Date.now() - start;
+
+      httpLog.error(
+        { method, path, status: 500, durationMs, ip, err: error instanceof Error ? error : new Error(String(error)) },
+        `${method} ${path} 500`
+      );
+
+      throw error;
+    }
+  };
+}
 
 /**
  * Higher-order function that wraps API handlers with authentication
