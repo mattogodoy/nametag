@@ -19,6 +19,17 @@ const connectionSchema = z.object({
   importMode: z.enum(['manual', 'notify', 'auto']).optional(),
 });
 
+const updateConnectionSchema = z.object({
+  serverUrl: z.string().url().min(1).optional(),
+  username: z.string().min(1).optional(),
+  password: z.string().optional(),
+  provider: z.string().nullable().optional(),
+  syncEnabled: z.boolean().optional(),
+  autoExportNew: z.boolean().optional(),
+  autoSyncInterval: z.number().int().min(60).max(86400).optional(),
+  importMode: z.enum(['manual', 'notify', 'auto']).optional(),
+});
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
@@ -117,7 +128,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const validationResult = connectionSchema.safeParse(body);
+    const validationResult = updateConnectionSchema.safeParse(body);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -137,14 +148,16 @@ export async function PUT(request: Request) {
       importMode,
     } = validationResult.data;
 
-    // Validate URL to prevent SSRF attacks
-    try {
-      await validateServerUrl(serverUrl);
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Invalid server URL' },
-        { status: 400 }
-      );
+    // Validate URL to prevent SSRF attacks if serverUrl is being updated
+    if (serverUrl) {
+      try {
+        await validateServerUrl(serverUrl);
+      } catch (error) {
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Invalid server URL' },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if connection exists
@@ -159,28 +172,30 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Prepare update data
+    // Prepare update data - only include fields that were provided
     const updateData: {
-      serverUrl: string;
-      username: string;
+      serverUrl?: string;
+      username?: string;
       password?: string;
-      provider: string | null;
+      provider?: string | null;
       syncEnabled?: boolean;
       autoExportNew?: boolean;
       autoSyncInterval?: number;
       importMode?: string;
-    } = {
-      serverUrl,
-      username,
-      provider: provider || null,
-    };
+    } = {};
 
-    // Only update password if provided
+    if (serverUrl !== undefined) {
+      updateData.serverUrl = serverUrl;
+    }
+    if (username !== undefined) {
+      updateData.username = username;
+    }
     if (password) {
       updateData.password = encryptPassword(password);
     }
-
-    // Update sync settings if provided
+    if (provider !== undefined) {
+      updateData.provider = provider || null;
+    }
     if (syncEnabled !== undefined) {
       updateData.syncEnabled = syncEnabled;
     }
