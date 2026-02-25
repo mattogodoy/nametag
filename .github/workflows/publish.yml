@@ -2,10 +2,10 @@ name: Publish Docker Image
 
 on:
   release:
-    types: [published]
+    types: [created]
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -137,3 +137,13 @@ jobs:
           docker buildx imagetools create -t ${IMAGE}:${TIMESTAMP} \
             ${IMAGE}:amd64-${VERSION} \
             ${IMAGE}:arm64-${VERSION}
+
+  publish-release:
+    needs: [create-manifest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: gh release edit "$TAG_NAME" --draft=false --repo "$GITHUB_REPOSITORY"

@@ -16,6 +16,7 @@
     { "type": "ci", "section": "CI", "hidden": true },
     { "type": "style", "section": "Styles", "hidden": true }
   ],
+  "draft": true,
   "packages": {
     ".": {
       "component": "",
