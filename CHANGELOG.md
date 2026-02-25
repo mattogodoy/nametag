@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.20.0](https://github.com/mattogodoy/nametag/compare/v0.19.0...v0.20.0) (2026-02-25)
+
+
+### Features
+
+* add publish workflow triggered by release events ([0ba7f87](https://github.com/mattogodoy/nametag/commit/0ba7f87a5a73bebb0d0d5d9a08a662d074e1c982))
+* add release-please workflow with AI release notes ([0fe319f](https://github.com/mattogodoy/nametag/commit/0fe319fb4c89455c7e19d8c0c82fe1763ed6ff7a))
+
+
+### Bug Fixes
+
+* address code review issues in release-please workflow ([350dbec](https://github.com/mattogodoy/nametag/commit/350dbec49004c3c10dae26ea1e0c7d07ea638cfa))
+* set empty component to prevent tag name mismatch ([d7c2601](https://github.com/mattogodoy/nametag/commit/d7c26012405564659776de77f8cee48d97592959))
+
 ## [0.19.0](https://github.com/mattogodoy/nametag/compare/v0.18.1...v0.19.0) (2026-02-24)
 
 ### Features
