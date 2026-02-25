@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.21.2](https://github.com/mattogodoy/nametag/compare/v0.21.1...v0.21.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* add bootstrap-sha to prevent old commits in release notes ([1af3e84](https://github.com/mattogodoy/nametag/commit/1af3e84982b78b14e07e33167375d70757a8761d))
+* align @prisma/client version with prisma CLI (7.0.1 → 7.4.1) ([8b2083b](https://github.com/mattogodoy/nametag/commit/8b2083bc68ea24f84a41ad658cf1e8bc41940afd))
+* merge Docker publish into release-please workflow ([4e0cc68](https://github.com/mattogodoy/nametag/commit/4e0cc683e89880cff1c5572289c2228bbe6ac6fd))
+* patch npm audit vulnerabilities (29 → 8 remaining) ([f6f68a9](https://github.com/mattogodoy/nametag/commit/f6f68a99ac79e6b504a3efe2c46893773796d4c5))
+
 ## [0.21.1](https://github.com/mattogodoy/nametag/compare/v0.21.0...v0.21.1) (2026-02-25)
 
 
