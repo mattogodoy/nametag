@@ -17,6 +17,7 @@
     { "type": "style", "section": "Styles", "hidden": true }
   ],
   "draft": true,
+  "bootstrap-sha": "29af0d7e235ff9fec64bfca9c7aacd18cc50a712",
   "packages": {
     ".": {
       "component": "",
