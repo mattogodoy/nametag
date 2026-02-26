@@ -45,7 +45,7 @@ PRODUCTION_SECRETS.txt
 /data/photos
 
 # Claude Code local settings
-.claude/settings.local.json
+.claude
 
 # Dev Container local overrides
 .devcontainer/devcontainer.local.json
