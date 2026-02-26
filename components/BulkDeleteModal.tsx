@@ -36,16 +36,23 @@ export default function BulkDeleteModal({
   const [deleteOrphans, setDeleteOrphans] = useState(false);
   const [deleteFromCardDav, setDeleteFromCardDav] = useState(false);
   const [hasCardDavSync, setHasCardDavSync] = useState(false);
+  const [prevIsOpen, setPrevIsOpen] = useState(false);
+
+  // Reset state when modal opens (React "adjusting state during render" pattern)
+  if (isOpen && !prevIsOpen) {
+    setError(null);
+    setIsDeleting(false);
+    setDeleteOrphans(false);
+    setDeleteFromCardDav(false);
+    setOrphans([]);
+    setIsLoadingOrphans(true);
+  }
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+  }
 
   useEffect(() => {
     if (isOpen) {
-      setError(null);
-      setIsDeleting(false);
-      setDeleteOrphans(false);
-      setDeleteFromCardDav(false);
-      setOrphans([]);
-      setIsLoadingOrphans(true);
-
       const controller = new AbortController();
 
       fetch('/api/people/bulk/orphans', {
