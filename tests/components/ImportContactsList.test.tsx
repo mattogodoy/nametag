@@ -73,12 +73,26 @@ END:VCARD`,
     },
   ];
 
+  const mockRelationshipTypes = [
+    {
+      id: 'rel-1',
+      label: 'Friend',
+      color: '#00FF00',
+    },
+    {
+      id: 'rel-2',
+      label: 'Family',
+      color: '#0000FF',
+    },
+  ];
+
   describe('Redirect behavior', () => {
     it('should redirect to /settings/carddav on successful CardDAV import', async () => {
       render(
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={false}
         />
       );
@@ -103,6 +117,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={true}
         />
       );
@@ -127,6 +142,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={true}
         />
       );
@@ -153,6 +169,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={false}
         />
       );
@@ -168,6 +185,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={true}
         />
       );
@@ -186,6 +204,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={false}
         />
       );
@@ -211,6 +230,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={true}
         />
       );
@@ -236,6 +256,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
         />
       );
 
@@ -255,6 +276,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={false}
         />
       );
@@ -284,6 +306,7 @@ END:VCARD`,
         <ImportContactsList
           pendingImports={mockPendingImports}
           groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
           isFileImport={false}
         />
       );
@@ -309,6 +332,93 @@ END:VCARD`,
         const body = JSON.parse(callArg.body as string);
         expect(body.globalGroupIds).toEqual(['group-1']);
       });
+    });
+
+    it('should include globalRelationshipTypeId in API call when selected', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+
+      render(
+        <ImportContactsList
+          pendingImports={mockPendingImports}
+          groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
+          isFileImport={false}
+        />
+      );
+
+      // Select contact
+      const checkbox = screen.getAllByRole('checkbox')[1];
+      fireEvent.click(checkbox);
+
+      // Select global relationship
+      const relSelect = screen.getAllByRole('combobox')[0];
+      fireEvent.change(relSelect, { target: { value: 'rel-1' } });
+
+      const importButton = screen.getByText(/importSelected/);
+      fireEvent.click(importButton);
+
+      await waitFor(() => {
+        const callArg = fetchSpy.mock.calls[0]?.[1] as RequestInit;
+        const body = JSON.parse(callArg.body as string);
+        expect(body.globalRelationshipTypeId).toBe('rel-1');
+      });
+    });
+  });
+
+  describe('Relationship dropdown', () => {
+    it('should render global relationship dropdown with None default', () => {
+      render(
+        <ImportContactsList
+          pendingImports={mockPendingImports}
+          groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
+          isFileImport={false}
+        />
+      );
+
+      // The global relationship select should be present
+      const relSelect = screen.getAllByRole('combobox')[0];
+      expect(relSelect).toBeDefined();
+      expect((relSelect as HTMLSelectElement).value).toBe('');
+    });
+
+    it('should not render relationship dropdown when no relationship types exist', () => {
+      render(
+        <ImportContactsList
+          pendingImports={mockPendingImports}
+          groups={mockGroups}
+          relationshipTypes={[]}
+          isFileImport={false}
+        />
+      );
+
+      // Should not have any combobox (the group selector uses a text input, not a combobox)
+      const comboboxes = screen.queryAllByRole('combobox');
+      expect(comboboxes.length).toBe(0);
+    });
+
+    it('should detect unsaved changes when global relationship is set', () => {
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      render(
+        <ImportContactsList
+          pendingImports={mockPendingImports}
+          groups={mockGroups}
+          relationshipTypes={mockRelationshipTypes}
+          isFileImport={false}
+        />
+      );
+
+      // Select global relationship (creates unsaved change)
+      const relSelect = screen.getAllByRole('combobox')[0];
+      fireEvent.change(relSelect, { target: { value: 'rel-1' } });
+
+      // Try to cancel
+      const cancelButton = screen.getByText(/cancel/);
+      fireEvent.click(cancelButton);
+
+      expect(confirmSpy).toHaveBeenCalled();
+      confirmSpy.mockRestore();
     });
   });
 });

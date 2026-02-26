@@ -63,15 +63,18 @@ export default async function ImportPage({
     redirect('/settings/account');
   }
 
-  // Get user's groups for assignment
-  const groups = await prisma.group.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  });
+  // Get user's groups and relationship types for assignment
+  const [groups, relationshipTypes] = await Promise.all([
+    prisma.group.findMany({
+      where: { userId: session.user.id },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.relationshipType.findMany({
+      where: { userId: session.user.id },
+      orderBy: { label: 'asc' },
+      select: { id: true, label: true, color: true },
+    }),
+  ]);
 
   return (
     <>
@@ -107,6 +110,7 @@ export default async function ImportPage({
               <ImportContactsList
                 pendingImports={pendingImports}
                 groups={groups}
+                relationshipTypes={relationshipTypes}
                 isFileImport={isFileImport}
               />
             </>

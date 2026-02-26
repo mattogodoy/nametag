@@ -22,15 +22,23 @@ interface Group {
   color: string | null;
 }
 
+interface RelationshipType {
+  id: string;
+  label: string;
+  color: string | null;
+}
+
 interface ImportContactsListProps {
   pendingImports: PendingImport[];
   groups: Group[];
+  relationshipTypes: RelationshipType[];
   isFileImport?: boolean;
 }
 
 export default function ImportContactsList({
   pendingImports,
   groups,
+  relationshipTypes,
   isFileImport = false,
 }: ImportContactsListProps) {
   const t = useTranslations('settings.carddav.import');
@@ -39,6 +47,8 @@ export default function ImportContactsList({
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [perContactGroups, setPerContactGroups] = useState<Map<string, string[]>>(new Map());
   const [availableGroups, setAvailableGroups] = useState<Group[]>(groups);
+  const [globalRelationshipTypeId, setGlobalRelationshipTypeId] = useState<string>('');
+  const [perContactRelationshipTypeId, setPerContactRelationshipTypeId] = useState<Map<string, string>>(new Map());
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,8 +89,20 @@ export default function ImportContactsList({
     });
   };
 
+  const handlePerContactRelationshipChange = (contactId: string, relationshipTypeId: string) => {
+    setPerContactRelationshipTypeId((prev) => {
+      const newMap = new Map(prev);
+      if (relationshipTypeId === '') {
+        newMap.delete(contactId);
+      } else {
+        newMap.set(contactId, relationshipTypeId);
+      }
+      return newMap;
+    });
+  };
+
   // Detect unsaved changes
-  const hasUnsavedChanges = selectedIds.size > 0 || selectedGroupIds.length > 0 || perContactGroups.size > 0;
+  const hasUnsavedChanges = selectedIds.size > 0 || selectedGroupIds.length > 0 || perContactGroups.size > 0 || globalRelationshipTypeId !== '' || perContactRelationshipTypeId.size > 0;
 
   // Warn before leaving page with unsaved changes
   useEffect(() => {
@@ -122,6 +144,12 @@ export default function ImportContactsList({
         perContactGroupsObj[contactId] = groupIds;
       });
 
+      // Build per-contact relationships object
+      const perContactRelObj: Record<string, string> = {};
+      perContactRelationshipTypeId.forEach((relId, contactId) => {
+        perContactRelObj[contactId] = relId;
+      });
+
       const response = await fetch('/api/carddav/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -129,6 +157,8 @@ export default function ImportContactsList({
           importIds: Array.from(selectedIds),
           globalGroupIds: selectedGroupIds,
           perContactGroups: perContactGroupsObj,
+          globalRelationshipTypeId: globalRelationshipTypeId || null,
+          perContactRelationshipTypeId: perContactRelObj,
         }),
       });
 
@@ -172,20 +202,50 @@ export default function ImportContactsList({
 
   return (
     <div className="space-y-6">
-      {/* Group Selection */}
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <h3 className="font-semibold text-foreground mb-3">
-          {t('assignToGroups')}
-        </h3>
-        <p className="text-sm text-muted mb-3">
-          {t('assignToGroupsDescription')}
-        </p>
-        <GroupsSelector
-          availableGroups={availableGroups}
-          selectedGroupIds={selectedGroupIds}
-          onChange={setSelectedGroupIds}
-          onGroupCreated={handleGroupCreated}
-        />
+      {/* Global Settings: Groups + Relationship side by side */}
+      <div className={`grid gap-4 ${relationshipTypes.length > 0 ? 'md:grid-cols-2' : ''}`}>
+        {/* Group Selection */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h3 className="font-semibold text-foreground mb-3">
+            {t('assignToGroups')}
+          </h3>
+          <p className="text-sm text-muted mb-3">
+            {t('assignToGroupsDescription')}
+          </p>
+          <GroupsSelector
+            availableGroups={availableGroups}
+            selectedGroupIds={selectedGroupIds}
+            onChange={setSelectedGroupIds}
+            onGroupCreated={handleGroupCreated}
+          />
+        </div>
+
+        {/* Relationship Selection */}
+        {relationshipTypes.length > 0 && (
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 className="font-semibold text-foreground mb-3">
+              {t('assignRelationship')}
+            </h3>
+            <p className="text-sm text-muted mb-3">
+              {t('assignRelationshipDescription')}
+            </p>
+            <select
+              value={globalRelationshipTypeId}
+              onChange={(e) => setGlobalRelationshipTypeId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">{t('noRelationship')}</option>
+              {relationshipTypes.map((rt) => (
+                <option key={rt.id} value={rt.id}>
+                  {rt.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted mt-2">
+              {t('relationshipPrecedenceHelp')}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Error */}
@@ -230,6 +290,9 @@ export default function ImportContactsList({
               onGroupsChange={handlePerContactGroupsChange}
               onGroupCreated={handleGroupCreated}
               parsedData={parsed}
+              relationshipTypes={relationshipTypes}
+              selectedRelationshipTypeId={perContactRelationshipTypeId.get(pendingImport.id) || ''}
+              onRelationshipChange={handlePerContactRelationshipChange}
             />
           );
         })}
