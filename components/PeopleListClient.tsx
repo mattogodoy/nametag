@@ -13,7 +13,9 @@ import { formatDate, type DateFormat } from '@/lib/date-format';
 interface PersonRow {
   id: string;
   name: string;
+  middleName: string | null;
   surname: string | null;
+  secondLastName: string | null;
   nickname: string | null;
   lastContact: Date | null;
   relationshipToUser: { label: string; color: string | null } | null;
@@ -139,12 +141,14 @@ export default function PeopleListClient({
   }, [pageIds]);
 
   const selectedNames = useMemo(() => {
+    const fullName = (p: PersonRow) =>
+      [p.name, p.middleName, p.surname, p.secondLastName].filter(Boolean).join(' ');
     if (selectAllPages) {
-      return people.map((p) => p.name);
+      return people.map(fullName);
     }
     return people
       .filter((p) => selectedIds.has(p.id))
-      .map((p) => p.name);
+      .map(fullName);
   }, [selectedIds, selectAllPages, people]);
 
   const handleSuccess = useCallback(() => {
