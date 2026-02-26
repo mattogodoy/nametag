@@ -506,6 +506,7 @@ export default function PeopleListClient({
         selectedIds={Array.from(selectedIds)}
         selectAll={selectAllPages}
         selectedNames={selectedNames}
+        totalCount={totalCount}
         onSuccess={handleDeleteSuccess}
       />
 

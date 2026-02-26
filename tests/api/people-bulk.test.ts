@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   personUpdateMany: vi.fn(),
   personGroupCreateMany: vi.fn(),
   personGroupFindMany: vi.fn(),
+  groupFindMany: vi.fn(),
   cardDavMappingDeleteMany: vi.fn(),
   cardDavMappingFindMany: vi.fn(),
   relationshipTypeFindUnique: vi.fn(),
@@ -22,6 +23,9 @@ vi.mock('../../lib/prisma', () => ({
     personGroup: {
       createMany: mocks.personGroupCreateMany,
       findMany: mocks.personGroupFindMany,
+    },
+    group: {
+      findMany: mocks.groupFindMany,
     },
     cardDavMapping: {
       deleteMany: mocks.cardDavMappingDeleteMany,
@@ -113,6 +117,10 @@ describe('Bulk Actions API', () => {
 
   describe('addToGroups action', () => {
     it('should add people to groups avoiding duplicates', async () => {
+      mocks.groupFindMany.mockResolvedValue([
+        { id: 'g1' },
+        { id: 'g2' },
+      ]);
       mocks.personFindMany.mockResolvedValue([
         { id: 'p1', userId: 'user-123' },
         { id: 'p2', userId: 'user-123' },

@@ -11,6 +11,9 @@ async function resolvePersonIds(
   selectAll: boolean | undefined,
   userId: string
 ): Promise<string[]> {
+  if (!selectAll && (!personIds || personIds.length === 0)) {
+    return [];
+  }
   if (selectAll) {
     const allPeople = await prisma.person.findMany({
       where: { userId, deletedAt: null },
@@ -38,9 +41,19 @@ export const POST = withAuth(async (request, session) => {
         const ids = await resolvePersonIds(data.personIds, data.selectAll, session.user.id);
         if (ids.length === 0) return apiResponse.ok({ success: true, affectedCount: 0 });
 
+        // Validate orphan IDs belong to the current user
+        let validOrphanIds: string[] = [];
+        if (data.orphanIds && data.orphanIds.length > 0) {
+          const validOrphans = await prisma.person.findMany({
+            where: { id: { in: data.orphanIds }, userId: session.user.id },
+            select: { id: true },
+          });
+          validOrphanIds = validOrphans.map((o) => o.id);
+        }
+
         // If requested, delete from CardDAV server (do this before soft-deleting)
         if (data.deleteFromCardDav) {
-          const allIdsToDelete = [...ids, ...(data.orphanIds || [])];
+          const allIdsToDelete = [...ids, ...validOrphanIds];
           for (const id of allIdsToDelete) {
             await deleteContactFromCardDav(id).catch((error) => {
               log.error(
@@ -53,7 +66,7 @@ export const POST = withAuth(async (request, session) => {
 
         // Always delete the CardDAV mappings when deleting people
         // This allows re-importing the contacts if they still exist on the server
-        const allIdsForMapping = [...ids, ...(data.deleteOrphans && data.orphanIds ? data.orphanIds : [])];
+        const allIdsForMapping = [...ids, ...(data.deleteOrphans ? validOrphanIds : [])];
         await prisma.cardDavMapping.deleteMany({
           where: { personId: { in: allIdsForMapping } },
         });
@@ -65,9 +78,9 @@ export const POST = withAuth(async (request, session) => {
         });
 
         // If requested, also soft delete the orphans
-        if (data.deleteOrphans && data.orphanIds && data.orphanIds.length > 0) {
+        if (data.deleteOrphans && validOrphanIds.length > 0) {
           await prisma.person.updateMany({
-            where: { id: { in: data.orphanIds }, userId: session.user.id },
+            where: { id: { in: validOrphanIds }, userId: session.user.id },
             data: { deletedAt: new Date() },
           });
         }
@@ -76,6 +89,16 @@ export const POST = withAuth(async (request, session) => {
       }
 
       case 'addToGroups': {
+        // Validate all group IDs belong to the current user
+        const validGroups = await prisma.group.findMany({
+          where: { id: { in: data.groupIds }, userId: session.user.id },
+          select: { id: true },
+        });
+        const validGroupIds = validGroups.map((g) => g.id);
+        if (validGroupIds.length === 0) {
+          return apiResponse.notFound('No valid groups found');
+        }
+
         const ids = await resolvePersonIds(data.personIds, data.selectAll, session.user.id);
         if (ids.length === 0) return apiResponse.ok({ success: true, affectedCount: 0 });
 
@@ -83,7 +106,7 @@ export const POST = withAuth(async (request, session) => {
         const existingMemberships = await prisma.personGroup.findMany({
           where: {
             personId: { in: ids },
-            groupId: { in: data.groupIds },
+            groupId: { in: validGroupIds },
           },
           select: { personId: true, groupId: true },
         });
@@ -95,7 +118,7 @@ export const POST = withAuth(async (request, session) => {
         // Build list of new memberships, excluding already-existing ones
         const newMemberships: { personId: string; groupId: string }[] = [];
         for (const personId of ids) {
-          for (const groupId of data.groupIds) {
+          for (const groupId of validGroupIds) {
             if (!existingSet.has(`${personId}:${groupId}`)) {
               newMemberships.push({ personId, groupId });
             }

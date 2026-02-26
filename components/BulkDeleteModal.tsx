@@ -15,6 +15,7 @@ interface BulkDeleteModalProps {
   selectedIds: string[];
   selectAll: boolean;
   selectedNames: string[];
+  totalCount: number;
   onSuccess: () => void;
 }
 
@@ -24,6 +25,7 @@ export default function BulkDeleteModal({
   selectedIds,
   selectAll,
   selectedNames,
+  totalCount,
   onSuccess,
 }: BulkDeleteModalProps) {
   const t = useTranslations('people.bulk');
@@ -97,7 +99,7 @@ export default function BulkDeleteModal({
     }
   };
 
-  const count = selectAll ? selectedNames.length : selectedIds.length;
+  const count = selectAll ? totalCount : selectedIds.length;
 
   return (
     <ConfirmationModal
