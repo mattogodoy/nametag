@@ -1,0 +1,138 @@
+name: Publish Docker Image
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  packages: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set build environment (CI)
+        run: |
+          echo "DATABASE_URL=postgresql://localhost:5432/dummy" >> "$GITHUB_ENV"
+          echo "NEXTAUTH_URL=http://localhost:3000" >> "$GITHUB_ENV"
+          echo "RESEND_API_KEY=re_build_time_key" >> "$GITHUB_ENV"
+          echo "EMAIL_DOMAIN=build.example.com" >> "$GITHUB_ENV"
+          echo "NEXT_TELEMETRY_DISABLED=1" >> "$GITHUB_ENV"
+          printf "NEXTAUTH_SECRET=" >> "$GITHUB_ENV"
+          head -c 32 < /dev/zero | tr '\0' 'x' >> "$GITHUB_ENV"
+          printf "\n" >> "$GITHUB_ENV"
+          printf "CRON_SECRET=" >> "$GITHUB_ENV"
+          head -c 16 < /dev/zero | tr '\0' 'x' >> "$GITHUB_ENV"
+          printf "\n" >> "$GITHUB_ENV"
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+
+  build-images:
+    needs: verify
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ matrix.arch }}-${{ steps.version.outputs.version }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+          provenance: false
+          sbom: false
+
+  create-manifest:
+    needs: [verify, build-images]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA_SHORT=$(echo "$GITHUB_SHA" | cut -c1-7)
+          TIMESTAMP=$(date -u +'%Y%m%d-%H%M%S')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          echo "timestamp=${TIMESTAMP}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push multi-arch manifest
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SHA="${{ steps.version.outputs.sha_short }}"
+          TIMESTAMP="${{ steps.version.outputs.timestamp }}"
+          IMAGE="ghcr.io/${{ github.repository }}"
+
+          docker buildx imagetools create -t ${IMAGE}:${VERSION} \
+            ${IMAGE}:amd64-${VERSION} \
+            ${IMAGE}:arm64-${VERSION}
+
+          docker buildx imagetools create -t ${IMAGE}:latest \
+            ${IMAGE}:amd64-${VERSION} \
+            ${IMAGE}:arm64-${VERSION}
+
+          docker buildx imagetools create -t ${IMAGE}:${SHA} \
+            ${IMAGE}:amd64-${VERSION} \
+            ${IMAGE}:arm64-${VERSION}
+
+          docker buildx imagetools create -t ${IMAGE}:${TIMESTAMP} \
+            ${IMAGE}:amd64-${VERSION} \
+            ${IMAGE}:arm64-${VERSION}
