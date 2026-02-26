@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import BulkDeleteModal from './BulkDeleteModal';
 import BulkGroupAssignModal from './BulkGroupAssignModal';
 import BulkRelationshipModal from './BulkRelationshipModal';
-import type { DateFormat } from '@/lib/date-format';
+import { formatDate, type DateFormat } from '@/lib/date-format';
 
 interface PersonRow {
   id: string;
@@ -44,7 +44,6 @@ interface PeopleListClientProps {
   dateFormat: DateFormat;
   availableGroups: Group[];
   relationshipTypes: RelationshipType[];
-  formatDateFn: (date: Date | string, format: DateFormat) => string;
   translations: {
     surname: string;
     nickname: string;
@@ -77,7 +76,6 @@ export default function PeopleListClient({
   dateFormat,
   availableGroups,
   relationshipTypes,
-  formatDateFn,
   translations: tt,
   commonTranslations: tc,
 }: PeopleListClientProps) {
@@ -347,7 +345,7 @@ export default function PeopleListClient({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-                      {person.lastContact ? formatDateFn(new Date(person.lastContact), dateFormat) : '\u2014'}
+                      {person.lastContact ? formatDate(new Date(person.lastContact), dateFormat) : '\u2014'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-3">

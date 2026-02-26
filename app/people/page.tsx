@@ -6,7 +6,6 @@ import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
 import EmptyState from '@/components/EmptyState';
 import ImportSuccessToast from '@/components/ImportSuccessToast';
-import { formatDate } from '@/lib/date-format';
 import { canCreateResource } from '@/lib/billing/subscription';
 import { getTranslations } from 'next-intl/server';
 import PeopleListClient from '@/components/PeopleListClient';
@@ -194,7 +193,6 @@ export default async function PeoplePage({
                 dateFormat={dateFormat}
                 availableGroups={allGroups}
                 relationshipTypes={relationshipTypes}
-                formatDateFn={formatDate}
                 translations={{
                   surname: t('surname'),
                   nickname: t('nickname'),
