@@ -320,7 +320,13 @@
         "groupsCount": "{count, plural, =0 {Keine Gruppen} =1 {1 Gruppe} other {# Gruppen}}",
         "importSuccessToast": "{imported, plural, =1 {1 Kontakt erfolgreich importiert} other {# Kontakte erfolgreich importiert}}{skipped, plural, =0 {} =1 {, 1 Duplikat übersprungen} other {, # Duplikate übersprungen}}",
         "importCompleteWithErrors": "{imported, plural, =0 {Keine Kontakte importiert} =1 {1 Kontakt importiert} other {# Kontakte importiert}}, {errors, plural, =1 {1 Fehler aufgetreten} other {# Fehler aufgetreten}}",
-        "importFailed": "Kontakte konnten nicht importiert werden"
+        "importFailed": "Kontakte konnten nicht importiert werden",
+        "assignRelationship": "Beziehung zu dir (Optional)",
+        "assignRelationshipDescription": "Den ausgewählten Kontakten wird diese Beziehung zu dir zugewiesen",
+        "noRelationship": "Keine",
+        "relationshipPrecedenceHelp": "Du kannst dies für einzelne Kontakte überschreiben, indem du sie aufklappst und eine andere Beziehung auswählst.",
+        "contactRelationship": "Beziehung zu dir",
+        "useGlobalRelationship": "Globale Einstellung verwenden"
       },
       "notifications": {
         "newContactsFound": "{count} neue Kontakte gefunden",

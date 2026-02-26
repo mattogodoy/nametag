@@ -15,6 +15,8 @@ const importSchema = z.object({
   groupIds: z.array(z.string()).optional(),
   globalGroupIds: z.array(z.string()).optional(),
   perContactGroups: z.record(z.string(), z.array(z.string())).optional(),
+  globalRelationshipTypeId: z.string().nullable().optional(),
+  perContactRelationshipTypeId: z.record(z.string(), z.string()).optional(),
 });
 
 export const POST = withLogging(async function POST(request: Request) {
@@ -35,11 +37,12 @@ export const POST = withLogging(async function POST(request: Request) {
       );
     }
 
-    const { importIds, groupIds, globalGroupIds, perContactGroups } = validationResult.data;
+    const { importIds, groupIds, globalGroupIds, perContactGroups, globalRelationshipTypeId, perContactRelationshipTypeId } = validationResult.data;
 
     // Support both old and new API formats
     const globalGroups = globalGroupIds || groupIds || [];
     const contactGroups = perContactGroups || {};
+    const contactRelationships = perContactRelationshipTypeId || {};
 
     // Get the user's CardDAV connection (may not exist for file-only imports)
     const connection = await prisma.cardDavConnection.findUnique({
@@ -136,6 +139,21 @@ export const POST = withLogging(async function POST(request: Request) {
     const softDeletedMap = new Map(
       softDeletedPersons.map((p) => [p.uid, p])
     );
+
+    // Pre-fetch valid relationship types for assignment
+    const allRelTypeIds = new Set<string>();
+    if (globalRelationshipTypeId) allRelTypeIds.add(globalRelationshipTypeId);
+    for (const relId of Object.values(contactRelationships)) {
+      if (relId && relId !== '__none__') allRelTypeIds.add(relId);
+    }
+    const validRelTypeIds = new Set<string>();
+    if (allRelTypeIds.size > 0) {
+      const validRelTypes = await prisma.relationshipType.findMany({
+        where: { id: { in: [...allRelTypeIds] }, userId: session.user.id },
+        select: { id: true },
+      });
+      for (const rt of validRelTypes) validRelTypeIds.add(rt.id);
+    }
 
     for (const pendingImport of pendingImports) {
       try {
@@ -268,6 +286,18 @@ export const POST = withLogging(async function POST(request: Request) {
               });
             }
           }
+        }
+
+        // Assign relationship to user — per-contact overrides global
+        const perContactRelValue = contactRelationships[pendingImport.id];
+        const effectiveRelId = perContactRelValue === '__none__'
+          ? null
+          : perContactRelValue || globalRelationshipTypeId || null;
+        if (effectiveRelId && validRelTypeIds.has(effectiveRelId)) {
+          await prisma.person.update({
+            where: { id: person.id },
+            data: { relationshipToUserId: effectiveRelId },
+          });
         }
 
         // Delete pending import

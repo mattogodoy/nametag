@@ -32,6 +32,12 @@ interface Group {
   color: string | null;
 }
 
+interface RelationshipType {
+  id: string;
+  label: string;
+  color: string | null;
+}
+
 interface CompactContactRowProps {
   pendingImport: PendingImport;
   isSelected: boolean;
@@ -41,6 +47,9 @@ interface CompactContactRowProps {
   onGroupsChange: (contactId: string, groupIds: string[]) => void;
   onGroupCreated?: (group: Group) => void;
   parsedData: ParsedVCardData | null;
+  relationshipTypes: RelationshipType[];
+  selectedRelationshipTypeId: string;
+  onRelationshipChange: (contactId: string, relationshipTypeId: string) => void;
 }
 
 export default function CompactContactRow({
@@ -52,6 +61,9 @@ export default function CompactContactRow({
   onGroupsChange,
   onGroupCreated,
   parsedData,
+  relationshipTypes,
+  selectedRelationshipTypeId,
+  onRelationshipChange,
 }: CompactContactRowProps) {
   const t = useTranslations('settings.carddav.import');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -145,6 +157,21 @@ export default function CompactContactRow({
             })}
           </div>
         )}
+
+        {/* Relationship pill (read-only display) */}
+        {selectedRelationshipTypeId && selectedRelationshipTypeId !== '__none__' && (() => {
+          const relType = relationshipTypes.find((rt) => rt.id === selectedRelationshipTypeId);
+          if (!relType) return null;
+          return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-elevated rounded-full text-xs font-medium text-foreground flex-shrink-0">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: relType.color || '#9CA3AF' }}
+              />
+              {relType.label}
+            </span>
+          );
+        })()}
       </div>
 
       {/* Expanded details */}
@@ -190,6 +217,26 @@ export default function CompactContactRow({
               showCreateHint={false}
             />
           </div>
+          {relationshipTypes.length > 0 && (
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('contactRelationship')}
+              </label>
+              <select
+                value={selectedRelationshipTypeId}
+                onChange={(e) => onRelationshipChange(pendingImport.id, e.target.value)}
+                className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-surface text-foreground text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">{t('useGlobalRelationship')}</option>
+                <option value="__none__">{t('noRelationship')}</option>
+                {relationshipTypes.map((rt) => (
+                  <option key={rt.id} value={rt.id}>
+                    {rt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
     </div>
