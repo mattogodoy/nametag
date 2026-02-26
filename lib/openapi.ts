@@ -753,6 +753,100 @@ export function generateOpenAPISpec(): OpenAPISpec {
           },
         },
       },
+      '/api/people/bulk': {
+        post: {
+          tags: ['People'],
+          summary: 'Bulk actions on people',
+          description: 'Perform bulk operations on multiple people. Supports delete (soft-delete with optional orphan and CardDAV cleanup), add to groups, and set relationship type. Specify either personIds or selectAll: true.',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            required: ['action'],
+            discriminator: { propertyName: 'action' },
+            oneOf: [
+              {
+                type: 'object',
+                required: ['action'],
+                properties: {
+                  action: { type: 'string', enum: ['delete'] },
+                  personIds: { type: 'array', items: { type: 'string' } },
+                  selectAll: { type: 'boolean' },
+                  deleteOrphans: { type: 'boolean' },
+                  orphanIds: { type: 'array', items: { type: 'string' } },
+                  deleteFromCardDav: { type: 'boolean' },
+                },
+              },
+              {
+                type: 'object',
+                required: ['action', 'groupIds'],
+                properties: {
+                  action: { type: 'string', enum: ['addToGroups'] },
+                  personIds: { type: 'array', items: { type: 'string' } },
+                  selectAll: { type: 'boolean' },
+                  groupIds: { type: 'array', items: { type: 'string' } },
+                },
+              },
+              {
+                type: 'object',
+                required: ['action', 'relationshipTypeId'],
+                properties: {
+                  action: { type: 'string', enum: ['setRelationship'] },
+                  personIds: { type: 'array', items: { type: 'string' } },
+                  selectAll: { type: 'boolean' },
+                  relationshipTypeId: { type: 'string' },
+                },
+              },
+            ],
+          }),
+          responses: {
+            '200': jsonResponse('Bulk action result', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                affectedCount: { type: 'integer' },
+              },
+            }),
+            '400': { description: 'Validation error' },
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+      },
+      '/api/people/bulk/orphans': {
+        post: {
+          tags: ['People'],
+          summary: 'Find orphans for bulk deletion',
+          description: 'Computes the aggregate list of people who would become disconnected from the network if the specified people were deleted. Used to warn before bulk delete.',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              personIds: { type: 'array', items: { type: 'string' } },
+              selectAll: { type: 'boolean' },
+            },
+          }),
+          responses: {
+            '200': jsonResponse('Orphan check result', {
+              type: 'object',
+              properties: {
+                orphans: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      fullName: { type: 'string' },
+                    },
+                  },
+                },
+                hasCardDavSync: { type: 'boolean' },
+              },
+            }),
+            '400': { description: 'Validation error' },
+            '401': ref401(),
+          },
+        },
+      },
       '/api/people/{id}/graph': {
         get: {
           tags: ['People'],
