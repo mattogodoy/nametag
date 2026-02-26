@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import BackLink from '@/components/BackLink';
 import { prisma } from '@/lib/prisma';
 import DeletePersonButton from '@/components/DeletePersonButton';
 import DeleteUserRelationshipButton from '@/components/DeleteUserRelationshipButton';
@@ -270,12 +271,12 @@ export default async function PersonDetailsPage({
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="mb-6">
-            <Link
-              href="/people"
+            <BackLink
+              fallbackHref="/people"
               className="text-primary hover:underline text-sm"
             >
               {t('backToPeople')}
-            </Link>
+            </BackLink>
           </div>
 
           <div className="bg-surface shadow rounded-lg overflow-hidden">
