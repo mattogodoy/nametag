@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.25.0](https://github.com/mattogodoy/nametag/compare/v0.24.0...v0.25.0) (2026-02-26)
+
+
+### Features
+
+* enforce tier contact limits on VCF and CardDAV import flows ([c7aabdd](https://github.com/mattogodoy/nametag/commit/c7aabddd81e4eb21b8ee6dc00877bf458411168e))
+* enforce tier contact limits on VCF and CardDAV imports ([aa066ca](https://github.com/mattogodoy/nametag/commit/aa066ca9bf3f93589c85274447bdad6c8559d85d))
+
+
+### Bug Fixes
+
+* replace Function type with explicit signature in test mocks ([1e3108b](https://github.com/mattogodoy/nametag/commit/1e3108b47d073cc03360427a2c790ff387bffa57))
+
 ## [0.24.0](https://github.com/mattogodoy/nametag/compare/v0.23.0...v0.24.0) (2026-02-26)
 
 
