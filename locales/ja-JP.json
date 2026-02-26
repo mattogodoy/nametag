@@ -321,6 +321,7 @@
         "importSuccessToast": "{imported, plural, =1 {1件の連絡先を正常にインポート} other {#件の連絡先を正常にインポート}}{skipped, plural, =0 {} =1 {、1件の重複をスキップ} other {、#件の重複をスキップ}}",
         "importCompleteWithErrors": "{imported, plural, =0 {インポートされた連絡先なし} =1 {1件の連絡先をインポート} other {#件の連絡先をインポート}}、{errors, plural, =1 {1件のエラーが発生} other {#件のエラーが発生}}",
         "importFailed": "連絡先のインポートに失敗しました",
+        "importLimitExceeded": "このインポートはプランの連絡先上限を超えます。{requested}件の連絡先を追加しようとしていますが、残り{available}件分の空きしかありません。プランをアップグレードするか、選択する連絡先を減らしてください。",
         "assignRelationship": "あなたとの関係（任意）",
         "assignRelationshipDescription": "選択した連絡先にこの関係が割り当てられます",
         "noRelationship": "[なし]",

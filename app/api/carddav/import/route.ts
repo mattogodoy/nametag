@@ -6,6 +6,8 @@ import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData, restorePersonFromVCardData } from '@/lib/carddav/person-from-vcard';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
+import { isSaasMode } from '@/lib/features';
+import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { z } from 'zod';
 
 const log = createModuleLogger('carddav');
@@ -139,6 +141,56 @@ export const POST = withLogging(async function POST(request: Request) {
     const softDeletedMap = new Map(
       softDeletedPersons.map((p) => [p.uid, p])
     );
+
+    // Check tier limits before importing (only in SaaS mode)
+    if (isSaasMode()) {
+      // Count how many pending imports are truly new using the pre-fetched maps.
+      // A pending import is "new" if its UID doesn't match an existing mapping
+      // or an existing active person. Soft-deleted restorations DO count as new
+      // since soft-deleted records are excluded from getUserUsage counts.
+      let newCount = 0;
+      for (const pendingImport of pendingImports) {
+        try {
+          const parsed = vCardToPerson(pendingImport.vCardData);
+          if (parsed.uid) {
+            const hasMapping = existingMappingsByUid.has(parsed.uid);
+            const hasActivePerson = existingPersonsByUid.has(parsed.uid);
+            if (!hasMapping && !hasActivePerson) {
+              newCount++;
+            }
+          } else {
+            // No UID means it will always be created as new
+            newCount++;
+          }
+        } catch {
+          // Unparseable vCards will fail during the import loop
+        }
+      }
+
+      if (newCount > 0) {
+        const [currentUsage, usageCheck] = await Promise.all([
+          getUserUsage(session.user.id),
+          canCreateResource(session.user.id, 'people'),
+        ]);
+
+        const totalAfterImport = currentUsage.people + newCount;
+        const available = usageCheck.limit - currentUsage.people;
+
+        if (!usageCheck.isUnlimited && totalAfterImport > usageCheck.limit) {
+          return NextResponse.json(
+            {
+              error: `This import would exceed your plan's contact limit. ` +
+                `You have ${currentUsage.people} contacts and are trying to add ${newCount}, ` +
+                `but your plan allows ${usageCheck.limit}.`,
+              code: 'LIMIT_EXCEEDED',
+              available: Math.max(0, available),
+              requested: newCount,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
 
     // Pre-fetch valid relationship types for assignment
     const allRelTypeIds = new Set<string>();

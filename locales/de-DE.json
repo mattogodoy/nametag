@@ -321,6 +321,7 @@
         "importSuccessToast": "{imported, plural, =1 {1 Kontakt erfolgreich importiert} other {# Kontakte erfolgreich importiert}}{skipped, plural, =0 {} =1 {, 1 Duplikat übersprungen} other {, # Duplikate übersprungen}}",
         "importCompleteWithErrors": "{imported, plural, =0 {Keine Kontakte importiert} =1 {1 Kontakt importiert} other {# Kontakte importiert}}, {errors, plural, =1 {1 Fehler aufgetreten} other {# Fehler aufgetreten}}",
         "importFailed": "Kontakte konnten nicht importiert werden",
+        "importLimitExceeded": "Dieser Import würde das Kontaktlimit deines Plans überschreiten. Du versuchst {requested} Kontakte hinzuzufügen, aber es ist nur Platz für {available}. Bitte upgrade deinen Plan oder wähle weniger Kontakte aus.",
         "assignRelationship": "Beziehung zu dir (Optional)",
         "assignRelationshipDescription": "Den ausgewählten Kontakten wird diese Beziehung zu dir zugewiesen",
         "noRelationship": "[Keine]",

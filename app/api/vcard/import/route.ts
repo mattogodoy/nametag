@@ -6,6 +6,8 @@ import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData } from '@/lib/carddav/person-from-vcard';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
+import { isSaasMode } from '@/lib/features';
+import { canCreateResource, getUserUsage } from '@/lib/billing';
 
 const log = createModuleLogger('vcard');
 
@@ -37,6 +39,66 @@ export const POST = withLogging(async function POST(request: Request) {
 
     // Split into individual vCards (handle multiple contacts in one file)
     const vcards = vcardText.split(/(?=BEGIN:VCARD)/g).filter(v => v.trim());
+
+    // Check tier limits before importing (only in SaaS mode)
+    if (isSaasMode()) {
+      // Extract UIDs from all vCards to determine how many are truly new
+      const vcardUIDs: string[] = [];
+      for (const vcard of vcards) {
+        try {
+          const parsed = vCardToPerson(vcard);
+          if (parsed.uid) {
+            vcardUIDs.push(parsed.uid);
+          } else {
+            // vCards without UIDs are always new
+            vcardUIDs.push('');
+          }
+        } catch {
+          // Unparseable vCards will fail during the import loop
+        }
+      }
+
+      // Batch-fetch existing people by UID to find duplicates
+      const validUIDs = vcardUIDs.filter(Boolean);
+      const existingByUID = validUIDs.length > 0
+        ? await prisma.person.findMany({
+            where: {
+              uid: { in: validUIDs },
+              userId: session.user.id,
+            },
+            select: { uid: true },
+          })
+        : [];
+      const existingUIDSet = new Set(existingByUID.map((p) => p.uid));
+
+      // Count how many vCards are truly new (not duplicates)
+      const newCount = vcardUIDs.filter((uid) => !uid || !existingUIDSet.has(uid)).length;
+
+      if (newCount > 0) {
+        const [currentUsage, usageCheck] = await Promise.all([
+          getUserUsage(session.user.id),
+          canCreateResource(session.user.id, 'people'),
+        ]);
+
+        const totalAfterImport = currentUsage.people + newCount;
+
+        const available = usageCheck.limit - currentUsage.people;
+
+        if (!usageCheck.isUnlimited && totalAfterImport > usageCheck.limit) {
+          return NextResponse.json(
+            {
+              error: `This import would exceed your plan's contact limit. ` +
+                `You have ${currentUsage.people} contacts and are trying to add ${newCount}, ` +
+                `but your plan allows ${usageCheck.limit}.`,
+              code: 'LIMIT_EXCEEDED',
+              available: Math.max(0, available),
+              requested: newCount,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
 
     const results = {
       imported: 0,
