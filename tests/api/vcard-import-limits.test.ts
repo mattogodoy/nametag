@@ -85,7 +85,7 @@ vi.mock('@/lib/logger', () => ({
 
 // Mock api-utils (withLogging is a pass-through wrapper)
 vi.mock('@/lib/api-utils', () => ({
-  withLogging: (fn: Function) => fn,
+  withLogging: (fn: (...args: unknown[]) => unknown) => fn,
 }));
 
 // Import after mocking
