@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.24.0](https://github.com/mattogodoy/nametag/compare/v0.23.0...v0.24.0) (2026-02-26)
+
+
+### Features
+
+* add bulk actions API endpoint (delete, addToGroups, setRelationship) ([1c3d355](https://github.com/mattogodoy/nametag/commit/1c3d355562029fa8a1242ae5d51e961396c77a84))
+* add bulk orphans API endpoint for aggregate orphan detection ([4055890](https://github.com/mattogodoy/nametag/commit/40558904606e561ed322ea27b8a89f6bae8ef1ef))
+* add BulkDeleteModal component with orphan and CardDAV handling ([da09b2f](https://github.com/mattogodoy/nametag/commit/da09b2fd5aa4b651c299f3b931a8f7563bc03ecd))
+* add BulkGroupAssignModal component ([57b233e](https://github.com/mattogodoy/nametag/commit/57b233e8a7f59bf08b2b6d08808dd4b22a837cd6))
+* add BulkRelationshipModal component ([246add7](https://github.com/mattogodoy/nametag/commit/246add7155f72e764b1e22c7f2db8eb2e7651cda))
+* add i18n keys for bulk actions on people list ([fb41707](https://github.com/mattogodoy/nametag/commit/fb41707db3a2666cba8c945e0597ec1a8587bff6))
+* add PeopleListClient with selection state, floating bar, and modals ([e70ff0c](https://github.com/mattogodoy/nametag/commit/e70ff0cd204a6f3ace993886d8720e5742299ab6))
+* add skip-docker detection to publish workflow ([5cd7b4c](https://github.com/mattogodoy/nametag/commit/5cd7b4ca48ecf90105fff08c3236ca053b26b971))
+* add Zod validation schemas for bulk people actions ([e35c985](https://github.com/mattogodoy/nametag/commit/e35c98558e6c4088e655562a4f16b9de8103dbb8))
+* bulk actions for people list ([36b67f2](https://github.com/mattogodoy/nametag/commit/36b67f2e8c7698f29979905b68f9185f5fcdb339))
+* wire PeopleListClient into people page with bulk action support ([b1caecf](https://github.com/mattogodoy/nametag/commit/b1caecf963ed097cfd1a40ac31aecc861bd0077c))
+
+
+### Bug Fixes
+
+* Add brackets for dropdown texts] ([2bb0897](https://github.com/mattogodoy/nametag/commit/2bb08973e15a3bb3bc79b467a685cd1d755a4f32))
+* add ownership validation and correct count in bulk actions ([b54f19b](https://github.com/mattogodoy/nametag/commit/b54f19b6f5e47f321ed633dffb67c67319183c75))
+* back to people link preserves browser history ([b7370eb](https://github.com/mattogodoy/nametag/commit/b7370ebd4a656fab839c6dcaf356ef739a10a6da))
+* import formatDate directly in client component ([49167bd](https://github.com/mattogodoy/nametag/commit/49167bd1f91a97050b2b48af7dc42f69ce4b9169))
+* move synchronous state resets out of useEffect in BulkDeleteModal ([f8e2d4d](https://github.com/mattogodoy/nametag/commit/f8e2d4df6159815069a8f3422f6b072b99aa0ea2))
+* reset isDeleting state when bulk delete modal reopens ([0dee632](https://github.com/mattogodoy/nametag/commit/0dee632b9936937bd67224a7e227cad9a37a4958))
+* show full name in bulk delete confirmation list ([af351f1](https://github.com/mattogodoy/nametag/commit/af351f1dd843253014516ea99eef6f130238b40c))
+* split release and Docker build into separate workflows ([036871e](https://github.com/mattogodoy/nametag/commit/036871efedf065ab612f1e3dc5da411a707d5cc2))
+
 ## [0.23.0](https://github.com/mattogodoy/nametag/compare/v0.22.0...v0.23.0) (2026-02-26)
 
 
