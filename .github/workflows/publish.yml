@@ -5,10 +5,70 @@ on:
     types: [published]
 
 permissions:
+  contents: read
   packages: write
+  pull-requests: read
 
 jobs:
+  check-skip:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if Docker build should be skipped
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          SKIP=false
+          VERSION="${TAG_NAME#v}"
+
+          # Check 1: [skip docker] in release body (from commit messages)
+          if echo "$RELEASE_BODY" | grep -qi '\[skip docker\]'; then
+            echo "::notice::Skipping Docker build: [skip docker] found in release body"
+            SKIP=true
+          fi
+
+          # Check 2: "skip docker" comment on the release PR
+          if [ "$SKIP" = "false" ]; then
+            PR_NUMBER=$(gh pr list --state merged --search "release ${VERSION} in:title" --json number --jq '.[0].number' 2>/dev/null || echo "")
+            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+              if gh pr view "$PR_NUMBER" --json comments --jq '.comments[].body' 2>/dev/null | grep -qi 'skip docker'; then
+                echo "::notice::Skipping Docker build: 'skip docker' found in PR #${PR_NUMBER} comments"
+                SKIP=true
+              fi
+            fi
+          fi
+
+          # Check 3: Automatic - only non-Docker files changed
+          if [ "$SKIP" = "false" ]; then
+            PREV_TAG=$(git tag --sort=-v:refname --list 'v*' | sed -n '2p')
+            if [ -n "$PREV_TAG" ]; then
+              # Files that don't affect the Docker image (based on .dockerignore + non-app files)
+              DOCKER_RELEVANT=$(git diff --name-only "$PREV_TAG"..."$TAG_NAME" | grep -vE \
+                '^(\.github/|\.devcontainer/|\.vscode/|docs/|\.worktrees/|scripts/|backups/|coverage/|README\.md$|CLAUDE\.md$|CHANGELOG\.md$|docker-compose.*\.yml$|\.dockerignore$|\.gitignore$|\.release-please-manifest\.json$|release-please-config\.json$|\.env\.example$)' \
+                || true)
+              if [ -z "$DOCKER_RELEVANT" ]; then
+                echo "::notice::Skipping Docker build: only non-Docker files changed since $PREV_TAG"
+                SKIP=true
+              else
+                echo "Docker-relevant files changed:"
+                echo "$DOCKER_RELEVANT"
+              fi
+            fi
+          fi
+
+          echo "skip=${SKIP}" >> "$GITHUB_OUTPUT"
+
   verify:
+    needs: check-skip
+    if: needs.check-skip.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +112,8 @@ jobs:
         run: npm run build
 
   build-images:
-    needs: verify
+    needs: [check-skip, verify]
+    if: needs.check-skip.outputs.skip != 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -94,7 +155,8 @@ jobs:
           sbom: false
 
   create-manifest:
-    needs: [verify, build-images]
+    needs: [check-skip, verify, build-images]
+    if: needs.check-skip.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Log in to GitHub Container Registry
