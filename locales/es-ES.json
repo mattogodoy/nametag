@@ -323,10 +323,10 @@
         "importFailed": "Error al importar los contactos",
         "assignRelationship": "Relación contigo (Opcional)",
         "assignRelationshipDescription": "A los contactos seleccionados se les asignará esta relación contigo",
-        "noRelationship": "Ninguna",
+        "noRelationship": "[Ninguna]",
         "relationshipPrecedenceHelp": "Puedes anular esto para contactos individuales expandiéndolos y seleccionando una relación diferente.",
         "contactRelationship": "Relación contigo",
-        "useGlobalRelationship": "Usar configuración global"
+        "useGlobalRelationship": "[Usar configuración global]"
       },
       "notifications": {
         "newContactsFound": "{count} contactos nuevos encontrados",

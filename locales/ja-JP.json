@@ -323,10 +323,10 @@
         "importFailed": "連絡先のインポートに失敗しました",
         "assignRelationship": "あなたとの関係（任意）",
         "assignRelationshipDescription": "選択した連絡先にこの関係が割り当てられます",
-        "noRelationship": "なし",
+        "noRelationship": "[なし]",
         "relationshipPrecedenceHelp": "個別の連絡先を展開して別の関係を選択することで、これを上書きできます。",
         "contactRelationship": "あなたとの関係",
-        "useGlobalRelationship": "グローバル設定を使用"
+        "useGlobalRelationship": "[グローバル設定を使用]"
       },
       "notifications": {
         "newContactsFound": "{count}件の新しい連絡先が見つかりました",

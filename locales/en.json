@@ -323,10 +323,10 @@
         "importFailed": "Failed to import contacts",
         "assignRelationship": "Relationship to You (Optional)",
         "assignRelationshipDescription": "Selected contacts will be assigned this relationship to you",
-        "noRelationship": "None",
+        "noRelationship": "[None]",
         "relationshipPrecedenceHelp": "You can override this for individual contacts by expanding them and selecting a different relationship.",
         "contactRelationship": "Relationship to You",
-        "useGlobalRelationship": "Use global setting"
+        "useGlobalRelationship": "[Use global setting]"
       },
       "notifications": {
         "newContactsFound": "{count} new contacts found",

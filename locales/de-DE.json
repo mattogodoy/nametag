@@ -323,10 +323,10 @@
         "importFailed": "Kontakte konnten nicht importiert werden",
         "assignRelationship": "Beziehung zu dir (Optional)",
         "assignRelationshipDescription": "Den ausgewählten Kontakten wird diese Beziehung zu dir zugewiesen",
-        "noRelationship": "Keine",
+        "noRelationship": "[Keine]",
         "relationshipPrecedenceHelp": "Du kannst dies für einzelne Kontakte überschreiben, indem du sie aufklappst und eine andere Beziehung auswählst.",
         "contactRelationship": "Beziehung zu dir",
-        "useGlobalRelationship": "Globale Einstellung verwenden"
+        "useGlobalRelationship": "[Globale Einstellung verwenden]"
       },
       "notifications": {
         "newContactsFound": "{count} neue Kontakte gefunden",

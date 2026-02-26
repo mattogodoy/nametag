@@ -323,10 +323,10 @@
         "importFailed": "Kunne ikke importere kontakter",
         "assignRelationship": "Relasjon til deg (valgfritt)",
         "assignRelationshipDescription": "Valgte kontakter vil bli tildelt denne relasjonen til deg",
-        "noRelationship": "Ingen",
+        "noRelationship": "[Ingen]",
         "relationshipPrecedenceHelp": "Du kan overstyre dette for individuelle kontakter ved å utvide dem og velge en annen relasjon.",
         "contactRelationship": "Relasjon til deg",
-        "useGlobalRelationship": "Bruk global innstilling"
+        "useGlobalRelationship": "[Bruk global innstilling]"
       },
       "notifications": {
         "newContactsFound": "{count} nye kontakter funnet",
