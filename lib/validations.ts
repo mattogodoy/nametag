@@ -185,6 +185,43 @@ export const deletePersonSchema = z.object({
 });
 
 // ============================================
+// Bulk action schemas
+// ============================================
+
+const bulkTargetSchema = z.object({
+  personIds: z.array(z.string()).optional(),
+  selectAll: z.boolean().optional(),
+}).refine(
+  (data) => (data.personIds && data.personIds.length > 0) || data.selectAll === true,
+  { message: 'Either personIds or selectAll must be provided' }
+);
+
+export const bulkOrphansSchema = bulkTargetSchema;
+
+export const bulkActionSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('delete'),
+    personIds: z.array(z.string()).optional(),
+    selectAll: z.boolean().optional(),
+    deleteOrphans: z.boolean(),
+    orphanIds: z.array(z.string()).optional(),
+    deleteFromCardDav: z.boolean(),
+  }),
+  z.object({
+    action: z.literal('addToGroups'),
+    personIds: z.array(z.string()).optional(),
+    selectAll: z.boolean().optional(),
+    groupIds: z.array(z.string()).min(1),
+  }),
+  z.object({
+    action: z.literal('setRelationship'),
+    personIds: z.array(z.string()).optional(),
+    selectAll: z.boolean().optional(),
+    relationshipTypeId: z.string(),
+  }),
+]);
+
+// ============================================
 // Group schemas
 // ============================================
 

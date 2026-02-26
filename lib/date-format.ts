@@ -1,4 +1,4 @@
-type DateFormat = 'MDY' | 'DMY' | 'YMD';
+export type DateFormat = 'MDY' | 'DMY' | 'YMD';
 
 /**
  * Parse a date string or Date object as a local date, avoiding timezone issues.

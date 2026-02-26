@@ -18,6 +18,8 @@ import {
   updateDateFormatSchema,
   updateImportantDateSchema,
   validateRequest,
+  bulkOrphansSchema,
+  bulkActionSchema,
 } from '@/lib/validations';
 
 describe('validations', () => {
@@ -747,6 +749,73 @@ describe('validations', () => {
         const body = await result.response.json();
         expect(body.details[0].field).toBe('name');
       }
+    });
+  });
+
+  describe('Bulk action schemas', () => {
+    describe('bulkOrphansSchema', () => {
+      it('should accept personIds array', () => {
+        const result = bulkOrphansSchema.safeParse({ personIds: ['id1', 'id2'] });
+        expect(result.success).toBe(true);
+      });
+
+      it('should accept selectAll flag', () => {
+        const result = bulkOrphansSchema.safeParse({ selectAll: true });
+        expect(result.success).toBe(true);
+      });
+
+      it('should reject empty object', () => {
+        const result = bulkOrphansSchema.safeParse({});
+        expect(result.success).toBe(false);
+      });
+    });
+
+    describe('bulkActionSchema', () => {
+      it('should accept delete action with personIds', () => {
+        const result = bulkActionSchema.safeParse({
+          action: 'delete',
+          personIds: ['id1'],
+          deleteOrphans: false,
+          deleteFromCardDav: false,
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it('should accept addToGroups action', () => {
+        const result = bulkActionSchema.safeParse({
+          action: 'addToGroups',
+          personIds: ['id1'],
+          groupIds: ['g1'],
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it('should accept setRelationship action', () => {
+        const result = bulkActionSchema.safeParse({
+          action: 'setRelationship',
+          personIds: ['id1'],
+          relationshipTypeId: 'rt1',
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it('should accept selectAll flag instead of personIds', () => {
+        const result = bulkActionSchema.safeParse({
+          action: 'delete',
+          selectAll: true,
+          deleteOrphans: false,
+          deleteFromCardDav: false,
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it('should reject unknown action', () => {
+        const result = bulkActionSchema.safeParse({
+          action: 'unknown',
+          personIds: ['id1'],
+        });
+        expect(result.success).toBe(false);
+      });
     });
   });
 });
