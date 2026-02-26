@@ -164,6 +164,12 @@ export default function ImportContactsList({
 
       if (!response.ok) {
         const data = await response.json();
+        if (response.status === 403 && data.code === 'LIMIT_EXCEEDED') {
+          throw new Error(t('importLimitExceeded', {
+            available: data.available ?? 0,
+            requested: data.requested ?? 0,
+          }));
+        }
         throw new Error(data.error || t('importFailed'));
       }
 
@@ -181,6 +187,7 @@ export default function ImportContactsList({
     } catch (err) {
       setError(err instanceof Error ? err.message : t('importFailed'));
       setImporting(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
