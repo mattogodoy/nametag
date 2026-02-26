@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import BulkDeleteModal from './BulkDeleteModal';
 import BulkGroupAssignModal from './BulkGroupAssignModal';
 import BulkRelationshipModal from './BulkRelationshipModal';
+import type { DateFormat } from '@/lib/date-format';
 
 interface PersonRow {
   id: string;
@@ -24,7 +25,7 @@ interface PersonRow {
 interface Group {
   id: string;
   name: string;
-  color: string;
+  color: string | null;
 }
 
 interface RelationshipType {
@@ -40,10 +41,10 @@ interface PeopleListClientProps {
   totalPages: number;
   sortBy: string;
   order: string;
-  dateFormat: string;
+  dateFormat: DateFormat;
   availableGroups: Group[];
   relationshipTypes: RelationshipType[];
-  formatDateFn: (date: Date, format: string) => string;
+  formatDateFn: (date: Date | string, format: DateFormat) => string;
   translations: {
     surname: string;
     nickname: string;

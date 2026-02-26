@@ -9,7 +9,7 @@ import GroupsSelector from './GroupsSelector';
 interface Group {
   id: string;
   name: string;
-  color: string;
+  color: string | null;
 }
 
 interface BulkGroupAssignModalProps {
