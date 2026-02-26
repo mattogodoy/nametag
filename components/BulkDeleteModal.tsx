@@ -40,6 +40,7 @@ export default function BulkDeleteModal({
   useEffect(() => {
     if (isOpen) {
       setError(null);
+      setIsDeleting(false);
       setDeleteOrphans(false);
       setDeleteFromCardDav(false);
       setOrphans([]);
