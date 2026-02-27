@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { getPhotoUrl } from '@/lib/photo-url';
 
 export interface PersonForCompare {
   id: string;
@@ -500,7 +501,8 @@ export default function PersonCompare({
                             >
                               {field.key === 'photo' && field.valA ? (
                                 <PhotoPreview
-                                  src={field.valA}
+                                  personId={personA.id}
+                                  photo={field.valA}
                                   name={formatPersonLabel(personA)}
                                 />
                               ) : (
@@ -529,7 +531,8 @@ export default function PersonCompare({
                             >
                               {field.key === 'photo' && field.valB ? (
                                 <PhotoPreview
-                                  src={field.valB}
+                                  personId={personB.id}
+                                  photo={field.valB}
                                   name={formatPersonLabel(personB)}
                                 />
                               ) : (
@@ -650,7 +653,8 @@ export default function PersonCompare({
                         <td className="px-3 py-2 text-sm text-foreground break-words">
                           {field.key === 'photo' && (field.valA ?? field.valB) ? (
                             <PhotoPreview
-                              src={(field.valA ?? field.valB) as string}
+                              personId={field.valA ? personA.id : personB.id}
+                              photo={(field.valA ?? field.valB) as string}
                               name={formatPersonLabel(primary)}
                             />
                           ) : (
@@ -729,11 +733,13 @@ export default function PersonCompare({
 }
 
 /** Small photo preview thumbnail for comparing photos side by side. */
-function PhotoPreview({ src, name }: { src: string; name: string }) {
+function PhotoPreview({ personId, photo, name }: { personId: string; photo: string; name: string }) {
+  const url = getPhotoUrl(personId, photo);
+  if (!url) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={url}
       alt={name}
       className="w-12 h-12 rounded-full object-cover border border-border"
     />
