@@ -1041,7 +1041,25 @@
       "willCombine": "Se combinarán:",
       "willDelete": "El contacto secundario se eliminará tras la fusión.",
       "noConflicts": "No hay campos en conflicto. Se conservarán los valores del contacto principal.",
-      "keepValue": "Conservar este valor"
+      "keepValue": "Conservar este valor",
+      "fieldName": "Nombre",
+      "fieldSurname": "Apellido",
+      "fieldMiddleName": "Segundo nombre",
+      "fieldSecondLastName": "Segundo apellido",
+      "fieldNickname": "Apodo",
+      "fieldPrefix": "Prefijo",
+      "fieldSuffix": "Sufijo",
+      "fieldOrganization": "Organización",
+      "fieldJobTitle": "Cargo",
+      "fieldGender": "Género",
+      "fieldAnniversary": "Aniversario",
+      "fieldLastContact": "Último contacto",
+      "fieldPhoto": "Foto",
+      "fieldNotes": "Notas",
+      "fieldRelationshipToUser": "Relación con el usuario",
+      "sameValue": "Ambos contactos tienen el mismo valor",
+      "onlyOneHasValue": "Solo un contacto tiene un valor",
+      "empty": "-"
     }
   },
   "groups": {

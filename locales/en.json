@@ -1041,7 +1041,25 @@
       "willCombine": "Will be combined:",
       "willDelete": "The secondary contact will be deleted after merging.",
       "noConflicts": "No conflicting fields. The primary contact's values will be kept.",
-      "keepValue": "Keep this value"
+      "keepValue": "Keep this value",
+      "fieldName": "Name",
+      "fieldSurname": "Last Name",
+      "fieldMiddleName": "Middle Name",
+      "fieldSecondLastName": "Second Last Name",
+      "fieldNickname": "Nickname",
+      "fieldPrefix": "Prefix",
+      "fieldSuffix": "Suffix",
+      "fieldOrganization": "Organization",
+      "fieldJobTitle": "Job Title",
+      "fieldGender": "Gender",
+      "fieldAnniversary": "Anniversary",
+      "fieldLastContact": "Last Contact",
+      "fieldPhoto": "Photo",
+      "fieldNotes": "Notes",
+      "fieldRelationshipToUser": "Relationship to User",
+      "sameValue": "Both contacts have the same value",
+      "onlyOneHasValue": "Only one contact has a value",
+      "empty": "-"
     }
   },
   "groups": {
