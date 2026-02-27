@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.25.1](https://github.com/mattogodoy/nametag/compare/v0.25.0...v0.25.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* escape quotation marks in German locale to fix JSON parsing ([140fc71](https://github.com/mattogodoy/nametag/commit/140fc71791b81930f0b8d42c8f86e0002e45b5a0))
+* reset bulk relationship button state after success and add missing translations ([0653416](https://github.com/mattogodoy/nametag/commit/06534169ad1f5b5ba38548855dfb4c5356112cd1))
+
 ## [0.25.0](https://github.com/mattogodoy/nametag/compare/v0.24.0...v0.25.0) (2026-02-26)
 
 
