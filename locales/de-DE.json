@@ -1012,7 +1012,8 @@
       "similarity": "{score}% Übereinstimmung",
       "merge": "Zusammenführen",
       "scanAll": "Alle Kontakte prüfen",
-      "duplicateGroups": "{count, plural, one {# Gruppe} other {# Gruppen}} möglicher Duplikate gefunden"
+      "duplicateGroups": "{count, plural, one {# Gruppe} other {# Gruppen}} möglicher Duplikate gefunden",
+      "error": "Beim Suchen nach Duplikaten ist ein Fehler aufgetreten."
     },
     "merge": {
       "title": "Kontakte zusammenführen",

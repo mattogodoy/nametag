@@ -1005,6 +1005,62 @@ describe('POST /api/people/merge', () => {
         data: { relatedPersonId: PRIMARY_ID },
       });
     });
+
+    it('skips duplicate relationships when both contacts relate to the same person', async () => {
+      // Primary already has a relationship with PERSON_3
+      const primary = makePerson({
+        id: PRIMARY_ID,
+        relationshipsFrom: [
+          { id: 'rel-primary-3', personId: PRIMARY_ID, relatedPersonId: PERSON_3_ID, relationshipTypeId: 'rt-1' },
+        ],
+        relationshipsTo: [
+          { id: 'rel-4-primary', personId: PERSON_4_ID, relatedPersonId: PRIMARY_ID, relationshipTypeId: 'rt-2' },
+        ],
+      });
+
+      // Secondary also has relationships with the same people + one unique one
+      const secondary = makePerson({
+        id: SECONDARY_ID,
+        relationshipsFrom: [
+          { id: 'rel-dup-3', personId: SECONDARY_ID, relatedPersonId: PERSON_3_ID, relationshipTypeId: 'rt-1' },
+          { id: 'rel-unique-5', personId: SECONDARY_ID, relatedPersonId: PERSON_5_ID, relationshipTypeId: 'rt-3' },
+        ],
+        relationshipsTo: [
+          { id: 'rel-dup-4', personId: PERSON_4_ID, relatedPersonId: SECONDARY_ID, relationshipTypeId: 'rt-2' },
+        ],
+      });
+
+      mocks.personFindUnique.mockResolvedValueOnce(primary);
+      mocks.personFindUnique.mockResolvedValueOnce(secondary);
+
+      const response = await POST(makeRequest({
+        primaryId: PRIMARY_ID,
+        secondaryId: SECONDARY_ID,
+      }));
+
+      expect(response.status).toBe(200);
+
+      // Only rel-unique-5 should be transferred (rel-dup-3 duplicates primary's rel to PERSON_3)
+      const fromCall = mocks.relationshipUpdateMany.mock.calls.find(
+        (c: unknown[]) => (c[0] as Record<string, Record<string, unknown>>).data.personId === PRIMARY_ID
+      );
+      expect(fromCall).toBeDefined();
+      expect(fromCall![0].where.id.in).toEqual(['rel-unique-5']);
+
+      // No relationshipsTo should be transferred (rel-dup-4 duplicates primary's rel from PERSON_4)
+      const toCall = mocks.relationshipUpdateMany.mock.calls.find(
+        (c: unknown[]) => (c[0] as Record<string, Record<string, unknown>>).data.relatedPersonId === PRIMARY_ID
+      );
+      expect(toCall).toBeUndefined();
+
+      // Duplicates should be soft-deleted as leftovers
+      const softDeleteCall = mocks.relationshipUpdateMany.mock.calls.find(
+        (c: unknown[]) => (c[0] as Record<string, Record<string, unknown>>).data.deletedAt instanceof Date
+      );
+      expect(softDeleteCall).toBeDefined();
+      expect(softDeleteCall![0].where.id.in).toContain('rel-dup-3');
+      expect(softDeleteCall![0].where.id.in).toContain('rel-dup-4');
+    });
   });
 
   // ─── CardDAV cleanup ───────────────────────────────────────────

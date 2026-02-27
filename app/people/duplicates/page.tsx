@@ -10,6 +10,7 @@ export default function DuplicatesPage() {
 
   const [groups, setGroups] = useState<DuplicateGroupDisplay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     async function fetchDuplicates() {
@@ -18,9 +19,11 @@ export default function DuplicatesPage() {
         if (res.ok) {
           const data: { groups: DuplicateGroupDisplay[] } = await res.json();
           setGroups(data.groups);
+        } else {
+          setError(true);
         }
       } catch {
-        // Silently handle - empty groups will show the empty state
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -41,6 +44,10 @@ export default function DuplicatesPage() {
             <div className="flex flex-col items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
               <p className="mt-4 text-muted">{tCommon('loading')}</p>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-400 dark:border-red-800 rounded-lg p-6">
+              <p className="text-red-600 dark:text-red-300">{t('error')}</p>
             </div>
           ) : (
             <DuplicatesList groups={groups} />

@@ -230,10 +230,6 @@ export function findAllDuplicateGroups(
     uf.makeSet(person.id);
   }
 
-  // Track the highest similarity for each pair that gets unioned
-  // Key: canonical root after union -> max similarity seen
-  const groupMaxSimilarity = new Map<string, number>();
-
   // Compare every pair
   for (let i = 0; i < people.length; i++) {
     for (let j = i + 1; j < people.length; j++) {
@@ -243,13 +239,6 @@ export function findAllDuplicateGroups(
 
       if (similarity >= SIMILARITY_THRESHOLD) {
         uf.union(a.id, b.id);
-
-        // Track the max similarity for the resulting group
-        const root = uf.find(a.id);
-        const current = groupMaxSimilarity.get(root) ?? 0;
-        if (similarity > current) {
-          groupMaxSimilarity.set(root, similarity);
-        }
       }
     }
   }
@@ -266,12 +255,11 @@ export function findAllDuplicateGroups(
 
   // Build result: only groups with 2+ members
   const result: DuplicateGroup[] = [];
-  for (const [root, members] of groups) {
+  for (const [, members] of groups) {
     if (members.length < 2) continue;
 
-    // Re-derive max similarity for this root (roots may have changed
-    // due to path compression, so recalculate from members)
-    let maxSim = 0;
+    // Derive max pairwise similarity within this group
+    let maxSim = SIMILARITY_THRESHOLD;
     for (let i = 0; i < members.length; i++) {
       for (let j = i + 1; j < members.length; j++) {
         const sim = stringSimilarity(
@@ -282,16 +270,13 @@ export function findAllDuplicateGroups(
       }
     }
 
-    // Use the recalculated max, but fall back to tracked value just in case
-    const similarity = maxSim || groupMaxSimilarity.get(root) || SIMILARITY_THRESHOLD;
-
     result.push({
       people: members.map((p) => ({
         id: p.id,
         name: p.name,
         surname: p.surname,
       })),
-      similarity,
+      similarity: maxSim,
     });
   }
 

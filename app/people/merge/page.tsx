@@ -23,9 +23,10 @@ interface ApiRelationshipFrom {
 }
 
 interface ApiPersonResponse {
-  person: Omit<PersonForCompare, 'relationshipToUser' | 'relationshipsFrom'> & {
+  person: Omit<PersonForCompare, 'relationshipToUser' | 'relationshipsFrom' | 'relationshipsTo'> & {
     relationshipToUser: ApiRelationshipToUser | null;
     relationshipsFrom?: ApiRelationshipFrom[];
+    relationshipsTo?: Array<{ id: string }>;
   };
 }
 
@@ -41,6 +42,7 @@ function mapApiPersonToCompare(
         }
       : null,
     relationshipsFrom: apiPerson.relationshipsFrom?.map((r) => ({ id: r.id })),
+    relationshipsTo: apiPerson.relationshipsTo,
   };
 }
 

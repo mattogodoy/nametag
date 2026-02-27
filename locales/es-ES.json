@@ -1012,7 +1012,8 @@
       "similarity": "{score}% de coincidencia",
       "merge": "Fusionar",
       "scanAll": "Analizar todos los contactos",
-      "duplicateGroups": "{count, plural, one {# grupo} other {# grupos}} de posibles duplicados encontrados"
+      "duplicateGroups": "{count, plural, one {# grupo} other {# grupos}} de posibles duplicados encontrados",
+      "error": "Ocurrió un error al buscar duplicados."
     },
     "merge": {
       "title": "Fusionar contactos",

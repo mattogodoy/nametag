@@ -1012,7 +1012,8 @@
       "similarity": "{score}% samsvar",
       "merge": "Slå sammen",
       "scanAll": "Skann alle kontakter",
-      "duplicateGroups": "{count, plural, one {# gruppe} other {# grupper}} med mulige duplikater funnet"
+      "duplicateGroups": "{count, plural, one {# gruppe} other {# grupper}} med mulige duplikater funnet",
+      "error": "Det oppstod en feil under søk etter duplikater."
     },
     "merge": {
       "title": "Slå sammen kontakter",

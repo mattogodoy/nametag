@@ -1012,7 +1012,8 @@
       "similarity": "{score}%一致",
       "merge": "統合",
       "scanAll": "すべての連絡先をスキャン",
-      "duplicateGroups": "{count, plural, other {#件のグループ}}の重複候補が見つかりました"
+      "duplicateGroups": "{count, plural, other {#件のグループ}}の重複候補が見つかりました",
+      "error": "重複の検索中にエラーが発生しました。"
     },
     "merge": {
       "title": "連絡先の統合",

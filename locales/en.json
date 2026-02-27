@@ -1012,7 +1012,8 @@
       "similarity": "{score}% match",
       "merge": "Merge",
       "scanAll": "Scan All Contacts",
-      "duplicateGroups": "{count, plural, one {# group} other {# groups}} of potential duplicates found"
+      "duplicateGroups": "{count, plural, one {# group} other {# groups}} of potential duplicates found",
+      "error": "An error occurred while searching for duplicates."
     },
     "merge": {
       "title": "Merge Contacts",

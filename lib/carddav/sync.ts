@@ -135,6 +135,9 @@ export async function syncFromServer(
       if (m.href) mappingByHref.set(m.href, m);
     }
 
+    // Collect all UIDs seen on the server during processing (for stale import cleanup)
+    const serverUids = new Set<string>();
+
     // Process each vCard
     for (let i = 0; i < vCards.length; i++) {
       const vCard = vCards[i];
@@ -157,6 +160,8 @@ export async function syncFromServer(
           result.errors++;
           continue;
         }
+
+        serverUids.add(parsedData.uid);
 
         // O(1) in-memory lookup: try UID first, then href as fallback.
         // The href fallback handles servers that rewrite vCard UIDs
@@ -326,17 +331,6 @@ export async function syncFromServer(
     });
 
     // Clean up stale pending imports whose UIDs no longer exist on the server.
-    // Collect all UIDs seen on the server during this sync.
-    const serverUids = new Set<string>();
-    for (const vCard of vCards) {
-      try {
-        const parsed = vCardToPerson(vCard.data);
-        if (parsed.uid) serverUids.add(parsed.uid);
-      } catch {
-        // Skip unparseable vCards
-      }
-    }
-
     // UIDs that are already mapped (imported) are also valid — not stale
     const mappedUids = new Set(allMappings.map((m) => m.uid));
     const allValidUids = new Set([...serverUids, ...mappedUids]);

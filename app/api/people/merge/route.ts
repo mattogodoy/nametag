@@ -110,14 +110,23 @@ export const POST = withAuth(async (request, session) => {
                 }
 
                 // Try 3: Match by name (FN field) — needed for Google Contacts
-                // which replaces both URL and UID with its own values
+                // which replaces both URL and UID with its own values.
+                // Only use when exactly one vCard matches to avoid deleting the wrong contact.
                 if (!match) {
                   const fullName = [secondary.name, secondary.surname].filter(Boolean).join(' ');
                   if (fullName) {
-                    match = vCards.find((vc) => {
+                    const fnMatches = vCards.filter((vc) => {
                       const fnMatch = vc.data.match(/^FN[^:]*:(.+)$/mi);
                       return fnMatch && fnMatch[1].trim() === fullName;
-                    }) || null;
+                    });
+                    if (fnMatches.length === 1) {
+                      match = fnMatches[0];
+                    } else if (fnMatches.length > 1) {
+                      log.warn(
+                        { personId: secondaryId, count: fnMatches.length, fullName },
+                        'Multiple vCards match by name, skipping delete to avoid wrong deletion'
+                      );
+                    }
                   }
                 }
 
@@ -259,17 +268,23 @@ export const POST = withAuth(async (request, session) => {
       return !primaryImportantDates.has(key);
     });
 
+    // Build sets of existing primary relationships to avoid creating duplicates
+    const primaryRelatedFromIds = new Set(primary.relationshipsFrom.map((r) => r.relatedPersonId));
+    const primaryRelatedToIds = new Set(primary.relationshipsTo.map((r) => r.personId));
+
     // Relationships FROM the secondary: re-parent to primary.
-    // Skip only if it would create a self-reference (secondary -> primary).
+    // Skip if it would create a self-reference or duplicate an existing relationship.
     const relsFromToTransfer = secondary.relationshipsFrom.filter((r) => {
       if (r.relatedPersonId === primaryId) return false; // would be self-referential
+      if (primaryRelatedFromIds.has(r.relatedPersonId)) return false; // would duplicate
       return true;
     });
 
     // Relationships TO the secondary: re-parent to primary.
-    // Skip only if it would create a self-reference (primary -> primary).
+    // Skip if it would create a self-reference or duplicate an existing relationship.
     const relsToToTransfer = secondary.relationshipsTo.filter((r) => {
       if (r.personId === primaryId) return false; // would be self-referential
+      if (primaryRelatedToIds.has(r.personId)) return false; // would duplicate
       return true;
     });
 

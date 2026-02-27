@@ -40,6 +40,7 @@ export interface PersonForCompare {
   importantDates: Array<{ title: string; date: string | Date }>;
   groups: Array<{ group: { id: string; name: string } }>;
   relationshipsFrom?: Array<{ id: string }>;
+  relationshipsTo?: Array<{ id: string }>;
 }
 
 export interface MergeSelections {
@@ -258,75 +259,61 @@ export default function PersonCompare({
   const hasAnyConflict =
     scalarFieldStates.some((f) => f.hasConflict) || relFieldState.hasConflict;
 
-  // Multi-value field counts
+  // Multi-value field counts (deduplicated, matching merge API logic)
   const multiValueFields = useMemo(() => {
-    const fields: Array<{
-      labelKey: string;
-      fieldKey: string;
-      countA: number;
-      countB: number;
-    }> = [
-      {
-        labelKey: 'phones',
-        fieldKey: 'phoneNumbers',
-        countA: personA.phoneNumbers.length,
-        countB: personB.phoneNumbers.length,
-      },
-      {
-        labelKey: 'emails',
-        fieldKey: 'emails',
-        countA: personA.emails.length,
-        countB: personB.emails.length,
-      },
-      {
-        labelKey: 'addresses',
-        fieldKey: 'addresses',
-        countA: personA.addresses.length,
-        countB: personB.addresses.length,
-      },
-      {
-        labelKey: 'urls',
-        fieldKey: 'urls',
-        countA: personA.urls.length,
-        countB: personB.urls.length,
-      },
-      {
-        labelKey: 'imHandles',
-        fieldKey: 'imHandles',
-        countA: personA.imHandles.length,
-        countB: personB.imHandles.length,
-      },
-      {
-        labelKey: 'locations',
-        fieldKey: 'locations',
-        countA: personA.locations.length,
-        countB: personB.locations.length,
-      },
-      {
-        labelKey: 'customFields',
-        fieldKey: 'customFields',
-        countA: personA.customFields.length,
-        countB: personB.customFields.length,
-      },
-      {
-        labelKey: 'importantDates',
-        fieldKey: 'importantDates',
-        countA: personA.importantDates.length,
-        countB: personB.importantDates.length,
-      },
+    const primaryPhones = new Set(primary.phoneNumbers.map((p) => p.number));
+    const primaryEmails = new Set(primary.emails.map((e) => e.email.toLowerCase()));
+    const primaryUrls = new Set(primary.urls.map((u) => u.url.toLowerCase()));
+    const primaryIm = new Set(primary.imHandles.map((im) => `${im.protocol}:${im.handle}`.toLowerCase()));
+    const primaryAddrs = new Set(primary.addresses.map((a) =>
+      [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
+        .map((v) => (v ?? '').toLowerCase().trim()).join('|')
+    ));
+    const primaryLocs = new Set(primary.locations.map((l) => `${l.latitude},${l.longitude}`));
+    const primaryCf = new Set(primary.customFields.map((f) => `${f.key}:${f.value}`));
+    const primaryDates = new Set(primary.importantDates.map((d) =>
+      `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`
+    ));
+
+    const fields: Array<{ labelKey: string; fieldKey: string; mergedCount: number }> = [
+      { labelKey: 'phones', fieldKey: 'phoneNumbers',
+        mergedCount: primary.phoneNumbers.length + secondary.phoneNumbers.filter((p) => !primaryPhones.has(p.number)).length },
+      { labelKey: 'emails', fieldKey: 'emails',
+        mergedCount: primary.emails.length + secondary.emails.filter((e) => !primaryEmails.has(e.email.toLowerCase())).length },
+      { labelKey: 'addresses', fieldKey: 'addresses',
+        mergedCount: primary.addresses.length + secondary.addresses.filter((a) => {
+          const key = [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
+            .map((v) => (v ?? '').toLowerCase().trim()).join('|');
+          return !primaryAddrs.has(key);
+        }).length },
+      { labelKey: 'urls', fieldKey: 'urls',
+        mergedCount: primary.urls.length + secondary.urls.filter((u) => !primaryUrls.has(u.url.toLowerCase())).length },
+      { labelKey: 'imHandles', fieldKey: 'imHandles',
+        mergedCount: primary.imHandles.length + secondary.imHandles.filter((im) => !primaryIm.has(`${im.protocol}:${im.handle}`.toLowerCase())).length },
+      { labelKey: 'locations', fieldKey: 'locations',
+        mergedCount: primary.locations.length + secondary.locations.filter((l) => !primaryLocs.has(`${l.latitude},${l.longitude}`)).length },
+      { labelKey: 'customFields', fieldKey: 'customFields',
+        mergedCount: primary.customFields.length + secondary.customFields.filter((f) => !primaryCf.has(`${f.key}:${f.value}`)).length },
+      { labelKey: 'importantDates', fieldKey: 'importantDates',
+        mergedCount: primary.importantDates.length + secondary.importantDates.filter((d) => {
+          const key = `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`;
+          return !primaryDates.has(key);
+        }).length },
     ];
-    return fields.filter((f) => f.countA + f.countB > 0);
-  }, [personA, personB]);
+    return fields.filter((f) => f.mergedCount > 0);
+  }, [primary, secondary]);
 
-  // Groups count
-  const groupCountA = personA.groups.length;
-  const groupCountB = personB.groups.length;
-  const totalGroupCount = groupCountA + groupCountB;
+  // Groups count (deduplicated)
+  const mergedGroupCount = useMemo(() => {
+    const primaryGroupIds = new Set(primary.groups.map((g) => g.group.id));
+    const uniqueFromSecondary = secondary.groups.filter((g) => !primaryGroupIds.has(g.group.id)).length;
+    return primary.groups.length + uniqueFromSecondary;
+  }, [primary, secondary]);
 
-  // Relationships count
-  const relCountA = personA.relationshipsFrom?.length ?? 0;
-  const relCountB = personB.relationshipsFrom?.length ?? 0;
-  const totalRelCount = relCountA + relCountB;
+  // Relationships count (both directions)
+  const totalRelCount =
+    (primary.relationshipsFrom?.length ?? 0) + (primary.relationshipsTo?.length ?? 0) +
+    (secondary.relationshipsFrom?.length ?? 0) + (secondary.relationshipsTo?.length ?? 0);
 
   return (
     <div className="space-y-6">
@@ -701,30 +688,27 @@ export default function PersonCompare({
               {t('willCombine')}
             </p>
             <ul className="space-y-1">
-              {multiValueFields.map((field) => {
-                const total = field.countA + field.countB;
-                return (
+              {multiValueFields.map((field) => (
                   <li key={field.fieldKey} className="text-sm text-foreground">
                     {t('multiValueNote', {
-                      count: total,
+                      count: field.mergedCount,
                       field: t(field.labelKey),
                     })}
                   </li>
-                );
-              })}
+              ))}
             </ul>
           </div>
         )}
 
         {/* Groups transfer */}
-        {totalGroupCount > 0 && (
+        {mergedGroupCount > 0 && (
           <div>
             <p className="text-xs font-medium text-muted mb-1.5">
               {t('willTransfer')}
             </p>
             <p className="text-sm text-foreground">
               {t('multiValueNote', {
-                count: totalGroupCount,
+                count: mergedGroupCount,
                 field: t('groups'),
               })}
             </p>
