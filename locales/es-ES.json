@@ -718,7 +718,7 @@
       "addToGroupsSuccess": "Se añadieron {count} personas a grupos correctamente",
       "addToGroupsFailed": "Error al añadir personas a grupos. Por favor, inténtalo de nuevo.",
       "setRelationshipTitle": "Establecer Relación para {count} Personas",
-      "setRelationshipDescription": "Elige un tipo de relación para asignar a todas las personas seleccionadas. Esto sobrescribirá cualquier relación existente.",
+      "setRelationshipDescription": "Elige un tipo de relación para asignar a todas las personas seleccionadas. La relación se creará como \"[persona] es [tipo] de ti\". Esto sobrescribirá cualquier relación existente.",
       "selectRelationshipType": "Seleccionar tipo de relación...",
       "applying": "Aplicando...",
       "setRelationshipSuccess": "Se actualizó la relación de {count} personas correctamente",
