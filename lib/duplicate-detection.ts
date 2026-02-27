@@ -31,6 +31,10 @@ export interface PersonForComparison {
 // Constants
 // ---------------------------------------------------------------------------
 
+// Minimum similarity score (0–1) for two names to be considered potential duplicates.
+// 0.75 balances recall (catching "Robert" / "Roberto") vs precision (avoiding false positives).
+// Kept as a constant rather than a user-configurable setting because changing it per-user
+// would invalidate cached duplicate groups and complicate the UX with no clear benefit.
 const SIMILARITY_THRESHOLD = 0.75;
 
 // ---------------------------------------------------------------------------

@@ -146,6 +146,11 @@ function formatPersonLabel(person: PersonForCompare): string {
   return [person.name, person.surname].filter(Boolean).join(' ');
 }
 
+/** Whether a person's relationship-to-user value is currently selected (via primary default or field override). */
+function isRelToUserSelected(personId: string, currentPrimaryId: string, hasOverride: boolean): boolean {
+  return hasOverride ? personId !== currentPrimaryId : personId === currentPrimaryId;
+}
+
 export default function PersonCompare({
   personA,
   personB,
@@ -549,11 +554,7 @@ export default function PersonCompare({
                         <input
                           type="radio"
                           name="field-relationshipToUser"
-                          checked={
-                            !('relationshipToUserId' in fieldOverrides)
-                              ? primaryId === personA.id
-                              : personA.id !== primaryId
-                          }
+                          checked={isRelToUserSelected(personA.id, primaryId, 'relationshipToUserId' in fieldOverrides)}
                           onChange={() =>
                             handleFieldOverride(
                               'relationshipToUser',
@@ -564,10 +565,7 @@ export default function PersonCompare({
                         />
                         <span
                           className={`break-words ${
-                            (!('relationshipToUserId' in fieldOverrides) &&
-                              primaryId === personA.id) ||
-                            ('relationshipToUserId' in fieldOverrides &&
-                              personA.id !== primaryId)
+                            isRelToUserSelected(personA.id, primaryId, 'relationshipToUserId' in fieldOverrides)
                               ? 'text-foreground font-medium'
                               : 'text-muted'
                           }`}
@@ -581,11 +579,7 @@ export default function PersonCompare({
                         <input
                           type="radio"
                           name="field-relationshipToUser"
-                          checked={
-                            !('relationshipToUserId' in fieldOverrides)
-                              ? primaryId === personB.id
-                              : personB.id !== primaryId
-                          }
+                          checked={isRelToUserSelected(personB.id, primaryId, 'relationshipToUserId' in fieldOverrides)}
                           onChange={() =>
                             handleFieldOverride(
                               'relationshipToUser',
@@ -596,10 +590,7 @@ export default function PersonCompare({
                         />
                         <span
                           className={`break-words ${
-                            (!('relationshipToUserId' in fieldOverrides) &&
-                              primaryId === personB.id) ||
-                            ('relationshipToUserId' in fieldOverrides &&
-                              personB.id !== primaryId)
+                            isRelToUserSelected(personB.id, primaryId, 'relationshipToUserId' in fieldOverrides)
                               ? 'text-foreground font-medium'
                               : 'text-muted'
                           }`}

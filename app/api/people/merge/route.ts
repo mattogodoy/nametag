@@ -159,15 +159,18 @@ export const POST = withAuth(async (request, session) => {
     // (auto-export may create a mapping between our initial fetch and the transaction)
     type CardDavMappingInfo = { href: string; etag: string | null; connectionId: string; uid: string };
 
+    // Scalar string fields shared between override application and auto-transfer.
+    // Date fields (anniversary, lastContact) and relationshipToUserId are handled
+    // separately because they need special conversion logic.
+    const SCALAR_STRING_FIELDS = [
+      'name', 'surname', 'middleName', 'secondLastName', 'nickname',
+      'prefix', 'suffix', 'organization', 'jobTitle', 'gender', 'photo', 'notes',
+    ] as const;
+
     // Build scalar field overrides for the primary contact
     const scalarUpdates: Record<string, unknown> = {};
     if (fieldOverrides) {
-      const simpleFields = [
-        'name', 'surname', 'middleName', 'secondLastName', 'nickname',
-        'prefix', 'suffix', 'organization', 'jobTitle', 'gender', 'photo', 'notes',
-      ] as const;
-
-      for (const field of simpleFields) {
+      for (const field of SCALAR_STRING_FIELDS) {
         if (field in fieldOverrides) {
           scalarUpdates[field] = fieldOverrides[field];
         }
@@ -194,12 +197,7 @@ export const POST = withAuth(async (request, session) => {
 
     // Auto-transfer secondary values for empty primary fields
     // (explicit user selection via fieldOverrides takes priority)
-    const autoTransferFields = [
-      'name', 'surname', 'middleName', 'secondLastName', 'nickname',
-      'prefix', 'suffix', 'organization', 'jobTitle', 'gender', 'photo', 'notes',
-    ] as const;
-
-    for (const field of autoTransferFields) {
+    for (const field of SCALAR_STRING_FIELDS) {
       if (!(field in scalarUpdates) && !primary[field] && secondary[field]) {
         scalarUpdates[field] = secondary[field];
       }
@@ -310,70 +308,43 @@ export const POST = withAuth(async (request, session) => {
         });
       }
 
-      // (b) Re-parent multi-value fields from secondary to primary
+      // (b) Re-parent multi-value fields from secondary to primary (non-duplicates only).
+      //     Config-driven to avoid repeating the transfer + cleanup pattern for each model.
+      const multiValueOps: Array<{
+        items: Array<{ id: string }>;
+        transfer: (ids: string[]) => PromiseLike<unknown>;
+        cleanup: () => PromiseLike<unknown>;
+      }> = [
+        { items: phonesToTransfer,
+          transfer: (ids) => tx.personPhone.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.personPhone.deleteMany({ where: { personId: secondaryId } }) },
+        { items: emailsToTransfer,
+          transfer: (ids) => tx.personEmail.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.personEmail.deleteMany({ where: { personId: secondaryId } }) },
+        { items: addressesToTransfer,
+          transfer: (ids) => tx.personAddress.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.personAddress.deleteMany({ where: { personId: secondaryId } }) },
+        { items: urlsToTransfer,
+          transfer: (ids) => tx.personUrl.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.personUrl.deleteMany({ where: { personId: secondaryId } }) },
+        { items: imHandlesToTransfer,
+          transfer: (ids) => tx.personIM.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.personIM.deleteMany({ where: { personId: secondaryId } }) },
+        { items: locationsToTransfer,
+          transfer: (ids) => tx.personLocation.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.personLocation.deleteMany({ where: { personId: secondaryId } }) },
+        { items: customFieldsToTransfer,
+          transfer: (ids) => tx.personCustomField.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.personCustomField.deleteMany({ where: { personId: secondaryId } }) },
+        { items: importantDatesToTransfer,
+          transfer: (ids) => tx.importantDate.updateMany({ where: { id: { in: ids } }, data: { personId: primaryId } }),
+          cleanup: () => tx.importantDate.deleteMany({ where: { personId: secondaryId } }) },
+      ];
 
-      // Phone numbers (only non-duplicates)
-      if (phonesToTransfer.length > 0) {
-        await tx.personPhone.updateMany({
-          where: { id: { in: phonesToTransfer.map((p) => p.id) } },
-          data: { personId: primaryId },
-        });
-      }
-
-      // Emails (only non-duplicates)
-      if (emailsToTransfer.length > 0) {
-        await tx.personEmail.updateMany({
-          where: { id: { in: emailsToTransfer.map((e) => e.id) } },
-          data: { personId: primaryId },
-        });
-      }
-
-      // Addresses (only non-duplicates)
-      if (addressesToTransfer.length > 0) {
-        await tx.personAddress.updateMany({
-          where: { id: { in: addressesToTransfer.map((a) => a.id) } },
-          data: { personId: primaryId },
-        });
-      }
-
-      // URLs (only non-duplicates)
-      if (urlsToTransfer.length > 0) {
-        await tx.personUrl.updateMany({
-          where: { id: { in: urlsToTransfer.map((u) => u.id) } },
-          data: { personId: primaryId },
-        });
-      }
-
-      // IM handles (only non-duplicates)
-      if (imHandlesToTransfer.length > 0) {
-        await tx.personIM.updateMany({
-          where: { id: { in: imHandlesToTransfer.map((im) => im.id) } },
-          data: { personId: primaryId },
-        });
-      }
-
-      // Locations (only non-duplicates)
-      if (locationsToTransfer.length > 0) {
-        await tx.personLocation.updateMany({
-          where: { id: { in: locationsToTransfer.map((l) => l.id) } },
-          data: { personId: primaryId },
-        });
-      }
-
-      // Custom fields (only non-duplicates)
-      if (customFieldsToTransfer.length > 0) {
-        await tx.personCustomField.updateMany({
-          where: { id: { in: customFieldsToTransfer.map((f) => f.id) } },
-          data: { personId: primaryId },
-        });
-      }
-
-      // Important dates (only non-duplicates)
-      if (importantDatesToTransfer.length > 0) {
-        await tx.importantDate.updateMany({
-          where: { id: { in: importantDatesToTransfer.map((d) => d.id) } },
-          data: { personId: primaryId },
-        });
+      for (const { items, transfer } of multiValueOps) {
+        if (items.length > 0) {
+          await transfer(items.map((x) => x.id));
+        }
       }
 
       // (c) Transfer groups (secondary's groups the primary doesn't have)
@@ -439,14 +410,9 @@ export const POST = withAuth(async (request, session) => {
       }
 
       // Delete remaining secondary multi-value records (duplicates that weren't transferred)
-      await tx.personPhone.deleteMany({ where: { personId: secondaryId } });
-      await tx.personEmail.deleteMany({ where: { personId: secondaryId } });
-      await tx.personAddress.deleteMany({ where: { personId: secondaryId } });
-      await tx.personUrl.deleteMany({ where: { personId: secondaryId } });
-      await tx.personIM.deleteMany({ where: { personId: secondaryId } });
-      await tx.personLocation.deleteMany({ where: { personId: secondaryId } });
-      await tx.personCustomField.deleteMany({ where: { personId: secondaryId } });
-      await tx.importantDate.deleteMany({ where: { personId: secondaryId } });
+      for (const { cleanup } of multiValueOps) {
+        await cleanup();
+      }
 
       // (g) Soft-delete the secondary contact
       await tx.person.update({
