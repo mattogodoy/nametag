@@ -67,6 +67,7 @@ export default function BulkRelationshipModal({
         const data = await response.json();
         toast.success(t('setRelationshipSuccess', { count: data.affectedCount }));
         setSelectedTypeId('');
+        setIsSubmitting(false);
         onSuccess();
       } else {
         const data = await response.json();

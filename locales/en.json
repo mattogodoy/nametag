@@ -718,7 +718,7 @@
       "addToGroupsSuccess": "Successfully added {count} people to groups",
       "addToGroupsFailed": "Failed to add people to groups. Please try again.",
       "setRelationshipTitle": "Set Relationship for {count} People",
-      "setRelationshipDescription": "Choose a relationship type to assign to all selected people. This will overwrite any existing relationship.",
+      "setRelationshipDescription": "Choose a relationship type to assign to all selected people. The relationship will be created as \"[person] is a [type] of you\". This will overwrite any existing relationship.",
       "selectRelationshipType": "Select relationship type...",
       "applying": "Applying...",
       "setRelationshipSuccess": "Successfully updated relationship for {count} people",
