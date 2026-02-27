@@ -1041,7 +1041,25 @@
       "willCombine": "統合されます：",
       "willDelete": "統合後、サブの連絡先は削除されます。",
       "noConflicts": "競合するフィールドはありません。メインの連絡先の値が保持されます。",
-      "keepValue": "この値を保持"
+      "keepValue": "この値を保持",
+      "fieldName": "名前",
+      "fieldSurname": "姓",
+      "fieldMiddleName": "ミドルネーム",
+      "fieldSecondLastName": "第二姓",
+      "fieldNickname": "ニックネーム",
+      "fieldPrefix": "敬称（前）",
+      "fieldSuffix": "敬称（後）",
+      "fieldOrganization": "組織",
+      "fieldJobTitle": "役職",
+      "fieldGender": "性別",
+      "fieldAnniversary": "記念日",
+      "fieldLastContact": "最終連絡日",
+      "fieldPhoto": "写真",
+      "fieldNotes": "メモ",
+      "fieldRelationshipToUser": "ユーザーとの関係",
+      "sameValue": "両方の連絡先が同じ値です",
+      "onlyOneHasValue": "一方の連絡先のみに値があります",
+      "empty": "-"
     }
   },
   "groups": {

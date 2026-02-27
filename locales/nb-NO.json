@@ -1041,7 +1041,25 @@
       "willCombine": "Blir kombinert:",
       "willDelete": "Den sekundære kontakten slettes etter sammenslåing.",
       "noConflicts": "Ingen motstridende felter. Verdiene fra hovedkontakten beholdes.",
-      "keepValue": "Behold denne verdien"
+      "keepValue": "Behold denne verdien",
+      "fieldName": "Navn",
+      "fieldSurname": "Etternavn",
+      "fieldMiddleName": "Mellomnavn",
+      "fieldSecondLastName": "Andre etternavn",
+      "fieldNickname": "Kallenavn",
+      "fieldPrefix": "Prefiks",
+      "fieldSuffix": "Suffiks",
+      "fieldOrganization": "Organisasjon",
+      "fieldJobTitle": "Stillingstittel",
+      "fieldGender": "Kjønn",
+      "fieldAnniversary": "Jubileum",
+      "fieldLastContact": "Siste kontakt",
+      "fieldPhoto": "Bilde",
+      "fieldNotes": "Notater",
+      "fieldRelationshipToUser": "Forhold til bruker",
+      "sameValue": "Begge kontakter har samme verdi",
+      "onlyOneHasValue": "Bare én kontakt har en verdi",
+      "empty": "-"
     }
   },
   "groups": {

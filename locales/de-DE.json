@@ -1041,7 +1041,25 @@
       "willCombine": "Wird zusammengeführt:",
       "willDelete": "Der sekundäre Kontakt wird nach dem Zusammenführen gelöscht.",
       "noConflicts": "Keine widersprüchlichen Felder. Die Werte des Hauptkontakts werden beibehalten.",
-      "keepValue": "Diesen Wert behalten"
+      "keepValue": "Diesen Wert behalten",
+      "fieldName": "Name",
+      "fieldSurname": "Nachname",
+      "fieldMiddleName": "Zweiter Vorname",
+      "fieldSecondLastName": "Zweiter Nachname",
+      "fieldNickname": "Spitzname",
+      "fieldPrefix": "Präfix",
+      "fieldSuffix": "Suffix",
+      "fieldOrganization": "Organisation",
+      "fieldJobTitle": "Berufsbezeichnung",
+      "fieldGender": "Geschlecht",
+      "fieldAnniversary": "Jahrestag",
+      "fieldLastContact": "Letzter Kontakt",
+      "fieldPhoto": "Foto",
+      "fieldNotes": "Notizen",
+      "fieldRelationshipToUser": "Beziehung zum Benutzer",
+      "sameValue": "Beide Kontakte haben den gleichen Wert",
+      "onlyOneHasValue": "Nur ein Kontakt hat einen Wert",
+      "empty": "-"
     }
   },
   "groups": {
