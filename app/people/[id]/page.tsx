@@ -10,6 +10,7 @@ import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import Navigation from '@/components/Navigation';
 import PersonVCardExport from '@/components/PersonVCardExport';
 import PersonVCardRawView from '@/components/PersonVCardRawView';
+import FindDuplicatesButton from '@/components/FindDuplicatesButton';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -323,6 +324,7 @@ export default async function PersonDetailsPage({
                 )}
               </div>
               <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
+                <FindDuplicatesButton personId={person.id} />
                 <Link
                   href={`/people/${person.id}/edit`}
                   className="flex-1 sm:flex-none px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 text-center"
