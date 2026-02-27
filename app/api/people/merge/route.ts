@@ -108,19 +108,50 @@ export const POST = withAuth(async (request, session) => {
       .filter((g) => !primaryGroupIds.has(g.groupId))
       .map((g) => g.groupId);
 
-    // Collect existing phone numbers and emails on the primary for deduplication
+    // Deduplication for multi-value fields
     const primaryPhoneNumbers = new Set(primary.phoneNumbers.map((p) => p.number));
     const primaryEmails = new Set(primary.emails.map((e) => e.email.toLowerCase()));
+    const primaryUrls = new Set(primary.urls.map((u) => u.url.toLowerCase()));
+    const primaryImHandles = new Set(primary.imHandles.map((im) => `${im.protocol}:${im.handle}`.toLowerCase()));
+    const primaryAddresses = new Set(primary.addresses.map((a) =>
+      [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
+        .map((v) => (v ?? '').toLowerCase().trim())
+        .join('|')
+    ));
+    const primaryLocations = new Set(primary.locations.map((l) => `${l.latitude},${l.longitude}`));
+    const primaryCustomFields = new Set(primary.customFields.map((f) => `${f.key}:${f.value}`));
+    const primaryImportantDates = new Set(primary.importantDates.map((d) =>
+      `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`
+    ));
 
-    // Secondary phone numbers that aren't duplicates
     const phonesToTransfer = secondary.phoneNumbers.filter(
       (p) => !primaryPhoneNumbers.has(p.number)
     );
-
-    // Secondary emails that aren't duplicates
     const emailsToTransfer = secondary.emails.filter(
       (e) => !primaryEmails.has(e.email.toLowerCase())
     );
+    const urlsToTransfer = secondary.urls.filter(
+      (u) => !primaryUrls.has(u.url.toLowerCase())
+    );
+    const imHandlesToTransfer = secondary.imHandles.filter(
+      (im) => !primaryImHandles.has(`${im.protocol}:${im.handle}`.toLowerCase())
+    );
+    const addressesToTransfer = secondary.addresses.filter((a) => {
+      const key = [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
+        .map((v) => (v ?? '').toLowerCase().trim())
+        .join('|');
+      return !primaryAddresses.has(key);
+    });
+    const locationsToTransfer = secondary.locations.filter(
+      (l) => !primaryLocations.has(`${l.latitude},${l.longitude}`)
+    );
+    const customFieldsToTransfer = secondary.customFields.filter(
+      (f) => !primaryCustomFields.has(`${f.key}:${f.value}`)
+    );
+    const importantDatesToTransfer = secondary.importantDates.filter((d) => {
+      const key = `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`;
+      return !primaryImportantDates.has(key);
+    });
 
     // Build the set of people the primary already has relationships with (both directions)
     const primaryRelatedPersonIds = new Set<string>();
@@ -177,50 +208,50 @@ export const POST = withAuth(async (request, session) => {
         });
       }
 
-      // Addresses - transfer all
-      if (secondary.addresses.length > 0) {
+      // Addresses (only non-duplicates)
+      if (addressesToTransfer.length > 0) {
         await tx.personAddress.updateMany({
-          where: { personId: secondaryId },
+          where: { id: { in: addressesToTransfer.map((a) => a.id) } },
           data: { personId: primaryId },
         });
       }
 
-      // URLs - transfer all
-      if (secondary.urls.length > 0) {
+      // URLs (only non-duplicates)
+      if (urlsToTransfer.length > 0) {
         await tx.personUrl.updateMany({
-          where: { personId: secondaryId },
+          where: { id: { in: urlsToTransfer.map((u) => u.id) } },
           data: { personId: primaryId },
         });
       }
 
-      // IM handles - transfer all
-      if (secondary.imHandles.length > 0) {
+      // IM handles (only non-duplicates)
+      if (imHandlesToTransfer.length > 0) {
         await tx.personIM.updateMany({
-          where: { personId: secondaryId },
+          where: { id: { in: imHandlesToTransfer.map((im) => im.id) } },
           data: { personId: primaryId },
         });
       }
 
-      // Locations - transfer all
-      if (secondary.locations.length > 0) {
+      // Locations (only non-duplicates)
+      if (locationsToTransfer.length > 0) {
         await tx.personLocation.updateMany({
-          where: { personId: secondaryId },
+          where: { id: { in: locationsToTransfer.map((l) => l.id) } },
           data: { personId: primaryId },
         });
       }
 
-      // Custom fields - transfer all
-      if (secondary.customFields.length > 0) {
+      // Custom fields (only non-duplicates)
+      if (customFieldsToTransfer.length > 0) {
         await tx.personCustomField.updateMany({
-          where: { personId: secondaryId },
+          where: { id: { in: customFieldsToTransfer.map((f) => f.id) } },
           data: { personId: primaryId },
         });
       }
 
-      // Important dates - transfer all
-      if (secondary.importantDates.length > 0) {
+      // Important dates (only non-duplicates)
+      if (importantDatesToTransfer.length > 0) {
         await tx.importantDate.updateMany({
-          where: { personId: secondaryId },
+          where: { id: { in: importantDatesToTransfer.map((d) => d.id) } },
           data: { personId: primaryId },
         });
       }
@@ -275,13 +306,15 @@ export const POST = withAuth(async (request, session) => {
         },
       });
 
-      // Delete duplicate phone numbers and emails that weren't transferred
-      await tx.personPhone.deleteMany({
-        where: { personId: secondaryId },
-      });
-      await tx.personEmail.deleteMany({
-        where: { personId: secondaryId },
-      });
+      // Delete remaining secondary multi-value records (duplicates that weren't transferred)
+      await tx.personPhone.deleteMany({ where: { personId: secondaryId } });
+      await tx.personEmail.deleteMany({ where: { personId: secondaryId } });
+      await tx.personAddress.deleteMany({ where: { personId: secondaryId } });
+      await tx.personUrl.deleteMany({ where: { personId: secondaryId } });
+      await tx.personIM.deleteMany({ where: { personId: secondaryId } });
+      await tx.personLocation.deleteMany({ where: { personId: secondaryId } });
+      await tx.personCustomField.deleteMany({ where: { personId: secondaryId } });
+      await tx.importantDate.deleteMany({ where: { personId: secondaryId } });
 
       // (g) Soft-delete the secondary contact
       await tx.person.update({
