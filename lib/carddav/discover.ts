@@ -120,6 +120,39 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
       }
     }
 
+    // Clean up stale pending imports whose UIDs no longer exist on the server.
+    // This handles contacts that were deleted from the CardDAV server after
+    // being discovered but before being imported into Nametag.
+    const serverUids = new Set<string>();
+    for (const vCard of vCards) {
+      try {
+        const parsed = vCardToPerson(vCard.data);
+        if (parsed.uid) serverUids.add(parsed.uid);
+      } catch {
+        // Skip unparseable vCards
+      }
+    }
+
+    // Also include UIDs that are already mapped (imported) — those aren't stale
+    const allValidUids = new Set([...serverUids, ...existingUids]);
+
+    // Find pending imports whose UIDs are no longer on the server
+    const allPending = await prisma.cardDavPendingImport.findMany({
+      where: { connectionId: connection.id },
+      select: { id: true, uid: true },
+    });
+
+    const staleIds = allPending
+      .filter((p) => !allValidUids.has(p.uid))
+      .map((p) => p.id);
+
+    if (staleIds.length > 0) {
+      await prisma.cardDavPendingImport.deleteMany({
+        where: { id: { in: staleIds } },
+      });
+      log.info({ count: staleIds.length }, 'Cleaned up stale pending imports');
+    }
+
     // Update connection
     await prisma.cardDavConnection.update({
       where: { id: connection.id },

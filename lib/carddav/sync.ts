@@ -325,6 +325,38 @@ export async function syncFromServer(
       },
     });
 
+    // Clean up stale pending imports whose UIDs no longer exist on the server.
+    // Collect all UIDs seen on the server during this sync.
+    const serverUids = new Set<string>();
+    for (const vCard of vCards) {
+      try {
+        const parsed = vCardToPerson(vCard.data);
+        if (parsed.uid) serverUids.add(parsed.uid);
+      } catch {
+        // Skip unparseable vCards
+      }
+    }
+
+    // UIDs that are already mapped (imported) are also valid — not stale
+    const mappedUids = new Set(allMappings.map((m) => m.uid));
+    const allValidUids = new Set([...serverUids, ...mappedUids]);
+
+    const stalePending = await prisma.cardDavPendingImport.findMany({
+      where: { connectionId: connection.id },
+      select: { id: true, uid: true },
+    });
+
+    const staleIds = stalePending
+      .filter((p) => !allValidUids.has(p.uid))
+      .map((p) => p.id);
+
+    if (staleIds.length > 0) {
+      await prisma.cardDavPendingImport.deleteMany({
+        where: { id: { in: staleIds } },
+      });
+      log.info({ count: staleIds.length }, 'Cleaned up stale pending imports');
+    }
+
     // Return the total pending imports count (not just new ones from this sync)
     const totalPending = await prisma.cardDavPendingImport.count({
       where: { connectionId: connection.id },
