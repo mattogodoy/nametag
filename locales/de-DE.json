@@ -718,7 +718,7 @@
       "addToGroupsSuccess": "{count} Personen erfolgreich zu Gruppen hinzugefügt",
       "addToGroupsFailed": "Personen konnten nicht zu Gruppen hinzugefügt werden. Bitte versuche es erneut.",
       "setRelationshipTitle": "Beziehung für {count} Personen festlegen",
-      "setRelationshipDescription": "Wähle einen Beziehungstyp für alle ausgewählten Personen. Die Beziehung wird als „[Person] ist ein(e) [Typ] von dir" erstellt. Dies überschreibt bestehende Beziehungen.",
+      "setRelationshipDescription": "Wähle einen Beziehungstyp für alle ausgewählten Personen. Die Beziehung wird als \"[Person] ist ein(e) [Typ] von dir\" erstellt. Dies überschreibt bestehende Beziehungen.",
       "selectRelationshipType": "Beziehungstyp auswählen...",
       "applying": "Wird angewendet...",
       "setRelationshipSuccess": "Beziehung für {count} Personen erfolgreich aktualisiert",
