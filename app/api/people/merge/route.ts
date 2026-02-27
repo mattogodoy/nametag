@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { mergePersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
-import { deleteFromCardDav } from '@/lib/carddav/delete-contact';
+import { createCardDavClient, deleteVCardDirect } from '@/lib/carddav/client';
+import { withRetry } from '@/lib/carddav/retry';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('merge');
@@ -9,8 +10,8 @@ const log = createModuleLogger('merge');
 // Full include for fetching a person with all relations
 const personFullInclude = {
   groups: true,
-  relationshipsFrom: true,
-  relationshipsTo: true,
+  relationshipsFrom: { where: { deletedAt: null } },
+  relationshipsTo: { where: { deletedAt: null } },
   phoneNumbers: true,
   emails: true,
   addresses: true,
@@ -20,7 +21,7 @@ const personFullInclude = {
   customFields: true,
   importantDates: true,
   cardDavMapping: { include: { connection: true } },
-} as const;
+};
 
 // POST /api/people/merge - Merge two contacts
 export const POST = withAuth(async (request, session) => {
@@ -56,16 +57,98 @@ export const POST = withAuth(async (request, session) => {
 
     // Try to delete the secondary's vCard from CardDAV BEFORE the transaction.
     // This is best-effort: if it fails, we still proceed with the merge.
-    // We do this before the transaction because deleteFromCardDav reads the
-    // mapping from the database, which will be deleted during the transaction.
+    // Uses deleteVCardDirect (raw HTTP DELETE) to avoid tsdav's fragile DAV discovery.
+    let serverDeleteSucceeded = false;
     if (secondary.cardDavMapping) {
-      await deleteFromCardDav(secondaryId).catch((err) => {
+      const mapping = secondary.cardDavMapping;
+      const connection = mapping.connection;
+
+      // Step 1: Try direct DELETE with stored etag
+      try {
+        await deleteVCardDirect(connection, mapping.href, mapping.etag || '');
+        serverDeleteSucceeded = true;
+      } catch (etagErr) {
         log.warn(
-          { err: err instanceof Error ? err : new Error(String(err)), personId: secondaryId },
-          'Failed to delete secondary contact from CardDAV server (proceeding with merge)'
+          { err: etagErr instanceof Error ? etagErr : new Error(String(etagErr)), personId: secondaryId },
+          'CardDAV delete with etag failed, retrying with wildcard'
         );
-      });
+
+        // Step 2: Try direct DELETE with wildcard etag
+        try {
+          await deleteVCardDirect(connection, mapping.href, '*');
+          serverDeleteSucceeded = true;
+        } catch (wildcardErr) {
+          log.warn(
+            { err: wildcardErr instanceof Error ? wildcardErr : new Error(String(wildcardErr)), personId: secondaryId },
+            'CardDAV delete with wildcard etag also failed'
+          );
+
+          // Step 3: If 404, the stored href is wrong (common with Google Contacts
+          // which rewrites both the URL and UID of created vCards).
+          // Try to find the vCard by UID or by name (FN field).
+          if (String(wildcardErr).includes('404')) {
+            log.info({ personId: secondaryId, uid: mapping.uid }, 'Stored href returned 404, attempting server-side lookup');
+            try {
+              const client = await createCardDavClient(connection);
+              const addressBooks = await client.fetchAddressBooks();
+              let found = false;
+              for (const ab of addressBooks) {
+                const vCards = await client.fetchVCards(ab);
+
+                // Try 1: Match by UID in vCard data
+                let match = null;
+                if (mapping.uid) {
+                  const escapedUid = mapping.uid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                  const uidPattern = new RegExp(`^UID[^:]*:(?:urn:uuid:)?${escapedUid}\\s*$`, 'mi');
+                  match = vCards.find((vc) => vc.data && uidPattern.test(vc.data));
+                }
+
+                // Try 2: Match by UID in URL
+                if (!match && mapping.uid) {
+                  const uidInUrl = mapping.uid.toLowerCase();
+                  match = vCards.find((vc) => vc.url.toLowerCase().includes(uidInUrl));
+                }
+
+                // Try 3: Match by name (FN field) — needed for Google Contacts
+                // which replaces both URL and UID with its own values
+                if (!match) {
+                  const fullName = [secondary.name, secondary.surname].filter(Boolean).join(' ');
+                  if (fullName) {
+                    match = vCards.find((vc) => {
+                      const fnMatch = vc.data.match(/^FN[^:]*:(.+)$/mi);
+                      return fnMatch && fnMatch[1].trim() === fullName;
+                    }) || null;
+                  }
+                }
+
+                if (match) {
+                  log.info(
+                    { personId: secondaryId, storedHref: mapping.href, actualUrl: match.url },
+                    'Found vCard on server via lookup, deleting'
+                  );
+                  await deleteVCardDirect(connection, match.url, '*');
+                  serverDeleteSucceeded = true;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                log.warn({ personId: secondaryId }, 'vCard not found on server by UID or name');
+              }
+            } catch (lookupErr) {
+              log.warn(
+                { err: lookupErr instanceof Error ? lookupErr : new Error(String(lookupErr)), personId: secondaryId },
+                'Server-side vCard lookup for delete failed'
+              );
+            }
+          }
+        }
+      }
     }
+
+    // Track whether we need post-transaction CardDAV cleanup for race conditions
+    // (auto-export may create a mapping between our initial fetch and the transaction)
+    type CardDavMappingInfo = { href: string; etag: string | null; connectionId: string; uid: string };
 
     // Build scalar field overrides for the primary contact
     const scalarUpdates: Record<string, unknown> = {};
@@ -98,6 +181,29 @@ export const POST = withAuth(async (request, session) => {
           ? { connect: { id: fieldOverrides.relationshipToUserId } }
           : { disconnect: true };
       }
+    }
+
+    // Auto-transfer secondary values for empty primary fields
+    // (explicit user selection via fieldOverrides takes priority)
+    const autoTransferFields = [
+      'name', 'surname', 'middleName', 'secondLastName', 'nickname',
+      'prefix', 'suffix', 'organization', 'jobTitle', 'gender', 'photo', 'notes',
+    ] as const;
+
+    for (const field of autoTransferFields) {
+      if (!(field in scalarUpdates) && !primary[field] && secondary[field]) {
+        scalarUpdates[field] = secondary[field];
+      }
+    }
+
+    for (const dateField of ['anniversary', 'lastContact'] as const) {
+      if (!(dateField in scalarUpdates) && !primary[dateField] && secondary[dateField]) {
+        scalarUpdates[dateField] = secondary[dateField];
+      }
+    }
+
+    if (!('relationshipToUser' in scalarUpdates) && !primary.relationshipToUserId && secondary.relationshipToUserId) {
+      scalarUpdates.relationshipToUser = { connect: { id: secondary.relationshipToUserId } };
     }
 
     // Collect the group IDs that the primary already has
@@ -153,35 +259,34 @@ export const POST = withAuth(async (request, session) => {
       return !primaryImportantDates.has(key);
     });
 
-    // Build the set of people the primary already has relationships with (both directions)
-    const primaryRelatedPersonIds = new Set<string>();
-    for (const r of primary.relationshipsFrom) {
-      primaryRelatedPersonIds.add(r.relatedPersonId);
-    }
-    for (const r of primary.relationshipsTo) {
-      primaryRelatedPersonIds.add(r.personId);
-    }
-
     // Relationships FROM the secondary: re-parent to primary.
-    // Skip if it would create a self-reference (secondary -> primary)
-    // or if primary already has a relationship with that person.
+    // Skip only if it would create a self-reference (secondary -> primary).
     const relsFromToTransfer = secondary.relationshipsFrom.filter((r) => {
       if (r.relatedPersonId === primaryId) return false; // would be self-referential
-      if (primaryRelatedPersonIds.has(r.relatedPersonId)) return false; // primary already related
       return true;
     });
 
     // Relationships TO the secondary: re-parent to primary.
-    // Skip if it would create a self-reference (primary -> primary)
-    // or if primary already has a relationship with that person.
+    // Skip only if it would create a self-reference (primary -> primary).
     const relsToToTransfer = secondary.relationshipsTo.filter((r) => {
       if (r.personId === primaryId) return false; // would be self-referential
-      if (primaryRelatedPersonIds.has(r.personId)) return false; // primary already related
       return true;
     });
 
+    // IDs of relationships that will be transferred
+    const transferredRelIds = new Set([
+      ...relsFromToTransfer.map((r) => r.id),
+      ...relsToToTransfer.map((r) => r.id),
+    ]);
+
+    // Leftover relationship IDs (self-refs that won't be transferred)
+    const leftoverRelIds = [
+      ...secondary.relationshipsFrom.map((r) => r.id),
+      ...secondary.relationshipsTo.map((r) => r.id),
+    ].filter((id) => !transferredRelIds.has(id));
+
     // Run everything in a single transaction
-    await prisma.$transaction(async (tx) => {
+    const raceMappingInfo = await prisma.$transaction(async (tx): Promise<CardDavMappingInfo | null> => {
       // (a) Apply scalar field overrides to the primary contact
       if (Object.keys(scalarUpdates).length > 0) {
         await tx.person.update({
@@ -284,27 +389,39 @@ export const POST = withAuth(async (request, session) => {
         });
       }
 
-      // (e) Delete secondary's CardDAV mapping if it has one
-      if (secondary.cardDavMapping) {
-        await tx.cardDavMapping.delete({
-          where: { id: secondary.cardDavMapping.id },
+      // (e) Delete secondary's CardDAV mapping.
+      // Re-check inside transaction to catch mappings created by auto-export
+      // between our initial fetch and this transaction (race condition).
+      let foundRaceMapping: CardDavMappingInfo | null = null;
+      if (!secondary.cardDavMapping) {
+        const freshMapping = await tx.cardDavMapping.findUnique({
+          where: { personId: secondaryId },
         });
+        if (freshMapping) {
+          foundRaceMapping = {
+            href: freshMapping.href,
+            etag: freshMapping.etag,
+            connectionId: freshMapping.connectionId,
+            uid: freshMapping.uid,
+          };
+        }
       }
+      await tx.cardDavMapping.deleteMany({
+        where: { personId: secondaryId },
+      });
 
       // (f) Delete secondary's remaining group memberships and relationships
       await tx.personGroup.deleteMany({
         where: { personId: secondaryId },
       });
 
-      // Delete remaining relationships (ones that weren't transferred - duplicates and self-refs)
-      await tx.relationship.deleteMany({
-        where: {
-          OR: [
-            { personId: secondaryId },
-            { relatedPersonId: secondaryId },
-          ],
-        },
-      });
+      // Soft-delete leftover relationships (self-refs that weren't transferred)
+      if (leftoverRelIds.length > 0) {
+        await tx.relationship.updateMany({
+          where: { id: { in: leftoverRelIds } },
+          data: { deletedAt: new Date() },
+        });
+      }
 
       // Delete remaining secondary multi-value records (duplicates that weren't transferred)
       await tx.personPhone.deleteMany({ where: { personId: secondaryId } });
@@ -321,7 +438,33 @@ export const POST = withAuth(async (request, session) => {
         where: { id: secondaryId },
         data: { deletedAt: new Date() },
       });
+
+      return foundRaceMapping;
     });
+
+    // Post-transaction: if auto-export created a mapping during our window,
+    // clean up the orphaned vCard from the CardDAV server.
+    if (raceMappingInfo) {
+      try {
+        const connection = await prisma.cardDavConnection.findUnique({
+          where: { id: raceMappingInfo.connectionId },
+        });
+        if (connection) {
+          const client = await createCardDavClient(connection);
+          await withRetry(() => client.deleteVCard({
+            url: raceMappingInfo.href,
+            etag: raceMappingInfo.etag || '',
+            data: '',
+          }));
+          log.info({ personId: secondaryId }, 'Cleaned up race-condition vCard from CardDAV server');
+        }
+      } catch (err) {
+        log.warn(
+          { err: err instanceof Error ? err : new Error(String(err)), personId: secondaryId },
+          'Failed to clean up race-condition vCard from CardDAV server'
+        );
+      }
+    }
 
     log.info(
       { primaryId, secondaryId, userId: session.user.id },

@@ -17,9 +17,15 @@ interface ApiRelationshipToUser {
   color: string | null;
 }
 
+interface ApiRelationshipFrom {
+  id: string;
+  relatedPerson: { id: string; name: string };
+}
+
 interface ApiPersonResponse {
-  person: Omit<PersonForCompare, 'relationshipToUser'> & {
+  person: Omit<PersonForCompare, 'relationshipToUser' | 'relationshipsFrom'> & {
     relationshipToUser: ApiRelationshipToUser | null;
+    relationshipsFrom?: ApiRelationshipFrom[];
   };
 }
 
@@ -34,6 +40,7 @@ function mapApiPersonToCompare(
           name: apiPerson.relationshipToUser.label,
         }
       : null,
+    relationshipsFrom: apiPerson.relationshipsFrom?.map((r) => ({ id: r.id })),
   };
 }
 

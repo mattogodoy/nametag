@@ -39,6 +39,7 @@ export interface PersonForCompare {
   customFields: Array<{ key: string; value: string }>;
   importantDates: Array<{ title: string; date: string | Date }>;
   groups: Array<{ group: { id: string; name: string } }>;
+  relationshipsFrom?: Array<{ id: string }>;
 }
 
 export interface MergeSelections {
@@ -322,6 +323,11 @@ export default function PersonCompare({
   const groupCountB = personB.groups.length;
   const totalGroupCount = groupCountA + groupCountB;
 
+  // Relationships count
+  const relCountA = personA.relationshipsFrom?.length ?? 0;
+  const relCountB = personB.relationshipsFrom?.length ?? 0;
+  const totalRelCount = relCountA + relCountB;
+
   return (
     <div className="space-y-6">
       {/* Primary Selection */}
@@ -557,7 +563,7 @@ export default function PersonCompare({
                           type="radio"
                           name="field-relationshipToUser"
                           checked={
-                            !('relationshipToUser' in fieldOverrides)
+                            !('relationshipToUserId' in fieldOverrides)
                               ? primaryId === personA.id
                               : personA.id !== primaryId
                           }
@@ -571,9 +577,9 @@ export default function PersonCompare({
                         />
                         <span
                           className={`break-words ${
-                            (!('relationshipToUser' in fieldOverrides) &&
+                            (!('relationshipToUserId' in fieldOverrides) &&
                               primaryId === personA.id) ||
-                            ('relationshipToUser' in fieldOverrides &&
+                            ('relationshipToUserId' in fieldOverrides &&
                               personA.id !== primaryId)
                               ? 'text-foreground font-medium'
                               : 'text-muted'
@@ -589,7 +595,7 @@ export default function PersonCompare({
                           type="radio"
                           name="field-relationshipToUser"
                           checked={
-                            !('relationshipToUser' in fieldOverrides)
+                            !('relationshipToUserId' in fieldOverrides)
                               ? primaryId === personB.id
                               : personB.id !== primaryId
                           }
@@ -603,9 +609,9 @@ export default function PersonCompare({
                         />
                         <span
                           className={`break-words ${
-                            (!('relationshipToUser' in fieldOverrides) &&
+                            (!('relationshipToUserId' in fieldOverrides) &&
                               primaryId === personB.id) ||
-                            ('relationshipToUser' in fieldOverrides &&
+                            ('relationshipToUserId' in fieldOverrides &&
                               personB.id !== primaryId)
                               ? 'text-foreground font-medium'
                               : 'text-muted'
@@ -720,6 +726,21 @@ export default function PersonCompare({
               {t('multiValueNote', {
                 count: totalGroupCount,
                 field: t('groups'),
+              })}
+            </p>
+          </div>
+        )}
+
+        {/* Relationships transfer */}
+        {totalRelCount > 0 && (
+          <div>
+            <p className="text-xs font-medium text-muted mb-1.5">
+              {t('willCombine')}
+            </p>
+            <p className="text-sm text-foreground">
+              {t('multiValueNote', {
+                count: totalRelCount,
+                field: t('relationships'),
               })}
             </p>
           </div>
