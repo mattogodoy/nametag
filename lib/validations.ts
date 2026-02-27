@@ -222,6 +222,34 @@ export const bulkActionSchema = z.discriminatedUnion('action', [
 ]);
 
 // ============================================
+// Merge person schema
+// ============================================
+
+export const mergePersonSchema = z.object({
+  primaryId: cuidSchema,
+  secondaryId: cuidSchema,
+  fieldOverrides: z.object({
+    name: z.string().optional(),
+    surname: z.string().nullable().optional(),
+    middleName: z.string().nullable().optional(),
+    secondLastName: z.string().nullable().optional(),
+    nickname: z.string().nullable().optional(),
+    prefix: z.string().nullable().optional(),
+    suffix: z.string().nullable().optional(),
+    organization: z.string().nullable().optional(),
+    jobTitle: z.string().nullable().optional(),
+    gender: z.string().nullable().optional(),
+    anniversary: z.string().nullable().optional(),
+    photo: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    relationshipToUserId: z.string().nullable().optional(),
+  }).strict().optional(),
+}).refine(
+  (data) => data.primaryId !== data.secondaryId,
+  { message: 'Cannot merge a person with themselves' }
+);
+
+// ============================================
 // Group schemas
 // ============================================
 
