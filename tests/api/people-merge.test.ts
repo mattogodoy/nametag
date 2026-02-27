@@ -934,14 +934,14 @@ describe('POST /api/people/merge', () => {
 
       // Only rel-ok should be transferred for relationshipsFrom
       const fromCall = mocks.relationshipUpdateMany.mock.calls.find(
-        (c: [{ where: { id: { in: string[] } }; data: { personId?: string } }]) => c[0].data.personId === PRIMARY_ID
+        (c: unknown[]) => (c[0] as Record<string, Record<string, unknown>>).data.personId === PRIMARY_ID
       );
       expect(fromCall).toBeDefined();
       expect(fromCall![0].where.id.in).toEqual(['rel-ok']);
 
       // No relationshipsTo should be transferred (rel-self-2 is self-ref)
       const toCall = mocks.relationshipUpdateMany.mock.calls.find(
-        (c: [{ where: { id: { in: string[] } }; data: { relatedPersonId?: string } }]) => c[0].data.relatedPersonId === PRIMARY_ID
+        (c: unknown[]) => (c[0] as Record<string, Record<string, unknown>>).data.relatedPersonId === PRIMARY_ID
       );
       expect(toCall).toBeUndefined();
     });
@@ -967,7 +967,7 @@ describe('POST /api/people/merge', () => {
 
       // The self-ref should be soft-deleted (not hard-deleted)
       const softDeleteCall = mocks.relationshipUpdateMany.mock.calls.find(
-        (c: [{ where: { id: { in: string[] } }; data: { deletedAt?: Date } }]) => c[0].data.deletedAt instanceof Date
+        (c: unknown[]) => (c[0] as Record<string, Record<string, unknown>>).data.deletedAt instanceof Date
       );
       expect(softDeleteCall).toBeDefined();
       expect(softDeleteCall![0].where.id.in).toContain('rel-self');
@@ -1261,8 +1261,10 @@ describe('POST /api/people/merge', () => {
 
       // Should soft-delete secondary, not hard-delete
       const updateCall = mocks.personUpdate.mock.calls.find(
-        (c: [{ where: { id: string }; data: { deletedAt?: Date } }]) =>
-          c[0].where.id === SECONDARY_ID && c[0].data.deletedAt instanceof Date
+        (c: unknown[]) => {
+          const arg = c[0] as Record<string, Record<string, unknown>>;
+          return arg.where.id === SECONDARY_ID && arg.data.deletedAt instanceof Date;
+        }
       );
       expect(updateCall).toBeDefined();
     });
