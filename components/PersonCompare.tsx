@@ -191,12 +191,16 @@ export default function PersonCompare({
       const next = { ...prev };
       if (fromPersonId === primaryId) {
         // User chose primary's value, remove override
-        delete next[fieldKey];
+        if (fieldKey === 'relationshipToUser') {
+          delete next['relationshipToUserId'];
+        } else {
+          delete next[fieldKey];
+        }
       } else {
         // User chose secondary's value, store as override
         if (fieldKey === 'relationshipToUser') {
-          // For relationshipToUser, store the ID
-          next[fieldKey] = secondary.relationshipToUserId;
+          // For relationshipToUser, store as relationshipToUserId (matching the API schema)
+          next['relationshipToUserId'] = secondary.relationshipToUserId;
         } else {
           next[fieldKey] = getScalarValue(
             secondary,
