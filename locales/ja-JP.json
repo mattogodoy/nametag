@@ -1059,7 +1059,10 @@
       "fieldRelationshipToUser": "ユーザーとの関係",
       "sameValue": "両方の連絡先が同じ値です",
       "onlyOneHasValue": "一方の連絡先のみに値があります",
-      "empty": "-"
+      "empty": "-",
+      "loadingContacts": "連絡先を読み込み中...",
+      "personNotFound": "一方または両方の連絡先が見つかりませんでした。",
+      "missingParams": "連絡先のパラメータが不足しています。統合する2つの連絡先を選択してください。"
     }
   },
   "groups": {

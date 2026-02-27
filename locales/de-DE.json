@@ -1059,7 +1059,10 @@
       "fieldRelationshipToUser": "Beziehung zum Benutzer",
       "sameValue": "Beide Kontakte haben den gleichen Wert",
       "onlyOneHasValue": "Nur ein Kontakt hat einen Wert",
-      "empty": "-"
+      "empty": "-",
+      "loadingContacts": "Kontakte werden geladen...",
+      "personNotFound": "Einer oder beide Kontakte konnten nicht gefunden werden.",
+      "missingParams": "Fehlende Kontaktparameter. Bitte wählen Sie zwei Kontakte zum Zusammenführen aus."
     }
   },
   "groups": {

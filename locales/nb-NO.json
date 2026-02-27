@@ -1059,7 +1059,10 @@
       "fieldRelationshipToUser": "Forhold til bruker",
       "sameValue": "Begge kontakter har samme verdi",
       "onlyOneHasValue": "Bare én kontakt har en verdi",
-      "empty": "-"
+      "empty": "-",
+      "loadingContacts": "Laster kontakter...",
+      "personNotFound": "Én eller begge kontaktene ble ikke funnet.",
+      "missingParams": "Manglende kontaktparametere. Velg to kontakter å slå sammen."
     }
   },
   "groups": {
