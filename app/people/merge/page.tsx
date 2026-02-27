@@ -136,6 +136,7 @@ function MergePageContent() {
       const message =
         err instanceof Error ? err.message : t('error');
       toast.error(message);
+    } finally {
       setMerging(false);
     }
   };

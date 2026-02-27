@@ -465,12 +465,11 @@ export const POST = withAuth(async (request, session) => {
           where: { id: raceMappingInfo.connectionId },
         });
         if (connection) {
-          const client = await createCardDavClient(connection);
-          await withRetry(() => client.deleteVCard({
-            url: raceMappingInfo.href,
-            etag: raceMappingInfo.etag || '',
-            data: '',
-          }));
+          await withRetry(() => deleteVCardDirect(
+            connection,
+            raceMappingInfo.href,
+            raceMappingInfo.etag || '*',
+          ));
           log.info({ personId: secondaryId }, 'Cleaned up race-condition vCard from CardDAV server');
         }
       } catch (err) {

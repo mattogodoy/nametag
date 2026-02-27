@@ -15,11 +15,9 @@ export interface DuplicateGroupDisplay {
   similarity: number;
 }
 
-interface DuplicatesListProps {
-  targetPersonId?: string;
-  candidates?: DuplicateCandidateDisplay[];
-  groups?: DuplicateGroupDisplay[];
-}
+type DuplicatesListProps =
+  | { targetPersonId: string; candidates: DuplicateCandidateDisplay[]; groups?: never }
+  | { targetPersonId?: never; candidates?: never; groups: DuplicateGroupDisplay[] };
 
 function formatName(name: string, surname: string | null): string {
   return [name, surname].filter(Boolean).join(' ');

@@ -1264,13 +1264,14 @@ describe('POST /api/people/merge', () => {
         href: 'https://carddav.example.com/contacts/abc.vcf',
         etag: '"etag-123"',
         connectionId: 'conn-1',
+        uid: 'uid-race',
       };
       mocks.cardDavMappingFindUnique.mockResolvedValueOnce(raceMapping);
 
-      // Mock the connection lookup and client for post-transaction cleanup
-      mocks.mockDeleteVCard.mockResolvedValue(undefined);
-      mocks.cardDavConnectionFindUnique.mockResolvedValueOnce({ id: 'conn-1' });
-      mocks.createCardDavClient.mockResolvedValueOnce({ deleteVCard: mocks.mockDeleteVCard });
+      // Mock the connection lookup and deleteVCardDirect for post-transaction cleanup
+      const mockConnection = { id: 'conn-1', serverUrl: 'https://carddav.example.com', username: 'user', password: 'pass' };
+      mocks.cardDavConnectionFindUnique.mockResolvedValueOnce(mockConnection);
+      mocks.deleteVCardDirect.mockResolvedValueOnce(undefined);
 
       const response = await POST(makeRequest({
         primaryId: PRIMARY_ID,
@@ -1289,12 +1290,12 @@ describe('POST /api/people/merge', () => {
         where: { personId: SECONDARY_ID },
       });
 
-      // Should have deleted the vCard from the server after the transaction
-      expect(mocks.mockDeleteVCard).toHaveBeenCalledWith({
-        url: 'https://carddav.example.com/contacts/abc.vcf',
-        etag: '"etag-123"',
-        data: '',
-      });
+      // Should have deleted the vCard from the server via deleteVCardDirect
+      expect(mocks.deleteVCardDirect).toHaveBeenCalledWith(
+        mockConnection,
+        'https://carddav.example.com/contacts/abc.vcf',
+        '"etag-123"',
+      );
     });
   });
 
