@@ -87,6 +87,12 @@ export const POST = withAuth(async (request, session) => {
           : null;
       }
 
+      if ('lastContact' in fieldOverrides) {
+        scalarUpdates.lastContact = fieldOverrides.lastContact
+          ? new Date(fieldOverrides.lastContact)
+          : null;
+      }
+
       if ('relationshipToUserId' in fieldOverrides) {
         scalarUpdates.relationshipToUser = fieldOverrides.relationshipToUserId
           ? { connect: { id: fieldOverrides.relationshipToUserId } }

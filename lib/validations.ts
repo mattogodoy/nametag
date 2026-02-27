@@ -240,6 +240,7 @@ export const mergePersonSchema = z.object({
     jobTitle: z.string().nullable().optional(),
     gender: z.string().nullable().optional(),
     anniversary: z.string().nullable().optional(),
+    lastContact: z.string().nullable().optional(),
     photo: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
     relationshipToUserId: z.string().nullable().optional(),
