@@ -71,15 +71,16 @@ jobs:
             ${{ steps.commits.outputs.commit_log }}
             ---
 
-            Write a concise release summary for end users. Rules:
-            - Group changes by THEME (e.g., "Contact Sync", "UI Polish"), NOT by commit type
-            - Write from the user's perspective: what they gain, what's fixed
-            - 3-8 bullet points total
-            - Start each bullet with a verb (Added, Fixed, Improved, etc.)
-            - If there are breaking changes, put them first under a "Breaking Changes" heading
-            - Do NOT include commit hashes or technical jargon
-            - Do NOT include changes that are invisible to users (refactoring, CI, tests)
-            - Use markdown formatting
+            Write a SHORT release summary for end users. This is critical — keep it brief.
+
+            Format: a flat markdown bullet list. No headings, no sections, no preamble.
+            - 3-6 bullet points MAXIMUM. Combine related commits into one bullet.
+            - One short sentence per bullet (under 20 words). Start with a verb (Added, Fixed, Improved).
+            - Write from the user's perspective: what changed for them.
+            - Only mention breaking changes if there are any — prefix with "**Breaking:**".
+            - Do NOT include commit hashes, component names, or technical jargon.
+            - Do NOT include invisible changes (refactoring, CI, tests, translations).
+            - Do NOT add a title, header, or sign-off. Just the bullets.
 
       - name: Post AI summary as PR comment
         if: steps.ai-notes.outcome == 'success'
