@@ -53,14 +53,43 @@ describe('Export API', () => {
     { id: 'group-3', name: 'Work', description: 'Colleagues', color: '#0000FF' },
   ];
 
+  const emptyMultiValues = {
+    phoneNumbers: [],
+    emails: [],
+    addresses: [],
+    urls: [],
+    imHandles: [],
+    locations: [],
+    customFields: [],
+  };
+
+  const nullPersonFields = {
+    secondLastName: null,
+    prefix: null,
+    suffix: null,
+    organization: null,
+    jobTitle: null,
+    photo: null,
+    gender: null,
+    anniversary: null,
+    contactReminderEnabled: false,
+    contactReminderInterval: null,
+    contactReminderIntervalUnit: null,
+  };
+
   const mockPeople = [
     {
       id: 'person-1',
       name: 'John',
+      middleName: 'Michael',
       surname: 'Doe',
       nickname: null,
       lastContact: null,
       notes: null,
+      ...nullPersonFields,
+      prefix: 'Dr.',
+      organization: 'Acme Corp',
+      jobTitle: 'Engineer',
       relationshipToUser: { id: 'rel-1', name: 'friend', label: 'Friend' },
       groups: [
         { group: { id: 'group-1', name: 'Family' } },
@@ -74,14 +103,37 @@ describe('Export API', () => {
           notes: null,
         },
       ],
+      importantDates: [
+        { title: 'Birthday', date: new Date('1990-05-15') },
+        { title: 'Anniversary', date: new Date('2015-06-20') },
+      ],
+      phoneNumbers: [{ type: 'mobile', number: '+1234567890' }],
+      emails: [{ type: 'work', email: 'john@acme.com' }],
+      addresses: [
+        {
+          type: 'home',
+          streetLine1: '123 Main St',
+          streetLine2: 'Apt 4',
+          locality: 'Springfield',
+          region: 'IL',
+          postalCode: '62701',
+          country: 'US',
+        },
+      ],
+      urls: [{ type: 'homepage', url: 'https://johndoe.com' }],
+      imHandles: [{ protocol: 'telegram', handle: '@johndoe' }],
+      locations: [{ type: 'home', latitude: 39.7817, longitude: -89.6501, label: 'Home' }],
+      customFields: [{ key: 'X-HOBBY', value: 'Guitar', type: null }],
     },
     {
       id: 'person-2',
       name: 'Jane',
+      middleName: null,
       surname: 'Doe',
       nickname: null,
       lastContact: null,
       notes: null,
+      ...nullPersonFields,
       relationshipToUser: null,
       groups: [{ group: { id: 'group-1', name: 'Family' } }],
       relationshipsFrom: [
@@ -92,17 +144,23 @@ describe('Export API', () => {
           notes: null,
         },
       ],
+      importantDates: [],
+      ...emptyMultiValues,
     },
     {
       id: 'person-3',
       name: 'Bob',
+      middleName: null,
       surname: 'Smith',
       nickname: 'Bobby',
       lastContact: null,
       notes: null,
+      ...nullPersonFields,
       relationshipToUser: null,
       groups: [{ group: { id: 'group-3', name: 'Work' } }],
       relationshipsFrom: [],
+      importantDates: [{ title: 'Birthday', date: new Date('1985-12-25') }],
+      ...emptyMultiValues,
     },
   ];
 
@@ -243,6 +301,71 @@ describe('Export API', () => {
       const person1 = body.people.find((p: { id: string }) => p.id === 'person-1');
       expect(person1.relationships).toHaveLength(1);
       expect(person1.relationships[0].relatedPersonId).toBe('person-2');
+    });
+
+    it('should include all person fields in export', async () => {
+      mocks.personFindMany.mockResolvedValue(mockPeople);
+
+      const request = new Request('http://localhost/api/user/export', {
+        method: 'GET',
+      });
+
+      const response = await exportData(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+
+      const person1 = body.people.find((p: { id: string }) => p.id === 'person-1');
+
+      // Scalar fields
+      expect(person1.middleName).toBe('Michael');
+      expect(person1.prefix).toBe('Dr.');
+      expect(person1.organization).toBe('Acme Corp');
+      expect(person1.jobTitle).toBe('Engineer');
+      expect(person1.secondLastName).toBeNull();
+      expect(person1.suffix).toBeNull();
+      expect(person1.photo).toBeNull();
+      expect(person1.gender).toBeNull();
+      expect(person1.anniversary).toBeNull();
+      expect(person1.contactReminderEnabled).toBe(false);
+      expect(person1.contactReminderInterval).toBeNull();
+      expect(person1.contactReminderIntervalUnit).toBeNull();
+
+      // Important dates
+      expect(person1.importantDates).toHaveLength(2);
+      expect(person1.importantDates[0].title).toBe('Birthday');
+
+      // Multi-value fields
+      expect(person1.phoneNumbers).toEqual([{ type: 'mobile', number: '+1234567890' }]);
+      expect(person1.emails).toEqual([{ type: 'work', email: 'john@acme.com' }]);
+      expect(person1.addresses).toEqual([
+        {
+          type: 'home',
+          streetLine1: '123 Main St',
+          streetLine2: 'Apt 4',
+          locality: 'Springfield',
+          region: 'IL',
+          postalCode: '62701',
+          country: 'US',
+        },
+      ]);
+      expect(person1.urls).toEqual([{ type: 'homepage', url: 'https://johndoe.com' }]);
+      expect(person1.imHandles).toEqual([{ protocol: 'telegram', handle: '@johndoe' }]);
+      expect(person1.locations).toHaveLength(1);
+      expect(person1.locations[0].label).toBe('Home');
+      expect(person1.customFields).toEqual([{ key: 'X-HOBBY', value: 'Guitar', type: null }]);
+
+      // Person with empty multi-value fields
+      const person2 = body.people.find((p: { id: string }) => p.id === 'person-2');
+      expect(person2.middleName).toBeNull();
+      expect(person2.importantDates).toHaveLength(0);
+      expect(person2.phoneNumbers).toHaveLength(0);
+      expect(person2.emails).toHaveLength(0);
+      expect(person2.addresses).toHaveLength(0);
+      expect(person2.urls).toHaveLength(0);
+      expect(person2.imHandles).toHaveLength(0);
+      expect(person2.locations).toHaveLength(0);
+      expect(person2.customFields).toHaveLength(0);
     });
 
     it('should return empty people array when no people match the group filter', async () => {
