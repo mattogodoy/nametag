@@ -143,26 +143,34 @@ export default async function PeoplePage({
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            {canCreate.allowed ? (
+            <div className="flex space-x-3">
               <Link
-                href="/people/new"
-                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50"
+                href="/people/duplicates"
+                className="px-4 py-2 border border-border text-foreground rounded-lg font-semibold hover:bg-surface transition-colors"
               >
-                {t('addPerson')}
+                {t('duplicates.findDuplicates')}
               </Link>
-            ) : (
-              <div className="relative group">
-                <span className="px-4 py-2 bg-gray-400 dark:bg-gray-600 text-white rounded-lg font-semibold cursor-not-allowed inline-block">
+              {canCreate.allowed ? (
+                <Link
+                  href="/people/new"
+                  className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50"
+                >
                   {t('addPerson')}
-                </span>
-                <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-lg z-10">
-                  <p className="mb-2">{t('limitReached', { limit: canCreate.limit })}</p>
-                  <Link href="/settings/billing" className="text-primary hover:text-primary-dark underline">
-                    {t('upgradePlan')}
-                  </Link>
+                </Link>
+              ) : (
+                <div className="relative group">
+                  <span className="px-4 py-2 bg-gray-400 dark:bg-gray-600 text-white rounded-lg font-semibold cursor-not-allowed inline-block">
+                    {t('addPerson')}
+                  </span>
+                  <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-lg z-10">
+                    <p className="mb-2">{t('limitReached', { limit: canCreate.limit })}</p>
+                    <Link href="/settings/billing" className="text-primary hover:text-primary-dark underline">
+                      {t('upgradePlan')}
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {totalCount === 0 ? (

@@ -58,6 +58,13 @@ export default async function ImportPage({
     },
   });
 
+  // PostgreSQL default ordering is case-sensitive and doesn't handle accented
+  // characters well. Re-sort with locale-aware comparison so "álvaro" sorts
+  // near "A" and lowercase names aren't pushed to the end.
+  pendingImports.sort((a, b) =>
+    a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })
+  );
+
   // If file import with no pending imports, redirect back
   if (isFileImport && pendingImports.length === 0) {
     redirect('/settings/account');

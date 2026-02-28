@@ -22,6 +22,8 @@ const mocks = vi.hoisted(() => ({
   cardDavMappingCreate: vi.fn(),
   cardDavMappingUpdate: vi.fn(),
   cardDavPendingImportUpsert: vi.fn(),
+  cardDavPendingImportFindMany: vi.fn(),
+  cardDavPendingImportDeleteMany: vi.fn(),
   cardDavPendingImportCount: vi.fn(),
   cardDavConflictCreate: vi.fn(),
   personFindMany: vi.fn(),
@@ -62,6 +64,8 @@ vi.mock('@/lib/prisma', () => ({
     },
     cardDavPendingImport: {
       upsert: mocks.cardDavPendingImportUpsert,
+      findMany: mocks.cardDavPendingImportFindMany,
+      deleteMany: mocks.cardDavPendingImportDeleteMany,
       count: mocks.cardDavPendingImportCount,
     },
     cardDavConflict: {
@@ -253,6 +257,8 @@ describe('CardDAV Sync Engine', () => {
 
     // Default: no pending imports in DB
     mocks.cardDavPendingImportCount.mockResolvedValue(0);
+    mocks.cardDavPendingImportFindMany.mockResolvedValue([]);
+    mocks.cardDavPendingImportDeleteMany.mockResolvedValue({ count: 0 });
 
     // Default: mapping operations succeed
     mocks.cardDavMappingUpdate.mockResolvedValue({});

@@ -3,13 +3,12 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import { prisma } from '@/lib/prisma';
-import DeletePersonButton from '@/components/DeletePersonButton';
 import DeleteUserRelationshipButton from '@/components/DeleteUserRelationshipButton';
 import RelationshipManager from '@/components/RelationshipManager';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import Navigation from '@/components/Navigation';
-import PersonVCardExport from '@/components/PersonVCardExport';
 import PersonVCardRawView from '@/components/PersonVCardRawView';
+import PersonActionsMenu from '@/components/PersonActionsMenu';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -329,9 +328,10 @@ export default async function PersonDetailsPage({
                 >
                   {t('edit')}
                 </Link>
-                <DeletePersonButton
+                <PersonActionsMenu
                   personId={person.id}
                   personName={formatFullName(person)}
+                  person={serializedPerson}
                   hasCardDavSync={!!cardDavConnection && !!person.cardDavMapping}
                 />
               </div>
@@ -782,10 +782,6 @@ export default async function PersonDetailsPage({
                 />
               </div>
 
-              {/* Export VCF Button */}
-              <div className="flex justify-center mt-6">
-                <PersonVCardExport person={serializedPerson} />
-              </div>
             </div>
           </div>
         </div>

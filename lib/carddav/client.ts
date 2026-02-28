@@ -100,9 +100,30 @@ export async function createCardDavClient(
         filename,
       });
 
+      // tsdav uses fetch() which does NOT throw on HTTP errors (4xx/5xx).
+      const createRes = response as Response | undefined;
+      if (createRes && typeof createRes.ok === 'boolean' && !createRes.ok) {
+        const statusText = createRes.statusText || 'Unknown error';
+        throw new Error(`CardDAV CREATE failed: ${createRes.status} ${statusText}`);
+      }
+
       const etag = response.headers?.get('etag') || '';
-      // Reconstruct the vCard URL the same way tsdav does
-      const vcardUrl = new URL(filename, addressBook.raw.url).href;
+
+      // Determine the actual URL of the created vCard.
+      // Prefer the response URL (actual URL the PUT was sent to, after any redirects)
+      // over reconstructing it, since `new URL(filename, base)` silently drops
+      // the last path segment when the base URL lacks a trailing slash.
+      const createResponse = response as Response | undefined;
+      let vcardUrl: string;
+      if (createResponse?.url) {
+        vcardUrl = createResponse.url;
+      } else {
+        // Fallback: ensure trailing slash on address book URL for correct resolution
+        const abUrl = addressBook.raw.url.endsWith('/')
+          ? addressBook.raw.url
+          : addressBook.raw.url + '/';
+        vcardUrl = new URL(filename, abUrl).href;
+      }
 
       return {
         url: vcardUrl,
@@ -122,6 +143,13 @@ export async function createCardDavClient(
         } as DAVVCard,
       });
 
+      // tsdav uses fetch() which does NOT throw on HTTP errors (4xx/5xx).
+      const updateRes = response as Response | undefined;
+      if (updateRes && typeof updateRes.ok === 'boolean' && !updateRes.ok) {
+        const statusText = updateRes.statusText || 'Unknown error';
+        throw new Error(`CardDAV UPDATE failed: ${updateRes.status} ${statusText}`);
+      }
+
       const etag = response.headers?.get('etag') || vCard.etag;
 
       return {
@@ -133,15 +161,57 @@ export async function createCardDavClient(
 
     async deleteVCard(vCard: VCard): Promise<void> {
       const absoluteUrl = resolveUrl(serverUrl, vCard.url);
-      await client.deleteVCard({
+      const response = await client.deleteVCard({
         vCard: {
           url: absoluteUrl,
           etag: vCard.etag,
           data: '',
         } as DAVVCard,
       });
+
+      // tsdav uses fetch() which does NOT throw on HTTP errors (4xx/5xx).
+      // We must check the response status ourselves.
+      const res = response as Response | undefined;
+      if (res && typeof res.ok === 'boolean' && !res.ok) {
+        const statusText = res.statusText || 'Unknown error';
+        throw new Error(`CardDAV DELETE failed: ${res.status} ${statusText}`);
+      }
     },
   };
+}
+
+/**
+ * Delete a vCard by direct HTTP DELETE request, bypassing tsdav's full DAV discovery.
+ * Use this when you already know the vCard URL and just need to delete it.
+ * This avoids the fragile discovery step that can fail with "cannot find homeUrl".
+ */
+export async function deleteVCardDirect(
+  connection: CardDavConnection,
+  vCardUrl: string,
+  etag: string
+): Promise<void> {
+  const password = decryptPassword(connection.password);
+  const authHeader = 'Basic ' + Buffer.from(`${connection.username}:${password}`).toString('base64');
+
+  const absoluteUrl = resolveUrl(connection.serverUrl, vCardUrl);
+
+  const headers: Record<string, string> = {
+    Authorization: authHeader,
+  };
+  if (etag && etag !== '*') {
+    headers['If-Match'] = etag;
+  } else if (etag === '*') {
+    headers['If-Match'] = '*';
+  }
+
+  const response = await fetch(absoluteUrl, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`CardDAV DELETE failed: ${response.status} ${response.statusText || 'Unknown error'}`);
+  }
 }
 
 /**

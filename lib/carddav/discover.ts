@@ -74,6 +74,9 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
 
     const pendingUids = new Set(existingPending.map((p) => p.uid));
 
+    // Collect all UIDs seen on the server during processing (for stale import cleanup)
+    const serverUids = new Set<string>();
+
     // Process each vCard
     for (const vCard of vCards) {
       try {
@@ -87,6 +90,7 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
         }
 
         const uid = parsed.uid;
+        serverUids.add(uid);
 
         // Skip if already imported or already pending
         if (existingUids.has(uid) || pendingUids.has(uid)) {
@@ -118,6 +122,27 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
           error instanceof Error ? error.message : 'Unknown error'
         );
       }
+    }
+
+    // Clean up stale pending imports whose UIDs no longer exist on the server.
+    // Also include UIDs that are already mapped (imported) — those aren't stale
+    const allValidUids = new Set([...serverUids, ...existingUids]);
+
+    // Find pending imports whose UIDs are no longer on the server
+    const allPending = await prisma.cardDavPendingImport.findMany({
+      where: { connectionId: connection.id },
+      select: { id: true, uid: true },
+    });
+
+    const staleIds = allPending
+      .filter((p) => !allValidUids.has(p.uid))
+      .map((p) => p.id);
+
+    if (staleIds.length > 0) {
+      await prisma.cardDavPendingImport.deleteMany({
+        where: { id: { in: staleIds } },
+      });
+      log.info({ count: staleIds.length }, 'Cleaned up stale pending imports');
     }
 
     // Update connection

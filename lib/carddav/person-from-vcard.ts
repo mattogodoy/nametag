@@ -103,21 +103,24 @@ function buildMultiValueUpdateData(parsedData: ParsedVCardData) {
  * Scalar person fields derived from parsed vCard data.
  */
 function buildScalarPersonData(parsedData: ParsedVCardData) {
+  // Use `?? null` for optional fields so Prisma clears them when absent from
+  // the vCard.  Plain `undefined` would cause Prisma to skip the field entirely,
+  // preserving a stale value after the remote side deleted it.
   return {
     name: parsedData.name,
-    surname: parsedData.surname,
-    secondLastName: parsedData.secondLastName,
-    middleName: parsedData.middleName,
-    prefix: parsedData.prefix,
-    suffix: parsedData.suffix,
-    nickname: parsedData.nickname,
-    organization: parsedData.organization,
-    jobTitle: parsedData.jobTitle,
-    photo: parsedData.photo,
-    gender: parsedData.gender,
-    anniversary: parsedData.anniversary,
-    lastContact: parsedData.lastContact,
-    notes: parsedData.notes,
+    surname: parsedData.surname ?? null,
+    secondLastName: parsedData.secondLastName ?? null,
+    middleName: parsedData.middleName ?? null,
+    prefix: parsedData.prefix ?? null,
+    suffix: parsedData.suffix ?? null,
+    nickname: parsedData.nickname ?? null,
+    organization: parsedData.organization ?? null,
+    jobTitle: parsedData.jobTitle ?? null,
+    photo: parsedData.photo ?? null,
+    gender: parsedData.gender ?? null,
+    anniversary: parsedData.anniversary ?? null,
+    lastContact: parsedData.lastContact ?? null,
+    notes: parsedData.notes ?? null,
   };
 }
 
@@ -232,7 +235,7 @@ export async function updatePersonFromVCard(
       where: { id: personId },
       data: {
         ...buildScalarPersonData(parsedData),
-        photo: photoValue,
+        photo: photoValue ?? null,
         uid: parsedData.uid,
 
         // Create new multi-value fields
