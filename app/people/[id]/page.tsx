@@ -3,14 +3,12 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import { prisma } from '@/lib/prisma';
-import DeletePersonButton from '@/components/DeletePersonButton';
 import DeleteUserRelationshipButton from '@/components/DeleteUserRelationshipButton';
 import RelationshipManager from '@/components/RelationshipManager';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import Navigation from '@/components/Navigation';
-import PersonVCardExport from '@/components/PersonVCardExport';
 import PersonVCardRawView from '@/components/PersonVCardRawView';
-import FindDuplicatesButton from '@/components/FindDuplicatesButton';
+import PersonActionsMenu from '@/components/PersonActionsMenu';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
 import { formatFullName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -324,16 +322,16 @@ export default async function PersonDetailsPage({
                 )}
               </div>
               <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
-                <FindDuplicatesButton personId={person.id} />
                 <Link
                   href={`/people/${person.id}/edit`}
                   className="flex-1 sm:flex-none px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 text-center"
                 >
                   {t('edit')}
                 </Link>
-                <DeletePersonButton
+                <PersonActionsMenu
                   personId={person.id}
                   personName={formatFullName(person)}
+                  person={serializedPerson}
                   hasCardDavSync={!!cardDavConnection && !!person.cardDavMapping}
                 />
               </div>
@@ -784,10 +782,6 @@ export default async function PersonDetailsPage({
                 />
               </div>
 
-              {/* Export VCF Button */}
-              <div className="flex justify-center mt-6">
-                <PersonVCardExport person={serializedPerson} />
-              </div>
             </div>
           </div>
         </div>
