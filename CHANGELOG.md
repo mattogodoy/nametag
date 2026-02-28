@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.26.0](https://github.com/mattogodoy/nametag/compare/v0.25.1...v0.26.0) (2026-02-28)
+
+
+### Features
+
+* add DuplicatesList component for displaying duplicate candidates ([a949e4f](https://github.com/mattogodoy/nametag/commit/a949e4f4167f914f97f165bbc38a301f3b1875be))
+* add Find Duplicates button to people list toolbar ([6661810](https://github.com/mattogodoy/nametag/commit/66618107931707f17da45d884ec508aef08a1c47))
+* add Find Duplicates button to person detail page ([673de88](https://github.com/mattogodoy/nametag/commit/673de88130599804474acdf6b4f66766b1288d40))
+* add global duplicate detection API endpoint ([c125b08](https://github.com/mattogodoy/nametag/commit/c125b080f846213636a4318b4b7ef8c07631065c))
+* add global duplicates scanner page ([eb2bb9b](https://github.com/mattogodoy/nametag/commit/eb2bb9b8dc9e8040370583d3fdb88c4a68dfff92))
+* add Levenshtein-based duplicate detection utility ([bd01fc1](https://github.com/mattogodoy/nametag/commit/bd01fc1ac009bff50142382baba35c8d13195bd1))
+* add merge contacts API endpoint with transactional data transfer ([eab5673](https://github.com/mattogodoy/nametag/commit/eab567323c75d1e3f0975ec063d390cfd46cd43e))
+* add merge contacts page with side-by-side comparison ([3d7ca86](https://github.com/mattogodoy/nametag/commit/3d7ca86adf9cee78c546da4d7f521432f850ac2f))
+* add merge person validation schema ([b27ba19](https://github.com/mattogodoy/nametag/commit/b27ba19f9689dd8714ea9d803ab13e5ddc09ef36))
+* add merge/duplicates translations for all five languages ([a8136fb](https://github.com/mattogodoy/nametag/commit/a8136fb939feba6f26484dbb9b98a89f50e007a3))
+* add per-person duplicate detection API endpoint ([d9bee34](https://github.com/mattogodoy/nametag/commit/d9bee348c314fd2d9534f7598053d61a784e92aa))
+* add PersonCompare component for side-by-side contact comparison ([0ed8437](https://github.com/mattogodoy/nametag/commit/0ed84374e86e7fa827046a39863ea764e103f23a))
+* merge duplicate contacts with CardDAV sync ([343f1a6](https://github.com/mattogodoy/nametag/commit/343f1a689abe768f4957d1fb8a3e9e2962676587))
+
+
+### Bug Fixes
+
+* add lastContact to merge field overrides ([17feda1](https://github.com/mattogodoy/nametag/commit/17feda16d7463a25768482c53296a97acf51ba06))
+* add missing merge field translations for DE, JA, NO locales ([13c10fd](https://github.com/mattogodoy/nametag/commit/13c10fdef99a655220c0729b336bef2349724417))
+* add missing merge page translations for DE, JA, NO locales ([d875c1c](https://github.com/mattogodoy/nametag/commit/d875c1c919c4127273cde9138a2e8d7dd79f48fe))
+* clean up stale pending imports and sort import list locale-aware ([c2a175d](https://github.com/mattogodoy/nametag/commit/c2a175dc5964bb87ebb2751b538c895443c42b4e))
+* deduplicate all multi-value fields during contact merge ([4bc8aa5](https://github.com/mattogodoy/nametag/commit/4bc8aa56fe991d8f46d5e3ffdbf545282383537e))
+* improve contact merge with CardDAV delete, scalar auto-transfer, and relationship summary ([b9de2db](https://github.com/mattogodoy/nametag/commit/b9de2dba0a47fe8f8d2ca3183eee132bcdbb61f5))
+* prevent duplicate relationships, improve merge accuracy and cleanup ([a14889a](https://github.com/mattogodoy/nametag/commit/a14889a2dd2899761a5dce63051b166abc970d36))
+* resolve TypeScript errors in merge test mock call assertions ([c2c0c3e](https://github.com/mattogodoy/nametag/commit/c2c0c3e4effc9eef86e07a3949f4a71de3842190))
+* use correct key for relationshipToUserId in merge field overrides ([c53afb7](https://github.com/mattogodoy/nametag/commit/c53afb7702e332b5c22923c4cf95c4fa8bdcf747))
+* use deleteVCardDirect for race-condition cleanup, harden UI edge cases ([fda3243](https://github.com/mattogodoy/nametag/commit/fda32434b0b470f14b932451034fb8c56fce8275))
+* use getPhotoUrl for photo display in PersonCompare component ([9612944](https://github.com/mattogodoy/nametag/commit/9612944be6db890ede392336eec5f33c5aac6954))
+* use null instead of undefined for missing vCard fields so Prisma clears them on sync ([0840365](https://github.com/mattogodoy/nametag/commit/0840365854e2f863aa747e41dab9c3d8ac671e02))
+* validate date overrides in merge schema to reject invalid strings ([c4290fe](https://github.com/mattogodoy/nametag/commit/c4290fe25b745155668f623e1d03c31818ba7b92))
+
 ## [0.25.1](https://github.com/mattogodoy/nametag/compare/v0.25.0...v0.25.1) (2026-02-27)
 
 
