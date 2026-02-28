@@ -106,12 +106,29 @@ jobs:
       - name: Get PR number
         id: pr-info
         env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
           PR_JSON: ${{ needs.release-please.outputs.pr }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
-          PR_NUMBER=$(echo "$PR_JSON" | jq -r 'if type == "object" then .number else . end')
+          PR_NUMBER=""
+
+          # Try release-please output first
+          if [ -n "$PR_JSON" ] && [ "$PR_JSON" != "null" ]; then
+            PR_NUMBER=$(echo "$PR_JSON" | jq -r 'if type == "object" then .number else . end' 2>/dev/null)
+          fi
+
+          # Fallback: find the merged release PR by tag version
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            VERSION="${TAG#v}"
+            PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --state merged \
+              --search "chore(master): release ${VERSION} in:title" \
+              --json number --jq '.[0].number // empty')
+          fi
+
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
 
       - name: Find AI release notes comment
+        if: steps.pr-info.outputs.pr_number != ''
         id: ai-comment
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
