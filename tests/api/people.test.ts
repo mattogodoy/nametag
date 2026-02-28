@@ -430,6 +430,75 @@ describe('People API', () => {
     });
   });
 
+  describe('Partial update (regression for #79)', () => {
+    it('should only update relationshipToUserId without overwriting other fields', async () => {
+      const existingPerson = {
+        id: 'person-1',
+        name: 'John',
+        surname: 'Doe',
+        middleName: 'Michael',
+        secondLastName: 'Smith',
+        nickname: 'Johnny',
+        notes: 'Some important notes',
+        userId: 'user-123',
+        contactReminderEnabled: false,
+      };
+      const updatedPerson = { ...existingPerson, groups: [] };
+
+      mocks.personFindUnique.mockResolvedValue(existingPerson);
+      mocks.importantDateCount.mockResolvedValue(0);
+      mocks.personUpdate.mockResolvedValue(updatedPerson);
+
+      const request = new Request('http://localhost/api/people/person-1', {
+        method: 'PUT',
+        body: JSON.stringify({ relationshipToUserId: 'rel-type-1' }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const context = { params: Promise.resolve({ id: 'person-1' }) };
+      await PUT(request, context);
+
+      const updateCall = mocks.personUpdate.mock.calls[0][0];
+      // Only relationshipToUser should be in the update data
+      expect(updateCall.data).toEqual({
+        relationshipToUser: { connect: { id: 'rel-type-1' } },
+      });
+      // None of the other fields should be present
+      expect(updateCall.data).not.toHaveProperty('name');
+      expect(updateCall.data).not.toHaveProperty('surname');
+      expect(updateCall.data).not.toHaveProperty('middleName');
+      expect(updateCall.data).not.toHaveProperty('nickname');
+      expect(updateCall.data).not.toHaveProperty('notes');
+    });
+
+    it('should only update provided fields without touching others', async () => {
+      const existingPerson = {
+        id: 'person-1',
+        name: 'John',
+        surname: 'Doe',
+        middleName: 'Michael',
+        nickname: 'Johnny',
+        userId: 'user-123',
+        contactReminderEnabled: false,
+      };
+      const updatedPerson = { ...existingPerson, name: 'John Updated', groups: [] };
+
+      mocks.personFindUnique.mockResolvedValue(existingPerson);
+      mocks.importantDateCount.mockResolvedValue(0);
+      mocks.personUpdate.mockResolvedValue(updatedPerson);
+
+      const request = new Request('http://localhost/api/people/person-1', {
+        method: 'PUT',
+        body: JSON.stringify({ name: 'John Updated' }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const context = { params: Promise.resolve({ id: 'person-1' }) };
+      await PUT(request, context);
+
+      const updateCall = mocks.personUpdate.mock.calls[0][0];
+      expect(updateCall.data).toEqual({ name: 'John Updated' });
+    });
+  });
+
   describe('New name fields (middleName, secondLastName)', () => {
     it('should create a person with middle name and second last name', async () => {
       const newPerson = {
