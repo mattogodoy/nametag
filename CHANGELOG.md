@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.26.1](https://github.com/mattogodoy/nametag/compare/v0.26.0...v0.26.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* include all person fields in JSON export ([9bd8991](https://github.com/mattogodoy/nametag/commit/9bd89917e9323ae8c88839ca816936f6ff488fc9))
+* include all person fields in JSON export ([56cd239](https://github.com/mattogodoy/nametag/commit/56cd2393fb31c379c9a47a04657b33955e5b495c)), closes [#106](https://github.com/mattogodoy/nametag/issues/106) [#107](https://github.com/mattogodoy/nametag/issues/107)
+* prepend AI release notes to GitHub releases ([0886c16](https://github.com/mattogodoy/nametag/commit/0886c16a4f795486f38c52743bca12b08f918fb3))
+* tighten AI release notes prompt to avoid truncation ([9fddcd3](https://github.com/mattogodoy/nametag/commit/9fddcd3224e53af66ac324083b4538e106c1d260))
+
 ## [0.26.0](https://github.com/mattogodoy/nametag/compare/v0.25.1...v0.26.0) (2026-02-28)
 
 
