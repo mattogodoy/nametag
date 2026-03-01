@@ -135,13 +135,6 @@ export default async function PersonDetailsPage({
       },
       include: {
         relationshipToUser: {
-          include: {
-            inverse: {
-              where: {
-                deletedAt: null,
-              },
-            },
-          },
           where: {
             deletedAt: null,
           },
@@ -252,11 +245,9 @@ export default async function PersonDetailsPage({
     (p) => !relatedPersonIds.has(p.id)
   );
 
-  // As other people's relationship to the person in question
-  // is listed, the user's relationship to the person needs to
-  // be shown which is the inverse of the person's relationship
-  // to the user.
-  const relationshipToUser = person.relationshipToUser?.inverse;
+  // relationshipToUserId stores the relationship FROM the user TO this person
+  // (e.g., if Peter is my child, it stores "Child"). Use it directly.
+  const relationshipToUser = person.relationshipToUser;
 
   return (
     <div className="min-h-screen bg-background">
