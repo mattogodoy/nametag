@@ -19,6 +19,8 @@ interface GraphEdge {
   target: string | GraphNode;
   type: string;
   color: string;
+  sourceLabel?: string;
+  targetLabel?: string;
 }
 
 interface Group {
@@ -65,6 +67,7 @@ export default function UnifiedNetworkGraph({
   clusterStrength = 0.3,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
+  const tPeople = useTranslations('people');
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
   const previousNodeIdsRef = useRef<Set<string> | null>(null);
@@ -267,7 +270,14 @@ export default function UnifiedNetworkGraph({
       .attr('fill', (d) => d.color || '#666')
       .attr('text-anchor', 'middle')
       .attr('opacity', 0)
-      .text((d) => d.type.toLowerCase());
+      .text((d) => {
+        const sourceName = d.sourceLabel || '';
+        const targetName = d.targetLabel || '';
+        if (sourceName && targetName) {
+          return tPeople('formPreview', { name: sourceName, personName: targetName, type: d.type });
+        }
+        return d.type.toLowerCase();
+      });
 
     // Create nodes
     const node = g
@@ -442,6 +452,7 @@ export default function UnifiedNetworkGraph({
     isMobile,
     linkDistance,
     router,
+    tPeople,
   ]);
 
   useEffect(() => {

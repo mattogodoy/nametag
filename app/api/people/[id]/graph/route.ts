@@ -195,7 +195,17 @@ export const GET = withAuth(async (_request, session, context) => {
 
     edges.push(...dedupedEdges.values());
 
-    return apiResponse.ok({ nodes, edges });
+    // Enrich edges with source and target labels for tooltip display
+    const nodeLabels = new Map<string, string>();
+    nodes.forEach((n) => nodeLabels.set(n.id, n.label));
+
+    const enrichedEdges = edges.map((e) => ({
+      ...e,
+      sourceLabel: nodeLabels.get(e.source) || '',
+      targetLabel: nodeLabels.get(e.target) || '',
+    }));
+
+    return apiResponse.ok({ nodes, edges: enrichedEdges });
   } catch (error) {
     return handleApiError(error, 'people-graph');
   }

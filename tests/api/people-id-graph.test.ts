@@ -118,12 +118,16 @@ describe('People Graph API Route', () => {
         target: 'person-2',
         type: 'friend',
         color: '#00FF00',
+        sourceLabel: 'Alice Smith',
+        targetLabel: 'Bob Johnson',
       });
       expect(body.edges).toContainEqual({
         source: 'person-2',
         target: 'person-1',
         type: 'friend',
         color: '#00FF00',
+        sourceLabel: 'Bob Johnson',
+        targetLabel: 'Alice Smith',
       });
     });
 
@@ -255,6 +259,8 @@ describe('People Graph API Route', () => {
         target: 'person-3',
         type: 'colleague',
         color: '#FF0000',
+        sourceLabel: 'Bob Johnson',
+        targetLabel: 'Charlie Brown',
       });
       // Check that person-3 -> person-2 edge exists
       expect(body.edges).toContainEqual({
@@ -262,6 +268,8 @@ describe('People Graph API Route', () => {
         target: 'person-2',
         type: 'colleague',
         color: '#FF0000',
+        sourceLabel: 'Charlie Brown',
+        targetLabel: 'Bob Johnson',
       });
     });
 
@@ -326,6 +334,8 @@ describe('People Graph API Route', () => {
         target: 'person-2',
         type: 'friend',
         color: '#00FF00',
+        sourceLabel: 'Alice Smith',
+        targetLabel: 'Bob Johnson',
       });
     });
 
@@ -368,12 +378,16 @@ describe('People Graph API Route', () => {
         target: 'user-user123',
         type: 'family',
         color: '#FF0000',
+        sourceLabel: 'Alice Smith',
+        targetLabel: 'You',
       });
       expect(body.edges).toContainEqual({
         source: 'user-user123',
         target: 'person-1',
         type: 'family',
         color: '#FF0000',
+        sourceLabel: 'You',
+        targetLabel: 'Alice Smith',
       });
     });
   });
