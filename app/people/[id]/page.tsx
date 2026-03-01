@@ -10,7 +10,7 @@ import Navigation from '@/components/Navigation';
 import PersonVCardRawView from '@/components/PersonVCardRawView';
 import PersonActionsMenu from '@/components/PersonActionsMenu';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatFullName, formatGraphName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PersonPhoto from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
@@ -733,7 +733,7 @@ export default async function PersonDetailsPage({
                         {t.rich('isYourRelationship', {
                           name: () => (
                             <span className="font-medium">
-                              {formatFullName(person)}
+                              {formatGraphName(person)}
                             </span>
                           ),
                           type: () => (
@@ -773,7 +773,7 @@ export default async function PersonDetailsPage({
                 {/* Relationships to other people */}
                 <RelationshipManager
                   personId={person.id}
-                  personName={formatFullName(person)}
+                  personName={formatGraphName(person)}
                   relationships={person.relationshipsTo}
                   availablePeople={availablePeople}
                   relationshipTypes={relationshipTypes}
