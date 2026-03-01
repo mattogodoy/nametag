@@ -10,7 +10,7 @@ import Navigation from '@/components/Navigation';
 import PersonVCardRawView from '@/components/PersonVCardRawView';
 import PersonActionsMenu from '@/components/PersonActionsMenu';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate } from '@/lib/date-format';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatFullName, formatGraphName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PersonPhoto from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
@@ -135,13 +135,6 @@ export default async function PersonDetailsPage({
       },
       include: {
         relationshipToUser: {
-          include: {
-            inverse: {
-              where: {
-                deletedAt: null,
-              },
-            },
-          },
           where: {
             deletedAt: null,
           },
@@ -252,11 +245,9 @@ export default async function PersonDetailsPage({
     (p) => !relatedPersonIds.has(p.id)
   );
 
-  // As other people's relationship to the person in question
-  // is listed, the user's relationship to the person needs to
-  // be shown which is the inverse of the person's relationship
-  // to the user.
-  const relationshipToUser = person.relationshipToUser?.inverse;
+  // relationshipToUserId stores the relationship FROM the user TO this person
+  // (e.g., if Peter is my child, it stores "Child"). Use it directly.
+  const relationshipToUser = person.relationshipToUser;
 
   return (
     <div className="min-h-screen bg-background">
@@ -729,22 +720,27 @@ export default async function PersonDetailsPage({
                 {relationshipToUser && (
                   <div className="mb-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground font-medium">
-                          {t('you')}
-                        </span>
-                        <span className="text-muted">•</span>
-                        <span
-                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          style={{
-                            backgroundColor: relationshipToUser.color
-                              ? `${relationshipToUser.color}20`
-                              : '#E5E7EB',
-                            color: relationshipToUser.color || '#374151',
-                          }}
-                        >
-                          {relationshipToUser.label}
-                        </span>
+                      <div className="flex items-center gap-1 flex-wrap text-foreground">
+                        {t.rich('isYourRelationship', {
+                          name: () => (
+                            <span className="font-medium">
+                              {formatGraphName(person)}
+                            </span>
+                          ),
+                          type: () => (
+                            <span
+                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: relationshipToUser.color
+                                  ? `${relationshipToUser.color}20`
+                                  : '#E5E7EB',
+                                color: relationshipToUser.color || '#374151',
+                              }}
+                            >
+                              {relationshipToUser.label}
+                            </span>
+                          ),
+                        })}
                       </div>
                       <div className="flex gap-3">
                         <Link
@@ -768,7 +764,7 @@ export default async function PersonDetailsPage({
                 {/* Relationships to other people */}
                 <RelationshipManager
                   personId={person.id}
-                  personName={formatFullName(person)}
+                  personName={formatGraphName(person)}
                   relationships={person.relationshipsTo}
                   availablePeople={availablePeople}
                   relationshipTypes={relationshipTypes}

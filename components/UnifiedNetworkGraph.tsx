@@ -19,6 +19,8 @@ interface GraphEdge {
   target: string | GraphNode;
   type: string;
   color: string;
+  sourceLabel?: string;
+  targetLabel?: string;
 }
 
 interface Group {
@@ -65,6 +67,7 @@ export default function UnifiedNetworkGraph({
   clusterStrength = 0.3,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
+  const tPeople = useTranslations('people');
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
   const previousNodeIdsRef = useRef<Set<string> | null>(null);
@@ -267,7 +270,39 @@ export default function UnifiedNetworkGraph({
       .attr('fill', (d) => d.color || '#666')
       .attr('text-anchor', 'middle')
       .attr('opacity', 0)
-      .text((d) => d.type.toLowerCase());
+      .each(function(d) {
+        const el = d3.select(this);
+        el.selectAll('*').remove();
+
+        const youLabel = tPeople('you');
+        const sourceName = d.sourceLabel || '';
+        const targetName = d.targetLabel || '';
+
+        const typeLower = d.type.toLowerCase();
+        let label: string;
+        if (sourceName === youLabel || sourceName === 'You') {
+          label = tPeople('graphEdgeLabelFromYou', { type: typeLower });
+        } else if (targetName === youLabel || targetName === 'You') {
+          label = tPeople('graphEdgeLabelToYou', { type: typeLower });
+        } else {
+          label = tPeople('graphEdgeLabel', { type: typeLower });
+        }
+
+        // Split around the type to bold it
+        const typeStr = typeLower;
+        const idx = label.toLowerCase().indexOf(typeStr.toLowerCase());
+        if (idx >= 0) {
+          const before = label.substring(0, idx);
+          const typePart = label.substring(idx, idx + typeStr.length);
+          const after = label.substring(idx + typeStr.length);
+
+          if (before) el.append('tspan').text(before);
+          el.append('tspan').attr('font-weight', 'bold').text(typePart);
+          if (after) el.append('tspan').text(after);
+        } else {
+          el.text(label);
+        }
+      });
 
     // Create nodes
     const node = g
@@ -442,6 +477,7 @@ export default function UnifiedNetworkGraph({
     isMobile,
     linkDistance,
     router,
+    tPeople,
   ]);
 
   useEffect(() => {

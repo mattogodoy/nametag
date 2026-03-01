@@ -115,12 +115,16 @@ describe('Dashboard Graph API Route', () => {
       target: 'person-2',
       type: 'friend',
       color: '#00FF00',
+      sourceLabel: 'Alice',
+      targetLabel: 'Bob',
     });
     expect(body.edges).toContainEqual({
       source: 'person-2',
       target: 'person-1',
       type: 'friend',
       color: '#00FF00',
+      sourceLabel: 'Bob',
+      targetLabel: 'Alice',
     });
   });
 
@@ -250,36 +254,48 @@ describe('Dashboard Graph API Route', () => {
       target: 'person-2',
       type: 'friend',
       color: '#00FF00',
+      sourceLabel: 'Alice',
+      targetLabel: 'Bob',
     });
     expect(body.edges).toContainEqual({
       source: 'person-2',
       target: 'person-1',
       type: 'friend',
       color: '#00FF00',
+      sourceLabel: 'Bob',
+      targetLabel: 'Alice',
     });
     expect(body.edges).toContainEqual({
       source: 'person-1',
       target: 'person-3',
       type: 'family',
       color: '#FF0000',
+      sourceLabel: 'Alice',
+      targetLabel: 'Charlie',
     });
     expect(body.edges).toContainEqual({
       source: 'person-3',
       target: 'person-1',
       type: 'family',
       color: '#FF0000',
+      sourceLabel: 'Charlie',
+      targetLabel: 'Alice',
     });
     expect(body.edges).toContainEqual({
       source: 'person-2',
       target: 'person-3',
       type: 'colleague',
       color: '#0000FF',
+      sourceLabel: 'Bob',
+      targetLabel: 'Charlie',
     });
     expect(body.edges).toContainEqual({
       source: 'person-3',
       target: 'person-2',
       type: 'colleague',
       color: '#0000FF',
+      sourceLabel: 'Charlie',
+      targetLabel: 'Bob',
     });
   });
 });

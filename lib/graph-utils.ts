@@ -14,6 +14,8 @@ export interface GraphEdge {
   target: string;
   type: string;
   color: string;
+  sourceLabel?: string;
+  targetLabel?: string;
 }
 
 type PersonId = Prisma.PersonGetPayload<{
