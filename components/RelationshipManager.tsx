@@ -50,7 +50,7 @@ interface RelationshipManagerProps {
 
 export default function RelationshipManager({
   personId,
-  personName: _personName,
+  personName,
   relationships,
   availablePeople,
   relationshipTypes,
@@ -273,25 +273,31 @@ export default function RelationshipManager({
               className="flex items-center justify-between p-3 bg-surface-elevated rounded-lg"
             >
               <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Link
-                    href={`/people/${rel.personId}`}
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                  >
-                    {formatFullName(rel.person)}
-                  </Link>
-                  <span className="text-muted">•</span>
-                  <span
-                    className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                    style={{
-                      backgroundColor: rel.relationshipType?.color
-                        ? `${rel.relationshipType.color}20`
-                        : '#E5E7EB',
-                      color: rel.relationshipType?.color || '#374151',
-                    }}
-                  >
-                    {rel.relationshipType?.label || 'Unknown'}
-                  </span>
+                <div className="flex items-center gap-1 flex-wrap text-foreground">
+                  {t.rich('isRelationshipOf', {
+                    name: () => (
+                      <Link
+                        href={`/people/${rel.personId}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      >
+                        {formatFullName(rel.person)}
+                      </Link>
+                    ),
+                    personName: personName,
+                    type: () => (
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                        style={{
+                          backgroundColor: rel.relationshipType?.color
+                            ? `${rel.relationshipType.color}20`
+                            : '#E5E7EB',
+                          color: rel.relationshipType?.color || '#374151',
+                        }}
+                      >
+                        {rel.relationshipType?.label || 'Unknown'}
+                      </span>
+                    ),
+                  })}
                 </div>
                 {rel.notes && (
                   <p className="text-sm text-muted mt-1">
