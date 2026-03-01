@@ -278,17 +278,18 @@ export default function UnifiedNetworkGraph({
         const sourceName = d.sourceLabel || '';
         const targetName = d.targetLabel || '';
 
+        const typeLower = d.type.toLowerCase();
         let label: string;
         if (sourceName === youLabel || sourceName === 'You') {
-          label = tPeople('graphEdgeLabelFromYou', { type: d.type });
+          label = tPeople('graphEdgeLabelFromYou', { type: typeLower });
         } else if (targetName === youLabel || targetName === 'You') {
-          label = tPeople('graphEdgeLabelToYou', { type: d.type });
+          label = tPeople('graphEdgeLabelToYou', { type: typeLower });
         } else {
-          label = tPeople('graphEdgeLabel', { type: d.type });
+          label = tPeople('graphEdgeLabel', { type: typeLower });
         }
 
         // Split around the type to bold it
-        const typeStr = d.type;
+        const typeStr = typeLower;
         const idx = label.toLowerCase().indexOf(typeStr.toLowerCase());
         if (idx >= 0) {
           const before = label.substring(0, idx);
