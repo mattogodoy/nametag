@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import RelationshipManager from '../../components/RelationshipManager';
 import enMessages from '../../locales/en.json';
@@ -12,9 +12,15 @@ vi.mock('sonner', () => ({
   },
 }));
 
-// Mock PersonAutocomplete to avoid rendering complexity
+// Store the onChange callback so tests can simulate person selection
+let capturedOnChange: ((personId: string, personName: string) => void) | null = null;
+
+// Mock PersonAutocomplete to capture onChange and allow tests to trigger it
 vi.mock('../../components/PersonAutocomplete', () => ({
-  default: () => <div data-testid="person-autocomplete" />,
+  default: ({ onChange }: { onChange: (personId: string, personName: string) => void }) => {
+    capturedOnChange = onChange;
+    return <div data-testid="person-autocomplete" />;
+  },
 }));
 
 // Wrapper component with NextIntlClientProvider for rich text rendering
@@ -25,6 +31,10 @@ function Wrapper({ children }: { children: React.ReactNode }) {
     </NextIntlClientProvider>
   );
 }
+
+beforeEach(() => {
+  capturedOnChange = null;
+});
 
 describe('RelationshipManager', () => {
   const defaultProps = {
@@ -166,5 +176,122 @@ describe('RelationshipManager', () => {
     const badge = screen.getByText('Parent');
     // The component applies color as inline style
     expect(badge).toHaveStyle({ color: '#FF5733' });
+  });
+
+  describe('Add Modal Preview', () => {
+    const propsWithAvailablePeople = {
+      ...defaultProps,
+      availablePeople: [
+        {
+          id: 'person-bob',
+          name: 'Bob',
+          surname: 'Brown',
+          nickname: null,
+        },
+      ],
+    };
+
+    it('should not show preview when no person is selected', () => {
+      render(
+        <Wrapper>
+          <RelationshipManager {...propsWithAvailablePeople} />
+        </Wrapper>
+      );
+
+      // Open the add modal
+      fireEvent.click(screen.getByText('Add Relationship'));
+
+      // Preview should not be visible when no person is selected
+      expect(screen.queryByTestId('relationship-preview')).not.toBeInTheDocument();
+    });
+
+    it('should show preview with person name when person is selected', () => {
+      render(
+        <Wrapper>
+          <RelationshipManager {...propsWithAvailablePeople} />
+        </Wrapper>
+      );
+
+      // Open the add modal
+      fireEvent.click(screen.getByText('Add Relationship'));
+
+      // Simulate selecting a person through the autocomplete
+      act(() => {
+        if (capturedOnChange) {
+          capturedOnChange('person-bob', 'Bob Brown');
+        }
+      });
+
+      const preview = screen.getByTestId('relationship-preview');
+      // Preview: "Bob Brown is Alice's Parent"
+      expect(preview.textContent).toContain('Bob Brown');
+      expect(preview.textContent).toContain("Alice's");
+      expect(preview.textContent).toContain('Parent');
+    });
+
+    it('should update preview when relationship type changes', () => {
+      render(
+        <Wrapper>
+          <RelationshipManager {...propsWithAvailablePeople} />
+        </Wrapper>
+      );
+
+      // Open the add modal
+      fireEvent.click(screen.getByText('Add Relationship'));
+
+      // Simulate selecting a person
+      act(() => {
+        if (capturedOnChange) {
+          capturedOnChange('person-bob', 'Bob Brown');
+        }
+      });
+
+      // Change relationship type to Child
+      const typeSelect = screen.getByDisplayValue('Parent');
+      fireEvent.change(typeSelect, { target: { value: 'type-child' } });
+
+      const preview = screen.getByTestId('relationship-preview');
+      // Preview: "Bob Brown is Alice's Child"
+      expect(preview.textContent).toContain('Bob Brown');
+      expect(preview.textContent).toContain("Alice's");
+      expect(preview.textContent).toContain('Child');
+    });
+
+    it('should show "your" variant when currentUser is selected', () => {
+      const propsWithCurrentUser = {
+        ...propsWithAvailablePeople,
+        currentUser: {
+          id: 'user-1',
+          name: 'Me',
+          surname: 'User',
+          nickname: null,
+        },
+        hasUserRelationship: false,
+      };
+
+      render(
+        <Wrapper>
+          <RelationshipManager {...propsWithCurrentUser} />
+        </Wrapper>
+      );
+
+      // Open the add modal
+      fireEvent.click(screen.getByText('Add Relationship'));
+
+      // Simulate selecting the current user
+      act(() => {
+        if (capturedOnChange) {
+          capturedOnChange('user-1', 'Me User');
+        }
+      });
+
+      const preview = screen.getByTestId('relationship-preview');
+      // Preview: "Me User is your Parent"
+      expect(preview.textContent).toContain('Me User');
+      expect(preview.textContent).toContain('your');
+      expect(preview.textContent).toContain('Parent');
+      // Should NOT contain Alice's since it's the "your" variant
+      expect(preview.textContent).not.toContain("Alice's");
+    });
   });
 });

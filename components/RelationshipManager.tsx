@@ -392,6 +392,40 @@ export default function RelationshipManager({
                   placeholder={t('optionalNotes')}
                 />
               </div>
+              {/* Preview sentence */}
+              {formData.relatedPersonId && (
+                <div
+                  className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200"
+                  data-testid="relationship-preview"
+                >
+                  {(() => {
+                    const selectedPerson = peopleWithUser.find(p => p.id === formData.relatedPersonId);
+                    const selectedType = formData.relationshipTypeId
+                      ? relationshipTypes.find(rt => rt.id === formData.relationshipTypeId)
+                      : null;
+
+                    const nameDisplay = selectedPerson
+                      ? formatFullName(selectedPerson)
+                      : t('formPreviewSelectPerson');
+                    const typeDisplay = selectedType
+                      ? selectedType.label
+                      : t('formPreviewSelectType');
+
+                    if (selectedPerson && currentUser && selectedPerson.id === currentUser.id) {
+                      return t('formPreviewYour', {
+                        name: nameDisplay,
+                        type: typeDisplay,
+                      });
+                    }
+
+                    return t('formPreview', {
+                      name: nameDisplay,
+                      personName: personName,
+                      type: typeDisplay,
+                    });
+                  })()}
+                </div>
+              )}
               <div className="flex justify-end space-x-3 pt-2">
                 <Button
                   type="button"
