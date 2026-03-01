@@ -270,13 +270,37 @@ export default function UnifiedNetworkGraph({
       .attr('fill', (d) => d.color || '#666')
       .attr('text-anchor', 'middle')
       .attr('opacity', 0)
-      .text((d) => {
+      .each(function(d) {
+        const el = d3.select(this);
+        el.selectAll('*').remove();
+
+        const youLabel = tPeople('you');
         const sourceName = d.sourceLabel || '';
         const targetName = d.targetLabel || '';
-        if (sourceName && targetName) {
-          return tPeople('formPreview', { name: sourceName, personName: targetName, type: d.type });
+
+        let label: string;
+        if (sourceName === youLabel || sourceName === 'You') {
+          label = tPeople('graphEdgeLabelFromYou', { type: d.type });
+        } else if (targetName === youLabel || targetName === 'You') {
+          label = tPeople('graphEdgeLabelToYou', { type: d.type });
+        } else {
+          label = tPeople('graphEdgeLabel', { type: d.type });
         }
-        return d.type.toLowerCase();
+
+        // Split around the type to bold it
+        const typeStr = d.type;
+        const idx = label.toLowerCase().indexOf(typeStr.toLowerCase());
+        if (idx >= 0) {
+          const before = label.substring(0, idx);
+          const typePart = label.substring(idx, idx + typeStr.length);
+          const after = label.substring(idx + typeStr.length);
+
+          if (before) el.append('tspan').text(before);
+          el.append('tspan').attr('font-weight', 'bold').text(typePart);
+          if (after) el.append('tspan').text(after);
+        } else {
+          el.text(label);
+        }
       });
 
     // Create nodes
