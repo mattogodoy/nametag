@@ -799,6 +799,9 @@
       "year": "år",
       "you": "Du",
       "relationshipToYouDirect": "Direkte relasjon til deg",
+      "formPreview": "{name} er {personName}s {type}",
+      "formPreviewYour": "{name} er din {type}",
+      "formPreviewSelectPerson": "Velg en person",
       "markdown": {
         "bold": "Fet (Ctrl+B)",
         "italic": "Kursiv (Ctrl+I)",

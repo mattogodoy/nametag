@@ -799,6 +799,9 @@
       "year": "año",
       "you": "Tú",
       "relationshipToYouDirect": "Relación contigo",
+      "formPreview": "{name} es {type} de {personName}",
+      "formPreviewYour": "{name} es tu {type}",
+      "formPreviewSelectPerson": "Selecciona una persona",
       "markdown": {
         "bold": "Negrita (Ctrl+B)",
         "italic": "Cursiva (Ctrl+I)",

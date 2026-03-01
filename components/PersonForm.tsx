@@ -629,6 +629,14 @@ export default function PersonForm({
                   </option>
                 ))}
               </select>
+              {formData.relationshipToUserId && (
+                <p className="mt-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
+                  {t('formPreviewYour', {
+                    name: formData.name || t('formPreviewSelectPerson'),
+                    type: relationshipTypes.find(rt => rt.id === formData.relationshipToUserId)?.label || '',
+                  })}
+                </p>
+              )}
             </div>
           )}
 
@@ -678,6 +686,15 @@ export default function PersonForm({
               <p className="text-xs text-muted mt-1">
                 {t('willBeConnectedTo', { name: knownThroughName })}
               </p>
+              {formData.relationshipToUserId && (
+                <p className="mt-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
+                  {t('formPreview', {
+                    name: formData.name || t('formPreviewSelectPerson'),
+                    personName: knownThroughName,
+                    type: relationshipTypes.find(rt => rt.id === formData.relationshipToUserId)?.label || '',
+                  })}
+                </p>
+              )}
             </div>
           )}
         </div>

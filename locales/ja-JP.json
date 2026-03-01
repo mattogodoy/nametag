@@ -799,6 +799,9 @@
       "year": "年",
       "you": "あなた",
       "relationshipToYouDirect": "あなたとの関係",
+      "formPreview": "{name}は{personName}の{type}です",
+      "formPreviewYour": "{name}はあなたの{type}です",
+      "formPreviewSelectPerson": "人物を選択",
       "markdown": {
         "bold": "太字 (Ctrl+B)",
         "italic": "斜体 (Ctrl+I)",
