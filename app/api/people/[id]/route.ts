@@ -44,7 +44,10 @@ export const GET = withAuth(async (_request, session, context) => {
         imHandles: true,
         locations: true,
         customFields: true,
-        importantDates: true,
+        importantDates: {
+          where: { deletedAt: null },
+          orderBy: { date: 'asc' as const },
+        },
       },
     });
 
@@ -345,7 +348,10 @@ export const PUT = withAuth(async (request, session, context) => {
         imHandles: true,
         locations: true,
         customFields: true,
-        importantDates: true,
+        importantDates: {
+          where: { deletedAt: null },
+          orderBy: { date: 'asc' as const },
+        },
       },
     });
 
