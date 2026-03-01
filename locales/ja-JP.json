@@ -671,6 +671,7 @@
     "otherRelationships": "その他の関係",
     "addRelationship": "関係を追加",
     "isRelationshipOf": "<name></name>は{personName}の<type></type>です",
+    "isYourRelationship": "<name></name>はあなたの<type></type>です",
     "formPreview": "{name}は{personName}の{type}です",
     "formPreviewYour": "{name}はあなたの{type}です",
     "formPreviewSelectPerson": "人物を選択",

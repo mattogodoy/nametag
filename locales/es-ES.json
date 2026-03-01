@@ -671,6 +671,7 @@
     "otherRelationships": "Otras Relaciones",
     "addRelationship": "Añadir Relación",
     "isRelationshipOf": "<name></name> es <type></type> de {personName}",
+    "isYourRelationship": "<name></name> es tu <type></type>",
     "formPreview": "{name} es {type} de {personName}",
     "formPreviewYour": "{name} es tu {type}",
     "formPreviewSelectPerson": "Selecciona una persona",

@@ -729,22 +729,27 @@ export default async function PersonDetailsPage({
                 {relationshipToUser && (
                   <div className="mb-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground font-medium">
-                          {t('you')}
-                        </span>
-                        <span className="text-muted">•</span>
-                        <span
-                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          style={{
-                            backgroundColor: relationshipToUser.color
-                              ? `${relationshipToUser.color}20`
-                              : '#E5E7EB',
-                            color: relationshipToUser.color || '#374151',
-                          }}
-                        >
-                          {relationshipToUser.label}
-                        </span>
+                      <div className="flex items-center gap-1 flex-wrap text-foreground">
+                        {t.rich('isYourRelationship', {
+                          name: () => (
+                            <span className="font-medium">
+                              {formatFullName(person)}
+                            </span>
+                          ),
+                          type: () => (
+                            <span
+                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: relationshipToUser.color
+                                  ? `${relationshipToUser.color}20`
+                                  : '#E5E7EB',
+                                color: relationshipToUser.color || '#374151',
+                              }}
+                            >
+                              {relationshipToUser.label}
+                            </span>
+                          ),
+                        })}
                       </div>
                       <div className="flex gap-3">
                         <Link

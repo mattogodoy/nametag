@@ -671,6 +671,7 @@
     "otherRelationships": "Andre relasjoner",
     "addRelationship": "Legg til relasjon",
     "isRelationshipOf": "<name></name> er {personName}s <type></type>",
+    "isYourRelationship": "<name></name> er din <type></type>",
     "formPreview": "{name} er {personName}s {type}",
     "formPreviewYour": "{name} er din {type}",
     "formPreviewSelectPerson": "Velg en person",
