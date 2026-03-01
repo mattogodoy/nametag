@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.27.0](https://github.com/mattogodoy/nametag/compare/v0.26.1...v0.27.0) (2026-03-01)
+
+
+### Features
+
+* add dynamic preview sentence to relationship creation form ([3147d23](https://github.com/mattogodoy/nametag/commit/3147d230fa63169879eec6cfe6b60c3646f2eb82))
+* add relationship preview to person creation form ([605226f](https://github.com/mattogodoy/nametag/commit/605226fa33fd9a8c78ee889dd4ea3ef79c82c1da))
+* add sentence tooltips to graph edge labels ([832b1d1](https://github.com/mattogodoy/nametag/commit/832b1d14f987ed635d4c15098b63d5750bffcde0))
+* **i18n:** add relationship direction sentence templates for all locales ([9691104](https://github.com/mattogodoy/nametag/commit/9691104c20f5e7c1757deef338deac45a883267c))
+* improve relationship direction clarity ([b1ea64e](https://github.com/mattogodoy/nametag/commit/b1ea64efe59dcd1e97f3fe41c1109289ec8f4192))
+* show relationships as sentences in person details page ([0516805](https://github.com/mattogodoy/nametag/commit/05168051d45641f37e15d6efc823bcf9e7c8e707))
+
+
+### Bug Fixes
+
+* add missing beforeEach import in RelationshipManager test ([1c8b8c3](https://github.com/mattogodoy/nametag/commit/1c8b8c3b2b1b241607f470f0a2c342ce95205157))
+* clarify CardDAV import relationship labels in all languages ([ca65f55](https://github.com/mattogodoy/nametag/commit/ca65f55fa6786abac0fb8783fa0d44d51be85f04))
+* filter soft-deleted importantDates from API responses ([06c928e](https://github.com/mattogodoy/nametag/commit/06c928e56b42a67f9bd2eef1fe3e393be02c8277))
+* filter soft-deleted importantDates from GET and PUT responses ([3b36558](https://github.com/mattogodoy/nametag/commit/3b365589cf03bd2f683fce8a2a08d5036f389d2c)), closes [#56](https://github.com/mattogodoy/nametag/issues/56)
+* handle empty PR output in release-please workflow ([3007131](https://github.com/mattogodoy/nametag/commit/3007131e783a477aea22b8b4a92824399f22c93d))
+* handle empty PR output in release-please workflow ([1cbab07](https://github.com/mattogodoy/nametag/commit/1cbab074e6740dea4a405101833ac45f7eb3848c))
+* lowercase relationship type in graph edge labels ([7c74673](https://github.com/mattogodoy/nametag/commit/7c7467308610a7970a6e942de158fac8db63f640))
+* shorten graph edge labels and handle user direction ([aed93a8](https://github.com/mattogodoy/nametag/commit/aed93a836fb558b511ab2ddf70518c865b06ab73))
+* show correct relationship direction for user relationships ([2fed34a](https://github.com/mattogodoy/nametag/commit/2fed34a84a00a0e3e4b4bf3007a772c01e6565d0))
+* show sentence format for user relationship in person details ([7b69c4a](https://github.com/mattogodoy/nametag/commit/7b69c4abb54b4acc15d68f1d0494a59c8ddb0277))
+* use nickname in relationship list names ([26aebfa](https://github.com/mattogodoy/nametag/commit/26aebfa61a8bef3f054f3884ac4e26777552b917))
+* use nickname+surname in relationship display on person details page ([d24bc42](https://github.com/mattogodoy/nametag/commit/d24bc42d528334d3ae9649755f34728644ad4400))
+
 ## [0.26.1](https://github.com/mattogodoy/nametag/compare/v0.26.0...v0.26.1) (2026-02-28)
 
 
