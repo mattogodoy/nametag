@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatFullName, formatGraphName } from '@/lib/nameUtils';
 import { Button } from './ui/Button';
 
 interface Person {
@@ -280,7 +280,7 @@ export default function RelationshipManager({
                         href={`/people/${rel.personId}`}
                         className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       >
-                        {formatFullName(rel.person)}
+                        {formatGraphName(rel.person)}
                       </Link>
                     ),
                     personName: personName,
