@@ -322,11 +322,11 @@
         "importCompleteWithErrors": "{imported, plural, =0 {Ingen kontakter importert} =1 {1 kontakt importert} other {# kontakter importert}}, {errors, plural, =1 {1 feil oppstod} other {# feil oppstod}}",
         "importFailed": "Kunne ikke importere kontakter",
         "importLimitExceeded": "Denne importen vil overskride kontaktgrensen for planen din. Du prøver å legge til {requested} kontakter, men har bare plass til {available}. Vennligst oppgrader planen din eller velg færre kontakter.",
-        "assignRelationship": "Relasjon til deg (valgfritt)",
+        "assignRelationship": "Relasjon til deg: Denne personen er din... (valgfritt)",
         "assignRelationshipDescription": "Valgte kontakter vil bli tildelt denne relasjonen til deg",
         "noRelationship": "[Ingen]",
         "relationshipPrecedenceHelp": "Du kan overstyre dette for individuelle kontakter ved å utvide dem og velge en annen relasjon.",
-        "contactRelationship": "Relasjon til deg",
+        "contactRelationship": "Relasjon til deg: Denne personen er din...",
         "useGlobalRelationship": "[Bruk global innstilling]"
       },
       "notifications": {

@@ -322,11 +322,11 @@
         "importCompleteWithErrors": "{imported, plural, =0 {No contacts imported} =1 {1 contact imported} other {# contacts imported}}, {errors, plural, =1 {1 error occurred} other {# errors occurred}}",
         "importFailed": "Failed to import contacts",
         "importLimitExceeded": "This import would exceed your plan's contact limit. You are trying to add {requested} contacts but only have room for {available}. Please upgrade your plan or select fewer contacts.",
-        "assignRelationship": "Relationship to You (Optional)",
+        "assignRelationship": "Relationship to you: This person is your... (Optional)",
         "assignRelationshipDescription": "Selected contacts will be assigned this relationship to you",
         "noRelationship": "[None]",
         "relationshipPrecedenceHelp": "You can override this for individual contacts by expanding them and selecting a different relationship.",
-        "contactRelationship": "Relationship to You",
+        "contactRelationship": "Relationship to you: This person is your...",
         "useGlobalRelationship": "[Use global setting]"
       },
       "notifications": {

@@ -322,11 +322,11 @@
         "importCompleteWithErrors": "{imported, plural, =0 {Keine Kontakte importiert} =1 {1 Kontakt importiert} other {# Kontakte importiert}}, {errors, plural, =1 {1 Fehler aufgetreten} other {# Fehler aufgetreten}}",
         "importFailed": "Kontakte konnten nicht importiert werden",
         "importLimitExceeded": "Dieser Import würde das Kontaktlimit deines Plans überschreiten. Du versuchst {requested} Kontakte hinzuzufügen, aber es ist nur Platz für {available}. Bitte upgrade deinen Plan oder wähle weniger Kontakte aus.",
-        "assignRelationship": "Beziehung zu dir (Optional)",
+        "assignRelationship": "Beziehung zu dir: Diese Person ist dein/e... (Optional)",
         "assignRelationshipDescription": "Den ausgewählten Kontakten wird diese Beziehung zu dir zugewiesen",
         "noRelationship": "[Keine]",
         "relationshipPrecedenceHelp": "Du kannst dies für einzelne Kontakte überschreiben, indem du sie aufklappst und eine andere Beziehung auswählst.",
-        "contactRelationship": "Beziehung zu dir",
+        "contactRelationship": "Beziehung zu dir: Diese Person ist dein/e...",
         "useGlobalRelationship": "[Globale Einstellung verwenden]"
       },
       "notifications": {
