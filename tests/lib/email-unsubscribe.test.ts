@@ -22,6 +22,9 @@ vi.mock('resend', () => {
       emails = {
         send: mockSend,
       };
+      batch = {
+        send: vi.fn(),
+      };
     },
   };
 });

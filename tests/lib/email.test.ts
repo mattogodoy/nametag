@@ -19,11 +19,15 @@ vi.mock('../../lib/env', () => ({
 
 // Mock Resend properly as a class
 const mockSend = vi.fn();
+const mockBatchSend = vi.fn();
 vi.mock('resend', () => {
   return {
     Resend: class MockResend {
       emails = {
         send: mockSend,
+      };
+      batch = {
+        send: mockBatchSend,
       };
     },
   };

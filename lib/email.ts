@@ -18,6 +18,11 @@ interface EmailSendResult {
   message?: string;
 }
 
+export interface EmailBatchResult {
+  success: boolean;
+  results: EmailSendResult[];
+}
+
 interface EmailMessage {
   from: string;
   to: string | string[];
@@ -28,7 +33,57 @@ interface EmailMessage {
 
 interface EmailProvider {
   send(message: EmailMessage): Promise<EmailSendResult>;
+  sendBatch?(messages: EmailMessage[]): Promise<EmailBatchResult>;
   isConfigured(): boolean;
+}
+
+// Retry configuration
+const RETRY_CONFIG = {
+  maxAttempts: 3,
+  initialDelayMs: 1000,
+  backoffFactor: 2,
+  maxDelayMs: 10000,
+  jitterFactor: 0.3,
+};
+
+const RETRYABLE_ERROR_NAMES = new Set([
+  'rate_limit_exceeded',
+  'internal_server_error',
+  'application_error',
+]);
+
+const RETRYABLE_THROWN_PATTERNS = [
+  'fetch failed',
+  'timeout',
+  'econnrefused',
+  'econnreset',
+  'socket hang up',
+];
+
+function isRetryableError(error: { name?: string; message?: string; statusCode?: number }): boolean {
+  if (error.name && RETRYABLE_ERROR_NAMES.has(error.name)) return true;
+  if (error.statusCode && error.statusCode >= 500) return true;
+  if (error.statusCode === 429) return true;
+  return false;
+}
+
+function isRetryableThrownError(err: Error): boolean {
+  const msg = err.message.toLowerCase();
+  return RETRYABLE_THROWN_PATTERNS.some(pattern => msg.includes(pattern));
+}
+
+function getRetryDelay(attempt: number): number {
+  const baseDelay = Math.min(
+    RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffFactor, attempt),
+    RETRY_CONFIG.maxDelayMs
+  );
+  // Add jitter: ±30%
+  const jitter = 1 + (Math.random() * 2 - 1) * RETRY_CONFIG.jitterFactor;
+  return Math.round(baseDelay * jitter);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // SMTP Email Provider
@@ -100,6 +155,17 @@ class SmtpEmailProvider implements EmailProvider {
       };
     }
   }
+
+  async sendBatch(messages: EmailMessage[]): Promise<EmailBatchResult> {
+    const results: EmailSendResult[] = [];
+    for (const message of messages) {
+      results.push(await this.send(message));
+    }
+    return {
+      success: results.every(r => r.success),
+      results,
+    };
+  }
 }
 
 // Resend Email Provider
@@ -132,25 +198,162 @@ class ResendEmailProvider implements EmailProvider {
       };
     }
 
-    try {
-      const { data, error } = await client.emails.send({
-        from: message.from,
-        to: message.to,
-        subject: message.subject,
-        html: message.html,
-        text: message.text,
-      });
+    let lastError = "Failed to send email";
 
-      if (error) {
-        log.error({ err: new Error(error.message) }, "Failed to send email via Resend");
-        return { success: false, error: error.message };
+    for (let attempt = 0; attempt < RETRY_CONFIG.maxAttempts; attempt++) {
+      try {
+        const { data, error } = await client.emails.send({
+          from: message.from,
+          to: message.to,
+          subject: message.subject,
+          html: message.html,
+          text: message.text,
+        });
+
+        if (error) {
+          const resendError = error as { message: string; statusCode?: number; name?: string };
+          if (isRetryableError(resendError) && attempt < RETRY_CONFIG.maxAttempts - 1) {
+            const delay = getRetryDelay(attempt);
+            log.warn({ attempt: attempt + 1, error: resendError.message, delay }, "Retryable Resend error, retrying");
+            await sleep(delay);
+            lastError = resendError.message;
+            continue;
+          }
+          log.error({ err: new Error(error.message) }, "Failed to send email via Resend");
+          return { success: false, error: error.message };
+        }
+
+        return { success: true, id: data?.id };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        if (isRetryableThrownError(error) && attempt < RETRY_CONFIG.maxAttempts - 1) {
+          const delay = getRetryDelay(attempt);
+          log.warn({ attempt: attempt + 1, error: error.message, delay }, "Retryable network error, retrying");
+          await sleep(delay);
+          lastError = error.message;
+          continue;
+        }
+        log.error({ err: error }, "Email send error");
+        return { success: false, error: "Failed to send email" };
+      }
+    }
+
+    log.error({ attempts: RETRY_CONFIG.maxAttempts, error: lastError }, "All retry attempts exhausted");
+    return { success: false, error: lastError };
+  }
+
+  async sendBatch(messages: EmailMessage[]): Promise<EmailBatchResult> {
+    const client = this.getClient();
+    if (!client) {
+      return {
+        success: true,
+        results: messages.map(() => ({ success: true, skipped: true, message: "Resend not configured" })),
+      };
+    }
+
+    const allResults: EmailSendResult[] = [];
+    const BATCH_SIZE = 100;
+
+    for (let i = 0; i < messages.length; i += BATCH_SIZE) {
+      const chunk = messages.slice(i, i + BATCH_SIZE);
+      const payload = chunk.map(m => ({
+        from: m.from,
+        to: m.to,
+        subject: m.subject,
+        html: m.html,
+        text: m.text,
+      }));
+
+      // Add delay between chunks to stay under rate limits
+      if (i > 0) {
+        await sleep(600);
       }
 
-      return { success: true, id: data?.id };
-    } catch (err) {
-      log.error({ err: err instanceof Error ? err : new Error(String(err)) }, "Email send error");
-      return { success: false, error: "Failed to send email" };
+      const chunkResults = await this.sendBatchChunkWithRetry(client, payload, chunk.length);
+      allResults.push(...chunkResults);
     }
+
+    return {
+      success: allResults.every(r => r.success),
+      results: allResults,
+    };
+  }
+
+  private async sendBatchChunkWithRetry(
+    client: Resend,
+    payload: { from: string; to: string | string[]; subject: string; html: string; text?: string }[],
+    count: number
+  ): Promise<EmailSendResult[]> {
+    type BatchSendFn = (
+      items: { from: string; to: string | string[]; subject: string; html: string; text?: string }[],
+      options?: { batchValidation?: string }
+    ) => Promise<{
+      data: { data: { id: string }[] } | null;
+      error: { message: string; statusCode?: number; name?: string } | null;
+      errors?: { index: number; message: string }[];
+    }>;
+
+    let lastError = "Batch send failed";
+
+    for (let attempt = 0; attempt < RETRY_CONFIG.maxAttempts; attempt++) {
+      try {
+        const response = await (client.batch.send as BatchSendFn)(payload, { batchValidation: 'permissive' });
+
+        const { data, error, errors } = response;
+
+        if (error) {
+          const resendError = error as { message: string; statusCode?: number; name?: string };
+          if (isRetryableError(resendError) && attempt < RETRY_CONFIG.maxAttempts - 1) {
+            const delay = getRetryDelay(attempt);
+            log.warn({ attempt: attempt + 1, error: resendError.message, delay }, "Retryable batch error, retrying");
+            await sleep(delay);
+            lastError = resendError.message;
+            continue;
+          }
+          log.error({ err: new Error(error.message) }, "Failed to send batch via Resend");
+          return payload.map(() => ({ success: false, error: error.message }));
+        }
+
+        // Build a set of failed indices from permissive mode errors
+        const failedIndices = new Map<number, string>();
+        if (errors) {
+          for (const e of errors) {
+            failedIndices.set(e.index, e.message);
+          }
+        }
+
+        const results: EmailSendResult[] = [];
+        const successData = data?.data || [];
+
+        let successIdx = 0;
+        for (let i = 0; i < count; i++) {
+          const failureMsg = failedIndices.get(i);
+          if (failureMsg) {
+            results.push({ success: false, error: failureMsg });
+          } else {
+            const item = successData[successIdx];
+            results.push({ success: true, id: item?.id });
+            successIdx++;
+          }
+        }
+
+        return results;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        if (isRetryableThrownError(error) && attempt < RETRY_CONFIG.maxAttempts - 1) {
+          const delay = getRetryDelay(attempt);
+          log.warn({ attempt: attempt + 1, error: error.message, delay }, "Retryable batch network error, retrying");
+          await sleep(delay);
+          lastError = error.message;
+          continue;
+        }
+        log.error({ err: error }, "Batch send error");
+        return payload.map(() => ({ success: false, error: "Failed to send batch" }));
+      }
+    }
+
+    log.error({ attempts: RETRY_CONFIG.maxAttempts, error: lastError }, "All batch retry attempts exhausted");
+    return payload.map(() => ({ success: false, error: lastError }));
   }
 }
 
@@ -243,6 +446,42 @@ export async function sendEmail({ to, subject, html, text, from = 'default' }: S
   };
 
   return provider.send(message);
+}
+
+export type SendBatchEmailItem = SendEmailOptions;
+
+export async function sendEmailBatch(items: SendBatchEmailItem[]): Promise<EmailBatchResult> {
+  const provider = getEmailProvider();
+
+  if (!provider) {
+    log.warn({ count: items.length }, "Email not configured - skipping batch send");
+    return {
+      success: true,
+      results: items.map(() => ({ success: true, skipped: true, message: "Email not configured" })),
+    };
+  }
+
+  const messages: EmailMessage[] = items.map(item => ({
+    from: fromAddresses[item.from || 'default'],
+    to: item.to,
+    subject: item.subject,
+    html: item.html,
+    text: item.text,
+  }));
+
+  if (provider.sendBatch) {
+    return provider.sendBatch(messages);
+  }
+
+  // Fallback: sequential sends
+  const results: EmailSendResult[] = [];
+  for (const message of messages) {
+    results.push(await provider.send(message));
+  }
+  return {
+    success: results.every(r => r.success),
+    results,
+  };
 }
 
 /**

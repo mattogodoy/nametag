@@ -44,6 +44,9 @@ describe('Email Provider Fallback', () => {
           emails = {
             send: mockResendSend,
           };
+          batch = {
+            send: vi.fn(),
+          };
         },
       }));
 
@@ -97,6 +100,9 @@ describe('Email Provider Fallback', () => {
           emails = {
             send: mockResendSend,
           };
+          batch = {
+            send: vi.fn(),
+          };
         },
       }));
 
@@ -149,6 +155,9 @@ describe('Email Provider Fallback', () => {
         Resend: class MockResend {
           emails = {
             send: mockResendSend,
+          };
+          batch = {
+            send: vi.fn(),
           };
         },
       }));
@@ -209,6 +218,9 @@ describe('Email Provider Fallback', () => {
         Resend: class MockResend {
           emails = {
             send: mockResendSend,
+          };
+          batch = {
+            send: vi.fn(),
           };
         },
       }));

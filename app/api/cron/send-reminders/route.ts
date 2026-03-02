@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendEmail, emailTemplates } from '@/lib/email';
+import { sendEmailBatch, emailTemplates } from '@/lib/email';
+import type { SendBatchEmailItem } from '@/lib/email';
 import { formatFullName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
 import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
@@ -61,10 +62,16 @@ export const GET = withLogging(async function GET(request: Request) {
       },
     });
 
-    let sentCount = 0;
-    let errorCount = 0;
+    interface PendingReminder {
+      email: SendBatchEmailItem;
+      type: 'important_date' | 'contact';
+      entityId: string;
+      logMeta: Record<string, string>;
+    }
 
-    // Process important date reminders
+    const pendingReminders: PendingReminder[] = [];
+
+    // Collect important date reminders
     for (const importantDate of importantDates) {
       const shouldSend = await shouldSendImportantDateReminder(importantDate, today);
 
@@ -96,26 +103,18 @@ export const GET = withLogging(async function GET(request: Request) {
           userLanguage
         );
 
-        const result = await sendEmail({
-          to: userEmail,
-          subject: template.subject,
-          html: template.html,
-          text: template.text,
-          from: 'reminders',
+        pendingReminders.push({
+          email: {
+            to: userEmail,
+            subject: template.subject,
+            html: template.html,
+            text: template.text,
+            from: 'reminders',
+          },
+          type: 'important_date',
+          entityId: importantDate.id,
+          logMeta: { personName, dateTitle: importantDate.title, userEmail },
         });
-
-        if (result.success) {
-          // Update lastReminderSent
-          await prisma.importantDate.update({
-            where: { id: importantDate.id },
-            data: { lastReminderSent: new Date() },
-          });
-          sentCount++;
-          log.info({ personName, dateTitle: importantDate.title, userEmail }, 'Reminder sent');
-        } else {
-          errorCount++;
-          log.error({ personName, dateTitle: importantDate.title, errorMessage: result.error }, 'Failed to send reminder');
-        }
       }
     }
 
@@ -135,6 +134,7 @@ export const GET = withLogging(async function GET(request: Request) {
       },
     });
 
+    // Collect contact reminders
     for (const person of peopleWithContactReminders) {
       const shouldSend = shouldSendContactReminder(person, today);
 
@@ -166,25 +166,50 @@ export const GET = withLogging(async function GET(request: Request) {
           userLanguage
         );
 
-        const result = await sendEmail({
-          to: person.user.email,
-          subject: template.subject,
-          html: template.html,
-          text: template.text,
-          from: 'reminders',
+        pendingReminders.push({
+          email: {
+            to: person.user.email,
+            subject: template.subject,
+            html: template.html,
+            text: template.text,
+            from: 'reminders',
+          },
+          type: 'contact',
+          entityId: person.id,
+          logMeta: { personName, userEmail: person.user.email },
         });
+      }
+    }
+
+    // Send all reminders as a batch
+    let sentCount = 0;
+    let errorCount = 0;
+
+    if (pendingReminders.length > 0) {
+      const batchResult = await sendEmailBatch(pendingReminders.map(r => r.email));
+
+      for (let i = 0; i < pendingReminders.length; i++) {
+        const reminder = pendingReminders[i];
+        const result = batchResult.results[i];
 
         if (result.success) {
-          // Update lastContactReminderSent
-          await prisma.person.update({
-            where: { id: person.id },
-            data: { lastContactReminderSent: new Date() },
-          });
+          if (reminder.type === 'important_date') {
+            await prisma.importantDate.update({
+              where: { id: reminder.entityId },
+              data: { lastReminderSent: new Date() },
+            });
+            log.info({ ...reminder.logMeta }, 'Reminder sent');
+          } else {
+            await prisma.person.update({
+              where: { id: reminder.entityId },
+              data: { lastContactReminderSent: new Date() },
+            });
+            log.info({ ...reminder.logMeta }, 'Contact reminder sent');
+          }
           sentCount++;
-          log.info({ personName, userEmail: person.user.email }, 'Contact reminder sent');
         } else {
           errorCount++;
-          log.error({ personName, errorMessage: result.error }, 'Failed to send contact reminder');
+          log.error({ ...reminder.logMeta, errorMessage: result.error }, `Failed to send ${reminder.type} reminder`);
         }
       }
     }

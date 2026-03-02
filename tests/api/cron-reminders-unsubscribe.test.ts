@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   personUpdate: vi.fn(),
   cronJobLogCreate: vi.fn(),
   cronJobLogUpdate: vi.fn(),
-  sendEmail: vi.fn(),
+  sendEmailBatch: vi.fn(),
   importantDateReminderTemplate: vi.fn(),
   contactReminderTemplate: vi.fn(),
   createUnsubscribeToken: vi.fn(),
@@ -44,7 +44,7 @@ vi.mock('../../lib/prisma', () => ({
 
 // Mock email
 vi.mock('../../lib/email', () => ({
-  sendEmail: mocks.sendEmail,
+  sendEmailBatch: mocks.sendEmailBatch,
   emailTemplates: {
     importantDateReminder: mocks.importantDateReminderTemplate,
     contactReminder: mocks.contactReminderTemplate,
@@ -116,7 +116,12 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
     // Default mocks
     mocks.cronJobLogCreate.mockResolvedValue({ id: 'log-1' });
     mocks.cronJobLogUpdate.mockResolvedValue({});
-    mocks.sendEmail.mockResolvedValue({ success: true });
+    mocks.sendEmailBatch.mockImplementation((items: unknown[]) =>
+      Promise.resolve({
+        success: true,
+        results: (items as unknown[]).map(() => ({ success: true, id: 'test-id' })),
+      })
+    );
     mocks.formatFullName.mockReturnValue('John Doe');
   });
 
