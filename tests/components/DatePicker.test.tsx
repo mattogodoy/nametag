@@ -422,6 +422,101 @@ describe('DatePicker', () => {
       // Should re-emit the date with current year placeholder
       expect(mockOnChange).toHaveBeenCalledWith(`${currentYear}-03-15`);
     });
+
+    it('should clear year and emit empty when yearUnknown changes from true to false', () => {
+      const currentYear = new Date().getFullYear();
+
+      // Render with yearUnknown=true and a date
+      const { rerender } = render(
+        <Wrapper>
+          <DatePicker
+            value={`1604-06-15`}
+            onChange={mockOnChange}
+            dateFormat="MDY"
+            showYearToggle
+            yearUnknown={true}
+            onYearUnknownChange={vi.fn()}
+          />
+        </Wrapper>
+      );
+
+      mockOnChange.mockClear();
+
+      // Simulate parent setting yearUnknown=false (user unchecked the checkbox)
+      rerender(
+        <Wrapper>
+          <DatePicker
+            value={`1604-06-15`}
+            onChange={mockOnChange}
+            dateFormat="MDY"
+            showYearToggle
+            yearUnknown={false}
+            onYearUnknownChange={vi.fn()}
+          />
+        </Wrapper>
+      );
+
+      // Should emit empty string (year is now required but missing)
+      expect(mockOnChange).toHaveBeenCalledWith('');
+    });
+
+    it('should preserve month and day when yearUnknown transitions from true to false', () => {
+      // Render with yearUnknown=true and a date with 1604 year
+      const { rerender } = render(
+        <Wrapper>
+          <DatePicker
+            value="1604-06-15"
+            onChange={mockOnChange}
+            dateFormat="MDY"
+            showYearToggle
+            yearUnknown={true}
+            onYearUnknownChange={vi.fn()}
+          />
+        </Wrapper>
+      );
+
+      mockOnChange.mockClear();
+
+      // Step 1: Parent sets yearUnknown=false (value unchanged yet)
+      rerender(
+        <Wrapper>
+          <DatePicker
+            value="1604-06-15"
+            onChange={mockOnChange}
+            dateFormat="MDY"
+            showYearToggle
+            yearUnknown={false}
+            onYearUnknownChange={vi.fn()}
+          />
+        </Wrapper>
+      );
+
+      expect(mockOnChange).toHaveBeenCalledWith('');
+      mockOnChange.mockClear();
+
+      // Step 2: Parent receives '' from onChange and updates value
+      rerender(
+        <Wrapper>
+          <DatePicker
+            value=""
+            onChange={mockOnChange}
+            dateFormat="MDY"
+            showYearToggle
+            yearUnknown={false}
+            onYearUnknownChange={vi.fn()}
+          />
+        </Wrapper>
+      );
+
+      // Month and day should still be populated despite value being ''
+      const monthSelect = screen.getByLabelText('Month') as HTMLSelectElement;
+      const daySelect = screen.getByLabelText('Day') as HTMLSelectElement;
+      const yearInput = screen.getByLabelText('Year') as HTMLInputElement;
+
+      expect(monthSelect.value).toBe('6');
+      expect(daySelect.value).toBe('15');
+      expect(yearInput.value).toBe('');
+    });
   });
 
   describe('Today button', () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getDaysInMonth, clampDay } from '@/lib/date-utils';
 
@@ -73,8 +73,15 @@ export default function DatePicker({
   const [day, setDay] = useState<number | null>(parsed.day);
   const [year, setYear] = useState<number | null>(parsed.year);
 
+  const prevYearUnknownRef = useRef(yearUnknown);
+  const skipNextValueSyncRef = useRef(false);
+
   // Sync internal state when value prop changes
   useEffect(() => {
+    if (skipNextValueSyncRef.current) {
+      skipNextValueSyncRef.current = false;
+      return;
+    }
     const p = parseISO(value);
     setMonth(p.month);
     setDay(p.day);
@@ -93,11 +100,18 @@ export default function DatePicker({
     return getDaysInMonth(month, effectiveYear);
   }, [month, year, yearUnknown]);
 
-  // Re-emit when yearUnknown changes (so parent gets a value if month+day are already set)
+  // Handle yearUnknown transitions
   useEffect(() => {
     if (yearUnknown && month !== null && day !== null) {
+      // year-known → year-unknown: re-emit so parent gets a value
       onChange(toISO(currentYear, month, day));
+    } else if (!yearUnknown && prevYearUnknownRef.current) {
+      // year-unknown → year-known: clear year, keep month+day
+      setYear(null);
+      skipNextValueSyncRef.current = true;
+      onChange('');
     }
+    prevYearUnknownRef.current = yearUnknown;
     // Only react to yearUnknown changes, not to month/day/year changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yearUnknown]);
