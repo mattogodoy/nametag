@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.28.1](https://github.com/mattogodoy/nametag/compare/v0.28.0...v0.28.1) (2026-03-03)
+
+
+### Bug Fixes
+
+* address remaining soft-delete filter gaps ([28cf352](https://github.com/mattogodoy/nametag/commit/28cf3526e20f9719adf4b3dc165a5bb82c76285f))
+* exclude soft-deleted records from all page server components ([b203909](https://github.com/mattogodoy/nametag/commit/b203909f4d0ab13a2e2b07308858ca4df935bf33))
+* exclude soft-deleted records from CardDAV sync and auto-export ([c71b45c](https://github.com/mattogodoy/nametag/commit/c71b45cd77ae45098184c604f88100f4820fa75b))
+* exclude soft-deleted records from export and import routes ([ec8658f](https://github.com/mattogodoy/nametag/commit/ec8658ff5a7458a92bd90b22a29ec32458f9024d))
+* exclude soft-deleted records from groups API routes ([c97fb4b](https://github.com/mattogodoy/nametag/commit/c97fb4b239ae6aebabbb2a166a92cacdea6ce405))
+* exclude soft-deleted records from important dates API routes ([509dc19](https://github.com/mattogodoy/nametag/commit/509dc197dbbd538b9859363bdfde37ed8a89628b))
+* exclude soft-deleted records from people API routes ([dfceaef](https://github.com/mattogodoy/nametag/commit/dfceaef627c3a62e987ec5e17852641cc3efaeec))
+* exclude soft-deleted records from relationship types API routes ([f99e509](https://github.com/mattogodoy/nametag/commit/f99e509cff6f92ada1a962ba6a058f9a7463cfe9))
+* exclude soft-deleted records from relationships API routes ([a3ac41e](https://github.com/mattogodoy/nametag/commit/a3ac41e5f20d6be1a7f0d6051e4acba80654ff1b))
+* exclude soft-deleted records from reminders and billing counts ([ff8d200](https://github.com/mattogodoy/nametag/commit/ff8d200d3f8fd4983dcf72d4a8c418f8ab6810e7))
+* exclude soft-deleted records from unsubscribe token lookups ([49fb23c](https://github.com/mattogodoy/nametag/commit/49fb23c2eb5881451c60acafd7c923a39ea0e7df))
+
 ## [0.28.0](https://github.com/mattogodoy/nametag/compare/v0.27.3...v0.28.0) (2026-03-03)
 
 
