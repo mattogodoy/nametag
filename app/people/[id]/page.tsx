@@ -91,15 +91,20 @@ function getRelativeTime(date: Date, t: (key: string, values?: Record<string, st
     return t('today');
   } else if (diffDays === 1) {
     return t('oneDayAgo');
-  } else if (diffDays < 30) {
+  } else if (diffDays < 28) {
     return t('daysAgo', { days: diffDays });
-  } else if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30);
-    return months === 1 ? t('oneMonthAgo') : t('monthsAgo', { months });
-  } else {
-    const years = Math.floor(diffDays / 365);
-    return years === 1 ? t('oneYearAgo') : t('yearsAgo', { years });
   }
+
+  // Use calendar-based month/year diff for accuracy
+  let months = (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth();
+  if (now.getDate() < date.getDate()) months--;
+
+  if (months < 12) {
+    if (months <= 0) return t('daysAgo', { days: diffDays });
+    return months === 1 ? t('oneMonthAgo') : t('monthsAgo', { months });
+  }
+  const years = Math.floor(months / 12);
+  return years === 1 ? t('oneYearAgo') : t('yearsAgo', { years });
 }
 
 export default async function PersonDetailsPage({

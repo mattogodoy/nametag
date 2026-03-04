@@ -80,7 +80,7 @@ describe('LastContactQuickUpdate', () => {
     expect(screen.getByText(/you haven't contacted this person yet/i)).toBeInTheDocument();
   });
 
-  it('always shows the "Update to today" button', () => {
+  it('shows the button when no date or when date is not today', () => {
     const { rerender } = render(
       <Wrapper>
         <LastContactQuickUpdate
@@ -94,7 +94,7 @@ describe('LastContactQuickUpdate', () => {
     // Button should be present when no date
     expect(screen.getByTitle(/update to today/i)).toBeInTheDocument();
 
-    // Button should also be present when date exists
+    // Button should also be present when date is in the past
     rerender(
       <Wrapper>
         <LastContactQuickUpdate
@@ -106,6 +106,20 @@ describe('LastContactQuickUpdate', () => {
     );
 
     expect(screen.getByTitle(/update to today/i)).toBeInTheDocument();
+  });
+
+  it('hides the button when last contact is today', () => {
+    render(
+      <Wrapper>
+        <LastContactQuickUpdate
+          personId="person-1"
+          currentLastContact={new Date().toISOString()}
+          dateFormat="MDY"
+        />
+      </Wrapper>
+    );
+
+    expect(screen.queryByTitle(/update to today/i)).not.toBeInTheDocument();
   });
 
   it('calls PUT API with correct payload and shows success toast on click', async () => {
@@ -247,9 +261,9 @@ describe('LastContactQuickUpdate', () => {
       json: () => Promise.resolve({ success: true }),
     });
 
-    // Wait for state update to complete to avoid act() warning
+    // After resolving, button hides because date is now today
     await waitFor(() => {
-      expect(button).not.toBeDisabled();
+      expect(screen.queryByTitle(/update to today/i)).not.toBeInTheDocument();
     });
   });
 });

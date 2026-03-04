@@ -16,12 +16,17 @@ function getRelativeTime(
 
   if (diffDays === 0) return t('today');
   if (diffDays === 1) return t('oneDayAgo');
-  if (diffDays < 30) return t('daysAgo', { days: diffDays });
-  if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30);
+  if (diffDays < 28) return t('daysAgo', { days: diffDays });
+
+  // Use calendar-based month/year diff for accuracy
+  let months = (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth();
+  if (now.getDate() < date.getDate()) months--;
+
+  if (months < 12) {
+    if (months <= 0) return t('daysAgo', { days: diffDays });
     return months === 1 ? t('oneMonthAgo') : t('monthsAgo', { months });
   }
-  const years = Math.floor(diffDays / 365);
+  const years = Math.floor(months / 12);
   return years === 1 ? t('oneYearAgo') : t('yearsAgo', { years });
 }
 
@@ -74,6 +79,7 @@ export default function LastContactQuickUpdate({
   }
 
   const parsedDate = lastContact ? new Date(lastContact) : null;
+  const isToday = !isLoading && parsedDate && Math.floor(Math.abs(new Date().getTime() - parsedDate.getTime()) / (1000 * 60 * 60 * 24)) === 0;
 
   return (
     <div>
@@ -93,7 +99,7 @@ export default function LastContactQuickUpdate({
             <span className="text-sm text-muted">{t('noContactRecorded')}</span>
           )}
         </p>
-        <button
+        {!isToday && <button
           type="button"
           title={t('updateToToday')}
           onClick={handleContactedToday}
@@ -113,7 +119,7 @@ export default function LastContactQuickUpdate({
             </svg>
           )}
           {t('updateToToday')}
-        </button>
+        </button>}
       </div>
       {contactReminderDescription && (
         <div className="text-xs text-primary mt-1 flex items-center gap-1">
