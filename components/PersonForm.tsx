@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useRef, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import PersonAutocomplete from './PersonAutocomplete';
+import PersonAvatar from './PersonPhoto';
+import PhotoCropModal from './PhotoCropModal';
 import GroupsSelector from './GroupsSelector';
 import ImportantDatesManager from './ImportantDatesManager';
 import MarkdownEditor from './MarkdownEditor';
@@ -41,6 +43,7 @@ interface PersonFormProps {
     nickname: string | null;
     prefix: string | null;
     suffix: string | null;
+    photo?: string | null;
     organization: string | null;
     jobTitle: string | null;
     lastContact: Date | null;
@@ -138,9 +141,15 @@ export default function PersonForm({
   reminderLimit,
 }: PersonFormProps) {
   const t = useTranslations('people.form');
+  const tPhoto = useTranslations('people.photo');
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [pendingPhotoBlob, setPendingPhotoBlob] = useState<Blob | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize knownThrough from URL params if provided
   const initialKnownThroughPerson = initialKnownThrough
@@ -269,6 +278,89 @@ export default function PersonForm({
     }
   };
 
+  const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
+
+  const handlePhotoSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so re-selecting same file triggers change
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      toast.error(tPhoto('formatError'));
+      return;
+    }
+    if (file.size > MAX_PHOTO_SIZE) {
+      toast.error(tPhoto('sizeError'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImageSrc(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    setCropImageSrc(null);
+
+    // Revoke previous preview URL if any
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    const previewUrl = URL.createObjectURL(blob);
+    setPhotoPreview(previewUrl);
+
+    if (person?.id) {
+      // Edit mode: upload immediately
+      setIsUploadingPhoto(true);
+      try {
+        const formDataUpload = new FormData();
+        formDataUpload.append('photo', blob, 'photo.jpg');
+        const res = await fetch(`/api/people/${person.id}/photo`, {
+          method: 'POST',
+          body: formDataUpload,
+        });
+        if (!res.ok) {
+          toast.error(tPhoto('uploadError'));
+        }
+      } catch {
+        toast.error(tPhoto('uploadError'));
+      } finally {
+        setIsUploadingPhoto(false);
+      }
+    } else {
+      // Create mode: defer upload
+      setPendingPhotoBlob(blob);
+    }
+  };
+
+  const handlePhotoRemove = async () => {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoPreview(null);
+    setPendingPhotoBlob(null);
+
+    if (person?.id) {
+      try {
+        const res = await fetch(`/api/people/${person.id}/photo`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) {
+          toast.error(tPhoto('removeError'));
+        }
+      } catch {
+        toast.error(tPhoto('removeError'));
+      }
+    }
+  };
+
   // Create list of people including the user for autocomplete
   const peopleWithUser = [
     { id: 'user', name: t('you'), surname: null, nickname: null, groups: [] },
@@ -323,6 +415,20 @@ export default function PersonForm({
         return;
       }
 
+      // Upload pending photo for newly created person (best effort)
+      if (mode === 'create' && pendingPhotoBlob && data.person?.id) {
+        try {
+          const photoFormData = new FormData();
+          photoFormData.append('photo', pendingPhotoBlob, 'photo.jpg');
+          await fetch(`/api/people/${data.person.id}/photo`, {
+            method: 'POST',
+            body: photoFormData,
+          });
+        } catch {
+          // Best effort — don't block redirect on failure
+        }
+      }
+
       // Show success toast
       const displayName = `${formData.name}${formData.surname ? ' ' + formData.surname : ''}`;
       toast.success(
@@ -374,6 +480,90 @@ export default function PersonForm({
         <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded">
           {error}
         </div>
+      )}
+
+      {/* Photo Section */}
+      <div className="flex flex-col items-center gap-3 mb-6">
+        <div className="relative group">
+          {photoPreview ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={photoPreview} alt="" className="w-20 h-20 rounded-full object-cover" />
+          ) : (
+            <PersonAvatar
+              personId={person?.id || 'new'}
+              name={formData.name || formData.surname || '?'}
+              photo={person?.photo}
+              size={80}
+              loading="eager"
+            />
+          )}
+
+          {/* Upload overlay on hover */}
+          <label className="absolute inset-0 rounded-full flex items-center justify-center bg-black/0 group-hover:bg-black/40 cursor-pointer transition-colors">
+            <svg
+              className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
+          </label>
+
+          {/* Remove button (top-right, visible on hover) */}
+          {(photoPreview || person?.photo) && (
+            <button
+              type="button"
+              onClick={handlePhotoRemove}
+              className="absolute -top-1 -right-1 w-5 h-5 bg-warning text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+              title={tPhoto('removeLabel')}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+
+          {/* Uploading spinner */}
+          {isUploadingPhoto && (
+            <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40">
+              <svg className="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            </div>
+          )}
+        </div>
+        <span className="text-xs text-muted">
+          {person?.photo || photoPreview ? tPhoto('changeLabel') : tPhoto('uploadLabel')}
+        </span>
+      </div>
+
+      {/* Crop modal */}
+      {cropImageSrc && (
+        <PhotoCropModal
+          imageSrc={cropImageSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropImageSrc(null)}
+        />
       )}
 
       {/* Personal Information Section */}
