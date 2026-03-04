@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.30.0](https://github.com/mattogodoy/nametag/compare/v0.29.0...v0.30.0) (2026-03-04)
+
+
+### Features
+
+* add fetchVCard method for single vCard retrieval ([d79e293](https://github.com/mattogodoy/nametag/commit/d79e293146ed9c6da87d5907c7dab0f0c4b86083))
+* add preservedProperties field to CardDavMapping ([43202b5](https://github.com/mattogodoy/nametag/commit/43202b5056dc74359fcb7a61cc695095fb1a3c72))
+* include preserved properties in sync push ([c6548ff](https://github.com/mattogodoy/nametag/commit/c6548ff6c0442756fb3070d7f331f55ccffb987c))
+* store preserved vCard properties during import ([47e71b6](https://github.com/mattogodoy/nametag/commit/47e71b635ccf01cf12bd843f95c36a94046bc616))
+* store preserved vCard properties during sync pull ([097c310](https://github.com/mattogodoy/nametag/commit/097c3104e4140dd680fa918d55c70b1a5e8e5952))
+* support preserved properties in vCard export ([b48c472](https://github.com/mattogodoy/nametag/commit/b48c472c46e49cc76c6d24dbc3d042232531df9b))
+
+
+### Bug Fixes
+
+* clean up legacy unknown vCard properties from notes during sync ([5a5dd2f](https://github.com/mattogodoy/nametag/commit/5a5dd2f53caa1f3f7d5820b6cd2ba6d74ecdb658))
+* handle 412 on vCard CREATE by adopting existing server vCard ([ca54d99](https://github.com/mattogodoy/nametag/commit/ca54d99cbaa5820929114c75de5937cfb86c4896))
+* mark primary contact mapping as pending after merge ([b9088a5](https://github.com/mattogodoy/nametag/commit/b9088a5d298a213a88277e218e31dbee5fd03621))
+* recover from 412 Precondition Failed by refreshing ETag ([d01ceb7](https://github.com/mattogodoy/nametag/commit/d01ceb7771f7f801403127aea94890f290d26c68))
+* stop appending unknown vCard properties to notes ([c82653e](https://github.com/mattogodoy/nametag/commit/c82653ee2129978050384c552d985b05fbdfd4ab))
+* use undefined instead of null for Prisma Json? field ([b722904](https://github.com/mattogodoy/nametag/commit/b722904e95b8bd9e83fab8a2c335c63cfe7a10ba))
+
+
+### Performance
+
+* defer parseVCard to remoteChanged branch to avoid double-parsing ([bb9aab3](https://github.com/mattogodoy/nametag/commit/bb9aab3c088457902c01c11ee9e09049946a780e))
+
 ## [0.29.0](https://github.com/mattogodoy/nametag/compare/v0.28.1...v0.29.0) (2026-03-04)
 
 
