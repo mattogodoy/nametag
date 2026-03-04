@@ -12,6 +12,7 @@ export interface UpcomingEvent {
   date: Date;
   daysUntil: number;
   isYearUnknown: boolean;
+  personPhoto?: string | null;
 }
 
 export function getNextOccurrence(
@@ -112,6 +113,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
             name: true,
             surname: true,
             nickname: true,
+            photo: true,
           },
         },
       },
@@ -127,6 +129,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         name: true,
         surname: true,
         nickname: true,
+        photo: true,
         lastContact: true,
         contactReminderInterval: true,
         contactReminderIntervalUnit: true,
@@ -167,6 +170,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         date: eventDate,
         daysUntil,
         isYearUnknown: parseAsLocalDate(importantDate.date).getFullYear() <= 1604,
+        personPhoto: importantDate.person.photo,
       });
     }
   }
@@ -196,6 +200,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
           date: reminderDueDate,
           daysUntil,
           isYearUnknown: false,
+          personPhoto: person.photo,
         });
       }
     }
