@@ -622,31 +622,39 @@ END:VCARD`;
       expect(parsed.unknownProperties[0].value).toBe('Some value');
     });
 
-    it('should append unknown properties to notes', () => {
-      const vCard = `BEGIN:VCARD
-VERSION:4.0
-FN:Test
-UNKNOWN-PROP:Some value
-END:VCARD`;
+    it('should NOT append unknown properties to notes', () => {
+      const vCard = [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        'FN:Test User',
+        'N:User;Test;;;',
+        'CLASS:PUBLIC',
+        'PROFILE:VCARD',
+        'NOTE:My real notes',
+        'END:VCARD',
+      ].join('\n');
 
-      const parsed = parseVCard(vCard);
-
-      expect(parsed.notes).toContain('Unknown vCard Properties');
-      expect(parsed.notes).toContain('UNKNOWN-PROP: Some value');
+      const result = parseVCard(vCard);
+      expect(result.notes).toBe('My real notes');
+      expect(result.notes).not.toContain('Unknown vCard Properties');
+      expect(result.unknownProperties).toHaveLength(2);
+      expect(result.unknownProperties.map(p => p.key)).toContain('CLASS');
+      expect(result.unknownProperties.map(p => p.key)).toContain('PROFILE');
     });
 
-    it('should preserve existing notes when adding unknown properties', () => {
-      const vCard = `BEGIN:VCARD
-VERSION:4.0
-FN:Test
-NOTE:Existing note
-UNKNOWN-PROP:Value
-END:VCARD`;
+    it('should leave notes undefined when only unknown properties exist', () => {
+      const vCard = [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        'FN:Test User',
+        'N:User;Test;;;',
+        'CLASS:PUBLIC',
+        'END:VCARD',
+      ].join('\n');
 
-      const parsed = parseVCard(vCard);
-
-      expect(parsed.notes).toContain('Existing note');
-      expect(parsed.notes).toContain('Unknown vCard Properties');
+      const result = parseVCard(vCard);
+      expect(result.notes).toBeUndefined();
+      expect(result.unknownProperties).toHaveLength(1);
     });
   });
 

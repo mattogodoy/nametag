@@ -80,12 +80,6 @@ export function parseVCard(vCardText: string): ParsedVCardDataEnhanced {
   // Collect unknown properties
   data.unknownProperties = collectUnknownProperties(properties, handledProperties);
 
-  // Add unknown properties to notes field
-  if (data.unknownProperties.length > 0) {
-    const unknownSection = formatUnknownPropertiesForNotes(data.unknownProperties);
-    data.notes = data.notes ? `${data.notes}\n\n${unknownSection}` : unknownSection;
-  }
-
   return data;
 }
 
