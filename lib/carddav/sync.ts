@@ -282,7 +282,7 @@ export async function syncFromServer(
                 syncStatus: 'synced',
                 preservedProperties: parsedEnhanced.unknownProperties.length > 0
                   ? parsedEnhanced.unknownProperties
-                  : null,
+                  : undefined,
               },
             });
 
