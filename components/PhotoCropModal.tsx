@@ -101,7 +101,7 @@ export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }: PhotoC
           <input
             type="range"
             min={1}
-            max={3}
+            max={5}
             step={0.1}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
