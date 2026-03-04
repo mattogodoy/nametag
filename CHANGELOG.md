@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.29.0](https://github.com/mattogodoy/nametag/compare/v0.28.1...v0.29.0) (2026-03-04)
+
+
+### Features
+
+* add LastContactQuickUpdate component ([#62](https://github.com/mattogodoy/nametag/issues/62)) ([dde09f8](https://github.com/mattogodoy/nametag/commit/dde09f8d5f0260a68b812188c6a559b104c32cd9))
+* add missing translations for de-DE, ja-JP, nb-NO ([#62](https://github.com/mattogodoy/nametag/issues/62)) ([496e693](https://github.com/mattogodoy/nametag/commit/496e6935c22fe7fe837a93f84249998b58ea2f8c))
+* add translation keys for quick last contact update ([#62](https://github.com/mattogodoy/nametag/issues/62)) ([6290b08](https://github.com/mattogodoy/nametag/commit/6290b082c54cc466e6b2e95f83b0e30085f70851))
+* improve contacted today button with text label and calendar icon ([#62](https://github.com/mattogodoy/nametag/issues/62)) ([dc46a13](https://github.com/mattogodoy/nametag/commit/dc46a13b79876c086ec887efa8bb3509b87a9065))
+* integrate LastContactQuickUpdate into person detail page ([#62](https://github.com/mattogodoy/nametag/issues/62)) ([2e12609](https://github.com/mattogodoy/nametag/commit/2e126096ca73e10701124a058f82c98d501492e8))
+* refine quick contact button UX ([#62](https://github.com/mattogodoy/nametag/issues/62)) ([ab5e80d](https://github.com/mattogodoy/nametag/commit/ab5e80d67cc0419d55f6d7ea7decb5598ce9eea7))
+
+
+### Bug Fixes
+
+* use calendar-based month calculation in relative time ([#62](https://github.com/mattogodoy/nametag/issues/62)) ([678e2eb](https://github.com/mattogodoy/nametag/commit/678e2ebbbcb6037803882d3d5bff4f54933c96be))
+
 ## [0.28.1](https://github.com/mattogodoy/nametag/compare/v0.28.0...v0.28.1) (2026-03-03)
 
 
