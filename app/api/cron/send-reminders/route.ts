@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmailBatch, emailTemplates } from '@/lib/email';
-import type { SendBatchEmailItem, EmailAttachment } from '@/lib/email';
+import type { SendBatchEmailItem } from '@/lib/email';
 import { formatFullName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
 import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
 import { parseAsLocalDate } from '@/lib/date-format';
-import { readPhotoFile, isPhotoFilename } from '@/lib/photo-storage';
 
 const log = createModuleLogger('cron');
 
@@ -61,7 +60,6 @@ export const GET = withLogging(async function GET(request: Request) {
             middleName: true,
             secondLastName: true,
             nickname: true,
-            photo: true,
             userId: true,
             user: {
               select: {
@@ -116,34 +114,13 @@ export const GET = withLogging(async function GET(request: Request) {
           userLanguage
         );
 
-        // Attach person photo as inline CID image if available
-        let attachments: EmailAttachment[] | undefined;
-        if (person.photo && isPhotoFilename(person.photo)) {
-          const photoData = await readPhotoFile(person.userId, person.photo);
-          if (photoData) {
-            attachments = [{
-              filename: 'photo.jpg',
-              content: photoData.buffer,
-              cid: 'person-photo',
-              contentType: photoData.mimeType,
-            }];
-          }
-        }
-
-        const photoHtml = attachments
-          ? '<img src="cid:person-photo" alt="" width="48" height="48" style="border-radius: 50%; vertical-align: middle; margin-right: 8px;">'
-          : '';
-
-        const html = injectPhotoIntoHtml(template.html, personName, photoHtml);
-
         pendingReminders.push({
           email: {
             to: userEmail,
             subject: template.subject,
-            html,
+            html: template.html,
             text: template.text,
             from: 'reminders',
-            attachments,
           },
           type: 'important_date',
           entityId: importantDate.id,
@@ -201,34 +178,13 @@ export const GET = withLogging(async function GET(request: Request) {
           userLanguage
         );
 
-        // Attach person photo as inline CID image if available
-        let attachments: EmailAttachment[] | undefined;
-        if (person.photo && isPhotoFilename(person.photo)) {
-          const photoData = await readPhotoFile(person.userId, person.photo);
-          if (photoData) {
-            attachments = [{
-              filename: 'photo.jpg',
-              content: photoData.buffer,
-              cid: 'person-photo',
-              contentType: photoData.mimeType,
-            }];
-          }
-        }
-
-        const photoHtml = attachments
-          ? '<img src="cid:person-photo" alt="" width="48" height="48" style="border-radius: 50%; vertical-align: middle; margin-right: 8px;">'
-          : '';
-
-        const html = injectPhotoIntoHtml(template.html, personName, photoHtml);
-
         pendingReminders.push({
           email: {
             to: person.user.email,
             subject: template.subject,
-            html,
+            html: template.html,
             text: template.text,
             from: 'reminders',
-            attachments,
           },
           type: 'contact',
           entityId: person.id,
@@ -491,18 +447,6 @@ function formatInterval(interval: number, unit: string): string {
     return `${interval} ${unitLower.slice(0, -1)}`;
   }
   return `${interval} ${unitLower}`;
-}
-
-/**
- * Inject a photo HTML snippet before the first occurrence of the person's
- * bold name in the email HTML. Falls through gracefully if no match found.
- */
-function injectPhotoIntoHtml(html: string, personName: string, photoHtml: string): string {
-  if (!photoHtml) return html;
-  const escapedName = personName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const namePattern = new RegExp(`(<strong>)(${escapedName})</strong>`);
-  const replaced = html.replace(namePattern, `${photoHtml}$1$2</strong>`);
-  return replaced;
 }
 
 function formatDateForEmail(
