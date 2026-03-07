@@ -13,6 +13,9 @@ export interface WizardData {
   testPassed: boolean;
   backupDownloaded: boolean;
   syncEnabled: boolean;
+  addressBookUrl: string | null;
+  addressBookName: string | null;
+  addressBooks: Array<{ url: string; displayName: string | null; description: string | null }>;
 }
 
 interface Step1ServerConfigProps {
@@ -43,6 +46,9 @@ export default function Step1ServerConfig({
       serverUrl: providerConfig?.serverUrl || '',
       testPassed: false,
       backupDownloaded: false,
+      addressBookUrl: null,
+      addressBookName: null,
+      addressBooks: [],
     });
     setTestResult(null);
   };
@@ -52,6 +58,9 @@ export default function Step1ServerConfig({
       [field]: value,
       testPassed: false,
       backupDownloaded: false,
+      addressBookUrl: null,
+      addressBookName: null,
+      addressBooks: [],
     });
     setTestResult(null);
   };
@@ -94,7 +103,7 @@ export default function Step1ServerConfig({
           success: true,
           message: t('testSuccessMessage'),
         });
-        onUpdate({ testPassed: true });
+        onUpdate({ testPassed: true, addressBooks: result.addressBooks || [] });
       }
     } catch {
       setTestResult({

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import Step1ServerConfig from './wizard/Step1ServerConfig';
+import Step2AddressBookSelect from './wizard/Step2AddressBookSelect';
 import Step2BackupDownload from './wizard/Step2BackupDownload';
 import Step3SyncConfig from './wizard/Step3SyncConfig';
 import type { WizardData } from './wizard/Step1ServerConfig';
@@ -21,9 +22,12 @@ const INITIAL_DATA: WizardData = {
   testPassed: false,
   backupDownloaded: false,
   syncEnabled: false,
+  addressBookUrl: null,
+  addressBookName: null,
+  addressBooks: [],
 };
 
-const STEPS = ['stepServer', 'stepBackup', 'stepSync'] as const;
+type StepKey = 'stepServer' | 'stepAddressBook' | 'stepBackup' | 'stepSync';
 
 export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardProps) {
   const tw = useTranslations('settings.carddav.wizard');
@@ -45,7 +49,35 @@ export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardPr
     setData((prev) => ({ ...prev, ...partial }));
   };
 
-  const stepTitles = [tw('step1Title'), tw('step2Title'), tw('step3Title')];
+  // Determine if the address book step is needed (2+ books)
+  const showAddressBookStep = data.addressBooks.length > 1;
+
+  // Build dynamic step list
+  const steps: StepKey[] = showAddressBookStep
+    ? ['stepServer', 'stepAddressBook', 'stepBackup', 'stepSync']
+    : ['stepServer', 'stepBackup', 'stepSync'];
+
+  const stepTitleMap: Record<StepKey, string> = {
+    stepServer: tw('step1Title'),
+    stepAddressBook: tw('step2abTitle'),
+    stepBackup: tw('step2Title'),
+    stepSync: tw('step3Title'),
+  };
+
+  const stepTitles = steps.map(key => stepTitleMap[key]);
+  const currentStepKey = steps[currentStep - 1];
+
+  // When moving past step 1 and there's exactly 1 address book, auto-select it
+  const handleStep1Next = () => {
+    if (data.addressBooks.length === 1) {
+      const book = data.addressBooks[0];
+      handleUpdate({
+        addressBookUrl: book.url,
+        addressBookName: book.displayName || null,
+      });
+    }
+    setCurrentStep(2);
+  };
 
   return (
     <Modal
@@ -57,7 +89,7 @@ export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardPr
       <div>
         {/* Step indicator */}
         <div className="flex items-center justify-center mb-8">
-          {STEPS.map((stepKey, index) => {
+          {steps.map((stepKey, index) => {
             const stepNumber = index + 1;
             const isActive = stepNumber === currentStep;
             const isCompleted = stepNumber < currentStep;
@@ -105,27 +137,36 @@ export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardPr
         </div>
 
         {/* Step content */}
-        {currentStep === 1 && (
+        {currentStepKey === 'stepServer' && (
           <Step1ServerConfig
             data={data}
             onUpdate={handleUpdate}
-            onNext={() => setCurrentStep(2)}
+            onNext={handleStep1Next}
             onCancel={onClose}
           />
         )}
-        {currentStep === 2 && (
+        {currentStepKey === 'stepAddressBook' && (
+          <Step2AddressBookSelect
+            data={data}
+            addressBooks={data.addressBooks}
+            onUpdate={handleUpdate}
+            onNext={() => setCurrentStep(currentStep + 1)}
+            onBack={() => setCurrentStep(currentStep - 1)}
+          />
+        )}
+        {currentStepKey === 'stepBackup' && (
           <Step2BackupDownload
             data={data}
             onUpdate={handleUpdate}
-            onNext={() => setCurrentStep(3)}
-            onBack={() => setCurrentStep(1)}
+            onNext={() => setCurrentStep(currentStep + 1)}
+            onBack={() => setCurrentStep(currentStep - 1)}
           />
         )}
-        {currentStep === 3 && (
+        {currentStepKey === 'stepSync' && (
           <Step3SyncConfig
             data={data}
             onUpdate={handleUpdate}
-            onBack={() => setCurrentStep(2)}
+            onBack={() => setCurrentStep(currentStep - 1)}
             onClose={onClose}
           />
         )}

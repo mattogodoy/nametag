@@ -42,6 +42,8 @@ export default function Step3SyncConfig({
           syncEnabled: data.syncEnabled,
           autoExportNew: true,
           importMode: 'manual',
+          addressBookUrl: data.addressBookUrl,
+          addressBookName: data.addressBookName,
         }),
       });
 
