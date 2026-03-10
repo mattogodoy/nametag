@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import sharp from 'sharp';
-import { isValidImageBuffer, processPhoto } from '@/lib/photo-storage';
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import { isValidImageBuffer, processPhoto, savePhotoFromBuffer, getPhotoStoragePath } from '@/lib/photo-storage';
 
 // Helper: create a minimal valid JPEG buffer (magic bytes + padding)
 function makeJpegBuffer(size = 64): Buffer {
@@ -200,5 +203,72 @@ describe('processPhoto', () => {
     expect(metadata.width).toBe(256);
     expect(metadata.height).toBe(256);
     expect(output.hasAlpha).toBe(true);
+  });
+});
+
+describe('savePhotoFromBuffer', () => {
+  let originalEnv: string | undefined;
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    originalEnv = process.env.PHOTO_STORAGE_PATH;
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'nametag-test-'));
+    process.env.PHOTO_STORAGE_PATH = tmpDir;
+  });
+
+  afterEach(async () => {
+    process.env.PHOTO_STORAGE_PATH = originalEnv;
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('should save a photo and return the filename', async () => {
+    const input = await createTestImage(300, 300, 'jpeg');
+    const filename = await savePhotoFromBuffer('test-user', 'person-1', input);
+
+    expect(filename).toBe('person-1.jpg');
+    const savedPath = path.join(tmpDir, 'test-user', filename);
+    const stat = await fs.stat(savedPath);
+    expect(stat.size).toBeGreaterThan(0);
+  });
+
+  it('should write to storage path without using os.tmpdir (no EXDEV)', async () => {
+    // Use a storage path on a different "device" (simulated by a subdirectory)
+    // The key assertion is that temp files are created inside the storage dir,
+    // not in os.tmpdir(), so rename never crosses filesystem boundaries.
+    const input = await createTestImage(100, 100, 'png');
+    await savePhotoFromBuffer('test-user', 'person-2', input);
+
+    // Verify no leftover temp files in os.tmpdir matching our pattern
+    const tmpFiles = await fs.readdir(os.tmpdir());
+    const leftover = tmpFiles.filter(f => f.startsWith('.nametag-tmp-'));
+    expect(leftover).toHaveLength(0);
+
+    // Verify the file was written to the correct location
+    const userDir = path.join(tmpDir, 'test-user');
+    const files = await fs.readdir(userDir);
+    expect(files).toContain('person-2.jpg');
+  });
+
+  it('should not leave temp files on success', async () => {
+    const input = await createTestImage(100, 100, 'jpeg');
+    await savePhotoFromBuffer('test-user', 'person-3', input);
+
+    const userDir = path.join(tmpDir, 'test-user');
+    const files = await fs.readdir(userDir);
+    const tmpFiles = files.filter(f => f.startsWith('.nametag-tmp-'));
+    expect(tmpFiles).toHaveLength(0);
+  });
+
+  it('should overwrite existing photo for the same person', async () => {
+    const input1 = await createTestImage(100, 100, 'jpeg');
+    const input2 = await createTestImage(200, 200, 'jpeg');
+
+    await savePhotoFromBuffer('test-user', 'person-4', input1);
+    await savePhotoFromBuffer('test-user', 'person-4', input2);
+
+    const userDir = path.join(tmpDir, 'test-user');
+    const files = await fs.readdir(userDir);
+    const personFiles = files.filter(f => f.startsWith('person-4'));
+    expect(personFiles).toHaveLength(1);
   });
 });

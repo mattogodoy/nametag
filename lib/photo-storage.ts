@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
 import path from 'path';
-import os from 'os';
 import crypto from 'crypto';
 import sharp from 'sharp';
 import { createModuleLogger } from './logger';
@@ -11,6 +10,25 @@ const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
 const PHOTO_SIZE = 256;
 const JPEG_QUALITY = 80;
 const FETCH_TIMEOUT_MS = 15000;
+
+/**
+ * Atomically write data to filePath: write to a temp file in the same
+ * directory, then rename.  This avoids EXDEV errors when the OS tmpdir
+ * and the target live on different filesystems (common with Docker
+ * bind-mounts).
+ */
+async function atomicWrite(filePath: string, data: Buffer): Promise<void> {
+  const dir = path.dirname(filePath);
+  const tmpPath = path.join(dir, `.nametag-tmp-${crypto.randomBytes(8).toString('hex')}`);
+  await fs.writeFile(tmpPath, data);
+  try {
+    await fs.rename(tmpPath, filePath);
+  } catch (err) {
+    // Clean up the temp file if rename somehow fails
+    await fs.unlink(tmpPath).catch(() => {});
+    throw err;
+  }
+}
 
 const MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -222,10 +240,7 @@ export async function savePhoto(
     const filename = `${personId}.${ext}`;
     const filePath = path.join(dirPath, filename);
 
-    // Write atomically: temp file + rename
-    const tmpPath = path.join(os.tmpdir(), `nametag-photo-${crypto.randomBytes(8).toString('hex')}`);
-    await fs.writeFile(tmpPath, data);
-    await fs.rename(tmpPath, filePath);
+    await atomicWrite(filePath, data);
 
     return filename;
   } catch (error) {
@@ -253,9 +268,7 @@ export async function savePhotoFromBuffer(
   const filename = `${personId}.${ext}`;
   const filePath = path.join(dirPath, filename);
 
-  const tmpPath = path.join(os.tmpdir(), `nametag-photo-${crypto.randomBytes(8).toString('hex')}`);
-  await fs.writeFile(tmpPath, data);
-  await fs.rename(tmpPath, filePath);
+  await atomicWrite(filePath, data);
 
   return filename;
 }
