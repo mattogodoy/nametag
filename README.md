@@ -135,6 +135,8 @@ volumes:
   photo_data:
 ```
 
+> **Important:** The `photo_data` volume is required to persist uploaded photos across container restarts and redeployments. Without it, all photos will be lost when the container is recreated.
+
 3. Create a `.env` file with required variables:
 
 ```bash
@@ -218,6 +220,7 @@ The database will be automatically set up on first run.
 | `SMTP_PASS`            | SMTP password or app-specific password                                | Not set                      |
 | `SMTP_REQUIRE_TLS`     | Require STARTTLS for security                                         | `true`                       |
 | `SMTP_FROM`            | Override "from" address (use if server rejects custom addresses)      | Not set                      |
+| `PHOTO_STORAGE_PATH`   | Custom path for photo storage                                         | `/app/data/photos`           |
 | `DISABLE_REGISTRATION` | Disable user registration after first user                            | `false`                      |
 | `NODE_ENV`             | Environment mode                                                      | `production`                 |
 | `LOG_LEVEL`            | Logging verbosity                                                     | `info`                       |
