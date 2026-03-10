@@ -796,21 +796,3 @@ function collectUnknownProperties(
   return unknown;
 }
 
-/**
- * Format unknown properties for display in notes field
- */
-function formatUnknownPropertiesForNotes(unknownProps: UnknownProperty[]): string {
-  const lines: string[] = ['--- Unknown vCard Properties ---'];
-
-  for (const prop of unknownProps) {
-    const groupPrefix = prop.group ? `${prop.group}.` : '';
-    const paramsStr = Object.entries(prop.params)
-      .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join(',') : v}`)
-      .join(';');
-    const params = paramsStr ? `;${paramsStr}` : '';
-
-    lines.push(`${groupPrefix}${prop.key}${params}: ${prop.value}`);
-  }
-
-  return lines.join('\n');
-}

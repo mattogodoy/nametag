@@ -208,7 +208,7 @@ describe('DatePicker', () => {
     });
 
     it('should adjust day options based on selected month', async () => {
-      const user = userEvent.setup();
+      userEvent.setup();
 
       render(
         <Wrapper>
@@ -424,8 +424,6 @@ describe('DatePicker', () => {
     });
 
     it('should clear year and emit empty when yearUnknown changes from true to false', () => {
-      const currentYear = new Date().getFullYear();
-
       // Render with yearUnknown=true and a date
       const { rerender } = render(
         <Wrapper>

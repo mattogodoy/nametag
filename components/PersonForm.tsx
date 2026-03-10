@@ -15,7 +15,6 @@ import PersonPhoneManager from './PersonPhoneManager';
 import PersonEmailManager from './PersonEmailManager';
 import PersonAddressManager from './PersonAddressManager';
 import PersonUrlManager from './PersonUrlManager';
-import { Button } from './ui/Button';
 import DatePicker from './ui/DatePicker';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';

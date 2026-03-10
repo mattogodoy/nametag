@@ -58,7 +58,7 @@ export const POST = withAuth(async (request, session) => {
     // Try to delete the secondary's vCard from CardDAV BEFORE the transaction.
     // This is best-effort: if it fails, we still proceed with the merge.
     // Uses deleteVCardDirect (raw HTTP DELETE) to avoid tsdav's fragile DAV discovery.
-    let serverDeleteSucceeded = false;
+    let _serverDeleteSucceeded = false;
     if (secondary.cardDavMapping) {
       const mapping = secondary.cardDavMapping;
       const connection = mapping.connection;
@@ -66,7 +66,7 @@ export const POST = withAuth(async (request, session) => {
       // Step 1: Try direct DELETE with stored etag
       try {
         await deleteVCardDirect(connection, mapping.href, mapping.etag || '');
-        serverDeleteSucceeded = true;
+        _serverDeleteSucceeded = true;
       } catch (etagErr) {
         log.warn(
           { err: etagErr instanceof Error ? etagErr : new Error(String(etagErr)), personId: secondaryId },
@@ -76,7 +76,7 @@ export const POST = withAuth(async (request, session) => {
         // Step 2: Try direct DELETE with wildcard etag
         try {
           await deleteVCardDirect(connection, mapping.href, '*');
-          serverDeleteSucceeded = true;
+          _serverDeleteSucceeded = true;
         } catch (wildcardErr) {
           log.warn(
             { err: wildcardErr instanceof Error ? wildcardErr : new Error(String(wildcardErr)), personId: secondaryId },
@@ -136,7 +136,7 @@ export const POST = withAuth(async (request, session) => {
                     'Found vCard on server via lookup, deleting'
                   );
                   await deleteVCardDirect(connection, match.url, '*');
-                  serverDeleteSucceeded = true;
+                  _serverDeleteSucceeded = true;
                   found = true;
                   break;
                 }
