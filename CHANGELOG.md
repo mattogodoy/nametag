@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.32.1](https://github.com/mattogodoy/nametag/compare/v0.32.0...v0.32.1) (2026-03-10)
+
+
+### Bug Fixes
+
+* **photos:** avoid EXDEV error when saving photos with Docker bind-mounts ([0edac50](https://github.com/mattogodoy/nametag/commit/0edac50354697c7b3112415c0bf9fe8ab0561d17)), closes [#139](https://github.com/mattogodoy/nametag/issues/139)
+* **photos:** avoid EXDEV error with Docker bind-mounts ([5cca9ad](https://github.com/mattogodoy/nametag/commit/5cca9adad10a63ec33fe88e5c754292a408618b0))
+
 ## [0.32.0](https://github.com/mattogodoy/nametag/compare/v0.31.1...v0.32.0) (2026-03-07)
 
 
