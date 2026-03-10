@@ -98,18 +98,18 @@ describe('PersonForm CardDAV Sync Toggle', () => {
     expect(screen.getByText('Sync to CardDAV server')).toBeInTheDocument();
   });
 
-  it('should default toggle to enabled for new person', () => {
+  it('should default toggle to disabled for new person', () => {
     render(
       <Wrapper>
         <PersonForm {...defaultProps} hasCardDavConnection={true} />
       </Wrapper>
     );
 
-    // The toggle button with bg-primary class means it's enabled
+    // The toggle button with bg-muted class means it's disabled
     const toggleButtons = screen.getAllByRole('button');
     const cardDavToggle = toggleButtons.find(btn => btn.id === 'carddav-sync-toggle');
     expect(cardDavToggle).toBeDefined();
-    expect(cardDavToggle?.className).toContain('bg-primary');
+    expect(cardDavToggle?.className).toContain('bg-muted');
   });
 
   it('should show warning when disabling sync for a person with cardDavMapping', async () => {

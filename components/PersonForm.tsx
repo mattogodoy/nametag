@@ -183,7 +183,7 @@ export default function PersonForm({
     contactReminderEnabled: person?.contactReminderEnabled || false,
     contactReminderInterval: person?.contactReminderInterval || 1,
     contactReminderIntervalUnit: (person?.contactReminderIntervalUnit || 'MONTHS') as ReminderIntervalUnit,
-    cardDavSyncEnabled: person?.cardDavSyncEnabled ?? true,
+    cardDavSyncEnabled: mode === 'edit' ? (person?.cardDavSyncEnabled ?? true) : false,
   });
 
   const [importantDates, setImportantDates] = useState<Array<{
