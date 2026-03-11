@@ -10,6 +10,7 @@ import {
   updateProfileSchema, updatePasswordSchema,
   updateThemeSchema, updateDateFormatSchema,
   importDataSchema, createImportantDateSchema, updateImportantDateSchema,
+  mergePersonSchema,
 } from './validations';
 
 // OpenAPI 3.1.0 specification generator for the Nametag API.
@@ -856,6 +857,126 @@ export function generateOpenAPISpec(): OpenAPISpec {
           parameters: [pathParam('id', 'Person ID')],
           responses: {
             '200': refGraph(),
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+      },
+
+      // =====================================================
+      // Duplicates & Merge
+      // =====================================================
+      '/api/people/duplicates': {
+        get: {
+          tags: ['People'],
+          summary: 'Find all duplicate contact groups',
+          description: 'Scans all contacts and returns groups of potential duplicates based on name similarity. Dismissed pairs are excluded.',
+          security: [{ session: [] }],
+          responses: {
+            '200': jsonResponse('Duplicate groups', {
+              type: 'object',
+              properties: {
+                groups: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      people: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'string' },
+                            name: { type: 'string' },
+                            surname: { type: 'string', nullable: true },
+                          },
+                        },
+                      },
+                      similarity: { type: 'number', description: 'Score between 0 and 1' },
+                    },
+                  },
+                },
+              },
+            }),
+            '401': ref401(),
+          },
+        },
+      },
+
+      '/api/people/{id}/duplicates': {
+        get: {
+          tags: ['People'],
+          summary: 'Find duplicate candidates for a person',
+          description: 'Returns contacts similar to the specified person, sorted by similarity descending. Dismissed pairs are excluded.',
+          security: [{ session: [] }],
+          parameters: [pathParam('id', 'Person ID')],
+          responses: {
+            '200': jsonResponse('Duplicate candidates', {
+              type: 'object',
+              properties: {
+                duplicates: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      personId: { type: 'string' },
+                      name: { type: 'string' },
+                      surname: { type: 'string', nullable: true },
+                      similarity: { type: 'number', description: 'Score between 0 and 1' },
+                    },
+                  },
+                },
+              },
+            }),
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+      },
+
+      '/api/people/duplicates/dismiss': {
+        post: {
+          tags: ['People'],
+          summary: 'Dismiss a duplicate pair',
+          description: 'Marks two contacts as not duplicates so they no longer appear in duplicate detection results.',
+          security: [{ session: [] }],
+          requestBody: jsonBody({
+            type: 'object',
+            required: ['personAId', 'personBId'],
+            properties: {
+              personAId: { type: 'string', description: 'ID of the first person' },
+              personBId: { type: 'string', description: 'ID of the second person' },
+            },
+          }),
+          responses: {
+            '200': jsonResponse('Pair dismissed', {
+              type: 'object',
+              properties: {
+                dismissed: { type: 'boolean' },
+              },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '404': ref404(),
+          },
+        },
+      },
+
+      '/api/people/merge': {
+        post: {
+          tags: ['People'],
+          summary: 'Merge two contacts',
+          description: 'Merges the secondary contact into the primary contact. Relationships, groups, multi-value fields, and important dates are transferred. The secondary contact is soft-deleted after merge.',
+          security: [{ session: [] }],
+          requestBody: zodBody(mergePersonSchema),
+          responses: {
+            '200': jsonResponse('Merge result', {
+              type: 'object',
+              properties: {
+                person: { $ref: '#/components/schemas/Person' },
+              },
+            }),
+            '400': ref400(),
             '401': ref401(),
             '404': ref404(),
           },
