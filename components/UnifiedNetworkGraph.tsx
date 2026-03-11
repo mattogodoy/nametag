@@ -446,7 +446,7 @@ export default function UnifiedNetworkGraph({
     // Add zoom behavior
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3])
+      .scaleExtent([0.1, 3])
       .on('zoom', (event) => {
         g.attr('transform', event.transform);
         // Save the current transform for restoration on re-render

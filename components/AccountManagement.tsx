@@ -234,7 +234,7 @@ export default function AccountManagement({ groups, peopleCount }: AccountManage
         setImportPreview({
           groups: data.groups.length,
           people: data.people.length,
-          customRelationshipTypes: data.customRelationshipTypes?.length || 0,
+          customRelationshipTypes: data.relationshipTypes?.length || data.customRelationshipTypes?.length || 0,
         });
 
         // Validate against tier limits

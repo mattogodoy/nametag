@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useSyncExternalStore } from 'react';
 
 interface BackLinkProps {
   fallbackHref: string;
@@ -8,22 +9,18 @@ interface BackLinkProps {
   className?: string;
 }
 
+const subscribe = () => () => {};
+
 export default function BackLink({ fallbackHref, children, className }: BackLinkProps) {
-  const router = useRouter();
+  const href = useSyncExternalStore(
+    subscribe,
+    () => sessionStorage.getItem(`backLink:${fallbackHref}`) || fallbackHref,
+    () => fallbackHref,
+  );
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        if (window.history.length > 1) {
-          router.back();
-        } else {
-          router.push(fallbackHref);
-        }
-      }}
-      className={className}
-    >
+    <Link href={href} className={className}>
       {children}
-    </button>
+    </Link>
   );
 }

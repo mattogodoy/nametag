@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.35.0](https://github.com/mattogodoy/nametag/compare/v0.34.0...v0.35.0) (2026-03-11)
+
+
+### Features
+
+* add group filter to people list page ([6d2b823](https://github.com/mattogodoy/nametag/commit/6d2b823b70e658ad94db0f195c0569649946182b))
+* add relationship filter to people list page ([1b0c54b](https://github.com/mattogodoy/nametag/commit/1b0c54bff3b3cd6268da8bdea864c1bec5d97dad))
+
+
+### Bug Fixes
+
+* allow zooming out further in network graphs ([178c5a7](https://github.com/mattogodoy/nametag/commit/178c5a7b7da97766cec66b28261f40b3e1e7d653))
+* back-to-people link preserves pagination without history.back ([d1f0e38](https://github.com/mattogodoy/nametag/commit/d1f0e3893f7fc402873d3d0deb5fad4a79d0a541))
+* count custom relationship types in JSON import preview ([8a85181](https://github.com/mattogodoy/nametag/commit/8a85181c960125a838eb01e1e0aff74d9b2519b8))
+* move select-all-pages prompt into the floating action bar ([a8e3d08](https://github.com/mattogodoy/nametag/commit/a8e3d08c06910c86a5c664ad0b0dc0c426ca71b9))
+* scroll search results to keep highlighted item visible ([cf2f0ab](https://github.com/mattogodoy/nametag/commit/cf2f0abd8bdec6377f11ede7d442c0b9ffb80eb8))
+* show 0-0 instead of 1-0 when filters return no results ([daa4c98](https://github.com/mattogodoy/nametag/commit/daa4c98b70fa16d88096b95d2a9020f808a8aa23))
+* show empty table instead of empty state when filters yield no results ([ace787b](https://github.com/mattogodoy/nametag/commit/ace787be7a1957155cf83c446fdf7008e3820fc4))
+* use useSyncExternalStore for BackLink sessionStorage read ([e5e9c3a](https://github.com/mattogodoy/nametag/commit/e5e9c3a2c3f721f816adc9b21b046c1f36145e1b))
+* use useSyncExternalStore for BackLink sessionStorage read ([f11a73a](https://github.com/mattogodoy/nametag/commit/f11a73a4650a4fc987fe699619e6a41256668909))
+
 ## [0.34.0](https://github.com/mattogodoy/nametag/compare/v0.33.0...v0.34.0) (2026-03-10)
 
 

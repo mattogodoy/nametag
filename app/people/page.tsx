@@ -15,7 +15,7 @@ const ITEMS_PER_PAGE = 50;
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; sortBy?: string; order?: string }>;
+  searchParams: Promise<{ page?: string; sortBy?: string; order?: string; group?: string; relationship?: string }>;
 }) {
   const session = await auth();
   const t = await getTranslations('people');
@@ -39,14 +39,36 @@ export default async function PeoplePage({
   const currentPage = Number(params.page) || 1;
   const sortBy = params.sortBy || 'name';
   const order = params.order || 'asc';
+  const groupFilter = params.group || '';
+  const relationshipFilter = params.relationship || '';
   const skip = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  // Build where clause for people query
+  const peopleWhere: {
+    userId: string;
+    deletedAt: null;
+    groups?: { none: Record<string, never> } | { some: { groupId: string } };
+    relationshipToUserId?: string | null;
+  } = {
+    userId: session.user.id,
+    deletedAt: null,
+  };
+
+  if (groupFilter === 'none') {
+    peopleWhere.groups = { none: {} };
+  } else if (groupFilter) {
+    peopleWhere.groups = { some: { groupId: groupFilter } };
+  }
+
+  if (relationshipFilter === 'none') {
+    peopleWhere.relationshipToUserId = null;
+  } else if (relationshipFilter) {
+    peopleWhere.relationshipToUserId = relationshipFilter;
+  }
 
   // Get total count for pagination
   const totalCount = await prisma.person.count({
-    where: {
-      userId: session.user.id,
-      deletedAt: null,
-    },
+    where: peopleWhere,
   });
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -54,7 +76,7 @@ export default async function PeoplePage({
   // Fetch all people, groups, and relationship types in parallel
   const [allPeople, allGroups, relationshipTypes] = await Promise.all([
     prisma.person.findMany({
-      where: { userId: session.user.id, deletedAt: null },
+      where: peopleWhere,
       include: {
         relationshipToUser: { select: { label: true, color: true } },
         groups: { include: { group: { select: { name: true, color: true } } } },
@@ -184,7 +206,7 @@ export default async function PeoplePage({
             </div>
           </div>
 
-          {totalCount === 0 ? (
+          {totalCount === 0 && !groupFilter && !relationshipFilter ? (
             <div className="bg-surface shadow-lg rounded-lg border-2 border-primary/30">
               <EmptyState
                 icon={
@@ -209,6 +231,8 @@ export default async function PeoplePage({
                 totalPages={totalPages}
                 sortBy={sortBy}
                 order={order}
+                groupFilter={groupFilter}
+                relationshipFilter={relationshipFilter}
                 dateFormat={dateFormat}
                 availableGroups={allGroups}
                 relationshipTypes={relationshipTypes}
@@ -221,7 +245,7 @@ export default async function PeoplePage({
                   actions: t('actions'),
                   indirect: t('indirect'),
                   orphanWarning: t('orphanWarning'),
-                  showing: t('showing', { start: skip + 1, end: Math.min(skip + ITEMS_PER_PAGE, totalCount), total: totalCount }),
+                  showing: t('showing', { start: totalCount === 0 ? 0 : skip + 1, end: Math.min(skip + ITEMS_PER_PAGE, totalCount), total: totalCount }),
                   page: t('page'),
                   of: t('of'),
                 }}
