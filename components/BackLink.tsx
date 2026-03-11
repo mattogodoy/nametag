@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 
 interface BackLinkProps {
   fallbackHref: string;
@@ -9,15 +9,14 @@ interface BackLinkProps {
   className?: string;
 }
 
-export default function BackLink({ fallbackHref, children, className }: BackLinkProps) {
-  const [href, setHref] = useState(fallbackHref);
+const subscribe = () => () => {};
 
-  useEffect(() => {
-    const saved = sessionStorage.getItem(`backLink:${fallbackHref}`);
-    if (saved) {
-      setHref(saved);
-    }
-  }, [fallbackHref]);
+export default function BackLink({ fallbackHref, children, className }: BackLinkProps) {
+  const href = useSyncExternalStore(
+    subscribe,
+    () => sessionStorage.getItem(`backLink:${fallbackHref}`) || fallbackHref,
+    () => fallbackHref,
+  );
 
   return (
     <Link href={href} className={className}>
