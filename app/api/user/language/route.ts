@@ -26,7 +26,7 @@ export const PUT = withLogging(async function PUT(request: Request) {
     // Validate language
     if (!language || !isSupportedLocale(language)) {
       return NextResponse.json(
-        { error: 'Invalid language. Supported languages: en, es-ES, ja-JP, nb-NO, de-DE' },
+        { error: 'Invalid language. Supported languages: en, es-ES, ja-JP, nb-NO, de-DE, zh-CN'},
         { status: 400 }
       );
     }

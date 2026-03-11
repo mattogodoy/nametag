@@ -18,9 +18,18 @@ const LANGUAGES = [
   { code: 'zh-CN' as const, name: '简体中文', flag: 'cn' },
 ];
 
-const labelMap = { en: 'en', 'es-ES': 'esES', 'ja-JP': 'jaJP', 'nb-NO': 'nbNO', 'de-DE': 'deDE', 'zn-CN': 'zhCN' } as const;
+const labelMap = {
+  en: 'en',
+  'es-ES': 'esES',
+  'ja-JP': 'jaJP',
+  'nb-NO': 'nbNO',
+  'de-DE': 'deDE',
+  'zh-CN': 'zhCN',
+} as const;
 
-export default function LanguageSelector({ currentLanguage }: LanguageSelectorProps) {
+export default function LanguageSelector({
+  currentLanguage,
+}: LanguageSelectorProps) {
   const t = useTranslations('settings.appearance.language');
   const tSuccess = useTranslations('success.profile');
   const tCommon = useTranslations('common');
@@ -28,7 +37,9 @@ export default function LanguageSelector({ currentLanguage }: LanguageSelectorPr
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLanguageChange = async (newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN') => {
+  const handleLanguageChange = async (
+    newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN',
+  ) => {
     if (isLoading || newLanguage === selectedLanguage) return;
 
     setIsLoading(true);
@@ -67,9 +78,7 @@ export default function LanguageSelector({ currentLanguage }: LanguageSelectorPr
 
   return (
     <div>
-      <p className="text-sm text-muted mb-4">
-        {t('description')}
-      </p>
+      <p className="text-sm text-muted mb-4">{t('description')}</p>
 
       <div className="space-y-3">
         {LANGUAGES.map((language) => {
@@ -88,7 +97,9 @@ export default function LanguageSelector({ currentLanguage }: LanguageSelectorPr
             >
               <span className={`fi fi-${language.flag} text-2xl`}></span>
               <div className="flex-1 text-left">
-                <div className={`font-medium ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-foreground'}`}>
+                <div
+                  className={`font-medium ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-foreground'}`}
+                >
                   {language.name}
                 </div>
                 <div className="text-sm text-muted">
@@ -97,8 +108,16 @@ export default function LanguageSelector({ currentLanguage }: LanguageSelectorPr
               </div>
               {isSelected && (
                 <div className="text-blue-600 dark:text-blue-400">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               )}

@@ -7,7 +7,7 @@ const log = createModuleLogger('locale');
 /**
  * Supported locales
  */
-export const SUPPORTED_LOCALES = ['en', 'es-ES', 'ja-JP', 'nb-NO', 'de-DE'] as const;
+export const SUPPORTED_LOCALES = ['en', 'es-ES', 'ja-JP', 'nb-NO', 'de-DE', 'zh-CN'] as const;
 export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
 
 /**
@@ -57,6 +57,10 @@ export function normalizeLocale(locale: string): SupportedLocale {
 
   if (languageCode === 'de') {
     return 'de-DE';
+  }
+
+  if (languageCode === 'zh') {
+    return 'zh-CN';
   }
 
   return DEFAULT_LOCALE;
