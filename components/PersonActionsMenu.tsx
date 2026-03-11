@@ -12,13 +12,22 @@ import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 import Modal from '@/components/ui/Modal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import PersonAutocomplete from '@/components/PersonAutocomplete';
 import { DuplicateCandidateDisplay } from '@/components/DuplicatesList';
+
+interface PersonForSearch {
+  id: string;
+  name: string;
+  surname?: string | null;
+  nickname?: string | null;
+}
 
 interface PersonActionsMenuProps {
   personId: string;
   personName: string;
   person: PersonWithRelations;
   hasCardDavSync: boolean;
+  allPeople?: PersonForSearch[];
 }
 
 interface Orphan {
@@ -31,9 +40,11 @@ export default function PersonActionsMenu({
   personName,
   person,
   hasCardDavSync,
+  allPeople = [],
 }: PersonActionsMenuProps) {
   const t = useTranslations('people');
   const tDup = useTranslations('people.duplicates');
+  const tMerge = useTranslations('people.merge');
   const router = useRouter();
 
   // Dropdown state
@@ -52,6 +63,10 @@ export default function PersonActionsMenu({
   // QR modal state
   const [showQrModal, setShowQrModal] = useState(false);
   const [vCardData, setVCardData] = useState<string>('');
+
+  // Merge modal state
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergeTargetId, setMergeTargetId] = useState('');
 
   // Delete state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -141,6 +156,19 @@ export default function PersonActionsMenu({
       setCandidates([]);
     } finally {
       setDupLoading(false);
+    }
+  };
+
+  const handleMergeWith = () => {
+    setMenuOpen(false);
+    setMergeTargetId('');
+    setShowMergeModal(true);
+  };
+
+  const handleMergeSelect = (selectedId: string) => {
+    if (selectedId) {
+      setShowMergeModal(false);
+      router.push(`/people/merge?primary=${personId}&secondary=${selectedId}`);
     }
   };
 
@@ -260,6 +288,17 @@ export default function PersonActionsMenu({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 {tDup('findDuplicates')}
+              </button>
+
+              {/* Merge with another person */}
+              <button
+                onClick={handleMergeWith}
+                className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors flex items-center gap-3"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {tMerge('mergeWith')}
               </button>
 
               {/* Export VCF */}
@@ -454,6 +493,19 @@ export default function PersonActionsMenu({
           </div>
         )}
       </ConfirmationModal>
+
+      {/* Merge Person Modal */}
+      <Modal isOpen={showMergeModal} onClose={() => setShowMergeModal(false)} title={tMerge('mergeWith')}>
+        <p className="text-sm text-muted mb-4">
+          {tMerge('mergeWithDescription', { name: personName })}
+        </p>
+        <PersonAutocomplete
+          people={allPeople}
+          value={mergeTargetId}
+          onChange={(id) => handleMergeSelect(id)}
+          placeholder={tMerge('searchPerson')}
+        />
+      </Modal>
     </>
   );
 }

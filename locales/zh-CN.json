@@ -1043,6 +1043,9 @@
             "merge": "合并",
             "scanAll": "扫描所有联系人",
             "duplicateGroups": "{count, plural, one {# 个分组} other {# 个分组}}的潜在重复项已找到",
+            "notDuplicate": "不是重复项",
+            "dismissed": "已忽略此配对，不会再次显示。",
+            "dismissError": "忽略此配对失败。",
             "error": "搜索重复项时发生错误。"
         },
         "merge": {
@@ -1093,7 +1096,10 @@
             "empty": "-",
             "loadingContacts": "正在加载联系人...",
             "personNotFound": "找不到一个或两个联系人。",
-            "missingParams": "缺少联系人参数。请选择两个要合并的联系人。"
+            "missingParams": "缺少联系人参数。请选择两个要合并的联系人。",
+            "mergeWith": "合并...",
+            "mergeWithDescription": "搜索要与 {name} 合并的联系人。",
+            "searchPerson": "搜索联系人..."
         },
         "photo": {
             "cropTitle": "裁剪照片",

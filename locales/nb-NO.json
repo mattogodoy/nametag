@@ -1096,7 +1096,10 @@
       "empty": "-",
       "loadingContacts": "Laster kontakter...",
       "personNotFound": "Én eller begge kontaktene ble ikke funnet.",
-      "missingParams": "Manglende kontaktparametere. Velg to kontakter å slå sammen."
+      "missingParams": "Manglende kontaktparametere. Velg to kontakter å slå sammen.",
+      "mergeWith": "Slå sammen med...",
+      "mergeWithDescription": "Søk etter en person å slå sammen med {name}.",
+      "searchPerson": "Søk etter en person..."
     },
     "photo": {
       "cropTitle": "Beskjær bilde",

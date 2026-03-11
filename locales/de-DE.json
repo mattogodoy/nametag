@@ -1096,7 +1096,10 @@
       "empty": "-",
       "loadingContacts": "Kontakte werden geladen...",
       "personNotFound": "Einer oder beide Kontakte konnten nicht gefunden werden.",
-      "missingParams": "Fehlende Kontaktparameter. Bitte wählen Sie zwei Kontakte zum Zusammenführen aus."
+      "missingParams": "Fehlende Kontaktparameter. Bitte wählen Sie zwei Kontakte zum Zusammenführen aus.",
+      "mergeWith": "Zusammenführen mit...",
+      "mergeWithDescription": "Suche eine Person, um sie mit {name} zusammenzuführen.",
+      "searchPerson": "Person suchen..."
     },
     "photo": {
       "cropTitle": "Foto zuschneiden",

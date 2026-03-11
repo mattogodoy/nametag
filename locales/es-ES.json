@@ -1096,7 +1096,10 @@
       "empty": "-",
       "loadingContacts": "Cargando contactos...",
       "personNotFound": "No se pudo encontrar uno o ambos contactos.",
-      "missingParams": "Faltan parámetros de contacto. Por favor selecciona dos contactos para fusionar."
+      "missingParams": "Faltan parámetros de contacto. Por favor selecciona dos contactos para fusionar.",
+      "mergeWith": "Fusionar con...",
+      "mergeWithDescription": "Busca una persona para fusionar con {name}.",
+      "searchPerson": "Buscar una persona..."
     },
     "photo": {
       "cropTitle": "Recortar foto",
