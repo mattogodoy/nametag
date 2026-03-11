@@ -74,6 +74,20 @@ describe('nameUtils', () => {
   });
 
   describe('formatFullName', () => {
+    it('should use FULLNAME_FORMAT when person.nameFormat is not provided', () => {
+      process.env.FULLNAME_FORMAT = '{surname}, {name}';
+      const person = { name: 'John', surname: 'Doe' };
+      expect(formatFullName(person)).toBe('Doe, John');
+      delete process.env.FULLNAME_FORMAT;
+    });
+
+    it('should prioritize person.nameFormat over FULLNAME_FORMAT', () => {
+      process.env.FULLNAME_FORMAT = '{surname}, {name}';
+      const person = { name: 'John', surname: 'Doe', nameFormat: '{name} ({surname})' };
+      expect(formatFullName(person)).toBe('John (Doe)');
+      delete process.env.FULLNAME_FORMAT;
+    });
+
     it('should format person object with all fields', () => {
       const person = { name: 'John', surname: 'Doe', nickname: 'Johnny' };
       expect(formatFullName(person)).toBe("John 'Johnny' Doe");
@@ -122,6 +136,27 @@ describe('nameUtils', () => {
   });
 
   describe('formatGraphName', () => {
+    it('should use GRAPHNAME_FORMAT for graph labels', () => {
+      process.env.GRAPHNAME_FORMAT = '{surname}, {name}';
+      const person = { name: 'John', surname: 'Doe' };
+      expect(formatGraphName(person)).toBe('Doe, John');
+      delete process.env.GRAPHNAME_FORMAT;
+    });
+
+    it('should allow nickname placeholder in GRAPHNAME_FORMAT', () => {
+      process.env.GRAPHNAME_FORMAT = '{surname}, {nickname}';
+      const person = { name: 'Matias', surname: 'Godoy', nickname: 'Matto' };
+      expect(formatGraphName(person)).toBe('Godoy, Matto');
+      delete process.env.GRAPHNAME_FORMAT;
+    });
+
+    it('should fallback to default logic when GRAPHNAME_FORMAT is empty', () => {
+      process.env.GRAPHNAME_FORMAT = '';
+      const person = { name: 'Matias', surname: 'Godoy', nickname: 'Matto' };
+      expect(formatGraphName(person)).toBe('Matto Godoy');
+      delete process.env.GRAPHNAME_FORMAT;
+    });
+
     it('should format name only', () => {
       const person = { name: 'John' };
       expect(formatGraphName(person)).toBe('John');

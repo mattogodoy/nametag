@@ -4,6 +4,7 @@ import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/a
 import { createCardDavClient, deleteVCardDirect } from '@/lib/carddav/client';
 import { withRetry } from '@/lib/carddav/retry';
 import { createModuleLogger } from '@/lib/logger';
+import { formatFullName } from '@/lib/nameUtils';
 
 const log = createModuleLogger('merge');
 
@@ -113,7 +114,8 @@ export const POST = withAuth(async (request, session) => {
                 // which replaces both URL and UID with its own values.
                 // Only use when exactly one vCard matches to avoid deleting the wrong contact.
                 if (!match) {
-                  const fullName = [secondary.name, secondary.surname].filter(Boolean).join(' ');
+                  // I'm not sure if this OK
+                  const fullName = formatFullName(secondary);
                   if (fullName) {
                     const fnMatches = vCards.filter((vc) => {
                       const fnMatch = vc.data.match(/^FN[^:]*:(.+)$/mi);

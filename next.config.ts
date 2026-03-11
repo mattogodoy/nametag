@@ -6,6 +6,12 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 const nextConfig: NextConfig = {
   devIndicators: false,
 
+  // Expose selected non-sensitive runtime configuration to client bundles.
+  env: {
+    FULLNAME_FORMAT: process.env.FULLNAME_FORMAT ?? '',
+    GRAPHNAME_FORMAT: process.env.GRAPHNAME_FORMAT ?? '',
+  },
+
   // Externalize Pino from Next.js webpack bundle (uses Node.js native modules)
   serverExternalPackages: ['pino', 'pino-pretty'],
 

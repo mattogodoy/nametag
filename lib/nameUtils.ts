@@ -12,7 +12,8 @@ export function formatPersonName(
   surname?: string | null,
   middleName?: string | null,
   secondLastName?: string | null,
-  nickname?: string | null
+  nickname?: string | null,
+  nameFormat?: string | null,
 ): string {
   const parts: string[] = [name];
 
@@ -31,7 +32,16 @@ export function formatPersonName(
   if (secondLastName) {
     parts.push(secondLastName);
   }
-
+  if (nameFormat) {
+    return nameFormat
+      .replaceAll('{name}', name)
+      .replaceAll('{nickname}', nickname || '')
+      .replaceAll('{middleName}', middleName || '')
+      .replaceAll('{surname}', surname || '')
+      .replaceAll('{secondLastName}', secondLastName || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
   return parts.join(' ');
 }
 
@@ -39,19 +49,32 @@ export function formatPersonName(
  * Formats a person's full name for display
  * Same as formatPersonName but with a person object
  */
+function getGlobalNameFormat(): string | null {
+  // In Next.js client bundles, this value is injected from next.config.ts env.
+  return process.env.FULLNAME_FORMAT || null;
+}
+
+function getGlobalGraphNameFormat(): string | null {
+  // In Next.js client bundles, this value is injected from next.config.ts env.
+  const format = process.env.GRAPHNAME_FORMAT;
+  return format && format.trim() ? format : null;
+}
+
 export function formatFullName(person: {
   name: string;
   surname?: string | null;
   middleName?: string | null;
   secondLastName?: string | null;
   nickname?: string | null;
+  nameFormat?: string | null;
 }): string {
   return formatPersonName(
     person.name,
     person.surname,
     person.middleName,
     person.secondLastName,
-    person.nickname
+    person.nickname,
+    person.nameFormat ?? getGlobalNameFormat(),
   );
 }
 
@@ -69,6 +92,16 @@ export function formatGraphName(person: {
   surname?: string | null;
   nickname?: string | null;
 }): string {
+  const graphNameFormat = getGlobalGraphNameFormat();
+  if (graphNameFormat) {
+    return graphNameFormat
+      .replaceAll('{name}', person.name)
+      .replaceAll('{surname}', person.surname || '')
+      .replaceAll('{nickname}', person.nickname || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   const displayName = person.nickname || person.name;
   return person.surname ? `${displayName} ${person.surname}` : displayName;
 }

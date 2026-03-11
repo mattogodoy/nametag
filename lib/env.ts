@@ -57,6 +57,15 @@ const envSchema = z.object({
 
   // Application URL for generating links in emails (optional, defaults to NEXTAUTH_URL)
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+
+  // Global full name display format
+  // Available placeholders: {name}, {nickname}, {middleName}, {surname}, {secondLastName}
+  FULLNAME_FORMAT: z.string().min(1).optional(),
+
+  // Global network graph name format
+  // Available placeholders: {name}, {surname}, {nickname}
+  // Empty value falls back to default graph naming logic
+  GRAPHNAME_FORMAT: z.string().optional(),
 });
 
 /**

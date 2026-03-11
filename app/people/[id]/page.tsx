@@ -266,9 +266,7 @@ export default async function PersonDetailsPage({
             <div className="px-6 py-5 border-b border-border flex flex-col sm:flex-row justify-between items-start gap-4">
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
-                  {person.name}
-                  {person.nickname && ` '${person.nickname}'`}
-                  {person.surname && ` ${person.surname}`}
+                  {formatFullName(person)}
                 </h1>
                 {person.groups.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -348,16 +346,7 @@ export default async function PersonDetailsPage({
                       {t('fullName')}
                     </h4>
                     <p className="text-foreground">
-                      {[
-                        person.prefix,
-                        person.name,
-                        person.middleName,
-                        person.surname,
-                        person.secondLastName,
-                        person.suffix,
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
+                      {formatFullName(person)}
                     </p>
                   </div>
 
