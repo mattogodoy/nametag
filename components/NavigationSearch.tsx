@@ -25,6 +25,7 @@ export default function NavigationSearch() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const itemRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   // Debounced server-side search
   const performSearch = useCallback(async (query: string) => {
@@ -108,13 +109,19 @@ export default function NavigationSearch() {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev < results.length - 1 ? prev + 1 : prev
-        );
+        setHighlightedIndex((prev) => {
+          const next = prev < results.length - 1 ? prev + 1 : prev;
+          itemRefs.current.get(next)?.scrollIntoView({ block: 'nearest' });
+          return next;
+        });
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        setHighlightedIndex((prev) => {
+          const next = prev > 0 ? prev - 1 : 0;
+          itemRefs.current.get(next)?.scrollIntoView({ block: 'nearest' });
+          return next;
+        });
         break;
       case 'Enter':
         e.preventDefault();
@@ -177,6 +184,10 @@ export default function NavigationSearch() {
           {results.map((person, index) => (
             <button
               key={person.id}
+              ref={(el) => {
+                if (el) itemRefs.current.set(index, el);
+                else itemRefs.current.delete(index);
+              }}
               type="button"
               onClick={() => handleSelect(person)}
               className={`w-full text-left px-4 py-2.5 hover:bg-surface-elevated transition-colors text-sm border-l-2 ${
