@@ -35,9 +35,13 @@ export interface PersonForComparison {
 
 // Minimum similarity score (0–1) for two names to be considered potential duplicates.
 // 0.75 balances recall (catching "Robert" / "Roberto") vs precision (avoiding false positives).
-// Kept as a constant rather than a user-configurable setting because changing it per-user
-// would invalidate cached duplicate groups and complicate the UX with no clear benefit.
 const SIMILARITY_THRESHOLD = 0.75;
+
+// When both people have surnames, similarity is a weighted average of
+// first-name similarity (60%) and surname similarity (40%). This prevents
+// shared surnames from inflating the score when first names are different.
+const NAME_WEIGHT = 0.6;
+const SURNAME_WEIGHT = 0.4;
 
 // ---------------------------------------------------------------------------
 // Core algorithms
@@ -102,15 +106,38 @@ export function stringSimilarity(a: string, b: string): number {
 // ---------------------------------------------------------------------------
 
 /**
- * Build a normalised comparison string from a name and optional surname.
- * Strips diacritical marks (accents), lowercases, and trims the result.
+ * Normalise a single name part for comparison.
+ * Strips diacritical marks (accents), lowercases, and trims.
  */
-function buildComparisonName(name: string, surname: string | null): string {
-  const parts = [name];
-  if (surname) {
-    parts.push(surname);
+function normalizePart(s: string): string {
+  return normalizeForSearch(s.trim());
+}
+
+/**
+ * Compute similarity between two people, taking name parts into account.
+ *
+ * When both have surnames, scores name and surname separately with a
+ * weighted average (60% name, 40% surname) so a shared surname alone
+ * doesn't inflate the match.
+ *
+ * Falls back to full-string comparison when either person lacks a surname.
+ */
+function personSimilarity(
+  nameA: string,
+  surnameA: string | null,
+  nameB: string,
+  surnameB: string | null
+): number {
+  if (surnameA && surnameB) {
+    const nameSim = stringSimilarity(normalizePart(nameA), normalizePart(nameB));
+    const surSim = stringSimilarity(normalizePart(surnameA), normalizePart(surnameB));
+    return nameSim * NAME_WEIGHT + surSim * SURNAME_WEIGHT;
   }
-  return normalizeForSearch(parts.join(' ').trim());
+
+  // Fallback: compare full concatenated strings
+  const fullA = normalizePart([nameA, surnameA].filter(Boolean).join(' '));
+  const fullB = normalizePart([nameB, surnameB].filter(Boolean).join(' '));
+  return stringSimilarity(fullA, fullB);
 }
 
 // ---------------------------------------------------------------------------
@@ -190,16 +217,16 @@ export function findDuplicates(
   people: PersonForComparison[],
   targetId?: string
 ): DuplicateCandidate[] {
-  const targetFull = buildComparisonName(targetName, targetSurname);
-
   const candidates: DuplicateCandidate[] = [];
 
   for (const person of people) {
     // Skip the target person itself
     if (targetId && person.id === targetId) continue;
 
-    const personFull = buildComparisonName(person.name, person.surname);
-    const similarity = stringSimilarity(targetFull, personFull);
+    const similarity = personSimilarity(
+      targetName, targetSurname,
+      person.name, person.surname
+    );
 
     if (similarity >= SIMILARITY_THRESHOLD) {
       candidates.push({
@@ -239,14 +266,11 @@ export function findAllDuplicateGroups(
 ): DuplicateGroup[] {
   const uf = new UnionFind();
 
-  // Map from person ID to their comparison name (computed once)
-  const compNames = new Map<string, string>();
   for (const person of people) {
-    compNames.set(person.id, buildComparisonName(person.name, person.surname));
     uf.makeSet(person.id);
   }
 
-  // Compare every pair
+  // Compare every pair using weighted name/surname similarity
   for (let i = 0; i < people.length; i++) {
     for (let j = i + 1; j < people.length; j++) {
       const a = people[i];
@@ -255,7 +279,7 @@ export function findAllDuplicateGroups(
       // Skip dismissed pairs
       if (dismissedPairs?.has(buildDismissalKey(a.id, b.id))) continue;
 
-      const similarity = stringSimilarity(compNames.get(a.id)!, compNames.get(b.id)!);
+      const similarity = personSimilarity(a.name, a.surname, b.name, b.surname);
 
       if (similarity >= SIMILARITY_THRESHOLD) {
         uf.union(a.id, b.id);
@@ -282,9 +306,9 @@ export function findAllDuplicateGroups(
     let maxSim = SIMILARITY_THRESHOLD;
     for (let i = 0; i < members.length; i++) {
       for (let j = i + 1; j < members.length; j++) {
-        const sim = stringSimilarity(
-          compNames.get(members[i].id)!,
-          compNames.get(members[j].id)!
+        const sim = personSimilarity(
+          members[i].name, members[i].surname,
+          members[j].name, members[j].surname
         );
         if (sim > maxSim) maxSim = sim;
       }
