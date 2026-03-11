@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import Navigation from '@/components/Navigation';
 import PersonCompare, {
   MergeSelections,
   PersonForCompare,
@@ -177,7 +178,7 @@ function MergePageContent() {
 
             <div className="mt-6 flex justify-end space-x-3">
               <Link
-                href={`/people/${personA.id}`}
+                href="/people"
                 className="px-4 py-2 border border-border text-foreground rounded-lg font-semibold hover:bg-surface transition-colors"
               >
                 {t('cancel')}
@@ -214,6 +215,7 @@ function LoadingFallback() {
 export default function MergePage() {
   return (
     <div className="min-h-screen bg-background">
+      <Navigation currentPath="/people/merge" />
       <Suspense fallback={<LoadingFallback />}>
         <MergePageContent />
       </Suspense>
