@@ -195,33 +195,6 @@ export default function PeopleListClient({
         {tt.showing}
       </div>
 
-      {/* Select all pages banner */}
-      {allPageSelected && !selectAllPages && totalCount > people.length && (
-        <div className="mb-2 p-2 bg-primary/10 border border-primary/30 rounded-lg text-sm text-center">
-          <button
-            onClick={handleSelectAllPages}
-            className="text-primary hover:underline font-medium"
-          >
-            {t('selectAllPages', { count: totalCount })}
-          </button>
-        </div>
-      )}
-
-      {selectAllPages && (
-        <div className="mb-2 p-2 bg-primary/10 border border-primary/30 rounded-lg text-sm text-center">
-          <span className="text-foreground font-medium">
-            {t('allSelected', { count: totalCount })}
-          </span>
-          {' '}
-          <button
-            onClick={clearSelection}
-            className="text-primary hover:underline"
-          >
-            {t('clearSelection')}
-          </button>
-        </div>
-      )}
-
       {/* Table */}
       <div className="bg-surface shadow-lg rounded-lg overflow-hidden border-2 border-primary/30">
         <div className="overflow-x-auto">
@@ -479,6 +452,17 @@ export default function PeopleListClient({
                   ? t('allSelected', { count: totalCount })
                   : t('selected', { count: selectedIds.size })}
               </span>
+              {allPageSelected && !selectAllPages && totalCount > people.length && (
+                <>
+                  <span className="text-muted">·</span>
+                  <button
+                    onClick={handleSelectAllPages}
+                    className="text-sm text-primary hover:underline font-medium"
+                  >
+                    {t('selectAllPages', { count: totalCount })}
+                  </button>
+                </>
+              )}
               <button
                 onClick={clearSelection}
                 className="text-muted hover:text-foreground transition-colors"
