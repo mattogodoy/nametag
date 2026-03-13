@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
@@ -49,9 +50,12 @@ export function OidcSignInButton({
       ) : (
         <>
           {iconUrl && !iconFailed ? (
-            <img
+            <Image
               src={iconUrl}
               alt={`${displayName} icon`}
+              width={20}
+              height={20}
+              unoptimized
               className="w-5 h-5 rounded-sm object-contain"
               onError={() => setIconFailed(true)}
             />
