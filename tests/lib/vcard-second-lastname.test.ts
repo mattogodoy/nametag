@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { personToVCard, vCardToPerson } from '@/lib/vcard';
+import { personToVCard } from '@/lib/carddav/vcard-export';
+import { vCardToPerson } from '@/lib/carddav/vcard-import';;
 import type { PersonWithRelations } from '@/lib/carddav/types';
 
 describe('vCard Second Last Name Handling', () => {

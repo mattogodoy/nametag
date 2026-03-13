@@ -1,11 +1,10 @@
 /**
- * Shared helpers for creating/updating a Person from parsed vCard data.
+ * vCard import utilities
+ * Converts vCard data into Nametag Person model records
  *
- * These functions centralise the logic that was previously duplicated across:
- *   - app/api/carddav/import/route.ts
- *   - app/api/vcard/import/route.ts
- *   - app/api/carddav/conflicts/[id]/resolve/route.ts
- *   - lib/carddav/sync.ts (updatePersonFromVCard)
+ * Combines:
+ * - lib/carddav/person-from-vcard.ts (DB write helpers)
+ * - vCardToPerson from lib/vcard.ts (parser wrapper)
  */
 
 import { prisma } from '@/lib/prisma';
@@ -13,12 +12,21 @@ import { savePhoto } from '@/lib/photo-storage';
 import type { ParsedVCardData } from './types';
 import type { Person } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { parseVCard } from './vcard-parser';
 
 // Derive the transaction client type from our actual (extended) prisma instance.
 // Parameters<...>[0] extracts the callback arg of $transaction, then
 // Parameters<callback>[0] is the `tx` client it receives.
 type TransactionCallback = Parameters<typeof prisma.$transaction>[0];
 type TxClient = TransactionCallback extends (tx: infer T) => unknown ? T : never;
+
+/**
+ * Parse vCard string to Person data structure
+ * Uses the enhanced parser which handles both v3.0 and v4.0, vendor extensions, etc.
+ */
+export function vCardToPerson(vCardText: string): ParsedVCardData {
+  return parseVCard(vCardText);
+}
 
 /**
  * Build the Prisma data object for multi-value fields when *creating* a person.

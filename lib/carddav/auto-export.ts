@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { getAddressBook } from './address-book';
-import { personToVCard } from '@/lib/vcard';
+import { personToVCard } from '@/lib/carddav/vcard-export';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { withRetry } from './retry';
 import { buildLocalHash } from './hash';

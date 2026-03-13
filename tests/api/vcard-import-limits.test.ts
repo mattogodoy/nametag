@@ -68,9 +68,13 @@ vi.mock('@/lib/sanitize', () => ({
   sanitizeNotes: (s: string) => s,
 }));
 
-// Mock createPersonFromVCardData
-vi.mock('@/lib/carddav/person-from-vcard', () => ({
+// Mock createPersonFromVCardData and vCardToPerson
+vi.mock('@/lib/carddav/vcard-import', () => ({
   createPersonFromVCardData: mocks.createPersonFromVCardData,
+  vCardToPerson: (text: string) => {
+    const uidMatch = text.match(/^UID:(.+)$/m);
+    return { uid: uidMatch ? uidMatch[1].trim() : undefined };
+  },
 }));
 
 // Mock logger

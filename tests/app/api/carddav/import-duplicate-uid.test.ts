@@ -54,9 +54,13 @@ vi.mock('@/lib/prisma', () => ({
   }),
 }));
 
-vi.mock('@/lib/carddav/person-from-vcard', () => ({
+vi.mock('@/lib/carddav/vcard-import', () => ({
   createPersonFromVCardData: mocks.createPersonFromVCardData,
   restorePersonFromVCardData: mocks.restorePersonFromVCardData,
+  vCardToPerson: (text: string) => {
+    const uidMatch = text.match(/^UID:(.+)$/m);
+    return { uid: uidMatch ? uidMatch[1].trim() : undefined };
+  },
 }));
 
 // ── helpers ─────────────────────────────────────────────────────────────────

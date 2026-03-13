@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from '@/lib/carddav/client';
 import { getAddressBook } from '@/lib/carddav/address-book';
-import { personToVCard } from '@/lib/vcard';
+import { personToVCard } from '@/lib/carddav/vcard-export';
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from '@/lib/carddav/hash';
 import { createModuleLogger } from '@/lib/logger';

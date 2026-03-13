@@ -64,7 +64,7 @@ vi.mock('@/lib/carddav/client', () => ({
   ),
 }));
 
-vi.mock('@/lib/vcard', () => ({
+vi.mock('@/lib/carddav/vcard-export', () => ({
   personToVCard: mocks.personToVCard,
 }));
 

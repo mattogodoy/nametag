@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { getAddressBook } from './address-book';
-import { vCardToPerson } from '@/lib/vcard';
+import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('carddav');

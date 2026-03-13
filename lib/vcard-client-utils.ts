@@ -3,7 +3,7 @@
  * Handles photo fetching, base64 encoding, and file downloads
  */
 
-import { addPhotoToVCard } from './vcard';
+import { addPhotoToVCard } from './carddav/vcard-export';
 
 export interface PhotoData {
   base64: string;

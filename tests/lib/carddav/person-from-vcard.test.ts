@@ -59,7 +59,7 @@ import {
   createPersonFromVCardData,
   restorePersonFromVCardData,
   savePhotoForPerson,
-} from '@/lib/carddav/person-from-vcard';
+} from '@/lib/carddav/vcard-import';
 import type { ParsedVCardData } from '@/lib/carddav/types';
 
 // --- Helpers ---

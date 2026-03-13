@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma, withDeleted } from '@/lib/prisma';
-import { vCardToPerson } from '@/lib/vcard';
+import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
-import { createPersonFromVCardData, restorePersonFromVCardData } from '@/lib/carddav/person-from-vcard';
+import { createPersonFromVCardData, restorePersonFromVCardData } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
 import { isSaasMode } from '@/lib/features';

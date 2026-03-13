@@ -8,13 +8,13 @@ import { Button } from './ui/Button';
 import { useTranslations } from 'next-intl';
 import { importDataSchema } from '@/lib/validations';
 import { z } from 'zod';
-import { personToVCard } from '@/lib/vcard';
+import { personToVCard } from '@/lib/carddav/vcard-export';
 import {
   addPhotoToVCardFromUrl,
   downloadVcf,
   generateBulkVcfFilename,
   exportPeopleWithProgress,
-} from '@/lib/vcard-helpers';
+} from '@/lib/vcard-client-utils';
 import { getPhotoUrl } from '@/lib/photo-url';
 import { toast } from 'sonner';
 

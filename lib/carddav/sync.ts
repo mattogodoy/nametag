@@ -1,12 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient, AddressBook, CardDavClientInterface, VCard } from './client';
-import { personToVCard, vCardToPerson } from '@/lib/vcard';
+import { personToVCard } from '@/lib/carddav/vcard-export';
+import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import type { UnknownProperty } from '@/lib/carddav/vcard-parser';
 import { withRetry, categorizeError } from './retry';
 import { getAddressBook } from './address-book';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
-import { updatePersonFromVCard } from './person-from-vcard';
+import { updatePersonFromVCard } from './vcard-import';
 
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from './hash';

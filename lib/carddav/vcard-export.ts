@@ -1,6 +1,6 @@
 /**
- * vCard transformation utilities
- * Bidirectional conversion between Nametag Person model and vCard 3.0 format
+ * vCard export utilities
+ * Converts Nametag Person model to vCard 3.0 format
  *
  * RFC 2426: vCard MIME Directory Profile (v3.0)
  * https://datatracker.ietf.org/doc/html/rfc2426
@@ -12,9 +12,8 @@
  * - Line folding: 75 character limit with CRLF + SPACE continuation
  */
 
-import type { PersonWithRelations, ParsedVCardData } from './carddav/types';
-import type { UnknownProperty } from './carddav/vcard-parser';
-import { parseVCard } from './carddav/vcard-parser';
+import type { PersonWithRelations } from './types';
+import type { UnknownProperty } from './vcard-parser';
 
 export interface VCardOptions {
   includePhoto?: boolean; // Default: true (requires base64 encoding)
@@ -294,14 +293,6 @@ export function peopleToVCard(
   return people
     .map(person => personToVCard(person, options))
     .join('\r\n');
-}
-
-/**
- * Parse vCard string to Person data structure
- * Uses the enhanced parser which handles both v3.0 and v4.0, vendor extensions, etc.
- */
-export function vCardToPerson(vCardText: string): ParsedVCardData {
-  return parseVCard(vCardText);
 }
 
 /**

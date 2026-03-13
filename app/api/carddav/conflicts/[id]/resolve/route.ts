@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { syncToServer } from '@/lib/carddav/sync';
-import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/person-from-vcard';
+import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/vcard-import';
 import type { ParsedVCardData } from '@/lib/carddav/types';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging, type RouteContext } from '@/lib/api-utils';

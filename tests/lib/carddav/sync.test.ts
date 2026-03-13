@@ -48,6 +48,7 @@ const mocks = vi.hoisted(() => ({
   // vCard
   vCardToPerson: vi.fn(),
   personToVCard: vi.fn(),
+  updatePersonFromVCard: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -100,9 +101,13 @@ vi.mock('@/lib/carddav/client', () => ({
   ),
 }));
 
-vi.mock('@/lib/vcard', () => ({
+vi.mock('@/lib/carddav/vcard-export', () => ({
   personToVCard: mocks.personToVCard,
+}));
+
+vi.mock('@/lib/carddav/vcard-import', () => ({
   vCardToPerson: mocks.vCardToPerson,
+  updatePersonFromVCard: mocks.updatePersonFromVCard,
 }));
 
 // Make withRetry just call the function immediately (no actual retries in tests)
