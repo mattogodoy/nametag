@@ -5,6 +5,23 @@ import { z } from 'zod';
  * This ensures all required environment variables are present at startup
  */
 
+function booleanFromEnv(defaultValue: boolean) {
+  return z
+    .preprocess((value) => {
+      if (typeof value === 'boolean') return value;
+
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+
+        if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+        if (['false', '0', 'no', 'off', ''].includes(normalized)) return false;
+      }
+
+      return value;
+    }, z.boolean())
+    .default(defaultValue);
+}
+
 const envSchema = z.object({
   // Database - either DATABASE_URL or individual DB_* variables
   DATABASE_URL: z.string().min(1).optional(),
@@ -19,6 +36,7 @@ const envSchema = z.object({
   NEXTAUTH_SECRET: z
     .string()
     .min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
+  PASSWORD_LOGIN_ENABLED: booleanFromEnv(true),
 
   // Email (Resend) - Only required in SaaS mode
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required').optional(),
@@ -27,15 +45,32 @@ const envSchema = z.object({
   // Email (SMTP) - Optional alternative to Resend
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().min(1).max(65535).optional(),
-  SMTP_SECURE: z.coerce.boolean().default(false).optional(),
+  SMTP_SECURE: booleanFromEnv(false).optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_REQUIRE_TLS: z.coerce.boolean().default(true).optional(),
+  SMTP_REQUIRE_TLS: booleanFromEnv(true).optional(),
   SMTP_FROM: z.string().optional(), // Override from address (e.g., for servers that reject custom from addresses)
 
   // Google OAuth - Only required in SaaS mode
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // Optional custom OIDC provider (available in all deployment modes)
+  OIDC_ENABLED: booleanFromEnv(false),
+  OIDC_ISSUER_URL: z.string().url().optional(),
+  OIDC_CLIENT_ID: z.string().optional(),
+  OIDC_CLIENT_SECRET: z.string().optional(),
+  OIDC_SCOPE: z.string().default('openid profile email'),
+  OIDC_PKCE: booleanFromEnv(true),
+  OIDC_PKCE_METHOD: z.enum(['S256']).default('S256'),
+  OIDC_DISPLAY_NAME: z.string().default('OIDC Provider'),
+  OIDC_ICON_URL: z.string().url().optional(),
+  OIDC_LOGOUT_URL: z.string().url().optional(),
+  OIDC_SYNC_PROFILE: booleanFromEnv(true),
+  OIDC_MAPPING_NAME: z.string().default('name'),
+  OIDC_MAPPING_LASTNAME: z.string().default('family_name'),
+  OIDC_MAPPING_NICKNAME: z.string().default('nickname'),
+  OIDC_MAPPING_AVATAR: z.string().default('picture'),
 
   // Cron
   CRON_SECRET: z.string().min(16, 'CRON_SECRET must be at least 16 characters'),
@@ -50,10 +85,10 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   // SaaS mode - enables billing and tier limits (undocumented, for internal use)
-  SAAS_MODE: z.coerce.boolean().default(false),
+  SAAS_MODE: booleanFromEnv(false),
 
   // Disable registration after first user (useful for public-facing self-hosted instances)
-  DISABLE_REGISTRATION: z.coerce.boolean().default(false),
+  DISABLE_REGISTRATION: booleanFromEnv(false),
 
   // Application URL for generating links in emails (optional, defaults to NEXTAUTH_URL)
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),

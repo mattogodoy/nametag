@@ -42,6 +42,27 @@ vi.mock('../../lib/env', () => ({
     get GOOGLE_CLIENT_SECRET() {
       return mocks.getEnv('GOOGLE_CLIENT_SECRET');
     },
+    get PASSWORD_LOGIN_ENABLED() {
+      return mocks.getEnv('PASSWORD_LOGIN_ENABLED');
+    },
+    get OIDC_ENABLED() {
+      return mocks.getEnv('OIDC_ENABLED');
+    },
+    get OIDC_ISSUER_URL() {
+      return mocks.getEnv('OIDC_ISSUER_URL');
+    },
+    get OIDC_CLIENT_ID() {
+      return mocks.getEnv('OIDC_CLIENT_ID');
+    },
+    get OIDC_CLIENT_SECRET() {
+      return mocks.getEnv('OIDC_CLIENT_SECRET');
+    },
+    get OIDC_DISPLAY_NAME() {
+      return mocks.getEnv('OIDC_DISPLAY_NAME');
+    },
+    get OIDC_ICON_URL() {
+      return mocks.getEnv('OIDC_ICON_URL');
+    },
   },
 }));
 
@@ -74,20 +95,28 @@ describe('OAuth Authentication', () => {
     vi.clearAllMocks();
     // Default to SaaS mode disabled (self-hosted)
     mocks.isSaasMode.mockReturnValue(false);
-    mocks.getEnv.mockReturnValue(undefined);
+    mocks.getEnv.mockImplementation((key: string) => {
+      if (key === 'PASSWORD_LOGIN_ENABLED') return true;
+      return undefined;
+    });
   });
 
   describe('GET /api/auth/available-providers', () => {
     it('should return credentials provider in self-hosted mode', async () => {
       mocks.isSaasMode.mockReturnValue(false);
 
-      const request = new Request('http://localhost/api/auth/available-providers');
+      const request = new Request(
+        'http://localhost/api/auth/available-providers',
+      );
       const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(body.providers.credentials).toBe(true);
-      expect(body.providers.google).toBe(false);
+      expect(body.credentials.enabled).toBe(true);
+      expect(body.google.enabled).toBe(false);
+      expect(body.oidc.enabled).toBe(false);
+      expect(body.oidc.display_name).toBe('OIDC Provider');
+      expect(body.oidc.icon_url).toBeNull();
     });
 
     it('should return Google provider when in SaaS mode with credentials', async () => {
@@ -98,13 +127,16 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const request = new Request('http://localhost/api/auth/available-providers');
+      const request = new Request(
+        'http://localhost/api/auth/available-providers',
+      );
       const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(body.providers.credentials).toBe(true);
-      expect(body.providers.google).toBe(true);
+      expect(body.credentials.enabled).toBe(true);
+      expect(body.google.enabled).toBe(true);
+      expect(body.oidc.enabled).toBe(false);
     });
 
     it('should not return Google provider when in SaaS mode without client ID', async () => {
@@ -114,12 +146,15 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const request = new Request('http://localhost/api/auth/available-providers');
+      const request = new Request(
+        'http://localhost/api/auth/available-providers',
+      );
       const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(body.providers.google).toBe(false);
+      expect(body.google.enabled).toBe(false);
+      expect(body.oidc.enabled).toBe(false);
     });
 
     it('should not return Google provider when in SaaS mode without client secret', async () => {
@@ -129,12 +164,75 @@ describe('OAuth Authentication', () => {
         return undefined;
       });
 
-      const request = new Request('http://localhost/api/auth/available-providers');
+      const request = new Request(
+        'http://localhost/api/auth/available-providers',
+      );
       const response = await availableProviders(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(body.providers.google).toBe(false);
+      expect(body.google.enabled).toBe(false);
+      expect(body.oidc.enabled).toBe(false);
+    });
+
+    it('should return OIDC provider when enabled with complete config', async () => {
+      mocks.getEnv.mockImplementation((key: string) => {
+        if (key === 'OIDC_ENABLED') return true;
+        if (key === 'OIDC_ISSUER_URL') return 'https://id.example.com';
+        if (key === 'OIDC_CLIENT_ID') return 'oidc-client-id';
+        if (key === 'OIDC_CLIENT_SECRET') return 'oidc-client-secret';
+        if (key === 'OIDC_DISPLAY_NAME') return 'Contoso ID';
+        if (key === 'OIDC_ICON_URL') return 'https://id.example.com/icon.png';
+        return undefined;
+      });
+
+      const request = new Request(
+        'http://localhost/api/auth/available-providers',
+      );
+      const response = await availableProviders(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.oidc.enabled).toBe(true);
+      expect(body.oidc.display_name).toBe('Contoso ID');
+      expect(body.oidc.icon_url).toBe('https://id.example.com/icon.png');
+    });
+
+    it('should not return OIDC provider when enabled but missing required config', async () => {
+      mocks.getEnv.mockImplementation((key: string) => {
+        if (key === 'PASSWORD_LOGIN_ENABLED') return true;
+        if (key === 'OIDC_ENABLED') return true;
+        if (key === 'OIDC_ISSUER_URL') return 'https://id.example.com';
+        if (key === 'OIDC_CLIENT_ID') return 'oidc-client-id';
+        return undefined;
+      });
+
+      const request = new Request(
+        'http://localhost/api/auth/available-providers',
+      );
+      const response = await availableProviders(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.oidc.enabled).toBe(false);
+    });
+
+    it('should disable credentials provider when PASSWORD_LOGIN_ENABLED is false', async () => {
+      mocks.getEnv.mockImplementation((key: string) => {
+        if (key === 'PASSWORD_LOGIN_ENABLED') return false;
+        return undefined;
+      });
+
+      const request = new Request(
+        'http://localhost/api/auth/available-providers',
+      );
+      const response = await availableProviders(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.credentials.enabled).toBe(false);
+      expect(body.google.enabled).toBe(false);
+      expect(body.oidc.enabled).toBe(false);
     });
   });
 

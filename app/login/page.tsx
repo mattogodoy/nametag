@@ -2,11 +2,12 @@
 
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { OidcSignInButton } from '@/components/OidcSignInButton';
 import { fetchAvailableProviders } from '@/lib/client-features';
 
 export default function LoginPage() {
@@ -23,19 +24,52 @@ export default function LoginPage() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [providersLoaded, setProvidersLoaded] = useState(false);
+  const [showCredentialsAuth, setShowCredentialsAuth] = useState(false);
   const [showGoogleAuth, setShowGoogleAuth] = useState(false);
+  const [showOidcAuth, setShowOidcAuth] = useState(false);
+  const [oidcDisplayName, setOidcDisplayName] = useState('OIDC Provider');
+  const [oidcIconUrl, setOidcIconUrl] = useState<string | null>(null);
+  const hasTriggeredAutoSsoRef = useRef(false);
 
   // Fetch available providers
   useEffect(() => {
-    fetchAvailableProviders().then((providers) => {
-      setShowGoogleAuth(providers.google);
-    });
+    fetchAvailableProviders()
+      .then((providers) => {
+        setShowCredentialsAuth(providers.credentials.enabled);
+        setShowGoogleAuth(providers.google.enabled);
+        setShowOidcAuth(providers.oidc.enabled);
+        setOidcDisplayName(providers.oidc.display_name || 'OIDC');
+        setOidcIconUrl(providers.oidc.icon_url || null);
+
+        // When password login is disabled and exactly one SSO is enabled,
+        // skip the login form and start OAuth immediately.
+        if (
+          !providers.credentials.enabled &&
+          providers.isOnlyOneSsoProviderEnabled &&
+          providers.onlyEnabledSsoProvider &&
+          !hasTriggeredAutoSsoRef.current
+        ) {
+          hasTriggeredAutoSsoRef.current = true;
+          signIn(providers.onlyEnabledSsoProvider, {
+            callbackUrl: '/dashboard',
+          });
+        }
+      })
+      .finally(() => {
+        setProvidersLoaded(true);
+      });
   }, []);
+
+  const hasOAuthProvider = showGoogleAuth || showOidcAuth;
 
   // Countdown timer for cooldown
   useEffect(() => {
     if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      const timer = setTimeout(
+        () => setResendCooldown(resendCooldown - 1),
+        1000,
+      );
       return () => clearTimeout(timer);
     }
   }, [resendCooldown]);
@@ -133,117 +167,143 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {showGoogleAuth && (
+        {hasOAuthProvider && (
           <div className="mt-8">
-            <GoogleSignInButton mode="signin" />
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-background text-muted">
-                  {t('orContinueWith')}
-                </span>
-              </div>
+            <div className="space-y-3">
+              {showGoogleAuth && <GoogleSignInButton mode="signin" />}
+              {showOidcAuth && (
+                <OidcSignInButton
+                  mode="signin"
+                  displayName={oidcDisplayName}
+                  iconUrl={oidcIconUrl}
+                />
+              )}
             </div>
+            {showCredentialsAuth && (
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-background text-muted">
+                    {t('orContinueWith')}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        <form className="mt-8 space-y-6 bg-surface border-2 border-primary/20 rounded-2xl p-8 shadow-2xl relative overflow-hidden" onSubmit={handleSubmit}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
-          {resendSuccess && (
-            <div className="bg-primary/20 border-2 border-primary text-primary px-4 py-3 rounded-lg shadow-lg shadow-primary/20 relative">
-              {t('emailSent')} {t('checkInbox')}
+        {providersLoaded && showCredentialsAuth && (
+          <form
+            className="mt-8 space-y-6 bg-surface border-2 border-primary/20 rounded-2xl p-8 shadow-2xl relative overflow-hidden"
+            hidden={!showCredentialsAuth}
+            aria-hidden={!showCredentialsAuth}
+            onSubmit={handleSubmit}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+            {resendSuccess && (
+              <div className="bg-primary/20 border-2 border-primary text-primary px-4 py-3 rounded-lg shadow-lg shadow-primary/20 relative">
+                {t('emailSent')} {t('checkInbox')}
+              </div>
+            )}
+            {error && (
+              <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded-lg shadow-lg shadow-warning/20 relative">
+                <p>{error}</p>
+                {isUnverified && !resendSuccess && (
+                  <div className="mt-2">
+                    {resendCooldown > 0 ? (
+                      <p className="text-sm">
+                        {t('resendCooldown', { seconds: resendCooldown })}
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resendLoading}
+                        className="text-sm font-medium underline hover:no-underline disabled:opacity-50"
+                      >
+                        {resendLoading
+                          ? tCommon('loading')
+                          : t('resendVerification')}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="rounded-md space-y-4 relative">
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-muted mb-2"
+                >
+                  {t('emailAddress')}
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none rounded-lg relative block w-full px-4 py-3 border-2 border-border placeholder-muted text-foreground bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-muted mb-2"
+                >
+                  {t('password')}
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none rounded-lg relative block w-full px-4 py-3 border-2 border-border placeholder-muted text-foreground bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
-          )}
-          {error && (
-            <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded-lg shadow-lg shadow-warning/20 relative">
-              <p>{error}</p>
-              {isUnverified && !resendSuccess && (
-                <div className="mt-2">
-                  {resendCooldown > 0 ? (
-                    <p className="text-sm">
-                      {t('resendCooldown', { seconds: resendCooldown })}
-                    </p>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleResendVerification}
-                      disabled={resendLoading}
-                      className="text-sm font-medium underline hover:no-underline disabled:opacity-50"
-                    >
-                      {resendLoading ? tCommon('loading') : t('resendVerification')}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          <div className="rounded-md space-y-4 relative">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
-                {t('emailAddress')}
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-4 py-3 border-2 border-border placeholder-muted text-foreground bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-muted mb-2">
-                {t('password')}
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-4 py-3 border-2 border-border placeholder-muted text-foreground bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
 
-          <div className="relative">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-6 border-2 border-transparent text-base font-bold rounded-lg text-black bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-primary/50 hover:scale-105"
-            >
-              {isLoading ? t('signingIn') : t('login')}
-            </button>
-          </div>
+            <div className="relative">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-3 px-6 border-2 border-transparent text-base font-bold rounded-lg text-black bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-primary/50 hover:scale-105"
+              >
+                {isLoading ? t('signingIn') : t('login')}
+              </button>
+            </div>
 
-          <div className="text-center space-y-2">
-            <p className="text-sm text-muted">
-              <Link
-                href="/forgot-password"
-                className="font-medium text-primary hover:text-primary-dark transition-colors"
-              >
-                {t('forgotPassword')}
-              </Link>
-            </p>
-            <p className="text-sm text-muted">
-              {t('dontHaveAccount')}{' '}
-              <Link
-                href="/register"
-                className="font-medium text-primary hover:text-primary-dark transition-colors"
-              >
-                {t('register')}
-              </Link>
-            </p>
-          </div>
-        </form>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted">
+                <Link
+                  href="/forgot-password"
+                  className="font-medium text-primary hover:text-primary-dark transition-colors"
+                >
+                  {t('forgotPassword')}
+                </Link>
+              </p>
+              <p className="text-sm text-muted">
+                {t('dontHaveAccount')}{' '}
+                <Link
+                  href="/register"
+                  className="font-medium text-primary hover:text-primary-dark transition-colors"
+                >
+                  {t('register')}
+                </Link>
+              </p>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
