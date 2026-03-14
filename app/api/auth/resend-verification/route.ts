@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { resendVerificationSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { handleApiError, parseRequestBody, normalizeEmail, withLogging } from '@/lib/api-utils';
 import { getAppUrl } from '@/lib/env';
+import { generateToken, hashToken } from '@/lib/token-hash';
 
 const TOKEN_EXPIRY_HOURS = 24;
 const RESEND_COOLDOWN_MINUTES = 2;
-
-function generateVerificationToken(): string {
-  return randomBytes(32).toString('hex');
-}
 
 export const POST = withLogging(async function POST(request: Request) {
   // Check rate limit
@@ -76,21 +72,22 @@ export const POST = withLogging(async function POST(request: Request) {
     }
 
     // Generate new token
-    const verifyToken = generateVerificationToken();
+    const rawToken = generateToken();
+    const hashedToken = hashToken(rawToken);
     const verifyExpires = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
 
-    // Update user with new token
+    // Update user with hashed token
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        emailVerifyToken: verifyToken,
+        emailVerifyToken: hashedToken,
         emailVerifyExpires: verifyExpires,
         emailVerifySentAt: new Date(),
       },
     });
 
-    // Send verification email
-    const verificationUrl = `${getAppUrl()}/verify-email?token=${verifyToken}`;
+    // Send verification email with raw token
+    const verificationUrl = `${getAppUrl()}/verify-email?token=${rawToken}`;
     const { subject, html, text } = await emailTemplates.accountVerification(verificationUrl);
 
     await sendEmail({

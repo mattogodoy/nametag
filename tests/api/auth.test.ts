@@ -287,6 +287,37 @@ describe('Auth API', () => {
       expect(mocks.userCreate).not.toHaveBeenCalled();
     });
 
+    it('should store a hashed verification token, not the raw token', async () => {
+      mocks.userFindUnique.mockResolvedValue(null);
+      mocks.userCreate.mockResolvedValue({
+        id: 'user-123',
+        email: 'test@example.com',
+        name: 'Test',
+      });
+
+      const request = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'test@example.com',
+          password: 'ValidPassword123!',
+          name: 'Test',
+        }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await register(request);
+
+      const createCall = mocks.userCreate.mock.calls[0][0];
+      const storedToken = createCall.data.emailVerifyToken;
+      // Token should be a 64-char hex string (SHA-256 output)
+      expect(storedToken).toMatch(/^[a-f0-9]{64}$/);
+      // The email should contain the raw token, not the hash
+      const emailCall = mocks.sendEmail.mock.calls[0];
+      const emailBody = JSON.stringify(emailCall);
+      // The stored token should NOT appear in the email (email has the raw token)
+      expect(emailBody).not.toContain(storedToken);
+    });
+
     describe('Self-Hosted Mode (email verification disabled)', () => {
       beforeEach(() => {
         // Disable email verification for self-hosted mode

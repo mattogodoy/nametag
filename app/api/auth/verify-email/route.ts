@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { hashToken } from '@/lib/token-hash';
 
 export const POST = withLogging(async function POST(request: Request) {
   try {
@@ -14,9 +15,12 @@ export const POST = withLogging(async function POST(request: Request) {
       );
     }
 
+    // Hash the incoming token to compare against stored hash
+    const hashedToken = hashToken(token);
+
     // Find user with this token
     const user = await prisma.user.findUnique({
-      where: { emailVerifyToken: token },
+      where: { emailVerifyToken: hashedToken },
     });
 
     if (!user) {
