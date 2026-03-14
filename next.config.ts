@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
       },
       {
         key: 'Permissions-Policy',
-        value: 'camera=(), microphone=(), geolocation=()', // Disable unnecessary browser features
+        value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()', // Disable unnecessary browser features
       },
       {
         key: 'X-XSS-Protection',
