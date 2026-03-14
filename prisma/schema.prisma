@@ -747,3 +747,13 @@ model DuplicateDismissal {
   @@index([userId])
   @@map("duplicate_dismissals")
 }
+
+// Stripe webhook idempotency – prevents duplicate event processing
+model StripeEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+  @@map("stripe_events")
+}
