@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { isValidImageBuffer, processPhoto, savePhotoFromBuffer } from '@/lib/photo-storage';
+import { isValidImageBuffer, processPhoto, savePhotoFromBuffer, resetPhotoStorageCache } from '@/lib/photo-storage';
 
 // Helper: create a minimal valid JPEG buffer (magic bytes + padding)
 function makeJpegBuffer(size = 64): Buffer {
@@ -214,10 +214,12 @@ describe('savePhotoFromBuffer', () => {
     originalEnv = process.env.PHOTO_STORAGE_PATH;
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'nametag-test-'));
     process.env.PHOTO_STORAGE_PATH = tmpDir;
+    resetPhotoStorageCache();
   });
 
   afterEach(async () => {
     process.env.PHOTO_STORAGE_PATH = originalEnv;
+    resetPhotoStorageCache();
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 

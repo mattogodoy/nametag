@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { constructWebhookEvent } from '@/lib/billing/stripe';
 import {
   sendSubscriptionCreatedEmail,
@@ -55,6 +56,19 @@ export const POST = withLogging(async function POST(request: Request) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     logger.error({ err: err instanceof Error ? err : new Error(String(err)) }, 'Webhook signature verification failed');
     return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
+  }
+
+  // Idempotency: skip duplicate events using unique constraint
+  try {
+    await prisma.stripeEvent.create({
+      data: { eventId: event.id },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      logger.info({ eventId: event.id }, 'Skipping duplicate Stripe event');
+      return NextResponse.json({ received: true });
+    }
+    throw error;
   }
 
   try {

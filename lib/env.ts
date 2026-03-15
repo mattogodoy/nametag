@@ -37,6 +37,9 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+  // Stripe - Only required in SaaS mode
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+
   // Cron
   CRON_SECRET: z.string().min(16, 'CRON_SECRET must be at least 16 characters'),
 
@@ -75,7 +78,7 @@ export type Env = z.infer<typeof envSchema>;
  * Validates environment variables and returns typed env object
  * Throws an error with details if validation fails
  */
-function validateEnv(): Env {
+export function validateEnv(): Env {
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {
@@ -129,12 +132,13 @@ function validateEnv(): Env {
     if (!result.data.EMAIL_DOMAIN) missing.push('EMAIL_DOMAIN');
     if (!result.data.GOOGLE_CLIENT_ID) missing.push('GOOGLE_CLIENT_ID');
     if (!result.data.GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
+    if (!result.data.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');
 
     if (missing.length > 0) {
       console.error('\n❌ Invalid environment variables:\n');
       console.error(`  - The following are required when SAAS_MODE is enabled: ${missing.join(', ')}`);
       console.error('\nPlease check your .env file.\n');
-      throw new Error('Invalid environment configuration');
+      throw new Error(`Invalid environment configuration: missing ${missing.join(', ')}`);
     }
   }
 

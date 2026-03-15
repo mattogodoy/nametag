@@ -1,15 +1,11 @@
-import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { updateProfileSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth, normalizeEmail } from '@/lib/api-utils';
 import { getAppUrl } from '@/lib/env';
+import { generateToken, hashToken } from '@/lib/token-hash';
 
 const TOKEN_EXPIRY_HOURS = 24;
-
-function generateVerificationToken(): string {
-  return randomBytes(32).toString('hex');
-}
 
 // GET /api/user/profile - Get the current user's profile
 export const GET = withAuth(async (_request, session) => {
@@ -76,7 +72,8 @@ export const PUT = withAuth(async (request, session) => {
 
     if (emailChanged) {
       // Generate new verification token
-      const verifyToken = generateVerificationToken();
+      const rawToken = generateToken();
+      const hashedToken = hashToken(rawToken);
       const verifyExpires = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
 
       // Update user with new email and require verification
@@ -88,14 +85,14 @@ export const PUT = withAuth(async (request, session) => {
           nickname: nickname || null,
           email,
           emailVerified: false,
-          emailVerifyToken: verifyToken,
+          emailVerifyToken: hashedToken,
           emailVerifyExpires: verifyExpires,
           emailVerifySentAt: new Date(),
         },
       });
 
-      // Send verification email to new address
-      const verificationUrl = `${getAppUrl()}/verify-email?token=${verifyToken}`;
+      // Send verification email to new address with raw token
+      const verificationUrl = `${getAppUrl()}/verify-email?token=${rawToken}`;
       const { subject, html, text } = await emailTemplates.accountVerification(verificationUrl);
 
       await sendEmail({

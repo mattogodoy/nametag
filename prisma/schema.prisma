@@ -28,7 +28,9 @@ model User {
   passwordResetToken   String?   @unique
   passwordResetExpires DateTime?
   passwordResetSentAt  DateTime?
-  lastLoginAt        DateTime?
+  lastLoginAt          DateTime?
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
 
   photo              String?
 
@@ -744,4 +746,14 @@ model DuplicateDismissal {
   @@unique([userId, personAId, personBId])
   @@index([userId])
   @@map("duplicate_dismissals")
+}
+
+// Stripe webhook idempotency – prevents duplicate event processing
+model StripeEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+  @@map("stripe_events")
 }

@@ -55,15 +55,17 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        // Check if the error is due to unverified email
+        // Check if the error is due to unverified email or locked account
         const checkRes = await fetch('/api/auth/check-verification', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
         });
-        const { verified } = await checkRes.json();
+        const { verified, locked } = await checkRes.json();
 
-        if (!verified) {
+        if (locked) {
+          setError(tErrors('auth.accountLocked'));
+        } else if (!verified) {
           setIsUnverified(true);
           setError(tErrors('auth.emailNotVerified'));
         } else {

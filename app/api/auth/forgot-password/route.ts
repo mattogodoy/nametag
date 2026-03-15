@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { forgotPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { handleApiError, parseRequestBody, normalizeEmail, withLogging } from '@/lib/api-utils';
 import { getAppUrl } from '@/lib/env';
+import { generateToken, hashToken } from '@/lib/token-hash';
+import { validateOrigin } from '@/lib/csrf';
 
 const TOKEN_EXPIRY_HOURS = 1;
 const RESEND_COOLDOWN_MINUTES = 2;
 
-function generateResetToken(): string {
-  return randomBytes(32).toString('hex');
-}
-
 export const POST = withLogging(async function POST(request: Request) {
+  if (!validateOrigin(request)) {
+    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
+  }
+
   // Check rate limit
   const rateLimitResponse = checkRateLimit(request, 'forgotPassword');
   if (rateLimitResponse) {
@@ -67,21 +68,22 @@ export const POST = withLogging(async function POST(request: Request) {
     }
 
     // Generate new token
-    const resetToken = generateResetToken();
+    const rawToken = generateToken();
+    const hashedToken = hashToken(rawToken);
     const resetExpires = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
 
-    // Update user with new token
+    // Update user with hashed token
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        passwordResetToken: resetToken,
+        passwordResetToken: hashedToken,
         passwordResetExpires: resetExpires,
         passwordResetSentAt: new Date(),
       },
     });
 
-    // Send reset email
-    const resetUrl = `${getAppUrl()}/reset-password?token=${resetToken}`;
+    // Send reset email with raw token
+    const resetUrl = `${getAppUrl()}/reset-password?token=${rawToken}`;
     const { subject, html, text } = await emailTemplates.passwordReset(resetUrl);
 
     await sendEmail({

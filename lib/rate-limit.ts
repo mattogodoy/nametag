@@ -69,6 +69,11 @@ export const rateLimitConfigs = {
     maxAttempts: 5,
     windowMs: 15 * 60 * 1000,
   },
+  // Verify email: 10 attempts per 15 minutes
+  verifyEmail: {
+    maxAttempts: 10,
+    windowMs: 15 * 60 * 1000,
+  },
 } as const;
 
 export type RateLimitType = keyof typeof rateLimitConfigs;

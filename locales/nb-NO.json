@@ -1621,5 +1621,11 @@
     "today": "I dag",
     "yearUnknown": "År ukjent",
     "yearUnknownTooltip": "Når dette er avkrysset, lagres kun måneden og dagen. Året ignoreres."
+  },
+  "auth": {
+    "accountLocked": {
+      "subject": "Kontoen er midlertidig låst",
+      "body": "Kontoen din har blitt midlertidig låst på grunn av for mange mislykkede påloggingsforsøk. Den vil automatisk bli låst opp om 30 minutter. Hvis du ikke forsøkte å logge inn, vennligst tilbakestill passordet ditt umiddelbart."
+    }
   }
 }

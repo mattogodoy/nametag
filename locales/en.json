@@ -1621,5 +1621,11 @@
     "today": "Today",
     "yearUnknown": "Year unknown",
     "yearUnknownTooltip": "When checked, only the month and day will be saved. The year will be ignored."
+  },
+  "auth": {
+    "accountLocked": {
+      "subject": "Account temporarily locked",
+      "body": "Your account has been temporarily locked due to too many failed login attempts. It will be automatically unlocked in 30 minutes. If you did not attempt to log in, please reset your password immediately."
+    }
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Session } from 'next-auth';
 import { auth } from './auth';
 import { logger, createModuleLogger } from './logger';
+import { validateOrigin } from '@/lib/csrf';
 
 const httpLog = createModuleLogger('http');
 
@@ -320,6 +321,10 @@ export function withAuth(handler: AuthenticatedHandler) {
     request: Request,
     context?: RouteContext
   ): Promise<Response | NextResponse> => {
+    if (!validateOrigin(request)) {
+      return apiResponse.forbidden('Invalid request origin');
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {

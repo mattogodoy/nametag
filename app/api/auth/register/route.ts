@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import * as bcrypt from 'bcryptjs';
-import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { generateToken, hashToken } from '@/lib/token-hash';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { registerSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit-redis';
@@ -11,14 +11,15 @@ import { createFreeSubscription } from '@/lib/billing';
 import { createPreloadedRelationshipTypes } from '@/lib/relationship-types';
 import { isFeatureEnabled } from '@/lib/features';
 import { getAppUrl } from '@/lib/env';
+import { validateOrigin } from '@/lib/csrf';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
-function generateVerificationToken(): string {
-  return randomBytes(32).toString('hex');
-}
-
 export const POST = withLogging(async function POST(request: Request) {
+  if (!validateOrigin(request)) {
+    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
+  }
+
   // Check rate limit (async with Redis)
   const rateLimitResponse = await checkRateLimit(request, 'register');
   if (rateLimitResponse) {
@@ -68,7 +69,8 @@ export const POST = withLogging(async function POST(request: Request) {
     const requireEmailVerification = isFeatureEnabled('emailVerification');
 
     // Generate verification token only if verification is required
-    const verifyToken = requireEmailVerification ? generateVerificationToken() : null;
+    const rawToken = requireEmailVerification ? generateToken() : null;
+    const hashedToken = rawToken ? hashToken(rawToken) : null;
     const verifyExpires = requireEmailVerification
       ? new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
       : null;
@@ -82,7 +84,7 @@ export const POST = withLogging(async function POST(request: Request) {
         surname: surname || null,
         nickname: nickname || null,
         emailVerified: !requireEmailVerification, // Auto-verify in self-hosted mode
-        emailVerifyToken: verifyToken,
+        emailVerifyToken: hashedToken,
         emailVerifyExpires: verifyExpires,
         emailVerifySentAt: requireEmailVerification ? new Date() : null,
       },
@@ -94,9 +96,9 @@ export const POST = withLogging(async function POST(request: Request) {
     // Create pre-loaded relationship types for new user
     await createPreloadedRelationshipTypes(prisma, user.id);
 
-    // Send verification email only in SaaS mode
+    // Send verification email only in SaaS mode (use raw token in URL)
     if (requireEmailVerification) {
-      const verificationUrl = `${getAppUrl()}/verify-email?token=${verifyToken}`;
+      const verificationUrl = `${getAppUrl()}/verify-email?token=${rawToken}`;
       const { subject, html, text } = await emailTemplates.accountVerification(verificationUrl);
 
       await sendEmail({

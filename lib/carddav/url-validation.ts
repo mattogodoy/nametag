@@ -12,6 +12,16 @@
 import dns from 'dns';
 import { isSaasMode } from '@/lib/features';
 
+const DNS_TIMEOUT_MS = 5000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 /**
  * Validate a server URL to prevent SSRF attacks.
  * Rejects non-HTTP protocols and malformed URLs in all modes.
@@ -62,8 +72,8 @@ export async function validateServerUrl(url: string): Promise<void> {
     if (!isRawIP) {
       // Resolve both IPv4 (A) and IPv6 (AAAA) records to prevent SSRF via IPv6
       const [v4Result, v6Result] = await Promise.allSettled([
-        dns.promises.resolve4(cleanHostname),
-        dns.promises.resolve6(cleanHostname),
+        withTimeout(dns.promises.resolve4(cleanHostname), DNS_TIMEOUT_MS, 'DNS resolution timeout'),
+        withTimeout(dns.promises.resolve6(cleanHostname), DNS_TIMEOUT_MS, 'DNS resolution timeout'),
       ]);
 
       const allAddresses: string[] = [];

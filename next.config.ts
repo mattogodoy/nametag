@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
       },
       {
         key: 'Permissions-Policy',
-        value: 'camera=(), microphone=(), geolocation=()', // Disable unnecessary browser features
+        value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()', // Disable unnecessary browser features
       },
       {
         key: 'X-XSS-Protection',
@@ -60,11 +60,15 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // TODO: Remove unsafe-inline and unsafe-eval in production
+              // Next.js requires 'unsafe-inline' for hydration scripts.
+              // Turbopack dev server also requires 'unsafe-eval' for HMR — only added in development.
+              // Nonce-based CSP is the proper long-term solution.
+              // See: https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
+              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https:",
-              "connect-src 'self'",
+              `connect-src 'self'${process.env.NODE_ENV === 'development' ? ' ws://localhost:*' : ''}`,
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

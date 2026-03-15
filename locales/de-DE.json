@@ -1621,5 +1621,11 @@
     "today": "Heute",
     "yearUnknown": "Jahr unbekannt",
     "yearUnknownTooltip": "Wenn aktiviert, werden nur der Monat und der Tag gespeichert. Das Jahr wird ignoriert."
+  },
+  "auth": {
+    "accountLocked": {
+      "subject": "Konto vorübergehend gesperrt",
+      "body": "Ihr Konto wurde aufgrund zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt. Es wird in 30 Minuten automatisch entsperrt. Wenn Sie nicht versucht haben, sich anzumelden, setzen Sie bitte sofort Ihr Passwort zurück."
+    }
   }
 }

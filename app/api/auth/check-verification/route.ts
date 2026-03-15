@@ -18,15 +18,16 @@ export const POST = withLogging(async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { emailVerified: true },
+      select: { emailVerified: true, lockedUntil: true },
     });
 
     if (!user) {
       // Don't reveal whether user exists
-      return NextResponse.json({ verified: true });
+      return NextResponse.json({ verified: true, locked: false });
     }
 
-    return NextResponse.json({ verified: user.emailVerified });
+    const locked = !!(user.lockedUntil && user.lockedUntil > new Date());
+    return NextResponse.json({ verified: user.emailVerified, locked });
   } catch (error) {
     logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Check verification error');
     return NextResponse.json(
