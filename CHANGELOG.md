@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.38.0](https://github.com/mattogodoy/nametag/compare/v0.37.1...v0.38.0) (2026-03-15)
+
+
+### Features
+
+* add account lockout after 10 failed login attempts ([0a765f1](https://github.com/mattogodoy/nametag/commit/0a765f125d62e3c91f2ec4a640e902e7771b908d))
+* add account lockout fields to User model ([975669c](https://github.com/mattogodoy/nametag/commit/975669c6f11601d49b30d3d1b7dee8f6488e652b))
+* add StripeEvent model for webhook idempotency ([670d7a8](https://github.com/mattogodoy/nametag/commit/670d7a82df9914a8a7cc3239326daf4fc406f5eb))
+* send email notification on account lockout with i18n ([16ef3e0](https://github.com/mattogodoy/nametag/commit/16ef3e01532a160263aa065456205db5211f774f))
+
+
+### Bug Fixes
+
+* add 5-second DNS resolution timeout to SSRF checks ([0a965de](https://github.com/mattogodoy/nametag/commit/0a965de0dfdee2d0c3831cc94105095f11205eb9))
+* add CSRF origin validation to state-changing API endpoints ([eab27a9](https://github.com/mattogodoy/nametag/commit/eab27a90f9838c5b0eaa7bd18758803208c2e64a))
+* add CSRF validation to unauthenticated auth endpoints ([93bfcdb](https://github.com/mattogodoy/nametag/commit/93bfcdbb08dd98de9ef4346f429ce9381e06c68c))
+* add idempotency to Stripe webhook handler using unique constraint ([77329de](https://github.com/mattogodoy/nametag/commit/77329dee4990a1f82d78c59ba5349e472242ac05))
+* add missing lockout fields to locale test mock objects ([91b1a23](https://github.com/mattogodoy/nametag/commit/91b1a236c70f9ec67fc36bdf9d86b8c1ebb69ea6))
+* add rate limiting to email verification endpoint ([1c92410](https://github.com/mattogodoy/nametag/commit/1c9241013391b127578836f858854b6bc25792f2))
+* add SSRF protection to photo URL downloads ([41b2645](https://github.com/mattogodoy/nametag/commit/41b26452a040b06eb424a45033360757ca9e19f8))
+* expand Permissions-Policy header to restrict additional browser features ([377ddcc](https://github.com/mattogodoy/nametag/commit/377ddcc252c0111f81fe376eff81a8cfbf403a3c))
+* hash email verification tokens before storing in database ([5e5ce3b](https://github.com/mattogodoy/nametag/commit/5e5ce3b4b3646d6ea57e6b94c1167d0637acafa5))
+* hash password reset tokens before storing in database ([f115463](https://github.com/mattogodoy/nametag/commit/f1154636ac22febb0cf44dc41e3cd60aff44a450))
+* make CSP environment-aware — unsafe-eval only in development ([d237a72](https://github.com/mattogodoy/nametag/commit/d237a720c7c4382eccf4f1a58a30a4d8f3ae3b66))
+* remove unsafe-eval from CSP script-src directive ([54c8e3a](https://github.com/mattogodoy/nametag/commit/54c8e3ad8936953d0cb67de999a2678e5217779f))
+* remove unsafe-inline from CSP script-src directive ([3c2fd16](https://github.com/mattogodoy/nametag/commit/3c2fd164f3bb297a7f2e8faf384180e09802a293))
+* require STRIPE_WEBHOOK_SECRET in SaaS mode env validation ([fb10653](https://github.com/mattogodoy/nametag/commit/fb1065362bc260325abea78f7d1231b66ac1fc7b))
+* resolve TypeScript error in csrf.ts missing return statement ([938f6aa](https://github.com/mattogodoy/nametag/commit/938f6aa5ef3ab75f0e0f4b460ae23eb90281fa11))
+* restore unsafe-inline in CSP — required for Next.js hydration ([e22d046](https://github.com/mattogodoy/nametag/commit/e22d0463bedd3f8af3483be9b0a8b256fd6a6ee5))
+* update lockout email test to use objectContaining for flexibility ([015f9c4](https://github.com/mattogodoy/nametag/commit/015f9c45de366a3c12341e4ec50b8f765fbe04e0))
+* validate locale in lockout email, surface account-locked error to user ([68cd6d8](https://github.com/mattogodoy/nametag/commit/68cd6d8c999f0499e28d8ddf1a0edbf215dfd137))
+* validate PHOTO_STORAGE_PATH and prevent path traversal ([e2280da](https://github.com/mattogodoy/nametag/commit/e2280da508e1484a1c49f11296886c2335d48090))
+
 ## [0.37.1](https://github.com/mattogodoy/nametag/compare/v0.37.0...v0.37.1) (2026-03-13)
 
 
