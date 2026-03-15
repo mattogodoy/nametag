@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.38.2](https://github.com/mattogodoy/nametag/compare/v0.38.1...v0.38.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* remove duplicate auth key in locale files causing missing translations ([e1a858f](https://github.com/mattogodoy/nametag/commit/e1a858fe28e9c5320bcd5bd256ee1cdd9ed9899f))
+
 ## [0.38.1](https://github.com/mattogodoy/nametag/compare/v0.38.0...v0.38.1) (2026-03-15)
 
 
