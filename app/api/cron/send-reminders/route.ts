@@ -8,6 +8,8 @@ import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
 import { parseAsLocalDate } from '@/lib/date-format';
+import { getTranslationsForLocale, type SupportedLocale } from '@/lib/i18n-utils';
+import { getDateDisplayTitle } from '@/lib/important-date-types';
 
 const log = createModuleLogger('cron');
 
@@ -90,7 +92,7 @@ export const GET = withLogging(async function GET(request: Request) {
       if (shouldSend) {
         const { person } = importantDate;
         const userEmail = person.user.email;
-        const userLanguage = (person.user.language as 'en' | 'es-ES') || 'en';
+        const userLanguage = (person.user.language as SupportedLocale) || 'en';
         const personName = formatFullName(person, person.user.nameOrder);
         const formattedDate = formatDateForEmail(
           importantDate.date,
@@ -107,9 +109,11 @@ export const GET = withLogging(async function GET(request: Request) {
 
         const unsubscribeUrl = `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`;
 
+        const tDates = await getTranslationsForLocale(userLanguage, 'people.form.importantDates');
+        const dateTitle = getDateDisplayTitle(importantDate, tDates);
         const template = await emailTemplates.importantDateReminder(
           personName,
-          importantDate.title,
+          dateTitle,
           formattedDate,
           unsubscribeUrl,
           userLanguage
@@ -125,7 +129,7 @@ export const GET = withLogging(async function GET(request: Request) {
           },
           type: 'important_date',
           entityId: importantDate.id,
-          logMeta: { personName, dateTitle: importantDate.title, userEmail },
+          logMeta: { personName, dateTitle, userEmail },
         });
       }
     }
@@ -153,7 +157,7 @@ export const GET = withLogging(async function GET(request: Request) {
       const shouldSend = shouldSendContactReminder(person, today);
 
       if (shouldSend) {
-        const userLanguage = (person.user.language as 'en' | 'es-ES') || 'en';
+        const userLanguage = (person.user.language as SupportedLocale) || 'en';
         const personName = formatFullName(person, person.user.nameOrder);
         const lastContactFormatted = person.lastContact
           ? formatDateForEmail(person.lastContact, person.user.dateFormat, userLanguage)

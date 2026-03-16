@@ -1,6 +1,9 @@
 import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
 import { formatFullName } from './nameUtils';
+import { getTranslationsForLocale } from './i18n-utils';
+import { getDateDisplayTitle } from './important-date-types';
+import { getUserLocale } from './locale';
 
 const TOKEN_EXPIRY_DAYS = 90;
 
@@ -185,7 +188,9 @@ export async function getUnsubscribeDetails(
 
     if (importantDate) {
       const personName = formatFullName(importantDate.person, nameOrder);
-      entityName = `${personName}'s ${importantDate.title}`;
+      const userLocale = await getUserLocale(unsubToken.userId);
+      const tDates = await getTranslationsForLocale(userLocale, 'people.form.importantDates');
+      entityName = `${personName}'s ${getDateDisplayTitle(importantDate, tDates)}`;
     }
   } else if (unsubToken.reminderType === 'CONTACT') {
     const person = await prisma.person.findFirst({

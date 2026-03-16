@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { formatFullName } from '@/lib/nameUtils';
 import { parseAsLocalDate } from '@/lib/date-format';
+import { getTranslationsForLocale } from '@/lib/i18n-utils';
+import { getDateDisplayTitle } from '@/lib/important-date-types';
+import { getUserLocale } from '@/lib/locale';
 
 export interface UpcomingEvent {
   id: string;
@@ -102,7 +105,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
   // Fetch user's nameOrder preference
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { nameOrder: true },
+    select: { nameOrder: true, language: true },
   });
   const nameOrder = user?.nameOrder;
 
@@ -146,6 +149,10 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
 
   const upcomingEvents: UpcomingEvent[] = [];
 
+  // Get user locale and translations for date titles
+  const userLocale = await getUserLocale(userId);
+  const tDates = await getTranslationsForLocale(userLocale, 'people.form.importantDates');
+
   // Process important dates
   for (const importantDate of importantDates) {
     let eventDate: Date;
@@ -172,7 +179,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         personId: importantDate.person.id,
         personName: formatFullName(importantDate.person, nameOrder),
         type: 'important_date',
-        title: importantDate.title,
+        title: getDateDisplayTitle(importantDate, tDates),
         titleKey: null,
         date: eventDate,
         daysUntil,

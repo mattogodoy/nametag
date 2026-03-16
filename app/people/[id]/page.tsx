@@ -15,6 +15,7 @@ import { formatFullName, formatGraphName } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PersonAvatar from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
+import { getDateDisplayTitle } from '@/lib/important-date-types';
 
 function isSafeUrl(url: string): boolean {
   try {
@@ -635,7 +636,7 @@ export default async function PersonDetailsPage({
                         >
                           <div className="flex-1">
                             <div className="font-medium text-foreground text-sm">
-                              {date.title}
+                              {getDateDisplayTitle(date, (key: string) => t(`form.importantDates.${key}`))}
                             </div>
                             <div className="text-xs text-muted">
                               {isYearUnknown
