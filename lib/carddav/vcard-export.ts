@@ -75,22 +75,41 @@ export function personToVCard(
     lines.push(buildV3Property('NICKNAME', {}, person.nickname));
   }
 
-  // BDAY (Birthday) - get from ImportantDates
-  const birthday = person.importantDates.find(
-    (d) => d.title.toLowerCase() === 'birthday'
-  );
+  let itemCounter = 1;
+
+  // BDAY (Birthday) - get from ImportantDates by type
+  const birthday = person.importantDates.find((d) => d.type === 'birthday');
   if (birthday) {
     lines.push(`BDAY:${formatVCardV3Date(birthday.date)}`);
   }
 
-  // Special dates - use BOTH X-ABDATE and X-ANNIVERSARY for maximum compatibility
+  // ANNIVERSARY - get from ImportantDates by type
+  const anniversary = person.importantDates.find((d) => d.type === 'anniversary');
+  if (anniversary) {
+    const dateValue = formatVCardV3Date(anniversary.date);
+    lines.push(`item${itemCounter}.X-ABDATE;VALUE=date-and-or-time:${dateValue}`);
+    lines.push(`item${itemCounter}.X-ABLabel:Anniversary`);
+    lines.push(`X-ANNIVERSARY:${dateValue}`);
+    itemCounter++;
+  }
+
+  // Map predefined types without vCard mapping to English display names for export
+  const EXPORT_LABELS: Record<string, string> = {
+    nameday: 'Name day',
+    memorial: 'Memorial',
+  };
+
+  // Other dates - everything except birthday and anniversary
   const otherDates = person.importantDates.filter(
-    (d) => d.title.toLowerCase() !== 'birthday'
+    (d) => d.type !== 'birthday' && d.type !== 'anniversary'
   );
 
-  let itemCounter = 1;
   otherDates.forEach((date) => {
-    const label = escapeVCardText(date.title);
+    // For predefined types: use English display name from EXPORT_LABELS
+    // For custom dates: use the title field
+    const label = escapeVCardText(
+      (date.type && EXPORT_LABELS[date.type]) || date.title
+    );
     const dateValue = formatVCardV3Date(date.date);
 
     // X-ABDATE format (Apple)
