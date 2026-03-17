@@ -202,9 +202,9 @@ model ImportantDate {
   // Relations
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
-  // NOTE: Partial unique index on (personId, type) WHERE type IS NOT NULL AND deletedAt IS NULL
-  // is managed via raw SQL in migration — Prisma doesn't support partial indexes natively.
-  // Do NOT add @@unique here — it would create a full constraint and cause migration drift.
+  // NOTE: Uniqueness of (personId, type) for predefined types is enforced at the
+  // application layer (POST/PUT/restore endpoints). A partial unique index is not used
+  // because Prisma doesn't support partial indexes and would generate drift migrations.
   @@index([personId])
   @@index([personId, date]) // For sorting by date
   @@index([reminderEnabled, date]) // For querying due reminders
