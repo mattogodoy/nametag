@@ -154,7 +154,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       log.warn({ code }, 'Auth warning');
     },
     debug(code, metadata) {
-      log.debug({ code, ...metadata }, 'Auth debug');
+      log.debug({ code, metadata }, 'Auth debug');
     },
   },
 
