@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import PillSelector from './PillSelector';
 
 interface GraphNode extends d3.SimulationNodeDatum {
@@ -77,6 +77,7 @@ export default function UnifiedNetworkGraph({
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [clusteringEnabled, setClusteringEnabled] = useState(enableGroupClustering);
+  const capitalizeType = useLocale().startsWith('de');
 
   // Detect mobile screen size
   useEffect(() => {
@@ -290,18 +291,17 @@ export default function UnifiedNetworkGraph({
         const sourceName = d.sourceLabel || '';
         const targetName = d.targetLabel || '';
 
-        const typeLower = d.type.toLowerCase();
+        const typeStr = capitalizeType ? d.type.charAt(0).toUpperCase() + d.type.slice(1) : d.type.toLowerCase();
         let label: string;
         if (sourceName === youLabel || sourceName === 'You') {
-          label = tPeople('graphEdgeLabelFromYou', { type: typeLower });
+          label = tPeople('graphEdgeLabelFromYou', { type: typeStr });
         } else if (targetName === youLabel || targetName === 'You') {
-          label = tPeople('graphEdgeLabelToYou', { type: typeLower });
+          label = tPeople('graphEdgeLabelToYou', { type: typeStr });
         } else {
-          label = tPeople('graphEdgeLabel', { type: typeLower });
+          label = tPeople('graphEdgeLabel', { type: typeStr });
         }
 
         // Split around the type to bold it
-        const typeStr = typeLower;
         const idx = label.toLowerCase().indexOf(typeStr.toLowerCase());
         if (idx >= 0) {
           const before = label.substring(0, idx);
@@ -506,6 +506,7 @@ export default function UnifiedNetworkGraph({
     linkDistance,
     router,
     tPeople,
+    capitalizeType,
   ]);
 
   useEffect(() => {
