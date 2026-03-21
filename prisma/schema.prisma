@@ -50,6 +50,7 @@ model User {
   cardDavConnection      CardDavConnection?
   cardDavPendingImports  CardDavPendingImport[]
   duplicateDismissals    DuplicateDismissal[]
+  events            Event[]
 
   @@unique([provider, providerAccountId])
   @@map("users")
@@ -109,6 +110,7 @@ model Person {
   cardDavMapping     CardDavMapping?
   dismissalsAsA      DuplicateDismissal[]   @relation("DismissalPersonA")
   dismissalsAsB      DuplicateDismissal[]   @relation("DismissalPersonB")
+  events             Event[]                @relation("EventPeople")
 
   @@index([userId])
   @@index([relationshipToUserId])
@@ -122,6 +124,24 @@ model Person {
   @@index([userId, deletedAt]) // For soft delete filtering
   @@unique([userId, uid])
   @@map("people")
+}
+
+// Event Model - Planned events with linked contacts
+model Event {
+  id                   String   @id @default(cuid())
+  userId               String
+  title                String
+  date                 DateTime
+  lastContactProcessed Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  people Person[] @relation("EventPeople")
+
+  @@index([userId, date])
+  @@map("events")
 }
 
 // Group Model - User-defined categories for organizing people

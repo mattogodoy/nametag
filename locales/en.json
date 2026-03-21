@@ -47,6 +47,7 @@
     "dashboard": "Dashboard",
     "people": "People",
     "groups": "Groups",
+    "events": "Events",
     "relationshipTypes": "Relationship Types",
     "settings": "Settings",
     "search": {
@@ -1632,5 +1633,38 @@
     "today": "Today",
     "yearUnknown": "Year unknown",
     "yearUnknownTooltip": "When checked, only the month and day will be saved. The year will be ignored."
+  },
+  "events": {
+    "title": "Events",
+    "addEvent": "Add Event",
+    "newEvent": "New Event",
+    "editEvent": "Edit Event",
+    "backToEvents": "Back to Events",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "noEvents": "No events yet. Plan something with your contacts!",
+    "noEventsForPerson": "No events planned with this person yet.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this event?",
+    "deleted": "Event deleted",
+    "deleteFailed": "Failed to delete event",
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "e.g. Coffee with friends",
+      "dateTime": "Date & Time",
+      "people": "People",
+      "peoplePlaceholder": "Search contacts...",
+      "titleRequired": "Title is required",
+      "dateRequired": "Date and time are required",
+      "peopleRequired": "Please select at least one person",
+      "saveFailed": "Failed to save event",
+      "saving": "Saving...",
+      "create": "Create Event",
+      "update": "Update Event",
+      "created": "Event created",
+      "updated": "Event updated",
+      "cancel": "Cancel"
+    }
   }
 }

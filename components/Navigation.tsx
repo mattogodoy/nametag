@@ -38,6 +38,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
     { href: '/dashboard', labelKey: 'dashboard' },
     { href: '/people', labelKey: 'people', createHref: '/people/new', createLabelKey: 'people' },
     { href: '/groups', labelKey: 'groups', createHref: '/groups/new', createLabelKey: 'groups' },
+    { href: '/events', labelKey: 'events', createHref: '/events/new', createLabelKey: 'events' },
     { href: '/relationship-types', labelKey: 'relationshipTypes', createHref: '/relationship-types/new', createLabelKey: 'relationshipTypes' },
   ];
 

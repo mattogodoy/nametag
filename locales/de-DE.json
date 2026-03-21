@@ -47,6 +47,7 @@
     "dashboard": "Dashboard",
     "people": "Personen",
     "groups": "Gruppen",
+    "events": "Ereignisse",
     "relationshipTypes": "Beziehungsarten",
     "settings": "Einstellungen",
     "search": {
@@ -1636,5 +1637,38 @@
     "today": "Heute",
     "yearUnknown": "Jahr unbekannt",
     "yearUnknownTooltip": "Wenn aktiviert, werden nur der Monat und der Tag gespeichert. Das Jahr wird ignoriert."
+  },
+  "events": {
+    "title": "Ereignisse",
+    "addEvent": "Ereignis hinzufügen",
+    "newEvent": "Neues Ereignis",
+    "editEvent": "Ereignis bearbeiten",
+    "backToEvents": "Zurück zu Ereignissen",
+    "upcoming": "Bevorstehend",
+    "past": "Vergangen",
+    "noEvents": "Noch keine Ereignisse. Plane etwas mit deinen Kontakten!",
+    "noEventsForPerson": "Noch keine Ereignisse mit dieser Person geplant.",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "confirmDelete": "Möchtest du dieses Ereignis wirklich löschen?",
+    "deleted": "Ereignis gelöscht",
+    "deleteFailed": "Fehler beim Löschen des Ereignisses",
+    "form": {
+      "title": "Titel",
+      "titlePlaceholder": "z.B. Kaffee mit Freunden",
+      "dateTime": "Datum & Uhrzeit",
+      "people": "Personen",
+      "peoplePlaceholder": "Kontakte suchen...",
+      "titleRequired": "Titel ist erforderlich",
+      "dateRequired": "Datum und Uhrzeit sind erforderlich",
+      "peopleRequired": "Bitte wähle mindestens eine Person aus",
+      "saveFailed": "Fehler beim Speichern des Ereignisses",
+      "saving": "Speichern...",
+      "create": "Ereignis erstellen",
+      "update": "Ereignis aktualisieren",
+      "created": "Ereignis erstellt",
+      "updated": "Ereignis aktualisiert",
+      "cancel": "Abbrechen"
+    }
   }
 }

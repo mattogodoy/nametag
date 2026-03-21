@@ -47,6 +47,7 @@
     "dashboard": "Dashbord",
     "people": "Personer",
     "groups": "Grupper",
+    "events": "Hendelser",
     "relationshipTypes": "Relasjonstyper",
     "settings": "Innstillinger",
     "search": {
@@ -1636,5 +1637,38 @@
     "today": "I dag",
     "yearUnknown": "År ukjent",
     "yearUnknownTooltip": "Når dette er avkrysset, lagres kun måneden og dagen. Året ignoreres."
+  },
+  "events": {
+    "title": "Hendelser",
+    "addEvent": "Legg til hendelse",
+    "newEvent": "Ny hendelse",
+    "editEvent": "Rediger hendelse",
+    "backToEvents": "Tilbake til hendelser",
+    "upcoming": "Kommende",
+    "past": "Tidligere",
+    "noEvents": "Ingen hendelser ennå. Planlegg noe med kontaktene dine!",
+    "noEventsForPerson": "Ingen planlagte hendelser med denne personen ennå.",
+    "edit": "Rediger",
+    "delete": "Slett",
+    "confirmDelete": "Er du sikker på at du vil slette denne hendelsen?",
+    "deleted": "Hendelse slettet",
+    "deleteFailed": "Kunne ikke slette hendelsen",
+    "form": {
+      "title": "Tittel",
+      "titlePlaceholder": "f.eks. Kaffe med venner",
+      "dateTime": "Dato og tid",
+      "people": "Personer",
+      "peoplePlaceholder": "Søk etter kontakter...",
+      "titleRequired": "Tittel er påkrevd",
+      "dateRequired": "Dato og tid er påkrevd",
+      "peopleRequired": "Velg minst én person",
+      "saveFailed": "Kunne ikke lagre hendelsen",
+      "saving": "Lagrer...",
+      "create": "Opprett hendelse",
+      "update": "Oppdater hendelse",
+      "created": "Hendelse opprettet",
+      "updated": "Hendelse oppdatert",
+      "cancel": "Avbryt"
+    }
   }
 }

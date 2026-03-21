@@ -47,6 +47,7 @@
     "dashboard": "ダッシュボード",
     "people": "人",
     "groups": "グループ",
+    "events": "イベント",
     "relationshipTypes": "関係の種類",
     "settings": "設定",
     "search": {
@@ -1636,5 +1637,38 @@
     "today": "今日",
     "yearUnknown": "年不明",
     "yearUnknownTooltip": "チェックすると、月と日のみが保存されます。年は無視されます。"
+  },
+  "events": {
+    "title": "イベント",
+    "addEvent": "イベントを追加",
+    "newEvent": "新しいイベント",
+    "editEvent": "イベントを編集",
+    "backToEvents": "イベントに戻る",
+    "upcoming": "予定",
+    "past": "過去",
+    "noEvents": "まだイベントはありません。連絡先と何か計画しましょう！",
+    "noEventsForPerson": "この人との予定はまだありません。",
+    "edit": "編集",
+    "delete": "削除",
+    "confirmDelete": "このイベントを削除してもよろしいですか？",
+    "deleted": "イベントを削除しました",
+    "deleteFailed": "イベントの削除に失敗しました",
+    "form": {
+      "title": "タイトル",
+      "titlePlaceholder": "例：友達とコーヒー",
+      "dateTime": "日時",
+      "people": "人",
+      "peoplePlaceholder": "連絡先を検索...",
+      "titleRequired": "タイトルは必須です",
+      "dateRequired": "日時は必須です",
+      "peopleRequired": "少なくとも1人を選択してください",
+      "saveFailed": "イベントの保存に失敗しました",
+      "saving": "保存中...",
+      "create": "イベントを作成",
+      "update": "イベントを更新",
+      "created": "イベントを作成しました",
+      "updated": "イベントを更新しました",
+      "cancel": "キャンセル"
+    }
   }
 }

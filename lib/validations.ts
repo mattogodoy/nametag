@@ -419,6 +419,20 @@ export const createImportantDateSchema = z.object({
 export const updateImportantDateSchema = createImportantDateSchema;
 
 // ============================================
+// Event schemas
+// ============================================
+
+export const createEventSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  date: z.iso.datetime({ error: 'Invalid datetime' }),
+  personIds: z.array(z.string()).min(1, 'At least one person is required'),
+});
+
+export const updateEventSchema = createEventSchema.partial().extend({
+  personIds: z.array(z.string()).optional(),
+});
+
+// ============================================
 // Helper function for API validation
 // ============================================
 

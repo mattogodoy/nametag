@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import { prisma } from '@/lib/prisma';
+import PersonEventsSection from '@/components/events/PersonEventsSection';
 import UserRelationshipCard from '@/components/UserRelationshipCard';
 import RelationshipManager from '@/components/RelationshipManager';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
@@ -111,7 +112,7 @@ export default async function PersonDetailsPage({
   const dateFormat = user?.dateFormat || 'MDY';
   const nameOrder = user?.nameOrder;
 
-  const [person, allPeople, relationshipTypes, cardDavConnection] = await Promise.all([
+  const [person, allPeople, relationshipTypes, cardDavConnection, personEvents] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -217,6 +218,19 @@ export default async function PersonDetailsPage({
     prisma.cardDavConnection.findUnique({
       where: { userId: session.user.id },
       select: { id: true },
+    }),
+    prisma.event.findMany({
+      where: {
+        userId: session.user.id,
+        people: { some: { id } },
+      },
+      include: {
+        people: {
+          where: { deletedAt: null },
+          select: { id: true, name: true, surname: true, nickname: true, photo: true },
+        },
+      },
+      orderBy: { date: 'asc' },
     }),
   ]);
 
@@ -669,6 +683,13 @@ export default async function PersonDetailsPage({
                   <MarkdownRenderer content={person.notes} />
                 </div>
               )}
+
+              {/* Events Section */}
+              <PersonEventsSection
+                events={personEvents.map((e) => ({ ...e, date: e.date.toISOString() }))}
+                dateFormat={dateFormat as import('@/lib/date-format').DateFormat}
+                nameOrder={nameOrder}
+              />
 
               {/* Relationship Network Section */}
               <div className="border border-border rounded-lg p-4">

@@ -47,6 +47,7 @@
     "dashboard": "Inicio",
     "people": "Personas",
     "groups": "Grupos",
+    "events": "Eventos",
     "relationshipTypes": "Tipos de Relación",
     "settings": "Configuración",
     "search": {
@@ -1636,5 +1637,38 @@
     "today": "Hoy",
     "yearUnknown": "Año desconocido",
     "yearUnknownTooltip": "Cuando está marcado, solo se guardarán el mes y el día. El año será ignorado."
+  },
+  "events": {
+    "title": "Eventos",
+    "addEvent": "Agregar Evento",
+    "newEvent": "Nuevo Evento",
+    "editEvent": "Editar Evento",
+    "backToEvents": "Volver a Eventos",
+    "upcoming": "Próximos",
+    "past": "Pasados",
+    "noEvents": "Aún no hay eventos. ¡Planifica algo con tus contactos!",
+    "noEventsForPerson": "Aún no hay eventos planificados con esta persona.",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "confirmDelete": "¿Estás seguro de que quieres eliminar este evento?",
+    "deleted": "Evento eliminado",
+    "deleteFailed": "Error al eliminar el evento",
+    "form": {
+      "title": "Título",
+      "titlePlaceholder": "ej. Café con amigos",
+      "dateTime": "Fecha y Hora",
+      "people": "Personas",
+      "peoplePlaceholder": "Buscar contactos...",
+      "titleRequired": "El título es obligatorio",
+      "dateRequired": "La fecha y hora son obligatorias",
+      "peopleRequired": "Por favor selecciona al menos una persona",
+      "saveFailed": "Error al guardar el evento",
+      "saving": "Guardando...",
+      "create": "Crear Evento",
+      "update": "Actualizar Evento",
+      "created": "Evento creado",
+      "updated": "Evento actualizado",
+      "cancel": "Cancelar"
+    }
   }
 }
