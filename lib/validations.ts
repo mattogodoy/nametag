@@ -72,7 +72,12 @@ const importantDateSchema = z.object({
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
 }).refine(
-  (data) => data.type != null || (data.title && data.title.trim().length > 0),
+  (data) =>
+    // Existing dates (with id) are allowed through — they may predate the
+    // predefined-type migration and legitimately have neither type nor title.
+    data.id != null ||
+    data.type != null ||
+    (data.title && data.title.trim().length > 0),
   { message: 'Title is required when no predefined type is selected', path: ['title'] }
 );
 

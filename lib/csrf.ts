@@ -3,8 +3,39 @@ import { getAppUrl } from '@/lib/env';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /**
+ * Builds the set of origins that are considered valid for CSRF checks.
+ * Includes the configured app URL and the request's own Host header,
+ * so self-hosted users who access the app via a hostname/port that
+ * differs from NEXTAUTH_URL are not blocked on state-changing requests.
+ */
+function getAllowedOrigins(request: Request): Set<string> {
+  const allowed = new Set<string>();
+
+  // Always trust the configured app URL
+  const appUrl = getAppUrl();
+  allowed.add(new URL(appUrl).origin);
+
+  // Also trust the Host header the request was sent to.
+  // Browsers enforce that Origin and Host match for same-origin requests,
+  // so accepting Host covers cases where the user accesses the app via a
+  // different hostname/port than what NEXTAUTH_URL is set to (common in
+  // Docker and LAN setups).
+  const host = request.headers.get('host');
+  if (host) {
+    // Host header doesn't include a scheme; infer from the request URL
+    // or from the X-Forwarded-Proto header (set by reverse proxies).
+    const proto =
+      request.headers.get('x-forwarded-proto') ||
+      (new URL(request.url).protocol === 'https:' ? 'https' : 'http');
+    allowed.add(`${proto}://${host}`);
+  }
+
+  return allowed;
+}
+
+/**
  * Validates that the request originates from the same origin as the application.
- * Checks the Origin and Referer headers against the configured app URL to prevent
+ * Checks the Origin and Referer headers against allowed origins to prevent
  * cross-site request forgery on state-changing (non-GET/HEAD/OPTIONS) requests.
  */
 export function validateOrigin(request: Request): boolean {
@@ -25,15 +56,14 @@ export function validateOrigin(request: Request): boolean {
     return true;
   }
 
-  const appUrl = getAppUrl();
-  const expectedOrigin = new URL(appUrl).origin;
+  const allowed = getAllowedOrigins(request);
 
   if (origin) {
-    return origin === expectedOrigin;
+    return allowed.has(origin);
   }
 
   try {
-    return new URL(referer!).origin === expectedOrigin;
+    return allowed.has(new URL(referer!).origin);
   } catch {
     return false;
   }

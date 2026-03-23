@@ -93,4 +93,50 @@ describe('CSRF Origin Validation', () => {
     });
     expect(validateOrigin(request)).toBe(true);
   });
+
+  it('should allow origin matching the Host header even if NEXTAUTH_URL differs', () => {
+    // User accesses via http://hades:3003 but NEXTAUTH_URL is https://nametag.one
+    const request = new Request('http://hades:3003/api/people', {
+      method: 'PUT',
+      headers: {
+        origin: 'http://hades:3003',
+        host: 'hades:3003',
+      },
+    });
+    expect(validateOrigin(request)).toBe(true);
+  });
+
+  it('should allow referer matching the Host header even if NEXTAUTH_URL differs', () => {
+    const request = new Request('http://hades:3003/api/people', {
+      method: 'PUT',
+      headers: {
+        referer: 'http://hades:3003/people/123/edit',
+        host: 'hades:3003',
+      },
+    });
+    expect(validateOrigin(request)).toBe(true);
+  });
+
+  it('should reject origin that matches neither NEXTAUTH_URL nor Host', () => {
+    const request = new Request('http://hades:3003/api/people', {
+      method: 'POST',
+      headers: {
+        origin: 'https://evil.com',
+        host: 'hades:3003',
+      },
+    });
+    expect(validateOrigin(request)).toBe(false);
+  });
+
+  it('should respect x-forwarded-proto when building Host origin', () => {
+    const request = new Request('http://hades:3003/api/people', {
+      method: 'PUT',
+      headers: {
+        origin: 'https://hades:3003',
+        host: 'hades:3003',
+        'x-forwarded-proto': 'https',
+      },
+    });
+    expect(validateOrigin(request)).toBe(true);
+  });
 });
