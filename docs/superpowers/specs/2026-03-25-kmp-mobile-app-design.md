@@ -6,6 +6,21 @@ A Kotlin Multiplatform (KMP) + Compose Multiplatform mobile app for nametag, liv
 
 Package name: `com.nametag.one`
 
+## Project Coexistence
+
+The `client/` directory is a **new top-level directory** added to the existing nametag Next.js repository. Gradle is fully scoped within `client/` — it has its own `settings.gradle.kts`, wrapper scripts, and build files. The Next.js project and the KMP project are completely independent build systems sharing a git repo.
+
+**`.gitignore` additions needed:**
+```
+client/.gradle/
+client/build/
+client/*/build/
+client/*/*/build/
+client/iosApp/*.xcworkspace/xcuserdata/
+client/iosApp/iosApp.xcodeproj/xcuserdata/
+client/local.properties
+```
+
 ## Architecture
 
 Follows the teleball mobile app's architecture: Unidirectional Data Flow (UDF) with State/Action/ViewModel pattern, Koin for dependency injection, Jetpack Navigation Compose for routing, and expect/actual for platform-specific code.
@@ -18,7 +33,7 @@ Feature-based modules, with only the modules needed for the first commit (no emp
 client/
 ├── app/                          # :app — Android/iOS entry points, root nav
 │   ├── src/
-│   │   ├── androidMain/          # MainActivity, NametageApplication
+│   │   ├── androidMain/          # MainActivity, NametagApplication
 │   │   ├── iosMain/              # MainViewController
 │   │   └── commonMain/           # App.kt, top-level NavHost, KoinInitializer
 │   └── build.gradle.kts
@@ -60,8 +75,10 @@ client/
 │       │               └── LoginUDF.kt
 │       └── build.gradle.kts
 ├── build.gradle.kts              # Root build config
-├── settings.gradle.kts           # Module includes
+├── settings.gradle.kts           # Module includes (rootProject.name = "nametag-mobile")
 ├── gradle.properties
+├── gradlew                       # Gradle wrapper script
+├── gradlew.bat
 ├── iosApp/                       # Xcode project
 │   ├── iosApp/
 │   │   ├── iOSApp.swift
@@ -69,6 +86,9 @@ client/
 │   │   └── AppDelegate.swift
 │   └── iosApp.xcodeproj/
 └── gradle/
+    ├── wrapper/
+    │   ├── gradle-wrapper.jar
+    │   └── gradle-wrapper.properties
     └── libs.versions.toml
 ```
 
@@ -91,8 +111,8 @@ client/
 - Name list: Dmitri, Sarah, Kenji, Amara, Luca, Fatima, Maya, Carlos, Yuki, Priya (and more)
 - "nametag" text below the logo
 - Loading spinner (circular, brand-colored)
-- Auto-navigates to Login after ~1.5s
-- Animation: `AnimatedContent` with fade transition, `LaunchedEffect` cycling names every ~2.5s
+- Auto-navigates to Login after ~2.5s (enough to see one full name cycle)
+- Animation: `AnimatedContent` with fade transition, `LaunchedEffect` cycling names every ~2s
 
 ### Login Screen
 
@@ -118,8 +138,8 @@ client/
 - Surface: `#FFFFFF`
 - Surface Elevated: `#FAFBFC`
 - Text: `#1B1D21`
-- Muted: `rgba(27, 29, 33, 0.6)`
-- Border: `rgba(30, 99, 255, 0.15)`
+- Muted: `#991B1D21` (60% opacity)
+- Border: `#261E63FF` (15% opacity)
 - Warning: `#FF4800`
 
 **Dark mode:**
@@ -128,8 +148,8 @@ client/
 - Surface: `#15171D`
 - Surface Elevated: `#1D1F26`
 - Text: `#E7EAF0`
-- Muted: `rgba(231, 234, 240, 0.65)`
-- Border: `rgba(92, 130, 255, 0.2)`
+- Muted: `#A6E7EAF0` (65% opacity)
+- Border: `#335C82FF` (20% opacity)
 - Warning: `#FF4800`
 
 **Logo red:** `#FF2600` (used in both modes)
@@ -139,7 +159,7 @@ client/
 ### Typography
 
 - System font stack for body text (matching web: -apple-system/Roboto)
-- **Permanent Marker** font for the rotating name in the logo
+- **Permanent Marker** font for the rotating name in the logo (bundled at `core/ui/src/commonMain/composeResources/font/permanent_marker_regular.ttf`)
 - Material3 type scale with proper sizing
 
 ### Production Composables (`:core:ui`)
@@ -186,7 +206,7 @@ Single `NavHost` in `:app` with Jetpack Navigation Compose:
 
 ## Data Persistence
 
-- `multiplatform-settings` for key-value storage
+- `multiplatform-settings-no-arg` artifact for key-value storage (no platform-specific factory needed)
 - `Preferences` interface in `:core:domain`, implementation in `:core:network`
 - Stores: server instance URL (defaults to `nametag.one`)
 
@@ -203,7 +223,7 @@ Single `NavHost` in `:app` with Jetpack Navigation Compose:
 
 - SwiftUI shell: `iOSApp.swift` → `ContentView.swift` → `ComposeView` (UIViewControllerRepresentable)
 - `AppDelegate.swift`: Koin init
-- Deployment target: 17.6
+- Deployment target: 17.0
 
 ## Build Configuration
 
@@ -211,6 +231,7 @@ Single `NavHost` in `:app` with Jetpack Navigation Compose:
 
 | Dependency | Version |
 |---|---|
+| Gradle | 8.12 |
 | Kotlin | 2.3.0 |
 | Compose Multiplatform | 1.9.3 |
 | AGP | 9.0.0 |
@@ -220,6 +241,16 @@ Single `NavHost` in `:app` with Jetpack Navigation Compose:
 | Navigation Compose | 2.9.1 |
 | Multiplatform Settings | 1.3.0 |
 | Lifecycle/ViewModel | 2.9.6 |
+
+### Plugins per Module
+
+| Module | Plugins |
+|---|---|
+| `:app` | `kotlin("multiplatform")`, `id("com.android.application")`, `id("org.jetbrains.compose")`, `id("org.jetbrains.kotlin.plugin.compose")` |
+| `:core:network` | `kotlin("multiplatform")`, `id("com.android.library")`, `kotlin("plugin.serialization")` |
+| `:core:domain` | `kotlin("multiplatform")`, `id("com.android.library")` |
+| `:core:ui` | `kotlin("multiplatform")`, `id("com.android.library")`, `id("org.jetbrains.compose")`, `id("org.jetbrains.kotlin.plugin.compose")` |
+| `:feature:auth` | `kotlin("multiplatform")`, `id("com.android.library")`, `id("org.jetbrains.compose")`, `id("org.jetbrains.kotlin.plugin.compose")` |
 
 ### Gradle Modules in `settings.gradle.kts`
 
