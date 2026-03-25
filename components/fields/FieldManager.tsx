@@ -222,6 +222,7 @@ export default function FieldManager<T extends BaseFieldItem>({
               onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
             }
             placeholder={t(field.placeholderKey)}
+            aria-label={t(field.placeholderKey)}
             rows={2}
             className={`w-full ${INPUT_BASE}`}
           />
@@ -236,6 +237,7 @@ export default function FieldManager<T extends BaseFieldItem>({
               onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
             }
             placeholder={t(field.placeholderKey)}
+            aria-label={t(field.placeholderKey)}
             className={`w-full ${INPUT_BASE}`}
             {...(field.inputAttrs as React.InputHTMLAttributes<HTMLInputElement>)}
           />
@@ -260,6 +262,7 @@ export default function FieldManager<T extends BaseFieldItem>({
                 onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
               }
               placeholder={t(field.placeholderKey)}
+              aria-label={t(field.placeholderKey)}
               className={INPUT_BASE}
               {...(field.inputAttrs as React.InputHTMLAttributes<HTMLInputElement>)}
             />
@@ -282,6 +285,7 @@ export default function FieldManager<T extends BaseFieldItem>({
                 )
               }
               placeholder={t(postalField.placeholderKey)}
+              aria-label={t(postalField.placeholderKey)}
               className={INPUT_BASE}
             />
           )}
@@ -343,6 +347,7 @@ export default function FieldManager<T extends BaseFieldItem>({
             onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
           }
           placeholder={t(field.placeholderKey)}
+          aria-label={t(field.placeholderKey)}
           className={`flex-1 ${INPUT_BASE}`}
           autoFocus={isAddForm}
         />
@@ -417,6 +422,7 @@ export default function FieldManager<T extends BaseFieldItem>({
             value={cfItem.key}
             onChange={(e) => onItemChange({ ...item, key: e.target.value } as T)}
             placeholder={t('keyPlaceholder')}
+            aria-label={t('keyPlaceholder')}
             className={`w-full ${INPUT_BASE}`}
             autoFocus
           />
@@ -487,6 +493,7 @@ export default function FieldManager<T extends BaseFieldItem>({
               onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
             }
             placeholder={t(field.placeholderKey)}
+            aria-label={t(field.placeholderKey)}
             className={`flex-1 ${INPUT_BASE}`}
           />
           <button
@@ -518,6 +525,7 @@ export default function FieldManager<T extends BaseFieldItem>({
           value={cfItem.key}
           onChange={(e) => onItemChange({ ...item, key: e.target.value } as T)}
           placeholder={t('keyPlaceholder')}
+          aria-label={t('keyPlaceholder')}
           className={`w-full ${INPUT_BASE}`}
         />
       );

@@ -268,6 +268,7 @@ export default function PeopleListClient({
                     onChange={togglePage}
                     className="w-4 h-4 text-primary bg-surface-elevated border-border rounded focus:ring-primary"
                     title={t('selectAll')}
+                    aria-label={t('selectAll')}
                   />
                 </th>
                 <th className="w-[32px] py-3 px-2" />
@@ -327,6 +328,7 @@ export default function PeopleListClient({
                         checked={isChecked}
                         onChange={() => togglePerson(person.id)}
                         className="w-4 h-4 text-primary bg-surface-elevated border-border rounded focus:ring-primary"
+                        aria-label={formatFullName(person, nameOrder)}
                       />
                     </td>
                     <td className="w-[32px] py-4 px-2">
