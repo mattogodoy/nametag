@@ -97,7 +97,7 @@ export default async function DashboardPage() {
                         event.daysUntil <= 0
                           ? 'text-warning'
                           : event.daysUntil <= 3
-                          ? 'text-foreground'
+                          ? 'text-accent'
                           : 'text-muted'
                       }`}>
                         {event.daysUntil < 0 ? t('overdue') : formatDaysUntil(event.daysUntil)}
