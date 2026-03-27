@@ -74,3 +74,8 @@ client/*/*/build/
 client/iosApp/*.xcworkspace/xcuserdata/
 client/iosApp/iosApp.xcodeproj/xcuserdata/
 client/local.properties
+client/.idea/
+client/.kotlin/
+
+# Superpowers
+.superpowers/
