@@ -228,6 +228,7 @@ export default async function PersonDetailsPage({
       },
       include: {
         people: {
+          where: { person: { deletedAt: null } },
           include: {
             person: {
               select: { id: true, name: true, surname: true },

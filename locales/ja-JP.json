@@ -1653,7 +1653,6 @@
     "noEntries": "ジャーナルエントリーがまだありません",
     "noEntriesDescription": "友人とのコーヒー、家族の夕食、旧友との再会 — 大切な瞬間を記録しましょう。",
     "writeFirstEntry": "最初のエントリーを書く",
-    "noMatchingEntries": "検索に一致するエントリーがありません",
     "form": {
       "titleLabel": "タイトル",
       "titlePlaceholder": "このエントリーにタイトルを付けてください...",
@@ -1675,6 +1674,7 @@
       "confirmDelete": "このジャーナルエントリーを削除してもよろしいですか？",
       "confirmDeleteDescription": "この操作は元に戻せません。",
       "deleted": "ジャーナルエントリーが削除されました",
+      "deleteFailed": "エントリーの削除に失敗しました",
       "taggedPeople": "人物"
     },
     "personSection": {

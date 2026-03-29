@@ -64,6 +64,7 @@ export default async function JournalPage({
       },
       include: {
         people: {
+          where: { person: { deletedAt: null } },
           include: {
             person: {
               select: {

@@ -1653,7 +1653,6 @@
     "noEntries": "Noch keine Tagebucheinträge",
     "noEntriesDescription": "Ein Kaffee mit Freunden, ein Familienessen, ein unverhofftes Wiedersehen — halte die Momente fest, die zahlen.",
     "writeFirstEntry": "Schreib deinen ersten Eintrag",
-    "noMatchingEntries": "Keine Einträge entsprechen deiner Suche",
     "form": {
       "titleLabel": "Titel",
       "titlePlaceholder": "Gib diesem Eintrag einen Titel...",
@@ -1675,6 +1674,7 @@
       "confirmDelete": "Bist du sicher, dass du diesen Tagebucheintrag löschen möchtest?",
       "confirmDeleteDescription": "Diese Aktion kann nicht ruckgangig gemacht werden.",
       "deleted": "Tagebucheintrag gelöscht",
+      "deleteFailed": "Eintrag konnte nicht gelöscht werden",
       "taggedPeople": "Personen"
     },
     "personSection": {

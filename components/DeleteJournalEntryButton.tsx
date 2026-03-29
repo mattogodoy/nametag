@@ -31,11 +31,11 @@ export default function DeleteJournalEntryButton({ entryId }: DeleteJournalEntry
         router.refresh();
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to delete entry');
+        setError(data.error || t('deleteFailed'));
         setIsDeleting(false);
       }
     } catch {
-      setError('Failed to delete entry');
+      setError(t('deleteFailed'));
       setIsDeleting(false);
     }
   };

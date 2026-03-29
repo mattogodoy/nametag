@@ -16,6 +16,7 @@ export const GET = withAuth(async (_request, session, context) => {
       },
       include: {
         people: {
+          where: { person: { deletedAt: null } },
           include: {
             person: {
               select: {
@@ -66,43 +67,56 @@ export const PUT = withAuth(async (request, session, context) => {
       return apiResponse.notFound('Journal entry not found');
     }
 
+    // Validate personIds belong to the current user
+    if (personIds && personIds.length > 0) {
+      const validCount = await prisma.person.count({
+        where: { id: { in: personIds }, userId: session.user.id, deletedAt: null },
+      });
+      if (validCount !== personIds.length) {
+        return apiResponse.error('One or more person IDs are invalid');
+      }
+    }
+
     const sanitizedTitle = sanitizeName(title) || title;
     const sanitizedBody = sanitizeNotes(entryBody) || entryBody;
     const entryDate = new Date(date);
 
-    // Remove existing people associations and recreate
-    await prisma.journalEntryPerson.deleteMany({
-      where: { journalEntryId: id },
-    });
+    // Remove existing people associations and recreate atomically
+    const entry = await prisma.$transaction(async (tx) => {
+      await tx.journalEntryPerson.deleteMany({
+        where: { journalEntryId: id },
+      });
 
-    const entry = await prisma.journalEntry.update({
-      where: { id },
-      data: {
-        title: sanitizedTitle,
-        date: entryDate,
-        body: sanitizedBody,
-        ...(personIds && personIds.length > 0 && {
+      return tx.journalEntry.update({
+        where: { id },
+        data: {
+          title: sanitizedTitle,
+          date: entryDate,
+          body: sanitizedBody,
+          ...(personIds && personIds.length > 0 && {
+            people: {
+              create: personIds.map((personId) => ({
+                person: { connect: { id: personId } },
+              })),
+            },
+          }),
+        },
+        include: {
           people: {
-            create: personIds.map((personId) => ({
-              person: { connect: { id: personId } },
-            })),
-          },
-        }),
-      },
-      include: {
-        people: {
-          include: {
-            person: {
-              select: {
-                id: true,
-                name: true,
-                surname: true,
-                nickname: true,
+            where: { person: { deletedAt: null } },
+            include: {
+              person: {
+                select: {
+                  id: true,
+                  name: true,
+                  surname: true,
+                  nickname: true,
+                },
               },
             },
           },
         },
-      },
+      });
     });
 
     // Update lastContact for tagged people if requested

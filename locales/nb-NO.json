@@ -1653,7 +1653,6 @@
     "noEntries": "Ingen journaloppføringer ennå",
     "noEntriesDescription": "En kaffe med venner, en familiemiddag, et uventet gjensyn — ta vare pa oyeblikkene som betyr noe.",
     "writeFirstEntry": "Skriv din første oppføring",
-    "noMatchingEntries": "Ingen oppføringer samsvarer med søket ditt",
     "form": {
       "titleLabel": "Tittel",
       "titlePlaceholder": "Gi denne oppføringen en tittel...",
@@ -1675,6 +1674,7 @@
       "confirmDelete": "Er du sikker på at du vil slette denne journaloppføringen?",
       "confirmDeleteDescription": "Denne handlingen kan ikke angres.",
       "deleted": "Journaloppføring slettet",
+      "deleteFailed": "Kunne ikke slette oppføringen",
       "taggedPeople": "Personer"
     },
     "personSection": {

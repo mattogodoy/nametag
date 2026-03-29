@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createJournalEntrySchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
@@ -13,27 +14,26 @@ export const GET = withAuth(async (request, session) => {
     const personId = url.searchParams.get('person');
     const search = url.searchParams.get('q');
 
-    const where: Record<string, unknown> = {
+    const where: Prisma.JournalEntryWhereInput = {
       userId: session.user.id,
       deletedAt: null,
+      ...(personId && {
+        people: { some: { personId } },
+      }),
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' as const } },
+          { body: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }),
     };
-
-    if (personId) {
-      where.people = { some: { personId } };
-    }
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { body: { contains: search, mode: 'insensitive' } },
-      ];
-    }
 
     const [entries, totalCount] = await Promise.all([
       prisma.journalEntry.findMany({
         where,
         include: {
           people: {
+            where: { person: { deletedAt: null } },
             include: {
               person: {
                 select: {
@@ -78,6 +78,16 @@ export const POST = withAuth(async (request, session) => {
     }
 
     const { title, date, body: entryBody, personIds, updateLastContact } = validation.data;
+
+    // Validate personIds belong to the current user
+    if (personIds && personIds.length > 0) {
+      const validCount = await prisma.person.count({
+        where: { id: { in: personIds }, userId: session.user.id, deletedAt: null },
+      });
+      if (validCount !== personIds.length) {
+        return apiResponse.error('One or more person IDs are invalid');
+      }
+    }
 
     const sanitizedTitle = sanitizeName(title) || title;
     const sanitizedBody = sanitizeNotes(entryBody) || entryBody;

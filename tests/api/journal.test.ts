@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   journalEntryPersonDeleteMany: vi.fn(),
   personUpdateMany: vi.fn(),
   personFindMany: vi.fn(),
+  personCount: vi.fn(),
+  $transaction: vi.fn(),
 }));
 
 vi.mock('../../lib/prisma', () => ({
@@ -26,7 +28,9 @@ vi.mock('../../lib/prisma', () => ({
     person: {
       updateMany: mocks.personUpdateMany,
       findMany: mocks.personFindMany,
+      count: mocks.personCount,
     },
+    $transaction: mocks.$transaction,
   },
 }));
 
@@ -45,7 +49,7 @@ vi.mock('../../lib/billing', () => ({
 }));
 
 import { GET, POST } from '../../app/api/journal/route';
-import { GET as GET_DETAIL, PUT as _PUT, DELETE } from '../../app/api/journal/[id]/route';
+import { GET as GET_DETAIL, PUT, DELETE } from '../../app/api/journal/[id]/route';
 
 describe('Journal API', () => {
   beforeEach(() => {
@@ -186,6 +190,64 @@ describe('Journal Detail API', () => {
 
       const request = new Request('http://localhost/api/journal/nonexistent');
       const response = await GET_DETAIL(request, mockContext);
+
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe('PUT /api/journal/[id]', () => {
+    it('should update a journal entry', async () => {
+      mocks.journalEntryFindUnique.mockResolvedValue({
+        id: 'entry-1',
+        userId: 'user-123',
+      });
+      const updatedEntry = {
+        id: 'entry-1',
+        title: 'Updated title',
+        date: new Date('2026-03-28'),
+        body: 'Updated body.',
+        people: [],
+      };
+      mocks.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        return fn({
+          journalEntryPerson: { deleteMany: mocks.journalEntryPersonDeleteMany },
+          journalEntry: { update: mocks.journalEntryUpdate },
+        });
+      });
+      mocks.journalEntryPersonDeleteMany.mockResolvedValue({ count: 0 });
+      mocks.journalEntryUpdate.mockResolvedValue(updatedEntry);
+
+      const request = new Request('http://localhost/api/journal/entry-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Updated title',
+          date: '2026-03-28',
+          body: 'Updated body.',
+          personIds: [],
+          updateLastContact: false,
+        }),
+      });
+      const response = await PUT(request, mockContext);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.entry.title).toBe('Updated title');
+    });
+
+    it('should return 404 for non-existent entry', async () => {
+      mocks.journalEntryFindUnique.mockResolvedValue(null);
+
+      const request = new Request('http://localhost/api/journal/entry-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Updated',
+          date: '2026-03-28',
+          body: 'Updated.',
+        }),
+      });
+      const response = await PUT(request, mockContext);
 
       expect(response.status).toBe(404);
     });

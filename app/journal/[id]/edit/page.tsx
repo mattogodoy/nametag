@@ -28,6 +28,7 @@ export default async function EditJournalEntryPage({
       },
       include: {
         people: {
+          where: { person: { deletedAt: null } },
           select: { personId: true },
         },
       },

@@ -1653,7 +1653,6 @@
     "noEntries": "Aún no hay entradas en el diario",
     "noEntriesDescription": "Un cafe con amigos, una cena familiar, un reencuentro inesperado — captura los momentos que importan.",
     "writeFirstEntry": "Escribe tu primera entrada",
-    "noMatchingEntries": "Ninguna entrada coincide con tu búsqueda",
     "form": {
       "titleLabel": "Título",
       "titlePlaceholder": "Dale un título a esta entrada...",
@@ -1675,6 +1674,7 @@
       "confirmDelete": "¿Estás seguro de que quieres eliminar esta entrada del diario?",
       "confirmDeleteDescription": "Esta accion no se puede deshacer.",
       "deleted": "Entrada del diario eliminada",
+      "deleteFailed": "Error al eliminar la entrada",
       "taggedPeople": "Personas"
     },
     "personSection": {

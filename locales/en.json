@@ -1649,7 +1649,6 @@
     "noEntries": "No journal entries yet",
     "noEntriesDescription": "A coffee catch-up, a family dinner, running into an old friend — capture the moments that matter.",
     "writeFirstEntry": "Write your first entry",
-    "noMatchingEntries": "No entries match your search",
     "form": {
       "titleLabel": "Title",
       "titlePlaceholder": "Give this entry a title...",
@@ -1671,6 +1670,7 @@
       "confirmDelete": "Are you sure you want to delete this journal entry?",
       "confirmDeleteDescription": "This action cannot be undone.",
       "deleted": "Journal entry deleted",
+      "deleteFailed": "Failed to delete entry",
       "taggedPeople": "People"
     },
     "personSection": {

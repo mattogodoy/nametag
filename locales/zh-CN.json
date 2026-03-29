@@ -1653,7 +1653,6 @@
     "noEntries": "暂无日记条目",
     "noEntriesDescription": "与朋友喝咖啡、家庭聚餐、与老友重逢——记录那些重要的时刻。",
     "writeFirstEntry": "写下第一条记录",
-    "noMatchingEntries": "没有与搜索匹配的条目",
     "form": {
       "titleLabel": "标题",
       "titlePlaceholder": "给这条记录起个标题...",
@@ -1675,6 +1674,7 @@
       "confirmDelete": "确定要删除这条日记记录吗？",
       "confirmDeleteDescription": "此操作无法撤销。",
       "deleted": "日记条目已删除",
+      "deleteFailed": "删除条目失败",
       "taggedPeople": "人物"
     },
     "personSection": {
