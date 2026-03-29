@@ -42,7 +42,7 @@ function formatPersonName(
   person: { name: string; surname: string | null },
   nameOrder: string | null | undefined
 ): string {
-  if (nameOrder === 'last_first') {
+  if (nameOrder === 'EASTERN') {
     return [person.surname, person.name].filter(Boolean).join(' ');
   }
   return [person.name, person.surname].filter(Boolean).join(' ');
