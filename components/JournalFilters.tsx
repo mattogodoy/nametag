@@ -80,7 +80,6 @@ export default function JournalFilters({ people, currentPersonIds, currentSearch
         />
       </form>
       <PillSelector
-        label={t('filterByPerson')}
         selectedItems={selectedPeople}
         availableItems={pillPeople.filter((p) => !selectedPeople.some((s) => s.id === p.id))}
         onAdd={handleAddPerson}
