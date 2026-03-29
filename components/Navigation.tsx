@@ -226,7 +226,6 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
                                 ? 'text-primary'
                                 : 'text-muted hover:text-primary'
                             }`}
-                            title={`${tCommon('create')} ${tNav(item.createLabelKey || item.labelKey)}`}
                             aria-label={`${tCommon('create')} ${tNav(item.createLabelKey || item.labelKey)}`}
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

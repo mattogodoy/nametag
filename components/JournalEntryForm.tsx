@@ -232,7 +232,7 @@ export default function JournalEntryForm({
             <div className="relative inline-flex items-center">
               <button
                 type="button"
-                className="flex items-center justify-center w-4 h-4 rounded-full bg-surface-elevated border border-border text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex items-center justify-center w-5 h-5 rounded-full bg-surface-elevated border border-border text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
                 onFocus={() => setShowTooltip(true)}
