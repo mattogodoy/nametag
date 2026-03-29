@@ -79,7 +79,7 @@ function groupByMonth(entries: TimelineEntry[], locale: string): MonthGroup[] {
 
   for (const entry of entries) {
     // Parse as local date to avoid timezone shift
-    const [year, month] = entry.date.split('-').map(Number);
+    const [year, month] = entry.date.split('T')[0].split('-').map(Number);
     const monthKey = `${year}-${String(month).padStart(2, '0')}`;
 
     const existing = map.get(monthKey);
@@ -147,11 +147,9 @@ export default function JournalTimeline({ entries, nameOrder, locale }: JournalT
           <div className="space-y-0">
             {group.entries.map((entry, index) => {
               const isLast = index === group.entries.length - 1;
-              const entryDate = new Date(
-                Number(entry.date.split('-')[0]),
-                Number(entry.date.split('-')[1]) - 1,
-                Number(entry.date.split('-')[2])
-              );
+              const dateOnly = entry.date.split('T')[0];
+              const [year, month, day] = dateOnly.split('-').map(Number);
+              const entryDate = new Date(year, month - 1, day);
               const dayNumber = entryDate.getDate();
               const weekday = entryDate.toLocaleDateString(locale, { weekday: 'short' });
               const bodyPreview = truncateBody(entry.body);
