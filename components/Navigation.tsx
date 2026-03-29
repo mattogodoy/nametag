@@ -97,7 +97,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
             </div>
 
             {/* Desktop nav items */}
-            <div className="hidden lg:flex space-x-4">
+            <div className="hidden xl:flex space-x-3">
               {navItems.map((item) => (
                 <div key={item.href}>
                   {item.createHref ? (
@@ -166,7 +166,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-3 rounded-md text-foreground hover:bg-surface-elevated transition-colors"
+              className="xl:hidden p-3 rounded-md text-foreground hover:bg-surface-elevated transition-colors"
               aria-label="Toggle menu"
             >
               <svg
@@ -193,13 +193,13 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
         <>
           {/* Backdrop */}
           <div
-            className="lg:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
+            className="xl:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
 
           {/* Mobile menu panel */}
-          <div className="lg:hidden fixed top-0 right-0 bottom-0 w-[90%] max-w-md bg-surface shadow-xl z-50 transform transition-transform duration-300 ease-in-out">
+          <div className="xl:hidden fixed top-0 right-0 bottom-0 w-[90%] max-w-md bg-surface shadow-xl z-50 transform transition-transform duration-300 ease-in-out">
             <div className="h-full flex flex-col">
               {/* Menu header with close button */}
               <div className="flex items-center justify-between p-4 border-b border-border">
