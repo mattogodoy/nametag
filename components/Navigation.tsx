@@ -133,6 +133,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
             <div key={item.href} className="relative">
               <Link
                 href={item.href}
+                aria-current={isActive(item.href) ? 'page' : undefined}
                 className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
                   isActive(item.href)
                     ? 'text-primary'

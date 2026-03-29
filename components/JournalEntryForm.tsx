@@ -235,7 +235,6 @@ export default function JournalEntryForm({
                 onMouseLeave={() => setShowTooltip(false)}
                 onFocus={() => setShowTooltip(true)}
                 onBlur={() => setShowTooltip(false)}
-                aria-label={t('updateLastContactTooltip')}
                 aria-describedby="update-last-contact-tooltip"
               >
                 <svg
@@ -253,16 +252,16 @@ export default function JournalEntryForm({
                   />
                 </svg>
               </button>
-              {showTooltip && (
-                <div
-                  id="update-last-contact-tooltip"
-                  role="tooltip"
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 text-xs text-foreground bg-surface-elevated border border-border rounded-lg shadow-lg z-50"
-                >
-                  {t('updateLastContactTooltip')}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px w-2 h-2 bg-surface-elevated border-r border-b border-border rotate-45" />
-                </div>
-              )}
+              <div
+                id="update-last-contact-tooltip"
+                role="tooltip"
+                className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 text-xs text-foreground bg-surface-elevated border border-border rounded-lg shadow-lg z-50 transition-opacity ${
+                  showTooltip ? 'opacity-100 visible' : 'opacity-0 invisible'
+                }`}
+              >
+                {t('updateLastContactTooltip')}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px w-2 h-2 bg-surface-elevated border-r border-b border-border rotate-45" />
+              </div>
             </div>
           </div>
         </div>
