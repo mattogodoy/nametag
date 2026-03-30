@@ -51,14 +51,14 @@ describe('LanguageSelector Component', () => {
     render(<LanguageSelector currentLanguage="en" />);
 
     const englishButton = screen.getByRole('button', { name: /English/i });
-    expect(englishButton).toHaveClass('border-blue-600');
+    expect(englishButton).toHaveClass('border-primary');
   });
 
   it('should display Spanish as selected when currentLanguage is es-ES', () => {
     render(<LanguageSelector currentLanguage="es-ES" />);
 
     const spanishButton = screen.getByRole('button', { name: /Español/i });
-    expect(spanishButton).toHaveClass('border-blue-600');
+    expect(spanishButton).toHaveClass('border-primary');
   });
 
   it('should change language to Spanish when clicked', async () => {

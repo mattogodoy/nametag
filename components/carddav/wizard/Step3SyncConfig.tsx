@@ -85,7 +85,7 @@ export default function Step3SyncConfig({
           aria-checked={data.syncEnabled}
           onClick={() => onUpdate({ syncEnabled: !data.syncEnabled })}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            data.syncEnabled ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
+            data.syncEnabled ? 'bg-primary' : 'bg-surface-elevated'
           }`}
         >
           <span
@@ -97,11 +97,11 @@ export default function Step3SyncConfig({
       </div>
 
       {/* Sync explanation */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
+      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20 space-y-2">
+        <p className="text-sm text-primary">
           {tw('syncExplanation')}
         </p>
-        <p className="text-sm text-blue-800 dark:text-blue-200">
+        <p className="text-sm text-primary">
           {tw('manualSyncExplanation')}
         </p>
       </div>

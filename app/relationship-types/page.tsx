@@ -69,7 +69,7 @@ export default async function RelationshipTypesPage() {
             </h1>
             <Link
               href="/relationship-types/new"
-              className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50"
+              className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
             >
               {t('createNewType')}
             </Link>
@@ -77,7 +77,7 @@ export default async function RelationshipTypesPage() {
 
           {relationshipTypesWithUsage.length > 0 ? (
             <div className="bg-surface shadow rounded-lg overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <table className="min-w-full divide-y divide-border">
                 <thead className="bg-surface-elevated">
                   <tr>
                     <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
@@ -94,13 +94,13 @@ export default async function RelationshipTypesPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-surface divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-surface divide-y divide-border">
                   {relationshipTypesWithUsage.map((type) => (
                     <tr key={type.id} className="hover:bg-surface-elevated">
                       <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                         <div
                           className="w-8 h-8 rounded"
-                          style={{ backgroundColor: type.color || '#3B82F6' }}
+                          style={{ backgroundColor: type.color || 'var(--badge-bg)' }}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

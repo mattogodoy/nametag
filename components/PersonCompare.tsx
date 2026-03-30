@@ -414,7 +414,7 @@ export default function PersonCompare({
                         className={`w-2.5 h-2.5 rounded-full ${
                           primaryId === personA.id
                             ? 'bg-primary'
-                            : 'bg-gray-400'
+                            : 'bg-muted'
                         }`}
                       />
                       <span
@@ -439,7 +439,7 @@ export default function PersonCompare({
                         className={`w-2.5 h-2.5 rounded-full ${
                           primaryId === personB.id
                             ? 'bg-primary'
-                            : 'bg-gray-400'
+                            : 'bg-muted'
                         }`}
                       />
                       <span

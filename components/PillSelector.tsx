@@ -147,7 +147,7 @@ export default function PillSelector<T extends PillItem>({
   const defaultRenderPill = (item: T, onRemoveClick: () => void) => (
     <div
       key={item.id}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
     >
       {item.color && (
         <div
@@ -162,7 +162,7 @@ export default function PillSelector<T extends PillItem>({
           onRemoveClick();
         }}
         disabled={isLoading}
-        className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors disabled:opacity-50"
+        className="hover:bg-primary/20 rounded-full p-0.5 transition-colors disabled:opacity-50"
         aria-label={`${removeAriaLabel} ${item.label}`}
       >
         <svg
@@ -170,6 +170,7 @@ export default function PillSelector<T extends PillItem>({
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -208,7 +209,7 @@ export default function PillSelector<T extends PillItem>({
 
       {/* Input box with pills */}
       <div
-        className="min-h-[42px] p-2 border-2 border-border rounded-lg bg-surface-elevated focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20 transition-all cursor-text"
+        className="min-h-[44px] p-2 border border-border rounded-lg bg-surface-elevated focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20 transition-all cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         <div className="flex flex-wrap gap-1.5 items-center">
@@ -261,6 +262,7 @@ export default function PillSelector<T extends PillItem>({
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -276,7 +278,7 @@ export default function PillSelector<T extends PillItem>({
 
       {/* Suggestions dropdown */}
       {showSuggestions && (searchTerm || showAllOnFocus) && (
-        <div className="absolute left-0 right-0 mt-1 bg-surface border-2 border-secondary/30 rounded-lg shadow-lg shadow-secondary/20 max-h-60 overflow-y-auto z-50">
+        <div className="absolute left-0 right-0 mt-1 bg-surface border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
           {filteredSuggestions.length > 0 || showCreateOption ? (
             <ul>
               {filteredSuggestions.map((item, index) => (
@@ -309,7 +311,7 @@ export default function PillSelector<T extends PillItem>({
                     }`}
                   >
                     <div className="flex items-center justify-center w-5 h-5 bg-primary rounded-full flex-shrink-0">
-                      <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                       </svg>
                     </div>

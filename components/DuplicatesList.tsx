@@ -27,7 +27,7 @@ function formatName(name: string, surname: string | null): string {
 
 function SimilarityBadge({ score }: { score: string }) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
       {score}
     </span>
   );

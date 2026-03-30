@@ -36,7 +36,7 @@ export default function ConfirmationModal({
   const confirmButtonStyles = {
     danger: 'bg-red-600 hover:bg-red-700',
     warning: 'bg-yellow-600 hover:bg-yellow-700',
-    default: 'bg-primary text-white hover:bg-primary-dark shadow-lg hover:shadow-primary/50',
+    default: 'bg-primary text-white hover:bg-primary-dark',
   };
 
   return (
@@ -49,7 +49,7 @@ export default function ConfirmationModal({
         <div className="mb-4">{children}</div>
 
         {error && (
-          <div className="mb-4 p-3 bg-warning/10 border-2 border-warning text-warning rounded text-sm">
+          <div role="alert" className="mb-4 p-3 bg-warning/10 border border-warning/30 text-warning rounded text-sm">
             {error}
           </div>
         )}

@@ -95,8 +95,8 @@ export default function CompactContactRow({
     <div
       className={`border rounded-lg transition-colors ${
         isSelected
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10'
-          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+          ? 'border-primary bg-primary/10'
+          : 'border-border hover:border-border'
       }`}
     >
       {/* Compact row */}
@@ -106,7 +106,7 @@ export default function CompactContactRow({
           type="checkbox"
           checked={isSelected}
           onChange={() => onToggle(pendingImport.id)}
-          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+          className="w-4 h-4 rounded border-border text-primary focus:ring-primary flex-shrink-0"
           aria-label={`Select ${fullName}`}
         />
 
@@ -114,7 +114,7 @@ export default function CompactContactRow({
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors flex-shrink-0"
+          className="text-muted hover:text-foreground transition-colors flex-shrink-0"
           aria-label={isExpanded ? t('collapseDetails') : t('expandDetails')}
           aria-expanded={isExpanded}
         >
@@ -149,7 +149,7 @@ export default function CompactContactRow({
                 >
                   <span
                     className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: group.color || '#9CA3AF' }}
+                    style={{ backgroundColor: group.color || 'var(--badge-bg)' }}
                   />
                   {group.name}
                 </span>
@@ -166,7 +166,7 @@ export default function CompactContactRow({
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-elevated rounded-full text-xs font-medium text-foreground flex-shrink-0">
               <span
                 className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: relType.color || '#9CA3AF' }}
+                style={{ backgroundColor: relType.color || 'var(--badge-bg)' }}
               />
               {relType.label}
             </span>
@@ -176,7 +176,7 @@ export default function CompactContactRow({
 
       {/* Expanded details */}
       {isExpanded && (
-        <div className="px-3 pb-3 pt-0 border-t border-gray-200 dark:border-gray-700 mt-2">
+        <div className="px-3 pb-3 pt-0 border-t border-border mt-2">
           {parsedData && (
             <div className="mt-2 space-y-1 text-sm text-muted">
               {parsedData.organization && (
@@ -225,7 +225,7 @@ export default function CompactContactRow({
               <select
                 value={selectedRelationshipTypeId}
                 onChange={(e) => onRelationshipChange(pendingImport.id, e.target.value)}
-                className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-surface text-foreground text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full max-w-xs px-3 py-2 border border-border rounded-lg bg-surface text-foreground text-sm focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 <option value="">{t('useGlobalRelationship')}</option>
                 <option value="__none__">{t('noRelationship')}</option>

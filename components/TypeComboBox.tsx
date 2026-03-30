@@ -126,7 +126,7 @@ export default function TypeComboBox({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
           aria-label={toggleAriaLabel || 'Toggle options'}
           tabIndex={-1}
         >
@@ -135,6 +135,7 @@ export default function TypeComboBox({
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -145,7 +146,7 @@ export default function TypeComboBox({
         <div
           id={listboxId}
           role="listbox"
-          className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
+          className="absolute z-10 mt-1 w-full bg-surface border border-border rounded-lg shadow-lg max-h-60 overflow-auto"
         >
           {options.map((option, index) => (
             <div
@@ -155,10 +156,10 @@ export default function TypeComboBox({
               aria-selected={option.value === value}
               onClick={() => handleSelect(option.value)}
               onMouseEnter={() => setHighlightedIndex(index)}
-              className={`w-full px-3 py-2 text-left text-sm cursor-pointer text-gray-900 dark:text-gray-100 first:rounded-t-lg last:rounded-b-lg ${
+              className={`w-full px-3 py-2 text-left text-sm cursor-pointer text-foreground first:rounded-t-lg last:rounded-b-lg ${
                 index === highlightedIndex
-                  ? 'bg-gray-100 dark:bg-gray-600'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-600'
+                  ? 'bg-surface-elevated'
+                  : 'hover:bg-surface-elevated'
               }`}
             >
               {option.label}

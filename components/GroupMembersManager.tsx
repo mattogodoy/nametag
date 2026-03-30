@@ -115,7 +115,7 @@ export default function GroupMembersManager({
   const customRenderPill = (item: { id: string; label: string; color?: string | null }, onRemoveClick: () => void) => (
     <div
       key={item.id}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
     >
       <PersonAvatar personId={item.id} name={item.label} photo={photoMap.get(item.id)} size={20} />
       <span>{item.label}</span>
@@ -123,7 +123,7 @@ export default function GroupMembersManager({
         type="button"
         onClick={onRemoveClick}
         disabled={isLoading}
-        className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors disabled:opacity-50"
+        className="hover:bg-primary/20 rounded-full p-0.5 transition-colors disabled:opacity-50"
         aria-label={`${t('remove')} ${item.label}`}
       >
         <svg
@@ -131,6 +131,7 @@ export default function GroupMembersManager({
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"

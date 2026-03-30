@@ -256,7 +256,7 @@ export default function PeopleListClient({
       </div>
 
       {/* Table */}
-      <div className="bg-surface shadow-lg rounded-lg overflow-hidden border-2 border-primary/30">
+      <div className="bg-surface shadow-sm rounded-lg overflow-hidden border border-border">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-surface-elevated">
@@ -268,6 +268,7 @@ export default function PeopleListClient({
                     onChange={togglePage}
                     className="w-4 h-4 text-primary bg-surface-elevated border-border rounded focus:ring-primary"
                     title={t('selectAll')}
+                    aria-label={t('selectAll')}
                   />
                 </th>
                 <th className="w-[32px] py-3 px-2" />
@@ -327,6 +328,7 @@ export default function PeopleListClient({
                         checked={isChecked}
                         onChange={() => togglePerson(person.id)}
                         className="w-4 h-4 text-primary bg-surface-elevated border-border rounded focus:ring-primary"
+                        aria-label={formatFullName(person, nameOrder)}
                       />
                     </td>
                     <td className="w-[32px] py-4 px-2">
@@ -345,9 +347,9 @@ export default function PeopleListClient({
                         {isOrphan && (
                           <span className="relative group cursor-help">
                             <span className="text-yellow-500">{'\u26A0\uFE0F'}</span>
-                            <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-lg whitespace-normal max-w-xs z-50 shadow-lg">
+                            <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-white bg-surface-elevated rounded-lg whitespace-normal max-w-xs z-50 shadow-lg">
                               {tt.orphanWarning}
-                              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></span>
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-surface-elevated"></span>
                             </span>
                           </span>
                         )}
@@ -364,8 +366,8 @@ export default function PeopleListClient({
                         <span
                           className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                           style={{
-                            backgroundColor: person.relationshipToUser.color ? `${person.relationshipToUser.color}20` : '#E5E7EB',
-                            color: person.relationshipToUser.color || '#374151',
+                            backgroundColor: person.relationshipToUser.color ? `${person.relationshipToUser.color}20` : 'var(--badge-bg)',
+                            color: person.relationshipToUser.color || 'var(--badge-text)',
                           }}
                         >
                           {person.relationshipToUser.label}
@@ -383,8 +385,8 @@ export default function PeopleListClient({
                             key={pg.groupId}
                             className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                             style={{
-                              backgroundColor: pg.group.color ? `${pg.group.color}20` : '#E5E7EB',
-                              color: pg.group.color || '#374151',
+                              backgroundColor: pg.group.color ? `${pg.group.color}20` : 'var(--badge-bg)',
+                              color: pg.group.color || 'var(--badge-text)',
                             }}
                           >
                             {pg.group.name}
@@ -505,7 +507,7 @@ export default function PeopleListClient({
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-          <div className="bg-surface shadow-2xl border-2 border-primary/30 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+          <div className="bg-surface shadow-lg border border-border rounded-lg px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-foreground">
                 {selectAllPages

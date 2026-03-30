@@ -189,17 +189,17 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
 
     return (
       <tr key={label} className={isDifferent ? 'bg-amber-50 dark:bg-amber-900/10' : ''}>
-        <td className="px-3 py-2 text-sm font-medium text-muted whitespace-nowrap border-r border-gray-200 dark:border-gray-700">
+        <td className="px-3 py-2 text-sm font-medium text-muted whitespace-nowrap border-r border-border">
           {t(label)}
           {isDifferent && (
             <span className="ml-1.5 inline-block w-2 h-2 bg-amber-500 rounded-full" title={t('changed')} />
           )}
         </td>
-        <td className="px-3 py-2 text-sm text-foreground border-r border-gray-200 dark:border-gray-700 break-words">
-          {localValue || <span className="text-gray-400">{t('empty')}</span>}
+        <td className="px-3 py-2 text-sm text-foreground border-r border-border break-words">
+          {localValue || <span className="text-muted">{t('empty')}</span>}
         </td>
         <td className="px-3 py-2 text-sm text-foreground break-words">
-          {remoteValue || <span className="text-gray-400">{t('empty')}</span>}
+          {remoteValue || <span className="text-muted">{t('empty')}</span>}
         </td>
       </tr>
     );
@@ -221,9 +221,9 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
         return (
           <div
             key={conflict.id}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+            className="border border-border rounded-lg overflow-hidden"
           >
-            <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="bg-surface-elevated px-6 py-4 border-b border-border">
               <h3 className="font-semibold text-foreground">
                 {conflict.mapping.person.name} {conflict.mapping.person.surname}
               </h3>
@@ -237,9 +237,9 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-3 py-2 text-left text-xs font-medium text-muted uppercase border-r border-gray-200 dark:border-gray-700 w-36"></th>
-                    <th className="px-3 py-2 text-left text-xs font-medium border-r border-gray-200 dark:border-gray-700 w-1/2">
+                  <tr className="border-b border-border">
+                    <th className="px-3 py-2 text-left text-xs font-medium text-muted uppercase border-r border-border w-36"></th>
+                    <th className="px-3 py-2 text-left text-xs font-medium border-r border-border w-1/2">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
                         <span className="text-blue-700 dark:text-blue-300">{t('localVersion')}</span>
@@ -253,7 +253,7 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody className="divide-y divide-border">
                   {SCALAR_FIELDS.map(({ key, label }) =>
                     renderFieldRow(
                       label,
@@ -273,13 +273,13 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
             </div>
 
             {/* Action Buttons */}
-            <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="bg-surface-elevated px-6 py-4 border-t border-border">
               <p className="text-sm text-muted mb-4">{t('chooseVersion')}</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => handleResolve(conflict.id, 'keep_local')}
                   disabled={isResolving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isResolving ? t('resolving') : t('keepLocal')}
                 </button>

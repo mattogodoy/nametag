@@ -115,10 +115,10 @@ export default function UserRelationshipCard({
               const initials = (userName || '?').charAt(0).toUpperCase();
               return photoUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={photoUrl} alt="" className="w-6 h-6 rounded-full object-cover bg-white dark:bg-black flex-shrink-0" />
+                <img src={photoUrl} alt="" className="w-6 h-6 rounded-full object-cover bg-surface flex-shrink-0" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">{initials}</span>
+                <div className="w-6 h-6 rounded-full bg-surface-elevated flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-semibold text-muted">{initials}</span>
                 </div>
               );
             })()}
@@ -134,8 +134,8 @@ export default function UserRelationshipCard({
                   style={{
                     backgroundColor: relationshipToUser.color
                       ? `${relationshipToUser.color}20`
-                      : '#E5E7EB',
-                    color: relationshipToUser.color || '#374151',
+                      : 'var(--badge-bg)',
+                    color: relationshipToUser.color || 'var(--badge-text)',
                   }}
                 >
                   {relationshipToUser.label}
@@ -182,7 +182,7 @@ export default function UserRelationshipCard({
             </h3>
             <form onSubmit={handleEdit} className="space-y-4">
               {error && (
-                <div className="bg-warning/10 border-2 border-warning text-warning px-3 py-2 rounded text-sm">
+                <div role="alert" className="bg-warning/10 border border-warning/30 text-warning px-3 py-2 rounded text-sm">
                   {error}
                 </div>
               )}
@@ -194,7 +194,7 @@ export default function UserRelationshipCard({
                   required
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {relationshipTypes.map((type) => (
                     <option key={type.id} value={type.id}>
@@ -235,7 +235,7 @@ export default function UserRelationshipCard({
             </p>
 
             {error && (
-              <div className="mb-4 p-3 bg-warning/10 border-2 border-warning text-warning rounded text-sm">
+              <div role="alert" className="mb-4 p-3 bg-warning/10 border border-warning/30 text-warning rounded text-sm">
                 {error}
               </div>
             )}

@@ -47,7 +47,7 @@
     "dashboard": "Inicio",
     "people": "Personas",
     "groups": "Grupos",
-    "relationshipTypes": "Tipos de Relación",
+    "relationshipTypes": "Relaciones",
     "settings": "Configuración",
     "search": {
       "placeholder": "Buscar personas...",
@@ -57,7 +57,9 @@
     "userMenu": {
       "settings": "Configuración",
       "signOut": "Cerrar sesión"
-    }
+    },
+    "journal": "Diario",
+    "createJournal": "Nueva entrada"
   },
   "settings": {
     "title": "Configuración",
@@ -596,12 +598,15 @@
   },
   "dashboard": {
     "title": "Panel",
+    "greetingMorning": "Buenos días, {name}",
+    "greetingAfternoon": "Buenas tardes, {name}",
+    "greetingEvening": "Buenas noches, {name}",
     "upcomingEvents": "Próximos Eventos",
     "yourNetwork": "Tu Red",
     "emptyNetwork": {
-      "title": "Tu red está vacía",
-      "description": "Comienza a construir tu red personal agregando personas que conoces.",
-      "action": "Crea tu primera persona"
+      "title": "Todo empieza por algún lado",
+      "description": "Agrega a las personas que importan en tu vida y mira cómo tu red cobra vida.",
+      "action": "Agrega tu primera persona"
     },
     "today": "Hoy",
     "tomorrow": "Mañana",
@@ -1636,5 +1641,48 @@
     "today": "Hoy",
     "yearUnknown": "Año desconocido",
     "yearUnknownTooltip": "Cuando está marcado, solo se guardarán el mes y el día. El año será ignorado."
+  },
+  "journal": {
+    "title": "Diario",
+    "newEntry": "Nueva entrada",
+    "editEntry": "Editar entrada",
+    "addEntry": "Añadir nueva entrada",
+    "searchPlaceholder": "Buscar entradas...",
+    "filterByPerson": "Filtrar por persona",
+    "allPeople": "Todas las personas",
+    "noEntries": "Aún no hay entradas en el diario",
+    "noEntriesDescription": "Un cafe con amigos, una cena familiar, un reencuentro inesperado — captura los momentos que importan.",
+    "writeFirstEntry": "Escribe tu primera entrada",
+    "form": {
+      "titleLabel": "Título",
+      "titlePlaceholder": "Dale un título a esta entrada...",
+      "dateLabel": "Fecha",
+      "peopleLabel": "Personas",
+      "peoplePlaceholder": "Escribe para añadir personas...",
+      "bodyLabel": "Entrada",
+      "bodyPlaceholder": "Escribe sobre tu encuentro...",
+      "updateLastContact": "Actualizar la fecha de último contacto para las personas etiquetadas",
+      "updateLastContactTooltip": "Establece la fecha de 'último contacto' de cada persona etiquetada a la fecha de esta entrada, para que puedas hacer un seguimiento de cuándo interactuaste por última vez con ellas.",
+      "save": "Guardar entrada",
+      "cancel": "Cancelar",
+      "markdownSupport": "Admite formato Markdown",
+      "saved": "Entrada guardada"
+    },
+    "detail": {
+      "editButton": "Editar",
+      "deleteButton": "Eliminar",
+      "confirmDelete": "¿Estás seguro de que quieres eliminar esta entrada del diario?",
+      "confirmDeleteDescription": "Esta accion no se puede deshacer.",
+      "deleted": "Entrada del diario eliminada",
+      "deleteFailed": "Error al eliminar la entrada",
+      "taggedPeople": "Personas"
+    },
+    "personSection": {
+      "title": "Diario",
+      "noEntries": "Aún no hay entradas en el diario",
+      "writeOne": "Escribe una",
+      "viewAll": "Ver todas las entradas",
+      "newEntry": "Nueva entrada"
+    }
   }
 }

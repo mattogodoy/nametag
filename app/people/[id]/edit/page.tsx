@@ -98,7 +98,7 @@ export default async function EditPersonPage({
           <div className="mb-6">
             <Link
               href={`/people/${person.id}`}
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+              className="text-primary hover:underline text-sm"
             >
               {t('backToPerson', { name: formatFullName(person, nameOrder) })}
             </Link>

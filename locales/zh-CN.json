@@ -47,7 +47,7 @@
     "dashboard": "仪表盘",
     "people": "联系人",
     "groups": "分组",
-    "relationshipTypes": "关系类型",
+    "relationshipTypes": "关系",
     "settings": "设置",
     "search": {
       "placeholder": "搜索联系人...",
@@ -57,7 +57,9 @@
     "userMenu": {
       "settings": "设置",
       "signOut": "退出登录"
-    }
+    },
+    "journal": "日记",
+    "createJournal": "新条目"
   },
   "settings": {
     "title": "设置",
@@ -596,12 +598,15 @@
   },
   "dashboard": {
     "title": "仪表盘",
+    "greetingMorning": "早上好，{name}",
+    "greetingAfternoon": "下午好，{name}",
+    "greetingEvening": "晚上好，{name}",
     "upcomingEvents": "即将发生的事件",
     "yourNetwork": "您的网络",
     "emptyNetwork": {
-      "title": "您的网络为空",
-      "description": "通过添加您认识的人来开始建立您的个人网络。",
-      "action": "创建您的第一个联系人"
+      "title": "每段旅程都有起点",
+      "description": "添加对你重要的人，看着你的人际网络变得生动起来。",
+      "action": "添加第一个人"
     },
     "today": "今天",
     "tomorrow": "明天",
@@ -1636,5 +1641,48 @@
     "today": "今天",
     "yearUnknown": "年份未知",
     "yearUnknownTooltip": "选中时，仅保存月份和日期。年份将被忽略。"
+  },
+  "journal": {
+    "title": "日记",
+    "newEntry": "新条目",
+    "editEntry": "编辑条目",
+    "addEntry": "添加新条目",
+    "searchPlaceholder": "搜索条目...",
+    "filterByPerson": "按人物筛选",
+    "allPeople": "所有人",
+    "noEntries": "暂无日记条目",
+    "noEntriesDescription": "与朋友喝咖啡、家庭聚餐、与老友重逢——记录那些重要的时刻。",
+    "writeFirstEntry": "写下第一条记录",
+    "form": {
+      "titleLabel": "标题",
+      "titlePlaceholder": "给这条记录起个标题...",
+      "dateLabel": "日期",
+      "peopleLabel": "人物",
+      "peoplePlaceholder": "输入以添加人物...",
+      "bodyLabel": "记录",
+      "bodyPlaceholder": "写下您的相遇经历...",
+      "updateLastContact": "更新已标记人物的最近联系日期",
+      "updateLastContactTooltip": "将每位已标记人物的「最近联系」日期设置为本条目的日期，以便追踪上次互动的时间。",
+      "save": "保存条目",
+      "cancel": "取消",
+      "markdownSupport": "支持 Markdown 格式",
+      "saved": "条目已保存"
+    },
+    "detail": {
+      "editButton": "编辑",
+      "deleteButton": "删除",
+      "confirmDelete": "确定要删除这条日记记录吗？",
+      "confirmDeleteDescription": "此操作无法撤销。",
+      "deleted": "日记条目已删除",
+      "deleteFailed": "删除条目失败",
+      "taggedPeople": "人物"
+    },
+    "personSection": {
+      "title": "日记",
+      "noEntries": "暂无日记条目",
+      "writeOne": "写一条",
+      "viewAll": "查看所有条目",
+      "newEntry": "新条目"
+    }
   }
 }

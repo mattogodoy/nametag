@@ -89,9 +89,9 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
         <div className="inline-flex items-center bg-surface-elevated rounded-lg p-1.5 shadow-sm">
           <button
             onClick={() => setFrequency('MONTHLY')}
-            className={`px-6 py-3 text-base font-semibold rounded-md transition-all ${
+            className={`px-6 py-3 text-base font-semibold rounded-md transition-colors ${
               frequency === 'MONTHLY'
-                ? 'bg-surface text-foreground shadow-md scale-105'
+                ? 'bg-surface text-foreground shadow-sm'
                 : 'text-muted hover:text-foreground'
             }`}
           >
@@ -99,9 +99,9 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
           </button>
           <button
             onClick={() => setFrequency('YEARLY')}
-            className={`px-6 py-3 text-base font-semibold rounded-md transition-all relative ${
+            className={`px-6 py-3 text-base font-semibold rounded-md transition-colors relative ${
               frequency === 'YEARLY'
-                ? 'bg-surface text-foreground shadow-md scale-105'
+                ? 'bg-surface text-foreground shadow-sm'
                 : 'text-muted hover:text-foreground'
             }`}
           >
@@ -132,20 +132,15 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
               key={tier}
               className={`relative bg-surface rounded-lg border-2 p-6 flex flex-col ${
                 isCurrent
-                  ? 'border-blue-500'
+                  ? 'border-primary'
                   : tier === 'PERSONAL'
                   ? 'border-purple-500'
                   : 'border-border'
               }`}
             >
               {isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-medium px-3 py-1 rounded-full">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-medium px-3 py-1 rounded-full">
                   {t('currentPlan')}
-                </span>
-              )}
-              {tier === 'PERSONAL' && !isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-                  {t('mostPopular')}
                 </span>
               )}
 
@@ -208,8 +203,8 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
                     disabled={loading !== null}
                     className={
                       tier === 'PERSONAL'
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-600/50'
-                        : 'bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg hover:shadow-yellow-600/50'
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'bg-yellow-600 hover:bg-yellow-700 text-white'
                     }
                   >
                     {loading === tier ? t('loading') : isUpgrade ? t('upgrade') : t('switchPlan')}

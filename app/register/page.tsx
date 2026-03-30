@@ -154,12 +154,12 @@ export default function RegisterPage() {
               {t('registrationDisabled')}
             </h2>
           </div>
-          <div className="bg-warning/10 border-2 border-warning text-warning px-6 py-4 rounded-lg">
+          <div role="alert" className="bg-warning/10 border border-warning/30 text-warning px-6 py-4 rounded-lg">
             <p className="text-sm">{t('registrationDisabledMessage')}</p>
           </div>
           <Link
             href="/login"
-            className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            className="inline-block text-primary hover:text-primary-dark"
           >
             {t('backToLogin')}
           </Link>
@@ -185,7 +185,7 @@ export default function RegisterPage() {
           </div>
           <Link
             href="/login"
-            className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            className="inline-block text-primary hover:text-primary-dark"
           >
             {t('goToLogin')}
           </Link>
@@ -231,7 +231,7 @@ export default function RegisterPage() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded">
+            <div role="alert" className="bg-warning/10 border border-warning/30 text-warning px-4 py-3 rounded">
               <div className="font-medium">{error}</div>
               {validationErrors.length > 0 && (
                 <ul className="mt-2 ml-4 list-disc space-y-1 text-sm">
@@ -256,7 +256,7 @@ export default function RegisterPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder={t('namePlaceholder')}
               />
             </div>
@@ -270,7 +270,7 @@ export default function RegisterPage() {
                 type="text"
                 value={surname}
                 onChange={(e) => setSurname(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder={t('surnamePlaceholder')}
               />
             </div>
@@ -284,7 +284,7 @@ export default function RegisterPage() {
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder={t('nicknamePlaceholder')}
               />
             </div>
@@ -300,7 +300,7 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder={t('emailAddress')}
               />
             </div>
@@ -316,7 +316,7 @@ export default function RegisterPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder={t('password')}
               />
               <PasswordStrengthIndicator password={password} showRequirements={true} />
@@ -333,7 +333,7 @@ export default function RegisterPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-gray-500 dark:placeholder-gray-400 text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder={t('confirmPasswordPlaceholder')}
               />
             </div>
@@ -343,7 +343,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-semibold rounded-lg text-black bg-primary hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? t('creatingAccount') : t('signUp')}
             </button>
@@ -354,7 +354,7 @@ export default function RegisterPage() {
               {t('alreadyHaveAccount')}{' '}
               <Link
                 href="/login"
-                className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                className="font-medium text-primary hover:text-primary-dark"
               >
                 {t('signIn')}
               </Link>

@@ -77,18 +77,18 @@ export default async function GroupsPage({
             {canCreate.allowed ? (
               <Link
                 href="/groups/new"
-                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50"
+                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
               >
                 {t('addGroup')}
               </Link>
             ) : (
               <div className="relative group">
-                <span className="px-4 py-2 bg-gray-400 dark:bg-gray-600 text-white rounded-lg font-semibold cursor-not-allowed inline-block">
+                <span className="px-4 py-2 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-block">
                   {t('addGroup')}
                 </span>
-                <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-lg z-10">
+                <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-surface-elevated text-white text-sm rounded-lg shadow-lg z-10">
                   <p className="mb-2">{t('limitReached', { limit: canCreate.limit })}</p>
-                  <Link href="/settings/billing" className="text-blue-400 hover:text-blue-300 underline">
+                  <Link href="/settings/billing" className="text-primary hover:text-primary-dark underline">
                     {t('upgradePlan')}
                   </Link>
                 </div>
@@ -100,11 +100,9 @@ export default async function GroupsPage({
             <div className="bg-surface shadow rounded-lg">
               <EmptyState
                 icon={
-                  <div className="p-4 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <svg className="w-12 h-12 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                  </div>
+                  <svg className="w-12 h-12 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
                 }
                 title={t('noGroupsYet')}
                 description={t('noGroupsDescription')}
@@ -124,7 +122,7 @@ export default async function GroupsPage({
                   <Link
                     key={group.id}
                     href={`/groups/${group.id}`}
-                    className="bg-surface shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
+                    className="bg-surface shadow-sm rounded-lg p-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -167,7 +165,7 @@ export default async function GroupsPage({
                         ←
                       </Link>
                     ) : (
-                      <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-surface-elevated text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                      <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-surface-elevated text-sm font-medium text-muted/50 cursor-not-allowed">
                         <span className="sr-only">{tCommon('previous')}</span>
                         ←
                       </span>
@@ -188,7 +186,7 @@ export default async function GroupsPage({
                       return pageNum === currentPage ? (
                         <span
                           key={pageNum}
-                          className="relative inline-flex items-center px-4 py-2 border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-sm font-medium text-primary"
+                          className="relative inline-flex items-center px-4 py-2 border border-primary bg-primary/10 text-sm font-medium text-primary"
                         >
                           {pageNum}
                         </span>
@@ -212,7 +210,7 @@ export default async function GroupsPage({
                         →
                       </Link>
                     ) : (
-                      <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-surface-elevated text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                      <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-surface-elevated text-sm font-medium text-muted/50 cursor-not-allowed">
                         <span className="sr-only">{tCommon('next')}</span>
                         →
                       </span>

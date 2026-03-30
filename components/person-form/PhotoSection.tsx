@@ -47,7 +47,7 @@ export default function PhotoSection({
             <img
               src={photoPreview}
               alt=""
-              className="w-20 h-20 rounded-full object-cover bg-white dark:bg-black"
+              className="w-20 h-20 rounded-full object-cover bg-surface"
             />
           ) : (
             <PersonAvatar

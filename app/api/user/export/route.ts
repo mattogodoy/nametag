@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { formatFullName } from '@/lib/nameUtils';
 
 export const GET = withAuth(async (request, session) => {
   try {
@@ -9,7 +10,7 @@ export const GET = withAuth(async (request, session) => {
     const filterByGroups = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : null;
 
     // Fetch all user data
-    const [user, allPeople, allGroups, relationshipTypes] = await Promise.all([
+    const [user, allPeople, allGroups, relationshipTypes, journalEntries] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -115,6 +116,19 @@ export const GET = withAuth(async (request, session) => {
       }),
       prisma.relationshipType.findMany({
         where: { userId: session.user.id, deletedAt: null },
+      }),
+      prisma.journalEntry.findMany({
+        where: { userId: session.user.id, deletedAt: null },
+        include: {
+          people: {
+            include: {
+              person: {
+                select: { id: true, name: true, surname: true, middleName: true, secondLastName: true, nickname: true },
+              },
+            },
+          },
+        },
+        orderBy: { date: 'desc' },
       }),
     ]);
 
@@ -240,6 +254,13 @@ export const GET = withAuth(async (request, session) => {
         label: type.label,
         color: type.color,
         inverseId: type.inverseId,
+      })),
+      journalEntries: journalEntries.map((e) => ({
+        id: e.id,
+        title: e.title,
+        date: e.date.toISOString(),
+        body: e.body,
+        people: e.people.map((ep) => formatFullName(ep.person)),
       })),
     };
 

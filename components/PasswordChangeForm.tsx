@@ -101,7 +101,7 @@ export default function PasswordChangeForm({}: PasswordChangeFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded">
+        <div role="alert" className="bg-warning/10 border border-warning/30 text-warning px-4 py-3 rounded">
           <div className="font-medium">{error}</div>
           {validationErrors.length > 0 && (
             <ul className="mt-2 ml-4 list-disc space-y-1 text-sm">
@@ -134,7 +134,7 @@ export default function PasswordChangeForm({}: PasswordChangeFormProps) {
           required
           value={formData.currentPassword}
           onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
@@ -151,7 +151,7 @@ export default function PasswordChangeForm({}: PasswordChangeFormProps) {
           required
           value={formData.newPassword}
           onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <PasswordStrengthIndicator password={formData.newPassword} showRequirements={true} />
       </div>
@@ -169,7 +169,7 @@ export default function PasswordChangeForm({}: PasswordChangeFormProps) {
           required
           value={formData.confirmPassword}
           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
@@ -177,7 +177,7 @@ export default function PasswordChangeForm({}: PasswordChangeFormProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? t('updating') : t('updatePassword')}
         </button>

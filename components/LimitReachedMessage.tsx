@@ -51,7 +51,7 @@ export default function LimitReachedMessage({
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/settings/billing"
-            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors"
+            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
           >
             Upgrade Plan
           </Link>

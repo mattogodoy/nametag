@@ -67,7 +67,7 @@ export default function Step2AddressBookSelect({
             className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
               selectedUrl === book.url
                 ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                : 'border-border hover:border-gray-400 dark:hover:border-gray-500'
+                : 'border-border hover:border-border'
             }`}
           >
             <input

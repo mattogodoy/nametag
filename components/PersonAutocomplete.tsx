@@ -147,7 +147,7 @@ export default function PersonAutocomplete({
         placeholder={placeholder}
         required={required}
         data-1p-ignore
-        className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         autoComplete="off"
       />
 
@@ -160,11 +160,11 @@ export default function PersonAutocomplete({
               onClick={() => handleSelect(person)}
               className={`w-full text-left px-3 py-2 hover:bg-surface-elevated transition-colors ${
                 index === highlightedIndex
-                  ? 'bg-blue-50 dark:bg-blue-900/20'
+                  ? 'bg-primary/10'
                   : ''
               } ${
                 person.id === value
-                  ? 'bg-blue-100 dark:bg-blue-900/30 font-medium'
+                  ? 'bg-primary/15 font-medium'
                   : ''
               }`}
               onMouseEnter={() => setHighlightedIndex(index)}
@@ -189,12 +189,12 @@ export default function PersonAutocomplete({
                 onClick={() => onCreateNew(searchTerm)}
                 className={`w-full text-left px-3 py-2 hover:bg-surface-elevated transition-colors ${
                   highlightedIndex === createNewIndex
-                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    ? 'bg-primary/10'
                     : ''
                 }`}
                 onMouseEnter={() => setHighlightedIndex(createNewIndex)}
               >
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <div className="flex items-center gap-2 text-primary">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>

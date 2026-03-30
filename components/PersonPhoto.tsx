@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { getPhotoUrl } from '@/lib/photo-url';
 
 interface PersonAvatarProps {
@@ -12,7 +12,7 @@ interface PersonAvatarProps {
   className?: string;
 }
 
-export default function PersonAvatar({
+export default memo(function PersonAvatar({
   personId,
   name,
   photo,
@@ -53,10 +53,10 @@ export default function PersonAvatar({
       {/* Initials fallback — shown when no photo, on error, or while loading */}
       {(!showImage || !loaded) && (
         <div
-          className={`absolute inset-0 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center ${showImage ? 'animate-pulse' : ''}`}
+          className={`absolute inset-0 rounded-full bg-surface-elevated flex items-center justify-center ${showImage ? 'animate-pulse' : ''}`}
         >
           <span
-            className="font-semibold text-gray-500 dark:text-gray-400 select-none"
+            className="font-semibold text-muted select-none"
             style={{ fontSize }}
           >
             {initials}
@@ -73,7 +73,7 @@ export default function PersonAvatar({
           loading={loading}
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}
-          className={`rounded-full object-cover bg-white dark:bg-black transition-opacity duration-300 ${
+          className={`rounded-full object-cover bg-surface transition-opacity duration-300 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ width: size, height: size }}
@@ -81,4 +81,4 @@ export default function PersonAvatar({
       )}
     </div>
   );
-}
+});

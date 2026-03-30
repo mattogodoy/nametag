@@ -51,13 +51,13 @@ export default function Error({
         <div className="flex flex-col gap-4">
           <button
             onClick={reset}
-            className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-black bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
             Try Again
           </button>
           <Link
             href="/"
-            className="inline-flex justify-center items-center px-6 py-3 border border-border text-base font-medium rounded-lg text-muted bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex justify-center items-center px-6 py-3 border border-border text-base font-medium rounded-lg text-muted bg-surface hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
             Go Home
           </Link>

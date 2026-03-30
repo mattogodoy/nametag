@@ -139,7 +139,7 @@ export default function BulkDeleteModal({
       </p>
 
       {isLoadingOrphans && (
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 rounded text-sm">
+        <div className="p-3 bg-primary/10 border border-primary/20 text-primary rounded text-sm">
           {t('checkingOrphans')}
         </div>
       )}
@@ -182,7 +182,7 @@ export default function BulkDeleteModal({
       )}
 
       {hasCardDavSync && (
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 rounded">
+        <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded">
           <div className="flex items-start">
             <input
               type="checkbox"
@@ -191,11 +191,11 @@ export default function BulkDeleteModal({
               onChange={(e) => setDeleteFromCardDav(e.target.checked)}
               className="w-4 h-4 mt-0.5 text-red-600 bg-surface-elevated border-border rounded focus:ring-red-500"
             />
-            <label htmlFor="bulkDeleteFromCardDav" className="ml-2 text-sm text-blue-800 dark:text-blue-400 cursor-pointer">
+            <label htmlFor="bulkDeleteFromCardDav" className="ml-2 text-sm text-primary cursor-pointer">
               {t('deleteFromCardDav')}
             </label>
           </div>
-          <p className="ml-6 mt-1 text-xs text-blue-700 dark:text-blue-300">
+          <p className="ml-6 mt-1 text-xs text-primary">
             {t('deleteFromCardDavDescription')}
           </p>
         </div>

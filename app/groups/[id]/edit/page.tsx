@@ -53,7 +53,7 @@ export default async function EditGroupPage({
           <div className="mb-6">
             <Link
               href={`/groups/${group.id}`}
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+              className="text-primary hover:underline text-sm"
             >
               {t('backToGroup', { name: group.name })}
             </Link>

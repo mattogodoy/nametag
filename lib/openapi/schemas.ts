@@ -393,5 +393,25 @@ export function sharedSchemas(): Record<string, unknown> {
       },
       required: ['id', 'userId', 'serverUrl', 'username', 'syncEnabled', 'autoExportNew', 'importMode', 'createdAt', 'updatedAt'],
     },
+    JournalEntry: {
+      type: 'object',
+      description: 'A journal entry with optional tagged people',
+      properties: {
+        id: { type: 'string', description: 'CUID identifier' },
+        userId: { type: 'string', description: 'User ID' },
+        title: { type: 'string', description: 'Entry title' },
+        date: { type: 'string', format: 'date-time', description: 'Date of the journal entry' },
+        body: { type: 'string', description: 'Entry content (markdown supported)' },
+        people: {
+          type: 'array',
+          description: 'People tagged in this entry',
+          items: { $ref: '#/components/schemas/Person' },
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+        deletedAt: { type: ['string', 'null'], format: 'date-time' },
+      },
+      required: ['id', 'userId', 'title', 'date', 'body', 'people', 'createdAt', 'updatedAt'],
+    },
   };
 }

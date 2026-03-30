@@ -91,14 +91,14 @@ export default function LanguageSelector({
               disabled={isLoading}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
                 isSelected
-                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                  ? 'border-primary bg-primary/10'
                   : 'border-border bg-surface hover:bg-surface-elevated'
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <span className={`fi fi-${language.flag} text-2xl`}></span>
               <div className="flex-1 text-left">
                 <div
-                  className={`font-medium ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-foreground'}`}
+                  className={`font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}
                 >
                   {language.name}
                 </div>
@@ -107,7 +107,7 @@ export default function LanguageSelector({
                 </div>
               </div>
               {isSelected && (
-                <div className="text-blue-600 dark:text-blue-400">
+                <div className="text-primary">
                   <svg
                     className="w-5 h-5"
                     fill="currentColor"
@@ -127,7 +127,7 @@ export default function LanguageSelector({
       </div>
 
       {isLoading && (
-        <p className="mt-4 text-sm text-blue-600 dark:text-blue-400">
+        <p className="mt-4 text-sm text-primary">
           {tCommon('loading')}
         </p>
       )}

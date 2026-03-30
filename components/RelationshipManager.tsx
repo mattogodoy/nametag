@@ -263,7 +263,7 @@ export default function RelationshipManager({
         </h4>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-3 py-1 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-primary/50"
+          className="px-3 py-1 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
         >
           {t('addRelationship')}
         </button>
@@ -288,7 +288,7 @@ export default function RelationshipManager({
                         <PersonAvatar personId={rel.personId} name={formatGraphName(rel.person, nameOrder)} photo={rel.person.photo} size={24} />
                         <Link
                           href={`/people/${rel.personId}`}
-                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          className="text-primary hover:underline font-medium"
                         >
                           {formatGraphName(rel.person, nameOrder)}
                         </Link>
@@ -301,8 +301,8 @@ export default function RelationshipManager({
                         style={{
                           backgroundColor: rel.relationshipType?.color
                             ? `${rel.relationshipType.color}20`
-                            : '#E5E7EB',
-                          color: rel.relationshipType?.color || '#374151',
+                            : 'var(--badge-bg)',
+                          color: rel.relationshipType?.color || 'var(--badge-text)',
                         }}
                       >
                         {rel.relationshipType?.label || 'Unknown'}
@@ -319,19 +319,19 @@ export default function RelationshipManager({
               <div className="flex gap-3">
                 <button
                   onClick={() => openEditModal(rel)}
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                  title={t('edit')}
+                  className="text-primary hover:text-primary-dark transition-colors"
+                  aria-label={t('edit')}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
                 <button
                   onClick={() => openDeleteModal(rel)}
                   className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
-                  title={t('delete')}
+                  aria-label={t('delete')}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
@@ -343,14 +343,14 @@ export default function RelationshipManager({
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="add-relationship-title">
           <div className="bg-surface rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
+            <h3 id="add-relationship-title" className="text-lg font-semibold text-foreground mb-4">
               {t('addRelationship')}
             </h3>
             <form onSubmit={handleAdd} className="space-y-4">
               {error && (
-                <div className="bg-warning/10 border-2 border-warning text-warning px-3 py-2 rounded text-sm">
+                <div className="bg-warning/10 border border-warning/30 text-warning px-3 py-2 rounded text-sm" role="alert">
                   {error}
                 </div>
               )}
@@ -381,7 +381,7 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, relationshipTypeId: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {relationshipTypes.map((type) => (
                     <option key={type.id} value={type.id}>
@@ -400,14 +400,14 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={t('optionalNotes')}
                 />
               </div>
               {/* Preview sentence */}
               {formData.relatedPersonId && (
                 <div
-                  className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200"
+                  className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-sm text-primary"
                   data-testid="relationship-preview"
                 >
                   {(() => {
@@ -460,14 +460,14 @@ export default function RelationshipManager({
 
       {/* Edit Modal */}
       {showEditModal && selectedRelationship && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-relationship-title">
           <div className="bg-surface rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
+            <h3 id="edit-relationship-title" className="text-lg font-semibold text-foreground mb-4">
               {t('editRelationship', { name: formatFullName(selectedRelationship.person, nameOrder) })}
             </h3>
             <form onSubmit={handleEdit} className="space-y-4">
               {error && (
-                <div className="bg-warning/10 border-2 border-warning text-warning px-3 py-2 rounded text-sm">
+                <div className="bg-warning/10 border border-warning/30 text-warning px-3 py-2 rounded text-sm" role="alert">
                   {error}
                 </div>
               )}
@@ -481,7 +481,7 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, relationshipTypeId: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {relationshipTypes.map((type) => (
                     <option key={type.id} value={type.id}>
@@ -500,7 +500,7 @@ export default function RelationshipManager({
                   onChange={(e) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={t('optionalNotes')}
                 />
               </div>
@@ -526,17 +526,17 @@ export default function RelationshipManager({
 
       {/* Delete Modal */}
       {showDeleteModal && selectedRelationship && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="alertdialog" aria-modal="true" aria-labelledby="delete-relationship-title" aria-describedby="delete-relationship-desc">
           <div className="bg-surface rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
+            <h3 id="delete-relationship-title" className="text-lg font-semibold text-foreground mb-2">
               {t('deleteRelationship')}
             </h3>
-            <p className="text-muted mb-6">
+            <p id="delete-relationship-desc" className="text-muted mb-6">
               {t('deleteRelationshipConfirm', { name: formatFullName(selectedRelationship.person, nameOrder) })}
             </p>
 
             {error && (
-              <div className="mb-4 p-3 bg-warning/10 border-2 border-warning text-warning rounded text-sm">
+              <div className="mb-4 p-3 bg-warning/10 border border-warning/30 text-warning rounded text-sm" role="alert">
                 {error}
               </div>
             )}

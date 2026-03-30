@@ -4,49 +4,51 @@
 /* Enable class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* PALETTE A — Cool Contrast Blue */
+/* PALETTE — Warm Personal */
 :root {
-  --a-primary: #1E63FF;
-  --a-secondary: #6DA8FF;
-  --a-text: #1B1D21;
-  --a-bg: #F6F7F9;
+  --a-primary: #2563EB;
+  --a-secondary: #93C5FD;
+  --a-text: #1C1917;
+  --a-bg: #F7F6F3;
   --a-surface: #FFFFFF;
 
-  /* Legacy variables for compatibility */
-  --background: #F6F7F9;
-  --foreground: #1B1D21;
+  --background: #F7F6F3;
+  --foreground: #1C1917;
   --surface: #FFFFFF;
-  --surface-elevated: #FAFBFC;
-  --border: rgba(30, 99, 255, 0.15);
-  --primary: #1E63FF;
-  --primary-dark: #1552D9;
-  --secondary: #6DA8FF;
-  --tertiary: #6DA8FF;
-  --accent: #6DA8FF;
-  --muted: rgba(27, 29, 33, 0.6);
-  --warning: #ff4800;
+  --surface-elevated: #F3F2EF;
+  --border: rgba(28, 25, 23, 0.1);
+  --primary: #2563EB;
+  --primary-dark: #1D4ED8;
+  --secondary: #93C5FD;
+  --tertiary: #93C5FD;
+  --accent: #D97706;
+  --muted: rgba(28, 25, 23, 0.63);
+  --warning: #C4552A;
+  --badge-bg: #E8E5E0;
+  --badge-text: #44403C;
 }
 
 .dark {
-  --a-primary: #5C82FF;
-  --a-secondary: #2C3E9F;
-  --a-text: #E7EAF0;
-  --a-bg: #0B0C10;
-  --a-surface: #15171D;
+  --a-primary: #60A5FA;
+  --a-secondary: #1D4ED8;
+  --a-text: #EDE9E1;
+  --a-bg: #121110;
+  --a-surface: #1C1A17;
 
-  /* Legacy variables for compatibility */
-  --background: #0B0C10;
-  --foreground: #E7EAF0;
-  --surface: #15171D;
-  --surface-elevated: #1D1F26;
-  --border: rgba(92, 130, 255, 0.2);
-  --primary: #5C82FF;
-  --primary-dark: #4A6FE6;
-  --secondary: #2C3E9F;
-  --tertiary: #2C3E9F;
-  --accent: #2C3E9F;
-  --muted: rgba(231, 234, 240, 0.65);
-  --warning: #ff4800;
+  --background: #121110;
+  --foreground: #EDE9E1;
+  --surface: #1C1A17;
+  --surface-elevated: #252320;
+  --border: rgba(237, 233, 225, 0.1);
+  --primary: #60A5FA;
+  --primary-dark: #3B82F6;
+  --secondary: #1D4ED8;
+  --tertiary: #1D4ED8;
+  --accent: #F59E0B;
+  --muted: rgba(237, 233, 225, 0.6);
+  --warning: #E5603E;
+  --badge-bg: #44403C;
+  --badge-text: #D6D3CD;
 }
 
 @theme inline {
@@ -70,6 +72,8 @@
   --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-warning: var(--warning);
+  --color-badge-bg: var(--badge-bg);
+  --color-badge-text: var(--badge-text);
 
   /* Use system font stack for better performance */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;

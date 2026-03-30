@@ -90,7 +90,7 @@ export default function Step2BackupDownload({
           onClick={handleDownloadBackup}
           disabled={isDownloading}
           size="lg"
-          className="bg-gray-600 text-white hover:bg-gray-700 border-0"
+          className="bg-primary text-white hover:bg-primary-dark border-0"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -109,8 +109,8 @@ export default function Step2BackupDownload({
       )}
 
       {downloadResult === 'empty' && (
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
+        <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+          <p className="text-sm text-primary">
             {tw('backupEmptyMessage')}
           </p>
         </div>

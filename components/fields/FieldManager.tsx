@@ -51,7 +51,7 @@ function setFieldValue<T extends BaseFieldItem>(
 // ─── Shared input class ───────────────────────────────────────────────────────
 
 const INPUT_BASE =
-  'px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100';
+  'px-3 py-2 border border-border rounded-lg bg-surface text-foreground';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -144,14 +144,14 @@ export default function FieldManager<T extends BaseFieldItem>({
             href={urlItem.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+            className="text-sm text-primary hover:underline break-all"
           >
             {urlItem.url}
           </a>
         );
       }
       return (
-        <span className="text-sm text-gray-900 dark:text-gray-100 break-all">
+        <span className="text-sm text-foreground break-all">
           {urlItem.url}
         </span>
       );
@@ -163,16 +163,16 @@ export default function FieldManager<T extends BaseFieldItem>({
       return (
         <>
           {locItem.label && (
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">
+            <span className="text-xs font-medium text-foreground block mb-1">
               {locItem.label}
             </span>
           )}
-          <p className="text-sm text-gray-900 dark:text-gray-100 font-mono">{coords}</p>
+          <p className="text-sm text-foreground font-mono">{coords}</p>
           <a
             href={`https://www.google.com/maps?q=${locItem.latitude},${locItem.longitude}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             {t('viewOnMap')}
           </a>
@@ -189,7 +189,7 @@ export default function FieldManager<T extends BaseFieldItem>({
               {cfItem.key}
             </span>
           </div>
-          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+          <p className="text-sm text-foreground whitespace-pre-wrap">
             {cfItem.value}
           </p>
         </>
@@ -222,6 +222,7 @@ export default function FieldManager<T extends BaseFieldItem>({
               onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
             }
             placeholder={t(field.placeholderKey)}
+            aria-label={t(field.placeholderKey)}
             rows={2}
             className={`w-full ${INPUT_BASE}`}
           />
@@ -236,6 +237,7 @@ export default function FieldManager<T extends BaseFieldItem>({
               onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
             }
             placeholder={t(field.placeholderKey)}
+            aria-label={t(field.placeholderKey)}
             className={`w-full ${INPUT_BASE}`}
             {...(field.inputAttrs as React.InputHTMLAttributes<HTMLInputElement>)}
           />
@@ -260,6 +262,7 @@ export default function FieldManager<T extends BaseFieldItem>({
                 onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
               }
               placeholder={t(field.placeholderKey)}
+              aria-label={t(field.placeholderKey)}
               className={INPUT_BASE}
               {...(field.inputAttrs as React.InputHTMLAttributes<HTMLInputElement>)}
             />
@@ -282,6 +285,7 @@ export default function FieldManager<T extends BaseFieldItem>({
                 )
               }
               placeholder={t(postalField.placeholderKey)}
+              aria-label={t(postalField.placeholderKey)}
               className={INPUT_BASE}
             />
           )}
@@ -343,6 +347,7 @@ export default function FieldManager<T extends BaseFieldItem>({
             onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
           }
           placeholder={t(field.placeholderKey)}
+          aria-label={t(field.placeholderKey)}
           className={`flex-1 ${INPUT_BASE}`}
           autoFocus={isAddForm}
         />
@@ -350,14 +355,14 @@ export default function FieldManager<T extends BaseFieldItem>({
           type="button"
           onClick={onConfirm}
           disabled={!isValid(item)}
-          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {confirmLabel}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
+          className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
         >
           {t('cancel')}
         </button>
@@ -383,7 +388,7 @@ export default function FieldManager<T extends BaseFieldItem>({
       const cfItem = item as unknown as PersonCustomField;
       customKeyElements.push(
         <div key="preset">
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-medium text-foreground mb-1">
             {t('preset')}
           </label>
           <select
@@ -417,6 +422,7 @@ export default function FieldManager<T extends BaseFieldItem>({
             value={cfItem.key}
             onChange={(e) => onItemChange({ ...item, key: e.target.value } as T)}
             placeholder={t('keyPlaceholder')}
+            aria-label={t('keyPlaceholder')}
             className={`w-full ${INPUT_BASE}`}
             autoFocus
           />
@@ -444,20 +450,20 @@ export default function FieldManager<T extends BaseFieldItem>({
             type="button"
             onClick={onConfirm}
             disabled={!isValid(item)}
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {confirmLabel}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
+            className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
           >
             {t('cancel')}
           </button>
         </div>
         {fieldConfig.namespace === 'locations' && (
-          <p className="text-xs text-gray-600 dark:text-gray-400">{t('coordinatesHelp')}</p>
+          <p className="text-xs text-muted">{t('coordinatesHelp')}</p>
         )}
       </div>
     );
@@ -487,19 +493,20 @@ export default function FieldManager<T extends BaseFieldItem>({
               onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
             }
             placeholder={t(field.placeholderKey)}
+            aria-label={t(field.placeholderKey)}
             className={`flex-1 ${INPUT_BASE}`}
           />
           <button
             type="button"
             onClick={handleSaveEdit}
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
           >
             {t('save')}
           </button>
           <button
             type="button"
             onClick={handleCancelEdit}
-            className="px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
+            className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
           >
             {t('cancel')}
           </button>
@@ -518,6 +525,7 @@ export default function FieldManager<T extends BaseFieldItem>({
           value={cfItem.key}
           onChange={(e) => onItemChange({ ...item, key: e.target.value } as T)}
           placeholder={t('keyPlaceholder')}
+          aria-label={t('keyPlaceholder')}
           className={`w-full ${INPUT_BASE}`}
         />
       );
@@ -542,14 +550,14 @@ export default function FieldManager<T extends BaseFieldItem>({
           <button
             type="button"
             onClick={handleSaveEdit}
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
           >
             {t('save')}
           </button>
           <button
             type="button"
             onClick={handleCancelEdit}
-            className="px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
+            className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
           >
             {t('cancel')}
           </button>
@@ -574,7 +582,7 @@ export default function FieldManager<T extends BaseFieldItem>({
 
     const specialContent = renderSpecialViewContent(item);
     const summaryEl = specialContent ?? (
-      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
+      <p className="text-sm text-foreground mt-1">
         {fieldConfig.formatSummary(item, t)}
       </p>
     );
@@ -583,7 +591,7 @@ export default function FieldManager<T extends BaseFieldItem>({
       <button
         type="button"
         onClick={() => handleStartEdit(index)}
-        className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        className="text-sm text-primary hover:text-primary-dark"
       >
         {t('edit')}
       </button>
@@ -653,14 +661,14 @@ export default function FieldManager<T extends BaseFieldItem>({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="block text-sm font-medium text-foreground">
           {label}
         </label>
         {!isAdding && (
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-sm text-primary hover:text-primary-dark"
           >
             + {t('add')}
           </button>
@@ -669,7 +677,7 @@ export default function FieldManager<T extends BaseFieldItem>({
 
       {/* Optional description (custom fields) */}
       {fieldConfig.namespace === 'customFields' && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{t('description')}</p>
+        <p className="text-xs text-muted">{t('description')}</p>
       )}
 
       {/* Existing items */}
@@ -677,7 +685,7 @@ export default function FieldManager<T extends BaseFieldItem>({
         {items.map((item, index) => (
           <div
             key={item.id ?? `new-${index}`}
-            className={`${isMultiField ? 'p-3' : 'flex items-center gap-2 p-3'} bg-gray-50 dark:bg-gray-800 rounded-lg`}
+            className={`${isMultiField ? 'p-3' : 'flex items-center gap-2 p-3'} bg-surface-elevated rounded-lg`}
           >
             {editingIndex === index && editingItem
               ? renderEditInline(editingItem, (updated) => setEditingItem(updated))
@@ -691,7 +699,7 @@ export default function FieldManager<T extends BaseFieldItem>({
 
       {/* Empty state */}
       {items.length === 0 && !isAdding && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 italic">{emptyText}</p>
+        <p className="text-sm text-muted italic">{emptyText}</p>
       )}
     </div>
   );

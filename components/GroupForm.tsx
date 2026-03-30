@@ -106,7 +106,7 @@ export default function GroupForm({ group, mode, availablePeople = [], nameOrder
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded">
+        <div className="bg-warning/10 border border-warning/30 text-warning px-4 py-3 rounded" role="alert">
           {error}
         </div>
       )}
@@ -124,7 +124,7 @@ export default function GroupForm({ group, mode, availablePeople = [], nameOrder
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder={t('groupNamePlaceholder')}
         />
       </div>
@@ -143,7 +143,7 @@ export default function GroupForm({ group, mode, availablePeople = [], nameOrder
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
-          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder={t('descriptionPlaceholder')}
         />
       </div>
@@ -158,10 +158,10 @@ export default function GroupForm({ group, mode, availablePeople = [], nameOrder
               key={color}
               type="button"
               onClick={() => setFormData({ ...formData, color })}
-              className={`w-10 h-10 rounded-full transition-all ${
+              className={`w-10 h-10 rounded-full transition-shadow ${
                 formData.color === color
-                  ? 'ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-gray-800 scale-110'
-                  : 'hover:scale-105'
+                  ? 'ring-4 ring-primary ring-offset-2 dark:ring-offset-gray-800'
+                  : 'hover:ring-2 hover:ring-border'
               }`}
               style={{ backgroundColor: color }}
               title={color}

@@ -51,6 +51,8 @@ model User {
   cardDavPendingImports  CardDavPendingImport[]
   duplicateDismissals    DuplicateDismissal[]
 
+  journalEntries    JournalEntry[]
+
   @@unique([provider, providerAccountId])
   @@map("users")
 }
@@ -109,6 +111,7 @@ model Person {
   cardDavMapping     CardDavMapping?
   dismissalsAsA      DuplicateDismissal[]   @relation("DismissalPersonA")
   dismissalsAsB      DuplicateDismissal[]   @relation("DismissalPersonB")
+  journalEntries     JournalEntryPerson[]
 
   @@index([userId])
   @@index([relationshipToUserId])
@@ -158,6 +161,41 @@ model PersonGroup {
   @@index([personId])
   @@index([groupId])
   @@map("person_groups")
+}
+
+// JournalEntry Model - User journal entries about encounters with people
+model JournalEntry {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  date      DateTime
+  body      String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  user   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  people JournalEntryPerson[]
+
+  @@index([userId, date])
+  @@index([userId, deletedAt])
+  @@map("journal_entries")
+}
+
+// JournalEntryPerson - Many-to-many join between JournalEntry and Person
+model JournalEntryPerson {
+  id             String @id @default(cuid())
+  journalEntryId String
+  personId       String
+
+  // Relations
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  person       Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([journalEntryId, personId])
+  @@index([personId])
+  @@map("journal_entry_people")
 }
 
 // Relationship Model - Connections between people

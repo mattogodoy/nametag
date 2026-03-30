@@ -283,6 +283,26 @@ export const addGroupMemberSchema = z.object({
 });
 
 // ============================================
+// Journal schemas
+// ============================================
+
+export const createJournalEntrySchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  date: z.string().min(1, 'Date is required'),
+  body: z.string().min(1, 'Entry body is required').max(50000),
+  personIds: z.array(z.string()).optional().default([]),
+  updateLastContact: z.boolean().optional().default(true),
+});
+
+export const updateJournalEntrySchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  date: z.string().min(1, 'Date is required'),
+  body: z.string().min(1, 'Entry body is required').max(50000),
+  personIds: z.array(z.string()).optional().default([]),
+  updateLastContact: z.boolean().optional().default(false),
+});
+
+// ============================================
 // Relationship schemas
 // ============================================
 
@@ -400,6 +420,13 @@ export const importDataSchema = z.object({
     label: z.string(),
     color: z.string().nullable().optional(),
     inverseId: z.string().nullable().optional(),
+  })).optional(),
+  journalEntries: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    date: z.string(),
+    body: z.string(),
+    people: z.array(z.string()),
   })).optional(),
 });
 

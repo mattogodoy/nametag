@@ -271,7 +271,7 @@ export default function PersonActionsMenu({
           aria-label={t('actions')}
           title={t('actions')}
 >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="5" r="1.5" />
             <circle cx="12" cy="12" r="1.5" />
             <circle cx="12" cy="19" r="1.5" />
@@ -286,7 +286,7 @@ export default function PersonActionsMenu({
                 onClick={handleFindDuplicates}
                 className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors flex items-center gap-3"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 {tDup('findDuplicates')}
@@ -297,7 +297,7 @@ export default function PersonActionsMenu({
                 onClick={handleMergeWith}
                 className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors flex items-center gap-3"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 {tMerge('mergeWith')}
@@ -308,7 +308,7 @@ export default function PersonActionsMenu({
                 onClick={handleExport}
                 className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors flex items-center gap-3"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 {t('downloadVcardFile')}
@@ -319,7 +319,7 @@ export default function PersonActionsMenu({
                 onClick={handleShowQr}
                 className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors flex items-center gap-3"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
                 {t('showContactQr')}
@@ -333,7 +333,7 @@ export default function PersonActionsMenu({
                 onClick={handleDeleteOpen}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-surface-elevated transition-colors flex items-center gap-3"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 {t('delete')}
@@ -433,7 +433,7 @@ export default function PersonActionsMenu({
         </p>
 
         {isLoadingOrphans && (
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-400 rounded text-sm">
+          <div className="p-3 bg-primary/10 border border-primary/20 text-primary rounded text-sm">
             {t('checkingOrphans')}
           </div>
         )}
@@ -453,7 +453,7 @@ export default function PersonActionsMenu({
                     className="hover:underline inline-flex items-center gap-1"
                   >
                     {orphan.fullName}
-                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
@@ -476,7 +476,7 @@ export default function PersonActionsMenu({
         )}
 
         {hasCardDavSync && (
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 rounded">
+          <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded">
             <div className="flex items-start">
               <input
                 type="checkbox"
@@ -485,11 +485,11 @@ export default function PersonActionsMenu({
                 onChange={(e) => setDeleteFromCardDav(e.target.checked)}
                 className="w-4 h-4 mt-0.5 text-red-600 bg-surface-elevated border-border rounded focus:ring-red-500"
               />
-              <label htmlFor="deleteFromCardDav" className="ml-2 text-sm text-blue-800 dark:text-blue-400 cursor-pointer">
+              <label htmlFor="deleteFromCardDav" className="ml-2 text-sm text-primary cursor-pointer">
                 {t('deleteFromCardDavServer')}
               </label>
             </div>
-            <p className="ml-6 mt-1 text-xs text-blue-700 dark:text-blue-300">
+            <p className="ml-6 mt-1 text-xs text-primary">
               {t('deleteFromCardDavServerDescription')}
             </p>
           </div>

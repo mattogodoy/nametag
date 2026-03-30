@@ -124,7 +124,7 @@ export default function GroupsSelector({
       <div
         className="w-3 h-3 rounded-full flex-shrink-0"
         style={{
-          backgroundColor: item.color || '#9CA3AF',
+          backgroundColor: item.color || 'var(--badge-bg)',
         }}
       />
       <span className="text-foreground">{item.label}</span>
@@ -157,9 +157,9 @@ export default function GroupsSelector({
   return (
     <div>
       {shouldShowHint && (
-        <div className="mb-2 flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="mb-2 flex items-start gap-2 p-3 bg-primary/10 border border-primary/20 rounded-lg">
           <svg
-            className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+            className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -172,7 +172,7 @@ export default function GroupsSelector({
             />
           </svg>
           <div className="flex-1">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
+            <p className="text-sm text-primary">
               <span className="font-medium">{t('quickTip')}</span> {t('quickTipMessage')}
             </p>
           </div>

@@ -103,7 +103,7 @@ export default async function ConflictsPage() {
             </p>
             <Link
               href="/settings/carddav"
-              className="inline-block px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="inline-block px-4 py-2 bg-muted text-white rounded-lg hover:bg-muted/80 transition-colors"
             >
               {t('backToSettings')}
             </Link>
@@ -118,10 +118,10 @@ export default async function ConflictsPage() {
 
             <ConflictList conflicts={conflicts} />
 
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-6 pt-4 border-t border-border">
               <Link
                 href="/settings/carddav"
-                className="inline-block px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                className="inline-block px-4 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80 transition-colors"
               >
                 {t('cancel')}
               </Link>

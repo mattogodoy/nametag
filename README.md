@@ -8,7 +8,7 @@
 
 Nametag is a personal relationships manager that helps you remember the people in your life and how they're connected. Track birthdays, contact information, how people are connected, and visualize your network as an interactive graph.
 
-![Dashboard](docs/screenshots/sc1.png)
+![Dashboard](docs/screenshots/dashboard-dark.png)
 _Dashboard with network overview and statistics_
 
 **[Try the hosted version →](https://nametag.one)**
@@ -24,31 +24,33 @@ Nametag solves this by giving you a single place to manage your personal network
 <details>
 <summary>View screenshots</summary>
 
-![People Management](docs/screenshots/sc2.png)
-![People Creation](docs/screenshots/sc7.png)
-_Create and manage your contacts with detailed information_
+![Dashboard dark theme](docs/screenshots/dashboard-dark.png)
+![Dashboard light theme](docs/screenshots/dashboard-light.png)
+_Main dashboard with a network graph of relationships_
 
 ---
 
-![Person Details](docs/screenshots/sc3.png)
-![Relationship Types](docs/screenshots/sc6.png)
-_Define and manage custom relationship types_
+![People dark theme](docs/screenshots/people-dark.png)
+![People light theme](docs/screenshots/people-light.png)
+_People list page_
 
 ---
 
-![Person Details](docs/screenshots/sc4.png)
-_Keep up-to-date information about the people you care about_
+![Groups dark theme](docs/screenshots/groups-dark.png)
+![Groups light theme](docs/screenshots/groups-light.png)
+_Groups page_
 
 ---
 
-![Groups](docs/screenshots/sc5.png)
-_Organize people into custom groups_
+![Journal dark theme](docs/screenshots/journal-dark.png)
+![Journal light theme](docs/screenshots/journal-light.png)
+_Journal page_
 
 ---
 
-![Light Mode](docs/screenshots/sc8.png)
-![Light Mode](docs/screenshots/sc9.png)
-_Clean light theme for comfortable daytime use_
+![Relationships dark theme](docs/screenshots/relationships-dark.png)
+![Relationships light theme](docs/screenshots/relationships-light.png)
+_Relationships page_
 
 </details>
 
@@ -107,7 +109,7 @@ services:
     image: ghcr.io/mattogodoy/nametag:latest
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - .env
     volumes:
@@ -418,6 +420,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed setup instructions, code gui
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 **Before submitting a PR**, run these verification commands locally:
+
 - `npm run verify` - Quick verification (lint, typecheck, unit tests, build)
 - `npm run verify:all` - Full verification including E2E tests
 
@@ -432,7 +435,6 @@ All PRs automatically run these checks via GitHub Actions. See [docs/PR_WORKFLOW
 Future features and improvements, ordered by priority:
 
 - [ ] **[HELP NEEDED]** Mobile app (Native apps for Android and iOS are preferred)
-- [ ] Add journaling capabilities [[Issue #28](https://github.com/mattogodoy/nametag/issues/28)]
 - [ ] Add support for SQLite databases
 - [ ] Implement OIDC [[Issue #10](https://github.com/mattogodoy/nametag/issues/10)]
 - [ ] Add notification support [[Issue #6](https://github.com/mattogodoy/nametag/issues/6)]
@@ -455,6 +457,7 @@ Features and improvements that have already been implemented:
 - [x] ~~API for third-party integrations~~ [[Issue #29](https://github.com/mattogodoy/nametag/issues/29), [PR #70](https://github.com/mattogodoy/nametag/pull/70)]
 - [x] ~~Add photos to people~~ [[Issue #19](https://github.com/mattogodoy/nametag/issues/19), [PR #135](https://github.com/mattogodoy/nametag/pull/135)]
 - [x] ~~Add custom template titles for important dates~~ [[Issue #23](https://github.com/mattogodoy/nametag/issues/23), [PR #176](https://github.com/mattogodoy/nametag/pull/176)]
+- [x] ~~Add journaling capabilities~~ [[Issue #28](https://github.com/mattogodoy/nametag/issues/28), [PR #192](https://github.com/mattogodoy/nametag/pull/192)]
 
 ## License
 

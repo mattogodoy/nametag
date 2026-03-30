@@ -88,14 +88,14 @@ export default function SyncSettingsModal({
                 id="syncEnabled"
                 checked={syncEnabled}
                 onChange={(e) => setSyncEnabled(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
               />
             </div>
             <div className="ml-3">
-              <label htmlFor="syncEnabled" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="syncEnabled" className="text-sm font-medium text-foreground">
                 {t('syncEnabledLabel')}
               </label>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-xs text-muted">
                 {t('syncEnabledHelp')}
               </p>
             </div>
@@ -109,14 +109,14 @@ export default function SyncSettingsModal({
                 id="autoExportNew"
                 checked={autoExportNew}
                 onChange={(e) => setAutoExportNew(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
               />
             </div>
             <div className="ml-3">
-              <label htmlFor="autoExportNew" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="autoExportNew" className="text-sm font-medium text-foreground">
                 {t('autoExportNewLabel')}
               </label>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-xs text-muted">
                 {t('autoExportNewHelp')}
               </p>
             </div>
@@ -124,20 +124,20 @@ export default function SyncSettingsModal({
 
           {/* Import Mode */}
           <div>
-            <label htmlFor="importMode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="importMode" className="block text-sm font-medium text-foreground mb-2">
               {t('importModeLabel')}
             </label>
             <select
               id="importMode"
               value={importMode}
               onChange={(e) => setImportMode(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="manual">{t('importModeManual')}</option>
               <option value="notify">{t('importModeNotify')}</option>
               <option value="auto">{t('importModeAuto')}</option>
             </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-xs text-muted">
               {t('importModeHelp')}
             </p>
           </div>

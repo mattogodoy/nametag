@@ -47,7 +47,7 @@
     "dashboard": "Dashboard",
     "people": "Personen",
     "groups": "Gruppen",
-    "relationshipTypes": "Beziehungsarten",
+    "relationshipTypes": "Beziehungen",
     "settings": "Einstellungen",
     "search": {
       "placeholder": "Personen suchen...",
@@ -57,7 +57,9 @@
     "userMenu": {
       "settings": "Einstellungen",
       "signOut": "Abmelden"
-    }
+    },
+    "journal": "Tagebuch",
+    "createJournal": "Neuer Eintrag"
   },
   "settings": {
     "title": "Einstellungen",
@@ -596,12 +598,15 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "greetingMorning": "Guten Morgen, {name}",
+    "greetingAfternoon": "Guten Tag, {name}",
+    "greetingEvening": "Guten Abend, {name}",
     "upcomingEvents": "Bevorstehende Ereignisse",
     "yourNetwork": "Dein Netzwerk",
     "emptyNetwork": {
-      "title": "Dein Netzwerk ist leer",
-      "description": "Beginne damit, dein persönliches Netzwerk aufzubauen, indem du Personen hinzufügst, die du kennst.",
-      "action": "Erstelle deine erste Person"
+      "title": "Jeder fängt irgendwo an",
+      "description": "Füge die Menschen hinzu, die dir wichtig sind, und sieh zu, wie dein Netzwerk zum Leben erwacht.",
+      "action": "Erste Person hinzufügen"
     },
     "today": "Heute",
     "tomorrow": "Morgen",
@@ -1636,5 +1641,48 @@
     "today": "Heute",
     "yearUnknown": "Jahr unbekannt",
     "yearUnknownTooltip": "Wenn aktiviert, werden nur der Monat und der Tag gespeichert. Das Jahr wird ignoriert."
+  },
+  "journal": {
+    "title": "Tagebuch",
+    "newEntry": "Neuer Eintrag",
+    "editEntry": "Eintrag bearbeiten",
+    "addEntry": "Neuen Eintrag hinzufügen",
+    "searchPlaceholder": "Einträge suchen...",
+    "filterByPerson": "Nach Person filtern",
+    "allPeople": "Alle Personen",
+    "noEntries": "Noch keine Tagebucheinträge",
+    "noEntriesDescription": "Ein Kaffee mit Freunden, ein Familienessen, ein unverhofftes Wiedersehen — halte die Momente fest, die zahlen.",
+    "writeFirstEntry": "Schreib deinen ersten Eintrag",
+    "form": {
+      "titleLabel": "Titel",
+      "titlePlaceholder": "Gib diesem Eintrag einen Titel...",
+      "dateLabel": "Datum",
+      "peopleLabel": "Personen",
+      "peoplePlaceholder": "Tippen um Personen hinzuzufügen...",
+      "bodyLabel": "Eintrag",
+      "bodyPlaceholder": "Schreibe über deine Begegnung...",
+      "updateLastContact": "Letzten Kontaktzeitpunkt für markierte Personen aktualisieren",
+      "updateLastContactTooltip": "Setzt das Datum des 'letzten Kontakts' jeder markierten Person auf das Datum dieses Eintrags, damit du nachverfolgen kannst, wann du zuletzt mit ihnen interagiert hast.",
+      "save": "Eintrag speichern",
+      "cancel": "Abbrechen",
+      "markdownSupport": "Unterstützt Markdown-Formatierung",
+      "saved": "Eintrag gespeichert"
+    },
+    "detail": {
+      "editButton": "Bearbeiten",
+      "deleteButton": "Löschen",
+      "confirmDelete": "Bist du sicher, dass du diesen Tagebucheintrag löschen möchtest?",
+      "confirmDeleteDescription": "Diese Aktion kann nicht ruckgangig gemacht werden.",
+      "deleted": "Tagebucheintrag gelöscht",
+      "deleteFailed": "Eintrag konnte nicht gelöscht werden",
+      "taggedPeople": "Personen"
+    },
+    "personSection": {
+      "title": "Tagebuch",
+      "noEntries": "Noch keine Tagebucheinträge",
+      "writeOne": "Einen schreiben",
+      "viewAll": "Alle Einträge anzeigen",
+      "newEntry": "Neuer Eintrag"
+    }
   }
 }

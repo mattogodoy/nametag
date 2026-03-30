@@ -57,40 +57,45 @@ jobs:
           model: openai/gpt-4o-mini
           prompt: |
             You are writing release notes for Nametag, a personal relationships manager web app.
+            The audience is end users and self-hosters — people who want to know what changed, not how it was built.
 
             Here are the commits since the last release:
             ---
             ${{ steps.commits.outputs.commit_log }}
             ---
 
-            Write a SHORT release summary for end users. This is critical — keep it brief.
+            Write release notes in this EXACT format (including the markdown headings):
 
-            Format: a flat markdown bullet list. No headings, no sections, no preamble.
-            - 3-6 bullet points MAXIMUM. Combine related commits into one bullet.
-            - One short sentence per bullet (under 20 words). Start with a verb (Added, Fixed, Improved).
-            - Write from the user's perspective: what changed for them.
-            - Only mention breaking changes if there are any — prefix with "**Breaking:**".
-            - Do NOT include commit hashes, component names, or technical jargon.
-            - Do NOT include invisible changes (refactoring, CI, tests, translations).
-            - Do NOT add a title, header, or sign-off. Just the bullets.
+            ## <A short, descriptive title about the most notable change — under 10 words>
 
-      - name: Prepend AI summary to release
+            <1-3 sentences in a warm, personal tone explaining what changed at a high level. Write as if you're telling a friend what's new. Don't list every change here — save that for the bullet list below.>
+
+            ### Changes
+
+            - <High-level change, one sentence, starts with a verb like Added, Fixed, Improved>
+            - <Another change>
+            - ...
+
+            Rules:
+            - 3-8 bullet points MAX. Combine related commits into one bullet.
+            - Write from the user's perspective. No commit hashes, component names, or technical jargon.
+            - Do NOT include invisible changes (refactoring, CI, tests, dependency updates).
+            - Only mention breaking changes if there are any — prefix the bullet with "**Breaking:**".
+            - Output ONLY the markdown above. No preamble, no sign-off, no extra text.
+
+      - name: Update release with summary
         if: steps.ai-notes.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
           TAG: ${{ needs.release-please.outputs.tag_name }}
           AI_SUMMARY: ${{ steps.ai-notes.outputs.response }}
         run: |
-          CURRENT_BODY=$(gh release view "$TAG" --json body --jq '.body')
-
           {
-            echo "## Release Summary"
-            echo ""
             echo "$AI_SUMMARY"
             echo ""
             echo "---"
             echo ""
-            echo "$CURRENT_BODY"
+            echo "For full details, see the [changelog](https://github.com/mattogodoy/nametag/blob/master/CHANGELOG.md)."
           } > /tmp/release-body.md
 
           gh release edit "$TAG" --notes-file /tmp/release-body.md

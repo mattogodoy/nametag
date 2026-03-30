@@ -73,7 +73,7 @@ export default async function EditRelationshipTypePage({
           <div className="mb-6">
             <Link
               href="/relationship-types"
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+              className="text-primary hover:underline text-sm"
             >
               {t('backToTypes')}
             </Link>

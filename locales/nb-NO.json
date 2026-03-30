@@ -47,7 +47,7 @@
     "dashboard": "Dashbord",
     "people": "Personer",
     "groups": "Grupper",
-    "relationshipTypes": "Relasjonstyper",
+    "relationshipTypes": "Relasjoner",
     "settings": "Innstillinger",
     "search": {
       "placeholder": "Søk etter personer...",
@@ -57,7 +57,9 @@
     "userMenu": {
       "settings": "Innstillinger",
       "signOut": "Logg ut"
-    }
+    },
+    "journal": "Journal",
+    "createJournal": "Ny oppføring"
   },
   "settings": {
     "title": "Innstillinger",
@@ -596,11 +598,14 @@
   },
   "dashboard": {
     "title": "Oversikt",
+    "greetingMorning": "God morgen, {name}",
+    "greetingAfternoon": "God ettermiddag, {name}",
+    "greetingEvening": "God kveld, {name}",
     "upcomingEvents": "Kommende hendelser",
     "yourNetwork": "Nettverket ditt",
     "emptyNetwork": {
-      "title": "Nettverket ditt er tomt",
-      "description": "Begynn å bygge ditt personlige nettverk ved å legge til personer du kjenner.",
+      "title": "Alle starter et sted",
+      "description": "Legg til menneskene som betyr noe for deg og se nettverket ditt bli levende.",
       "action": "Legg til din første person"
     },
     "today": "I dag",
@@ -1636,5 +1641,48 @@
     "today": "I dag",
     "yearUnknown": "År ukjent",
     "yearUnknownTooltip": "Når dette er avkrysset, lagres kun måneden og dagen. Året ignoreres."
+  },
+  "journal": {
+    "title": "Journal",
+    "newEntry": "Ny oppføring",
+    "editEntry": "Rediger oppføring",
+    "addEntry": "Legg til ny oppføring",
+    "searchPlaceholder": "Søk i oppføringer...",
+    "filterByPerson": "Filtrer etter person",
+    "allPeople": "Alle personer",
+    "noEntries": "Ingen journaloppføringer ennå",
+    "noEntriesDescription": "En kaffe med venner, en familiemiddag, et uventet gjensyn — ta vare pa oyeblikkene som betyr noe.",
+    "writeFirstEntry": "Skriv din første oppføring",
+    "form": {
+      "titleLabel": "Tittel",
+      "titlePlaceholder": "Gi denne oppføringen en tittel...",
+      "dateLabel": "Dato",
+      "peopleLabel": "Personer",
+      "peoplePlaceholder": "Skriv for å legge til personer...",
+      "bodyLabel": "Oppføring",
+      "bodyPlaceholder": "Skriv om møtet ditt...",
+      "updateLastContact": "Oppdater siste kontaktdato for merkede personer",
+      "updateLastContactTooltip": "Setter datoen for «sist kontaktet» for hver merket person til datoen for denne oppføringen, slik at du kan holde styr på når du sist hadde kontakt med dem.",
+      "save": "Lagre oppføring",
+      "cancel": "Avbryt",
+      "markdownSupport": "Støtter Markdown-formatering",
+      "saved": "Oppføring lagret"
+    },
+    "detail": {
+      "editButton": "Rediger",
+      "deleteButton": "Slett",
+      "confirmDelete": "Er du sikker på at du vil slette denne journaloppføringen?",
+      "confirmDeleteDescription": "Denne handlingen kan ikke angres.",
+      "deleted": "Journaloppføring slettet",
+      "deleteFailed": "Kunne ikke slette oppføringen",
+      "taggedPeople": "Personer"
+    },
+    "personSection": {
+      "title": "Journal",
+      "noEntries": "Ingen journaloppføringer ennå",
+      "writeOne": "Skriv en",
+      "viewAll": "Vis alle oppføringer",
+      "newEntry": "Ny oppføring"
+    }
   }
 }

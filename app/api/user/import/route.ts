@@ -3,6 +3,7 @@ import { importDataSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, MAX_REQUEST_SIZE, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { isSaasMode } from '@/lib/features';
+import { formatFullName } from '@/lib/nameUtils';
 
 import { z } from 'zod';
 
@@ -346,12 +347,62 @@ export const POST = withAuth(async (request, session) => {
       }
     }
 
+    // 5. Import journal entries
+    let journalEntriesImported = 0;
+    if (data.journalEntries && data.journalEntries.length > 0) {
+      const allPeople = await prisma.person.findMany({
+        where: { userId: session.user.id, deletedAt: null },
+        select: { id: true, name: true, surname: true, middleName: true, secondLastName: true, nickname: true },
+      });
+
+      const nameToId = new Map<string, string>();
+      for (const p of allPeople) {
+        nameToId.set(formatFullName(p).toLowerCase(), p.id);
+      }
+
+      for (const entry of data.journalEntries) {
+        const entryDate = new Date(entry.date);
+        // Skip duplicates
+        const existing = await prisma.journalEntry.findFirst({
+          where: {
+            userId: session.user.id,
+            title: entry.title,
+            date: entryDate,
+            deletedAt: null,
+          },
+        });
+        if (existing) continue;
+
+        const resolvedPersonIds = entry.people
+          .map((name: string) => nameToId.get(name.toLowerCase()))
+          .filter((id): id is string => id !== undefined);
+
+        await prisma.journalEntry.create({
+          data: {
+            userId: session.user.id,
+            title: entry.title,
+            date: entryDate,
+            body: entry.body,
+            ...(resolvedPersonIds.length > 0 && {
+              people: {
+                create: resolvedPersonIds.map((personId) => ({
+                  person: { connect: { id: personId } },
+                })),
+              },
+            }),
+          },
+        });
+        journalEntriesImported++;
+      }
+    }
+
     return apiResponse.ok({
       success: true,
       imported: {
         groups: groupIdMap.size,
         people: personIdMap.size,
         relationshipTypes: relationshipTypeIdMap.size,
+        journalEntries: journalEntriesImported,
       },
     });
   } catch (error) {

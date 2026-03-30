@@ -106,7 +106,7 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
               <td className="px-4 py-4 text-sm text-muted">
                 {payment.description || 'Subscription payment'}
                 {payment.promotionCode && (
-                  <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
+                  <span className="ml-2 text-xs text-primary">
                     ({payment.promotionCode})
                   </span>
                 )}

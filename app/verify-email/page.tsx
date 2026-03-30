@@ -52,7 +52,7 @@ function VerifyEmailContent() {
     <div className="max-w-md w-full space-y-8 text-center">
       {state === 'loading' && (
         <div className="space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted">{t('verifyingEmail')}</p>
         </div>
       )}
@@ -69,7 +69,7 @@ function VerifyEmailContent() {
           </div>
           <Link
             href="/login"
-            className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-black bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/50"
+            className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark"
           >
             {t('goToLoginButton')}
           </Link>
@@ -89,13 +89,13 @@ function VerifyEmailContent() {
           <div className="space-y-2">
             <Link
               href="/register"
-              className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-black bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/50"
+              className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark"
             >
               {t('registerAgain')}
             </Link>
             <Link
               href="/login"
-              className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400"
+              className="inline-block text-primary hover:text-primary-dark"
             >
               {t('goToLoginButton')}
             </Link>
@@ -115,7 +115,7 @@ function VerifyEmailContent() {
           </div>
           <Link
             href="/login"
-            className="inline-block text-blue-600 hover:text-blue-500 dark:text-blue-400"
+            className="inline-block text-primary hover:text-primary-dark"
           >
             {t('goToLoginButton')}
           </Link>
@@ -130,7 +130,7 @@ function LoadingFallback() {
   return (
     <div className="max-w-md w-full space-y-8 text-center">
       <div className="space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
         <p className="text-muted">{tCommon('loading')}</p>
       </div>
     </div>

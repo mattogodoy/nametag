@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   personFindMany: vi.fn(),
   groupFindMany: vi.fn(),
   relationshipTypeFindMany: vi.fn(),
+  journalEntryFindMany: vi.fn(),
 }));
 
 // Mock Prisma
@@ -22,6 +23,9 @@ vi.mock('../../lib/prisma', () => ({
     },
     relationshipType: {
       findMany: mocks.relationshipTypeFindMany,
+    },
+    journalEntry: {
+      findMany: mocks.journalEntryFindMany,
     },
   },
 }));
@@ -173,6 +177,7 @@ describe('Export API', () => {
     mocks.userFindUnique.mockResolvedValue(mockUser);
     mocks.groupFindMany.mockResolvedValue(mockGroups);
     mocks.relationshipTypeFindMany.mockResolvedValue(mockRelationshipTypes);
+    mocks.journalEntryFindMany.mockResolvedValue([]);
   });
 
   describe('GET /api/user/export', () => {

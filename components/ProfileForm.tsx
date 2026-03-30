@@ -191,7 +191,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded">
+          <div role="alert" className="bg-warning/10 border border-warning/30 text-warning px-4 py-3 rounded">
             {error}
           </div>
         )}
@@ -293,7 +293,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -309,7 +309,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
               id="surname"
               value={formData.surname}
               onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -325,7 +325,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
               id="nickname"
               value={formData.nickname}
               onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
@@ -343,7 +343,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
             required
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -351,7 +351,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? t('saving') : t('saveChanges')}
           </button>
@@ -383,7 +383,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
                 type="button"
                 onClick={saveProfile}
                 disabled={isLoading}
-                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark shadow-lg hover:shadow-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? t('saving') : t('emailChange.confirm')}
               </button>

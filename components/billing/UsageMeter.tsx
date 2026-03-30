@@ -31,7 +31,7 @@ export default function UsageMeter({ label, current, limit, isUnlimited }: Usage
                 ? 'bg-red-600'
                 : isNearLimit
                 ? 'bg-yellow-500'
-                : 'bg-blue-600'
+                : 'bg-primary'
             }`}
             style={{ width: `${percentage}%` }}
           />

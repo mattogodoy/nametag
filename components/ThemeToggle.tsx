@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
 import { useTranslations } from 'next-intl';
 import styles from './ThemeToggle.module.css';
@@ -16,6 +16,13 @@ export default function ThemeToggle({}: ThemeToggleProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (messageTimeoutRef.current) clearTimeout(messageTimeoutRef.current);
+    };
+  }, []);
 
   const handleThemeChange = async () => {
     if (isLoading) return;
@@ -40,7 +47,8 @@ export default function ThemeToggle({}: ThemeToggleProps) {
       setIsSuccess(true);
 
       // Clear success message after 2 seconds
-      setTimeout(() => setMessage(''), 2000);
+      if (messageTimeoutRef.current) clearTimeout(messageTimeoutRef.current);
+      messageTimeoutRef.current = setTimeout(() => setMessage(''), 2000);
     } catch {
       setMessage(t('themeError'));
       setIsSuccess(false);

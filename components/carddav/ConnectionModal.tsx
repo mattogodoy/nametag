@@ -205,13 +205,13 @@ function ConnectionEditModal({
       <div className="space-y-6">
         {/* Provider Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             {t('providerLabel')}
           </label>
           <select
             value={provider}
             onChange={(e) => handleProviderChange(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
           >
             {Object.entries(CARDDAV_PROVIDERS).map(([key, config]) => (
               <option key={key} value={key}>
@@ -224,7 +224,7 @@ function ConnectionEditModal({
 
         {/* Server URL */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             {t('serverUrlLabel')}
           </label>
           <input
@@ -237,13 +237,13 @@ function ConnectionEditModal({
             placeholder="https://carddav.example.com"
             required
             disabled={provider !== 'custom'}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 
         {/* Username */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             {t('usernameLabel')}
           </label>
           <input
@@ -255,15 +255,15 @@ function ConnectionEditModal({
             }}
             placeholder={t('usernamePlaceholder')}
             required
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
 
         {/* Password */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             {t('passwordLabel')}
-            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+            <span className="ml-2 text-xs text-muted">
               ({t('leaveBlankToKeep')})
             </span>
           </label>
@@ -275,7 +275,7 @@ function ConnectionEditModal({
               setTestResult(null);
             }}
             placeholder={t('passwordPlaceholder')}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           {CARDDAV_PROVIDERS[provider]?.requiresAppPassword && (
             <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
@@ -311,8 +311,8 @@ function ConnectionEditModal({
 
         {/* Form validation message */}
         {!isFormComplete && (
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="p-4 bg-surface-elevated rounded-lg border border-border">
+            <p className="text-sm text-muted">
               {t('fillAllFields')}
             </p>
           </div>
@@ -331,7 +331,7 @@ function ConnectionEditModal({
             type="button"
             onClick={handleTestConnection}
             disabled={!isFormComplete || isTesting}
-            className="bg-gray-600 text-white hover:bg-gray-700 border-0"
+            className="bg-muted text-white hover:bg-muted/80 border-0"
           >
             {isTesting ? t('testing') : t('testConnection')}
           </Button>

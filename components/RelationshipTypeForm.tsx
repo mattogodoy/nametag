@@ -148,7 +148,7 @@ export default function RelationshipTypeForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-warning/10 border-2 border-warning text-warning px-4 py-3 rounded">
+        <div role="alert" className="bg-warning/10 border border-warning/30 text-warning px-4 py-3 rounded">
           {error}
         </div>
       )}
@@ -166,7 +166,7 @@ export default function RelationshipTypeForm({
           required
           value={formData.label}
           onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder={t('labelPlaceholder')}
         />
         <p className="text-xs text-muted mt-1">
@@ -194,8 +194,8 @@ export default function RelationshipTypeForm({
                 setInverseLabel('');
               }
             }}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-              isSymmetric ? 'bg-blue-600' : 'bg-surface-elevated'
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+              isSymmetric ? 'bg-primary' : 'bg-surface-elevated'
             }`}
           >
             <span
@@ -238,10 +238,10 @@ export default function RelationshipTypeForm({
               key={color}
               type="button"
               onClick={() => setFormData({ ...formData, color })}
-              className={`w-10 h-10 rounded-full transition-all ${
+              className={`w-10 h-10 rounded-full transition-shadow ${
                 formData.color === color
-                  ? 'ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-gray-800 scale-110'
-                  : 'hover:scale-105'
+                  ? 'ring-4 ring-primary ring-offset-2 dark:ring-offset-gray-800'
+                  : 'hover:ring-2 hover:ring-border'
               }`}
               style={{ backgroundColor: color }}
               title={color}

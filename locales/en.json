@@ -47,7 +47,7 @@
     "dashboard": "Dashboard",
     "people": "People",
     "groups": "Groups",
-    "relationshipTypes": "Relationship Types",
+    "relationshipTypes": "Relationships",
     "settings": "Settings",
     "search": {
       "placeholder": "Search people...",
@@ -57,7 +57,9 @@
     "userMenu": {
       "settings": "Settings",
       "signOut": "Sign out"
-    }
+    },
+    "journal": "Journal",
+    "createJournal": "New entry"
   },
   "settings": {
     "title": "Settings",
@@ -596,12 +598,15 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "greetingMorning": "Good morning, {name}",
+    "greetingAfternoon": "Good afternoon, {name}",
+    "greetingEvening": "Good evening, {name}",
     "upcomingEvents": "Upcoming Events",
     "yourNetwork": "Your Network",
     "emptyNetwork": {
-      "title": "Your network is empty",
-      "description": "Start building your personal network by adding people you know.",
-      "action": "Create your first person"
+      "title": "Everyone starts somewhere",
+      "description": "Add the people who matter to you and watch your network come to life.",
+      "action": "Add your first person"
     },
     "today": "Today",
     "tomorrow": "Tomorrow",
@@ -1632,5 +1637,48 @@
     "today": "Today",
     "yearUnknown": "Year unknown",
     "yearUnknownTooltip": "When checked, only the month and day will be saved. The year will be ignored."
+  },
+  "journal": {
+    "title": "Journal",
+    "newEntry": "New Entry",
+    "editEntry": "Edit Entry",
+    "addEntry": "Add new entry",
+    "searchPlaceholder": "Search entries...",
+    "filterByPerson": "Filter by person",
+    "allPeople": "All people",
+    "noEntries": "No journal entries yet",
+    "noEntriesDescription": "A coffee catch-up, a family dinner, running into an old friend — capture the moments that matter.",
+    "writeFirstEntry": "Write your first entry",
+    "form": {
+      "titleLabel": "Title",
+      "titlePlaceholder": "Give this entry a title...",
+      "dateLabel": "Date",
+      "peopleLabel": "People",
+      "peoplePlaceholder": "Type to add people...",
+      "bodyLabel": "Entry",
+      "bodyPlaceholder": "Write about your encounter...",
+      "updateLastContact": "Update last contact date for tagged people",
+      "updateLastContactTooltip": "Sets the 'last contacted' date for each tagged person to this entry's date, so you can track when you last interacted with them.",
+      "save": "Save entry",
+      "cancel": "Cancel",
+      "markdownSupport": "Supports Markdown formatting",
+      "saved": "Entry saved"
+    },
+    "detail": {
+      "editButton": "Edit",
+      "deleteButton": "Delete",
+      "confirmDelete": "Are you sure you want to delete this journal entry?",
+      "confirmDeleteDescription": "This action cannot be undone.",
+      "deleted": "Journal entry deleted",
+      "deleteFailed": "Failed to delete entry",
+      "taggedPeople": "People"
+    },
+    "personSection": {
+      "title": "Journal",
+      "noEntries": "No journal entries yet",
+      "writeOne": "Write one",
+      "viewAll": "View all entries",
+      "newEntry": "New entry"
+    }
   }
 }

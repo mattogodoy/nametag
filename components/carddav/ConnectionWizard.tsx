@@ -98,7 +98,7 @@ export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardPr
                 {index > 0 && (
                   <div
                     className={`w-12 h-0.5 mt-4 mx-1 ${
-                      isCompleted ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
+                      isCompleted ? 'bg-primary' : 'bg-surface-elevated'
                     }`}
                   />
                 )}
@@ -109,7 +109,7 @@ export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardPr
                         ? 'bg-primary text-white'
                         : isCompleted
                           ? 'bg-primary/20 text-primary border-2 border-primary'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                          : 'bg-surface-elevated text-muted'
                     }`}
                   >
                     {isCompleted ? (

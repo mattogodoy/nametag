@@ -293,7 +293,7 @@ export default function DatePicker({
             checked={yearUnknown}
             onChange={handleYearUnknownChange}
             disabled={disabled}
-            className="h-4 w-4 text-blue-600 border-border rounded focus:ring-blue-500"
+            className="h-4 w-4 text-primary border-border rounded focus:ring-primary"
             aria-label={t('yearUnknown')}
           />
           <span className="ml-2 text-xs text-muted flex items-center gap-1">

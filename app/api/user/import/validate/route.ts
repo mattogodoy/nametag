@@ -26,6 +26,7 @@ export const POST = withAuth(async (request, session) => {
         valid: true,
         newPeopleCount: data.people.length,
         newGroupsCount: data.groups.length,
+        journalEntries: data.journalEntries?.length || 0,
       });
     }
 
@@ -120,6 +121,7 @@ export const POST = withAuth(async (request, session) => {
       valid: true,
       newPeopleCount,
       newGroupsCount,
+      journalEntries: data.journalEntries?.length || 0,
       currentPeople: currentUsage.people,
       currentGroups: currentUsage.groups,
       peopleLimit: usageCheck.limit,

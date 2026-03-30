@@ -46,7 +46,7 @@ export default async function AboutPage() {
               href="https://github.com/mattogodoy/nametag"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="text-primary hover:text-primary-dark"
             >
               GitHub →
             </a>
@@ -70,7 +70,7 @@ export default async function AboutPage() {
               href={`https://github.com/mattogodoy/nametag/releases/tag/v${version}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary-dark"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -84,7 +84,7 @@ export default async function AboutPage() {
               href="https://github.com/mattogodoy/nametag/blob/master/CHANGELOG.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary-dark"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -131,7 +131,7 @@ export default async function AboutPage() {
             href="https://github.com/mattogodoy/nametag/blob/master/CONTRIBUTING.md"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-sm text-primary hover:text-primary-dark"
           >
             {t('learnToContribute')}
           </a>
@@ -151,7 +151,7 @@ export default async function AboutPage() {
               href="https://github.com/mattogodoy/nametag/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              className="text-primary hover:text-primary-dark"
             >
               {t('openIssue')}
             </a>
@@ -163,7 +163,7 @@ export default async function AboutPage() {
               href="https://github.com/mattogodoy/nametag/discussions"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              className="text-primary hover:text-primary-dark"
             >
               {t('startDiscussion')}
             </a>
@@ -175,7 +175,7 @@ export default async function AboutPage() {
               href="https://github.com/mattogodoy/nametag/blob/master/SECURITY.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              className="text-primary hover:text-primary-dark"
             >
               {t('seeSecurityPolicy')}
             </a>

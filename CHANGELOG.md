@@ -6,6 +6,85 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.41.0](https://github.com/mattogodoy/nametag/compare/v0.40.0...v0.41.0) (2026-03-29)
+
+
+### Features
+
+* add delete button with confirmation dialog to journal entry detail ([0548d47](https://github.com/mattogodoy/nametag/commit/0548d47eed373c5166b92f8ff86d6253dd9d84f4))
+* add GET and POST /api/journal endpoints ([c0df406](https://github.com/mattogodoy/nametag/commit/c0df406269ec94926f9e82c696dbe1f86b658f09))
+* add GET/PUT/DELETE /api/journal/[id] endpoints ([1dc2e37](https://github.com/mattogodoy/nametag/commit/1dc2e37a54db77a8e7fdf6de451900be61c5a6d2))
+* add journal endpoints to OpenAPI spec ([a7cf5e5](https://github.com/mattogodoy/nametag/commit/a7cf5e5455361d0a056cd3eb7fdf60f896544e74))
+* add journal pages — timeline, new, detail, edit ([3bad3f5](https://github.com/mattogodoy/nametag/commit/3bad3f5521b362922c273868212a37de0d675206))
+* add journal section to person detail page ([92bd26d](https://github.com/mattogodoy/nametag/commit/92bd26d6c1add2071d26d9d96a07b1320a774619))
+* add Journal to navigation bar ([0b5d310](https://github.com/mattogodoy/nametag/commit/0b5d310113d426cc47aba020b3d88c079d414243))
+* add journal translations for all 6 locales ([1e8896d](https://github.com/mattogodoy/nametag/commit/1e8896d51ad52e049d75ddb116412dac8718137b))
+* add journal Zod validation schemas ([7542120](https://github.com/mattogodoy/nametag/commit/754212027127ce7b7ff1fc54cbcb466a8dc25cd7))
+* add JournalEntry and JournalEntryPerson models ([ae9c382](https://github.com/mattogodoy/nametag/commit/ae9c382f975d193541460cf4c88f3720222ae926))
+* add JournalEntryForm client component ([181517f](https://github.com/mattogodoy/nametag/commit/181517f3c107ec585cfb483a616f9f7c3027446e))
+* add JournalTimeline component with month grouping ([ed81335](https://github.com/mattogodoy/nametag/commit/ed813359b5a94f8caa0736a5b5c5f60b43ba9375))
+* add success toast on journal entry save ([1e2e239](https://github.com/mattogodoy/nametag/commit/1e2e239d36254a25259289b5806f923251935275))
+* center and widen search bar, rename Relationship Types to Relationships in nav ([320a1d3](https://github.com/mattogodoy/nametag/commit/320a1d3bb118c2c803ab369aa0aab403147da671))
+* include journal entries in JSON import/export ([db30c0d](https://github.com/mattogodoy/nametag/commit/db30c0dd01012581962ed57671e5786bdaf2e213))
+* increase entry preview to text-sm with 3-line clamp and more padding ([27c5ca0](https://github.com/mattogodoy/nametag/commit/27c5ca00a20bc4594c80cf49732e831b92c64743))
+* Journal — encounters timeline with person integration ([4ba7c48](https://github.com/mattogodoy/nametag/commit/4ba7c48a9b7022347bbce788313ffa872a5f4bf2))
+* remove create buttons from desktop nav tab bar ([b9a4c4c](https://github.com/mattogodoy/nametag/commit/b9a4c4cf16c007745c5cd548ea986d558c50f010))
+* restyle nav items as tab bar with underline active indicator ([574af14](https://github.com/mattogodoy/nametag/commit/574af14cffe7bbf1dfc6aeeb76a8511d3a03612b))
+* strengthen entry card hover with 60% border opacity and shadow ([09c9848](https://github.com/mattogodoy/nametag/commit/09c98481af98b49269bc8aafd2d6fdfbd8cf3947))
+* style Write one as pill button matching Update to today ([bf8259f](https://github.com/mattogodoy/nametag/commit/bf8259fad31e5e9c2161b43ff753dd640aa72b89))
+* truly center search bar using absolute positioning ([001cd47](https://github.com/mattogodoy/nametag/commit/001cd47e444081e9bfd62e93a41ceb2923e57447))
+* two-row navbar — logo/search/user on top, nav items centered below ([b14f945](https://github.com/mattogodoy/nametag/commit/b14f9454da6077e87a3137a1bfad5341a7f78747))
+* use PillSelector for multi-person filtering on journal page ([c428baf](https://github.com/mattogodoy/nametag/commit/c428baf9ff9f8f1d38057ac2902d27e7d38ed3f0))
+* use warm accent color for timeline dots and month headers ([d606f55](https://github.com/mattogodoy/nametag/commit/d606f5579d53826051e5c365fbfdcc07e80c6a45))
+* warmer empty state copy for first-time journal experience ([6fb786a](https://github.com/mattogodoy/nametag/commit/6fb786aa8e8f48ca14d43ea0d34041c9c2743de1))
+* warn on unsaved changes when navigating away from journal form ([00d44af](https://github.com/mattogodoy/nametag/commit/00d44afc751ff51778b04b0d01b2f5d3344fa2d9))
+
+
+### Bug Fixes
+
+* **a11y:** add aria-current to nav, label to search, fix tooltip aria-describedby ([da9ced7](https://github.com/mattogodoy/nametag/commit/da9ced7392fb9da266db25eee6b4312dc255d627))
+* **a11y:** add aria-live to error, aria-busy to submit, article wrapper for body ([09ba183](https://github.com/mattogodoy/nametag/commit/09ba18363d1bca47e2ff70109859321c839ec6b4))
+* **a11y:** add dialog role and aria-modal to mobile menu ([3fe1ed5](https://github.com/mattogodoy/nametag/commit/3fe1ed5dbba550480376bcc4e62bd782f2c626f4))
+* **a11y:** expand checkbox touch target to 44px with label wrapping ([1a21753](https://github.com/mattogodoy/nametag/commit/1a21753cb77547ca1605f115b55e2cbdf3dd33c5))
+* add journalEntry mock to export tests ([1f7c575](https://github.com/mattogodoy/nametag/commit/1f7c575b3d0ab30495a77a4c00e7f297ce79fee7))
+* align search bar with nav items by removing mx-auto ([b40f0bd](https://github.com/mattogodoy/nametag/commit/b40f0bdf4e6f48c6f507f62c95ab9af9c815b510))
+* bump nav breakpoint to xl to prevent overlap with 5 items ([7637a96](https://github.com/mattogodoy/nametag/commit/7637a96773941f75135c98c26932f9a9ff686d58))
+* derive filter state from URL props so nav resets filters ([9a07fc2](https://github.com/mattogodoy/nametag/commit/9a07fc2f60a64ab022a2a8b4d492734dd19854f5))
+* destructure locale prop in JournalSection ([f3a860f](https://github.com/mattogodoy/nametag/commit/f3a860f266ab15346dcb29eca1c32d94a804ecf6))
+* extract journal filters into client component for interactivity ([35ded7c](https://github.com/mattogodoy/nametag/commit/35ded7c23a9de56f2ce9c474c1e1850dc139a8a9))
+* handle ISO date strings in JournalTimeline date parsing ([18b6b1f](https://github.com/mattogodoy/nametag/commit/18b6b1fda191383d38c80831ce9357084baa8cbd))
+* make search and person filter interactive on journal page ([8167fc5](https://github.com/mattogodoy/nametag/commit/8167fc55f3ca6678f1e3669149b0368b7a03a7fa))
+* narrow nameOrder type in JournalFilters to fix build ([e04a915](https://github.com/mattogodoy/nametag/commit/e04a91565bdb43baa8c116fa0a42aa9d83a6d682))
+* normalize person pill sizing between timeline and detail page ([2c72f0e](https://github.com/mattogodoy/nametag/commit/2c72f0eed73c24b685c14438c088ff11769d277c))
+* pass locale to JournalSection to prevent hydration mismatch ([2ed98cf](https://github.com/mattogodoy/nametag/commit/2ed98cf4642911f34f1d6aaa3064f31970a133a7))
+* **polish:** enlarge tooltip button to 20px, remove redundant title attr ([fd6fb58](https://github.com/mattogodoy/nametag/commit/fd6fb58684eafb57c1a01152d2d9eea38c49ac62))
+* **polish:** use Button component, fix 11px badge text to 12px ([ff85d7d](https://github.com/mattogodoy/nametag/commit/ff85d7d174d93558525dd47bd512e851cb4262d8))
+* prevent duplicate person pill from React strict mode double-effect ([4c1fa7a](https://github.com/mattogodoy/nametag/commit/4c1fa7a54e325489b68fa6e6db7252dc27749715))
+* read entry.id from API response correctly in journal form ([6d50031](https://github.com/mattogodoy/nametag/commit/6d50031e193361904068c5f86a90de819cf96299))
+* remove misleading trash recovery message from delete confirmation ([044f870](https://github.com/mattogodoy/nametag/commit/044f8704e1be2de19ebc425102c10ccb34fd3ece))
+* remove redundant Filter by person label from journal filters ([dd86a71](https://github.com/mattogodoy/nametag/commit/dd86a71d74c7c436a43a73aa934a5ecb9e6894cb))
+* require children for ConfirmationModal, update delete description ([6626e56](https://github.com/mattogodoy/nametag/commit/6626e56d3bcc4b231daea6b41600f03dd467a904))
+* resolve lint errors — unused import, const, hook order, unused var ([a754875](https://github.com/mattogodoy/nametag/commit/a75487533424c0d90fa1c6fc39b599ac33c908a4))
+* **responsive:** responsive date column, tooltip overflow, nav search padding ([7f2b7a9](https://github.com/mattogodoy/nametag/commit/7f2b7a96616901f46e034cabb3edfd970471515c))
+* security/data integrity fixes from PR review ([b94dce2](https://github.com/mattogodoy/nametag/commit/b94dce28507976f422ae8718268c4fb554879664))
+* sort journal entries by date desc then createdAt desc ([f4012a6](https://github.com/mattogodoy/nametag/commit/f4012a67643540cef101909cfde99c64d1425553))
+* sort journal entry on person detail by date then createdAt desc ([00a98a3](https://github.com/mattogodoy/nametag/commit/00a98a32eed7f3bdbc431e3141e16f93161ca6fe))
+* use book icon instead of plus in Write one button ([23eacff](https://github.com/mattogodoy/nametag/commit/23eacff91ea1e8567d6dc91e6c217f4a16601f09))
+* use EASTERN enum value for name order in JournalSection ([bfe014e](https://github.com/mattogodoy/nametag/commit/bfe014e1c8c9586e4e426d9f5877595b64fe5b1a))
+
+
+### Performance
+
+* move navIcons/navItems to module scope, memoize groupByMonth ([ce1cc78](https://github.com/mattogodoy/nametag/commit/ce1cc78b125da5989019a2018d1c4e10b0c85292))
+
+## [0.40.0](https://github.com/mattogodoy/nametag/compare/v0.39.2...v0.40.0) (2026-03-26)
+
+
+### Features
+
+* UI overhaul — warm palette, accessibility, design tokens, performance ([7b45f74](https://github.com/mattogodoy/nametag/commit/7b45f7454e42de31b1b932f545b44dc1bce193d8))
+* UI overhaul — warm palette, accessibility, design tokens, performance ([1374679](https://github.com/mattogodoy/nametag/commit/137467965cf89beae83eec21897f742dc2a00e5f))
+
 ## [0.39.2](https://github.com/mattogodoy/nametag/compare/v0.39.1...v0.39.2) (2026-03-23)
 
 

@@ -212,7 +212,7 @@ export default function ImportContactsList({
       {/* Global Settings: Groups + Relationship side by side */}
       <div className={`grid gap-4 ${relationshipTypes.length > 0 ? 'md:grid-cols-2' : ''}`}>
         {/* Group Selection */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="border border-border rounded-lg p-4">
           <h3 className="font-semibold text-foreground mb-3">
             {t('assignToGroups')}
           </h3>
@@ -229,7 +229,7 @@ export default function ImportContactsList({
 
         {/* Relationship Selection */}
         {relationshipTypes.length > 0 && (
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div className="border border-border rounded-lg p-4">
             <h3 className="font-semibold text-foreground mb-3">
               {t('assignRelationship')}
             </h3>
@@ -239,7 +239,7 @@ export default function ImportContactsList({
             <select
               value={globalRelationshipTypeId}
               onChange={(e) => setGlobalRelationshipTypeId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
             >
               <option value="">{t('noRelationship')}</option>
               {relationshipTypes.map((rt) => (
@@ -264,13 +264,13 @@ export default function ImportContactsList({
 
       {/* Contacts List */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={allSelected}
               onChange={handleSelectAll}
-              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
             <span className="font-medium text-foreground">
               {allSelected ? t('deselectAll') : t('selectAll')}
@@ -306,11 +306,11 @@ export default function ImportContactsList({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex gap-3 pt-4 border-t border-border">
         <button
           onClick={handleImport}
           disabled={importing || selectedIds.size === 0}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
         >
           {importing
             ? t('importing')
@@ -319,7 +319,7 @@ export default function ImportContactsList({
         <button
           onClick={handleCancel}
           disabled={importing}
-          className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          className="px-6 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
         >
           {t('cancel')}
         </button>
