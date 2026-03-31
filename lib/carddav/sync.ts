@@ -178,6 +178,21 @@ export async function syncFromServer(
       if (m.href) mappingByHref.set(m.href, m);
     }
 
+    // Get UIDs of persons that already have a mapping under any UID.
+    // Prevents creating pending imports for contacts whose person is already
+    // mapped (e.g. auto-export with server UID rewrite).
+    const alreadyMappedPersonUids = new Set(
+      (await prisma.person.findMany({
+        where: {
+          userId,
+          deletedAt: null,
+          uid: { not: null },
+          cardDavMapping: { isNot: null },
+        },
+        select: { uid: true },
+      })).map((p) => p.uid!)
+    );
+
     // Collect all UIDs seen on the server during processing (for stale import cleanup)
     const serverUids = new Set<string>();
 
@@ -333,7 +348,7 @@ export async function syncFromServer(
             result.updatedLocally++;
           }
           // If only local changed, we'll push in syncToServer
-        } else {
+        } else if (!alreadyMappedPersonUids.has(parsedData.uid)) {
           // New contact from server - add to pending imports
           await prisma.cardDavPendingImport.upsert({
             where: {

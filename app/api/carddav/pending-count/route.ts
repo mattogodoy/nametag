@@ -23,12 +23,34 @@ export const GET = withLogging(async function GET(_request: Request) {
       return NextResponse.json({ count: 0 });
     }
 
-    // Count pending imports
-    const count = await prisma.cardDavPendingImport.count({
-      where: {
-        connectionId: connection.id,
-      },
+    // Get UIDs of persons already mapped (under any UID) to exclude stale
+    // pending imports that would just be skipped during import.
+    const alreadyMappedPersonUids = new Set(
+      (await prisma.person.findMany({
+        where: {
+          userId: session.user.id,
+          deletedAt: null,
+          uid: { not: null },
+          cardDavMapping: { isNot: null },
+        },
+        select: { uid: true },
+      })).map((p) => p.uid!)
+    );
+
+    // Count pending imports, excluding already-mapped contacts
+    if (alreadyMappedPersonUids.size === 0) {
+      const count = await prisma.cardDavPendingImport.count({
+        where: { connectionId: connection.id },
+      });
+      return NextResponse.json({ count });
+    }
+
+    // When there are mapped UIDs to exclude, fetch and filter
+    const allPending = await prisma.cardDavPendingImport.findMany({
+      where: { connectionId: connection.id },
+      select: { uid: true },
     });
+    const count = allPending.filter((p) => !alreadyMappedPersonUids.has(p.uid)).length;
 
     return NextResponse.json({ count });
   } catch (error) {

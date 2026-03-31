@@ -57,6 +57,22 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
 
     const existingUids = new Set(existingMappings.map((m) => m.uid));
 
+    // Get UIDs of persons that already have a mapping under any UID.
+    // This catches cases where a person was auto-exported with a server-
+    // rewritten UID — their person.uid differs from mapping.uid, so the
+    // existingUids check alone would miss them.
+    const alreadyMappedPersonUids = new Set(
+      (await prisma.person.findMany({
+        where: {
+          userId,
+          deletedAt: null,
+          uid: { not: null },
+          cardDavMapping: { isNot: null },
+        },
+        select: { uid: true },
+      })).map((p) => p.uid!)
+    );
+
     // Get all existing pending imports
     const existingPending = await prisma.cardDavPendingImport.findMany({
       where: {
@@ -87,8 +103,8 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
         const uid = parsed.uid;
         serverUids.add(uid);
 
-        // Skip if already imported or already pending
-        if (existingUids.has(uid) || pendingUids.has(uid)) {
+        // Skip if already imported, already pending, or person already mapped
+        if (existingUids.has(uid) || pendingUids.has(uid) || alreadyMappedPersonUids.has(uid)) {
           continue;
         }
 
