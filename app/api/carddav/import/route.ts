@@ -240,12 +240,25 @@ export const POST = withLogging(async function POST(request: Request) {
           const existingPerson = existingPersonsByUid.get(parsedData.uid);
 
           if (existingPerson) {
-            // Person already exists — create a CardDAV mapping (if applicable) and clean up
+            // Person already exists — relink their mapping to this connection
+            // instead of inserting a second row for the same person.
             const isFileImport = pendingImport.uploadedByUserId !== null;
             if (!isFileImport && connection) {
               const enhancedParsed = parseVCard(pendingImport.vCardData);
-              await prisma.cardDavMapping.create({
-                data: {
+              await prisma.cardDavMapping.upsert({
+                where: { personId: existingPerson.id },
+                update: {
+                  connectionId: connection.id,
+                  uid: parsedData.uid,
+                  href: pendingImport.href,
+                  etag: pendingImport.etag,
+                  syncStatus: 'synced',
+                  lastSyncedAt: new Date(),
+                  preservedProperties: enhancedParsed.unknownProperties.length > 0
+                    ? enhancedParsed.unknownProperties
+                    : undefined,
+                },
+                create: {
                   connectionId: connection.id,
                   personId: existingPerson.id,
                   uid: parsedData.uid,

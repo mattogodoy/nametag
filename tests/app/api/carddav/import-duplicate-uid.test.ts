@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   findManyPerson: vi.fn(),
   deletePending: vi.fn(),
   createMapping: vi.fn(),
+  upsertMapping: vi.fn(),
   findManyGroup: vi.fn(),
   findManyPersonGroup: vi.fn(),
   createManyPersonGroup: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock('@/lib/prisma', () => ({
     cardDavMapping: {
       findMany: mocks.findManyMapping,
       create: mocks.createMapping,
+      upsert: mocks.upsertMapping,
     },
     person: { findMany: mocks.findManyPerson },
     group: { findMany: mocks.findManyGroup },
@@ -234,6 +236,63 @@ describe('POST /api/carddav/import — duplicate UID handling', () => {
         personId: 'person-eve',
         uid: 'carddav-uid',
       }),
+    });
+  });
+
+  it('should relink an existing person to the current CardDAV connection instead of creating a duplicate mapping', async () => {
+    const pending = [
+      {
+        id: 'p-reconnect',
+        connectionId: 'conn-2',
+        uploadedByUserId: null,
+        uid: 'existing-uid',
+        href: '/addressbooks/reconnected.vcf',
+        etag: '"etag-2"',
+        vCardData: makeVCard('existing-uid', 'Grace'),
+        displayName: 'Grace',
+        discoveredAt: new Date(),
+        notifiedAt: null,
+      },
+    ];
+
+    mocks.findManyPending.mockResolvedValue(pending);
+    mocks.findUniqueConnection.mockResolvedValue({ id: 'conn-2' });
+    mocks.findManyPerson.mockResolvedValue([
+      { id: 'person-existing', uid: 'existing-uid' },
+    ]);
+    mocks.upsertMapping.mockResolvedValue({
+      id: 'mapping-1',
+      personId: 'person-existing',
+      connectionId: 'conn-2',
+      uid: 'existing-uid',
+    });
+
+    const res = await postImport(['p-reconnect']);
+    const data = await res.json();
+
+    expect(data.imported).toBe(0);
+    expect(data.skipped).toBe(1);
+    expect(mocks.createMapping).not.toHaveBeenCalled();
+    expect(mocks.upsertMapping).toHaveBeenCalledWith({
+      where: { personId: 'person-existing' },
+      update: expect.objectContaining({
+        connectionId: 'conn-2',
+        uid: 'existing-uid',
+        href: '/addressbooks/reconnected.vcf',
+        etag: '"etag-2"',
+        syncStatus: 'synced',
+      }),
+      create: expect.objectContaining({
+        connectionId: 'conn-2',
+        personId: 'person-existing',
+        uid: 'existing-uid',
+        href: '/addressbooks/reconnected.vcf',
+        etag: '"etag-2"',
+        syncStatus: 'synced',
+      }),
+    });
+    expect(mocks.deletePending).toHaveBeenCalledWith({
+      where: { id: 'p-reconnect' },
     });
   });
 
