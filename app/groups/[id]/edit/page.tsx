@@ -64,7 +64,11 @@ export default async function EditGroupPage({
           </h1>
 
           <div className="bg-surface shadow rounded-lg p-6">
-            <GroupForm group={group} mode="edit" nameOrder={nameOrder} />
+            <GroupForm
+              group={group}
+              mode="edit"
+              nameOrder={nameOrder}
+            />
           </div>
         </div>
       </main>

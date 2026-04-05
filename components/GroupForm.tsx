@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import PillSelector from './PillSelector';
 import { formatFullName } from '@/lib/nameUtils';
+import { getRandomColor, PRESET_COLORS } from '@/lib/colors';
 import { Button } from './ui/Button';
 
 interface Person {
@@ -27,18 +28,12 @@ interface GroupFormProps {
   nameOrder?: 'WESTERN' | 'EASTERN';
 }
 
-const PRESET_COLORS = [
-  '#EF4444', // Red
-  '#F59E0B', // Amber
-  '#10B981', // Green
-  '#3B82F6', // Blue
-  '#6366F1', // Indigo
-  '#8B5CF6', // Purple
-  '#EC4899', // Pink
-  '#14B8A6', // Teal
-];
-
-export default function GroupForm({ group, mode, availablePeople = [], nameOrder }: GroupFormProps) {
+export default function GroupForm({
+  group,
+  mode,
+  availablePeople = [],
+  nameOrder,
+}: GroupFormProps) {
   const t = useTranslations('groups.form');
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -47,11 +42,18 @@ export default function GroupForm({ group, mode, availablePeople = [], nameOrder
   const [formData, setFormData] = useState({
     name: group?.name || '',
     description: group?.description || '',
-    color: group?.color || PRESET_COLORS[0],
+    color: group?.color || getRandomColor(),
   });
 
   // State for selected people (only used in create mode)
   const [selectedPeople, setSelectedPeople] = useState<{ id: string; label: string }[]>([]);
+
+  const handleRerollColor = () => {
+    setFormData((prev) => ({
+      ...prev,
+      color: getRandomColor(),
+    }));
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -175,13 +177,26 @@ export default function GroupForm({ group, mode, availablePeople = [], nameOrder
           >
             {t('customColor')}
           </label>
-          <input
-            type="color"
-            id="customColor"
-            value={formData.color}
-            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-            className="w-20 h-10 rounded cursor-pointer"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              id="customColor"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              className="w-20 h-10 rounded cursor-pointer"
+            />
+            <button
+              type="button"
+              onClick={handleRerollColor}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-elevated hover:text-foreground"
+              aria-label="Reroll color"
+              title="Reroll color"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
