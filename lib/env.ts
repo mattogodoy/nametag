@@ -37,6 +37,14 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+  // Google Service Account (for self-hosted / domain-wide delegation)
+  GOOGLE_SERVICE_ACCOUNT_KEY: z.string().optional(), // Base64-encoded service account JSON
+  GOOGLE_SERVICE_ACCOUNT_KEY_PATH: z.string().optional(), // Path to service account JSON file
+  GOOGLE_DELEGATED_USER_EMAIL: z.string().email().optional(), // Email to impersonate
+
+  // Google Vision API (OCR)
+  GOOGLE_VISION_ENABLED: z.coerce.boolean().default(false),
+
   // Stripe - Only required in SaaS mode
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
 

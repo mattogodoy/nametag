@@ -50,6 +50,7 @@ model User {
   cardDavConnection      CardDavConnection?
   cardDavPendingImports  CardDavPendingImport[]
   duplicateDismissals    DuplicateDismissal[]
+  googleIntegration      GoogleIntegration?
 
   journalEntries    JournalEntry[]
 
@@ -112,6 +113,8 @@ model Person {
   dismissalsAsA      DuplicateDismissal[]   @relation("DismissalPersonA")
   dismissalsAsB      DuplicateDismissal[]   @relation("DismissalPersonB")
   journalEntries     JournalEntryPerson[]
+  emailLogs          EmailLogPerson[]
+  documents          Document[]
 
   @@index([userId])
   @@index([relationshipToUserId])
@@ -798,4 +801,130 @@ model StripeEvent {
 
   @@index([processedAt])
   @@map("stripe_events")
+}
+
+// ============================================
+// GOOGLE INTEGRATION MODELS (Gmail + Drive)
+// ============================================
+
+// Google API integration - stores auth config per user (OAuth or Service Account)
+model GoogleIntegration {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  authMode          String    @default("oauth") // "oauth" or "service_account"
+
+  // OAuth fields (encrypted)
+  accessToken       String?   @db.Text  // Encrypted, null for service_account mode
+  refreshToken      String?   @db.Text  // Encrypted, null for service_account mode
+  tokenExpiresAt    DateTime?
+
+  // Service Account fields
+  serviceAccountKey String?   @db.Text  // Encrypted JSON key, null for oauth mode
+  delegatedEmail    String?             // Email to impersonate (domain-wide delegation)
+
+  // Sync config
+  gmailSyncEnabled  Boolean   @default(false)
+  driveSyncEnabled  Boolean   @default(false)
+  lastGmailSyncAt   DateTime?
+  gmailHistoryId    String?   // For incremental Gmail sync
+  autoSyncInterval  Int       @default(3600) // 1 hour in seconds
+  driveRootFolderId String?   // "Nametag" folder ID in user's Drive
+
+  // Error tracking
+  lastError         String?
+  lastErrorAt       DateTime?
+
+  // Sync locking
+  syncInProgress    Boolean   @default(false)
+  syncStartedAt     DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailLogs         EmailLog[]
+  documents         Document[]
+
+  @@map("google_integrations")
+}
+
+// Logged email from Gmail
+model EmailLog {
+  id                String    @id @default(cuid())
+  integrationId     String
+  gmailMessageId    String    // Gmail message ID (for dedup)
+  gmailThreadId     String    // Gmail thread ID
+  subject           String?
+  snippet           String?   @db.Text
+  body              String?   @db.Text  // Plain text body
+  fromEmail         String
+  fromName          String?
+  toEmails          String[]  // Array of recipient emails
+  ccEmails          String[]
+  date              DateTime
+  labelIds          String[]  // Gmail labels
+  hasAttachments    Boolean   @default(false)
+  isRead            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  integration       GoogleIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  people            EmailLogPerson[]
+  documents         Document[]
+
+  @@unique([integrationId, gmailMessageId])
+  @@index([integrationId, date])
+  @@index([fromEmail])
+  @@map("email_logs")
+}
+
+// Many-to-many: EmailLog <-> Person (tracks which contacts are involved in each email)
+model EmailLogPerson {
+  id          String   @id @default(cuid())
+  emailLogId  String
+  personId    String
+  role        String   // "from", "to", "cc"
+
+  // Relations
+  emailLog    EmailLog @relation(fields: [emailLogId], references: [id], onDelete: Cascade)
+  person      Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([emailLogId, personId, role])
+  @@index([personId])
+  @@map("email_log_people")
+}
+
+// Document stored in Google Drive, linked to a contact
+model Document {
+  id              String    @id @default(cuid())
+  integrationId   String
+  personId        String?   // Nullable for unmatched docs
+  emailLogId      String?   // If extracted from an email attachment
+  driveFileId     String    // Google Drive file ID
+  driveFolderId   String?   // Parent folder ID in Drive
+  driveWebViewUrl String?   // Direct link to view in Drive
+  fileName        String
+  mimeType        String
+  fileSize        Int?      // Bytes
+  source          String    // "email_attachment", "manual_upload"
+
+  // OCR
+  ocrText         String?   @db.Text  // Extracted text from OCR
+  ocrStatus       String    @default("pending") // "pending", "processing", "completed", "failed", "skipped"
+  metadata        Json?     // Extracted metadata (author, pages, etc.)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  integration     GoogleIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  person          Person?   @relation(fields: [personId], references: [id], onDelete: SetNull)
+  emailLog        EmailLog? @relation(fields: [emailLogId], references: [id], onDelete: SetNull)
+
+  @@index([integrationId])
+  @@index([personId])
+  @@index([emailLogId])
+  @@index([ocrStatus])
+  @@map("documents")
 }

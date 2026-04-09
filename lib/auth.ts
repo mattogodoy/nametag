@@ -130,6 +130,19 @@ const providers = [
         Google({
           clientId: env.GOOGLE_CLIENT_ID,
           clientSecret: env.GOOGLE_CLIENT_SECRET,
+          authorization: {
+            params: {
+              access_type: 'offline',
+              prompt: 'consent',
+              scope: [
+                'openid',
+                'email',
+                'profile',
+                'https://www.googleapis.com/auth/gmail.readonly',
+                'https://www.googleapis.com/auth/drive.file',
+              ].join(' '),
+            },
+          },
         }),
       ]
     : []),
@@ -190,6 +203,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
           // Update user object with existing user's ID for JWT callback
           user.id = existingUser.id;
+
+          // Store/update Google OAuth tokens for Gmail/Drive integration
+          if (account.access_token) {
+            const { encryptPassword } = await import('@/lib/carddav/encryption');
+            await prisma.googleIntegration.upsert({
+              where: { userId: existingUser.id },
+              update: {
+                accessToken: encryptPassword(account.access_token),
+                ...(account.refresh_token ? { refreshToken: encryptPassword(account.refresh_token) } : {}),
+                tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              },
+              create: {
+                userId: existingUser.id,
+                authMode: 'oauth',
+                accessToken: encryptPassword(account.access_token),
+                refreshToken: account.refresh_token ? encryptPassword(account.refresh_token) : null,
+                tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              },
+            });
+          }
         } else {
           // Create new user with OAuth
           const newUser = await prisma.user.create({
@@ -208,6 +241,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           // Create pre-loaded relationship types
           await createPreloadedRelationshipTypes(prisma, newUser.id);
+
+          // Store Google OAuth tokens for Gmail/Drive integration
+          if (account.access_token) {
+            const { encryptPassword } = await import('@/lib/carddav/encryption');
+            await prisma.googleIntegration.create({
+              data: {
+                userId: newUser.id,
+                authMode: 'oauth',
+                accessToken: encryptPassword(account.access_token),
+                refreshToken: account.refresh_token ? encryptPassword(account.refresh_token) : null,
+                tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              },
+            });
+          }
 
           // Update user object with new user's ID for JWT callback
           user.id = newUser.id;

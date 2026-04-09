@@ -17,6 +17,8 @@ import PersonAvatar from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import JournalSection from '@/components/JournalSection';
+import EmailsSection from '@/components/EmailsSection';
+import DocumentsSection from '@/components/DocumentsSection';
 
 function isSafeUrl(url: string): boolean {
   try {
@@ -113,7 +115,7 @@ export default async function PersonDetailsPage({
   const dateFormat = user?.dateFormat || 'MDY';
   const nameOrder = user?.nameOrder;
 
-  const [person, allPeople, relationshipTypes, cardDavConnection, latestJournalEntry] = await Promise.all([
+  const [person, allPeople, relationshipTypes, cardDavConnection, latestJournalEntry, latestEmails, personDocuments, googleIntegration] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -237,6 +239,53 @@ export default async function PersonDetailsPage({
         },
       },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+    }),
+    // Fetch latest emails linked to this person
+    prisma.emailLogPerson.findMany({
+      where: {
+        personId: id,
+        person: { userId: session.user.id, deletedAt: null },
+      },
+      include: {
+        emailLog: {
+          select: {
+            id: true,
+            subject: true,
+            snippet: true,
+            fromEmail: true,
+            fromName: true,
+            date: true,
+            hasAttachments: true,
+            isRead: true,
+          },
+        },
+      },
+      orderBy: { emailLog: { date: 'desc' } },
+      take: 5,
+    }),
+    // Fetch documents linked to this person
+    prisma.document.findMany({
+      where: {
+        personId: id,
+        person: { userId: session.user.id, deletedAt: null },
+      },
+      select: {
+        id: true,
+        fileName: true,
+        mimeType: true,
+        fileSize: true,
+        source: true,
+        driveWebViewUrl: true,
+        ocrStatus: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    }),
+    // Check if user has Google integration
+    prisma.googleIntegration.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true, driveSyncEnabled: true },
     }),
   ]);
 
@@ -694,6 +743,42 @@ export default async function PersonDetailsPage({
                 nameOrder={nameOrder}
                 locale={user?.language || 'en'}
               />
+
+              {/* Emails Section */}
+              {latestEmails.length > 0 && (
+                <EmailsSection
+                  personId={person.id}
+                  emailCount={latestEmails.length}
+                  latestEmails={latestEmails.map((elp) => ({
+                    id: elp.emailLog.id,
+                    subject: elp.emailLog.subject,
+                    snippet: elp.emailLog.snippet,
+                    fromEmail: elp.emailLog.fromEmail,
+                    fromName: elp.emailLog.fromName,
+                    date: elp.emailLog.date.toISOString(),
+                    hasAttachments: elp.emailLog.hasAttachments,
+                    isRead: elp.emailLog.isRead,
+                  }))}
+                />
+              )}
+
+              {/* Documents Section */}
+              {(personDocuments.length > 0 || googleIntegration?.driveSyncEnabled) && (
+                <DocumentsSection
+                  personId={person.id}
+                  documents={personDocuments.map((doc) => ({
+                    id: doc.id,
+                    fileName: doc.fileName,
+                    mimeType: doc.mimeType,
+                    fileSize: doc.fileSize,
+                    source: doc.source,
+                    driveWebViewUrl: doc.driveWebViewUrl,
+                    ocrStatus: doc.ocrStatus,
+                    createdAt: doc.createdAt.toISOString(),
+                  }))}
+                  showUpload={!!googleIntegration?.driveSyncEnabled}
+                />
+              )}
 
               {/* Relationship Network Section */}
               <div className="border border-border rounded-lg p-4">

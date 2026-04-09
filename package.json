@@ -31,6 +31,7 @@
     "d3-transition": "^3.0.1",
     "d3-zoom": "^3.0.0",
     "flag-icons": "^7.5.0",
+    "googleapis": "^171.4.0",
     "ioredis": "^5.8.2",
     "isomorphic-dompurify": "^2.34.0",
     "next": "^16.0.10",
