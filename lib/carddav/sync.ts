@@ -11,6 +11,7 @@ import { updatePersonFromVCard } from './vcard-import';
 
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from './hash';
+import { getAlreadyMappedPersonUids } from './mapped-uids';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('carddav');
@@ -178,6 +179,11 @@ export async function syncFromServer(
       if (m.href) mappingByHref.set(m.href, m);
     }
 
+    // Get UIDs of persons that already have a mapping under any UID.
+    // Prevents creating pending imports for contacts whose person is already
+    // mapped (e.g. auto-export with server UID rewrite).
+    const alreadyMappedPersonUids = await getAlreadyMappedPersonUids(userId);
+
     // Collect all UIDs seen on the server during processing (for stale import cleanup)
     const serverUids = new Set<string>();
 
@@ -333,7 +339,7 @@ export async function syncFromServer(
             result.updatedLocally++;
           }
           // If only local changed, we'll push in syncToServer
-        } else {
+        } else if (!alreadyMappedPersonUids.has(parsedData.uid)) {
           // New contact from server - add to pending imports
           await prisma.cardDavPendingImport.upsert({
             where: {
@@ -379,8 +385,8 @@ export async function syncFromServer(
       },
     });
 
-    // Clean up stale pending imports whose UIDs no longer exist on the server.
-    // UIDs that are already mapped (imported) are also valid — not stale
+    // Clean up stale pending imports: UIDs no longer on the server, or UIDs
+    // whose person is already mapped (these would just be skipped during import).
     const mappedUids = new Set(allMappings.map((m) => m.uid));
     const allValidUids = new Set([...serverUids, ...mappedUids]);
 
@@ -390,7 +396,7 @@ export async function syncFromServer(
     });
 
     const staleIds = stalePending
-      .filter((p) => !allValidUids.has(p.uid))
+      .filter((p) => !allValidUids.has(p.uid) || alreadyMappedPersonUids.has(p.uid))
       .map((p) => p.id);
 
     if (staleIds.length > 0) {

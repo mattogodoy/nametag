@@ -122,6 +122,19 @@ export const POST = withLogging(async function POST(request: Request) {
       existingActivePersons.map((p) => [p.uid, p])
     );
 
+    // Pre-fetch existing mappings by personId to detect persons that already have
+    // a mapping under a different UID (e.g. auto-export with server UID rewrite).
+    // The personId column is globally unique, so we must check this before creating.
+    const existingPersonIds = existingActivePersons.map((p) => p.id);
+    const mappingsByPersonId = new Set(
+      existingPersonIds.length > 0
+        ? (await prisma.cardDavMapping.findMany({
+            where: { personId: { in: existingPersonIds } },
+            select: { personId: true },
+          })).map((m) => m.personId)
+        : []
+    );
+
     // Use withDeleted() to bypass soft-delete filtering and find soft-deleted records
     const rawClient = withDeleted();
     let softDeletedPersons: Awaited<ReturnType<typeof rawClient.person.findMany>> = [];
@@ -242,7 +255,7 @@ export const POST = withLogging(async function POST(request: Request) {
           if (existingPerson) {
             // Person already exists — create a CardDAV mapping (if applicable) and clean up
             const isFileImport = pendingImport.uploadedByUserId !== null;
-            if (!isFileImport && connection) {
+            if (!isFileImport && connection && !mappingsByPersonId.has(existingPerson.id)) {
               const enhancedParsed = parseVCard(pendingImport.vCardData);
               await prisma.cardDavMapping.create({
                 data: {
@@ -258,6 +271,7 @@ export const POST = withLogging(async function POST(request: Request) {
                     : undefined,
                 },
               });
+              mappingsByPersonId.add(existingPerson.id);
             }
 
             await prisma.cardDavPendingImport.delete({
@@ -295,8 +309,9 @@ export const POST = withLogging(async function POST(request: Request) {
         }
 
         // Create CardDAV mapping only for CardDAV imports (not file imports)
+        // Skip if person already has a mapping (e.g. restored person with stale mapping)
         const isFileImport = pendingImport.uploadedByUserId !== null;
-        if (!isFileImport && connection) {
+        if (!isFileImport && connection && !mappingsByPersonId.has(person.id)) {
           const enhancedParsed = parseVCard(pendingImport.vCardData);
           await prisma.cardDavMapping.create({
             data: {
@@ -312,6 +327,7 @@ export const POST = withLogging(async function POST(request: Request) {
                 : undefined,
             },
           });
+          mappingsByPersonId.add(person.id);
         }
 
         // Assign to groups - merge global groups + per-contact groups

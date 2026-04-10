@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getAlreadyMappedPersonUids } from '@/lib/carddav/mapped-uids';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
 
@@ -23,10 +24,15 @@ export const GET = withLogging(async function GET(_request: Request) {
       return NextResponse.json({ count: 0 });
     }
 
-    // Count pending imports
+    // Exclude pending imports whose person is already mapped (under any UID)
+    const alreadyMappedPersonUids = await getAlreadyMappedPersonUids(session.user.id);
+
     const count = await prisma.cardDavPendingImport.count({
       where: {
         connectionId: connection.id,
+        ...(alreadyMappedPersonUids.size > 0
+          ? { uid: { notIn: [...alreadyMappedPersonUids] } }
+          : {}),
       },
     });
 

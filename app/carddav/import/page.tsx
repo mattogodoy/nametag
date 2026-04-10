@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
+import { getAlreadyMappedPersonUids } from '@/lib/carddav/mapped-uids';
 import ImportContactsList from '@/components/ImportContactsList';
 import Navigation from '@/components/Navigation';
 
@@ -43,7 +44,7 @@ export default async function ImportPage({
   }
 
   // Get pending imports scoped to this user
-  const pendingImports = await prisma.cardDavPendingImport.findMany({
+  const allPendingImports = await prisma.cardDavPendingImport.findMany({
     where: isFileImport
       ? {
           // File imports: owned by user, no connection
@@ -58,6 +59,17 @@ export default async function ImportPage({
       displayName: 'asc',
     },
   });
+
+  // Filter out pending imports whose person is already mapped (under any UID).
+  // These are stale entries from before the discovery-level fix; new ones won't
+  // be created but old ones may still exist until cleaned up.
+  let pendingImports = allPendingImports;
+  if (!isFileImport && allPendingImports.length > 0) {
+    const alreadyMappedPersonUids = await getAlreadyMappedPersonUids(session.user.id);
+    pendingImports = allPendingImports.filter(
+      (p) => !alreadyMappedPersonUids.has(p.uid)
+    );
+  }
 
   // PostgreSQL default ordering is case-sensitive and doesn't handle accented
   // characters well. Re-sort with locale-aware comparison so "álvaro" sorts

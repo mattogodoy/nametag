@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.42.2](https://github.com/mattogodoy/nametag/compare/v0.42.1...v0.42.2) (2026-04-09)
+
+
+### Bug Fixes
+
+* use native ARM64 runner instead of QEMU emulation ([0a3b224](https://github.com/mattogodoy/nametag/commit/0a3b224062dc640a22d7e04cc74b7e928f57ac19))
+* use native ARM64 runner instead of QEMU emulation ([fb1e053](https://github.com/mattogodoy/nametag/commit/fb1e05300ba1128bf875631f11c6c92a7d17b7dd))
+
+## [0.42.1](https://github.com/mattogodoy/nametag/compare/v0.42.0...v0.42.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* add z-index for navbar to fix search stacking issue ([d213f06](https://github.com/mattogodoy/nametag/commit/d213f0632a865ae84e2320ea48f721f32779e1cf))
+* add z-index for navbar to fix search stacking issue ([3db785d](https://github.com/mattogodoy/nametag/commit/3db785d2d950def517fa15f8d5cdeedbb92109c4))
+* make orphan warning tooltip readable in light mode ([2571814](https://github.com/mattogodoy/nametag/commit/2571814f2a1055b389a5708218c34e4180248c1b))
+* make orphan warning tooltip readable in light mode ([b48876f](https://github.com/mattogodoy/nametag/commit/b48876f2e5a5450d1d8d5cd347e1bd44f182612b)), closes [#209](https://github.com/mattogodoy/nametag/issues/209)
+
+## [0.42.0](https://github.com/mattogodoy/nametag/compare/v0.41.0...v0.42.0) (2026-03-31)
+
+
+### Features
+
+* redesign release notes to be warmer and less technical ([869b9e6](https://github.com/mattogodoy/nametag/commit/869b9e62b815dcd93cdd885f1803ff0d7c523fcd))
+
+
+### Bug Fixes
+
+* prevent UniqueConstraintViolation on personId during CardDAV import ([e7c809f](https://github.com/mattogodoy/nametag/commit/e7c809f80c67d76cec5bb02e1bf2d3db5eb62766))
+* prevent UniqueConstraintViolation on personId during CardDAV import ([f1841de](https://github.com/mattogodoy/nametag/commit/f1841de340acaa6825d2d24ea1acd44a27c1d307)), closes [#197](https://github.com/mattogodoy/nametag/issues/197)
+* suppress already-mapped contacts from CardDAV import UI ([e2a87c5](https://github.com/mattogodoy/nametag/commit/e2a87c51e865c3bffd1ae089c0bdbab308e5bbd2))
+* suppress already-mapped contacts from CardDAV import UI ([ef05544](https://github.com/mattogodoy/nametag/commit/ef05544612279124c5ce1998f672de2d58e465d7))
+
 ## [0.41.0](https://github.com/mattogodoy/nametag/compare/v0.40.0...v0.41.0) (2026-03-29)
 
 

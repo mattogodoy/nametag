@@ -79,8 +79,8 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
     <nav className="bg-surface border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top row: Logo, Search (centered), User menu */}
-        <div className="relative flex items-center justify-between h-16">
-          <Link href="/dashboard" className="flex items-center flex-shrink-0 z-10">
+        <div className="relative z-30 flex items-center justify-between h-16">
+          <Link href="/dashboard" className="flex items-center shrink-0 z-10">
             <Image
               src="/logo.svg"
               alt="Nametag Logo"

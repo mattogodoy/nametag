@@ -49,6 +49,9 @@ const mocks = vi.hoisted(() => ({
   vCardToPerson: vi.fn(),
   personToVCard: vi.fn(),
   updatePersonFromVCard: vi.fn(),
+
+  // mapped-uids helper
+  getAlreadyMappedPersonUids: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -117,6 +120,10 @@ vi.mock('@/lib/carddav/retry', () => ({
     category: 'UNKNOWN',
     userMessage: error instanceof Error ? error.message : 'Unknown error',
   })),
+}));
+
+vi.mock('@/lib/carddav/mapped-uids', () => ({
+  getAlreadyMappedPersonUids: mocks.getAlreadyMappedPersonUids,
 }));
 
 vi.mock('@/lib/photo-storage', () => ({
@@ -277,6 +284,8 @@ describe('CardDAV Sync Engine', () => {
     // Default: no existing mappings (for both syncFromServer pre-load and syncToServer)
     mocks.cardDavMappingFindMany.mockResolvedValue([]);
     mocks.personFindMany.mockResolvedValue([]);
+    // Default: no persons already mapped under a different UID
+    mocks.getAlreadyMappedPersonUids.mockResolvedValue(new Set());
 
     // Default: personToVCard returns a valid vCard string
     mocks.personToVCard.mockReturnValue('BEGIN:VCARD\nVERSION:3.0\nEND:VCARD');
@@ -446,6 +455,27 @@ describe('CardDAV Sync Engine', () => {
 
         expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
         expect(result.errors).toBe(1);
+      });
+
+      it('should not create pending import when person UID is already mapped under a different UID (issue #197)', async () => {
+        const serverUid = 'person-original-uid';
+
+        // No mapping for this UID (the mapping uses a different UID from auto-export)
+        mocks.cardDavMappingFindMany.mockResolvedValue([]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(serverUid, '/contacts/gerda.vcf', 'etag-1', 'Gerda'),
+        ]);
+        mocks.vCardToPerson.mockReturnValue(makeParsedVCard(serverUid, 'Gerda'));
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+
+        // Person with this UID already has a mapping (under a different UID)
+        mocks.getAlreadyMappedPersonUids.mockResolvedValue(new Set([serverUid]));
+
+        const result = await syncFromServer(USER_ID);
+
+        // Should NOT create a pending import
+        expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
+        expect(result.pendingImports).toBeFalsy();
       });
     });
 

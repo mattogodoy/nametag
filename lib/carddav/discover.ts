@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { getAddressBook } from './address-book';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
+import { getAlreadyMappedPersonUids } from './mapped-uids';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('carddav');
@@ -57,6 +58,12 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
 
     const existingUids = new Set(existingMappings.map((m) => m.uid));
 
+    // Get UIDs of persons that already have a mapping under any UID.
+    // This catches cases where a person was auto-exported with a server-
+    // rewritten UID — their person.uid differs from mapping.uid, so the
+    // existingUids check alone would miss them.
+    const alreadyMappedPersonUids = await getAlreadyMappedPersonUids(userId);
+
     // Get all existing pending imports
     const existingPending = await prisma.cardDavPendingImport.findMany({
       where: {
@@ -87,8 +94,8 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
         const uid = parsed.uid;
         serverUids.add(uid);
 
-        // Skip if already imported or already pending
-        if (existingUids.has(uid) || pendingUids.has(uid)) {
+        // Skip if already imported, already pending, or person already mapped
+        if (existingUids.has(uid) || pendingUids.has(uid) || alreadyMappedPersonUids.has(uid)) {
           continue;
         }
 
@@ -119,18 +126,17 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
       }
     }
 
-    // Clean up stale pending imports whose UIDs no longer exist on the server.
-    // Also include UIDs that are already mapped (imported) — those aren't stale
+    // Clean up stale pending imports: UIDs no longer on the server, or UIDs
+    // whose person is already mapped (these would just be skipped during import).
     const allValidUids = new Set([...serverUids, ...existingUids]);
 
-    // Find pending imports whose UIDs are no longer on the server
     const allPending = await prisma.cardDavPendingImport.findMany({
       where: { connectionId: connection.id },
       select: { id: true, uid: true },
     });
 
     const staleIds = allPending
-      .filter((p) => !allValidUids.has(p.uid))
+      .filter((p) => !allValidUids.has(p.uid) || alreadyMappedPersonUids.has(p.uid))
       .map((p) => p.id);
 
     if (staleIds.length > 0) {

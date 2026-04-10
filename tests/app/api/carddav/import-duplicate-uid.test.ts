@@ -302,6 +302,54 @@ describe('POST /api/carddav/import — duplicate UID handling', () => {
     });
   });
 
+  it('should skip mapping creation when person already has a mapping under a different UID (issue #197)', async () => {
+    // Scenario: Person "Gerda" has a mapping from auto-export (uid="auto-uid"),
+    // but a Baikal contact with a matching person UID "baikal-uid" is being imported.
+    // The existing mapping check by UID misses it, but the personId check catches it.
+    const cardDavPending = {
+      id: 'p-gerda',
+      connectionId: 'conn-1',
+      uploadedByUserId: null, // CardDAV import
+      uid: 'baikal-uid',
+      href: '/addressbooks/gerda.vcf',
+      etag: '"etag-1"',
+      vCardData: makeVCard('baikal-uid', 'Gerda'),
+      displayName: 'Gerda',
+      discoveredAt: new Date(),
+      notifiedAt: null,
+    };
+
+    mocks.findManyPending.mockResolvedValue([cardDavPending]);
+
+    // User has a CardDAV connection
+    mocks.findUniqueConnection.mockResolvedValue({ id: 'conn-1' });
+
+    // Person exists with uid matching the import
+    mocks.findManyPerson.mockResolvedValue([
+      { id: 'person-gerda', uid: 'baikal-uid' },
+    ]);
+
+    // The person already has a mapping under a DIFFERENT UID (from auto-export)
+    // First call: mapping by UID for connection → no match (different UID)
+    // Second call: mapping by personId → match found!
+    mocks.findManyMapping
+      .mockResolvedValueOnce([]) // no mapping with uid="baikal-uid"
+      .mockResolvedValueOnce([{ personId: 'person-gerda' }]); // person already mapped
+
+    const res = await postImport(['p-gerda']);
+    const data = await res.json();
+
+    // Should skip (not crash with UniqueConstraintViolation)
+    expect(data.skipped).toBe(1);
+    expect(data.errors).toBe(0);
+    // Should NOT attempt to create a mapping
+    expect(mocks.createMapping).not.toHaveBeenCalled();
+    // Pending import should be cleaned up
+    expect(mocks.deletePending).toHaveBeenCalledWith({
+      where: { id: 'p-gerda' },
+    });
+  });
+
   it('should return 404 when no pending imports match', async () => {
     mocks.findManyPending.mockResolvedValue([]);
 
