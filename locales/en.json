@@ -1848,7 +1848,7 @@
     "viewContact": "View contact",
     "noBody": "No email body available"
   },
-  "emails": {
+  "emailsUi": {
     "title": "Emails",
     "noEmails": "No emails logged yet",
     "viewAll": "View all emails",

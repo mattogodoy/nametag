@@ -41,7 +41,7 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 export default function EmailsSection({ personId, emailCount, latestEmails }: EmailsSectionProps) {
-  const t = useTranslations('emails');
+  const t = useTranslations('emailsUi');
 
   return (
     <div className="border border-border rounded-lg p-4">
