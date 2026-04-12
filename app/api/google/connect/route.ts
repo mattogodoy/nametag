@@ -61,6 +61,7 @@ export const POST = withLogging(async function POST(request: Request) {
       driveFolderName,
       calendarSyncEnabled,
       birthdayCalendarId,
+      ocrEnabled,
     } = body;
 
     if (!authMode || !['oauth', 'service_account'].includes(authMode)) {
@@ -136,6 +137,9 @@ export const POST = withLogging(async function POST(request: Request) {
     }
     if (birthdayCalendarId !== undefined) {
       data.birthdayCalendarId = birthdayCalendarId;
+    }
+    if (ocrEnabled !== undefined) {
+      data.ocrEnabled = ocrEnabled;
     }
 
     // Upsert the integration

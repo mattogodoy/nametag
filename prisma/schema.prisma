@@ -839,6 +839,9 @@ model GoogleIntegration {
   birthdayCalendarId  String?  // Google Calendar ID for birthday events
   lastCalendarSyncAt  DateTime?
 
+  // OCR config
+  ocrEnabled          Boolean  @default(true) // User-level OCR toggle
+
   // Error tracking
   lastError         String?
   lastErrorAt       DateTime?

@@ -49,9 +49,23 @@ export async function processDocumentOcr(
   userId: string,
   documentId: string,
 ): Promise<void> {
-  // Check if Vision API is enabled
+  // Check if OCR is enabled (user toggle + optional env-level kill switch)
   if (!env.GOOGLE_VISION_ENABLED) {
-    logger.info({ documentId }, 'Google Vision API disabled, skipping OCR');
+    logger.info({ documentId }, 'Google Vision API disabled globally via env, skipping OCR');
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { ocrStatus: 'skipped' },
+    });
+    return;
+  }
+
+  // Check user-level OCR toggle
+  const integration = await prisma.googleIntegration.findFirst({
+    where: { userId },
+    select: { ocrEnabled: true },
+  });
+  if (integration && !integration.ocrEnabled) {
+    logger.info({ documentId, userId }, 'OCR disabled by user, skipping');
     await prisma.document.update({
       where: { id: documentId },
       data: { ocrStatus: 'skipped' },
