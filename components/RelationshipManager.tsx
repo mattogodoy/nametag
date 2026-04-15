@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
-import { formatFullName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { Button } from './ui/Button';
 import PersonAvatar from './PersonPhoto';
 
