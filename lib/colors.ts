@@ -1,15 +1,15 @@
 export const PRESET_COLORS: string[] = [
-  '#ef4444', // Red
-  '#f97316', // Orange
-  '#eab308', // Yellow
-  '#22c55e', // Green
-  '#10b981', // Emerald
-  '#06b6d4', // Cyan
-  '#3b82f6', // Blue
-  '#6366f1', // Indigo
-  '#a855f7', // Purple
-  '#ec4899', // Pink
-  '#f43f5e', // Rose
+  '#EF4444', // Red
+  '#F97316', // Orange
+  '#EAB308', // Yellow
+  '#22C55E', // Green
+  '#10B981', // Emerald
+  '#06B6D4', // Cyan
+  '#3B82F6', // Blue
+  '#6366F1', // Indigo
+  '#A855F7', // Purple
+  '#EC4899', // Pink
+  '#F43F5E', // Rose
 ];
 
 const toHex = (value: number): string => value.toString(16).padStart(2, '0');
