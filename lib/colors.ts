@@ -12,12 +12,26 @@ export const PRESET_COLORS: string[] = [
   '#F43F5E', // Rose
 ];
 
-const toHex = (value: number): string => value.toString(16).padStart(2, '0');
-
 export function getRandomColor(): string {
-  const red = Math.floor(Math.random() * 256);
-  const green = Math.floor(Math.random() * 256);
-  const blue = Math.floor(Math.random() * 256);
+  const h = Math.floor(Math.random() * 360);
+  const s = 50 + Math.floor(Math.random() * 30); // 50-80%
+  const l = 45 + Math.floor(Math.random() * 20); // 45-65%
 
-  return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+  return HSLToHex({ h, s, l });
 }
+
+const HSLToHex = (hsl: { h: number; s: number; l: number }): string => {
+  const { h, s, l } = hsl;
+
+  const hDecimal = l / 100;
+  const a = (s * Math.min(hDecimal, 1 - hDecimal)) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = hDecimal - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+
+    return Math.round(255 * color)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
