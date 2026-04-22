@@ -13,24 +13,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from './hash';
 import { getAlreadyMappedPersonUids } from './mapped-uids';
 import { createModuleLogger } from '@/lib/logger';
+import { ExternalServiceError } from '@/lib/errors';
+import { updateContext } from '@/lib/logging/context';
 
 const log = createModuleLogger('carddav');
 
 /** Preserved vCard properties stored on CardDavMapping for round-tripping. */
 export type PreservedProperties = UnknownProperty[];
-
-/**
- * Check whether an error represents an HTTP 412 Precondition Failed response.
- * Checks for a numeric `status` property first (structured errors), then
- * falls back to matching the "412" status code in the error message (tsdav
- * wraps HTTP failures as plain Error objects with the status in the message).
- */
-export function is412Error(error: unknown): boolean {
-  if (typeof error === 'object' && error !== null && 'status' in error) {
-    return (error as { status: number }).status === 412;
-  }
-  return error instanceof Error && /\b412\b/.test(error.message);
-}
 
 /**
  * Handle a 412 Precondition Failed on vCard CREATE by adopting the existing
@@ -566,12 +555,13 @@ export async function syncToServer(
 
           let updated: VCard;
           try {
+            updateContext({ personId: mapping.personId });
             updated = await withRetry(
               () => client.updateVCard(vCard, vCardData),
               { maxAttempts: 3 }
             );
           } catch (updateError) {
-            if (!is412Error(updateError)) throw updateError;
+            if (!(updateError instanceof ExternalServiceError && updateError.status === 412)) throw updateError;
 
             // 412: fetch fresh ETag from server and retry once
             log.warn({ personId: mapping.personId, href: mapping.href }, '412 Precondition Failed — refreshing ETag and retrying');
@@ -605,7 +595,7 @@ export async function syncToServer(
               { maxAttempts: 3 }
             );
           } catch (createError) {
-            if (!is412Error(createError)) throw createError;
+            if (!(createError instanceof ExternalServiceError && createError.status === 412)) throw createError;
             created = await createOrAdoptVCard(client, addressBook, vCardData, filename, mapping.personId);
           }
 
@@ -711,12 +701,13 @@ export async function syncToServer(
         // was imported from server but not yet mapped) — adopt it and update instead.
         let created: VCard;
         try {
+          updateContext({ personId: person.id });
           created = await withRetry(
             () => client.createVCard(addressBook, vCardData, filename),
             { maxAttempts: 3 }
           );
         } catch (createError) {
-          if (!is412Error(createError)) throw createError;
+          if (!(createError instanceof ExternalServiceError && createError.status === 412)) throw createError;
           created = await createOrAdoptVCard(client, addressBook, vCardData, filename, person.id);
         }
 

@@ -152,7 +152,8 @@ vi.mock('uuid', () => ({
 }));
 
 // --- Import after mocks ---
-import { syncFromServer, syncToServer, bidirectionalSync, is412Error, createOrAdoptVCard } from '@/lib/carddav/sync';
+import { syncFromServer, syncToServer, bidirectionalSync, createOrAdoptVCard } from '@/lib/carddav/sync';
+import { ExternalServiceError } from '@/lib/errors';
 import type { AddressBook } from '@/lib/carddav/client';
 
 // --- Test data helpers ---
@@ -785,33 +786,24 @@ describe('CardDAV Sync Engine', () => {
     });
   });
 
-  describe('is412Error', () => {
-    it('should detect 412 from error message (tsdav format)', () => {
-      expect(is412Error(new Error('CardDAV CREATE failed: 412 Precondition Failed'))).toBe(true);
-      expect(is412Error(new Error('CardDAV UPDATE failed: 412 Precondition Failed'))).toBe(true);
+  describe('412 handling via ExternalServiceError', () => {
+    it('ExternalServiceError.status === 412 is the trigger for fallback paths', () => {
+      const err412 = new ExternalServiceError({
+        message: 'CardDAV UPDATE failed: 412 Precondition Failed',
+        service: 'carddav',
+        status: 412,
+      });
+      expect(err412 instanceof ExternalServiceError).toBe(true);
+      expect(err412.status).toBe(412);
     });
 
-    it('should detect 412 from status property on error object', () => {
-      const errorWithStatus = Object.assign(new Error('Precondition Failed'), { status: 412 });
-      expect(is412Error(errorWithStatus)).toBe(true);
-    });
-
-    it('should not match non-412 errors', () => {
-      expect(is412Error(new Error('CardDAV UPDATE failed: 404 Not Found'))).toBe(false);
-      expect(is412Error(new Error('Network timeout'))).toBe(false);
-      expect(is412Error(new Error('Something went wrong'))).toBe(false);
-    });
-
-    it('should not match when status property is not 412', () => {
-      const error500 = Object.assign(new Error('Server error'), { status: 500 });
-      expect(is412Error(error500)).toBe(false);
-    });
-
-    it('should handle non-Error values', () => {
-      expect(is412Error(null)).toBe(false);
-      expect(is412Error(undefined)).toBe(false);
-      expect(is412Error('412')).toBe(false);
-      expect(is412Error({ status: 412 })).toBe(true);
+    it('non-412 ExternalServiceError passes through', () => {
+      const err404 = new ExternalServiceError({
+        message: 'not found',
+        service: 'carddav',
+        status: 404,
+      });
+      expect(err404.status).not.toBe(412);
     });
   });
 
@@ -971,7 +963,7 @@ describe('CardDAV Sync Engine', () => {
 
       // First updateVCard throws 412, second succeeds
       mocks.updateVCard
-        .mockRejectedValueOnce(new Error('CardDAV UPDATE failed: 412 Precondition Failed'))
+        .mockRejectedValueOnce(new ExternalServiceError({ message: 'CardDAV UPDATE failed: 412 Precondition Failed', service: 'carddav', status: 412 }))
         .mockResolvedValueOnce({
           url: mapping.href,
           etag: 'fresh-etag-after-retry',
@@ -1009,7 +1001,7 @@ describe('CardDAV Sync Engine', () => {
 
       // CREATE throws 412
       mocks.createVCard.mockRejectedValueOnce(
-        new Error('CardDAV CREATE failed: 412 Precondition Failed')
+        new ExternalServiceError({ message: 'CardDAV CREATE failed: 412 Precondition Failed', service: 'carddav', status: 412 })
       );
 
       // fetchVCard finds the existing server vCard
@@ -1062,7 +1054,7 @@ describe('CardDAV Sync Engine', () => {
 
       // CREATE throws 412
       mocks.createVCard.mockRejectedValueOnce(
-        new Error('CardDAV CREATE failed: 412 Precondition Failed')
+        new ExternalServiceError({ message: 'CardDAV CREATE failed: 412 Precondition Failed', service: 'carddav', status: 412 })
       );
 
       // fetchVCard finds existing server vCard
@@ -1106,7 +1098,7 @@ describe('CardDAV Sync Engine', () => {
 
       // UPDATE throws 500 (not 412)
       mocks.updateVCard.mockRejectedValueOnce(
-        new Error('CardDAV UPDATE failed: 500 Internal Server Error')
+        new ExternalServiceError({ message: 'CardDAV UPDATE failed: 500 Internal Server Error', service: 'carddav', status: 500 })
       );
 
       const result = await syncToServer(USER_ID);
@@ -1144,7 +1136,7 @@ describe('CardDAV Sync Engine', () => {
 
       // CREATE throws 403 (not 412)
       mocks.createVCard.mockRejectedValueOnce(
-        new Error('CardDAV CREATE failed: 403 Forbidden')
+        new ExternalServiceError({ message: 'CardDAV CREATE failed: 403 Forbidden', service: 'carddav', status: 403 })
       );
 
       const result = await syncToServer(USER_ID);

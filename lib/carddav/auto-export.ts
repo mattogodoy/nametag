@@ -6,6 +6,7 @@ import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { withRetry } from './retry';
 import { buildLocalHash } from './hash';
 import { createModuleLogger } from '@/lib/logger';
+import { updateContext } from '@/lib/logging/context';
 
 const log = createModuleLogger('carddav');
 import { v4 as uuidv4 } from 'uuid';
@@ -99,6 +100,7 @@ export async function autoExportPerson(personId: string): Promise<void> {
   }
 
   try {
+    updateContext({ personId: person.id });
     // Create CardDAV client
     const client = await createCardDavClient(connection);
 
@@ -297,6 +299,7 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
   }
 
   try {
+    updateContext({ personId: person.id });
     // Create CardDAV client
     const client = await createCardDavClient(connection);
 
