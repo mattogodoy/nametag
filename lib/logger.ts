@@ -1,10 +1,12 @@
 import pino from 'pino';
+import { getContext } from './logging/context';
+import { AppError, ExternalServiceError } from './errors';
 
 type LogContext = Record<string, unknown>;
 
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
-const pinoOptions: pino.LoggerOptions = {
+export const pinoOptions: pino.LoggerOptions = {
   level: LOG_LEVEL,
   formatters: {
     level(label) {
@@ -12,6 +14,31 @@ const pinoOptions: pino.LoggerOptions = {
     },
   },
   timestamp: pino.stdTimeFunctions.isoTime,
+  mixin() {
+    return getContext() ?? {};
+  },
+  serializers: {
+    err: (err: unknown) => {
+      const base = pino.stdSerializers.err(err as Error);
+      if (err instanceof AppError) {
+        const enriched: Record<string, unknown> = {
+          ...base,
+          code: err.code,
+          statusCode: err.statusCode,
+          ...err.context,
+        };
+        if (err instanceof ExternalServiceError) {
+          enriched.service = err.service;
+          enriched.endpoint = err.endpoint;
+          enriched.method = err.method;
+          enriched.status = err.status;
+          enriched.body = err.body;
+        }
+        return enriched;
+      }
+      return base;
+    },
+  },
 };
 
 if (process.env.NODE_ENV !== 'production') {
@@ -40,14 +67,12 @@ export const securityLogger = {
       'Rate limit exceeded'
     );
   },
-
   authFailure: (ip: string, reason: string, context?: LogContext) => {
     securityLog.warn(
       { type: 'AUTH_FAILURE', ip, reason, ...context },
       'Authentication failure'
     );
   },
-
   suspiciousActivity: (ip: string, activity: string, context?: LogContext) => {
     securityLog.warn(
       { type: 'SUSPICIOUS_ACTIVITY', ip, activity, ...context },
