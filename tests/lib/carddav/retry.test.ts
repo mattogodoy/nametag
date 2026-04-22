@@ -8,6 +8,7 @@ import {
   categorizeError,
   ErrorCategory,
 } from '@/lib/carddav/retry';
+import { ExternalServiceError } from '@/lib/errors';
 
 describe('withRetry', () => {
   it('returns on first success without retrying', async () => {
@@ -550,5 +551,57 @@ describe('ErrorCategory enum', () => {
     expect(ErrorCategory.MALFORMED).toBe('malformed');
     expect(ErrorCategory.NOT_FOUND).toBe('not_found');
     expect(ErrorCategory.UNKNOWN).toBe('unknown');
+  });
+});
+
+// Integration with ExternalServiceError (Task 2/6 follow-up)
+
+describe('withRetry with ExternalServiceError', () => {
+  it('retries on ExternalServiceError with status 5xx', async () => {
+    let attempts = 0;
+    const result = await withRetry(async () => {
+      attempts++;
+      if (attempts < 3) {
+        throw new ExternalServiceError({ message: 'server error', service: 'carddav', status: 503 });
+      }
+      return 'ok';
+    }, { initialDelay: 1, maxDelay: 2 });
+    expect(result).toBe('ok');
+    expect(attempts).toBe(3);
+  });
+
+  it('does not retry on ExternalServiceError with status 400', async () => {
+    let attempts = 0;
+    await expect(withRetry(async () => {
+      attempts++;
+      throw new ExternalServiceError({ message: 'bad', service: 'carddav', status: 400 });
+    }, { initialDelay: 1, maxDelay: 2 })).rejects.toBeInstanceOf(ExternalServiceError);
+    expect(attempts).toBe(1);
+  });
+
+  it('retries on 429 rate limit', async () => {
+    let attempts = 0;
+    await expect(withRetry(async () => {
+      attempts++;
+      throw new ExternalServiceError({ message: 'slow down', service: 'carddav', status: 429 });
+    }, { maxAttempts: 2, initialDelay: 1, maxDelay: 2 })).rejects.toBeInstanceOf(ExternalServiceError);
+    expect(attempts).toBe(2);
+  });
+});
+
+describe('categorizeError with ExternalServiceError', () => {
+  it('classifies ExternalServiceError 401 as AUTH', () => {
+    const err = new ExternalServiceError({ message: 'unauth', service: 'carddav', status: 401 });
+    expect(categorizeError(err).category).toBe(ErrorCategory.AUTH);
+  });
+
+  it('classifies ExternalServiceError 500 as SERVER', () => {
+    const err = new ExternalServiceError({ message: 'server', service: 'carddav', status: 500 });
+    expect(categorizeError(err).category).toBe(ErrorCategory.SERVER);
+  });
+
+  it('classifies ExternalServiceError 429 as RATE_LIMIT', () => {
+    const err = new ExternalServiceError({ message: 'r', service: 'carddav', status: 429 });
+    expect(categorizeError(err).category).toBe(ErrorCategory.RATE_LIMIT);
   });
 });
