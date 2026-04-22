@@ -273,7 +273,10 @@ export async function deleteVCardDirect(
       method: 'DELETE',
       status: response.status,
       body,
-      context: { etag },
+      context: {
+        serverHost: new URL(connection.serverUrl).host,
+        etag,
+      },
     });
   }
 }
