@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.43.1](https://github.com/mattogodoy/nametag/compare/v0.43.0...v0.43.1) (2026-04-22)
+
+
+### Features
+
+* **carddav:** log outgoing vCard on push failure ([7417d2d](https://github.com/mattogodoy/nametag/commit/7417d2dd2eb7e7f3f04b2c93154a84d981a4e6db))
+* **carddav:** log outgoing vCard on push failure ([c8aedab](https://github.com/mattogodoy/nametag/commit/c8aedabd38a0c93952a048cab71a9861f235eff8))
+
+
+### Bug Fixes
+
+* **docker:** install tzdata so TZ env var can resolve non-UTC zones ([39998e8](https://github.com/mattogodoy/nametag/commit/39998e8038b2347b1e18bc1b58aff5e6e718f968))
+
+
+### Miscellaneous
+
+* release 0.43.1 ([8978e43](https://github.com/mattogodoy/nametag/commit/8978e438bc567df4c24804b54be1e19c257c476e))
+
 ## [0.43.0](https://github.com/mattogodoy/nametag/compare/v0.42.2...v0.43.0) (2026-04-22)
 
 
