@@ -6,24 +6,9 @@ type LogContext = Record<string, unknown>;
 
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
-const { chindingsSym } = pino.symbols;
-
-/**
- * Parse the keys already serialised into a child logger's chindings buffer so
- * the mixin can skip them, letting child bindings take precedence.
- * chindings is a raw JSON fragment like `,"key":value,"key2":value2`
- */
-function chindingKeys(self: pino.Logger): Set<string> {
+function boundKeys(self: pino.Logger): Set<string> {
   try {
-    const chindings = (self as unknown as Record<symbol, string>)[chindingsSym];
-    if (!chindings) return new Set<string>();
-    const keys = new Set<string>();
-    const keyPattern = /,"([^"]+)":/g;
-    let m: RegExpExecArray | null;
-    while ((m = keyPattern.exec(chindings)) !== null) {
-      keys.add(m[1]);
-    }
-    return keys;
+    return new Set(Object.keys(self.bindings()));
   } catch {
     return new Set<string>();
   }
@@ -40,7 +25,7 @@ export const pinoOptions: pino.LoggerOptions = {
   mixin(_mergeObj: object, _num: number, self: pino.Logger) {
     try {
       const ctx = getContext() ?? {};
-      const bound = chindingKeys(self);
+      const bound = boundKeys(self);
       if (bound.size === 0) return ctx;
       // Drop context keys that the child logger already has as bindings so
       // those bindings win over ALS context in the final JSON output.

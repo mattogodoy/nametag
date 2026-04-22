@@ -43,17 +43,13 @@ const mockPinoFn = vi.fn(() => ({
   child: mockChild,
 }));
 
-// Attach stdTimeFunctions and symbols to the mock
-const mockChindingsSym = Symbol('pino.chindings');
+// Attach stdTimeFunctions and stdSerializers to the mock
 const mockPino = Object.assign(mockPinoFn, {
   stdTimeFunctions: {
     isoTime: () => `,"time":"${new Date().toISOString()}"`,
     epochTime: () => `,"time":${Date.now()}`,
     unixTime: () => `,"time":${Math.round(Date.now() / 1000)}`,
     nullTime: () => '',
-  },
-  symbols: {
-    chindingsSym: mockChindingsSym,
   },
   stdSerializers: {
     err: (err: Error) => ({
