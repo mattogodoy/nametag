@@ -5,6 +5,7 @@ import DateFormatSelector from '@/components/DateFormatSelector';
 import NameOrderSelector from '@/components/NameOrderSelector';
 import NameDisplayFormatSelector from '@/components/NameDisplayFormatSelector';
 import LanguageSelector from '@/components/LanguageSelector';
+import GraphDisplaySelector from '@/components/GraphDisplaySelector';
 import { prisma } from '@/lib/prisma';
 import { getUserLocale, type SupportedLocale } from '@/lib/locale';
 import { getTranslations } from 'next-intl/server';
@@ -21,7 +22,7 @@ export default async function AppearanceSettingsPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { theme: true, dateFormat: true, language: true, nameOrder: true, nameDisplayFormat: true },
+    select: { theme: true, dateFormat: true, language: true, nameOrder: true, nameDisplayFormat: true, graphMode: true, graphBubbleThreshold: true },
   });
 
   const currentTheme = user?.theme || 'DARK';
@@ -29,6 +30,9 @@ export default async function AppearanceSettingsPage() {
   const currentLanguage = (user?.language as SupportedLocale) || (await getUserLocale(session.user.id));
   const currentNameOrder = (user?.nameOrder as 'WESTERN' | 'EASTERN') || 'WESTERN';
   const currentNameDisplayFormat = (user?.nameDisplayFormat as 'FULL' | 'NICKNAME_PREFERRED' | 'SHORT') || 'FULL';
+  const currentGraphMode: 'auto' | 'individuals' | 'bubbles' =
+    user?.graphMode === 'individuals' || user?.graphMode === 'bubbles' ? user.graphMode : 'auto';
+  const currentGraphThreshold = user?.graphBubbleThreshold ?? 50;
 
   return (
     <div className="space-y-6">
@@ -82,6 +86,20 @@ export default async function AppearanceSettingsPage() {
           {t('nameDisplayFormatDescription')}
         </p>
         <NameDisplayFormatSelector currentFormat={currentNameDisplayFormat} />
+      </div>
+
+      {/* Network Graph Display Settings */}
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">
+          {t('graphModeTitle')}
+        </h2>
+        <p className="text-muted mb-6">
+          {t('graphModeDescription')}
+        </p>
+        <GraphDisplaySelector
+          currentMode={currentGraphMode}
+          currentThreshold={currentGraphThreshold}
+        />
       </div>
     </div>
   );

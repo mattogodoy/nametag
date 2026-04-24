@@ -2,15 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { diffSimulationData } from '../../../components/graph/diff-simulation';
 import type { SimulationNode, SimulationEdge } from '../../../components/graph/simulation-types';
 
-const mkNode = (id: string, partial: Partial<SimulationNode> = {}): SimulationNode => ({
-  kind: 'person',
-  id,
-  label: id,
-  groups: [],
-  colors: [],
-  isCenter: false,
-  ...partial,
-});
+const mkNode = (id: string, partial: Partial<SimulationNode> = {}): SimulationNode => {
+  const base = {
+    kind: 'person' as const,
+    id,
+    label: id,
+    groups: [] as string[],
+    colors: [] as string[],
+    isCenter: false,
+  };
+  return { ...base, ...partial } as SimulationNode;
+};
 
 describe('diffSimulationData', () => {
   it('retains positions of existing nodes by id', () => {

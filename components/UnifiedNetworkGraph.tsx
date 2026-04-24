@@ -17,6 +17,10 @@ import { getLODTier } from './graph/lod';
 import { getCachedPhoto, loadPhoto } from './graph/photo-cache';
 import { buildQuadtree, findNodeAtPoint, type NodeQuadtree } from './graph/hit-test';
 import { diffSimulationData } from './graph/diff-simulation';
+import { resolveGraphMode } from './graph/mode-resolution';
+import { buildSimulationNodes, type RawGraphPerson } from './graph/bubble-composition';
+import { buildHubAndSpokeEdges } from './graph/edge-composition';
+import { UNGROUPED_SYNTHETIC_ID } from './graph/simulation-types';
 import type {
   SimulationNode, SimulationEdge, PersonSimNode,
 } from './graph/simulation-types';
@@ -37,6 +41,8 @@ interface UnifiedNetworkGraphProps {
   refreshKey?: number;
   enableGroupClustering?: boolean;
   clusterStrength?: number;
+  graphMode?: 'individuals' | 'bubbles' | null;
+  graphBubbleThreshold?: number;
 }
 
 export default function UnifiedNetworkGraph({
@@ -48,6 +54,8 @@ export default function UnifiedNetworkGraph({
   refreshKey,
   enableGroupClustering = true,
   clusterStrength = 0.3,
+  graphMode: graphModeProp = null,
+  graphBubbleThreshold = 50,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,6 +78,15 @@ export default function UnifiedNetworkGraph({
   const [isMobile, setIsMobile] = useState(false);
   const [clusteringEnabled, setClusteringEnabled] = useState(enableGroupClustering);
   const capitalizeType = useLocale().startsWith('de');
+
+  // Bubble state
+  const [expandedBubbles, setExpandedBubbles] = useState<Set<string>>(new Set());
+  const [localGraphMode, setLocalGraphMode] = useState<'individuals' | 'bubbles' | null>(graphModeProp);
+  const previousIncludeGroupIdsRef = useRef<Set<string>>(new Set());
+  const rawCacheRef = useRef<{ nodes: RawGraphPerson[]; edges: SimulationEdge[] } | null>(null);
+
+  // Ungrouped label for bubble composition
+  const ungroupedLabel = t('unsortedBubbleLabel');
 
   const includeGroupIds = useMemo(
     () => selectedGroupFilters.filter((f) => !f.isNegative).map((f) => f.id),
@@ -239,7 +256,78 @@ export default function UnifiedNetworkGraph({
     return sim;
   }, [isMobile, linkDistance, chargeStrength, clusteringEnabled, clusterStrength, requestPaint]);
 
-  // Step 3: Data-fetch effect
+  // Step 3: Composition helper — recomposes sim data from raw cache
+  const recomposeAndBuildSim = useCallback((raw: { nodes: RawGraphPerson[]; edges: SimulationEdge[] }) => {
+    const incomingPeople = raw.nodes;
+
+    // If no groups prop, we're not on the dashboard — skip bubble logic.
+    const usingBubbles = Boolean(groups);
+    const resolvedMode = usingBubbles
+      ? resolveGraphMode({
+          graphMode: localGraphMode,
+          graphBubbleThreshold,
+          nodeCount: incomingPeople.length,
+        })
+      : 'individuals';
+
+    // Auto-expand groups that were NEWLY added to the include filter since last fetch.
+    // (Don't re-add groups the user manually collapsed while still filtered.)
+    const nextExpanded = new Set(expandedBubbles);
+    if (resolvedMode === 'bubbles' && groups) {
+      const prev = previousIncludeGroupIdsRef.current;
+      for (const id of includeGroupIds) {
+        if (!prev.has(id)) nextExpanded.add(id);
+      }
+    }
+    previousIncludeGroupIdsRef.current = new Set(includeGroupIds);
+
+    // Drop expanded groups that no longer exist in the current data.
+    if (resolvedMode === 'bubbles' && groups) {
+      const presentGroups = new Set(groups.map((g) => g.id));
+      presentGroups.add(UNGROUPED_SYNTHETIC_ID);
+      for (const id of [...nextExpanded]) {
+        if (!presentGroups.has(id)) nextExpanded.delete(id);
+      }
+    }
+    if (nextExpanded.size !== expandedBubbles.size) {
+      setExpandedBubbles(nextExpanded);
+    }
+
+    const incomingNodes = buildSimulationNodes({
+      people: incomingPeople,
+      groups: groups ?? [],
+      mode: resolvedMode,
+      expandedBubbles: nextExpanded,
+      ungroupedLabel,
+    });
+
+    const rawEdges: SimulationEdge[] = raw.edges;
+    const centerSimId = incomingPeople.find((p) => p.isCenter)?.id ?? 'user-self';
+    const incomingEdges = resolvedMode === 'bubbles'
+      ? buildHubAndSpokeEdges({
+          rawEdges,
+          simNodes: incomingNodes,
+          centerNodeId: centerSimId,
+          neutralEdgeColor: '#9ca3af',
+        })
+      : rawEdges;
+
+    const { nodes, edges } = diffSimulationData(nodesRef.current, incomingNodes, edgesRef.current, incomingEdges);
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
+
+    simRef.current?.stop();
+    const sim = buildSimulation(nodes, edges);
+    if (sim) {
+      sim.alpha(0.3).restart();
+      simRef.current = sim;
+    }
+  }, [
+    groups, localGraphMode, graphBubbleThreshold, expandedBubbles,
+    includeGroupIds, ungroupedLabel, buildSimulation,
+  ]);
+
+  // Step 4: Data-fetch effect
   useEffect(() => {
     if (!canvasRef.current || !apiEndpoint) return;
 
@@ -252,35 +340,27 @@ export default function UnifiedNetworkGraph({
       if (excludeGroupIds.length > 0) url.searchParams.set('excludeGroupIds', excludeGroupIds.join(','));
 
       const response = await fetch(url.toString());
-      const data = await response.json() as { nodes: Omit<PersonSimNode, 'kind'>[]; edges: SimulationEdge[] };
+      const data = await response.json() as { nodes: RawGraphPerson[]; edges: SimulationEdge[] };
 
       if (cancelled) return;
 
-      const incomingNodes: SimulationNode[] = data.nodes.map((n) => ({ ...n, kind: 'person' }));
-      const incomingEdges: SimulationEdge[] = data.edges;
-
-      const { nodes, edges } = diffSimulationData(
-        nodesRef.current,
-        incomingNodes,
-        edgesRef.current,
-        incomingEdges,
-      );
-      nodesRef.current = nodes;
-      edgesRef.current = edges;
-
-      simRef.current?.stop();
-      const sim = buildSimulation(nodes, edges);
-      if (sim) {
-        sim.alpha(0.3).restart();
-        simRef.current = sim;
-      }
+      rawCacheRef.current = data;
+      recomposeAndBuildSim(data);
     };
 
     fetchData();
     return () => { cancelled = true; };
-  }, [apiEndpoint, refreshKey, includeMode, includeGroupIds, excludeGroupIds, clusteringEnabled, buildSimulation]);
+  }, [apiEndpoint, refreshKey, includeMode, includeGroupIds, excludeGroupIds, clusteringEnabled, recomposeAndBuildSim]);
 
-  // Step 4: Zoom, click, hover, and drag handlers
+  // Step 5: Recompose when bubble state changes (mode toggle, expand/collapse)
+  useEffect(() => {
+    const raw = rawCacheRef.current;
+    if (!raw) return;
+    recomposeAndBuildSim(raw);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localGraphMode, expandedBubbles, graphBubbleThreshold]);
+
+  // Step 6: Zoom, click, hover, and drag handlers
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -333,6 +413,18 @@ export default function UnifiedNetworkGraph({
     const onClick = (event: MouseEvent) => {
       const node = nodeAt(event.clientX, event.clientY);
       if (!node) return;
+
+      // Bubble click: toggle expansion
+      if (node.kind === 'bubble') {
+        setExpandedBubbles((prev) => {
+          const next = new Set(prev);
+          if (next.has(node.groupId)) next.delete(node.groupId);
+          else next.add(node.groupId);
+          return next;
+        });
+        return;
+      }
+
       if (node.kind !== 'person') return;
       if (centerNodeNonClickable && node.isCenter) return;
       if (node.id.startsWith('user-')) router.push('/dashboard');
@@ -378,10 +470,12 @@ export default function UnifiedNetworkGraph({
       select(canvas).on('.zoom', null);
       select(canvas).on('.drag', null);
     };
-  }, [centerNodeNonClickable, isMobile, requestPaint, router]);
+  }, [centerNodeNonClickable, isMobile, requestPaint, router, setExpandedBubbles]);
 
   // capitalizeType is reserved for future label rendering use.
   void capitalizeType;
+  // PersonSimNode type is used via inference in the type cast; suppress unused import.
+  void (undefined as unknown as PersonSimNode);
 
   return (
     <div className="w-full h-full">
@@ -480,6 +574,36 @@ export default function UnifiedNetworkGraph({
           className="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-surface rounded-lg border border-border"
         />
         <div className="absolute bottom-4 right-4 flex gap-2">
+          {groups && (
+            <button
+              onClick={async () => {
+                const resolvedCurrent = resolveGraphMode({
+                  graphMode: localGraphMode,
+                  graphBubbleThreshold,
+                  nodeCount: nodesRef.current.length,
+                });
+                const next: 'individuals' | 'bubbles' = resolvedCurrent === 'bubbles' ? 'individuals' : 'bubbles';
+                setLocalGraphMode(next);
+                try {
+                  await fetch('/api/user/graph-display', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ graphMode: next }),
+                  });
+                } catch {
+                  // Silent fail — local state is source of truth until next page load.
+                }
+              }}
+              className="p-3 bg-surface border border-border rounded-lg hover:bg-surface-elevated transition-colors"
+              aria-label={resolveGraphMode({ graphMode: localGraphMode, graphBubbleThreshold, nodeCount: nodesRef.current.length }) === 'bubbles' ? t('showIndividuals') : t('showAsGroups')}
+              title={resolveGraphMode({ graphMode: localGraphMode, graphBubbleThreshold, nodeCount: nodesRef.current.length }) === 'bubbles' ? t('showIndividuals') : t('showAsGroups')}
+            >
+              <svg className="w-5 h-5 text-primary dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="8" cy="8" r="4" strokeWidth="2"/>
+                <circle cx="16" cy="16" r="4" strokeWidth="2"/>
+              </svg>
+            </button>
+          )}
           <button
             onClick={() => setClusteringEnabled(!clusteringEnabled)}
             className={`p-3 border rounded-lg transition-colors ${
