@@ -197,20 +197,14 @@ export default function UnifiedNetworkGraph({
     const mobileChargeStrength = isMobile ? -250 : chargeStrength;
     const collisionRadius = clusteringEnabled ? (isMobile ? 40 : 50) : (isMobile ? 25 : 30);
 
-    // Scale per-node charge by sqrt(n) so total repulsion doesn't explode on large graphs.
-    // At n<=60 full strength; at n=240 ~half; at n=960 ~quarter.
-    const chargeScale = Math.min(1, Math.sqrt(60 / Math.max(nodes.length, 1)));
-    const scaledCharge = mobileChargeStrength * (clusteringEnabled ? 1.2 : 1) * chargeScale;
-    const chargeReach = Math.min(width, height) * 0.5;
-
     const sim = forceSimulation<SimulationNode>(nodes)
-      .velocityDecay(0.7)
+      .velocityDecay(0.6)
       .force('link', forceLink<SimulationNode, SimulationEdge>(edges)
         .id((d) => d.id)
         .distance(mobileLinkDistance))
-      .force('charge', forceManyBody()
-        .strength(scaledCharge)
-        .distanceMax(chargeReach))
+      .force('charge', forceManyBody().strength(
+        clusteringEnabled ? mobileChargeStrength * 1.5 : mobileChargeStrength,
+      ))
       .force('center', forceCenter(width / 2, height / 2))
       .force('collision', forceCollide().radius(collisionRadius));
 
