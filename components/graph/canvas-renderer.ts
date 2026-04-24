@@ -25,16 +25,23 @@ const FONT_SIZE = {
 } as const;
 
 function nodeRadius(node: SimulationNode, isMobile: boolean): number {
+  if (node.kind === 'bubble') {
+    if (node.isExpanded) return isMobile ? 12 : 16;
+    const base = isMobile ? 14 : 18;
+    return Math.max(base, Math.min(isMobile ? 40 : 56, base * Math.sqrt(node.memberCount)));
+  }
   const table = isMobile ? NODE_RADIUS.mobile : NODE_RADIUS.desktop;
   return node.isCenter ? table.center : table.normal;
 }
 
 function nodeFontSize(node: SimulationNode, isMobile: boolean): number {
+  if (node.kind === 'bubble') return isMobile ? 11 : 13;
   const table = isMobile ? FONT_SIZE.mobile : FONT_SIZE.desktop;
   return node.isCenter ? table.center : table.normal;
 }
 
 function getNodeFill(node: SimulationNode, isDark: boolean): string {
+  if (node.kind === 'bubble') return node.color ?? (isDark ? '#4b5563' : '#d1d5db');
   if (node.photo) return isDark ? '#000000' : '#ffffff';
   if (node.isCenter) return '#3B82F6';
   if (node.colors.length > 0) return node.colors[0];
@@ -42,6 +49,7 @@ function getNodeFill(node: SimulationNode, isDark: boolean): string {
 }
 
 function getNodeStroke(node: SimulationNode, isDark: boolean): string {
+  if (node.kind === 'bubble') return node.color ?? (isDark ? '#9ca3af' : '#6b7280');
   if (node.colors.length > 0) return node.colors[0];
   if (node.isCenter) return '#3B82F6';
   return isDark ? '#ffffff' : '#1f2937';
@@ -112,7 +120,7 @@ function drawNode(rc: RenderContext, node: SimulationNode): void {
     rc.ctx.stroke();
   }
 
-  if (rc.lod === 'full' && node.photo) {
+  if (rc.lod === 'full' && node.kind === 'person' && node.photo) {
     const entry = rc.getPhoto(node.id);
     if (entry && entry !== 'loading' && entry !== 'error') {
       rc.ctx.save();
@@ -126,6 +134,7 @@ function drawNode(rc: RenderContext, node: SimulationNode): void {
 }
 
 function drawLabel(rc: RenderContext, node: SimulationNode, color: string): void {
+  if (node.kind !== 'person') return;  // bubble labels are drawn inside drawBubble in Task 20
   if (node.x === undefined || node.y === undefined) return;
   const r = nodeRadius(node, rc.isMobile);
   const fontSize = nodeFontSize(node, rc.isMobile);
