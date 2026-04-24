@@ -284,15 +284,6 @@ export default function UnifiedNetworkGraph({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const zoomBehavior = zoom<HTMLCanvasElement, unknown>()
-      .scaleExtent([0.1, 3])
-      .on('zoom', (event) => {
-        transformRef.current = event.transform;
-        requestPaint();
-      });
-    zoomBehaviorRef.current = zoomBehavior;
-    select(canvas).call(zoomBehavior);
-
     const toGraphCoords = (clientX: number, clientY: number): [number, number] => {
       const rect = canvas.getBoundingClientRect();
       const xPx = clientX - rect.left;
@@ -307,6 +298,26 @@ export default function UnifiedNetworkGraph({
       const [gx, gy] = toGraphCoords(clientX, clientY);
       return findNodeAtPoint(tree, gx, gy, isMobile ? 18 : 22);
     };
+
+    const zoomBehavior = zoom<HTMLCanvasElement, unknown>()
+      .scaleExtent([0.1, 3])
+      .filter((event: Event) => {
+        const me = event as MouseEvent;
+        if (me.ctrlKey || me.button) return false;
+        if (event.type === 'mousedown' || event.type === 'touchstart') {
+          const touch = 'touches' in event ? (event as TouchEvent).touches[0] : null;
+          const cx = touch ? touch.clientX : me.clientX;
+          const cy = touch ? touch.clientY : me.clientY;
+          if (nodeAt(cx, cy)) return false;
+        }
+        return true;
+      })
+      .on('zoom', (event) => {
+        transformRef.current = event.transform;
+        requestPaint();
+      });
+    zoomBehaviorRef.current = zoomBehavior;
+    select(canvas).call(zoomBehavior);
 
     const onMove = (event: MouseEvent) => {
       const node = nodeAt(event.clientX, event.clientY);
