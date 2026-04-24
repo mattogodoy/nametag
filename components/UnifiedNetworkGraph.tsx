@@ -1,77 +1,42 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { select } from 'd3-selection';
 import {
   forceSimulation, forceLink, forceManyBody, forceCenter,
-  forceCollide, forceX, forceY,
-  type SimulationNodeDatum,
+  forceCollide, forceX, forceY, type Simulation,
 } from 'd3-force';
+import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomTransform, type ZoomBehavior } from 'd3-zoom';
-import { drag, type D3DragEvent } from 'd3-drag';
-import 'd3-transition';
+import { drag } from 'd3-drag';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import PillSelector from './PillSelector';
 import { GraphFilterGroupPill } from './GraphFilterPills';
+import { paintFrame } from './graph/canvas-renderer';
+import { getLODTier } from './graph/lod';
+import { getCachedPhoto, loadPhoto } from './graph/photo-cache';
+import { buildQuadtree, findNodeAtPoint, type NodeQuadtree } from './graph/hit-test';
+import { diffSimulationData } from './graph/diff-simulation';
+import type {
+  SimulationNode, SimulationEdge, PersonSimNode,
+} from './graph/simulation-types';
 
-interface GraphNode extends SimulationNodeDatum {
-  id: string;
-  label: string;
-  groups: string[];
-  colors: string[];
-  isCenter: boolean;
-  photo?: string | null;
-}
-
-interface GraphEdge {
-  source: string | GraphNode;
-  target: string | GraphNode;
-  type: string;
-  color: string;
-  sourceLabel?: string;
-  targetLabel?: string;
-}
-
-interface Group {
-  id: string;
-  name: string;
-  color: string | null;
-}
-
+// Props interface — unchanged from pre-rewrite file
+interface Group { id: string; name: string; color: string | null; }
 type IncludeMode = 'or' | 'and';
-
-type GroupFilterItem = {
-  id: string;
-  label: string;
-  color: string | null;
-  isNegative: boolean;
-};
+type GroupFilterItem = { id: string; label: string; color: string | null; isNegative: boolean; };
 
 interface UnifiedNetworkGraphProps {
-  // Data source: either fetch from API or use provided data
   apiEndpoint?: string;
-
-  // For dashboard mode with groups filter
   groups?: Group[];
-
-  // For controlling center node behavior
-  centerNodeId?: string; // ID of the center node (e.g., user or person)
-  centerNodeNonClickable?: boolean; // If true, center node won't navigate
-
-  // Force simulation parameters
+  centerNodeId?: string;
+  centerNodeNonClickable?: boolean;
   linkDistance?: number;
   chargeStrength?: number;
-
-  // Animation for new nodes
   animateNewNodes?: boolean;
-
-  // Refresh trigger
   refreshKey?: number;
-
-  // Clustering by group
   enableGroupClustering?: boolean;
-  clusterStrength?: number; // 0 to 1, how strongly nodes are pulled to their cluster
+  clusterStrength?: number;
 }
 
 export default function UnifiedNetworkGraph({
@@ -80,25 +45,32 @@ export default function UnifiedNetworkGraph({
   centerNodeNonClickable = false,
   linkDistance = 120,
   chargeStrength = -400,
-  animateNewNodes = false,
   refreshKey,
   enableGroupClustering = true,
   clusterStrength = 0.3,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
-  const tPeople = useTranslations('people');
-  const svgRef = useRef<SVGSVGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const router = useRouter();
-  const previousNodeIdsRef = useRef<Set<string> | null>(null);
-  const zoomTransformRef = useRef<ZoomTransform | null>(null);
-  const zoomBehaviorRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
-  const [selectedGroupFilters, setSelectedGroupFilters] = useState<
-    GroupFilterItem[]
-  >([]);
+
+  // Simulation state
+  const simRef = useRef<Simulation<SimulationNode, SimulationEdge> | null>(null);
+  const nodesRef = useRef<SimulationNode[]>([]);
+  const edgesRef = useRef<SimulationEdge[]>([]);
+  const quadtreeRef = useRef<NodeQuadtree | null>(null);
+  const transformRef = useRef<ZoomTransform>(zoomIdentity);
+  const zoomBehaviorRef = useRef<ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+  const hoveredNodeIdRef = useRef<string | null>(null);
+  const dirtyRef = useRef<boolean>(false);
+  const rafRef = useRef<number | null>(null);
+
+  // Filter state
+  const [selectedGroupFilters, setSelectedGroupFilters] = useState<GroupFilterItem[]>([]);
   const [includeMode, setIncludeMode] = useState<IncludeMode>('or');
   const [isMobile, setIsMobile] = useState(false);
   const [clusteringEnabled, setClusteringEnabled] = useState(enableGroupClustering);
   const capitalizeType = useLocale().startsWith('de');
+
   const includeGroupIds = useMemo(
     () => selectedGroupFilters.filter((f) => !f.isNegative).map((f) => f.id),
     [selectedGroupFilters],
@@ -110,30 +82,21 @@ export default function UnifiedNetworkGraph({
 
   // Detect mobile screen size
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Function to re-center the graph view
+  // Re-center the graph view
   const recenterGraph = useCallback(() => {
-    if (!svgRef.current || !zoomBehaviorRef.current) return;
-
-    const svg = select(svgRef.current);
-
-    // Reset to identity transform (no zoom, no pan)
-    svg
+    const canvas = canvasRef.current;
+    const zoomBehavior = zoomBehaviorRef.current;
+    if (!canvas || !zoomBehavior) return;
+    select(canvas)
       .transition()
       .duration(750)
-      .call(zoomBehaviorRef.current.transform, zoomIdentity);
-
-    // Clear the stored transform
-    zoomTransformRef.current = null;
+      .call(zoomBehavior.transform, zoomIdentity);
   }, []);
 
   const toggleFilterSign = (id: string) => {
@@ -146,436 +109,32 @@ export default function UnifiedNetworkGraph({
     );
   };
 
-  const renderGraph = useCallback((data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
-    if (!svgRef.current) return;
+  // --- rendering stubs; Tasks 8–10 fill these in ---
+  const requestPaint = useCallback(() => {
+    dirtyRef.current = true;
+  }, []);
 
-    // Clear previous graph
-    select(svgRef.current).selectAll('*').remove();
-
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
-
-    // Data is already filtered by the API based on selectedGroupId
-    const filteredNodes = data.nodes;
-    const filteredEdges = data.edges;
-
-    const nodes = filteredNodes;
-    const edges = filteredEdges;
-
-    // Mobile-specific parameters
-    const nodeRadius = isMobile ? { center: 10, normal: 7 } : { center: 12, normal: 8 };
-    const fontSize = isMobile ? { center: 12, normal: 10, edge: 9 } : { center: 14, normal: 12, edge: 10 };
-    const mobileLinkDistance = isMobile ? 80 : linkDistance;
-    const mobileChargeStrength = isMobile ? -250 : chargeStrength;
-
-    // Track new nodes for animation
-    const currentNodeIds = new Set(nodes.map((n) => n.id));
-    const newNodeIds = animateNewNodes && previousNodeIdsRef.current
-      ? new Set([...currentNodeIds].filter((id) => !previousNodeIdsRef.current!.has(id)))
-      : new Set<string>();
-    previousNodeIdsRef.current = currentNodeIds;
-
-    const svg = select(svgRef.current);
-
-    // Main group for zooming/panning
-    const g = svg.append('g');
-
-    // Define arrow markers for directed edges (one for each unique color)
-    const defs = svg.append('defs');
-    const uniqueColors = Array.from(new Set(edges.map((e) => e.color || '#999')));
-    uniqueColors.forEach((color) => {
-      defs.append('marker')
-        .attr('id', `arrow-${color.replace('#', '')}`)
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 18)
-        .attr('refY', 0)
-        .attr('markerWidth', 5)
-        .attr('markerHeight', 5)
-        .attr('orient', 'auto')
-        .append('path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', color)
-        .attr('fill-opacity', 0.8)
-    });
-
-    // Add clip paths for nodes with photos
-    nodes.forEach((n) => {
-      if (n.photo) {
-        const r = n.isCenter ? nodeRadius.center : nodeRadius.normal;
-        defs.append('clipPath')
-          .attr('id', `clip-${CSS.escape(n.id)}`)
-          .append('circle')
-          .attr('r', r);
-      }
-    });
-
-    // Calculate cluster positions for group clustering
-    const clusterCenters: Map<string, { x: number; y: number }> = new Map();
-    if (clusteringEnabled) {
-      // Get unique group IDs from nodes
-      const uniqueGroupIds = Array.from(
-        new Set(nodes.flatMap((n) => n.groups))
-      ).filter(Boolean);
-
-      // Arrange clusters in a circle around the center
-      const clusterRadius = Math.min(width, height) * 0.35;
-      uniqueGroupIds.forEach((groupId, index) => {
-        const angle = (2 * Math.PI * index) / uniqueGroupIds.length - Math.PI / 2;
-        clusterCenters.set(groupId, {
-          x: width / 2 + clusterRadius * Math.cos(angle),
-          y: height / 2 + clusterRadius * Math.sin(angle),
-        });
-      });
-    }
-
-    // Helper to get target position for a node based on its groups
-    const getClusterTarget = (node: GraphNode): { x: number; y: number } | null => {
-      if (!clusteringEnabled || node.isCenter || node.groups.length === 0) {
-        return null;
-      }
-      // Use the first group as the primary cluster
-      const primaryGroup = node.groups[0];
-      return clusterCenters.get(primaryGroup) || null;
-    };
-
-    const getNodeId = (n: string | GraphNode): string => (typeof n === 'string' ? n : n.id);
-
-    type SimEdge = Omit<GraphEdge, 'source' | 'target'> & { source: GraphNode; target: GraphNode };
-    const simEdges = edges as unknown as SimEdge[];
-
-    // Increase collision radius when clustering to spread nodes apart more
-    const collisionRadius = clusteringEnabled
-      ? (isMobile ? 40 : 50)
-      : (isMobile ? 25 : 30);
-
-    // Create force simulation
-    const simulation = forceSimulation(nodes)
-      .force(
-        'link',
-        forceLink<GraphNode, SimEdge>(simEdges)
-          .id((d) => d.id)
-          .distance(mobileLinkDistance)
-      )
-      .force('charge', forceManyBody().strength(clusteringEnabled ? mobileChargeStrength * 1.5 : mobileChargeStrength))
-      .force('center', forceCenter(width / 2, height / 2))
-      .force('collision', forceCollide().radius(collisionRadius));
-
-    // Add clustering forces if enabled
-    if (clusteringEnabled) {
-      simulation
-        .force(
-          'clusterX',
-          forceX<GraphNode>((d) => {
-            const target = getClusterTarget(d);
-            return target ? target.x : width / 2;
-          }).strength((d) => (getClusterTarget(d) ? clusterStrength : 0))
-        )
-        .force(
-          'clusterY',
-          forceY<GraphNode>((d) => {
-            const target = getClusterTarget(d);
-            return target ? target.y : height / 2;
-          }).strength((d) => (getClusterTarget(d) ? clusterStrength : 0))
-        );
-    }
-
-    // Create edges
-    const link = g
-      .append('g')
-      .selectAll('line')
-      .data(simEdges)
-      .enter()
-      .append('line')
-      .attr('stroke', (d) => d.color || '#999')
-      .attr('stroke-opacity', (d) => {
-        if (animateNewNodes) {
-          // Fade in only edges connected to new nodes
-          const targetNode = getNodeId(d.target);
-          return newNodeIds.has(targetNode) ? 0 : 0.15;
-        }
-        return 0.15;
-      })
-      .attr('stroke-width', 2)
-
-    // Animate edges connected to new nodes
-    if (animateNewNodes) {
-      link
-        .filter((d) => {
-          const targetNode = getNodeId(d.target);
-          return newNodeIds.has(targetNode);
-        })
-        .transition()
-        .duration(400)
-        .delay(100)
-        .attr('stroke-opacity', 0.15);
-    }
-
-    // Create edge labels (hidden by default)
-    const edgeLabels = g
-      .append('g')
-      .selectAll('text')
-      .data(simEdges)
-      .enter()
-      .append('text')
-      .attr('font-size', fontSize.edge)
-      .attr('fill', (d) => d.color || '#666')
-      .attr('text-anchor', 'middle')
-      .attr('opacity', 0)
-      .each(function(d) {
-        const el = select(this);
-        el.selectAll('*').remove();
-
-        const youLabel = tPeople('you');
-        const sourceName = d.sourceLabel || '';
-        const targetName = d.targetLabel || '';
-
-        const typeStr = capitalizeType ? d.type.charAt(0).toUpperCase() + d.type.slice(1) : d.type.toLowerCase();
-        let label: string;
-        if (sourceName === youLabel || sourceName === 'You') {
-          label = tPeople('graphEdgeLabelFromYou', { type: typeStr });
-        } else if (targetName === youLabel || targetName === 'You') {
-          label = tPeople('graphEdgeLabelToYou', { type: typeStr });
-        } else {
-          label = tPeople('graphEdgeLabel', { type: typeStr });
-        }
-
-        // Split around the type to bold it
-        const idx = label.toLowerCase().indexOf(typeStr.toLowerCase());
-        if (idx >= 0) {
-          const before = label.substring(0, idx);
-          const typePart = label.substring(idx, idx + typeStr.length);
-          const after = label.substring(idx + typeStr.length);
-
-          if (before) el.append('tspan').text(before);
-          el.append('tspan').attr('font-weight', 'bold').text(typePart);
-          if (after) el.append('tspan').text(after);
-        } else {
-          el.text(label);
-        }
-      });
-
-    // Create nodes
-    const node = g
-      .append('g')
-      .selectAll('g')
-      .data(nodes)
-      .enter()
-      .append('g')
-      .style('cursor', (d) => {
-        if (centerNodeNonClickable && d.isCenter) return 'default';
-        return 'pointer';
-      })
-      .call(
-        drag<SVGGElement, GraphNode>()
-          .on('start', dragstarted)
-          .on('drag', dragged)
-          .on('end', dragended)
-      )
-      .on('click', (_event, d) => {
-        // Don't navigate if it's the center node and centerNodeNonClickable is true
-        if (centerNodeNonClickable && d.isCenter) return;
-
-        // Check if it's the user node (starts with "user-")
-        if (d.id.startsWith('user-')) {
-          router.push('/dashboard');
-        } else {
-          router.push(`/people/${d.id}`);
-        }
-      })
-      .on('mouseenter', function(_event, d) {
-        // Highlight connected edges and show their arrow markers
-        link
-          .transition()
-          .duration(200)
-          .attr('stroke-opacity', (edge) => {
-            const sourceId = getNodeId(edge.source);
-            return sourceId === d.id ? 0.8 : 0.05;
-          })
-          .attr('marker-end', (edge) => {
-            const sourceId = getNodeId(edge.source);
-            return sourceId === d.id ? `url(#arrow-${(edge.color || '#999').replace('#', '')})`: null;
-          });
-
-        // Show labels for connected edges
-        edgeLabels
-          .transition()
-          .duration(200)
-          .attr('opacity', (edge) => {
-            const sourceId = getNodeId(edge.source);
-            return sourceId === d.id ? 1 : 0;
-          });
-      })
-      .on('mouseleave', function() {
-        // Reset edge opacity and arrow markers
-        link
-          .transition()
-          .duration(200)
-          .attr('stroke-opacity', 0.15)
-          .attr('marker-end', null);
-
-        // Hide all labels
-        edgeLabels
-          .transition()
-          .duration(200)
-          .attr('opacity', 0);
-      });
-
-    // Add circles to nodes
-    const isDarkTheme = document.documentElement.classList.contains('dark');
-    const circles = node
-      .append('circle')
-      .attr('r', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal))
-      .attr('fill', (d) => {
-        if (d.photo) return isDarkTheme ? '#000000' : '#ffffff';
-        if (d.isCenter) return '#3B82F6'; // Blue for center
-        if (d.colors.length > 0) return d.colors[0];
-        return '#9CA3AF';
-      })
-      .attr('stroke', (d) => {
-        if (d.colors.length > 0) return d.colors[0];
-        if (d.isCenter) return '#3B82F6';
-        return isDarkTheme ? '#fff' : '#1f2937';
-      })
-      .attr('stroke-width', 2);
-
-    // Add photo images for nodes that have photos
-    node.filter((d) => !!d.photo)
-      .append('image')
-      .attr('href', (d) => d.id.startsWith('user-') ? '/api/photos/user' : `/api/photos/${d.id}`)
-      .attr('x', (d) => -(d.isCenter ? nodeRadius.center : nodeRadius.normal))
-      .attr('y', (d) => -(d.isCenter ? nodeRadius.center : nodeRadius.normal))
-      .attr('width', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal) * 2)
-      .attr('height', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal) * 2)
-      .attr('clip-path', (d) => `url(#clip-${CSS.escape(d.id)})`)
-      .attr('preserveAspectRatio', 'xMidYMid slice');
-
-    // Animate new nodes
-    if (animateNewNodes) {
-      circles
-        .filter((d) => newNodeIds.has(d.id))
-        .attr('r', 0)
-        .transition()
-        .duration(300)
-        .attr('r', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal));
-    }
-
-    // Add labels to nodes
-    const labels = node
-      .append('text')
-      .text((d) => d.label)
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d) => (d.isCenter ? (isMobile ? 22 : 25) : (isMobile ? 18 : 20)))
-      .attr('font-size', (d) => (d.isCenter ? fontSize.center : fontSize.normal))
-      .attr('font-weight', (d) => (d.isCenter ? 'bold' : 'normal'))
-      .attr('fill', 'currentColor')
-      .style('pointer-events', 'none');
-
-    // Animate new node labels
-    if (animateNewNodes) {
-      labels
-        .filter((d) => newNodeIds.has(d.id))
-        .style('opacity', 0)
-        .transition()
-        .duration(300)
-        .style('opacity', 1);
-    }
-
-    // Add zoom behavior
-    const zoomBehavior = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 3])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-        // Save the current transform for restoration on re-render
-        zoomTransformRef.current = event.transform;
-      });
-
-    // Store zoom behavior for re-centering
-    zoomBehaviorRef.current = zoomBehavior;
-
-    svg.call(zoomBehavior);
-
-    // Restore previous zoom transform if it exists
-    if (zoomTransformRef.current) {
-      svg.call(zoomBehavior.transform, zoomTransformRef.current);
-    }
-
-    // Update positions on each tick
-    simulation.on('tick', () => {
-      link
-        .attr('x1', (d) => d.source.x ?? 0)
-        .attr('y1', (d) => d.source.y ?? 0)
-        .attr('x2', (d) => d.target.x ?? 0)
-        .attr('y2', (d) => d.target.y ?? 0);
-
-      // Position edge labels at the center of edges
-      edgeLabels
-        .attr('x', (d) => ((d.source.x ?? 0) + (d.target.x ?? 0)) / 2)
-        .attr('y', (d) => ((d.source.y ?? 0) + (d.target.y ?? 0)) / 2);
-
-      node.attr('transform', (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
-    });
-
-    // Drag functions
-    function dragstarted(event: D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-
-    function dragged(event: D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragended(event: D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
-  }, [
-    animateNewNodes,
-    centerNodeNonClickable,
-    chargeStrength,
-    clusterStrength,
-    clusteringEnabled,
-    isMobile,
-    linkDistance,
-    router,
-    tPeople,
-    capitalizeType,
-  ]);
-
-  useEffect(() => {
-    if (!svgRef.current || !apiEndpoint) return;
-
-    const fetchData = async () => {
-      // Build URL with query parameters
-      const url = new URL(apiEndpoint, window.location.origin);
-      url.searchParams.set('groupMatchOperator', includeMode);
-
-      if (includeGroupIds.length > 0) {
-        url.searchParams.set('includeGroupIds', includeGroupIds.join(','));
-      }
-      if (excludeGroupIds.length > 0) {
-        url.searchParams.set('excludeGroupIds', excludeGroupIds.join(','));
-      }
-
-      const response = await fetch(url.toString());
-      const data = await response.json();
-      renderGraph(data);
-    };
-
-    fetchData();
-  }, [
-    apiEndpoint,
-    refreshKey,
-    includeMode,
-    includeGroupIds,
-    excludeGroupIds,
-    isMobile,
-    clusteringEnabled,
-    renderGraph,
-  ]);
+  // The following are referenced here so TypeScript/ESLint does not flag them
+  // as unused while Task 8 wires them up. Do not remove.
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const _unusedRefs = {
+    simRef, nodesRef, edgesRef, quadtreeRef, hoveredNodeIdRef, rafRef,
+    zoomBehaviorRef, transformRef,
+  };
+  const _unusedProps = {
+    apiEndpoint, centerNodeNonClickable, linkDistance, chargeStrength, refreshKey,
+    clusterStrength, capitalizeType, router, isMobile, clusteringEnabled,
+    includeGroupIds, excludeGroupIds, includeMode, requestPaint,
+  };
+  const _unusedImports = {
+    paintFrame, getLODTier, getCachedPhoto, loadPhoto, buildQuadtree,
+    findNodeAtPoint, diffSimulationData,
+    forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide,
+    forceX, forceY, drag,
+  };
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+  // PersonSimNode, SimulationNode, SimulationEdge are type-only imports —
+  // TypeScript does not error on unused type imports.
 
   return (
     <div className="w-full h-full">
@@ -669,8 +228,8 @@ export default function UnifiedNetworkGraph({
         </div>
       )}
       <div className="relative">
-        <svg
-          ref={svgRef}
+        <canvas
+          ref={canvasRef}
           className="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-surface rounded-lg border border-border"
         />
         <div className="absolute bottom-4 right-4 flex gap-2">
