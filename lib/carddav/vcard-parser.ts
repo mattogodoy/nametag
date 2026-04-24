@@ -376,20 +376,26 @@ function processProperty(
     }
 
     case 'TEL': {
-      const typeParam = prop.params.TYPE || 'other';
-      const types = Array.isArray(typeParam) ? typeParam : [typeParam];
-      const type = types[0] || 'other';
+      const groupLabel = prop.group ? getItemGroupLabel(prop.group, itemGroups) : undefined;
+      const typeParam = prop.params.TYPE;
+      const types = typeParam
+        ? (Array.isArray(typeParam) ? typeParam : [typeParam])
+        : [];
+      const type = groupLabel || types[0] || 'other';
 
       data.phoneNumbers.push({ type, number: prop.value });
       return true;
     }
 
     case 'EMAIL': {
-      const typeParam = prop.params.TYPE || 'other';
-      const types = Array.isArray(typeParam) ? typeParam : [typeParam];
+      const groupLabel = prop.group ? getItemGroupLabel(prop.group, itemGroups) : undefined;
+      const typeParam = prop.params.TYPE;
+      const types = typeParam
+        ? (Array.isArray(typeParam) ? typeParam : [typeParam])
+        : [];
       // Filter out 'internet' which is redundant
       const filteredTypes = types.filter((t) => t.toLowerCase() !== 'internet');
-      const type = filteredTypes[0] || 'other';
+      const type = groupLabel || filteredTypes[0] || 'other';
 
       data.emails.push({ type, email: prop.value });
       return true;
@@ -398,9 +404,12 @@ function processProperty(
     case 'ADR': {
       // ADR = ;;street;locality;region;postal;country
       const parts = prop.value.split(';');
-      const typeParam = prop.params.TYPE || 'other';
-      const types = Array.isArray(typeParam) ? typeParam : [typeParam];
-      const type = types[0] || 'other';
+      const groupLabel = prop.group ? getItemGroupLabel(prop.group, itemGroups) : undefined;
+      const typeParam = prop.params.TYPE;
+      const types = typeParam
+        ? (Array.isArray(typeParam) ? typeParam : [typeParam])
+        : [];
+      const type = groupLabel || types[0] || 'other';
 
       // Split street component on newline
       const streetPart = parts[2] || '';

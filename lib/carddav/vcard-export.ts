@@ -29,6 +29,16 @@ const DEFAULT_OPTIONS: VCardOptions = {
   stripMarkdown: false,
 };
 
+// Standard TYPE parameter values that servers (Google, iCloud) accept on
+// EMAIL/TEL/ADR. Non-standard labels get emitted via Apple-style item grouping
+// with X-ABLabel so we don't send invalid TYPE values that servers reject
+// (Google returns 400 INVALID_ARGUMENT).
+const STANDARD_EMAIL_TYPES = new Set(['HOME', 'WORK', 'OTHER', 'INTERNET']);
+const STANDARD_TEL_TYPES = new Set([
+  'CELL', 'HOME', 'WORK', 'FAX', 'PAGER', 'VOICE', 'OTHER', 'MAIN',
+]);
+const STANDARD_ADR_TYPES = new Set(['HOME', 'WORK', 'OTHER']);
+
 /**
  * Convert Person model to vCard 3.0 string
  */
@@ -124,21 +134,37 @@ export function personToVCard(
 
   // TEL (Phone numbers)
   person.phoneNumbers.forEach((phone) => {
-    const type = phone.type.toUpperCase();
-    // Convert "MOBILE" to "CELL" for v3.0 compatibility
-    const v3Type = type === 'MOBILE' ? 'CELL' : type;
-    lines.push(buildV3Property('TEL', { TYPE: v3Type }, phone.number));
+    // MOBILE → CELL for v3.0 compatibility
+    const upper = phone.type.toUpperCase();
+    const v3Type = upper === 'MOBILE' ? 'CELL' : upper;
+
+    if (STANDARD_TEL_TYPES.has(v3Type)) {
+      lines.push(buildV3Property('TEL', { TYPE: v3Type }, phone.number));
+    } else {
+      const label = escapeVCardText(phone.type);
+      lines.push(`item${itemCounter}.TEL:${escapeVCardText(phone.number)}`);
+      lines.push(`item${itemCounter}.X-ABLabel:${label}`);
+      itemCounter++;
+    }
   });
 
   // EMAIL
   person.emails.forEach((email) => {
-    const type = email.type.toUpperCase();
-    lines.push(buildV3Property('EMAIL', { TYPE: type }, email.email));
+    const upper = email.type.toUpperCase();
+
+    if (STANDARD_EMAIL_TYPES.has(upper)) {
+      lines.push(buildV3Property('EMAIL', { TYPE: upper }, email.email));
+    } else {
+      const label = escapeVCardText(email.type);
+      lines.push(`item${itemCounter}.EMAIL:${escapeVCardText(email.email)}`);
+      lines.push(`item${itemCounter}.X-ABLabel:${label}`);
+      itemCounter++;
+    }
   });
 
   // ADR (Address) - ;;street;locality;region;postal;country
   person.addresses.forEach((addr) => {
-    const type = addr.type.toUpperCase();
+    const upper = addr.type.toUpperCase();
 
     // Combine streetLine1 and streetLine2 with newline separator
     const streetValue = [addr.streetLine1, addr.streetLine2]
@@ -156,8 +182,16 @@ export function personToVCard(
     ]
       .map(escapeVCardText)
       .join(';');
+
     // Build ADR line directly (don't use buildV3Property which would escape the semicolons)
-    lines.push(`ADR;TYPE=${type}:${adrValue}`);
+    if (STANDARD_ADR_TYPES.has(upper)) {
+      lines.push(`ADR;TYPE=${upper}:${adrValue}`);
+    } else {
+      const label = escapeVCardText(addr.type);
+      lines.push(`item${itemCounter}.ADR:${adrValue}`);
+      lines.push(`item${itemCounter}.X-ABLabel:${label}`);
+      itemCounter++;
+    }
   });
 
   // URL - use item grouping with X-ABLabel for better compatibility

@@ -597,6 +597,66 @@ END:VCARD`;
       expect(parsed.customFields[0].value).toBe('John Doe');
       expect(parsed.customFields[0].type).toBe('Father');
     });
+
+    it('uses X-ABLabel as EMAIL type when present', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.EMAIL:matt@example.com
+item1.X-ABLabel:Personal
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.emails).toHaveLength(1);
+      expect(parsed.emails[0].email).toBe('matt@example.com');
+      expect(parsed.emails[0].type).toBe('Personal');
+    });
+
+    it('uses X-ABLabel as TEL type when present', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.TEL:+15555551212
+item1.X-ABLabel:School
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.phoneNumbers).toHaveLength(1);
+      expect(parsed.phoneNumbers[0].number).toBe('+15555551212');
+      expect(parsed.phoneNumbers[0].type).toBe('School');
+    });
+
+    it('uses X-ABLabel as ADR type when present, preserving structured value', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.ADR:;;1 Beach Rd;Coast;ST;11111;US
+item1.X-ABLabel:Summer
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.addresses).toHaveLength(1);
+      expect(parsed.addresses[0].type).toBe('Summer');
+      expect(parsed.addresses[0].streetLine1).toBe('1 Beach Rd');
+      expect(parsed.addresses[0].locality).toBe('Coast');
+      expect(parsed.addresses[0].postalCode).toBe('11111');
+    });
+
+    it('prefers X-ABLabel over TYPE parameter for EMAIL', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.EMAIL;TYPE=INTERNET:matt@example.com
+item1.X-ABLabel:Personal
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.emails[0].type).toBe('Personal');
+    });
   });
 
   describe('parseVCard - Custom Fields', () => {
