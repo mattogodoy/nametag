@@ -542,7 +542,7 @@ export default function UnifiedNetworkGraph({
             const memberRadius = isMobile ? 12 : 14;
             const padding = isMobile ? 18 : 24;
             const clusterRadius = Math.sqrt(Math.max(node.memberCount, 1)) * memberRadius * 1.2 + padding;
-            const targetDist = clusterRadius + (isMobile ? 130 : 180);
+            const targetDist = (clusterRadius + (isMobile ? 130 : 180)) * 2;
             const finalDist = Math.max(dist, targetDist);
             const ratio = finalDist / dist;
             const targetX = center.x + dx * ratio;
@@ -568,6 +568,15 @@ export default function UnifiedNetworkGraph({
             node.fy = targetY;
             node.vx = 0;
             node.vy = 0;
+
+            const bubbleId = node.id;
+            window.setTimeout(() => {
+              const ghost = nodesRef.current.find((n) => n.id === bubbleId);
+              if (ghost) {
+                ghost.fx = null;
+                ghost.fy = null;
+              }
+            }, 2000);
           }
         }
         setExpandedBubbles((prev) => {
