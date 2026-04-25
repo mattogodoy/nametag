@@ -248,6 +248,7 @@ export function paintFrame(
       const mx = ((src.x ?? 0) + (tgt.x ?? 0)) / 2;
       const my = ((src.y ?? 0) + (tgt.y ?? 0)) / 2;
       const parts = rc.formatEdgeLabel(e);
+      if (!parts.before && !parts.emphasis && !parts.after) continue;
 
       rc.ctx.font = normalFont;
       const wBefore = rc.ctx.measureText(parts.before).width;

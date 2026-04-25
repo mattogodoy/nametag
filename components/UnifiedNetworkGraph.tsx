@@ -131,6 +131,9 @@ export default function UnifiedNetworkGraph({
   }, []);
 
   const formatEdgeLabel = useCallback((edge: SimulationEdge) => {
+    if (edge.type === 'aggregated' || edge.type === 'membership') {
+      return { before: '', emphasis: '', after: '' };
+    }
     const youLabel = tPeople('you');
     const sourceName = edge.sourceLabel ?? '';
     const targetName = edge.targetLabel ?? '';
