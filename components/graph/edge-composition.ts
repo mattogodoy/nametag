@@ -55,23 +55,5 @@ export function buildHubAndSpokeEdges(args: BuildEdgesArgs): SimulationEdge[] {
     });
   }
 
-  // Tether each expanded ghost bubble to its members so they cluster around
-  // the ghost in the simulation instead of drifting away from the graph.
-  for (const n of simNodes) {
-    if (n.kind !== 'bubble' || !n.isExpanded) continue;
-    for (const memberId of n.memberIds) {
-      if (!personToSimNode.has(memberId)) continue;
-      const key = `${n.id}|${memberId}`;
-      if (emitted.has(key)) continue;
-      emitted.add(key);
-      out.push({
-        source: n.id,
-        target: memberId,
-        type: 'membership',
-        color: neutralEdgeColor,
-      });
-    }
-  }
-
   return out;
 }

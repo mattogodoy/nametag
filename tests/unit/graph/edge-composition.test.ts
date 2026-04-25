@@ -95,7 +95,7 @@ describe('buildHubAndSpokeEdges', () => {
     ]);
   });
 
-  it('emits direct person edges when the bubble is expanded plus a membership tether to the ghost', () => {
+  it('emits direct person edges when the bubble is expanded (ghost bubble skipped)', () => {
     const alicePerson: SimulationNode = {
       kind: 'person', id: 'p-alice', label: 'Alice', groups: ['g-family'], colors: [], isCenter: false,
     };
@@ -110,27 +110,6 @@ describe('buildHubAndSpokeEdges', () => {
     });
     expect(out).toEqual([
       { source: 'user-1', target: 'p-alice', type: 'friend', color: '#f00' },
-      { source: 'bubble:g-family', target: 'p-alice', type: 'membership', color: neutralColor },
-    ]);
-  });
-
-  it('tethers expanded-bubble members to the ghost even when they have no relationship to you', () => {
-    const carolPerson: SimulationNode = {
-      kind: 'person', id: 'p-carol', label: 'Carol', groups: ['g-family'], colors: [], isCenter: false,
-    };
-    const expandedFamily: SimulationNode = {
-      ...bubbleFamilyExpanded,
-      memberIds: ['p-carol'],
-      memberCount: 1,
-    };
-    const out = buildHubAndSpokeEdges({
-      rawEdges: [],
-      simNodes: [center, expandedFamily, carolPerson],
-      centerNodeId: 'user-1',
-      neutralEdgeColor: neutralColor,
-    });
-    expect(out).toEqual([
-      { source: 'bubble:g-family', target: 'p-carol', type: 'membership', color: neutralColor },
     ]);
   });
 });
