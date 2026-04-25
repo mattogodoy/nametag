@@ -526,11 +526,19 @@ export default function UnifiedNetworkGraph({
 
     const handleNodeActivate = (node: SimulationNode) => {
       if (node.kind === 'bubble') {
-        // On collapsed→expanded transition, push the bubble outward and pin
-        // it briefly. While pinned, the cluster field force pushes other
-        // nodes out of the way; after we release the pin, the sim resettles
-        // with everything in clean position.
-        if (!node.isExpanded && node.x !== undefined && node.y !== undefined) {
+        // Collapse is instant.
+        if (node.isExpanded) {
+          setExpandedBubbles((prev) => {
+            const next = new Set(prev);
+            next.delete(node.groupId);
+            return next;
+          });
+          return;
+        }
+        // Expand: push the bubble outward, pin it, reheat the sim so other
+        // nodes redistribute, wait briefly, THEN trigger expansion so the
+        // cluster lands in cleared space.
+        if (node.x !== undefined && node.y !== undefined) {
           const center = nodesRef.current.find(
             (n): n is SimulationNode & { x: number; y: number } =>
               n.kind === 'person' && n.isCenter && n.x !== undefined && n.y !== undefined,
@@ -548,43 +556,37 @@ export default function UnifiedNetworkGraph({
             const targetX = center.x + dx * ratio;
             const targetY = center.y + dy * ratio;
 
-            const canvas = canvasRef.current;
-            const rect = canvas?.getBoundingClientRect();
-            console.debug('[graph] click bubble', {
-              memberCount: node.memberCount,
-              from: { x: node.x, y: node.y },
-              to: { x: targetX, y: targetY },
-              dist: Math.round(dist),
-              targetDist: Math.round(targetDist),
-              finalDist: Math.round(finalDist),
-              ratio: Number(ratio.toFixed(2)),
-              clusterRadius: Math.round(clusterRadius),
-              center: { x: Math.round(center.x), y: Math.round(center.y) },
-              canvas: rect ? { w: Math.round(rect.width), h: Math.round(rect.height) } : null,
-            });
             node.x = targetX;
             node.y = targetY;
             node.fx = targetX;
             node.fy = targetY;
             node.vx = 0;
             node.vy = 0;
+            if (simRef.current) simRef.current.alpha(0.3).restart();
 
             const bubbleId = node.id;
+            const groupId = node.groupId;
+
+            // Wait for the sim to redistribute around the pushed bubble,
+            // then expand. The ghost inherits fx/fy through diffSimulationData.
             window.setTimeout(() => {
-              const ghost = nodesRef.current.find((n) => n.id === bubbleId);
-              if (ghost) {
-                ghost.fx = null;
-                ghost.fy = null;
-              }
-            }, 2000);
+              setExpandedBubbles((prev) => {
+                const next = new Set(prev);
+                next.add(groupId);
+                return next;
+              });
+              // After expansion settles, release the pin. With centerX/Y
+              // strength = 0 for expanded ghosts, the bubble stays put.
+              window.setTimeout(() => {
+                const ghost = nodesRef.current.find((n) => n.id === bubbleId);
+                if (ghost) {
+                  ghost.fx = null;
+                  ghost.fy = null;
+                }
+              }, 1500);
+            }, 1000);
           }
         }
-        setExpandedBubbles((prev) => {
-          const next = new Set(prev);
-          if (next.has(node.groupId)) next.delete(node.groupId);
-          else next.add(node.groupId);
-          return next;
-        });
         return;
       }
       if (centerNodeNonClickable && node.isCenter) return;
