@@ -3,15 +3,25 @@ import type { SimulationEdge, SimulationNode } from './simulation-types';
 export interface BuildEdgesArgs {
   rawEdges: SimulationEdge[];
   simNodes: SimulationNode[];
-  centerNodeId: string;
   neutralEdgeColor: string;
 }
 
+/**
+ * Build the visible edge set for bubble mode.
+ *
+ * Rule: an edge is visible if at least one endpoint is a visible person sim node.
+ *  - person ↔ person (direct):    keep with original color and type.
+ *  - person ↔ collapsed bubble:   aggregate to one neutral edge person→bubble.
+ *  - bubble ↔ bubble:             hide (avoids noise when groups are collapsed).
+ *
+ * Members of expanded ghost bubbles are present as their own person nodes,
+ * so the ghost itself is treated as having no members for mapping purposes.
+ */
 export function buildHubAndSpokeEdges(args: BuildEdgesArgs): SimulationEdge[] {
-  const { rawEdges, simNodes, centerNodeId, neutralEdgeColor } = args;
+  const { rawEdges, simNodes, neutralEdgeColor } = args;
 
   // Map person id → the sim-node id that represents them (themselves or a non-expanded bubble).
-  // Expanded (ghost) bubbles are NOT included: members are present as their own person nodes.
+  // Expanded (ghost) bubbles do NOT claim their members: members are present as person nodes.
   const personToSimNode = new Map<string, string>();
   for (const n of simNodes) {
     if (n.kind === 'person') personToSimNode.set(n.id, n.id);
@@ -34,11 +44,12 @@ export function buildHubAndSpokeEdges(args: BuildEdgesArgs): SimulationEdge[] {
     const srcSim = personToSimNode.get(srcPerson) ?? srcPerson;
     const tgtSim = personToSimNode.get(tgtPerson) ?? tgtPerson;
 
-    // Only keep edges incident to the center
-    if (srcSim !== centerNodeId && tgtSim !== centerNodeId) continue;
-
     const srcIsBubble = srcSim.startsWith('bubble:');
     const tgtIsBubble = tgtSim.startsWith('bubble:');
+
+    // Hide edges where both endpoints collapse into bubbles — too noisy.
+    if (srcIsBubble && tgtIsBubble) continue;
+
     const isAggregated = srcIsBubble || tgtIsBubble;
 
     const key = `${srcSim}|${tgtSim}`;

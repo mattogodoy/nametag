@@ -338,12 +338,10 @@ export default function UnifiedNetworkGraph({
     });
 
     const rawEdges: SimulationEdge[] = raw.edges;
-    const centerSimId = incomingPeople.find((p) => p.isCenter)?.id ?? 'user-self';
     const incomingEdges = resolvedMode === 'bubbles'
       ? buildHubAndSpokeEdges({
           rawEdges,
           simNodes: incomingNodes,
-          centerNodeId: centerSimId,
           neutralEdgeColor: '#9ca3af',
         })
       : rawEdges;

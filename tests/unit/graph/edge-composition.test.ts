@@ -24,14 +24,13 @@ const bubbleWork: SimulationNode = {
 const neutralColor = '#888';
 
 describe('buildHubAndSpokeEdges', () => {
-  it('returns raw edges unchanged when all endpoints are persons still present', () => {
+  it('returns raw edges unchanged when both endpoints are persons', () => {
     const rawEdges: SimulationEdge[] = [
       { source: 'user-1', target: 'p-alice', type: 'friend', color: '#f00' },
     ];
     const out = buildHubAndSpokeEdges({
       rawEdges,
       simNodes: [center, alice],
-      centerNodeId: 'user-1',
       neutralEdgeColor: neutralColor,
     });
     expect(out).toEqual(rawEdges);
@@ -44,7 +43,6 @@ describe('buildHubAndSpokeEdges', () => {
     const out = buildHubAndSpokeEdges({
       rawEdges,
       simNodes: [center, bubbleFamily],
-      centerNodeId: 'user-1',
       neutralEdgeColor: neutralColor,
     });
     expect(out).toEqual([
@@ -60,21 +58,19 @@ describe('buildHubAndSpokeEdges', () => {
     const out = buildHubAndSpokeEdges({
       rawEdges,
       simNodes: [center, bubbleFamily],
-      centerNodeId: 'user-1',
       neutralEdgeColor: neutralColor,
     });
     expect(out).toHaveLength(1);
     expect(out[0].target).toBe('bubble:g-family');
   });
 
-  it('hides edges that do not touch the center', () => {
+  it('hides bubble↔bubble edges between two collapsed bubbles', () => {
     const rawEdges: SimulationEdge[] = [
-      { source: 'p-alice', target: 'p-bob', type: 'sibling', color: '#f00' },
+      { source: 'p-alice', target: 'p-carol', type: 'friend', color: '#f00' },
     ];
     const out = buildHubAndSpokeEdges({
       rawEdges,
       simNodes: [center, bubbleFamily, bubbleWork],
-      centerNodeId: 'user-1',
       neutralEdgeColor: neutralColor,
     });
     expect(out).toEqual([]);
@@ -87,7 +83,6 @@ describe('buildHubAndSpokeEdges', () => {
     const out = buildHubAndSpokeEdges({
       rawEdges,
       simNodes: [center, bubbleFamily],
-      centerNodeId: 'user-1',
       neutralEdgeColor: neutralColor,
     });
     expect(out).toEqual([
@@ -95,7 +90,7 @@ describe('buildHubAndSpokeEdges', () => {
     ]);
   });
 
-  it('emits direct person edges when the bubble is expanded (ghost bubble skipped)', () => {
+  it('emits direct person edges when the source bubble is expanded (you→member)', () => {
     const alicePerson: SimulationNode = {
       kind: 'person', id: 'p-alice', label: 'Alice', groups: ['g-family'], colors: [], isCenter: false,
     };
@@ -105,11 +100,65 @@ describe('buildHubAndSpokeEdges', () => {
     const out = buildHubAndSpokeEdges({
       rawEdges,
       simNodes: [center, bubbleFamilyExpanded, alicePerson],
-      centerNodeId: 'user-1',
       neutralEdgeColor: neutralColor,
     });
     expect(out).toEqual([
       { source: 'user-1', target: 'p-alice', type: 'friend', color: '#f00' },
+    ]);
+  });
+
+  it('shows direct person↔person edges between non-center expanded members', () => {
+    // John is in expanded Work, Sarah is in expanded Family. John is father of Sarah.
+    const johnPerson: SimulationNode = {
+      kind: 'person', id: 'p-john', label: 'John', groups: ['g-work'], colors: [], isCenter: false,
+    };
+    const sarahPerson: SimulationNode = {
+      kind: 'person', id: 'p-sarah', label: 'Sarah', groups: ['g-family'], colors: [], isCenter: false,
+    };
+    const expandedWork: SimulationNode = {
+      kind: 'bubble', id: 'bubble:g-work', groupId: 'g-work', label: 'Work · 1',
+      color: null, memberCount: 1, memberIds: ['p-john'], isExpanded: true,
+    };
+    const expandedFamily: SimulationNode = {
+      kind: 'bubble', id: 'bubble:g-family', groupId: 'g-family', label: 'Family · 1',
+      color: null, memberCount: 1, memberIds: ['p-sarah'], isExpanded: true,
+    };
+    const rawEdges: SimulationEdge[] = [
+      { source: 'p-john', target: 'p-sarah', type: 'father', color: '#0f0' },
+    ];
+    const out = buildHubAndSpokeEdges({
+      rawEdges,
+      simNodes: [center, expandedWork, johnPerson, expandedFamily, sarahPerson],
+      neutralEdgeColor: neutralColor,
+    });
+    expect(out).toEqual([
+      { source: 'p-john', target: 'p-sarah', type: 'father', color: '#0f0' },
+    ]);
+  });
+
+  it('aggregates expanded-person ↔ collapsed-bubble edges to neutral person→bubble edges', () => {
+    // John is expanded (Work), Sarah is hidden inside collapsed Family bubble.
+    const johnPerson: SimulationNode = {
+      kind: 'person', id: 'p-john', label: 'John', groups: ['g-work'], colors: [], isCenter: false,
+    };
+    const expandedWork: SimulationNode = {
+      kind: 'bubble', id: 'bubble:g-work', groupId: 'g-work', label: 'Work · 1',
+      color: null, memberCount: 1, memberIds: ['p-john'], isExpanded: true,
+    };
+    const collapsedFamily: SimulationNode = {
+      kind: 'bubble', id: 'bubble:g-family', groupId: 'g-family', label: 'Family · 1',
+      color: null, memberCount: 1, memberIds: ['p-sarah'], isExpanded: false,
+    };
+    const rawEdges: SimulationEdge[] = [
+      { source: 'p-john', target: 'p-sarah', type: 'father', color: '#0f0' },
+    ];
+    const out = buildHubAndSpokeEdges({
+      rawEdges,
+      simNodes: [center, expandedWork, johnPerson, collapsedFamily],
+      neutralEdgeColor: neutralColor,
+    });
+    expect(out).toEqual([
+      { source: 'p-john', target: 'bubble:g-family', type: 'aggregated', color: neutralColor },
     ]);
   });
 });
