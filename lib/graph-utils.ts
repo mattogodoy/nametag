@@ -127,7 +127,7 @@ export function inverseRelationshipToGraphEdge(
 }
 
 type Group = Prisma.GroupGetPayload<{
-  select: { name: true; color: true };
+  select: { id: true; name: true; color: true };
 }>;
 
 interface Person
@@ -146,7 +146,7 @@ export function personToGraphNode(
   return {
     id: person.id,
     label: formatGraphName(person, nameOrder, nameDisplayFormat),
-    groups: person.groups.map((pg) => pg.group.name),
+    groups: person.groups.map((pg) => pg.group.id),
     colors: person.groups.map((pg) => pg.group.color || '#3B82F6'),
     isCenter,
     photo: person.photo,

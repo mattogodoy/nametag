@@ -86,7 +86,7 @@ describe('graph-utils', () => {
         nickname: null,
         photo: 'photos/person-1.webp',
         groups: [
-          { group: { name: 'Family', color: '#FF0000' } },
+          { group: { id: 'g-family', name: 'Family', color: '#FF0000' } },
         ],
       };
 

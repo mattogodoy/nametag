@@ -25,6 +25,7 @@ type DashboardGraphPerson = {
   } | null;
   groups: Array<{
     group: {
+      id: string;
       name: string;
       color: string | null;
     };
@@ -146,6 +147,7 @@ export const GET = withAuth(async (request, session) => {
           select: {
             group: {
               select: {
+                id: true,
                 name: true,
                 color: true,
               },

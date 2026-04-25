@@ -334,14 +334,6 @@ export default function UnifiedNetworkGraph({
       setExpandedBubbles(nextExpanded);
     }
 
-    console.debug('[graph] recompose', {
-      mode: resolvedMode,
-      peopleCount: incomingPeople.length,
-      expandedBefore: [...expandedBubbles],
-      nextExpanded: [...nextExpanded],
-      includeGroupIds,
-    });
-
     const incomingNodes = buildSimulationNodes({
       people: incomingPeople,
       groups: groups ?? [],
@@ -461,12 +453,10 @@ export default function UnifiedNetworkGraph({
 
     const handleNodeActivate = (node: SimulationNode) => {
       if (node.kind === 'bubble') {
-        console.debug('[graph] bubble toggle', { groupId: node.groupId, wasExpanded: node.isExpanded });
         setExpandedBubbles((prev) => {
           const next = new Set(prev);
           if (next.has(node.groupId)) next.delete(node.groupId);
           else next.add(node.groupId);
-          console.debug('[graph] expandedBubbles ->', [...next]);
           return next;
         });
         return;
@@ -509,10 +499,7 @@ export default function UnifiedNetworkGraph({
         d.fx = null;
         d.fy = null;
         const traveled = Math.hypot(event.x - dragStartX, event.y - dragStartY);
-        if (traveled < CLICK_TRAVEL_PX) {
-          console.debug('[graph] click', { kind: d.kind, id: d.id, traveled });
-          handleNodeActivate(d);
-        }
+        if (traveled < CLICK_TRAVEL_PX) handleNodeActivate(d);
       });
 
     select(canvas).call(drag_);
