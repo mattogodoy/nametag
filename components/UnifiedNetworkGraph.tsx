@@ -559,7 +559,7 @@ export default function UnifiedNetworkGraph({
                 ghost.fy = null;
                 if (simRef.current) simRef.current.alpha(0.2).restart();
               }
-            }, 500);
+            }, 2000);
           }
         }
         setExpandedBubbles((prev) => {
