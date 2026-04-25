@@ -567,24 +567,20 @@ export default function UnifiedNetworkGraph({
             const bubbleId = node.id;
             const groupId = node.groupId;
 
-            // Wait for the sim to redistribute around the pushed bubble,
-            // then expand. The ghost inherits fx/fy through diffSimulationData.
+            setExpandedBubbles((prev) => {
+              const next = new Set(prev);
+              next.add(groupId);
+              return next;
+            });
+            // Release the pin once the cluster has had time to settle. With
+            // centerX/Y strength = 0 for expanded ghosts, it stays put.
             window.setTimeout(() => {
-              setExpandedBubbles((prev) => {
-                const next = new Set(prev);
-                next.add(groupId);
-                return next;
-              });
-              // After expansion settles, release the pin. With centerX/Y
-              // strength = 0 for expanded ghosts, the bubble stays put.
-              window.setTimeout(() => {
-                const ghost = nodesRef.current.find((n) => n.id === bubbleId);
-                if (ghost) {
-                  ghost.fx = null;
-                  ghost.fy = null;
-                }
-              }, 1500);
-            }, 150);
+              const ghost = nodesRef.current.find((n) => n.id === bubbleId);
+              if (ghost) {
+                ghost.fx = null;
+                ghost.fy = null;
+              }
+            }, 1500);
           }
         }
         return;
