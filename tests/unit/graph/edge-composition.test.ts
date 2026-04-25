@@ -104,6 +104,7 @@ describe('buildHubAndSpokeEdges', () => {
     });
     expect(out).toEqual([
       { source: 'user-1', target: 'p-alice', type: 'friend', color: '#f00' },
+      { source: 'bubble:g-family', target: 'p-alice', type: 'membership', color: neutralColor },
     ]);
   });
 
@@ -133,6 +134,26 @@ describe('buildHubAndSpokeEdges', () => {
     });
     expect(out).toEqual([
       { source: 'p-john', target: 'p-sarah', type: 'father', color: '#0f0' },
+      { source: 'bubble:g-work', target: 'p-john', type: 'membership', color: neutralColor },
+      { source: 'bubble:g-family', target: 'p-sarah', type: 'membership', color: neutralColor },
+    ]);
+  });
+
+  it('emits invisible membership tethers from each expanded ghost to its present members', () => {
+    const alicePerson: SimulationNode = {
+      kind: 'person', id: 'p-alice', label: 'Alice', groups: ['g-family'], colors: [], isCenter: false,
+    };
+    const bobPerson: SimulationNode = {
+      kind: 'person', id: 'p-bob', label: 'Bob', groups: ['g-family'], colors: [], isCenter: false,
+    };
+    const out = buildHubAndSpokeEdges({
+      rawEdges: [],
+      simNodes: [center, bubbleFamilyExpanded, alicePerson, bobPerson],
+      neutralEdgeColor: neutralColor,
+    });
+    expect(out).toEqual([
+      { source: 'bubble:g-family', target: 'p-alice', type: 'membership', color: neutralColor },
+      { source: 'bubble:g-family', target: 'p-bob',   type: 'membership', color: neutralColor },
     ]);
   });
 
@@ -159,6 +180,7 @@ describe('buildHubAndSpokeEdges', () => {
     });
     expect(out).toEqual([
       { source: 'p-john', target: 'bubble:g-family', type: 'aggregated', color: neutralColor },
+      { source: 'bubble:g-work', target: 'p-john', type: 'membership', color: neutralColor },
     ]);
   });
 });

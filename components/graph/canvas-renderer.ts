@@ -222,11 +222,13 @@ export function paintFrame(
   }
 
   for (const e of edges) {
+    if (e.type === 'membership') continue;
     const srcId = typeof e.source === 'string' ? e.source : e.source.id;
     const highlighted = srcId === rc.hoveredNodeId;
     if (!highlighted) drawEdge(rc, e, false);
   }
   for (const e of edges) {
+    if (e.type === 'membership') continue;
     const srcId = typeof e.source === 'string' ? e.source : e.source.id;
     if (srcId === rc.hoveredNodeId) drawEdge(rc, e, true);
   }

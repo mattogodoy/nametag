@@ -131,6 +131,9 @@ export default function UnifiedNetworkGraph({
   }, []);
 
   const formatEdgeLabel = useCallback((edge: SimulationEdge) => {
+    if (edge.type === 'aggregated' || edge.type === 'membership') {
+      return { before: '', emphasis: '', after: '' };
+    }
     const youLabel = tPeople('you');
     const sourceName = edge.sourceLabel ?? '';
     const targetName = edge.targetLabel ?? '';
@@ -245,11 +248,13 @@ export default function UnifiedNetworkGraph({
       return personCollisionR;
     };
 
+    const membershipLinkDistance = isMobile ? 22 : 32;
     const sim = forceSimulation<SimulationNode>(nodes)
       .velocityDecay(0.6)
       .force('link', forceLink<SimulationNode, SimulationEdge>(edges)
         .id((d) => d.id)
-        .distance(mobileLinkDistance))
+        .distance((e) => e.type === 'membership' ? membershipLinkDistance : mobileLinkDistance)
+        .strength((e) => e.type === 'membership' ? 0.7 : 1))
       .force('charge', forceManyBody().strength(
         clusteringEnabled ? mobileChargeStrength * 1.5 : mobileChargeStrength,
       ))

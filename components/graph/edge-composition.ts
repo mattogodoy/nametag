@@ -66,5 +66,24 @@ export function buildHubAndSpokeEdges(args: BuildEdgesArgs): SimulationEdge[] {
     });
   }
 
+  // Invisible "membership" tethers: keep each expanded group's members
+  // clustered around the ghost via the link force. The renderer skips
+  // drawing edges of type 'membership'.
+  for (const n of simNodes) {
+    if (n.kind !== 'bubble' || !n.isExpanded) continue;
+    for (const memberId of n.memberIds) {
+      if (!personToSimNode.has(memberId)) continue;
+      const key = `${n.id}|${memberId}`;
+      if (emitted.has(key)) continue;
+      emitted.add(key);
+      out.push({
+        source: n.id,
+        target: memberId,
+        type: 'membership',
+        color: neutralEdgeColor,
+      });
+    }
+  }
+
   return out;
 }
