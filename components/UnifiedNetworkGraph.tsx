@@ -367,7 +367,59 @@ export default function UnifiedNetworkGraph({
           .strength((d) => (target(d) ? clusterStrength : 0)));
     }
 
+    // Hard physical barrier: each expanded ghost's domain is enforced as a
+    // closed region. Members are clamped inside; non-members are clamped
+    // outside. This guarantees no other node can wedge between members.
+    const clampClusterBoundaries = () => {
+      const memberR = isMobile ? 12 : 14;
+      const padding = isMobile ? 18 : 24;
+      const personOuter = isMobile ? 7 : 8;
+      const bubbleOuter = isMobile ? 12 : 14;
+      for (const ghost of nodes) {
+        if (ghost.kind !== 'bubble' || !ghost.isExpanded) continue;
+        if (ghost.x === undefined || ghost.y === undefined) continue;
+        const clusterRadius = Math.sqrt(Math.max(ghost.memberCount, 1)) * memberR * 1.2 + padding;
+        const memberSet = new Set(ghost.memberIds);
+        const gx = ghost.x;
+        const gy = ghost.y;
+        for (const node of nodes) {
+          if (node === ghost) continue;
+          if (node.x === undefined || node.y === undefined) continue;
+          const dx = node.x - gx;
+          const dy = node.y - gy;
+          const d = Math.hypot(dx, dy);
+          if (memberSet.has(node.id)) {
+            // Members: clamp inside (distance ≤ clusterRadius - nodeRadius).
+            const maxDist = Math.max(clusterRadius - personOuter, 0);
+            if (d > maxDist && d > 0) {
+              node.x = gx + (dx / d) * maxDist;
+              node.y = gy + (dy / d) * maxDist;
+              if ((node.vx ?? 0) * dx + (node.vy ?? 0) * dy > 0) {
+                node.vx = 0;
+                node.vy = 0;
+              }
+            }
+          } else {
+            // Non-members: clamp outside (distance ≥ clusterRadius + nodeRadius).
+            const nodeR = node.kind === 'bubble' ? bubbleOuter : personOuter;
+            const minDist = clusterRadius + nodeR;
+            if (d < minDist && d > 0) {
+              node.x = gx + (dx / d) * minDist;
+              node.y = gy + (dy / d) * minDist;
+              // Reflect inward velocity component outward
+              const vDotR = ((node.vx ?? 0) * dx + (node.vy ?? 0) * dy) / d;
+              if (vDotR < 0) {
+                node.vx = (node.vx ?? 0) - 2 * vDotR * (dx / d);
+                node.vy = (node.vy ?? 0) - 2 * vDotR * (dy / d);
+              }
+            }
+          }
+        }
+      }
+    };
+
     sim.on('tick', () => {
+      clampClusterBoundaries();
       quadtreeRef.current = buildQuadtree(nodes);
       requestPaint();
     });
