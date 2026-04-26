@@ -141,16 +141,15 @@ function drawNode(rc: RenderContext, node: SimulationNode): void {
 }
 
 function drawLabel(rc: RenderContext, node: SimulationNode, color: string): void {
-  if (node.kind !== 'person') return;  // bubble labels are drawn inside drawBubble in Task 20
+  if (node.kind !== 'person') return;  // bubble labels are drawn inside drawBubble
   if (node.x === undefined || node.y === undefined) return;
-  const r = nodeRadius(node, rc.isMobile);
   const fontSize = nodeFontSize(node, rc.isMobile);
   rc.ctx.font = `${node.isCenter ? '600 ' : ''}${fontSize}px system-ui, -apple-system, sans-serif`;
   rc.ctx.fillStyle = color;
   rc.ctx.textAlign = 'center';
   rc.ctx.textBaseline = 'top';
   const dy = node.isCenter ? (rc.isMobile ? 14 : 17) : (rc.isMobile ? 12 : 14);
-  rc.ctx.fillText(node.label, node.x, (node.y ?? 0) + r + dy - r);
+  rc.ctx.fillText(node.label, node.x, node.y + dy);
 }
 
 function drawBubble(rc: RenderContext, node: SimulationNode): void {

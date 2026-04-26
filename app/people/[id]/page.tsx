@@ -706,10 +706,8 @@ export default async function PersonDetailsPage({
                 </h3>
                 <UnifiedNetworkGraph
                   apiEndpoint={`/api/people/${person.id}/graph`}
-                  centerNodeId={person.id}
                   linkDistance={100}
                   chargeStrength={-300}
-                  animateNewNodes={true}
                   refreshKey={person.relationshipsTo.length + (person.relationshipToUserId ? 1000 : 0)}
                 />
                 <p className="text-xs text-muted mt-2">

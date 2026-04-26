@@ -31,11 +31,9 @@ type GroupFilterItem = { id: string; label: string; color: string | null; isNega
 interface UnifiedNetworkGraphProps {
   apiEndpoint?: string;
   groups?: Group[];
-  centerNodeId?: string;
   centerNodeNonClickable?: boolean;
   linkDistance?: number;
   chargeStrength?: number;
-  animateNewNodes?: boolean;
   refreshKey?: number;
   graphMode?: 'individuals' | 'bubbles' | null;
 }
@@ -64,6 +62,7 @@ export default function UnifiedNetworkGraph({
   const hoveredNodeIdRef = useRef<string | null>(null);
   const dirtyRef = useRef<boolean>(false);
   const rafRef = useRef<number | null>(null);
+  const unpinTimeoutRef = useRef<number | null>(null);
 
   // Filter state
   const [selectedGroupFilters, setSelectedGroupFilters] = useState<GroupFilterItem[]>([]);
@@ -428,7 +427,11 @@ export default function UnifiedNetworkGraph({
 
     fetchData();
     return () => { cancelled = true; };
-  }, [apiEndpoint, refreshKey, includeMode, includeGroupIds, excludeGroupIds, recomposeAndBuildSim]);
+    // recomposeAndBuildSim intentionally excluded: it depends on bubble state
+    // (expandedBubbles, localGraphMode) which are handled by the Step 5 effect
+    // from the cached raw data — no need to re-fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiEndpoint, refreshKey, includeMode, includeGroupIds, excludeGroupIds]);
 
   // Step 5: Recompose when bubble state changes (mode toggle, expand/collapse)
   useEffect(() => {
@@ -538,7 +541,9 @@ export default function UnifiedNetworkGraph({
             });
             // Release the pin once the cluster has had time to settle. With
             // centerX/Y strength = 0 for expanded ghosts, it stays put.
-            window.setTimeout(() => {
+            if (unpinTimeoutRef.current !== null) window.clearTimeout(unpinTimeoutRef.current);
+            unpinTimeoutRef.current = window.setTimeout(() => {
+              unpinTimeoutRef.current = null;
               const ghost = nodesRef.current.find((n) => n.id === bubbleId);
               if (ghost) {
                 ghost.fx = null;
@@ -598,8 +603,12 @@ export default function UnifiedNetworkGraph({
       canvas.removeEventListener('mousemove', onMove);
       select(canvas).on('.zoom', null);
       select(canvas).on('.drag', null);
+      if (unpinTimeoutRef.current !== null) {
+        window.clearTimeout(unpinTimeoutRef.current);
+        unpinTimeoutRef.current = null;
+      }
     };
-  }, [centerNodeNonClickable, isMobile, requestPaint, router, setExpandedBubbles]);
+  }, [centerNodeNonClickable, isMobile, requestPaint, router]);
 
   return (
     <div className="w-full h-full">
