@@ -121,12 +121,8 @@
       "nameDisplayFormatError": "Error al actualizar el formato de nombre",
       "graphModeTitle": "Visualización del grafo",
       "graphModeDescription": "Cómo mostrar tu grafo de red en el panel.",
-      "graphModeAuto": "Automático",
       "graphModeIndividuals": "Mostrar siempre personas",
       "graphModeBubbles": "Mostrar siempre grupos",
-      "graphThresholdLabel": "Agrupar cuando la red supere",
-      "graphThresholdSuffix": "personas",
-      "graphThresholdDescription": "Solo se usa en modo automático. Rango: 10–500.",
       "graphDisplaySuccess": "Visualización actualizada",
       "graphDisplayError": "No se pudo actualizar la visualización",
       "language": {

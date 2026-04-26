@@ -121,12 +121,8 @@
       "nameDisplayFormatError": "Kunne ikke oppdatere navnevisningsformat",
       "graphModeTitle": "Visning av nettverksgraf",
       "graphModeDescription": "Hvordan nettverksgrafen vises i dashbordet.",
-      "graphModeAuto": "Automatisk",
       "graphModeIndividuals": "Vis alltid enkeltvis",
       "graphModeBubbles": "Vis alltid som grupper",
-      "graphThresholdLabel": "Samle grupper når nettverket overstiger",
-      "graphThresholdSuffix": "personer",
-      "graphThresholdDescription": "Brukes bare i automatisk modus. Område: 10–500.",
       "graphDisplaySuccess": "Visning oppdatert",
       "graphDisplayError": "Kunne ikke oppdatere visningen",
       "language": {

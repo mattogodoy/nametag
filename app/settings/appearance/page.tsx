@@ -22,7 +22,7 @@ export default async function AppearanceSettingsPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { theme: true, dateFormat: true, language: true, nameOrder: true, nameDisplayFormat: true, graphMode: true, graphBubbleThreshold: true },
+    select: { theme: true, dateFormat: true, language: true, nameOrder: true, nameDisplayFormat: true, graphMode: true },
   });
 
   const currentTheme = user?.theme || 'DARK';
@@ -30,9 +30,8 @@ export default async function AppearanceSettingsPage() {
   const currentLanguage = (user?.language as SupportedLocale) || (await getUserLocale(session.user.id));
   const currentNameOrder = (user?.nameOrder as 'WESTERN' | 'EASTERN') || 'WESTERN';
   const currentNameDisplayFormat = (user?.nameDisplayFormat as 'FULL' | 'NICKNAME_PREFERRED' | 'SHORT') || 'FULL';
-  const currentGraphMode: 'auto' | 'individuals' | 'bubbles' =
-    user?.graphMode === 'individuals' || user?.graphMode === 'bubbles' ? user.graphMode : 'auto';
-  const currentGraphThreshold = user?.graphBubbleThreshold ?? 50;
+  const currentGraphMode: 'individuals' | 'bubbles' =
+    user?.graphMode === 'bubbles' ? 'bubbles' : 'individuals';
 
   return (
     <div className="space-y-6">
@@ -96,10 +95,7 @@ export default async function AppearanceSettingsPage() {
         <p className="text-muted mb-6">
           {t('graphModeDescription')}
         </p>
-        <GraphDisplaySelector
-          currentMode={currentGraphMode}
-          currentThreshold={currentGraphThreshold}
-        />
+        <GraphDisplaySelector currentMode={currentGraphMode} />
       </div>
     </div>
   );

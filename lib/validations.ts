@@ -374,12 +374,8 @@ export const updateNameDisplayFormatSchema = z.object({
 });
 
 export const updateGraphDisplaySchema = z.object({
-  graphMode: z.union([z.enum(['individuals', 'bubbles']), z.null()]).optional(),
-  graphBubbleThreshold: z.number().int().min(10).max(500).optional(),
-}).refine(
-  (v) => v.graphMode !== undefined || v.graphBubbleThreshold !== undefined,
-  { message: 'At least one of graphMode or graphBubbleThreshold is required' },
-);
+  graphMode: z.enum(['individuals', 'bubbles']),
+});
 
 // ============================================
 // Import schema

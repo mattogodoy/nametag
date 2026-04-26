@@ -11,14 +11,10 @@ export const PUT = withAuth(async (request, session) => {
       return validation.response;
     }
 
-    const { graphMode, graphBubbleThreshold } = validation.data;
-    const data: { graphMode?: string | null; graphBubbleThreshold?: number } = {};
-    if (graphMode !== undefined) data.graphMode = graphMode;
-    if (graphBubbleThreshold !== undefined) data.graphBubbleThreshold = graphBubbleThreshold;
-
+    const { graphMode } = validation.data;
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data,
+      data: { graphMode },
     });
 
     return apiResponse.ok({ user });

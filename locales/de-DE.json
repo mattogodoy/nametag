@@ -121,12 +121,8 @@
       "nameDisplayFormatError": "Fehler beim Aktualisieren des Namensanzeigeformats",
       "graphModeTitle": "Netzwerk-Grafikanzeige",
       "graphModeDescription": "Wie dein Netzwerk-Graph auf dem Dashboard angezeigt wird.",
-      "graphModeAuto": "Automatisch",
       "graphModeIndividuals": "Immer einzeln anzeigen",
       "graphModeBubbles": "Immer als Gruppen anzeigen",
-      "graphThresholdLabel": "Gruppen zusammenfassen ab",
-      "graphThresholdSuffix": "Personen",
-      "graphThresholdDescription": "Nur im Automatik-Modus. Bereich: 10–500.",
       "graphDisplaySuccess": "Anzeige aktualisiert",
       "graphDisplayError": "Anzeige konnte nicht aktualisiert werden",
       "language": {

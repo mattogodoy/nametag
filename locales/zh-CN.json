@@ -121,12 +121,8 @@
       "nameDisplayFormatError": "更新姓名显示格式失败",
       "graphModeTitle": "网络图显示",
       "graphModeDescription": "如何在仪表盘中显示你的人脉网络图。",
-      "graphModeAuto": "自动",
       "graphModeIndividuals": "始终单独显示",
       "graphModeBubbles": "始终按组显示",
-      "graphThresholdLabel": "网络超出以下人数时合并为组",
-      "graphThresholdSuffix": "人",
-      "graphThresholdDescription": "仅用于自动模式。范围：10–500。",
       "graphDisplaySuccess": "显示已更新",
       "graphDisplayError": "无法更新显示",
       "language": {

@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   // Fetch user's date format preference
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { dateFormat: true, graphMode: true, graphBubbleThreshold: true },
+    select: { dateFormat: true, graphMode: true },
   });
   const dateFormat = user?.dateFormat || 'MDY';
 
@@ -129,7 +129,6 @@ export default async function DashboardPage() {
                 groups={groups}
                 centerNodeNonClickable={true}
                 graphMode={(user?.graphMode === 'individuals' || user?.graphMode === 'bubbles') ? user.graphMode : null}
-                graphBubbleThreshold={user?.graphBubbleThreshold ?? 50}
               />
             </div>
           ) : (

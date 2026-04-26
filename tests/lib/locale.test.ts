@@ -116,7 +116,6 @@ describe('Locale Utilities', () => {
         nameOrder: 'WESTERN',
         nameDisplayFormat: 'FULL',
         graphMode: null,
-        graphBubbleThreshold: 50,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -157,7 +156,6 @@ describe('Locale Utilities', () => {
         nameOrder: 'WESTERN',
         nameDisplayFormat: 'FULL',
         graphMode: null,
-        graphBubbleThreshold: 50,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

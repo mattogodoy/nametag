@@ -121,12 +121,8 @@
       "nameDisplayFormatError": "Failed to update name display format",
       "graphModeTitle": "Network graph display",
       "graphModeDescription": "How to display your network graph on the dashboard.",
-      "graphModeAuto": "Auto",
       "graphModeIndividuals": "Always show individuals",
       "graphModeBubbles": "Always show groups",
-      "graphThresholdLabel": "Collapse groups when network exceeds",
-      "graphThresholdSuffix": "people",
-      "graphThresholdDescription": "Only used in Auto mode. Range: 10–500.",
       "graphDisplaySuccess": "Graph display updated",
       "graphDisplayError": "Failed to update graph display",
       "language": {

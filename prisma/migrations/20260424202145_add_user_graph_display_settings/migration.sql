@@ -1,3 +1,2 @@
 -- AlterTable
-ALTER TABLE "users" ADD COLUMN     "graphBubbleThreshold" INTEGER NOT NULL DEFAULT 50,
-ADD COLUMN     "graphMode" TEXT;
+ALTER TABLE "users" ADD COLUMN     "graphMode" TEXT;

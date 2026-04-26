@@ -21,8 +21,7 @@ model User {
   dateFormat         DateFormat @default(MDY)
   nameOrder          NameOrder @default(WESTERN)
   nameDisplayFormat  NameDisplayFormat @default(FULL)
-  graphMode          String?           // 'individuals' | 'bubbles' | null (= auto)
-  graphBubbleThreshold Int             @default(50)
+  graphMode          String?           // 'individuals' | 'bubbles' | null (unset → individuals)
   language           String?   @default("en") // "en" or "es-ES"
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique

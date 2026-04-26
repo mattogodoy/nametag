@@ -27,7 +27,7 @@ describe('PUT /api/user/graph-display', () => {
     });
 
   it('persists graphMode=individuals', async () => {
-    mocks.userUpdate.mockResolvedValue({ id: 'user-123', graphMode: 'individuals', graphBubbleThreshold: 50 });
+    mocks.userUpdate.mockResolvedValue({ id: 'user-123', graphMode: 'individuals' });
     const res = await PUT(make({ graphMode: 'individuals' }));
     expect(res.status).toBe(200);
     expect(mocks.userUpdate).toHaveBeenCalledWith(expect.objectContaining({
@@ -36,37 +36,23 @@ describe('PUT /api/user/graph-display', () => {
     }));
   });
 
-  it('persists graphMode=null to reset to auto', async () => {
-    mocks.userUpdate.mockResolvedValue({ id: 'user-123', graphMode: null, graphBubbleThreshold: 50 });
-    const res = await PUT(make({ graphMode: null }));
+  it('persists graphMode=bubbles', async () => {
+    mocks.userUpdate.mockResolvedValue({ id: 'user-123', graphMode: 'bubbles' });
+    const res = await PUT(make({ graphMode: 'bubbles' }));
     expect(res.status).toBe(200);
     expect(mocks.userUpdate).toHaveBeenCalledWith(expect.objectContaining({
-      data: { graphMode: null },
+      data: { graphMode: 'bubbles' },
     }));
-  });
-
-  it('persists graphBubbleThreshold within bounds', async () => {
-    mocks.userUpdate.mockResolvedValue({ id: 'user-123', graphMode: null, graphBubbleThreshold: 75 });
-    const res = await PUT(make({ graphBubbleThreshold: 75 }));
-    expect(res.status).toBe(200);
-    expect(mocks.userUpdate).toHaveBeenCalledWith(expect.objectContaining({
-      data: { graphBubbleThreshold: 75 },
-    }));
-  });
-
-  it('rejects graphBubbleThreshold below 10', async () => {
-    const res = await PUT(make({ graphBubbleThreshold: 5 }));
-    expect(res.status).toBe(400);
-    expect(mocks.userUpdate).not.toHaveBeenCalled();
-  });
-
-  it('rejects graphBubbleThreshold above 500', async () => {
-    const res = await PUT(make({ graphBubbleThreshold: 501 }));
-    expect(res.status).toBe(400);
   });
 
   it('rejects an invalid graphMode value', async () => {
     const res = await PUT(make({ graphMode: 'foo' }));
+    expect(res.status).toBe(400);
+    expect(mocks.userUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects null graphMode (no longer supported)', async () => {
+    const res = await PUT(make({ graphMode: null }));
     expect(res.status).toBe(400);
   });
 

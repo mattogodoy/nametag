@@ -121,12 +121,8 @@
       "nameDisplayFormatError": "名前の表示形式の更新に失敗しました",
       "graphModeTitle": "ネットワークグラフの表示",
       "graphModeDescription": "ダッシュボードでネットワークグラフを表示する方法。",
-      "graphModeAuto": "自動",
       "graphModeIndividuals": "常に個別に表示",
       "graphModeBubbles": "常にグループで表示",
-      "graphThresholdLabel": "ネットワークが以下の人数を超えたらグループ化",
-      "graphThresholdSuffix": "人",
-      "graphThresholdDescription": "自動モードでのみ使用されます。範囲: 10〜500。",
       "graphDisplaySuccess": "表示を更新しました",
       "graphDisplayError": "表示の更新に失敗しました",
       "language": {

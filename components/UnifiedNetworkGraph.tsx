@@ -40,7 +40,6 @@ interface UnifiedNetworkGraphProps {
   animateNewNodes?: boolean;
   refreshKey?: number;
   graphMode?: 'individuals' | 'bubbles' | null;
-  graphBubbleThreshold?: number;
 }
 
 export default function UnifiedNetworkGraph({
@@ -51,7 +50,6 @@ export default function UnifiedNetworkGraph({
   chargeStrength = -400,
   refreshKey,
   graphMode: graphModeProp = null,
-  graphBubbleThreshold = 50,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
   const tPeople = useTranslations('people');
@@ -355,14 +353,7 @@ export default function UnifiedNetworkGraph({
     const incomingPeople = raw.nodes;
 
     // If no groups prop, we're not on the dashboard — skip bubble logic.
-    const usingBubbles = Boolean(groups);
-    const resolvedMode = usingBubbles
-      ? resolveGraphMode({
-          graphMode: localGraphMode,
-          graphBubbleThreshold,
-          nodeCount: incomingPeople.length,
-        })
-      : 'individuals';
+    const resolvedMode = groups ? resolveGraphMode(localGraphMode) : 'individuals';
 
     // Always expand any group that's currently in the include filter.
     const nextExpanded = new Set(expandedBubbles);
@@ -412,7 +403,7 @@ export default function UnifiedNetworkGraph({
       simRef.current = sim;
     }
   }, [
-    groups, localGraphMode, graphBubbleThreshold, expandedBubbles,
+    groups, localGraphMode, expandedBubbles,
     includeGroupIds, ungroupedLabel, buildSimulation,
   ]);
 
@@ -447,7 +438,7 @@ export default function UnifiedNetworkGraph({
     if (!raw) return;
     recomposeAndBuildSim(raw);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localGraphMode, expandedBubbles, graphBubbleThreshold]);
+  }, [localGraphMode, expandedBubbles]);
 
   // Step 6: Zoom, click, hover, and drag handlers
   useEffect(() => {
@@ -713,11 +704,7 @@ export default function UnifiedNetworkGraph({
         />
         <div className="absolute bottom-4 right-4 flex gap-2">
           {groups && (() => {
-            const bubblesActive = resolveGraphMode({
-              graphMode: localGraphMode,
-              graphBubbleThreshold,
-              nodeCount: nodesRef.current.length,
-            }) === 'bubbles';
+            const bubblesActive = resolveGraphMode(localGraphMode) === 'bubbles';
             const label = bubblesActive ? t('showIndividuals') : t('showAsGroups');
             return (
               <>

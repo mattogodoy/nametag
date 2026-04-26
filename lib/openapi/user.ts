@@ -89,7 +89,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
       put: {
         tags: ['User Settings'],
         summary: 'Update network-graph display preferences',
-        description: 'Updates graphMode (individuals | bubbles | null) and/or graphBubbleThreshold (10-500). Null graphMode means "auto" (resolved at render time from network size).',
+        description: 'Updates the user\'s network-graph display mode (individuals or bubbles).',
         security: [{ session: [] }],
         requestBody: zodBody(updateGraphDisplaySchema),
         responses: {
