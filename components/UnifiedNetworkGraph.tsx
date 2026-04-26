@@ -21,9 +21,7 @@ import { resolveGraphMode } from './graph/mode-resolution';
 import { buildSimulationNodes, type RawGraphPerson } from './graph/bubble-composition';
 import { buildHubAndSpokeEdges } from './graph/edge-composition';
 import { UNGROUPED_SYNTHETIC_ID } from './graph/simulation-types';
-import type {
-  SimulationNode, SimulationEdge, PersonSimNode,
-} from './graph/simulation-types';
+import type { SimulationNode, SimulationEdge } from './graph/simulation-types';
 
 // Props interface — unchanged from pre-rewrite file
 interface Group { id: string; name: string; color: string | null; }
@@ -602,9 +600,6 @@ export default function UnifiedNetworkGraph({
       select(canvas).on('.drag', null);
     };
   }, [centerNodeNonClickable, isMobile, requestPaint, router, setExpandedBubbles]);
-
-  // PersonSimNode type is used via inference in the type cast; suppress unused import.
-  void (undefined as unknown as PersonSimNode);
 
   return (
     <div className="w-full h-full">
