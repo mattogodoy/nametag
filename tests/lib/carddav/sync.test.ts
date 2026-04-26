@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   cardDavMappingFindMany: vi.fn(),
   cardDavMappingCreate: vi.fn(),
   cardDavMappingUpdate: vi.fn(),
+  cardDavMappingDelete: vi.fn(),
   cardDavPendingImportUpsert: vi.fn(),
   cardDavPendingImportFindMany: vi.fn(),
   cardDavPendingImportDeleteMany: vi.fn(),
@@ -66,6 +67,7 @@ vi.mock('@/lib/prisma', () => ({
       findMany: mocks.cardDavMappingFindMany,
       create: mocks.cardDavMappingCreate,
       update: mocks.cardDavMappingUpdate,
+      delete: mocks.cardDavMappingDelete,
     },
     cardDavPendingImport: {
       upsert: mocks.cardDavPendingImportUpsert,
@@ -1105,6 +1107,111 @@ describe('CardDAV Sync Engine', () => {
 
       // Should NOT attempt fetchVCard recovery
       expect(mocks.fetchVCard).not.toHaveBeenCalled();
+      expect(result.errors).toBe(1);
+      expect(result.updatedRemotely).toBe(0);
+    });
+
+    it("recovers from a 400 INVALID_ARGUMENT when GET says the resource is gone", async () => {
+      const mapping = makePendingMapping();
+
+      mocks.cardDavMappingFindMany
+        .mockResolvedValueOnce([mapping])
+        .mockResolvedValueOnce([{ personId: mapping.personId }]);
+      mocks.personFindMany.mockResolvedValue([]);
+
+      // Update fails with the Google-style 400
+      mocks.updateVCard.mockRejectedValueOnce(
+        new ExternalServiceError({
+          message: 'CardDAV UPDATE failed: 400 Bad Request',
+          service: 'carddav',
+          status: 400,
+          body: '{"error":{"status":"INVALID_ARGUMENT"}}',
+        }),
+      );
+
+      // GET disambiguates: resource is gone server-side
+      mocks.fetchVCard.mockResolvedValue(null);
+
+      const result = await syncToServer(USER_ID);
+
+      expect(mocks.fetchVCard).toHaveBeenCalledWith(expect.anything(), mapping.href);
+      expect(mocks.cardDavMappingDelete).toHaveBeenCalledWith({ where: { id: mapping.id } });
+      expect(mocks.personUpdate).toHaveBeenCalledWith({
+        where: { id: mapping.personId },
+        data: { uid: null },
+      });
+      // Not counted as an error: it's a self-heal, not a failure to surface
+      expect(result.errors).toBe(0);
+      expect(result.updatedRemotely).toBe(0);
+    });
+
+    it("recovers from a 400 with a moved ETag by retrying with the fresh ETag", async () => {
+      const mapping = makePendingMapping();
+
+      mocks.cardDavMappingFindMany
+        .mockResolvedValueOnce([mapping])
+        .mockResolvedValueOnce([{ personId: mapping.personId }]);
+      mocks.personFindMany.mockResolvedValue([]);
+
+      // First update fails with 400
+      mocks.updateVCard
+        .mockRejectedValueOnce(
+          new ExternalServiceError({
+            message: 'CardDAV UPDATE failed: 400 Bad Request',
+            service: 'carddav',
+            status: 400,
+          }),
+        )
+        // Retry succeeds
+        .mockResolvedValueOnce({
+          url: mapping.href,
+          etag: 'after-refresh-etag',
+          data: 'updated',
+        });
+
+      // GET reveals the etag has moved on
+      mocks.fetchVCard.mockResolvedValue({
+        url: mapping.href,
+        etag: 'fresh-server-etag',
+        data: '',
+      });
+
+      const result = await syncToServer(USER_ID);
+
+      expect(mocks.fetchVCard).toHaveBeenCalledTimes(1);
+      expect(mocks.updateVCard).toHaveBeenCalledTimes(2);
+      // Mapping was NOT deleted — just retried with fresh etag
+      expect(mocks.cardDavMappingDelete).not.toHaveBeenCalled();
+      expect(result.updatedRemotely).toBe(1);
+      expect(result.errors).toBe(0);
+    });
+
+    it("treats 400 with same ETag and existing resource as a real error (genuine body issue)", async () => {
+      const mapping = makePendingMapping();
+
+      mocks.cardDavMappingFindMany
+        .mockResolvedValueOnce([mapping])
+        .mockResolvedValueOnce([{ personId: mapping.personId }]);
+      mocks.personFindMany.mockResolvedValue([]);
+
+      mocks.updateVCard.mockRejectedValueOnce(
+        new ExternalServiceError({
+          message: 'CardDAV UPDATE failed: 400 Bad Request',
+          service: 'carddav',
+          status: 400,
+        }),
+      );
+
+      // GET shows resource exists with the same etag we sent
+      mocks.fetchVCard.mockResolvedValue({
+        url: mapping.href,
+        etag: mapping.etag, // same as stored
+        data: '',
+      });
+
+      const result = await syncToServer(USER_ID);
+
+      expect(mocks.cardDavMappingDelete).not.toHaveBeenCalled();
       expect(result.errors).toBe(1);
       expect(result.updatedRemotely).toBe(0);
     });

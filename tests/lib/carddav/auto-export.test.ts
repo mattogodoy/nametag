@@ -17,11 +17,15 @@ const mocks = vi.hoisted(() => ({
   cardDavConnectionFindUnique: vi.fn(),
   cardDavConnectionUpdate: vi.fn(),
   cardDavMappingFindUnique: vi.fn(),
+  cardDavMappingFindMany: vi.fn(),
   cardDavMappingCreate: vi.fn(),
   cardDavMappingUpdate: vi.fn(),
+  cardDavMappingDelete: vi.fn(),
 
   // CardDAV client
   fetchAddressBooks: vi.fn(),
+  fetchVCards: vi.fn(),
+  fetchVCard: vi.fn(),
   createVCard: vi.fn(),
   updateVCard: vi.fn(),
 
@@ -48,8 +52,10 @@ vi.mock('@/lib/prisma', () => ({
     },
     cardDavMapping: {
       findUnique: mocks.cardDavMappingFindUnique,
+      findMany: mocks.cardDavMappingFindMany,
       create: mocks.cardDavMappingCreate,
       update: mocks.cardDavMappingUpdate,
+      delete: mocks.cardDavMappingDelete,
     },
   },
 }));
@@ -58,6 +64,8 @@ vi.mock('@/lib/carddav/client', () => ({
   createCardDavClient: vi.fn(() =>
     Promise.resolve({
       fetchAddressBooks: mocks.fetchAddressBooks,
+      fetchVCards: mocks.fetchVCards,
+      fetchVCard: mocks.fetchVCard,
       createVCard: mocks.createVCard,
       updateVCard: mocks.updateVCard,
     })
@@ -536,6 +544,99 @@ describe('CardDAV Auto-Export', () => {
         }),
         expect.any(String),
       );
+    });
+
+    it('resets the mapping when GET says the resource is gone after a 400', async () => {
+      const { ExternalServiceError } = await import('@/lib/errors');
+      mocks.cardDavMappingFindUnique.mockResolvedValue(makeMapping());
+      mocks.fetchAddressBooks.mockResolvedValue([
+        { url: 'https://carddav.example.com/addressbooks/default/', displayName: 'Contacts', raw: {} },
+      ]);
+      mocks.updateVCard.mockRejectedValueOnce(
+        new ExternalServiceError({
+          message: 'CardDAV UPDATE failed: 400 Bad Request',
+          service: 'carddav',
+          status: 400,
+          body: '{"error":{"status":"INVALID_ARGUMENT"}}',
+        }),
+      );
+      mocks.fetchVCard.mockResolvedValue(null);
+
+      await autoUpdatePerson(PERSON_ID);
+
+      expect(mocks.cardDavMappingDelete).toHaveBeenCalledWith({ where: { id: MAPPING_ID } });
+      expect(mocks.personUpdate).toHaveBeenCalledWith({
+        where: { id: PERSON_ID },
+        data: { uid: null },
+      });
+      // Should NOT update the mapping with synced status — it's gone
+      expect(mocks.cardDavMappingUpdate).not.toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ syncStatus: 'synced' }) }),
+      );
+    });
+
+    it('retries with fresh ETag when GET reveals the etag has moved on after a 400', async () => {
+      const { ExternalServiceError } = await import('@/lib/errors');
+      mocks.cardDavMappingFindUnique.mockResolvedValue(makeMapping());
+      mocks.fetchAddressBooks.mockResolvedValue([
+        { url: 'https://carddav.example.com/addressbooks/default/', displayName: 'Contacts', raw: {} },
+      ]);
+      mocks.updateVCard
+        .mockRejectedValueOnce(
+          new ExternalServiceError({
+            message: 'CardDAV UPDATE failed: 400 Bad Request',
+            service: 'carddav',
+            status: 400,
+          }),
+        )
+        .mockResolvedValueOnce({
+          url: 'https://carddav.example.com/contacts/existing-uid-123.vcf',
+          etag: 'after-refresh',
+          data: '',
+        });
+      mocks.fetchVCard.mockResolvedValue({
+        url: 'https://carddav.example.com/contacts/existing-uid-123.vcf',
+        etag: 'fresh-server-etag',
+        data: '',
+      });
+
+      await autoUpdatePerson(PERSON_ID);
+
+      expect(mocks.updateVCard).toHaveBeenCalledTimes(2);
+      expect(mocks.cardDavMappingDelete).not.toHaveBeenCalled();
+      // Final update should use the fresh etag
+      expect(mocks.cardDavMappingUpdate).toHaveBeenCalledWith({
+        where: { id: MAPPING_ID },
+        data: expect.objectContaining({
+          etag: 'after-refresh',
+          syncStatus: 'synced',
+        }),
+      });
+    });
+
+    it('rethrows when GET shows the same etag (genuine body issue)', async () => {
+      const { ExternalServiceError } = await import('@/lib/errors');
+      mocks.cardDavMappingFindUnique.mockResolvedValue(makeMapping());
+      mocks.fetchAddressBooks.mockResolvedValue([
+        { url: 'https://carddav.example.com/addressbooks/default/', displayName: 'Contacts', raw: {} },
+      ]);
+      mocks.updateVCard.mockRejectedValueOnce(
+        new ExternalServiceError({
+          message: 'CardDAV UPDATE failed: 400 Bad Request',
+          service: 'carddav',
+          status: 400,
+        }),
+      );
+      mocks.fetchVCard.mockResolvedValue({
+        url: 'https://carddav.example.com/contacts/existing-uid-123.vcf',
+        etag: 'etag-1', // matches mapping.etag
+        data: '',
+      });
+
+      await expect(autoUpdatePerson(PERSON_ID)).rejects.toThrow(
+        'CardDAV UPDATE failed: 400 Bad Request',
+      );
+      expect(mocks.cardDavMappingDelete).not.toHaveBeenCalled();
     });
   });
 });
