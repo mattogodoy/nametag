@@ -4,8 +4,10 @@ import { getAddressBook } from './address-book';
 import { personToVCard } from '@/lib/carddav/vcard-export';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { withRetry } from './retry';
+import { classifyUpdateFailure } from './update-recovery';
 import { buildLocalHash } from './hash';
 import { createModuleLogger } from '@/lib/logger';
+import { ExternalServiceError } from '@/lib/errors';
 import { updateContext } from '@/lib/logging/context';
 
 const log = createModuleLogger('carddav');
@@ -321,13 +323,49 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
     const vCardData = personToVCard(person, { photoDataUri: updatePhotoDataUri });
 
     // Update vCard on server
-    const vCard = {
+    let vCard = {
       url: mapping.href,
       etag: mapping.etag || '',
       data: '',
     };
 
-    const updated = await withRetry(() => client.updateVCard(vCard, vCardData));
+    let updated;
+    try {
+      updated = await withRetry(() => client.updateVCard(vCard, vCardData));
+    } catch (updateError) {
+      const isRecoverableStatus =
+        updateError instanceof ExternalServiceError &&
+        (updateError.status === 400 || updateError.status === 404 || updateError.status === 410);
+      if (!isRecoverableStatus) throw updateError;
+
+      // Disambiguate via GET. See update-recovery.ts for the rationale.
+      const addressBook = await getAddressBook(client, connection);
+      const recovery = await classifyUpdateFailure(client, addressBook, mapping.href, vCard.etag);
+
+      if (recovery.kind === 'gone') {
+        log.warn(
+          { event: 'carddav.contact.gone', personId: person.id, href: mapping.href },
+          'CardDAV resource gone server-side; resetting mapping so next push creates a fresh contact',
+        );
+        await prisma.cardDavMapping.delete({ where: { id: mapping.id } });
+        await prisma.person.update({
+          where: { id: person.id },
+          data: { uid: null },
+        });
+        return;
+      }
+
+      if (recovery.kind === 'stale-etag') {
+        log.warn(
+          { personId: person.id, href: mapping.href },
+          'Server returned a non-412 status with a moved ETag; refreshing and retrying',
+        );
+        vCard = { url: mapping.href, etag: recovery.freshEtag, data: '' };
+        updated = await client.updateVCard(vCard, vCardData);
+      } else {
+        throw updateError;
+      }
+    }
 
     // Update mapping
     const localHash = buildLocalHash(person);

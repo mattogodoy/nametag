@@ -5,6 +5,7 @@ import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import type { UnknownProperty } from '@/lib/carddav/vcard-parser';
 import { withRetry, categorizeError } from './retry';
+import { classifyUpdateFailure } from './update-recovery';
 import { getAddressBook } from './address-book';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { updatePersonFromVCard } from './vcard-import';
@@ -561,30 +562,77 @@ export async function syncToServer(
           };
 
           let updated: VCard;
+          let recoveredAsGone = false;
           try {
             updated = await withRetry(
               () => client.updateVCard(vCard, vCardData),
               { maxAttempts: 3 }
             );
           } catch (updateError) {
-            if (!(updateError instanceof ExternalServiceError && updateError.status === 412)) throw updateError;
+            if (!(updateError instanceof ExternalServiceError)) throw updateError;
 
-            // 412: fetch fresh ETag from server and retry once
-            log.warn({ personId: mapping.personId, href: mapping.href }, '412 Precondition Failed — refreshing ETag and retrying');
-            const freshVCard = await client.fetchVCard(addressBook, mapping.href);
-            if (!freshVCard) {
-              throw new Error(`412 recovery failed: could not fetch vCard at ${mapping.href}`);
+            if (updateError.status === 412) {
+              // 412: fetch fresh ETag from server and retry once
+              log.warn({ personId: mapping.personId, href: mapping.href }, '412 Precondition Failed — refreshing ETag and retrying');
+              const freshVCard = await client.fetchVCard(addressBook, mapping.href);
+              if (!freshVCard) {
+                throw new Error(`412 recovery failed: could not fetch vCard at ${mapping.href}`);
+              }
+
+              vCard = { url: mapping.href, etag: freshVCard.etag, data: '' };
+              updated = await client.updateVCard(vCard, vCardData);
+            } else if (
+              updateError.status === 400 ||
+              updateError.status === 404 ||
+              updateError.status === 410
+            ) {
+              // Disambiguate via GET. Google's `carddav/v1` returns 400
+              // INVALID_ARGUMENT both for genuinely-bad bodies AND for PUTs
+              // against server-deleted resources, so we can't trust the
+              // status code alone. 404/410 are the spec-correct "gone"
+              // signals from other servers.
+              const recovery = await classifyUpdateFailure(
+                client,
+                addressBook,
+                mapping.href,
+                vCard.etag,
+              );
+              if (recovery.kind === 'gone') {
+                log.warn(
+                  { event: 'carddav.contact.gone', personId: mapping.personId, href: mapping.href },
+                  'CardDAV resource gone server-side; resetting mapping so next push creates a fresh contact',
+                );
+                await prisma.cardDavMapping.delete({ where: { id: mapping.id } });
+                await prisma.person.update({
+                  where: { id: mapping.personId },
+                  data: { uid: null },
+                });
+                recoveredAsGone = true;
+              } else if (recovery.kind === 'stale-etag') {
+                log.warn(
+                  { personId: mapping.personId, href: mapping.href },
+                  'Server returned a non-412 status with a moved ETag; refreshing and retrying',
+                );
+                vCard = { url: mapping.href, etag: recovery.freshEtag, data: '' };
+                updated = await client.updateVCard(vCard, vCardData);
+              } else {
+                throw updateError;
+              }
+            } else {
+              throw updateError;
             }
+          }
 
-            vCard = { url: mapping.href, etag: freshVCard.etag, data: '' };
-            updated = await client.updateVCard(vCard, vCardData);
+          if (recoveredAsGone) {
+            // Mapping is gone; skip the post-update bookkeeping below.
+            continue;
           }
 
           // Store the new etag
           await prisma.cardDavMapping.update({
             where: { id: mapping.id },
             data: {
-              etag: updated.etag,
+              etag: updated!.etag,
             },
           });
 

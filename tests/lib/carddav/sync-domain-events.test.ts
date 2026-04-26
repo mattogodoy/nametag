@@ -172,6 +172,13 @@ describe('CardDAV sync domain events', () => {
       message: 'CardDAV UPDATE failed: 400 Bad Request',
       service: 'carddav', status: 400, body: '<error>bad</error>',
     }));
+    // Recovery path: GET returns the same etag we sent, so the failure is
+    // genuine (body issue) rather than a stale-etag/resource-gone case.
+    // This keeps the original test intent: a real failure should emit
+    // carddav.push.failed.
+    mocks.fetchVCard.mockResolvedValue({
+      url: 'https://carddav.example/ab/x.vcf', etag: '"e"', data: '',
+    });
     mocks.findManyPerson.mockResolvedValue([]);
 
     await syncToServer('u-1');
