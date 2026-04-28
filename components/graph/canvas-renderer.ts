@@ -49,7 +49,6 @@ function nodeFontSize(node: SimulationNode, isMobile: boolean): number {
 
 function getNodeFill(node: SimulationNode, isDark: boolean): string {
   if (node.kind === 'bubble') return node.color ?? (isDark ? '#4b5563' : '#d1d5db');
-  if (node.photo) return isDark ? '#000000' : '#ffffff';
   if (node.isCenter) return '#3B82F6';
   if (node.colors.length > 0) return node.colors[0];
   return '#9CA3AF';
@@ -116,9 +115,20 @@ function drawNode(rc: RenderContext, node: SimulationNode): void {
   if (node.x === undefined || node.y === undefined) return;
   const r = nodeRadius(node, rc.isMobile);
 
+  // Resolve a loaded photo (if any) before painting the fill, so we can use
+  // a contrast background only when an image will actually be drawn over it.
+  const photoImage = rc.lod !== 'dots' && node.kind === 'person' && node.photo
+    ? rc.getPhoto(node.id)
+    : undefined;
+  const willDrawPhoto = photoImage !== undefined
+    && photoImage !== 'loading'
+    && photoImage !== 'error';
+
   rc.ctx.beginPath();
   rc.ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
-  rc.ctx.fillStyle = getNodeFill(node, rc.isDark);
+  rc.ctx.fillStyle = willDrawPhoto
+    ? (rc.isDark ? '#000000' : '#ffffff')
+    : getNodeFill(node, rc.isDark);
   rc.ctx.fill();
 
   if (rc.lod !== 'dots') {
@@ -127,16 +137,13 @@ function drawNode(rc: RenderContext, node: SimulationNode): void {
     rc.ctx.stroke();
   }
 
-  if (rc.lod === 'full' && node.kind === 'person' && node.photo) {
-    const entry = rc.getPhoto(node.id);
-    if (entry && entry !== 'loading' && entry !== 'error') {
-      rc.ctx.save();
-      rc.ctx.beginPath();
-      rc.ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
-      rc.ctx.clip();
-      rc.ctx.drawImage(entry, node.x - r, node.y - r, r * 2, r * 2);
-      rc.ctx.restore();
-    }
+  if (willDrawPhoto && photoImage instanceof HTMLImageElement) {
+    rc.ctx.save();
+    rc.ctx.beginPath();
+    rc.ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+    rc.ctx.clip();
+    rc.ctx.drawImage(photoImage, node.x - r, node.y - r, r * 2, r * 2);
+    rc.ctx.restore();
   }
 }
 

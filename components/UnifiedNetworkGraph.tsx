@@ -170,7 +170,7 @@ export default function UnifiedNetworkGraph({
     const isDark = document.documentElement.classList.contains('dark');
 
     // Request photos for nodes that will render at full LOD and are in viewport.
-    if (lod === 'full') {
+    if (lod !== 'dots') {
       const padPx = 64;
       for (const node of nodesRef.current) {
         if (node.kind !== 'person') continue;
