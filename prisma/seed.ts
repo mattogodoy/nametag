@@ -27,6 +27,7 @@ async function main() {
       password: hashedPassword,
       name: 'Demo User',
       theme: 'LIGHT',
+      emailVerified: true,
     },
   });
 
