@@ -381,13 +381,26 @@ export default function UnifiedNetworkGraph({
     });
 
     const rawEdges: SimulationEdge[] = raw.edges;
-    const incomingEdges = resolvedMode === 'bubbles'
+    const composedEdges = resolvedMode === 'bubbles'
       ? buildHubAndSpokeEdges({
           rawEdges,
           simNodes: incomingNodes,
           neutralEdgeColor: '#9ca3af',
         })
       : rawEdges;
+
+    // d3-force's forceLink mutates each edge's source/target from string ids
+    // to node-object references on the first sim build. If we reused those
+    // mutated edges on a later rebuild, forceLink would keep the stale refs
+    // (it skips resolution when source/target is already an object) — so the
+    // new simulation would move new node objects while edges still drew
+    // between the previous sim's node objects, leaving the visible
+    // disconnect from #240. Clone edges with string ids each time.
+    const incomingEdges: SimulationEdge[] = composedEdges.map((e) => ({
+      ...e,
+      source: typeof e.source === 'string' ? e.source : e.source.id,
+      target: typeof e.target === 'string' ? e.target : e.target.id,
+    }));
 
     const { nodes, edges } = diffSimulationData(nodesRef.current, incomingNodes, edgesRef.current, incomingEdges);
     nodesRef.current = nodes;
