@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.44.4](https://github.com/mattogodoy/nametag/compare/v0.44.3...v0.44.4) (2026-04-30)
+
+
+### Bug Fixes
+
+* **dates:** preserve calendar date across timezones (closes [#218](https://github.com/mattogodoy/nametag/issues/218)) ([b1a6106](https://github.com/mattogodoy/nametag/commit/b1a6106cf04201bfd17580148a0f92edb3445162))
+* **dates:** preserve calendar date across timezones for last contact, anniversary, and vCard export ([68acf63](https://github.com/mattogodoy/nametag/commit/68acf632a28503693ea36f5bb15d16c7f2f7f739))
+* **important-dates:** show reminder limit message and rename Memorial to Date of Death ([617022c](https://github.com/mattogodoy/nametag/commit/617022c6e54dd3219fef2942af1ffb7f1a744ec1))
+* **important-dates:** show reminder limit message and rename Memorial to Date of Death ([25c734b](https://github.com/mattogodoy/nametag/commit/25c734b44d5af648023889b8e077b59b8a5618a5)), closes [#203](https://github.com/mattogodoy/nametag/issues/203)
+
 ## [0.44.3](https://github.com/mattogodoy/nametag/compare/v0.44.2...v0.44.3) (2026-04-29)
 
 
