@@ -362,9 +362,11 @@ END:VCARD`;
       expect(parsed.importantDates).toHaveLength(1);
       expect(parsed.importantDates[0].type).toBe('birthday');
       expect(parsed.importantDates[0].title).toBe('');
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(1990);
-      expect(parsed.importantDates[0].date.getMonth()).toBe(4); // May (0-indexed)
-      expect(parsed.importantDates[0].date.getDate()).toBe(15);
+      // Parsed dates are UTC-midnight (matching the API storage convention),
+      // so assertions must use UTC accessors to be timezone-independent.
+      expect(parsed.importantDates[0].date.getUTCFullYear()).toBe(1990);
+      expect(parsed.importantDates[0].date.getUTCMonth()).toBe(4); // May (0-indexed)
+      expect(parsed.importantDates[0].date.getUTCDate()).toBe(15);
     });
 
     it('should parse BDAY with year-omitted (v4 format)', () => {

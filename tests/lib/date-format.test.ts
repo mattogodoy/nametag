@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, formatDateWithoutYear, getDateFormatLabel, getDateFormatExample, parseAsLocalDate } from '@/lib/date-format';
+import { formatDate, formatDateWithoutYear, getDateFormatLabel, getDateFormatExample, getLocalDateString, parseAsLocalDate } from '@/lib/date-format';
 
 describe('date-format', () => {
   describe('parseAsLocalDate', () => {
@@ -49,11 +49,32 @@ describe('date-format', () => {
     });
 
     describe('with ISO datetime strings', () => {
-      it('should parse full ISO datetime string normally', () => {
-        const isoString = '2024-12-25T10:30:00.000Z';
-        const result = parseAsLocalDate(isoString);
-        // Should parse as UTC datetime
-        expect(result.toISOString()).toBe(isoString);
+      it('extracts the date prefix and anchors it locally (issue #218)', () => {
+        // Date-only fields are stored as UTC midnight; when round-tripped
+        // through the API as full ISO they must still display as the original
+        // calendar date in any timezone. Asserting via local components: in a
+        // pre-fix world a Phoenix viewer would see Dec 24 here.
+        const result = parseAsLocalDate('2024-12-25T00:00:00.000Z');
+        expect(result.getFullYear()).toBe(2024);
+        expect(result.getMonth()).toBe(11);
+        expect(result.getDate()).toBe(25);
+      });
+
+      it('uses the date prefix even when the ISO carries a non-zero time', () => {
+        const result = parseAsLocalDate('2024-12-25T10:30:00.000Z');
+        expect(result.getFullYear()).toBe(2024);
+        expect(result.getMonth()).toBe(11);
+        expect(result.getDate()).toBe(25);
+      });
+    });
+
+    describe('issue #218 regression — lastContact display', () => {
+      it('formats a UTC-midnight ISO consistently with formatDate', () => {
+        // The server returns lastContact as UTC midnight ISO; formatting it
+        // must yield the calendar date encoded in the prefix.
+        expect(formatDate('2026-04-30T00:00:00.000Z', 'YMD')).toBe('2026-04-30');
+        expect(formatDate('2026-04-30T00:00:00.000Z', 'MDY')).toBe('04/30/2026');
+        expect(formatDate('2026-04-30T00:00:00.000Z', 'DMY')).toBe('30/04/2026');
       });
     });
 
@@ -196,6 +217,26 @@ describe('date-format', () => {
     it('should return default label for unknown format', () => {
       // TypeScript would prevent this, but testing runtime behavior
       expect(getDateFormatLabel('UNKNOWN' as 'MDY')).toBe('MM/DD/YYYY');
+    });
+  });
+
+  describe('getLocalDateString', () => {
+    it('returns the supplied date as YYYY-MM-DD using local components', () => {
+      // Constructed with local components so the result is independent of the
+      // host timezone — pre-fix code used UTC and would shift after midnight.
+      expect(getLocalDateString(new Date(2026, 3, 30))).toBe('2026-04-30');
+    });
+
+    it('zero-pads single-digit months and days', () => {
+      expect(getLocalDateString(new Date(2026, 0, 5))).toBe('2026-01-05');
+    });
+
+    it('defaults to today', () => {
+      const result = getLocalDateString();
+      expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const now = new Date();
+      const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      expect(result).toBe(expected);
     });
   });
 

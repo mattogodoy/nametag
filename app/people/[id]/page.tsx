@@ -396,21 +396,25 @@ export default async function PersonDetailsPage({
                     </div>
                   )}
 
-                  {person.anniversary && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted mb-1">
-                        {t('anniversary')}
-                      </h4>
-                      <p className="text-foreground">
-                        {formatDate(new Date(person.anniversary), dateFormat)}
-                        {getYearsAgo(new Date(person.anniversary), t) && (
-                          <span className="text-sm text-muted ml-1">
-                            ({getYearsAgo(new Date(person.anniversary), t)})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
+                  {person.anniversary && (() => {
+                    const anniversaryDate = parseAsLocalDate(person.anniversary.toISOString());
+                    const yearsAgo = getYearsAgo(anniversaryDate, t);
+                    return (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted mb-1">
+                          {t('anniversary')}
+                        </h4>
+                        <p className="text-foreground">
+                          {formatDate(anniversaryDate, dateFormat)}
+                          {yearsAgo && (
+                            <span className="text-sm text-muted ml-1">
+                              ({yearsAgo})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   <LastContactQuickUpdate
                     personId={person.id}

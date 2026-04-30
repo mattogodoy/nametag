@@ -396,7 +396,7 @@ export default function PeopleListClient({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-                      {person.lastContact ? formatDate(new Date(person.lastContact), dateFormat) : '\u2014'}
+                      {person.lastContact ? formatDate(person.lastContact, dateFormat) : '\u2014'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-3">

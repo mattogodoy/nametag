@@ -366,13 +366,17 @@ function formatFullName(person: PersonWithRelations): string {
 }
 
 /**
- * Format date for vCard 3.0 (YYYYMMDD or --MMDD for year-omitted)
+ * Format date for vCard 3.0 (YYYYMMDD or --MMDD for year-omitted).
+ *
+ * Uses UTC accessors because Nametag stores calendar dates as UTC-midnight
+ * DateTime values. Reading them with local-time `getDate()` would shift the
+ * day west of UTC.
  */
 export function formatVCardV3Date(date: Date): string {
   const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
 
   // If year is 1604 or earlier, omit it (year unknown - Apple uses 1604 as marker)
   if (year <= 1604) {
