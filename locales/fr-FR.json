@@ -1115,7 +1115,7 @@
     "close": "Fermer",
     "downloadVcardFile": "Télécharger le fichier vCard",
     "duplicates": {
-      "title": "Dupliqués les Contacts",
+      "title": "Contacts en doublons",
       "findDuplicates": "Trouver des doublons",
       "noDuplicates": "Aucun contact en double trouvé.",
       "similarity": "{score}% similaire",
