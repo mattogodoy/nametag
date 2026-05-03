@@ -4,16 +4,16 @@ ALTER TABLE "important_dates" ADD COLUMN "type" TEXT;
 -- Backfill: match existing titles in all 6 supported languages (case-insensitive, trimmed)
 -- Note: Spanish "Memorial" matches via the English entry (same word in both languages)
 UPDATE "important_dates" SET "type" = 'birthday', "title" = ''
-WHERE TRIM(LOWER("title")) IN ('birthday', 'cumpleaños', 'geburtstag', '誕生日', 'bursdag', '生日');
+WHERE TRIM(LOWER("title")) IN ('birthday', 'cumpleaños', 'geburtstag', '誕生日', 'bursdag', '生日', 'anniversaire');
 
 UPDATE "important_dates" SET "type" = 'anniversary', "title" = ''
-WHERE TRIM(LOWER("title")) IN ('anniversary', 'aniversario', 'jahrestag', '記念日', 'jubileum', '周年纪念');
+WHERE TRIM(LOWER("title")) IN ('anniversary', 'aniversario', 'jahrestag', '記念日', 'jubileum', '周年纪念', 'anniversaire');
 
 UPDATE "important_dates" SET "type" = 'nameday', "title" = ''
-WHERE TRIM(LOWER("title")) IN ('name day', 'día del santo', 'namenstag', '名前の日', 'navnedag', '命名日');
+WHERE TRIM(LOWER("title")) IN ('name day', 'día del santo', 'namenstag', '名前の日', 'navnedag', '命名日', 'fête');
 
 UPDATE "important_dates" SET "type" = 'memorial', "title" = ''
-WHERE TRIM(LOWER("title")) IN ('memorial', 'gedenktag', '追悼日', 'minnedag', '追悼纪念日');
+WHERE TRIM(LOWER("title")) IN ('memorial', 'gedenktag', '追悼日', 'minnedag', '追悼纪念日', 'commémoration');
 
 -- Deduplicate: if a person has multiple dates with the same type after backfill,
 -- keep only the oldest one (by id) and reset the rest to custom (type = NULL, restore title)

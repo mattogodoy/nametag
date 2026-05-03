@@ -14,10 +14,7 @@ export const PUT = withLogging(async function PUT(request: Request) {
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -26,8 +23,11 @@ export const PUT = withLogging(async function PUT(request: Request) {
     // Validate language
     if (!language || !isSupportedLocale(language)) {
       return NextResponse.json(
-        { error: 'Invalid language. Supported languages: en, es-ES, ja-JP, nb-NO, de-DE, zh-CN'},
-        { status: 400 }
+        {
+          error:
+            'Invalid language. Supported languages: en, es-ES, ja-JP, nb-NO, de-DE, zh-CN, fr-FR',
+        },
+        { status: 400 },
       );
     }
 
@@ -45,10 +45,13 @@ export const PUT = withLogging(async function PUT(request: Request) {
       language,
     });
   } catch (error) {
-    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error updating language');
+    logger.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Error updating language',
+    );
     return NextResponse.json(
       { error: 'Failed to update language' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 });
