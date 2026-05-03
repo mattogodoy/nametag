@@ -30,6 +30,9 @@ const mocks = vi.hoisted(() => {
   const personCustomFieldDeleteMany = vi.fn();
   const importantDateUpdateMany = vi.fn();
   const importantDateDeleteMany = vi.fn();
+  const journalEntryPersonFindMany = vi.fn();
+  const journalEntryPersonUpdateMany = vi.fn();
+  const journalEntryPersonDeleteMany = vi.fn();
   const withDeletedPersonFindUnique = vi.fn();
   const withDeletedPersonUpdate = vi.fn();
   const withDeletedDisconnect = vi.fn();
@@ -49,6 +52,11 @@ const mocks = vi.hoisted(() => {
     personLocation: { updateMany: personLocationUpdateMany, deleteMany: personLocationDeleteMany },
     personCustomField: { updateMany: personCustomFieldUpdateMany, deleteMany: personCustomFieldDeleteMany },
     importantDate: { updateMany: importantDateUpdateMany, deleteMany: importantDateDeleteMany },
+    journalEntryPerson: {
+      findMany: journalEntryPersonFindMany,
+      updateMany: journalEntryPersonUpdateMany,
+      deleteMany: journalEntryPersonDeleteMany,
+    },
   };
 
   return {
@@ -76,6 +84,9 @@ const mocks = vi.hoisted(() => {
     personCustomFieldDeleteMany,
     importantDateUpdateMany,
     importantDateDeleteMany,
+    journalEntryPersonFindMany,
+    journalEntryPersonUpdateMany,
+    journalEntryPersonDeleteMany,
     withDeletedPersonFindUnique,
     withDeletedPersonUpdate,
     withDeletedDisconnect,
@@ -107,6 +118,11 @@ vi.mock('../../../lib/prisma', () => ({
     personLocation: { updateMany: mocks.personLocationUpdateMany, deleteMany: mocks.personLocationDeleteMany },
     personCustomField: { updateMany: mocks.personCustomFieldUpdateMany, deleteMany: mocks.personCustomFieldDeleteMany },
     importantDate: { updateMany: mocks.importantDateUpdateMany, deleteMany: mocks.importantDateDeleteMany },
+    journalEntryPerson: {
+      findMany: mocks.journalEntryPersonFindMany,
+      updateMany: mocks.journalEntryPersonUpdateMany,
+      deleteMany: mocks.journalEntryPersonDeleteMany,
+    },
   },
   withDeleted: vi.fn(() => ({
     person: {
@@ -759,6 +775,12 @@ describe('mergePeople', () => {
     mocks.mockTxClient.personCustomField.deleteMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.importantDate.updateMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.importantDate.deleteMany.mockResolvedValue({ count: 0 });
+    // Default: target has no existing journal references → updateMany still
+    // runs unconditionally, but deleteMany is skipped. Tests that exercise
+    // the collision path override findMany per-test.
+    mocks.mockTxClient.journalEntryPerson.findMany.mockResolvedValue([]);
+    mocks.mockTxClient.journalEntryPerson.updateMany.mockResolvedValue({ count: 0 });
+    mocks.mockTxClient.journalEntryPerson.deleteMany.mockResolvedValue({ count: 0 });
   });
 
   it('returns null when target not found', async () => {
@@ -946,5 +968,49 @@ describe('mergePeople', () => {
   it('does not call personGroup.createMany when no new groups', async () => {
     await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
     expect(mocks.mockTxClient.personGroup.createMany).not.toHaveBeenCalled();
+  });
+
+  it('re-parents source journal entry references to target', async () => {
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    expect(mocks.mockTxClient.journalEntryPerson.updateMany).toHaveBeenCalledTimes(1);
+    expect(mocks.mockTxClient.journalEntryPerson.updateMany).toHaveBeenCalledWith({
+      where: { personId: SOURCE_ID },
+      data: { personId: PERSON_ID },
+    });
+  });
+
+  it('removes source journal references that would collide with target', async () => {
+    mocks.mockTxClient.journalEntryPerson.findMany.mockResolvedValueOnce([
+      { journalEntryId: 'je-1' },
+      { journalEntryId: 'je-2' },
+    ]);
+
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    expect(mocks.mockTxClient.journalEntryPerson.deleteMany).toHaveBeenCalledTimes(1);
+    expect(mocks.mockTxClient.journalEntryPerson.deleteMany).toHaveBeenCalledWith({
+      where: {
+        personId: SOURCE_ID,
+        journalEntryId: { in: ['je-1', 'je-2'] },
+      },
+    });
+    expect(mocks.mockTxClient.journalEntryPerson.updateMany).toHaveBeenCalledTimes(1);
+    expect(mocks.mockTxClient.journalEntryPerson.updateMany).toHaveBeenCalledWith({
+      where: { personId: SOURCE_ID },
+      data: { personId: PERSON_ID },
+    });
+
+    // Order matters: the bare updateMany would throw P2002 on the
+    // (journalEntryId, personId) unique constraint if it ran before delete.
+    const deleteOrder = mocks.mockTxClient.journalEntryPerson.deleteMany.mock.invocationCallOrder[0];
+    const updateOrder = mocks.mockTxClient.journalEntryPerson.updateMany.mock.invocationCallOrder[0];
+    expect(deleteOrder).toBeLessThan(updateOrder);
+  });
+
+  it('does not delete journal references when target has none', async () => {
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    expect(mocks.mockTxClient.journalEntryPerson.deleteMany).not.toHaveBeenCalled();
   });
 });

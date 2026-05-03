@@ -732,6 +732,31 @@ export async function mergePeople(
       });
     }
 
+    // (d2) Re-parent journal entry references; remove any that would collide
+    // with an existing target reference (the join has @@unique on
+    // [journalEntryId, personId]). Without this step, the source's join rows
+    // remain pointing at a soft-deleted person and disappear from the journal
+    // UI, which filters out people with deletedAt set.
+    const targetJournalRefs = await tx.journalEntryPerson.findMany({
+      where: { personId: targetId },
+      select: { journalEntryId: true },
+    });
+    const targetJournalEntryIds = targetJournalRefs.map((r) => r.journalEntryId);
+
+    if (targetJournalEntryIds.length > 0) {
+      await tx.journalEntryPerson.deleteMany({
+        where: {
+          personId: sourceId,
+          journalEntryId: { in: targetJournalEntryIds },
+        },
+      });
+    }
+
+    await tx.journalEntryPerson.updateMany({
+      where: { personId: sourceId },
+      data: { personId: targetId },
+    });
+
     // (e) Delete source's CardDAV mapping
     await tx.cardDavMapping.deleteMany({ where: { personId: sourceId } });
 
