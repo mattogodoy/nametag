@@ -511,6 +511,7 @@ export default function PersonActionsMenu({
             onChange={(id) => handleMergeSelect(id)}
             placeholder={tMerge('searchPerson')}
             nameOrder={nameOrder}
+            nameDisplayFormat={nameDisplayFormat}
           />
         </div>
       </Modal>
