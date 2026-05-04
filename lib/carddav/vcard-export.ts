@@ -16,7 +16,6 @@ import type { PersonWithRelations } from './types';
 import type { UnknownProperty } from './vcard-parser';
 import {
   buildCustomFieldXLines,
-  customFieldXKey,
   filterFreeFormCustomFieldsAgainstTemplates,
 } from '@/lib/customFields/serialize';
 

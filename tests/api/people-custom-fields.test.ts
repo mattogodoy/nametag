@@ -119,17 +119,6 @@ import { CustomFieldValidationError } from '../../lib/customFields/persistence';
 const TEMPLATE_ID = 'c1234567890123456789012a';
 const PERSON_ID = 'p1234567890123456789012a';
 
-const mockSelectTemplate = {
-  id: TEMPLATE_ID,
-  userId: 'user-123',
-  name: 'Diet',
-  slug: 'diet',
-  type: 'SELECT' as const,
-  options: ['vegan', 'omnivore'],
-  order: 0,
-  deletedAt: null,
-};
-
 const mockPerson = {
   id: PERSON_ID,
   name: 'Alice',
