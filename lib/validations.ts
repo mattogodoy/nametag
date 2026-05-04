@@ -369,6 +369,14 @@ export const updateNameOrderSchema = z.object({
   nameOrder: z.enum(['WESTERN', 'EASTERN']),
 });
 
+export const updateNameDisplayFormatSchema = z.object({
+  nameDisplayFormat: z.enum(['FULL', 'NICKNAME_PREFERRED', 'SHORT']),
+});
+
+export const updateGraphDisplaySchema = z.object({
+  graphMode: z.enum(['individuals', 'bubbles']),
+});
+
 // ============================================
 // Import schema
 // ============================================

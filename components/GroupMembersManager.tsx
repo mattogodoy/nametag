@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import PillSelector from './PillSelector';
 import PersonAvatar from './PersonPhoto';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatFullName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 
 interface Person {
   id: string;
@@ -30,6 +30,7 @@ interface GroupMembersManagerProps {
   currentMembers: Member[];
   availablePeople: Person[];
   nameOrder?: 'WESTERN' | 'EASTERN';
+  nameDisplayFormat?: NameDisplayFormat;
 }
 
 export default function GroupMembersManager({
@@ -38,6 +39,7 @@ export default function GroupMembersManager({
   currentMembers,
   availablePeople,
   nameOrder,
+  nameDisplayFormat,
 }: GroupMembersManagerProps) {
   const t = useTranslations('groups.members');
   const router = useRouter();
@@ -60,7 +62,7 @@ export default function GroupMembersManager({
 
   const selectedItems = currentMembers.map((member) => ({
     id: member.id,
-    label: formatFullName(member, nameOrder),
+    label: formatGraphName(member, nameOrder, nameDisplayFormat),
   }));
 
   const handleAdd = async (item: { id: string; label: string }) => {
@@ -103,7 +105,7 @@ export default function GroupMembersManager({
         return;
       }
 
-      toast.success(t('removedSuccess', { name: formatFullName(member, nameOrder), group: groupName }));
+      toast.success(t('removedSuccess', { name: formatGraphName(member, nameOrder, nameDisplayFormat), group: groupName }));
       router.refresh();
     } catch {
       toast.error(t('errorConnection'));

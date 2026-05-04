@@ -43,7 +43,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-  const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_PHOTO_SIZE = 50 * 1024 * 1024; // 50MB
 
   const emailChanged = formData.email !== currentEmail;
 

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { Session } from 'next-auth';
+import { randomUUID } from 'node:crypto';
 import { auth } from './auth';
 import { logger, createModuleLogger } from './logger';
 import { validateOrigin } from '@/lib/csrf';
+import { runWithContext, updateContext } from '@/lib/logging/context';
 
 const httpLog = createModuleLogger('http');
 
@@ -269,34 +271,44 @@ export function withLogging<
 >(
   handler: (...args: Args) => Promise<R>
 ): (...args: Args) => Promise<R> {
-  return async (...args: Args): Promise<R> => {
-    const request = args[0];
-    const start = Date.now();
-    const method = request.method;
-    const path = new URL(request.url).pathname;
-    const ip = getClientIp(request);
+  return (...args: Args): Promise<R> =>
+    runWithContext({ requestId: randomUUID() }, async () => {
+      const request = args[0];
+      const start = Date.now();
+      const method = request.method;
+      const path = new URL(request.url).pathname;
+      const ip = getClientIp(request);
 
-    try {
-      const response = await handler(...args);
-      const durationMs = Date.now() - start;
-
-      httpLog.info(
-        { method, path, status: response.status, durationMs, ip },
-        `${method} ${path} ${response.status}`
-      );
-
-      return response;
-    } catch (error) {
-      const durationMs = Date.now() - start;
-
-      httpLog.error(
-        { method, path, status: 500, durationMs, ip, err: error instanceof Error ? error : new Error(String(error)) },
-        `${method} ${path} 500`
-      );
-
-      throw error;
-    }
-  };
+      try {
+        const response = await handler(...args);
+        httpLog.info(
+          {
+            event: 'http.request.completed',
+            method,
+            path,
+            status: response.status,
+            durationMs: Date.now() - start,
+            ip,
+          },
+          `${method} ${path} ${response.status}`
+        );
+        return response;
+      } catch (error) {
+        httpLog.error(
+          {
+            event: 'http.request.failed',
+            method,
+            path,
+            status: 500,
+            durationMs: Date.now() - start,
+            ip,
+            err: error instanceof Error ? error : new Error(String(error)),
+          },
+          `${method} ${path} 500`
+        );
+        throw error;
+      }
+    });
 }
 
 /**
@@ -330,6 +342,8 @@ export function withAuth(handler: AuthenticatedHandler) {
     if (!session?.user?.id) {
       return apiResponse.unauthorized();
     }
+
+    updateContext({ userId: session.user.id });
 
     return handler(request, session as AuthenticatedSession, context as RouteContext);
   });

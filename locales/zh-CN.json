@@ -109,6 +109,22 @@
       "nameOrderExample": "示例",
       "nameOrderSuccess": "姓名显示顺序已更新",
       "nameOrderError": "更新姓名显示顺序失败",
+      "nameDisplayFormatTitle": "姓名显示格式",
+      "nameDisplayFormatDescription": "选择显示姓名的哪些部分",
+      "nameDisplayFormatFull": "全名",
+      "nameDisplayFormatFullDescription": "显示所有姓名部分，包括昵称",
+      "nameDisplayFormatNicknamePreferred": "优先昵称",
+      "nameDisplayFormatNicknamePreferredDescription": "使用昵称代替名字",
+      "nameDisplayFormatShort": "简短",
+      "nameDisplayFormatShortDescription": "仅显示昵称或名字",
+      "nameDisplayFormatSuccess": "姓名显示格式已更新",
+      "nameDisplayFormatError": "更新姓名显示格式失败",
+      "graphModeTitle": "网络图显示",
+      "graphModeDescription": "如何在仪表盘中显示你的人脉网络图。",
+      "graphModeIndividuals": "始终单独显示",
+      "graphModeBubbles": "始终按组显示",
+      "graphDisplaySuccess": "显示已更新",
+      "graphDisplayError": "无法更新显示",
       "language": {
         "title": "语言",
         "description": "选择您偏好的语言",
@@ -619,8 +635,48 @@
       "filterByGroups": "按分组筛选",
       "filterPlaceholder": "输入以按分组筛选...",
       "noGroupsFound": "未找到匹配的分组",
-      "clusterByGroup": "按分组群集",
-      "recenterGraph": "重新居中图形"
+      "recenterGraph": "重新居中图形",
+      "matchMode": {
+        "any": "任意",
+        "all": "全部",
+        "anyTitle": "匹配任意分组",
+        "allTitle": "匹配全部分组",
+        "ariaLabel": "{title}。点击切换。"
+      },
+      "filterState": {
+        "included": "已包含。点击以排除。",
+        "excluded": "已排除。点击以包含。",
+        "includedWithLabel": "{label}: 已包含。点击以排除。",
+        "excludedWithLabel": "{label}: 已排除。点击以包含。"
+      },
+      "filterAction": {
+        "include": "包含",
+        "exclude": "排除",
+        "remove": "移除",
+        "removeWithLabel": "移除{label}"
+      },
+      "filterHelp": {
+        "ariaLabel": "图筛选帮助",
+        "title": "分组筛选的工作方式",
+        "groupsSection": "包含或排除分组",
+        "groupsDescription": "默认情况下，已选择的分组会被包含（绿色）。点击分组可切换为排除（红色），再次点击可切回。",
+        "includingSection": "分组已包含：",
+        "includingDescription": "来自已包含分组的联系人会显示在图中。",
+        "excludingSection": "分组已排除：",
+        "excludingDescription": "来自已排除分组的联系人不会显示在图中。",
+        "matchModeSection": "筛选模式",
+        "anyMode": "任意（OR）：",
+        "anyModeDescription": "显示满足至少一个已选条件的联系人，也就是属于至少一个已包含分组且不属于任何已排除分组。",
+        "allMode": "全部（AND）：",
+        "allModeDescription": "仅显示满足所有已选条件的联系人，也就是属于所有已包含分组且不属于任何已排除分组。",
+        "example": "朋友",
+        "pillTip": "点击分组名称即可将其包含或排除。",
+        "modeTip": "模式：匹配一个或所有已包含的分组。"
+      },
+      "showAsGroups": "按组显示",
+      "showIndividuals": "单独显示",
+      "collapseAllGroups": "收起所有组",
+      "unsortedBubbleLabel": "未分组"
     }
   },
   "people": {
@@ -890,7 +946,7 @@
           "birthday": "生日",
           "anniversary": "周年纪念",
           "nameday": "命名日",
-          "memorial": "追悼纪念日",
+          "memorial": "忌日",
           "other": "其他"
         }
       },
@@ -1139,7 +1195,7 @@
       "uploadError": "上传照片失败",
       "removeError": "移除照片失败",
       "formatError": "不支持的格式。使用 JPEG、PNG、GIF 或 WebP。",
-      "sizeError": "照片必须小于 10MB",
+      "sizeError": "照片必须小于 50MB",
       "sourceTitle": "添加照片",
       "dropzoneText": "拖放、粘贴或单击以浏览",
       "dropzoneActive": "在此处放置图像",
@@ -1164,6 +1220,7 @@
       "descriptionPlaceholder": "此分组的可选描述",
       "color": "颜色",
       "customColor": "或选择自定义颜色：",
+      "generateRandomColor": "生成随机颜色",
       "addPeople": "添加联系人(可选)",
       "addPeoplePlaceholder": "输入名称以添加联系人...",
       "addPeopleHelp": "您可以立即将联系人添加到此分组，或稍后从分组详情页添加。",

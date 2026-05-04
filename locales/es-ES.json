@@ -109,6 +109,22 @@
       "nameOrderExample": "Ejemplo",
       "nameOrderSuccess": "Orden de nombres actualizado correctamente",
       "nameOrderError": "Error al actualizar el orden de nombres",
+      "nameDisplayFormatTitle": "Formato de nombre",
+      "nameDisplayFormatDescription": "Elige que partes del nombre se muestran",
+      "nameDisplayFormatFull": "Nombre completo",
+      "nameDisplayFormatFullDescription": "Mostrar todas las partes del nombre incluyendo apodo",
+      "nameDisplayFormatNicknamePreferred": "Apodo preferido",
+      "nameDisplayFormatNicknamePreferredDescription": "Usar apodo en lugar del primer nombre",
+      "nameDisplayFormatShort": "Corto",
+      "nameDisplayFormatShortDescription": "Mostrar solo apodo o primer nombre",
+      "nameDisplayFormatSuccess": "Formato de nombre actualizado correctamente",
+      "nameDisplayFormatError": "Error al actualizar el formato de nombre",
+      "graphModeTitle": "Visualización del grafo",
+      "graphModeDescription": "Cómo mostrar tu grafo de red en el panel.",
+      "graphModeIndividuals": "Mostrar siempre personas",
+      "graphModeBubbles": "Mostrar siempre grupos",
+      "graphDisplaySuccess": "Visualización actualizada",
+      "graphDisplayError": "No se pudo actualizar la visualización",
       "language": {
         "title": "Idioma",
         "description": "Elige tu idioma",
@@ -619,8 +635,48 @@
       "filterByGroups": "Filtrar por Grupos",
       "filterPlaceholder": "Escribe para filtrar por grupos...",
       "noGroupsFound": "No se encontraron grupos que coincidan",
-      "clusterByGroup": "Agrupar por grupo",
-      "recenterGraph": "Volver a centrar el gráfico"
+      "recenterGraph": "Volver a centrar el gráfico",
+      "matchMode": {
+        "any": "Cualquiera",
+        "all": "Todo",
+        "anyTitle": "Coincidiendo con cualquier grupo",
+        "allTitle": "Coincidiendo con todos los grupos",
+        "ariaLabel": "{title}. Haz clic para cambiar."
+      },
+      "filterState": {
+        "included": "Incluido. Haz clic para excluir.",
+        "excluded": "Excluido. Haz clic para incluir.",
+        "includedWithLabel": "{label}: Incluido. Haz clic para excluir.",
+        "excludedWithLabel": "{label}: Excluido. Haz clic para incluir."
+      },
+      "filterAction": {
+        "include": "incluir",
+        "exclude": "excluir",
+        "remove": "eliminar",
+        "removeWithLabel": "Eliminar {label}"
+      },
+      "filterHelp": {
+        "ariaLabel": "Ayuda de filtro de gráfico",
+        "title": "Cómo funcionan los filtros de grupos",
+        "groupsSection": "Incluir o excluir grupos",
+        "groupsDescription": "De forma predeterminada, los grupos seleccionados se incluyen (verde). Haz clic en un grupo para cambiarlo a excluido (rojo), y viceversa.",
+        "includingSection": "Grupo incluido:",
+        "includingDescription": "Las personas de los grupos incluidos se muestran en el gráfico.",
+        "excludingSection": "Grupo excluido:",
+        "excludingDescription": "Las personas de los grupos excluidos no se muestran en el gráfico.",
+        "matchModeSection": "Modo de filtro",
+        "anyMode": "Cualquiera (O):",
+        "anyModeDescription": "Muestra a las personas que cumplen al menos una de las condiciones seleccionadas, es decir, pertenecen al menos a un grupo incluido y a ningún grupo excluido.",
+        "allMode": "Todos (Y):",
+        "allModeDescription": "Muestra solo a las personas que cumplen todas las condiciones seleccionadas, es decir, pertenecen a todos los grupos incluidos y a ningún grupo excluido.",
+        "example": "Amigos",
+        "pillTip": "Haz clic en el nombre de un grupo para incluirlo o excluirlo.",
+        "modeTip": "Modo: coincidir con uno o todos los grupos incluidos."
+      },
+      "showAsGroups": "Mostrar como grupos",
+      "showIndividuals": "Mostrar personas",
+      "collapseAllGroups": "Contraer todos los grupos",
+      "unsortedBubbleLabel": "Sin grupo"
     }
   },
   "people": {
@@ -890,7 +946,7 @@
           "birthday": "Cumpleaños",
           "anniversary": "Aniversario",
           "nameday": "Día del santo",
-          "memorial": "Memorial",
+          "memorial": "Fecha de fallecimiento",
           "other": "Otro"
         }
       },
@@ -1139,7 +1195,7 @@
       "uploadError": "Error al subir la foto",
       "removeError": "Error al eliminar la foto",
       "formatError": "Formato no soportado. Usa JPEG, PNG, GIF o WebP.",
-      "sizeError": "La foto debe ser menor de 10MB",
+      "sizeError": "La foto debe ser menor de 50MB",
       "sourceTitle": "Agregar foto",
       "dropzoneText": "Arrastra y suelta, pega o haz clic para buscar",
       "dropzoneActive": "Suelta la imagen aquí",
@@ -1164,6 +1220,7 @@
       "descriptionPlaceholder": "Descripción opcional para este grupo",
       "color": "Color",
       "customColor": "O elige un color personalizado:",
+      "generateRandomColor": "Generar un color aleatorio",
       "addPeople": "Añadir Personas (Opcional)",
       "addPeoplePlaceholder": "Escribe un nombre para añadir personas...",
       "addPeopleHelp": "Puedes añadir personas a este grupo ahora, o hacerlo más tarde desde la página de detalles del grupo.",

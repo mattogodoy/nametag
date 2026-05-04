@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { parseAsLocalDate } from '@/lib/date-format';
 import { getTranslationsForLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
@@ -105,9 +105,10 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
   // Fetch user's nameOrder preference
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { nameOrder: true, language: true },
+    select: { nameOrder: true, language: true, nameDisplayFormat: true },
   });
   const nameOrder = user?.nameOrder;
+  const nameDisplayFormat = user?.nameDisplayFormat;
 
   const [importantDates, peopleWithContactReminders] = await Promise.all([
     prisma.importantDate.findMany({
@@ -177,7 +178,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
       upcomingEvents.push({
         id: `important-${importantDate.id}`,
         personId: importantDate.person.id,
-        personName: formatFullName(importantDate.person, nameOrder),
+        personName: formatGraphName(importantDate.person, nameOrder, nameDisplayFormat),
         type: 'important_date',
         title: getDateDisplayTitle(importantDate, tDates),
         titleKey: null,
@@ -207,7 +208,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         upcomingEvents.push({
           id: `contact-${person.id}`,
           personId: person.id,
-          personName: formatFullName(person, nameOrder),
+          personName: formatGraphName(person, nameOrder, nameDisplayFormat),
           type: 'contact_reminder',
           title: null,
           titleKey: 'timeToCatchUp',

@@ -47,6 +47,9 @@ RUN npx esbuild prisma/seed.production.ts --platform=node --format=cjs --outfile
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Install tzdata so the TZ env var can resolve non-UTC zones
+RUN apk add --no-cache tzdata
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 

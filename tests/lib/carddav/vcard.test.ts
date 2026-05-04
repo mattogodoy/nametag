@@ -671,6 +671,202 @@ END:VCARD`;
     });
   });
 
+  describe('custom TYPE labels - item grouping', () => {
+    function makePerson(overrides: Partial<PersonWithRelations>): PersonWithRelations {
+      return {
+        id: 'test-1',
+        userId: 'user-1',
+        name: 'John',
+        surname: 'Doe',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        prefix: null,
+        suffix: null,
+        uid: 'test-uid',
+        organization: null,
+        jobTitle: null,
+        photo: null,
+        gender: null,
+        anniversary: null,
+        lastContact: null,
+        notes: null,
+        relationshipToUserId: null,
+        contactReminderEnabled: false,
+        contactReminderInterval: null,
+        contactReminderIntervalUnit: null,
+        lastContactReminderSent: null,
+        cardDavSyncEnabled: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        phoneNumbers: [],
+        emails: [],
+        addresses: [],
+        urls: [],
+        imHandles: [],
+        locations: [],
+        customFields: [],
+        importantDates: [],
+        relationshipsFrom: [],
+        groups: [],
+        ...overrides,
+      };
+    }
+
+    it('emits EMAIL with TYPE= for standard labels (home, work, other)', () => {
+      const person = makePerson({
+        emails: [
+          { id: 'e1', personId: 'test-1', type: 'home', email: 'a@x.com', createdAt: new Date() },
+          { id: 'e2', personId: 'test-1', type: 'work', email: 'b@x.com', createdAt: new Date() },
+          { id: 'e3', personId: 'test-1', type: 'other', email: 'c@x.com', createdAt: new Date() },
+        ],
+      });
+      const vcard = personToVCard(person);
+      expect(vcard).toContain('EMAIL;TYPE=HOME:a@x.com');
+      expect(vcard).toContain('EMAIL;TYPE=WORK:b@x.com');
+      expect(vcard).toContain('EMAIL;TYPE=OTHER:c@x.com');
+      expect(vcard).not.toMatch(/item\d+\.EMAIL:/);
+    });
+
+    it('emits non-standard EMAIL labels via item grouping + X-ABLabel', () => {
+      const person = makePerson({
+        emails: [
+          { id: 'e1', personId: 'test-1', type: 'Personal', email: 'matt@example.com', createdAt: new Date() },
+        ],
+      });
+      const vcard = personToVCard(person);
+      expect(vcard).not.toContain('EMAIL;TYPE=PERSONAL');
+      expect(vcard).toMatch(/item\d+\.EMAIL:matt@example\.com/);
+      expect(vcard).toMatch(/item\d+\.X-ABLabel:Personal/);
+    });
+
+    it('emits TEL with TYPE= for standard labels (cell, mobile→cell, home, work, fax)', () => {
+      const person = makePerson({
+        phoneNumbers: [
+          { id: 'p1', personId: 'test-1', type: 'cell', number: '+1', createdAt: new Date() },
+          { id: 'p2', personId: 'test-1', type: 'mobile', number: '+2', createdAt: new Date() },
+          { id: 'p3', personId: 'test-1', type: 'home', number: '+3', createdAt: new Date() },
+          { id: 'p4', personId: 'test-1', type: 'fax', number: '+4', createdAt: new Date() },
+        ],
+      });
+      const vcard = personToVCard(person);
+      expect(vcard).toContain('TEL;TYPE=CELL:+1');
+      expect(vcard).toContain('TEL;TYPE=CELL:+2');
+      expect(vcard).toContain('TEL;TYPE=HOME:+3');
+      expect(vcard).toContain('TEL;TYPE=FAX:+4');
+      expect(vcard).not.toMatch(/item\d+\.TEL:/);
+    });
+
+    it('emits non-standard TEL labels via item grouping + X-ABLabel', () => {
+      const person = makePerson({
+        phoneNumbers: [
+          { id: 'p1', personId: 'test-1', type: 'school', number: '+15555551212', createdAt: new Date() },
+        ],
+      });
+      const vcard = personToVCard(person);
+      expect(vcard).not.toContain('TEL;TYPE=SCHOOL');
+      expect(vcard).toMatch(/item\d+\.TEL:\+15555551212/);
+      expect(vcard).toMatch(/item\d+\.X-ABLabel:school/);
+    });
+
+    it('emits ADR with TYPE= for standard labels', () => {
+      const person = makePerson({
+        addresses: [
+          {
+            id: 'a1',
+            personId: 'test-1',
+            type: 'home',
+            streetLine1: '1 Main St',
+            streetLine2: null,
+            locality: 'Town',
+            region: 'ST',
+            postalCode: '00000',
+            country: 'US',
+            createdAt: new Date(),
+          },
+        ],
+      });
+      const vcard = personToVCard(person);
+      expect(vcard).toContain('ADR;TYPE=HOME:;;1 Main St;Town;ST;00000;US');
+      expect(vcard).not.toMatch(/item\d+\.ADR:/);
+    });
+
+    it('emits non-standard ADR labels via item grouping + X-ABLabel, preserving structured value', () => {
+      const person = makePerson({
+        addresses: [
+          {
+            id: 'a1',
+            personId: 'test-1',
+            type: 'summer',
+            streetLine1: '1 Beach Rd',
+            streetLine2: null,
+            locality: 'Coast',
+            region: 'ST',
+            postalCode: '11111',
+            country: 'US',
+            createdAt: new Date(),
+          },
+        ],
+      });
+      const vcard = personToVCard(person);
+      expect(vcard).not.toContain('ADR;TYPE=SUMMER');
+      expect(vcard).toMatch(/item\d+\.ADR:;;1 Beach Rd;Coast;ST;11111;US/);
+      expect(vcard).toMatch(/item\d+\.X-ABLabel:summer/);
+    });
+
+    it('round-trips a custom EMAIL label through export and parse', () => {
+      const person = makePerson({
+        emails: [
+          { id: 'e1', personId: 'test-1', type: 'Personal', email: 'matt@example.com', createdAt: new Date() },
+        ],
+      });
+      const vcard = personToVCard(person);
+      const parsed = vCardToPerson(vcard);
+      expect(parsed.emails).toHaveLength(1);
+      expect(parsed.emails[0].email).toBe('matt@example.com');
+      expect(parsed.emails[0].type).toBe('Personal');
+    });
+
+    it('round-trips a custom TEL label through export and parse', () => {
+      const person = makePerson({
+        phoneNumbers: [
+          { id: 'p1', personId: 'test-1', type: 'School', number: '+15555551212', createdAt: new Date() },
+        ],
+      });
+      const vcard = personToVCard(person);
+      const parsed = vCardToPerson(vcard);
+      expect(parsed.phoneNumbers).toHaveLength(1);
+      expect(parsed.phoneNumbers[0].number).toBe('+15555551212');
+      expect(parsed.phoneNumbers[0].type).toBe('School');
+    });
+
+    it('round-trips a custom ADR label through export and parse', () => {
+      const person = makePerson({
+        addresses: [
+          {
+            id: 'a1',
+            personId: 'test-1',
+            type: 'Summer',
+            streetLine1: '1 Beach Rd',
+            streetLine2: null,
+            locality: 'Coast',
+            region: 'ST',
+            postalCode: '11111',
+            country: 'US',
+            createdAt: new Date(),
+          },
+        ],
+      });
+      const vcard = personToVCard(person);
+      const parsed = vCardToPerson(vcard);
+      expect(parsed.addresses).toHaveLength(1);
+      expect(parsed.addresses[0].type).toBe('Summer');
+      expect(parsed.addresses[0].streetLine1).toBe('1 Beach Rd');
+      expect(parsed.addresses[0].locality).toBe('Coast');
+    });
+  });
+
   describe('preserved properties round-trip', () => {
     it('should include preservedProperties in generated vCard', () => {
       const person: PersonWithRelations = {

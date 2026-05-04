@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
   // Production optimization
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
 
+  // Next 16's default proxyClientMaxBodySize is 10MB. Bodies larger than the
+  // limit are silently truncated, which breaks multipart parsing for photo
+  // uploads from high-resolution sources. Raise to match our 50MB upload cap.
+  experimental: {
+    proxyClientMaxBodySize: '50mb',
+  },
+
   // Logging configuration
   logging: {
     fetches: {

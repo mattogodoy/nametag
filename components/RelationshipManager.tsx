@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import PersonAutocomplete from './PersonAutocomplete';
-import { formatFullName, formatGraphName } from '@/lib/nameUtils';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { Button } from './ui/Button';
 import PersonAvatar from './PersonPhoto';
 
@@ -50,6 +50,7 @@ interface RelationshipManagerProps {
   };
   hasUserRelationship?: boolean;
   nameOrder?: 'WESTERN' | 'EASTERN';
+  nameDisplayFormat?: NameDisplayFormat;
 }
 
 export default function RelationshipManager({
@@ -61,6 +62,7 @@ export default function RelationshipManager({
   currentUser,
   hasUserRelationship = false,
   nameOrder,
+  nameDisplayFormat,
 }: RelationshipManagerProps) {
   const t = useTranslations('people');
   const tCommon = useTranslations('common');
@@ -154,7 +156,7 @@ export default function RelationshipManager({
       }
 
       const relatedPerson = peopleWithUser.find(p => p.id === formData.relatedPersonId);
-      toast.success(`Relationship with ${formatFullName(relatedPerson!, nameOrder)} has been added`);
+      toast.success(`Relationship with ${formatGraphName(relatedPerson!, nameOrder, nameDisplayFormat)} has been added`);
 
       setShowAddModal(false);
       setFormData({ relatedPersonId: '', relationshipTypeId: defaultTypeId, notes: '' });
@@ -191,7 +193,7 @@ export default function RelationshipManager({
         return;
       }
 
-      toast.success(`Relationship with ${formatFullName(selectedRelationship.person, nameOrder)} has been updated`);
+      toast.success(`Relationship with ${formatGraphName(selectedRelationship.person, nameOrder, nameDisplayFormat)} has been updated`);
 
       setShowEditModal(false);
       setSelectedRelationship(null);
@@ -285,12 +287,12 @@ export default function RelationshipManager({
                   {t.rich('isRelationshipOf', {
                     name: () => (
                       <span className="inline-flex items-center gap-1.5">
-                        <PersonAvatar personId={rel.personId} name={formatGraphName(rel.person, nameOrder)} photo={rel.person.photo} size={24} />
+                        <PersonAvatar personId={rel.personId} name={formatGraphName(rel.person, nameOrder, nameDisplayFormat)} photo={rel.person.photo} size={24} />
                         <Link
                           href={`/people/${rel.personId}`}
                           className="text-primary hover:underline font-medium"
                         >
-                          {formatGraphName(rel.person, nameOrder)}
+                          {formatGraphName(rel.person, nameOrder, nameDisplayFormat)}
                         </Link>
                       </span>
                     ),
@@ -369,6 +371,7 @@ export default function RelationshipManager({
                   onCreateNew={handleCreateNewPerson}
                   highlightPersonId={currentUser?.id}
                   nameOrder={nameOrder}
+                  nameDisplayFormat={nameDisplayFormat}
                 />
               </div>
               <div>
@@ -417,7 +420,7 @@ export default function RelationshipManager({
                       : null;
 
                     const nameDisplay = selectedPerson
-                      ? formatFullName(selectedPerson, nameOrder)
+                      ? formatGraphName(selectedPerson, nameOrder, nameDisplayFormat)
                       : t('formPreviewSelectPerson');
                     const typeDisplay = selectedType
                       ? selectedType.label
@@ -463,7 +466,7 @@ export default function RelationshipManager({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-relationship-title">
           <div className="bg-surface rounded-lg max-w-md w-full p-6">
             <h3 id="edit-relationship-title" className="text-lg font-semibold text-foreground mb-4">
-              {t('editRelationship', { name: formatFullName(selectedRelationship.person, nameOrder) })}
+              {t('editRelationship', { name: formatGraphName(selectedRelationship.person, nameOrder, nameDisplayFormat) })}
             </h3>
             <form onSubmit={handleEdit} className="space-y-4">
               {error && (
@@ -532,7 +535,7 @@ export default function RelationshipManager({
               {t('deleteRelationship')}
             </h3>
             <p id="delete-relationship-desc" className="text-muted mb-6">
-              {t('deleteRelationshipConfirm', { name: formatFullName(selectedRelationship.person, nameOrder) })}
+              {t('deleteRelationshipConfirm', { name: formatGraphName(selectedRelationship.person, nameOrder, nameDisplayFormat) })}
             </p>
 
             {error && (

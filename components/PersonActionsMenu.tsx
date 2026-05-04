@@ -14,6 +14,7 @@ import Modal from '@/components/ui/Modal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import PersonAutocomplete from '@/components/PersonAutocomplete';
 import { DuplicateCandidateDisplay } from '@/components/DuplicatesList';
+import type { NameDisplayFormat } from '@/lib/nameUtils';
 
 interface PersonForSearch {
   id: string;
@@ -29,6 +30,7 @@ interface PersonActionsMenuProps {
   hasCardDavSync: boolean;
   allPeople?: PersonForSearch[];
   nameOrder?: 'WESTERN' | 'EASTERN';
+  nameDisplayFormat?: NameDisplayFormat;
 }
 
 interface Orphan {
@@ -43,6 +45,7 @@ export default function PersonActionsMenu({
   hasCardDavSync,
   allPeople = [],
   nameOrder,
+  nameDisplayFormat,
 }: PersonActionsMenuProps) {
   const t = useTranslations('people');
   const tDup = useTranslations('people.duplicates');

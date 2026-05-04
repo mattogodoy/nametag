@@ -1,6 +1,7 @@
 import {
   updateProfileSchema, updatePasswordSchema,
   updateThemeSchema, updateDateFormatSchema, updateNameOrderSchema,
+  updateNameDisplayFormatSchema, updateGraphDisplaySchema,
   importDataSchema,
 } from '../validations';
 import { zodBody, jsonBody, jsonResponse, ref400, ref401, refMessage, resp } from './helpers';
@@ -84,6 +85,23 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         },
       },
     },
+    '/api/user/graph-display': {
+      put: {
+        tags: ['User Settings'],
+        summary: 'Update network-graph display preferences',
+        description: 'Updates the user\'s network-graph display mode (individuals or bubbles).',
+        security: [{ session: [] }],
+        requestBody: zodBody(updateGraphDisplaySchema),
+        responses: {
+          '200': jsonResponse('Graph display settings updated', {
+            type: 'object',
+            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+          }),
+          '400': ref400(),
+          '401': ref401(),
+        },
+      },
+    },
     '/api/user/name-order': {
       put: {
         tags: ['User Settings'],
@@ -92,6 +110,21 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         requestBody: zodBody(updateNameOrderSchema),
         responses: {
           '200': jsonResponse('Name order updated', {
+            type: 'object',
+            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+          }),
+          '401': ref401(),
+        },
+      },
+    },
+    '/api/user/name-display-format': {
+      put: {
+        tags: ['User Settings'],
+        summary: 'Update name display format preference',
+        security: [{ session: [] }],
+        requestBody: zodBody(updateNameDisplayFormatSchema),
+        responses: {
+          '200': jsonResponse('Name display format updated', {
             type: 'object',
             properties: { user: { $ref: '#/components/schemas/UserProfile' } },
           }),

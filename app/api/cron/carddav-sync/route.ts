@@ -1,137 +1,111 @@
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { bidirectionalSync } from '@/lib/carddav/sync';
 import { env } from '@/lib/env';
-import { handleApiError, withLogging } from '@/lib/api-utils';
-import { logger, securityLogger } from '@/lib/logger';
-import { getClientIp } from '@/lib/api-utils';
+import { handleApiError, withLogging, getClientIp } from '@/lib/api-utils';
+import { createModuleLogger, securityLogger } from '@/lib/logger';
+import { runWithContext, updateContext } from '@/lib/logging/context';
 
-// This endpoint should be called by a cron job
+const log = createModuleLogger('cron-carddav');
+
 export const GET = withLogging(async function GET(request: Request) {
   const startTime = Date.now();
+  const jobId = `carddav-sync:${randomUUID()}`;
+  updateContext({ jobId });
+
   let cronLogId: string | null = null;
 
   try {
-    // Verify the cron secret
     const authHeader = request.headers.get('authorization');
-
     if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
-      securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', {
-        endpoint: 'carddav-sync',
-      });
+      securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', { endpoint: 'carddav-sync' });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Log cron job start
     const cronLog = await prisma.cronJobLog.create({
-      data: {
-        jobName: 'carddav-sync',
-        status: 'started',
-      },
+      data: { jobName: 'carddav-sync', status: 'started' },
     });
     cronLogId = cronLog.id;
 
     const now = new Date();
-
-    // Find all CardDAV connections where sync is enabled
     const connections = await prisma.cardDavConnection.findMany({
-      where: {
-        syncEnabled: true,
-      },
-      select: {
-        id: true,
-        userId: true,
-        autoSyncInterval: true,
-        lastSyncAt: true,
-      },
+      where: { syncEnabled: true },
+      select: { id: true, userId: true, autoSyncInterval: true, lastSyncAt: true },
     });
+
+    log.info({ event: 'cron.carddav.started', totalUsers: connections.length });
 
     let syncedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
-    // Process each connection with rate limiting
     for (const connection of connections) {
-      try {
-        // Check if enough time has passed since last sync
-        const shouldSync = shouldSyncNow(
-          connection.lastSyncAt,
-          connection.autoSyncInterval,
-          now
-        );
+      const shouldSync = shouldSyncNow(connection.lastSyncAt, connection.autoSyncInterval, now);
+      if (!shouldSync) {
+        skippedCount++;
+        continue;
+      }
 
-        if (!shouldSync) {
-          skippedCount++;
-          continue;
-        }
+      await runWithContext(
+        { requestId: randomUUID(), userId: connection.userId, jobId, connectionId: connection.id },
+        async () => {
+          try {
+            log.info({ event: 'cron.carddav.iteration.started' }, 'Starting background sync');
+            const result = await bidirectionalSync(connection.userId);
+            log.info(
+              {
+                event: 'cron.carddav.iteration.completed',
+                imported: result.imported,
+                exported: result.exported,
+                updatedLocally: result.updatedLocally,
+                updatedRemotely: result.updatedRemotely,
+                conflicts: result.conflicts,
+                errors: result.errors,
+              },
+              'Background sync completed',
+            );
+            syncedCount++;
+          } catch (error) {
+            errorCount++;
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            errors.push(`User ${connection.userId}: ${errorMessage}`);
+            log.error(
+              {
+                event: 'cron.carddav.iteration.failed',
+                err: error instanceof Error ? error : new Error(String(error)),
+              },
+              'Background sync failed',
+            );
+            await prisma.cardDavConnection.update({
+              where: { id: connection.id },
+              data: { lastError: errorMessage, lastErrorAt: now },
+            });
+          }
+        },
+      );
 
-        // Perform bidirectional sync
-        logger.info({
-          userId: connection.userId,
-          connectionId: connection.id,
-        }, 'Starting background sync');
-
-        const result = await bidirectionalSync(connection.userId);
-
-        logger.info({
-          userId: connection.userId,
-          connectionId: connection.id,
-          imported: result.imported,
-          exported: result.exported,
-          updatedLocally: result.updatedLocally,
-          updatedRemotely: result.updatedRemotely,
-          conflicts: result.conflicts,
-          errors: result.errors,
-        }, 'Background sync completed');
-
-        syncedCount++;
-
-        // Small delay between users to avoid overwhelming servers
-        // Only delay if there are more connections to process
-        if (connections.indexOf(connection) < connections.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-      } catch (error) {
-        errorCount++;
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        errors.push(`User ${connection.userId}: ${errorMessage}`);
-
-        logger.error({
-          userId: connection.userId,
-          connectionId: connection.id,
-          errorMessage,
-        }, 'Background sync failed');
-
-        // Update connection with error
-        await prisma.cardDavConnection.update({
-          where: { id: connection.id },
-          data: {
-            lastError: errorMessage,
-            lastErrorAt: now,
-          },
-        });
-
-        // Continue with next user even if this one failed
+      if (connections.indexOf(connection) < connections.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
 
-    logger.info({
-      total: connections.length,
+    log.info({
+      event: 'cron.carddav.finished',
+      totalUsers: connections.length,
       synced: syncedCount,
       skipped: skippedCount,
       errors: errorCount,
-    }, 'Background CardDAV sync completed');
+      durationMs: Date.now() - startTime,
+    });
 
-    // Log cron job completion
     if (cronLogId) {
-      const duration = Date.now() - startTime;
       await prisma.cronJobLog.update({
         where: { id: cronLogId },
         data: {
           status: errorCount > 0 ? 'completed_with_errors' : 'completed',
-          duration,
+          duration: Date.now() - startTime,
           message: `Synced ${syncedCount} users, skipped ${skippedCount}, ${errorCount} errors`,
         },
       });
@@ -146,14 +120,12 @@ export const GET = withLogging(async function GET(request: Request) {
       errorMessages: errors,
     });
   } catch (error) {
-    // Log cron job failure
     if (cronLogId) {
-      const duration = Date.now() - startTime;
       await prisma.cronJobLog.update({
         where: { id: cronLogId },
         data: {
           status: 'failed',
-          duration,
+          duration: Date.now() - startTime,
           message: error instanceof Error ? error.message : 'Unknown error',
         },
       });
@@ -162,22 +134,8 @@ export const GET = withLogging(async function GET(request: Request) {
   }
 });
 
-/**
- * Determine if sync should run now based on last sync time and interval
- */
-function shouldSyncNow(
-  lastSyncAt: Date | null,
-  autoSyncInterval: number,
-  now: Date
-): boolean {
-  // If never synced, sync now
-  if (!lastSyncAt) {
-    return true;
-  }
-
-  // Calculate time since last sync in seconds
+function shouldSyncNow(lastSyncAt: Date | null, autoSyncInterval: number, now: Date): boolean {
+  if (!lastSyncAt) return true;
   const timeSinceLastSync = (now.getTime() - lastSyncAt.getTime()) / 1000;
-
-  // Sync if interval has passed
   return timeSinceLastSync >= autoSyncInterval;
 }

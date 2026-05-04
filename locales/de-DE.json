@@ -109,6 +109,22 @@
       "nameOrderExample": "Beispiel",
       "nameOrderSuccess": "Namensreihenfolge erfolgreich aktualisiert",
       "nameOrderError": "Fehler beim Aktualisieren der Namensreihenfolge",
+      "nameDisplayFormatTitle": "Namensanzeigeformat",
+      "nameDisplayFormatDescription": "Waehle welche Namensteile angezeigt werden",
+      "nameDisplayFormatFull": "Vollstaendiger Name",
+      "nameDisplayFormatFullDescription": "Alle Namensteile einschliesslich Spitzname anzeigen",
+      "nameDisplayFormatNicknamePreferred": "Spitzname bevorzugt",
+      "nameDisplayFormatNicknamePreferredDescription": "Spitzname anstelle des Vornamens verwenden",
+      "nameDisplayFormatShort": "Kurz",
+      "nameDisplayFormatShortDescription": "Nur Spitzname oder Vorname anzeigen",
+      "nameDisplayFormatSuccess": "Namensanzeigeformat erfolgreich aktualisiert",
+      "nameDisplayFormatError": "Fehler beim Aktualisieren des Namensanzeigeformats",
+      "graphModeTitle": "Netzwerk-Grafikanzeige",
+      "graphModeDescription": "Wie dein Netzwerk-Graph auf dem Dashboard angezeigt wird.",
+      "graphModeIndividuals": "Immer einzeln anzeigen",
+      "graphModeBubbles": "Immer als Gruppen anzeigen",
+      "graphDisplaySuccess": "Anzeige aktualisiert",
+      "graphDisplayError": "Anzeige konnte nicht aktualisiert werden",
       "language": {
         "title": "Sprache",
         "description": "Wähle deine bevorzugte Sprache",
@@ -619,8 +635,48 @@
       "filterByGroups": "Nach Gruppen filtern",
       "filterPlaceholder": "Tippen, um nach Gruppen zu filtern...",
       "noGroupsFound": "Keine Gruppen gefunden passend zu",
-      "clusterByGroup": "Nach Gruppe clustern",
-      "recenterGraph": "Graph neu zentrieren"
+      "recenterGraph": "Graph neu zentrieren",
+      "matchMode": {
+        "any": "Beliebig",
+        "all": "Alle",
+        "anyTitle": "Übereinstimmung mit beliebiger Gruppe",
+        "allTitle": "Übereinstimmung mit allen Gruppen",
+        "ariaLabel": "{title}. Klicken zum Wechseln."
+      },
+      "filterState": {
+        "included": "Eingeschlossen. Klicken zum Ausschließen.",
+        "excluded": "Ausgeschlossen. Klicken zum Einschließen.",
+        "includedWithLabel": "{label}: Eingeschlossen. Klicken zum Ausschließen.",
+        "excludedWithLabel": "{label}: Ausgeschlossen. Klicken zum Einschließen."
+      },
+      "filterAction": {
+        "include": "einschließen",
+        "exclude": "ausschließen",
+        "remove": "entfernen",
+        "removeWithLabel": "{label} entfernen"
+      },
+      "filterHelp": {
+        "ariaLabel": "Hilfe zum Graph-Filter",
+        "title": "Funktionsweise Gruppenfilter",
+        "groupsSection": "Gruppen ein-/ausschließen",
+        "groupsDescription": "Standardmäßig sind ausgewählte Gruppen eingeschlossen (grün). Mit einem Klick auf die Gruppe kann der Status zu ausschließen (rot) geändert werden und umgekehrt.",
+        "includingSection": "Gruppe eingeschlossen:",
+        "includingDescription": "Personen aus eingeschlossenen Gruppen werden im Graphen angezeigt.",
+        "excludingSection": "Gruppe ausgeschlossen:",
+        "excludingDescription": "Personen aus ausgeschlossenen Gruppen werden nicht im Graphen angezeigt.",
+        "matchModeSection": "Filtermodus",
+        "anyMode": "Beliebig (ODER):",
+        "anyModeDescription": "Es werden Personen angezeigt, die mindestens einer der ausgewählten Bedingungen entsprechen, also mindestens einer inkludierten Gruppe und keiner exkludierten Gruppe angehören.",
+        "allMode": "Alle (UND):",
+        "allModeDescription": "Es werden nur Personen angezeigt, die alle ausgewählten Bedingungen erfüllen, also allen inkludierten Gruppen und keiner exkludierten Gruppen angehören.",
+        "example": "Freunde",
+        "pillTip": "Auf einen Gruppennamen klicken, um ihn ein- oder auszuschließen.",
+        "modeTip": "Modus: eine oder alle ausgewählten Gruppen abgleichen."
+      },
+      "showAsGroups": "Als Gruppen anzeigen",
+      "showIndividuals": "Einzeln anzeigen",
+      "collapseAllGroups": "Alle Gruppen einklappen",
+      "unsortedBubbleLabel": "Ohne Gruppe"
     }
   },
   "people": {
@@ -890,7 +946,7 @@
           "birthday": "Geburtstag",
           "anniversary": "Jahrestag",
           "nameday": "Namenstag",
-          "memorial": "Gedenktag",
+          "memorial": "Todestag",
           "other": "Andere"
         }
       },
@@ -1139,7 +1195,7 @@
       "uploadError": "Foto konnte nicht hochgeladen werden",
       "removeError": "Foto konnte nicht entfernt werden",
       "formatError": "Format nicht unterstützt. Verwende JPEG, PNG, GIF oder WebP.",
-      "sizeError": "Das Foto darf maximal 10 MB groß sein",
+      "sizeError": "Das Foto darf maximal 50 MB groß sein",
       "sourceTitle": "Foto hinzufügen",
       "dropzoneText": "Ziehen und ablegen, einfügen oder klicken zum Durchsuchen",
       "dropzoneActive": "Bild hier ablegen",
@@ -1164,6 +1220,7 @@
       "descriptionPlaceholder": "Optionale Beschreibung für diese Gruppe",
       "color": "Farbe",
       "customColor": "Oder wähle eine benutzerdefinierte Farbe:",
+      "generateRandomColor": "Eine zufällige Farbe generieren",
       "addPeople": "Personen hinzufügen (optional)",
       "addPeoplePlaceholder": "Tippe einen Namen, um Personen hinzuzufügen...",
       "addPeopleHelp": "Du kannst Personen jetzt hinzufügen oder später auf der Gruppendetailseite.",

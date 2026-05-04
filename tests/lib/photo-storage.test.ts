@@ -119,9 +119,9 @@ describe('processPhoto', () => {
     await expect(processPhoto(textBuf)).rejects.toThrow('Unsupported image format');
   });
 
-  it('should reject buffers exceeding 10MB', async () => {
-    // Create a buffer with JPEG magic bytes but over 10MB
-    const oversized = Buffer.alloc(10 * 1024 * 1024 + 1);
+  it('should reject buffers exceeding 50MB', async () => {
+    // Create a buffer with JPEG magic bytes but over 50MB
+    const oversized = Buffer.alloc(50 * 1024 * 1024 + 1);
     oversized[0] = 0xFF;
     oversized[1] = 0xD8;
     oversized[2] = 0xFF;

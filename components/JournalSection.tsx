@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 
 interface JournalSectionProps {
   personId: string;
@@ -19,6 +20,7 @@ interface JournalSectionProps {
     }>;
   } | null;
   nameOrder: string | null | undefined;
+  nameDisplayFormat?: NameDisplayFormat;
   locale: string;
 }
 
@@ -38,20 +40,11 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-function formatPersonName(
-  person: { name: string; surname: string | null },
-  nameOrder: string | null | undefined
-): string {
-  if (nameOrder === 'EASTERN') {
-    return [person.surname, person.name].filter(Boolean).join(' ');
-  }
-  return [person.name, person.surname].filter(Boolean).join(' ');
-}
-
 export default function JournalSection({
   personId,
   latestEntry,
   nameOrder,
+  nameDisplayFormat,
   locale,
 }: JournalSectionProps) {
   const t = useTranslations('journal.personSection');
@@ -103,7 +96,7 @@ export default function JournalSection({
                     key={p.person.id}
                     className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full"
                   >
-                    {formatPersonName(p.person, nameOrder)}
+                    {formatGraphName(p.person, nameOrder as 'WESTERN' | 'EASTERN' | undefined, nameDisplayFormat)}
                   </span>
                 ))}
             </div>

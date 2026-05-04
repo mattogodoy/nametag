@@ -1,6 +1,6 @@
 {
   "name": "nametag",
-  "version": "0.42.2",
+  "version": "0.44.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -60,6 +60,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/d3-drag": "^3.0.7",
     "@types/d3-force": "^3.0.10",
+    "@types/d3-quadtree": "^3.0.6",
     "@types/d3-selection": "^3.0.11",
     "@types/d3-transition": "^3.0.9",
     "@types/d3-zoom": "^3.0.8",

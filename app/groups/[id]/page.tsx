@@ -67,10 +67,11 @@ export default async function GroupDetailsPage({
     }),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { nameOrder: true },
+      select: { nameOrder: true, nameDisplayFormat: true },
     }),
   ]);
   const nameOrder = user?.nameOrder || 'WESTERN';
+  const nameDisplayFormat = user?.nameDisplayFormat || 'FULL';
 
   if (!group) {
     notFound();
@@ -137,6 +138,7 @@ export default async function GroupDetailsPage({
                 currentMembers={currentMembers}
                 availablePeople={allPeople}
                 nameOrder={nameOrder}
+                nameDisplayFormat={nameDisplayFormat}
               />
             </div>
           </div>

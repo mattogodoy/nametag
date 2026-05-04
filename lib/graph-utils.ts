@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { formatGraphName } from './nameUtils';
+import { formatGraphName, type NameDisplayFormat } from './nameUtils';
 
 export interface GraphNode {
   id: string;
@@ -127,7 +127,7 @@ export function inverseRelationshipToGraphEdge(
 }
 
 type Group = Prisma.GroupGetPayload<{
-  select: { name: true; color: true };
+  select: { id: true; name: true; color: true };
 }>;
 
 interface Person
@@ -137,11 +137,16 @@ interface Person
   groups: { group: Group }[];
 }
 
-export function personToGraphNode(person: Person, isCenter = false, nameOrder?: 'WESTERN' | 'EASTERN'): GraphNode {
+export function personToGraphNode(
+  person: Person,
+  isCenter = false,
+  nameOrder?: 'WESTERN' | 'EASTERN',
+  nameDisplayFormat?: NameDisplayFormat
+): GraphNode {
   return {
     id: person.id,
-    label: formatGraphName(person, nameOrder),
-    groups: person.groups.map((pg) => pg.group.name),
+    label: formatGraphName(person, nameOrder, nameDisplayFormat),
+    groups: person.groups.map((pg) => pg.group.id),
     colors: person.groups.map((pg) => pg.group.color || '#3B82F6'),
     isCenter,
     photo: person.photo,

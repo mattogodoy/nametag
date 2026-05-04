@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import Navigation from '@/components/Navigation';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { Button } from '@/components/ui/Button';
 import DeleteJournalEntryButton from '@/components/DeleteJournalEntryButton';
 
@@ -48,7 +48,7 @@ export default async function JournalEntryDetailPage({
     }),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { nameOrder: true, language: true, dateFormat: true },
+      select: { nameOrder: true, nameDisplayFormat: true, language: true, dateFormat: true },
     }),
   ]);
 
@@ -57,6 +57,7 @@ export default async function JournalEntryDetailPage({
   }
 
   const nameOrder = user?.nameOrder ?? 'WESTERN';
+  const nameDisplayFormat = (user?.nameDisplayFormat || 'FULL') as NameDisplayFormat;
   const locale = user?.language ?? 'en';
 
   const formattedDate = entry.date.toLocaleDateString(locale, {
@@ -114,7 +115,7 @@ export default async function JournalEntryDetailPage({
                       href={`/people/${person.id}`}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
                     >
-                      {formatFullName(person, nameOrder)}
+                      {formatGraphName(person, nameOrder, nameDisplayFormat)}
                     </Link>
                   ))}
                 </div>

@@ -1,630 +1,783 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { select } from 'd3-selection';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   forceSimulation, forceLink, forceManyBody, forceCenter,
-  forceCollide, forceX, forceY,
-  type SimulationNodeDatum,
+  forceCollide, forceX, forceY, type Simulation,
 } from 'd3-force';
+import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomTransform, type ZoomBehavior } from 'd3-zoom';
-import { drag, type D3DragEvent } from 'd3-drag';
-import 'd3-transition';
+import { drag } from 'd3-drag';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import PillSelector from './PillSelector';
+import { GraphFilterGroupPill } from './GraphFilterPills';
+import { paintFrame } from './graph/canvas-renderer';
+import { getLODTier } from './graph/lod';
+import { getCachedPhoto, loadPhoto } from './graph/photo-cache';
+import { buildQuadtree, findNodeAtPoint, type NodeQuadtree } from './graph/hit-test';
+import { diffSimulationData } from './graph/diff-simulation';
+import { resolveGraphMode } from './graph/mode-resolution';
+import { buildSimulationNodes, type RawGraphPerson } from './graph/bubble-composition';
+import { buildHubAndSpokeEdges } from './graph/edge-composition';
+import { UNGROUPED_SYNTHETIC_ID } from './graph/simulation-types';
+import type { SimulationNode, SimulationEdge } from './graph/simulation-types';
 
-interface GraphNode extends SimulationNodeDatum {
-  id: string;
-  label: string;
-  groups: string[];
-  colors: string[];
-  isCenter: boolean;
-  photo?: string | null;
-}
-
-interface GraphEdge {
-  source: string | GraphNode;
-  target: string | GraphNode;
-  type: string;
-  color: string;
-  sourceLabel?: string;
-  targetLabel?: string;
-}
-
-interface Group {
-  id: string;
-  name: string;
-  color: string | null;
-}
+// Props interface — unchanged from pre-rewrite file
+interface Group { id: string; name: string; color: string | null; }
+type IncludeMode = 'or' | 'and';
+type GroupFilterItem = { id: string; label: string; color: string | null; isNegative: boolean; };
 
 interface UnifiedNetworkGraphProps {
-  // Data source: either fetch from API or use provided data
   apiEndpoint?: string;
-
-  // For dashboard mode with groups filter
   groups?: Group[];
-
-  // For controlling center node behavior
-  centerNodeId?: string; // ID of the center node (e.g., user or person)
-  centerNodeNonClickable?: boolean; // If true, center node won't navigate
-
-  // Force simulation parameters
+  centerNodeNonClickable?: boolean;
   linkDistance?: number;
   chargeStrength?: number;
-
-  // Animation for new nodes
-  animateNewNodes?: boolean;
-
-  // Refresh trigger
   refreshKey?: number;
-
-  // Clustering by group
-  enableGroupClustering?: boolean;
-  clusterStrength?: number; // 0 to 1, how strongly nodes are pulled to their cluster
+  graphMode?: 'individuals' | 'bubbles' | null;
 }
 
 export default function UnifiedNetworkGraph({
   apiEndpoint,
   groups,
   centerNodeNonClickable = false,
-  linkDistance = 120,
+  linkDistance = 160,
   chargeStrength = -400,
-  animateNewNodes = false,
   refreshKey,
-  enableGroupClustering = true,
-  clusterStrength = 0.3,
+  graphMode: graphModeProp = null,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
   const tPeople = useTranslations('people');
-  const svgRef = useRef<SVGSVGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const router = useRouter();
-  const previousNodeIdsRef = useRef<Set<string> | null>(null);
-  const zoomTransformRef = useRef<ZoomTransform | null>(null);
-  const zoomBehaviorRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+
+  // Simulation state
+  const simRef = useRef<Simulation<SimulationNode, SimulationEdge> | null>(null);
+  const nodesRef = useRef<SimulationNode[]>([]);
+  const edgesRef = useRef<SimulationEdge[]>([]);
+  const quadtreeRef = useRef<NodeQuadtree | null>(null);
+  const transformRef = useRef<ZoomTransform>(zoomIdentity);
+  const zoomBehaviorRef = useRef<ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+  const hoveredNodeIdRef = useRef<string | null>(null);
+  const dirtyRef = useRef<boolean>(false);
+  const rafRef = useRef<number | null>(null);
+  const unpinTimeoutRef = useRef<number | null>(null);
+
+  // Filter state
+  const [selectedGroupFilters, setSelectedGroupFilters] = useState<GroupFilterItem[]>([]);
+  const [includeMode, setIncludeMode] = useState<IncludeMode>('or');
   const [isMobile, setIsMobile] = useState(false);
-  const [clusteringEnabled, setClusteringEnabled] = useState(enableGroupClustering);
   const capitalizeType = useLocale().startsWith('de');
+
+  // Bubble state
+  const [expandedBubbles, setExpandedBubbles] = useState<Set<string>>(new Set());
+  const [localGraphMode, setLocalGraphMode] = useState<'individuals' | 'bubbles' | null>(graphModeProp);
+  const rawCacheRef = useRef<{ nodes: RawGraphPerson[]; edges: SimulationEdge[] } | null>(null);
+
+  // Ungrouped label for bubble composition
+  const ungroupedLabel = t('unsortedBubbleLabel');
+
+  const includeGroupIds = useMemo(
+    () => selectedGroupFilters.filter((f) => !f.isNegative).map((f) => f.id),
+    [selectedGroupFilters],
+  );
+  const excludeGroupIds = useMemo(
+    () => selectedGroupFilters.filter((f) => f.isNegative).map((f) => f.id),
+    [selectedGroupFilters],
+  );
 
   // Detect mobile screen size
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Function to re-center the graph view
+  // Re-center the graph view
   const recenterGraph = useCallback(() => {
-    if (!svgRef.current || !zoomBehaviorRef.current) return;
-
-    const svg = select(svgRef.current);
-
-    // Reset to identity transform (no zoom, no pan)
-    svg
+    const canvas = canvasRef.current;
+    const zoomBehavior = zoomBehaviorRef.current;
+    if (!canvas || !zoomBehavior) return;
+    select(canvas)
       .transition()
       .duration(750)
-      .call(zoomBehaviorRef.current.transform, zoomIdentity);
-
-    // Clear the stored transform
-    zoomTransformRef.current = null;
+      .call(zoomBehavior.transform, zoomIdentity);
   }, []);
 
-  const renderGraph = useCallback((data: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
-    if (!svgRef.current) return;
+  const toggleFilterSign = (id: string) => {
+    setSelectedGroupFilters((prev) =>
+      prev.map((filter) =>
+        filter.id === id
+          ? { ...filter, isNegative: !filter.isNegative }
+          : filter,
+      ),
+    );
+  };
 
-    // Clear previous graph
-    select(svgRef.current).selectAll('*').remove();
+  const requestPaint = useCallback(() => {
+    dirtyRef.current = true;
+  }, []);
 
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
-
-    // Data is already filtered by the API based on selectedGroupId
-    const filteredNodes = data.nodes;
-    const filteredEdges = data.edges;
-
-    const nodes = filteredNodes;
-    const edges = filteredEdges;
-
-    // Mobile-specific parameters
-    const nodeRadius = isMobile ? { center: 10, normal: 7 } : { center: 12, normal: 8 };
-    const fontSize = isMobile ? { center: 12, normal: 10, edge: 9 } : { center: 14, normal: 12, edge: 10 };
-    const mobileLinkDistance = isMobile ? 80 : linkDistance;
-    const mobileChargeStrength = isMobile ? -250 : chargeStrength;
-
-    // Track new nodes for animation
-    const currentNodeIds = new Set(nodes.map((n) => n.id));
-    const newNodeIds = animateNewNodes && previousNodeIdsRef.current
-      ? new Set([...currentNodeIds].filter((id) => !previousNodeIdsRef.current!.has(id)))
-      : new Set<string>();
-    previousNodeIdsRef.current = currentNodeIds;
-
-    const svg = select(svgRef.current);
-
-    // Main group for zooming/panning
-    const g = svg.append('g');
-
-    // Define arrow markers for directed edges (one for each unique color)
-    const defs = svg.append('defs');
-    const uniqueColors = Array.from(new Set(edges.map((e) => e.color || '#999')));
-    uniqueColors.forEach((color) => {
-      defs.append('marker')
-        .attr('id', `arrow-${color.replace('#', '')}`)
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 18)
-        .attr('refY', 0)
-        .attr('markerWidth', 5)
-        .attr('markerHeight', 5)
-        .attr('orient', 'auto')
-        .append('path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', color)
-        .attr('fill-opacity', 0.8)
-    });
-
-    // Add clip paths for nodes with photos
-    nodes.forEach((n) => {
-      if (n.photo) {
-        const r = n.isCenter ? nodeRadius.center : nodeRadius.normal;
-        defs.append('clipPath')
-          .attr('id', `clip-${CSS.escape(n.id)}`)
-          .append('circle')
-          .attr('r', r);
-      }
-    });
-
-    // Calculate cluster positions for group clustering
-    const clusterCenters: Map<string, { x: number; y: number }> = new Map();
-    if (clusteringEnabled) {
-      // Get unique group IDs from nodes
-      const uniqueGroupIds = Array.from(
-        new Set(nodes.flatMap((n) => n.groups))
-      ).filter(Boolean);
-
-      // Arrange clusters in a circle around the center
-      const clusterRadius = Math.min(width, height) * 0.35;
-      uniqueGroupIds.forEach((groupId, index) => {
-        const angle = (2 * Math.PI * index) / uniqueGroupIds.length - Math.PI / 2;
-        clusterCenters.set(groupId, {
-          x: width / 2 + clusterRadius * Math.cos(angle),
-          y: height / 2 + clusterRadius * Math.sin(angle),
-        });
-      });
+  const formatEdgeLabel = useCallback((edge: SimulationEdge) => {
+    if (edge.type === 'aggregated' || edge.type === 'membership') {
+      return { before: '', emphasis: '', after: '' };
     }
-
-    // Helper to get target position for a node based on its groups
-    const getClusterTarget = (node: GraphNode): { x: number; y: number } | null => {
-      if (!clusteringEnabled || node.isCenter || node.groups.length === 0) {
-        return null;
-      }
-      // Use the first group as the primary cluster
-      const primaryGroup = node.groups[0];
-      return clusterCenters.get(primaryGroup) || null;
+    const youLabel = tPeople('you');
+    const sourceName = edge.sourceLabel ?? '';
+    const targetName = edge.targetLabel ?? '';
+    const typeStr = capitalizeType
+      ? edge.type.charAt(0).toUpperCase() + edge.type.slice(1)
+      : edge.type.toLowerCase();
+    let full: string;
+    if (sourceName === youLabel || sourceName === 'You') {
+      full = tPeople('graphEdgeLabelFromYou', { type: typeStr });
+    } else if (targetName === youLabel || targetName === 'You') {
+      full = tPeople('graphEdgeLabelToYou', { type: typeStr });
+    } else {
+      full = tPeople('graphEdgeLabel', { type: typeStr });
+    }
+    const idx = full.toLowerCase().indexOf(typeStr.toLowerCase());
+    if (idx < 0) return { before: full, emphasis: '', after: '' };
+    return {
+      before: full.substring(0, idx),
+      emphasis: full.substring(idx, idx + typeStr.length),
+      after: full.substring(idx + typeStr.length),
     };
+  }, [tPeople, capitalizeType]);
 
-    const getNodeId = (n: string | GraphNode): string => (typeof n === 'string' ? n : n.id);
+  // Step 1: Paint loop
+  const runPaint = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    type SimEdge = Omit<GraphEdge, 'source' | 'target'> & { source: GraphNode; target: GraphNode };
-    const simEdges = edges as unknown as SimEdge[];
+    // Keep backing store in sync with CSS size and DPR.
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const wantW = Math.floor(rect.width * dpr);
+    const wantH = Math.floor(rect.height * dpr);
+    if (canvas.width !== wantW || canvas.height !== wantH) {
+      canvas.width = wantW;
+      canvas.height = wantH;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Increase collision radius when clustering to spread nodes apart more
-    const collisionRadius = clusteringEnabled
-      ? (isMobile ? 40 : 50)
-      : (isMobile ? 25 : 30);
+    const transform = transformRef.current;
+    const lod = getLODTier(transform.k);
+    const isDark = document.documentElement.classList.contains('dark');
 
-    // Create force simulation
-    const simulation = forceSimulation(nodes)
-      .force(
-        'link',
-        forceLink<GraphNode, SimEdge>(simEdges)
-          .id((d) => d.id)
-          .distance(mobileLinkDistance)
-      )
-      .force('charge', forceManyBody().strength(clusteringEnabled ? mobileChargeStrength * 1.5 : mobileChargeStrength))
-      .force('center', forceCenter(width / 2, height / 2))
-      .force('collision', forceCollide().radius(collisionRadius));
-
-    // Add clustering forces if enabled
-    if (clusteringEnabled) {
-      simulation
-        .force(
-          'clusterX',
-          forceX<GraphNode>((d) => {
-            const target = getClusterTarget(d);
-            return target ? target.x : width / 2;
-          }).strength((d) => (getClusterTarget(d) ? clusterStrength : 0))
-        )
-        .force(
-          'clusterY',
-          forceY<GraphNode>((d) => {
-            const target = getClusterTarget(d);
-            return target ? target.y : height / 2;
-          }).strength((d) => (getClusterTarget(d) ? clusterStrength : 0))
-        );
+    // Request photos for nodes that will render at full LOD and are in viewport.
+    if (lod !== 'dots') {
+      const padPx = 64;
+      for (const node of nodesRef.current) {
+        if (node.kind !== 'person') continue;
+        if (!node.photo) continue;
+        if (node.x === undefined || node.y === undefined) continue;
+        const screenX = node.x * transform.k + transform.x;
+        const screenY = node.y * transform.k + transform.y;
+        if (
+          screenX < -padPx || screenX > rect.width + padPx ||
+          screenY < -padPx || screenY > rect.height + padPx
+        ) continue;
+        const src = node.id.startsWith('user-')
+          ? '/api/photos/user'
+          : `/api/photos/${node.id}`;
+        loadPhoto(node.id, src, requestPaint);
+      }
     }
 
-    // Create edges
-    const link = g
-      .append('g')
-      .selectAll('line')
-      .data(simEdges)
-      .enter()
-      .append('line')
-      .attr('stroke', (d) => d.color || '#999')
-      .attr('stroke-opacity', (d) => {
-        if (animateNewNodes) {
-          // Fade in only edges connected to new nodes
-          const targetNode = getNodeId(d.target);
-          return newNodeIds.has(targetNode) ? 0 : 0.15;
-        }
-        return 0.15;
-      })
-      .attr('stroke-width', 2)
-
-    // Animate edges connected to new nodes
-    if (animateNewNodes) {
-      link
-        .filter((d) => {
-          const targetNode = getNodeId(d.target);
-          return newNodeIds.has(targetNode);
-        })
-        .transition()
-        .duration(400)
-        .delay(100)
-        .attr('stroke-opacity', 0.15);
-    }
-
-    // Create edge labels (hidden by default)
-    const edgeLabels = g
-      .append('g')
-      .selectAll('text')
-      .data(simEdges)
-      .enter()
-      .append('text')
-      .attr('font-size', fontSize.edge)
-      .attr('fill', (d) => d.color || '#666')
-      .attr('text-anchor', 'middle')
-      .attr('opacity', 0)
-      .each(function(d) {
-        const el = select(this);
-        el.selectAll('*').remove();
-
-        const youLabel = tPeople('you');
-        const sourceName = d.sourceLabel || '';
-        const targetName = d.targetLabel || '';
-
-        const typeStr = capitalizeType ? d.type.charAt(0).toUpperCase() + d.type.slice(1) : d.type.toLowerCase();
-        let label: string;
-        if (sourceName === youLabel || sourceName === 'You') {
-          label = tPeople('graphEdgeLabelFromYou', { type: typeStr });
-        } else if (targetName === youLabel || targetName === 'You') {
-          label = tPeople('graphEdgeLabelToYou', { type: typeStr });
-        } else {
-          label = tPeople('graphEdgeLabel', { type: typeStr });
-        }
-
-        // Split around the type to bold it
-        const idx = label.toLowerCase().indexOf(typeStr.toLowerCase());
-        if (idx >= 0) {
-          const before = label.substring(0, idx);
-          const typePart = label.substring(idx, idx + typeStr.length);
-          const after = label.substring(idx + typeStr.length);
-
-          if (before) el.append('tspan').text(before);
-          el.append('tspan').attr('font-weight', 'bold').text(typePart);
-          if (after) el.append('tspan').text(after);
-        } else {
-          el.text(label);
-        }
-      });
-
-    // Create nodes
-    const node = g
-      .append('g')
-      .selectAll('g')
-      .data(nodes)
-      .enter()
-      .append('g')
-      .style('cursor', (d) => {
-        if (centerNodeNonClickable && d.isCenter) return 'default';
-        return 'pointer';
-      })
-      .call(
-        drag<SVGGElement, GraphNode>()
-          .on('start', dragstarted)
-          .on('drag', dragged)
-          .on('end', dragended)
-      )
-      .on('click', (_event, d) => {
-        // Don't navigate if it's the center node and centerNodeNonClickable is true
-        if (centerNodeNonClickable && d.isCenter) return;
-
-        // Check if it's the user node (starts with "user-")
-        if (d.id.startsWith('user-')) {
-          router.push('/dashboard');
-        } else {
-          router.push(`/people/${d.id}`);
-        }
-      })
-      .on('mouseenter', function(_event, d) {
-        // Highlight connected edges and show their arrow markers
-        link
-          .transition()
-          .duration(200)
-          .attr('stroke-opacity', (edge) => {
-            const sourceId = getNodeId(edge.source);
-            return sourceId === d.id ? 0.8 : 0.05;
-          })
-          .attr('marker-end', (edge) => {
-            const sourceId = getNodeId(edge.source);
-            return sourceId === d.id ? `url(#arrow-${(edge.color || '#999').replace('#', '')})`: null;
-          });
-
-        // Show labels for connected edges
-        edgeLabels
-          .transition()
-          .duration(200)
-          .attr('opacity', (edge) => {
-            const sourceId = getNodeId(edge.source);
-            return sourceId === d.id ? 1 : 0;
-          });
-      })
-      .on('mouseleave', function() {
-        // Reset edge opacity and arrow markers
-        link
-          .transition()
-          .duration(200)
-          .attr('stroke-opacity', 0.15)
-          .attr('marker-end', null);
-
-        // Hide all labels
-        edgeLabels
-          .transition()
-          .duration(200)
-          .attr('opacity', 0);
-      });
-
-    // Add circles to nodes
-    const isDarkTheme = document.documentElement.classList.contains('dark');
-    const circles = node
-      .append('circle')
-      .attr('r', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal))
-      .attr('fill', (d) => {
-        if (d.photo) return isDarkTheme ? '#000000' : '#ffffff';
-        if (d.isCenter) return '#3B82F6'; // Blue for center
-        if (d.colors.length > 0) return d.colors[0];
-        return '#9CA3AF';
-      })
-      .attr('stroke', (d) => {
-        if (d.colors.length > 0) return d.colors[0];
-        if (d.isCenter) return '#3B82F6';
-        return isDarkTheme ? '#fff' : '#1f2937';
-      })
-      .attr('stroke-width', 2);
-
-    // Add photo images for nodes that have photos
-    node.filter((d) => !!d.photo)
-      .append('image')
-      .attr('href', (d) => d.id.startsWith('user-') ? '/api/photos/user' : `/api/photos/${d.id}`)
-      .attr('x', (d) => -(d.isCenter ? nodeRadius.center : nodeRadius.normal))
-      .attr('y', (d) => -(d.isCenter ? nodeRadius.center : nodeRadius.normal))
-      .attr('width', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal) * 2)
-      .attr('height', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal) * 2)
-      .attr('clip-path', (d) => `url(#clip-${CSS.escape(d.id)})`)
-      .attr('preserveAspectRatio', 'xMidYMid slice');
-
-    // Animate new nodes
-    if (animateNewNodes) {
-      circles
-        .filter((d) => newNodeIds.has(d.id))
-        .attr('r', 0)
-        .transition()
-        .duration(300)
-        .attr('r', (d) => (d.isCenter ? nodeRadius.center : nodeRadius.normal));
-    }
-
-    // Add labels to nodes
-    const labels = node
-      .append('text')
-      .text((d) => d.label)
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d) => (d.isCenter ? (isMobile ? 22 : 25) : (isMobile ? 18 : 20)))
-      .attr('font-size', (d) => (d.isCenter ? fontSize.center : fontSize.normal))
-      .attr('font-weight', (d) => (d.isCenter ? 'bold' : 'normal'))
-      .attr('fill', 'currentColor')
-      .style('pointer-events', 'none');
-
-    // Animate new node labels
-    if (animateNewNodes) {
-      labels
-        .filter((d) => newNodeIds.has(d.id))
-        .style('opacity', 0)
-        .transition()
-        .duration(300)
-        .style('opacity', 1);
-    }
-
-    // Add zoom behavior
-    const zoomBehavior = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 3])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-        // Save the current transform for restoration on re-render
-        zoomTransformRef.current = event.transform;
-      });
-
-    // Store zoom behavior for re-centering
-    zoomBehaviorRef.current = zoomBehavior;
-
-    svg.call(zoomBehavior);
-
-    // Restore previous zoom transform if it exists
-    if (zoomTransformRef.current) {
-      svg.call(zoomBehavior.transform, zoomTransformRef.current);
-    }
-
-    // Update positions on each tick
-    simulation.on('tick', () => {
-      link
-        .attr('x1', (d) => d.source.x ?? 0)
-        .attr('y1', (d) => d.source.y ?? 0)
-        .attr('x2', (d) => d.target.x ?? 0)
-        .attr('y2', (d) => d.target.y ?? 0);
-
-      // Position edge labels at the center of edges
-      edgeLabels
-        .attr('x', (d) => ((d.source.x ?? 0) + (d.target.x ?? 0)) / 2)
-        .attr('y', (d) => ((d.source.y ?? 0) + (d.target.y ?? 0)) / 2);
-
-      node.attr('transform', (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
-    });
-
-    // Drag functions
-    function dragstarted(event: D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-
-    function dragged(event: D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragended(event: D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
-  }, [
-    animateNewNodes,
-    centerNodeNonClickable,
-    chargeStrength,
-    clusterStrength,
-    clusteringEnabled,
-    isMobile,
-    linkDistance,
-    router,
-    tPeople,
-    capitalizeType,
-  ]);
+    paintFrame(
+      {
+        ctx,
+        transform,
+        width: rect.width,
+        height: rect.height,
+        lod,
+        isDark,
+        isMobile,
+        hoveredNodeId: hoveredNodeIdRef.current,
+        getPhoto: getCachedPhoto,
+        formatEdgeLabel,
+      },
+      nodesRef.current,
+      edgesRef.current,
+    );
+  }, [isMobile, requestPaint, formatEdgeLabel]);
 
   useEffect(() => {
-    if (!svgRef.current || !apiEndpoint) return;
+    const tick = () => {
+      if (dirtyRef.current) {
+        dirtyRef.current = false;
+        runPaint();
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [runPaint]);
+
+  // Step 2: Simulation builder
+  const buildSimulation = useCallback((nodes: SimulationNode[], edges: SimulationEdge[]) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mobileLinkDistance = isMobile ? 110 : linkDistance;
+    const mobileChargeStrength = isMobile ? -250 : chargeStrength;
+    const personCollisionR = isMobile ? 38 : 52;
+
+    // Visible-radius-aware collision so bubbles don't overlap "you" or each other.
+    const collisionForNode = (d: SimulationNode): number => {
+      if (d.kind === 'bubble') return (isMobile ? 12 : 14) + (isMobile ? 18 : 28);
+      return personCollisionR;
+    };
+
+    const membershipLinkDistance = isMobile ? 22 : 32;
+    const aggregatedLinkDistance = isMobile ? 150 : 220;
+
+    // Custom force: each expanded ghost behaves like an "invisible big bubble".
+    // Members get strongly pulled toward the ghost (orbiting close to it);
+    // non-members get pushed out of the ghost's domain so the cluster reads
+    // as a coherent island.
+    const expandedClusterField = (() => {
+      const tightenStrength = 0.35;
+      const repelStrength = 0.5;
+      const padding = isMobile ? 18 : 24;
+      const memberRadius = isMobile ? 12 : 14;
+      let attached: SimulationNode[] = [];
+      const memberToGhostId = new Map<string, string>();
+
+      const force = (alpha: number) => {
+        // Build per-ghost domain (ghost position + radius + member set + protected ids)
+        type Domain = { ghostId: string; x: number; y: number; r: number; protectedIds: Set<string> };
+        const domains: Domain[] = [];
+        for (const n of attached) {
+          if (n.kind !== 'bubble' || !n.isExpanded || n.x === undefined) continue;
+          const r = Math.sqrt(Math.max(n.memberCount, 1)) * memberRadius * 1.2 + padding;
+          const protectedIds = new Set<string>([n.id, ...n.memberIds]);
+          domains.push({ ghostId: n.id, x: n.x, y: n.y ?? 0, r, protectedIds });
+        }
+        if (domains.length === 0) return;
+
+        // Tighten each expanded member toward its ghost
+        for (const node of attached) {
+          if (node.kind !== 'person') continue;
+          const ghostId = memberToGhostId.get(node.id);
+          if (!ghostId) continue;
+          const dom = domains.find((d) => d.ghostId === ghostId);
+          if (!dom || node.x === undefined) continue;
+          const dx = dom.x - (node.x ?? 0);
+          const dy = dom.y - (node.y ?? 0);
+          node.vx = (node.vx ?? 0) + dx * tightenStrength * alpha;
+          node.vy = (node.vy ?? 0) + dy * tightenStrength * alpha;
+        }
+
+        // Push non-members out of each domain
+        for (const dom of domains) {
+          for (const node of attached) {
+            if (dom.protectedIds.has(node.id)) continue;
+            if (node.x === undefined) continue;
+            const dx = (node.x ?? 0) - dom.x;
+            const dy = (node.y ?? 0) - dom.y;
+            const d = Math.hypot(dx, dy);
+            if (d > 0 && d < dom.r) {
+              const push = ((dom.r - d) / dom.r) * repelStrength * alpha;
+              node.vx = (node.vx ?? 0) + (dx / d) * push * dom.r;
+              node.vy = (node.vy ?? 0) + (dy / d) * push * dom.r;
+            }
+          }
+        }
+      };
+
+      force.initialize = (n: SimulationNode[]) => {
+        attached = n;
+        memberToGhostId.clear();
+        for (const node of n) {
+          if (node.kind === 'bubble' && node.isExpanded) {
+            for (const memberId of node.memberIds) {
+              memberToGhostId.set(memberId, node.id);
+            }
+          }
+        }
+      };
+
+      return force;
+    })();
+
+    const sim = forceSimulation<SimulationNode>(nodes)
+      .velocityDecay(0.6)
+      .force('link', forceLink<SimulationNode, SimulationEdge>(edges)
+        .id((d) => d.id)
+        .distance((e) => {
+          if (e.type === 'membership') return membershipLinkDistance;
+          if (e.type === 'aggregated') return aggregatedLinkDistance;
+          return mobileLinkDistance;
+        })
+        .strength((e) => e.type === 'membership' ? 0.4 : 1))
+      .force('charge', forceManyBody().strength(mobileChargeStrength))
+      .force('center', forceCenter(width / 2, height / 2))
+      // Stronger pull for "you" anchors it at canvas-center under normal forces,
+      // while still letting the user drag it around for fun.
+      .force('centerX', forceX<SimulationNode>(width / 2).strength((d) => {
+        if (d.kind === 'person' && d.isCenter) return 0.5;
+        if (d.kind === 'bubble' && d.isExpanded) return 0;
+        return 0.15;
+      }))
+      .force('centerY', forceY<SimulationNode>(height / 2).strength((d) => {
+        if (d.kind === 'person' && d.isCenter) return 0.5;
+        if (d.kind === 'bubble' && d.isExpanded) return 0;
+        return 0.15;
+      }))
+      .force('collision', forceCollide<SimulationNode>().radius(collisionForNode))
+      .force('expandedCluster', expandedClusterField);
+
+    sim.on('tick', () => {
+      quadtreeRef.current = buildQuadtree(nodes);
+      requestPaint();
+    });
+
+    return sim;
+  }, [isMobile, linkDistance, chargeStrength, requestPaint]);
+
+  // Step 3: Composition helper — recomposes sim data from raw cache
+  const recomposeAndBuildSim = useCallback((raw: { nodes: RawGraphPerson[]; edges: SimulationEdge[] }) => {
+    const incomingPeople = raw.nodes;
+
+    // If no groups prop, we're not on the dashboard — skip bubble logic.
+    const resolvedMode = groups ? resolveGraphMode(localGraphMode) : 'individuals';
+
+    // Always expand any group that's currently in the include filter.
+    const nextExpanded = new Set(expandedBubbles);
+    if (resolvedMode === 'bubbles' && groups) {
+      for (const id of includeGroupIds) {
+        nextExpanded.add(id);
+      }
+    }
+
+    // Drop expanded groups that no longer exist in the current data.
+    if (resolvedMode === 'bubbles' && groups) {
+      const presentGroups = new Set(groups.map((g) => g.id));
+      presentGroups.add(UNGROUPED_SYNTHETIC_ID);
+      for (const id of [...nextExpanded]) {
+        if (!presentGroups.has(id)) nextExpanded.delete(id);
+      }
+    }
+    if (nextExpanded.size !== expandedBubbles.size) {
+      setExpandedBubbles(nextExpanded);
+    }
+
+    const incomingNodes = buildSimulationNodes({
+      people: incomingPeople,
+      groups: groups ?? [],
+      mode: resolvedMode,
+      expandedBubbles: nextExpanded,
+      ungroupedLabel,
+    });
+
+    const rawEdges: SimulationEdge[] = raw.edges;
+    const composedEdges = resolvedMode === 'bubbles'
+      ? buildHubAndSpokeEdges({
+          rawEdges,
+          simNodes: incomingNodes,
+          neutralEdgeColor: '#9ca3af',
+        })
+      : rawEdges;
+
+    // d3-force's forceLink mutates each edge's source/target from string ids
+    // to node-object references on the first sim build. If we reused those
+    // mutated edges on a later rebuild, forceLink would keep the stale refs
+    // (it skips resolution when source/target is already an object) — so the
+    // new simulation would move new node objects while edges still drew
+    // between the previous sim's node objects, leaving the visible
+    // disconnect from #240. Clone edges with string ids each time.
+    const incomingEdges: SimulationEdge[] = composedEdges.map((e) => ({
+      ...e,
+      source: typeof e.source === 'string' ? e.source : e.source.id,
+      target: typeof e.target === 'string' ? e.target : e.target.id,
+    }));
+
+    const { nodes, edges } = diffSimulationData(nodesRef.current, incomingNodes, edgesRef.current, incomingEdges);
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
+
+    simRef.current?.stop();
+    const sim = buildSimulation(nodes, edges);
+    if (sim) {
+      sim.alpha(0.3).restart();
+      simRef.current = sim;
+    }
+  }, [
+    groups, localGraphMode, expandedBubbles,
+    includeGroupIds, ungroupedLabel, buildSimulation,
+  ]);
+
+  // Step 4: Data-fetch effect
+  useEffect(() => {
+    if (!canvasRef.current || !apiEndpoint) return;
+
+    let cancelled = false;
 
     const fetchData = async () => {
-      // Build URL with query parameters
       const url = new URL(apiEndpoint, window.location.origin);
-      // Add all selected group IDs as query parameters
-      if (selectedGroupIds.length > 0) {
-        selectedGroupIds.forEach((groupId) => {
-          url.searchParams.append('groupIds', groupId);
-        });
-      }
+      url.searchParams.set('groupMatchOperator', includeMode);
+      if (includeGroupIds.length > 0) url.searchParams.set('includeGroupIds', includeGroupIds.join(','));
+      if (excludeGroupIds.length > 0) url.searchParams.set('excludeGroupIds', excludeGroupIds.join(','));
 
       const response = await fetch(url.toString());
-      const data = await response.json();
-      renderGraph(data);
+      const data = await response.json() as { nodes: RawGraphPerson[]; edges: SimulationEdge[] };
+
+      if (cancelled) return;
+
+      rawCacheRef.current = data;
+      recomposeAndBuildSim(data);
     };
 
     fetchData();
-  }, [apiEndpoint, refreshKey, selectedGroupIds, isMobile, clusteringEnabled, renderGraph]);
+    return () => { cancelled = true; };
+    // recomposeAndBuildSim intentionally excluded: it depends on bubble state
+    // (expandedBubbles, localGraphMode) which are handled by the Step 5 effect
+    // from the cached raw data — no need to re-fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiEndpoint, refreshKey, includeMode, includeGroupIds, excludeGroupIds]);
+
+  // Step 5: Recompose when bubble state changes (mode toggle, expand/collapse)
+  useEffect(() => {
+    const raw = rawCacheRef.current;
+    if (!raw) return;
+    recomposeAndBuildSim(raw);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localGraphMode, expandedBubbles]);
+
+  // Step 6: Zoom, click, hover, and drag handlers
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const toGraphCoords = (clientX: number, clientY: number): [number, number] => {
+      const rect = canvas.getBoundingClientRect();
+      const xPx = clientX - rect.left;
+      const yPx = clientY - rect.top;
+      const t = transformRef.current;
+      return [(xPx - t.x) / t.k, (yPx - t.y) / t.k];
+    };
+
+    const nodeAt = (clientX: number, clientY: number): SimulationNode | undefined => {
+      const tree = quadtreeRef.current;
+      if (!tree) return undefined;
+      const [gx, gy] = toGraphCoords(clientX, clientY);
+      return findNodeAtPoint(tree, gx, gy, isMobile ? 18 : 22);
+    };
+
+    const zoomBehavior = zoom<HTMLCanvasElement, unknown>()
+      .scaleExtent([0.1, 3])
+      .filter((event: Event) => {
+        const me = event as MouseEvent;
+        if (me.ctrlKey || me.button) return false;
+        if (event.type === 'mousedown' || event.type === 'touchstart') {
+          const touch = 'touches' in event ? (event as TouchEvent).touches[0] : null;
+          const cx = touch ? touch.clientX : me.clientX;
+          const cy = touch ? touch.clientY : me.clientY;
+          if (nodeAt(cx, cy)) return false;
+        }
+        return true;
+      })
+      .on('zoom', (event) => {
+        transformRef.current = event.transform;
+        requestPaint();
+      });
+    zoomBehaviorRef.current = zoomBehavior;
+    select(canvas).call(zoomBehavior);
+
+    const onMove = (event: MouseEvent) => {
+      const node = nodeAt(event.clientX, event.clientY);
+      const id = node?.id ?? null;
+      if (hoveredNodeIdRef.current !== id) {
+        hoveredNodeIdRef.current = id;
+        canvas.style.cursor = id ? 'pointer' : 'default';
+        requestPaint();
+      }
+    };
+
+    const handleNodeActivate = (node: SimulationNode) => {
+      if (node.kind === 'bubble') {
+        // Collapse is instant.
+        if (node.isExpanded) {
+          setExpandedBubbles((prev) => {
+            const next = new Set(prev);
+            next.delete(node.groupId);
+            return next;
+          });
+          return;
+        }
+        // Expand: push the bubble outward, pin it, reheat the sim so other
+        // nodes redistribute, wait briefly, THEN trigger expansion so the
+        // cluster lands in cleared space.
+        if (node.x !== undefined && node.y !== undefined) {
+          const center = nodesRef.current.find(
+            (n): n is SimulationNode & { x: number; y: number } =>
+              n.kind === 'person' && n.isCenter && n.x !== undefined && n.y !== undefined,
+          );
+          if (center) {
+            const dx = node.x - center.x;
+            const dy = node.y - center.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const memberRadius = isMobile ? 12 : 14;
+            const padding = isMobile ? 18 : 24;
+            const clusterRadius = Math.sqrt(Math.max(node.memberCount, 1)) * memberRadius * 1.2 + padding;
+            const targetDist = (clusterRadius + (isMobile ? 130 : 180)) * 2;
+            const finalDist = Math.max(dist, targetDist);
+            const ratio = finalDist / dist;
+            const targetX = center.x + dx * ratio;
+            const targetY = center.y + dy * ratio;
+
+            node.x = targetX;
+            node.y = targetY;
+            node.fx = targetX;
+            node.fy = targetY;
+            node.vx = 0;
+            node.vy = 0;
+            if (simRef.current) simRef.current.alpha(0.3).restart();
+
+            const bubbleId = node.id;
+            const groupId = node.groupId;
+
+            setExpandedBubbles((prev) => {
+              const next = new Set(prev);
+              next.add(groupId);
+              return next;
+            });
+            // Release the pin once the cluster has had time to settle. With
+            // centerX/Y strength = 0 for expanded ghosts, it stays put.
+            if (unpinTimeoutRef.current !== null) window.clearTimeout(unpinTimeoutRef.current);
+            unpinTimeoutRef.current = window.setTimeout(() => {
+              unpinTimeoutRef.current = null;
+              const ghost = nodesRef.current.find((n) => n.id === bubbleId);
+              if (ghost) {
+                ghost.fx = null;
+                ghost.fy = null;
+              }
+            }, 1500);
+          }
+        }
+        return;
+      }
+      if (centerNodeNonClickable && node.isCenter) return;
+      if (node.id.startsWith('user-')) router.push('/dashboard');
+      else router.push(`/people/${node.id}`);
+    };
+
+    let dragStartX = 0;
+    let dragStartY = 0;
+    const CLICK_TRAVEL_PX = 4;
+
+    const drag_ = drag<HTMLCanvasElement, unknown>()
+      .container(canvas)
+      .subject((event) => {
+        const node = nodeAt(event.sourceEvent.clientX, event.sourceEvent.clientY);
+        return node ?? null;
+      })
+      .on('start', (event) => {
+        const d = event.subject as SimulationNode | null;
+        if (!d) return;
+        dragStartX = event.x;
+        dragStartY = event.y;
+        if (!event.active && simRef.current) simRef.current.alphaTarget(0.1).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on('drag', (event) => {
+        const d = event.subject as SimulationNode | null;
+        if (!d) return;
+        const [gx, gy] = toGraphCoords(event.sourceEvent.clientX, event.sourceEvent.clientY);
+        d.fx = gx;
+        d.fy = gy;
+      })
+      .on('end', (event) => {
+        const d = event.subject as SimulationNode | null;
+        if (!d) return;
+        if (!event.active && simRef.current) simRef.current.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+        const traveled = Math.hypot(event.x - dragStartX, event.y - dragStartY);
+        if (traveled < CLICK_TRAVEL_PX) handleNodeActivate(d);
+      });
+
+    select(canvas).call(drag_);
+
+    canvas.addEventListener('mousemove', onMove);
+
+    return () => {
+      canvas.removeEventListener('mousemove', onMove);
+      select(canvas).on('.zoom', null);
+      select(canvas).on('.drag', null);
+      if (unpinTimeoutRef.current !== null) {
+        window.clearTimeout(unpinTimeoutRef.current);
+        unpinTimeoutRef.current = null;
+      }
+    };
+  }, [centerNodeNonClickable, isMobile, requestPaint, router]);
 
   return (
     <div className="w-full h-full">
       {groups && (
-        <div className="mb-4">
-          <PillSelector
-            selectedItems={groups
-              .filter((g) => selectedGroupIds.includes(g.id))
-              .map((g) => ({
-                id: g.id,
-                label: g.name,
-                color: g.color,
-              }))}
-            availableItems={groups.map((g) => ({
-              id: g.id,
-              label: g.name,
-              color: g.color,
-            }))}
-            onAdd={(item) => setSelectedGroupIds([...selectedGroupIds, item.id])}
-            onRemove={(itemId) =>
-              setSelectedGroupIds(selectedGroupIds.filter((id) => id !== itemId))
-            }
-            onClearAll={() => setSelectedGroupIds([])}
-            placeholder={t('filterPlaceholder')}
-            emptyMessage={t('noGroupsFound')}
-            showAllOnFocus={true}
-            renderPill={(item, onRemove) => (
-              <div
-                key={item.id}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/20 border border-primary/40 rounded-full text-sm font-medium shadow-sm"
-              >
-                <div
-                  className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-white/50"
-                  style={{ backgroundColor: item.color || '#7bf080' }}
-                />
-                <span className="text-foreground">{item.label}</span>
-                <button
-                  type="button"
-                  onClick={onRemove}
-                  className="hover:bg-primary/30 rounded-full p-0.5 transition-colors text-primary"
-                  aria-label={`Remove ${item.label}`}
+        <div className="mb-4 space-y-2">
+          <div className="flex items-stretch gap-3">
+            <div className="shrink-0">
+              <label className="flex h-full items-center text-sm placeholder-muted">
+                <span
+                  className="inline-flex h-full items-stretch rounded-md border border-border bg-surface-elevated p-0.5 focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIncludeMode((prev) => (prev === 'or' ? 'and' : 'or'))
+                    }
+                    className="inline-flex h-full px-3 items-center justify-center whitespace-nowrap text-base font-normal rounded border border-transparent text-foreground transition-all hover:bg-surface focus:outline-none"
+                    aria-label={t('matchMode.ariaLabel', {
+                      title:
+                        includeMode === 'or'
+                          ? t('matchMode.anyTitle')
+                          : t('matchMode.allTitle'),
+                    })}
+                    title={
+                      includeMode === 'or'
+                        ? t('matchMode.anyTitle')
+                        : t('matchMode.allTitle')
+                    }
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )}
-          />
+                    {includeMode === 'or'
+                      ? t('matchMode.any')
+                      : t('matchMode.all')}
+                  </button>
+                </span>
+              </label>
+            </div>
+
+            <div className="flex-1">
+              <PillSelector<GroupFilterItem>
+                selectedItems={selectedGroupFilters}
+                availableItems={groups.map((g) => ({
+                  id: g.id,
+                  label: g.name,
+                  color: g.color,
+                  isNegative: false,
+                }))}
+                onAdd={(item) => {
+                  setSelectedGroupFilters((prev) =>
+                    prev.some((f) => f.id === item.id)
+                      ? prev
+                      : [...prev, { ...item, isNegative: false }],
+                  );
+                }}
+                onRemove={(itemId) =>
+                  setSelectedGroupFilters((prev) =>
+                    prev.filter((f) => f.id !== itemId),
+                  )
+                }
+                onClearAll={() => setSelectedGroupFilters([])}
+                placeholder={t('filterPlaceholder')}
+                emptyMessage={t('noGroupsFound')}
+                showAllOnFocus={true}
+                renderPill={(item, onRemove) => (
+                  <GraphFilterGroupPill
+                    key={item.id}
+                    id={item.id}
+                    label={item.label}
+                    color={item.color}
+                    isNegative={item.isNegative}
+                    onToggle={() => toggleFilterSign(item.id)}
+                    onRemove={onRemove}
+                    title={
+                      item.isNegative
+                        ? t('filterState.excluded')
+                        : t('filterState.included')
+                    }
+                    ariaLabel={
+                      item.isNegative
+                        ? t('filterState.excludedWithLabel', {
+                            label: item.label,
+                          })
+                        : t('filterState.includedWithLabel', {
+                            label: item.label,
+                          })
+                    }
+                  />
+                )}
+              />
+            </div>
+          </div>
         </div>
       )}
       <div className="relative">
-        <svg
-          ref={svgRef}
+        <canvas
+          ref={canvasRef}
           className="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-surface rounded-lg border border-border"
         />
         <div className="absolute bottom-4 right-4 flex gap-2">
-          <button
-            onClick={() => setClusteringEnabled(!clusteringEnabled)}
-            className={`p-3 border rounded-lg transition-colors ${
-              clusteringEnabled
-                ? 'bg-primary/20 border-primary/40 dark:bg-primary dark:border-primary'
-                : 'bg-surface border-border hover:bg-surface-elevated'
-            }`}
-            aria-label={t('clusterByGroup')}
-            title={t('clusterByGroup')}
-          >
-            <svg
-              className="w-5 h-5 text-primary dark:text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-          </button>
+          {groups && (() => {
+            const bubblesActive = resolveGraphMode(localGraphMode) === 'bubbles';
+            const label = bubblesActive ? t('showIndividuals') : t('showAsGroups');
+            return (
+              <>
+                <button
+                  onClick={async () => {
+                    const next: 'individuals' | 'bubbles' = bubblesActive ? 'individuals' : 'bubbles';
+                    setLocalGraphMode(next);
+                    try {
+                      await fetch('/api/user/graph-display', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ graphMode: next }),
+                      });
+                    } catch {
+                      // Silent fail — local state is source of truth until next page load.
+                    }
+                  }}
+                  className={`p-3 border rounded-lg transition-colors ${
+                    bubblesActive
+                      ? 'bg-primary/20 border-primary/40 dark:bg-primary dark:border-primary'
+                      : 'bg-surface border-border hover:bg-surface-elevated'
+                  }`}
+                  aria-label={label}
+                  title={label}
+                >
+                  <svg className="w-5 h-5 text-primary dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="8" cy="8" r="4" strokeWidth="2"/>
+                    <circle cx="16" cy="16" r="4" strokeWidth="2"/>
+                  </svg>
+                </button>
+                {bubblesActive && expandedBubbles.size > 0 && (
+                  <button
+                    onClick={() => setExpandedBubbles(new Set())}
+                    className="p-3 bg-surface border border-border rounded-lg hover:bg-surface-elevated transition-colors"
+                    aria-label={t('collapseAllGroups')}
+                    title={t('collapseAllGroups')}
+                  >
+                    <svg
+                      className="w-5 h-5 text-primary dark:text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <polyline points="4 14 10 14 10 20" />
+                      <polyline points="20 10 14 10 14 4" />
+                      <line x1="14" y1="10" x2="21" y2="3" />
+                      <line x1="3" y1="21" x2="10" y2="14" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            );
+          })()}
           <button
             onClick={recenterGraph}
             className="p-3 bg-surface border border-border rounded-lg hover:bg-surface-elevated transition-colors"

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import PillSelector from './PillSelector';
+import { PRESET_COLORS } from '@/lib/colors';
 
 interface Group {
   id: string;
@@ -23,13 +24,7 @@ interface GroupsSelectorProps {
 
 // Generate a random color from a nice palette
 function generateRandomColor(): string {
-  const colors = [
-    '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
-    '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
-    '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
-    '#EC4899', '#F43F5E',
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
+  return PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
 }
 
 export default function GroupsSelector({
@@ -48,9 +43,12 @@ export default function GroupsSelector({
   const [isCreating, setIsCreating] = useState(false);
 
   // Combine original groups with newly created ones
-  const allGroups = [...availableGroups, ...createdGroups.filter(
-    (cg) => !availableGroups.some((ag) => ag.id === cg.id)
-  )];
+  const allGroups = [
+    ...availableGroups,
+    ...createdGroups.filter(
+      (cg) => !availableGroups.some((ag) => ag.id === cg.id),
+    ),
+  ];
 
   // Transform groups to PillItem format
   const pillItems = allGroups.map((group) => ({
@@ -60,7 +58,7 @@ export default function GroupsSelector({
   }));
 
   const selectedItems = pillItems.filter((item) =>
-    selectedGroupIds.includes(item.id)
+    selectedGroupIds.includes(item.id),
   );
 
   const handleAdd = (item: { id: string }) => {
@@ -118,9 +116,12 @@ export default function GroupsSelector({
   // Custom pill renderer for groups (gray background with color circle on left)
   const renderGroupPill = (
     item: { id: string; label: string; color?: string | null },
-    onRemove: () => void
+    onRemove: () => void,
   ) => (
-    <div key={item.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-elevated rounded-full text-sm font-medium">
+    <div
+      key={item.id}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-elevated rounded-full text-sm font-medium"
+    >
       <div
         className="w-3 h-3 rounded-full flex-shrink-0"
         style={{
@@ -173,7 +174,8 @@ export default function GroupsSelector({
           </svg>
           <div className="flex-1">
             <p className="text-sm text-primary">
-              <span className="font-medium">{t('quickTip')}</span> {t('quickTipMessage')}
+              <span className="font-medium">{t('quickTip')}</span>{' '}
+              {t('quickTipMessage')}
             </p>
           </div>
         </div>

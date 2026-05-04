@@ -2,8 +2,46 @@ import { createDAVClient, DAVAddressBook, DAVVCard } from 'tsdav';
 import { CardDavConnection } from '@prisma/client';
 import { decryptPassword } from './encryption';
 import { createModuleLogger } from '@/lib/logger';
+import { ExternalServiceError } from '@/lib/errors';
+import { readBodySafely } from '@/lib/logging/http-body';
 
 const log = createModuleLogger('carddav');
+
+/**
+ * Truncate embedded PHOTO base64 in a vCard so it can be safely logged.
+ * Preserves structure (headers, params, line folding) of everything else.
+ */
+function truncateVCardForLog(vcard: string, maxPhotoValueChars = 40): string {
+  const lines = vcard.split(/\r?\n/);
+  const out: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!/^PHOTO[;:]/i.test(line)) {
+      out.push(line);
+      continue;
+    }
+    let full = line;
+    let j = i + 1;
+    while (j < lines.length && /^[ \t]/.test(lines[j])) {
+      full += lines[j].substring(1);
+      j++;
+    }
+    i = j - 1;
+    const colonIdx = full.indexOf(':');
+    if (colonIdx < 0) {
+      out.push(full.slice(0, 80) + '…[truncated]');
+      continue;
+    }
+    const header = full.slice(0, colonIdx);
+    const value = full.slice(colonIdx + 1);
+    out.push(
+      value.length > maxPhotoValueChars
+        ? `${header}:${value.slice(0, maxPhotoValueChars)}…[+${value.length - maxPhotoValueChars} chars]`
+        : `${header}:${value}`,
+    );
+  }
+  return out.join('\r\n');
+}
 
 export interface AddressBook {
   url: string;
@@ -123,8 +161,20 @@ export async function createCardDavClient(
       // tsdav uses fetch() which does NOT throw on HTTP errors (4xx/5xx).
       const createRes = response as Response | undefined;
       if (createRes && typeof createRes.ok === 'boolean' && !createRes.ok) {
-        const statusText = createRes.statusText || 'Unknown error';
-        throw new Error(`CardDAV CREATE failed: ${createRes.status} ${statusText}`);
+        const body = await readBodySafely(createRes);
+        throw new ExternalServiceError({
+          message: `CardDAV CREATE failed: ${createRes.status} ${createRes.statusText || ''}`.trim(),
+          service: 'carddav',
+          endpoint: addressBook.raw.url,
+          method: 'POST',
+          status: createRes.status,
+          body,
+          context: {
+            serverHost: new URL(serverUrl).host,
+            filename,
+            outgoingVCard: truncateVCardForLog(vCardData),
+          },
+        });
       }
 
       const etag = response.headers?.get('etag') || '';
@@ -166,8 +216,20 @@ export async function createCardDavClient(
       // tsdav uses fetch() which does NOT throw on HTTP errors (4xx/5xx).
       const updateRes = response as Response | undefined;
       if (updateRes && typeof updateRes.ok === 'boolean' && !updateRes.ok) {
-        const statusText = updateRes.statusText || 'Unknown error';
-        throw new Error(`CardDAV UPDATE failed: ${updateRes.status} ${statusText}`);
+        const body = await readBodySafely(updateRes);
+        throw new ExternalServiceError({
+          message: `CardDAV UPDATE failed: ${updateRes.status} ${updateRes.statusText || ''}`.trim(),
+          service: 'carddav',
+          endpoint: absoluteUrl,
+          method: 'PUT',
+          status: updateRes.status,
+          body,
+          context: {
+            serverHost: new URL(serverUrl).host,
+            etag: vCard.etag,
+            outgoingVCard: truncateVCardForLog(newData),
+          },
+        });
       }
 
       const etag = response.headers?.get('etag') || vCard.etag;
@@ -193,8 +255,19 @@ export async function createCardDavClient(
       // We must check the response status ourselves.
       const res = response as Response | undefined;
       if (res && typeof res.ok === 'boolean' && !res.ok) {
-        const statusText = res.statusText || 'Unknown error';
-        throw new Error(`CardDAV DELETE failed: ${res.status} ${statusText}`);
+        const body = await readBodySafely(res);
+        throw new ExternalServiceError({
+          message: `CardDAV DELETE failed: ${res.status} ${res.statusText || ''}`.trim(),
+          service: 'carddav',
+          endpoint: absoluteUrl,
+          method: 'DELETE',
+          status: res.status,
+          body,
+          context: {
+            serverHost: new URL(serverUrl).host,
+            etag: vCard.etag,
+          },
+        });
       }
     },
   };
@@ -230,7 +303,19 @@ export async function deleteVCardDirect(
   });
 
   if (!response.ok) {
-    throw new Error(`CardDAV DELETE failed: ${response.status} ${response.statusText || 'Unknown error'}`);
+    const body = await readBodySafely(response);
+    throw new ExternalServiceError({
+      message: `CardDAV DELETE failed: ${response.status} ${response.statusText || 'Unknown error'}`,
+      service: 'carddav',
+      endpoint: absoluteUrl,
+      method: 'DELETE',
+      status: response.status,
+      body,
+      context: {
+        serverHost: new URL(connection.serverUrl).host,
+        etag,
+      },
+    });
   }
 }
 

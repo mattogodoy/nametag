@@ -6,6 +6,142 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.44.5](https://github.com/mattogodoy/nametag/compare/v0.44.4...v0.44.5) (2026-05-03)
+
+
+### Bug Fixes
+
+* **people-merge:** preserve journal entry references when merging contacts ([45661fe](https://github.com/mattogodoy/nametag/commit/45661fe07c1085f4ace19acfa2969c125548e066))
+* **people-merge:** preserve journal entry references when merging contacts ([f514632](https://github.com/mattogodoy/nametag/commit/f514632a1b8130c45a875f79d55452411af8bd74))
+
+## [0.44.4](https://github.com/mattogodoy/nametag/compare/v0.44.3...v0.44.4) (2026-04-30)
+
+
+### Bug Fixes
+
+* **dates:** preserve calendar date across timezones (closes [#218](https://github.com/mattogodoy/nametag/issues/218)) ([b1a6106](https://github.com/mattogodoy/nametag/commit/b1a6106cf04201bfd17580148a0f92edb3445162))
+* **dates:** preserve calendar date across timezones for last contact, anniversary, and vCard export ([68acf63](https://github.com/mattogodoy/nametag/commit/68acf632a28503693ea36f5bb15d16c7f2f7f739))
+* **important-dates:** show reminder limit message and rename Memorial to Date of Death ([617022c](https://github.com/mattogodoy/nametag/commit/617022c6e54dd3219fef2942af1ffb7f1a744ec1))
+* **important-dates:** show reminder limit message and rename Memorial to Date of Death ([25c734b](https://github.com/mattogodoy/nametag/commit/25c734b44d5af648023889b8e077b59b8a5618a5)), closes [#203](https://github.com/mattogodoy/nametag/issues/203)
+
+## [0.44.3](https://github.com/mattogodoy/nametag/compare/v0.44.2...v0.44.3) (2026-04-29)
+
+
+### Bug Fixes
+
+* **photos:** downsize crops client-side and lift 10MB upload ceiling ([1290105](https://github.com/mattogodoy/nametag/commit/1290105fe0987e2f0bd294bff9737a5003501d87))
+* **photos:** downsize crops client-side and lift 10MB upload ceiling ([55ce430](https://github.com/mattogodoy/nametag/commit/55ce430d5dda75feae03e01cbe5d311e100210a9))
+
+## [0.44.2](https://github.com/mattogodoy/nametag/compare/v0.44.1...v0.44.2) (2026-04-29)
+
+
+### Bug Fixes
+
+* **graph:** clone edges per recompose so forceLink sees fresh string ids ([e2f994b](https://github.com/mattogodoy/nametag/commit/e2f994b3e5cbda09b7c0e157f3cdf0e77557d3f1))
+* **graph:** clone edges per recompose so forceLink sees fresh string ids ([ecf46a3](https://github.com/mattogodoy/nametag/commit/ecf46a3061623e45c6d5f95353d935d100961cbb))
+
+## [0.44.1](https://github.com/mattogodoy/nametag/compare/v0.44.0...v0.44.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* **graph:** photos render at default zoom, no more black-circle stub ([341fa6a](https://github.com/mattogodoy/nametag/commit/341fa6af8573a01ca55f92af51fa217fe50d6b66))
+* **graph:** photos render at default zoom, no more black-circle stub ([0bf19f1](https://github.com/mattogodoy/nametag/commit/0bf19f108cee36bb876dc95214a725858fdb46ea))
+
+## [0.44.0](https://github.com/mattogodoy/nametag/compare/v0.43.3...v0.44.0) (2026-04-28)
+
+
+### Features
+
+* **graph:** canvas renderer + group-bubble clustering ([671ea9f](https://github.com/mattogodoy/nametag/commit/671ea9f96ed437186fe8f4c241989d03bd35b11b))
+
+## [0.43.3](https://github.com/mattogodoy/nametag/compare/v0.43.2...v0.43.3) (2026-04-26)
+
+
+### Bug Fixes
+
+* **carddav:** recover from server-deleted contacts instead of looping forever ([0f2248a](https://github.com/mattogodoy/nametag/commit/0f2248aa248ab865836a25b15bb722e20800ec88))
+* **carddav:** recover from server-deleted contacts instead of looping forever ([c3784d8](https://github.com/mattogodoy/nametag/commit/c3784d8bc4bb8569d222381c998ecd628e9d7a78))
+* **carddav:** use item grouping for non-standard EMAIL/TEL/ADR labels ([161de9f](https://github.com/mattogodoy/nametag/commit/161de9fe146843ab221caa49b024f9052e82b095))
+* **carddav:** use item grouping for non-standard EMAIL/TEL/ADR labels ([bd71618](https://github.com/mattogodoy/nametag/commit/bd716188ea1d6c687401ec44d18d196dcfc6fa26))
+
+## [0.43.2](https://github.com/mattogodoy/nametag/compare/v0.43.1...v0.43.2) (2026-04-22)
+
+
+### Bug Fixes
+
+* **carddav:** drop REV/PRODID round-trip and fix backslash unescape ([af1b922](https://github.com/mattogodoy/nametag/commit/af1b922e00589c3a77ded206cb223138766bf636))
+* **carddav:** drop REV/PRODID round-trip and fix backslash unescape ([8b01d79](https://github.com/mattogodoy/nametag/commit/8b01d7972e5cfbe66656454d9e7a4dc18367ab6c))
+
+## [0.43.1](https://github.com/mattogodoy/nametag/compare/v0.43.0...v0.43.1) (2026-04-22)
+
+
+### Features
+
+* **carddav:** log outgoing vCard on push failure ([7417d2d](https://github.com/mattogodoy/nametag/commit/7417d2dd2eb7e7f3f04b2c93154a84d981a4e6db))
+* **carddav:** log outgoing vCard on push failure ([c8aedab](https://github.com/mattogodoy/nametag/commit/c8aedabd38a0c93952a048cab71a9861f235eff8))
+
+
+### Bug Fixes
+
+* **docker:** install tzdata so TZ env var can resolve non-UTC zones ([39998e8](https://github.com/mattogodoy/nametag/commit/39998e8038b2347b1e18bc1b58aff5e6e718f968))
+
+
+### Miscellaneous
+
+* release 0.43.1 ([8978e43](https://github.com/mattogodoy/nametag/commit/8978e438bc567df4c24804b54be1e19c257c476e))
+
+## [0.43.0](https://github.com/mattogodoy/nametag/compare/v0.42.2...v0.43.0) (2026-04-22)
+
+
+### Features
+
+* add API endpoint for name display format preference ([7664808](https://github.com/mattogodoy/nametag/commit/766480825d946e5b35fb2cdd6585772971fd5527))
+* add group filtering in network graph ([8df671a](https://github.com/mattogodoy/nametag/commit/8df671ab910e6fa005eaa9aa002b6b701de0a151))
+* add i18n translations for name display format setting ([1627fd3](https://github.com/mattogodoy/nametag/commit/1627fd3d1de13d5d329863bdb1b997f12cebe3b1))
+* add missing locale strings for pending languages ([87a1117](https://github.com/mattogodoy/nametag/commit/87a1117230aeb581757fa37ef1acbc5df5abdc99))
+* add Name Display Format selector to appearance settings ([cbd6dd1](https://github.com/mattogodoy/nametag/commit/cbd6dd1120861f5354820c0f80d1b74192246788))
+* add NameDisplayFormat enum and user preference field ([00266c0](https://github.com/mattogodoy/nametag/commit/00266c02f4d5067e94d3b9622e58a3354f716fb8))
+* add nameDisplayFormat parameter to name formatting functions ([0f2bd3d](https://github.com/mattogodoy/nametag/commit/0f2bd3dc4a92f47b36afc99d9d370c02d267da4d))
+* add random color generation ([04f551a](https://github.com/mattogodoy/nametag/commit/04f551a51e83d6b8b5526a83f06135221abe3f90))
+* apply nameDisplayFormat to upcoming events and reminder emails ([43b44fa](https://github.com/mattogodoy/nametag/commit/43b44fadbc05c4dae1f607c75c7ff69a0bb846cb))
+* **auth:** emit auth.login.succeeded and auth.login.failed domain events ([e4e8646](https://github.com/mattogodoy/nametag/commit/e4e86466f556697315c3add59ad1ef37c60570df))
+* **carddav:** emit autoExport.failed and autoUpdate.failed domain events ([a46d816](https://github.com/mattogodoy/nametag/commit/a46d8161d024b1729c8f45a18d617e4499975d87))
+* **carddav:** emit sync.finished, push.failed, conflict.created domain events ([0b5926f](https://github.com/mattogodoy/nametag/commit/0b5926f7c7d4de30ec0442f4f4de08e84b5622b7))
+* configurable name display format ([4da4306](https://github.com/mattogodoy/nametag/commit/4da43068b739e74a2744d99ce2c67483f96bb612))
+* **cron:** open jobId scope and emit cron.carddav.* events ([5c1960a](https://github.com/mattogodoy/nametag/commit/5c1960afffaa0e3d32fe22eb6b6735534a192375))
+* **errors:** add AppError and ExternalServiceError base classes ([d25ef48](https://github.com/mattogodoy/nametag/commit/d25ef48cc97efddf44e4e7361ea933c1d1ec78da))
+* **http:** open ALS scope in withLogging, add userId in withAuth ([d128269](https://github.com/mattogodoy/nametag/commit/d1282698cf6ede1c6b756043ec73644b541273b2))
+* integrate GraphFilterHelpModal and refactor filter pill rendering in UnifiedNetworkGraph ([a3172be](https://github.com/mattogodoy/nametag/commit/a3172be80c28a22f53eafc176bbaa2e1b175b953))
+* **logger:** add ALS mixin and AppError-aware err serializer ([98f2d89](https://github.com/mattogodoy/nametag/commit/98f2d894b8dabaa5515c14171c92e11a809081ea))
+* **logging:** add AsyncLocalStorage-backed request context ([a001f9c](https://github.com/mattogodoy/nametag/commit/a001f9c7ac0eb32e1107ed504c0b51f4e0560617))
+* **logging:** add readBodySafely for capturing truncated HTTP error bodies ([b2f49e9](https://github.com/mattogodoy/nametag/commit/b2f49e9bfc50d0e8bbe8907ab26e0177bee6016e))
+* pass nameDisplayFormat through graph routes ([905b69b](https://github.com/mattogodoy/nametag/commit/905b69b27c8c7ccb912301dfbd70191a78c227d5))
+* propagate nameDisplayFormat to all name display call sites ([0a22b9f](https://github.com/mattogodoy/nametag/commit/0a22b9f8f2e6e949527360b585bce89ff130e332))
+
+
+### Bug Fixes
+
+* add missing translation for generate random color button ([aad0f00](https://github.com/mattogodoy/nametag/commit/aad0f00c32ac040104e91e1194a0212ca234526e))
+* add nameDisplayFormat to mock user objects in locale test ([e7f4dce](https://github.com/mattogodoy/nametag/commit/e7f4dce736674ebc2f07fe0bf0204ca7423901ae))
+* add nameDisplayFormat to profile endpoint and OpenAPI spec ([0b515e7](https://github.com/mattogodoy/nametag/commit/0b515e7316c6e39bd3ef8bc4c4a7f7e31694cf27))
+* apply nameDisplayFormat to pills and timeline, keep dropdowns showing full names ([314e9f4](https://github.com/mattogodoy/nametag/commit/314e9f48fa3806e5f8073c48031d9261d03e6f69))
+* **carddav:** capture response body and throw ExternalServiceError on HTTP failures ([309de9d](https://github.com/mattogodoy/nametag/commit/309de9da394d423f69ff8856bc8a28356302d44e))
+* change modal backdrop to use new opacity syntax ([79ca8b9](https://github.com/mattogodoy/nametag/commit/79ca8b901a068965c5bc001fcaaf83993093e11e))
+* graph group pill and aria labels ([d119c60](https://github.com/mattogodoy/nametag/commit/d119c606b00492ffc5ba45fbeacd306e90d2688e))
+* improve visual design of graph filter help button ([5ee98c2](https://github.com/mattogodoy/nametag/commit/5ee98c2f4ada4ec674948d9653b9f99bded0ea89))
+* **logger:** bindings and record fields win over ALS mixin; context spread can't overwrite err fields ([86eabd3](https://github.com/mattogodoy/nametag/commit/86eabd3af9b48c131e2e6dce6bb993769f09b1c2))
+* modal focus trap logic ([3576fa3](https://github.com/mattogodoy/nametag/commit/3576fa395e6e0aada61eac822e06094b70c16cf2))
+* pass nameDisplayFormat from all server pages to client components ([dc9a3f4](https://github.com/mattogodoy/nametag/commit/dc9a3f4df343a4db566a73d9d595dbab18879e43))
+* remove unused formatFullName import from RelationshipManager ([9ad4b71](https://github.com/mattogodoy/nametag/commit/9ad4b7181cdb784b301a27032a42249e9e69132a))
+* resolve typecheck errors in new test files and normalize personId context in syncToServer ([3ba3c94](https://github.com/mattogodoy/nametag/commit/3ba3c94203d5fcf334f78c8983c7fde1c4c2f4ae))
+* specify locale in formatDateWithoutYear function to ensure correct month names regardless of system locale settings ([1d0f8e4](https://github.com/mattogodoy/nametag/commit/1d0f8e4cfa43c5415b63462e579ad6d67c447b0a))
+* update OpenAPI spec to reflect new group filtering options for dashboard graph endpoint ([256b50a](https://github.com/mattogodoy/nametag/commit/256b50afc465b0909b95d6054c2d1e8e33e80eac))
+* update test to match new button label for generating random color ([7726a0f](https://github.com/mattogodoy/nametag/commit/7726a0f6ac787f9f770077e6eaa8828cfb086ac6))
+* use formatGraphName for display-name contexts so nickname-preferred works ([fa16567](https://github.com/mattogodoy/nametag/commit/fa1656756f86cc43e4a7335fa29435c7f1f3d55f))
+* use formatGraphName in all display-name contexts so nickname-preferred works everywhere ([2e1fefe](https://github.com/mattogodoy/nametag/commit/2e1fefeafc67a61bb8d1189113f5d334a538d614))
+* use new icon in relationship type form ([f9e509f](https://github.com/mattogodoy/nametag/commit/f9e509fb943bba9c75cd6e10d32de907745f016e))
+
 ## [0.42.2](https://github.com/mattogodoy/nametag/compare/v0.42.1...v0.42.2) (2026-04-09)
 
 
