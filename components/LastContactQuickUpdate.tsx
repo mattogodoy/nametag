@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { formatDate, type DateFormat } from '@/lib/date-format';
+import { formatDate, getLocalDateString, parseAsLocalDate, type DateFormat } from '@/lib/date-format';
 
 function getRelativeTime(
   date: Date,
@@ -49,11 +49,10 @@ export default function LastContactQuickUpdate({
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleContactedToday() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const previousValue = lastContact;
 
-    // Optimistic update
-    setLastContact(new Date().toISOString());
+    setLastContact(today);
     setIsLoading(true);
 
     try {
@@ -78,7 +77,7 @@ export default function LastContactQuickUpdate({
     }
   }
 
-  const parsedDate = lastContact ? new Date(lastContact) : null;
+  const parsedDate = lastContact ? parseAsLocalDate(lastContact) : null;
   const isToday = !isLoading && parsedDate && Math.floor(Math.abs(new Date().getTime() - parsedDate.getTime()) / (1000 * 60 * 60 * 24)) === 0;
 
   return (

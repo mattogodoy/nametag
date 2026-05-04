@@ -376,20 +376,26 @@ function processProperty(
     }
 
     case 'TEL': {
-      const typeParam = prop.params.TYPE || 'other';
-      const types = Array.isArray(typeParam) ? typeParam : [typeParam];
-      const type = types[0] || 'other';
+      const groupLabel = prop.group ? getItemGroupLabel(prop.group, itemGroups) : undefined;
+      const typeParam = prop.params.TYPE;
+      const types = typeParam
+        ? (Array.isArray(typeParam) ? typeParam : [typeParam])
+        : [];
+      const type = groupLabel || types[0] || 'other';
 
       data.phoneNumbers.push({ type, number: prop.value });
       return true;
     }
 
     case 'EMAIL': {
-      const typeParam = prop.params.TYPE || 'other';
-      const types = Array.isArray(typeParam) ? typeParam : [typeParam];
+      const groupLabel = prop.group ? getItemGroupLabel(prop.group, itemGroups) : undefined;
+      const typeParam = prop.params.TYPE;
+      const types = typeParam
+        ? (Array.isArray(typeParam) ? typeParam : [typeParam])
+        : [];
       // Filter out 'internet' which is redundant
       const filteredTypes = types.filter((t) => t.toLowerCase() !== 'internet');
-      const type = filteredTypes[0] || 'other';
+      const type = groupLabel || filteredTypes[0] || 'other';
 
       data.emails.push({ type, email: prop.value });
       return true;
@@ -398,9 +404,12 @@ function processProperty(
     case 'ADR': {
       // ADR = ;;street;locality;region;postal;country
       const parts = prop.value.split(';');
-      const typeParam = prop.params.TYPE || 'other';
-      const types = Array.isArray(typeParam) ? typeParam : [typeParam];
-      const type = types[0] || 'other';
+      const groupLabel = prop.group ? getItemGroupLabel(prop.group, itemGroups) : undefined;
+      const typeParam = prop.params.TYPE;
+      const types = typeParam
+        ? (Array.isArray(typeParam) ? typeParam : [typeParam])
+        : [];
+      const type = groupLabel || types[0] || 'other';
 
       // Split street component on newline
       const streetPart = parts[2] || '';
@@ -526,13 +535,19 @@ function processProperty(
       return true;
     }
 
+    // Server-authored metadata that has no user-facing meaning in Nametag.
+    // We consume it so it doesn't leak into unknownProperties, but we do NOT
+    // preserve it — round-tripping REV/PRODID accumulates duplicates and has
+    // caused CardDAV push failures when exported values carry odd escaping.
+    case 'REV':
+    case 'PRODID':
+      return true;
+
     // Properties to preserve as custom fields
     case 'ROLE':
     case 'LANG':
     case 'TZ':
     case 'KEY':
-    case 'REV':
-    case 'PRODID':
     case 'RELATED': {
       data.customFields.push({
         key: prop.property,
@@ -766,14 +781,35 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
 }
 
 /**
- * Unescape vCard text
+ * Unescape vCard text values.
+ *
+ * Scans left-to-right so escape sequences compose correctly. A regex chain
+ * like `.replace(/\\\\/g, '\\')` run after other replaces would turn the
+ * 3-char sequence `\\:` (which should decode to literal `\:`) into `:`.
+ *
+ * Handles: \\ \n \N \; \, and \: (the last is a 4.0 extension some tools
+ * emit; leaving it un-unescaped caused stray backslashes to survive a
+ * round-trip and break subsequent CardDAV PUTs).
  */
 function unescapeVCardText(text: string): string {
-  return text
-    .replace(/\\n/g, '\n')
-    .replace(/\\;/g, ';')
-    .replace(/\\,/g, ',')
-    .replace(/\\\\/g, '\\');
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch !== '\\' || i + 1 >= text.length) {
+      out += ch;
+      continue;
+    }
+    const next = text[i + 1];
+    if (next === 'n' || next === 'N') {
+      out += '\n';
+    } else if (next === '\\' || next === ';' || next === ',' || next === ':') {
+      out += next;
+    } else {
+      out += ch + next;
+    }
+    i++;
+  }
+  return out;
 }
 
 /**

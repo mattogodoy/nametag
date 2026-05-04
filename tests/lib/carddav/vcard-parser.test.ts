@@ -83,6 +83,31 @@ describe('vCard Parser', () => {
 
       expect(props[0].params.TYPE).toEqual(['work', 'voice']);
     });
+
+    it('should unescape \\n, \\;, \\, and \\\\ in values', () => {
+      const vCard = 'BEGIN:VCARD\nVERSION:3.0\nNOTE:line1\\nline2 a\\;b c\\,d path\\\\here\nEND:VCARD';
+      const props = parseProperties(vCard, '3.0');
+
+      expect(props[0].value).toBe('line1\nline2 a;b c,d path\\here');
+    });
+
+    it('should unescape \\: (vCard 4.0 extension some tools emit)', () => {
+      const vCard = 'BEGIN:VCARD\nVERSION:3.0\nX-TS:2025-10-31T06\\:54\\:04Z\nEND:VCARD';
+      const props = parseProperties(vCard, '3.0');
+
+      expect(props[0].value).toBe('2025-10-31T06:54:04Z');
+    });
+
+    it('should decode \\\\: as literal backslash + colon, not strip the backslash', () => {
+      // `\\:` = escape-sequence \\ (literal backslash) then literal `:`.
+      // A naive regex chain that runs `/\\\\/g → \\` last would corrupt this
+      // by first consuming `\:` and turning it into `:`. Left-to-right scan
+      // must preserve the backslash.
+      const vCard = 'BEGIN:VCARD\nVERSION:3.0\nX-PATH:C\\\\:drive\nEND:VCARD';
+      const props = parseProperties(vCard, '3.0');
+
+      expect(props[0].value).toBe('C\\:drive');
+    });
   });
 
   describe('associateItemGroups', () => {
@@ -337,9 +362,11 @@ END:VCARD`;
       expect(parsed.importantDates).toHaveLength(1);
       expect(parsed.importantDates[0].type).toBe('birthday');
       expect(parsed.importantDates[0].title).toBe('');
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(1990);
-      expect(parsed.importantDates[0].date.getMonth()).toBe(4); // May (0-indexed)
-      expect(parsed.importantDates[0].date.getDate()).toBe(15);
+      // Parsed dates are UTC-midnight (matching the API storage convention),
+      // so assertions must use UTC accessors to be timezone-independent.
+      expect(parsed.importantDates[0].date.getUTCFullYear()).toBe(1990);
+      expect(parsed.importantDates[0].date.getUTCMonth()).toBe(4); // May (0-indexed)
+      expect(parsed.importantDates[0].date.getUTCDate()).toBe(15);
     });
 
     it('should parse BDAY with year-omitted (v4 format)', () => {
@@ -572,6 +599,66 @@ END:VCARD`;
       expect(parsed.customFields[0].value).toBe('John Doe');
       expect(parsed.customFields[0].type).toBe('Father');
     });
+
+    it('uses X-ABLabel as EMAIL type when present', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.EMAIL:matt@example.com
+item1.X-ABLabel:Personal
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.emails).toHaveLength(1);
+      expect(parsed.emails[0].email).toBe('matt@example.com');
+      expect(parsed.emails[0].type).toBe('Personal');
+    });
+
+    it('uses X-ABLabel as TEL type when present', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.TEL:+15555551212
+item1.X-ABLabel:School
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.phoneNumbers).toHaveLength(1);
+      expect(parsed.phoneNumbers[0].number).toBe('+15555551212');
+      expect(parsed.phoneNumbers[0].type).toBe('School');
+    });
+
+    it('uses X-ABLabel as ADR type when present, preserving structured value', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.ADR:;;1 Beach Rd;Coast;ST;11111;US
+item1.X-ABLabel:Summer
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.addresses).toHaveLength(1);
+      expect(parsed.addresses[0].type).toBe('Summer');
+      expect(parsed.addresses[0].streetLine1).toBe('1 Beach Rd');
+      expect(parsed.addresses[0].locality).toBe('Coast');
+      expect(parsed.addresses[0].postalCode).toBe('11111');
+    });
+
+    it('prefers X-ABLabel over TYPE parameter for EMAIL', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.EMAIL;TYPE=INTERNET:matt@example.com
+item1.X-ABLabel:Personal
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.emails[0].type).toBe('Personal');
+    });
   });
 
   describe('parseVCard - Custom Fields', () => {
@@ -606,6 +693,24 @@ END:VCARD`;
       expect(parsed.customFields.find(f => f.key === 'ROLE')?.value).toBe('Tech Lead');
       expect(parsed.customFields.find(f => f.key === 'LANG')?.value).toBe('en');
       expect(parsed.customFields.find(f => f.key === 'TZ')?.value).toBe('-0500');
+    });
+
+    it('should NOT capture REV or PRODID (server-authored metadata)', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+REV:2025-10-31T06:54:04Z
+PRODID:-//Google Inc//Google Contacts//EN
+ROLE:Tech Lead
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.customFields.find(f => f.key === 'REV')).toBeUndefined();
+      expect(parsed.customFields.find(f => f.key === 'PRODID')).toBeUndefined();
+      expect(parsed.unknownProperties.find(p => p.key === 'REV')).toBeUndefined();
+      expect(parsed.unknownProperties.find(p => p.key === 'PRODID')).toBeUndefined();
+      expect(parsed.customFields.find(f => f.key === 'ROLE')?.value).toBe('Tech Lead');
     });
   });
 

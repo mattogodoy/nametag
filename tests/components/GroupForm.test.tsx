@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import GroupForm from '../../components/GroupForm';
+import { PRESET_COLORS } from '../../lib/colors';
 import enMessages from '../../locales/en.json';
 
 vi.mock('next/navigation', () => ({
@@ -153,11 +154,11 @@ describe('GroupForm', () => {
         </Wrapper>
       );
 
-      // There should be 8 preset color buttons
+      // There should be x preset color buttons
       const colorButtons = screen.getAllByRole('button').filter(
         (btn) => btn.getAttribute('type') === 'button' && btn.style.backgroundColor
       );
-      expect(colorButtons.length).toBe(8);
+      expect(colorButtons.length).toBe(PRESET_COLORS.length);
     });
 
     it('selecting a preset color updates the custom color input', async () => {
@@ -169,7 +170,7 @@ describe('GroupForm', () => {
         </Wrapper>
       );
 
-      const redColorButton = screen.getByTitle('#EF4444');
+      const redColorButton = screen.getByTitle(PRESET_COLORS[0]);
       await user.click(redColorButton);
 
       const colorInput = screen.getByLabelText(/or choose a custom color/i) as HTMLInputElement;
@@ -184,6 +185,22 @@ describe('GroupForm', () => {
       );
 
       expect(screen.getByLabelText(/or choose a custom color/i)).toBeInTheDocument();
+    });
+
+    it('reroll updates the selected color', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <Wrapper>
+          <GroupForm mode="create" />
+        </Wrapper>
+      );
+
+      const colorInput = screen.getByLabelText(/or choose a custom color/i) as HTMLInputElement;
+
+      await user.click(screen.getByRole('button', { name: /Generate a random color/i }));
+
+      expect(colorInput.value).toMatch(/^#[0-9a-f]{6}$/i);
     });
   });
 

@@ -20,6 +20,8 @@ model User {
   theme              Theme     @default(DARK)
   dateFormat         DateFormat @default(MDY)
   nameOrder          NameOrder @default(WESTERN)
+  nameDisplayFormat  NameDisplayFormat @default(FULL)
+  graphMode          String?           // 'individuals' | 'bubbles' | null (unset → individuals)
   language           String?   @default("en") // "en" or "es-ES"
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
@@ -306,6 +308,12 @@ enum DateFormat {
 enum NameOrder {
   WESTERN // Given Name Surname (e.g., "John Smith")
   EASTERN // Surname Given Name (e.g., "Smith John")
+}
+
+enum NameDisplayFormat {
+  FULL
+  NICKNAME_PREFERRED
+  SHORT
 }
 
 // ============================================

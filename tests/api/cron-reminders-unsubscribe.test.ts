@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   importantDateReminderTemplate: vi.fn(),
   contactReminderTemplate: vi.fn(),
   createUnsubscribeToken: vi.fn(),
-  formatFullName: vi.fn(),
+  formatGraphName: vi.fn(),
   loggerInfo: vi.fn(),
   securityLoggerAuthFailure: vi.fn(),
 }));
@@ -58,7 +58,7 @@ vi.mock('../../lib/unsubscribe-tokens', () => ({
 
 // Mock nameUtils
 vi.mock('../../lib/nameUtils', () => ({
-  formatFullName: mocks.formatFullName,
+  formatGraphName: mocks.formatGraphName,
 }));
 
 // Mock env
@@ -122,7 +122,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         results: (items as unknown[]).map(() => ({ success: true, id: 'test-id' })),
       })
     );
-    mocks.formatFullName.mockReturnValue('John Doe');
+    mocks.formatGraphName.mockReturnValue('John Doe');
   });
 
   describe('Important date reminders', () => {

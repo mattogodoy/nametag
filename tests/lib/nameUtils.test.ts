@@ -189,9 +189,9 @@ describe('nameUtils', () => {
       expect(formatGraphName(person)).toBe('John Doe');
     });
 
-    it('should use nickname instead of name when present', () => {
+    it('should show full name with nickname in quotes when present', () => {
       const person = { name: 'Matias', surname: 'Godoy', nickname: 'Matto' };
-      expect(formatGraphName(person)).toBe('Matto Godoy');
+      expect(formatGraphName(person)).toBe("Matias 'Matto' Godoy");
     });
 
     it('should show only first name and surname (ignore middle names)', () => {
@@ -204,7 +204,7 @@ describe('nameUtils', () => {
       expect(formatGraphName(person)).toBe('Matias Godoy');
     });
 
-    it('should use nickname with surname (ignore middle names)', () => {
+    it('should show full name with nickname in quotes (ignore middle names)', () => {
       const person = {
         name: 'Matias',
         surname: 'Godoy',
@@ -212,7 +212,7 @@ describe('nameUtils', () => {
         secondLastName: 'Biedma',
         nickname: 'Matto',
       };
-      expect(formatGraphName(person)).toBe('Matto Godoy');
+      expect(formatGraphName(person)).toBe("Matias 'Matto' Godoy");
     });
 
     it('should handle null surname', () => {
@@ -222,7 +222,7 @@ describe('nameUtils', () => {
 
     it('should handle nickname without surname', () => {
       const person = { name: 'John', surname: null, nickname: 'Johnny' };
-      expect(formatGraphName(person)).toBe('Johnny');
+      expect(formatGraphName(person)).toBe("John 'Johnny'");
     });
   });
 
@@ -232,9 +232,9 @@ describe('nameUtils', () => {
       expect(formatGraphName(person, 'EASTERN')).toBe('Tanaka Taro');
     });
 
-    it('should use nickname in eastern order', () => {
+    it('should show full name with nickname in eastern order', () => {
       const person = { name: 'Matias', surname: 'Godoy', nickname: 'Matto' };
-      expect(formatGraphName(person, 'EASTERN')).toBe('Godoy Matto');
+      expect(formatGraphName(person, 'EASTERN')).toBe("Godoy 'Matto' Matias");
     });
 
     it('should handle no surname in eastern order', () => {
@@ -245,6 +245,127 @@ describe('nameUtils', () => {
     it('should default to western when nameOrder is omitted', () => {
       const person = { name: 'John', surname: 'Doe' };
       expect(formatGraphName(person)).toBe('John Doe');
+    });
+  });
+
+  describe('formatGraphName with nameDisplayFormat', () => {
+    // FULL format — shows complete name with nickname in quotes
+    it('should show full name with nickname in FULL format', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }, undefined, 'FULL'))
+        .toBe("Robert 'Dad' Johnson");
+    });
+
+    it('should show name and surname in FULL format when no nickname', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: null }, undefined, 'FULL'))
+        .toBe('Robert Johnson');
+    });
+
+    it('should show name only in FULL format when no surname or nickname', () => {
+      expect(formatGraphName({ name: 'Robert', surname: null, nickname: null }, undefined, 'FULL'))
+        .toBe('Robert');
+    });
+
+    it('should show name with nickname in FULL format when no surname', () => {
+      expect(formatGraphName({ name: 'Robert', surname: null, nickname: 'Bob' }, undefined, 'FULL'))
+        .toBe("Robert 'Bob'");
+    });
+
+    // NICKNAME_PREFERRED format — nickname replaces first name
+    it('should show nickname + surname in NICKNAME_PREFERRED format', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }, undefined, 'NICKNAME_PREFERRED'))
+        .toBe('Dad Johnson');
+    });
+
+    it('should fall back to name + surname in NICKNAME_PREFERRED when no nickname', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: null }, undefined, 'NICKNAME_PREFERRED'))
+        .toBe('Robert Johnson');
+    });
+
+    it('should show nickname only in NICKNAME_PREFERRED when no surname', () => {
+      expect(formatGraphName({ name: 'Robert', surname: null, nickname: 'Dad' }, undefined, 'NICKNAME_PREFERRED'))
+        .toBe('Dad');
+    });
+
+    // SHORT format — nickname or name only, no surname
+    it('should show nickname only in SHORT format', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }, undefined, 'SHORT'))
+        .toBe('Dad');
+    });
+
+    it('should fall back to name in SHORT format when no nickname', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: null }, undefined, 'SHORT'))
+        .toBe('Robert');
+    });
+
+    // EASTERN name order combinations
+    it('should use Eastern order in FULL format', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }, 'EASTERN', 'FULL'))
+        .toBe("Johnson 'Dad' Robert");
+    });
+
+    it('should use Eastern order in NICKNAME_PREFERRED format', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }, 'EASTERN', 'NICKNAME_PREFERRED'))
+        .toBe('Johnson Dad');
+    });
+
+    it('should use Eastern order in SHORT format (no surname, so order irrelevant)', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }, 'EASTERN', 'SHORT'))
+        .toBe('Dad');
+    });
+
+    // Default behavior (no nameDisplayFormat passed) matches FULL
+    it('should default to FULL behavior when nameDisplayFormat is undefined', () => {
+      expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }))
+        .toBe("Robert 'Dad' Johnson");
+    });
+
+    // CJK names
+    it('should handle CJK names in FULL format with Eastern order', () => {
+      expect(formatGraphName({ name: '太郎', surname: '田中', nickname: 'タロウ' }, 'EASTERN', 'FULL'))
+        .toBe("田中'タロウ'太郎");
+    });
+
+    it('should handle CJK names in NICKNAME_PREFERRED format with Eastern order', () => {
+      expect(formatGraphName({ name: '太郎', surname: '田中', nickname: 'タロウ' }, 'EASTERN', 'NICKNAME_PREFERRED'))
+        .toBe('田中タロウ');
+    });
+
+    it('should handle CJK names in SHORT format', () => {
+      expect(formatGraphName({ name: '太郎', surname: '田中', nickname: 'タロウ' }, 'EASTERN', 'SHORT'))
+        .toBe('タロウ');
+    });
+  });
+
+  describe('formatFullName with nameDisplayFormat', () => {
+    const person = { name: 'Robert', surname: 'Johnson', middleName: 'Michael', secondLastName: null, nickname: 'Dad' };
+
+    // FULL format — same as current behavior
+    it('should show full name in FULL format', () => {
+      expect(formatFullName(person, undefined, 'FULL'))
+        .toBe("Robert 'Dad' Michael Johnson");
+    });
+
+    // NICKNAME_PREFERRED — in full context, still shows all parts (detail views)
+    it('should show full name in NICKNAME_PREFERRED format (detail context)', () => {
+      expect(formatFullName(person, undefined, 'NICKNAME_PREFERRED'))
+        .toBe("Robert 'Dad' Michael Johnson");
+    });
+
+    // SHORT format — nickname only
+    it('should show nickname only in SHORT format', () => {
+      expect(formatFullName(person, undefined, 'SHORT'))
+        .toBe('Dad');
+    });
+
+    it('should fall back to name in SHORT format when no nickname', () => {
+      expect(formatFullName({ name: 'Robert', surname: 'Johnson', nickname: null }, undefined, 'SHORT'))
+        .toBe('Robert');
+    });
+
+    // Default behavior matches FULL
+    it('should default to FULL when nameDisplayFormat is undefined', () => {
+      expect(formatFullName(person))
+        .toBe("Robert 'Dad' Michael Johnson");
     });
   });
 
@@ -285,7 +406,7 @@ describe('nameUtils', () => {
 
     it('should omit spaces for CJK formatGraphName with nickname', () => {
       const person = { name: '太郎', surname: '田中', nickname: 'たろちゃん' };
-      expect(formatGraphName(person, 'EASTERN')).toBe('田中たろちゃん');
+      expect(formatGraphName(person, 'EASTERN')).toBe("田中'たろちゃん'太郎");
     });
 
     it('should keep spaces for CJK names in western order', () => {

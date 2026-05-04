@@ -22,6 +22,7 @@ export const GET = withAuth(async (_request, session) => {
         dateFormat: true,
         language: true,
         nameOrder: true,
+        nameDisplayFormat: true,
         emailVerified: true,
         createdAt: true,
         updatedAt: true,

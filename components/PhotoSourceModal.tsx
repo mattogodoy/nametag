@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_PHOTO_SIZE = 50 * 1024 * 1024; // 50MB
 
 interface PhotoSourceModalProps {
   onSelect: (file: File) => void;

@@ -5,7 +5,7 @@ import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('people-photo');
 
-const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
 
 // POST /api/people/[id]/photo - Upload a person's photo
 export const POST = withAuth(async (request, session, context) => {
@@ -27,7 +27,7 @@ export const POST = withAuth(async (request, session, context) => {
 
     // Check file size before reading full buffer
     if (file.size > MAX_UPLOAD_SIZE) {
-      return apiResponse.error('Photo exceeds maximum size of 10MB');
+      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`);
     }
 
     // Verify person exists and is owned by user

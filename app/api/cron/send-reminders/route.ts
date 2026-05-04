@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmailBatch, emailTemplates } from '@/lib/email';
 import type { SendBatchEmailItem } from '@/lib/email';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
 import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
@@ -69,6 +69,7 @@ export const GET = withLogging(async function GET(request: Request) {
                 dateFormat: true,
                 language: true,
                 nameOrder: true,
+                nameDisplayFormat: true,
               },
             },
           },
@@ -93,7 +94,7 @@ export const GET = withLogging(async function GET(request: Request) {
         const { person } = importantDate;
         const userEmail = person.user.email;
         const userLanguage = (person.user.language as SupportedLocale) || 'en';
-        const personName = formatFullName(person, person.user.nameOrder);
+        const personName = formatGraphName(person, person.user.nameOrder, person.user.nameDisplayFormat);
         const formattedDate = formatDateForEmail(
           importantDate.date,
           person.user.dateFormat,
@@ -147,6 +148,7 @@ export const GET = withLogging(async function GET(request: Request) {
             dateFormat: true,
             language: true,
             nameOrder: true,
+            nameDisplayFormat: true,
           },
         },
       },
@@ -158,7 +160,7 @@ export const GET = withLogging(async function GET(request: Request) {
 
       if (shouldSend) {
         const userLanguage = (person.user.language as SupportedLocale) || 'en';
-        const personName = formatFullName(person, person.user.nameOrder);
+        const personName = formatGraphName(person, person.user.nameOrder, person.user.nameDisplayFormat);
         const lastContactFormatted = person.lastContact
           ? formatDateForEmail(person.lastContact, person.user.dateFormat, userLanguage)
           : null;

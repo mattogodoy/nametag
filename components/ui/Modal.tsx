@@ -48,11 +48,13 @@ export default function Modal({
   // Focus trap
   useEffect(() => {
     if (isOpen && modalRef.current) {
-      const focusableElements = modalRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+      const focusableElements = Array.from(
+        modalRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
 
       const handleTab = (e: KeyboardEvent) => {
         if (e.key === 'Tab') {
@@ -88,7 +90,7 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         // Click outside to close
         if (e.target === e.currentTarget) {
@@ -101,11 +103,15 @@ export default function Modal({
     >
       <div
         ref={modalRef}
+        tabIndex={-1}
         className={`bg-surface rounded-lg w-full ${sizeClasses[size]} shadow-xl max-h-[90vh] overflow-y-auto`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-surface z-10">
-          <h2 id="modal-title" className="text-xl font-semibold text-foreground">
+          <h2
+            id="modal-title"
+            className="text-xl font-semibold text-foreground"
+          >
             {title}
           </h2>
           <button

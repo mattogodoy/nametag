@@ -247,13 +247,11 @@ export default function ImportantDatesManager({
     onChange,
     idPrefix,
     canEnable,
-    limitMessage,
   }: {
     date: ImportantDate;
     onChange: (updates: Partial<ImportantDate>) => void;
     idPrefix: string;
     canEnable: boolean;
-    limitMessage?: string;
   }) => {
     const isFuture = isDateInFuture(date.date);
     // Can toggle on if: already enabled (to disable) OR canEnable is true
@@ -290,9 +288,9 @@ export default function ImportantDatesManager({
             {t('remindMe')}
           </label>
         </div>
-        {!canToggle && limitMessage && (
+        {!canToggle && reminderLimit && !reminderLimit.isUnlimited && (
           <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-            {t('reminderLimitReached', { limit: reminderLimit?.limit ?? 0 })}
+            {t('reminderLimitReached', { limit: reminderLimit.limit })}
           </p>
         )}
 

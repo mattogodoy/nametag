@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import DatePicker from '../ui/DatePicker';
+import { getLocalDateString } from '@/lib/date-format';
 import type { FormData } from '../../hooks/usePersonForm';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -41,7 +42,7 @@ export default function LastContactSection({
         onChange={(val) => onFormDataChange({ lastContact: val })}
         dateFormat={dateFormat}
         showTodayButton
-        maxDate={new Date().toISOString().split('T')[0]}
+        maxDate={getLocalDateString()}
       />
       {formData.lastContact && (
         <button

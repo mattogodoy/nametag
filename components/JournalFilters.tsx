@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import PillSelector from '@/components/PillSelector';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatFullName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 
 interface PersonOption {
   id: string;
@@ -23,13 +23,19 @@ interface JournalFiltersProps {
   currentPersonIds: string[];
   currentSearch?: string;
   nameOrder: 'WESTERN' | 'EASTERN';
+  nameDisplayFormat?: NameDisplayFormat;
 }
 
-export default function JournalFilters({ people, currentPersonIds, currentSearch, nameOrder }: JournalFiltersProps) {
+export default function JournalFilters({ people, currentPersonIds, currentSearch, nameOrder, nameDisplayFormat }: JournalFiltersProps) {
   const t = useTranslations('journal');
   const router = useRouter();
 
   const pillPeople: PillPerson[] = useMemo(
+    () => people.map((p) => ({ id: p.id, label: formatGraphName(p, nameOrder, nameDisplayFormat) })),
+    [people, nameOrder, nameDisplayFormat],
+  );
+
+  const dropdownPeople: PillPerson[] = useMemo(
     () => people.map((p) => ({ id: p.id, label: formatFullName(p, nameOrder) })),
     [people, nameOrder],
   );
@@ -82,7 +88,7 @@ export default function JournalFilters({ people, currentPersonIds, currentSearch
       </form>
       <PillSelector
         selectedItems={selectedPeople}
-        availableItems={pillPeople.filter((p) => !selectedPeople.some((s) => s.id === p.id))}
+        availableItems={dropdownPeople.filter((p) => !selectedPeople.some((s) => s.id === p.id))}
         onAdd={handleAddPerson}
         onRemove={handleRemovePerson}
         placeholder={t('filterByPerson')}

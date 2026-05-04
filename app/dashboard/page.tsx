@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
+import GraphFilterHelpModal from '@/components/GraphFilterHelpModal';
 import { formatDate, formatDateWithoutYear } from '@/lib/date-format';
 import { getUpcomingEvents } from '@/lib/upcoming-events';
 import { getTranslations } from 'next-intl/server';
@@ -20,7 +21,7 @@ export default async function DashboardPage() {
   // Fetch user's date format preference
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { dateFormat: true },
+    select: { dateFormat: true, graphMode: true },
   });
   const dateFormat = user?.dateFormat || 'MDY';
 
@@ -117,15 +118,17 @@ export default async function DashboardPage() {
           {/* Network Graph */}
           {peopleCount > 0 ? (
             <div className="bg-surface rounded-lg p-6 mb-8 border border-border">
-              <h2 className="text-xl font-bold text-foreground mb-4">
-                {t('yourNetwork')}
-              </h2>
+              <div className="mb-4 flex items-center gap-3">
+                <h2 className="text-xl font-bold text-foreground">
+                  {t('yourNetwork')}
+                </h2>
+                <GraphFilterHelpModal />
+              </div>
               <UnifiedNetworkGraph
                 apiEndpoint="/api/dashboard/graph"
                 groups={groups}
                 centerNodeNonClickable={true}
-                linkDistance={120}
-                chargeStrength={-400}
+                graphMode={(user?.graphMode === 'individuals' || user?.graphMode === 'bubbles') ? user.graphMode : null}
               />
             </div>
           ) : (

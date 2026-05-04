@@ -36,11 +36,19 @@ export async function authorizeCredentials(credentials: {
   });
 
   if (!user) {
+    log.warn(
+      { event: 'auth.login.failed', reason: 'unknown_user', email },
+      'Login failed: unknown user',
+    );
     return null;
   }
 
   // OAuth users don't have passwords - they must use OAuth to sign in
   if (!user.password) {
+    log.warn(
+      { event: 'auth.login.failed', reason: 'oauth_only', email, userId: user.id },
+      'Login failed: OAuth-only account',
+    );
     return null;
   }
 
@@ -84,6 +92,10 @@ export async function authorizeCredentials(credentials: {
       data: updateData,
     });
 
+    log.warn(
+      { event: 'auth.login.failed', reason: 'invalid_credentials', email, userId: user.id },
+      'Login failed: invalid credentials',
+    );
     return null;
   }
 
@@ -101,6 +113,11 @@ export async function authorizeCredentials(credentials: {
       lastLoginAt: new Date(),
     },
   });
+
+  log.info(
+    { event: 'auth.login.succeeded', userId: user.id, method: 'credentials' },
+    'Login succeeded',
+  );
 
   return {
     id: user.id,

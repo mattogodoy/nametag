@@ -69,7 +69,11 @@ export default async function NewGroupPage() {
             />
           ) : (
             <div className="bg-surface shadow rounded-lg p-6">
-              <GroupForm mode="create" availablePeople={availablePeople} nameOrder={nameOrder} />
+              <GroupForm
+                mode="create"
+                availablePeople={availablePeople}
+                nameOrder={nameOrder}
+              />
             </div>
           )}
         </div>

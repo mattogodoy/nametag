@@ -109,6 +109,22 @@
       "nameOrderExample": "例",
       "nameOrderSuccess": "名前の表示順を更新しました",
       "nameOrderError": "名前の表示順の更新に失敗しました",
+      "nameDisplayFormatTitle": "名前の表示形式",
+      "nameDisplayFormatDescription": "名前のどの部分を表示するか選択します",
+      "nameDisplayFormatFull": "フルネーム",
+      "nameDisplayFormatFullDescription": "ニックネームを含むすべての名前を表示",
+      "nameDisplayFormatNicknamePreferred": "ニックネーム優先",
+      "nameDisplayFormatNicknamePreferredDescription": "名の代わりにニックネームを使用",
+      "nameDisplayFormatShort": "短縮",
+      "nameDisplayFormatShortDescription": "ニックネームまたは名のみ表示",
+      "nameDisplayFormatSuccess": "名前の表示形式を更新しました",
+      "nameDisplayFormatError": "名前の表示形式の更新に失敗しました",
+      "graphModeTitle": "ネットワークグラフの表示",
+      "graphModeDescription": "ダッシュボードでネットワークグラフを表示する方法。",
+      "graphModeIndividuals": "常に個別に表示",
+      "graphModeBubbles": "常にグループで表示",
+      "graphDisplaySuccess": "表示を更新しました",
+      "graphDisplayError": "表示の更新に失敗しました",
       "language": {
         "title": "言語",
         "description": "お好みの言語を選択してください",
@@ -619,8 +635,48 @@
       "filterByGroups": "グループでフィルタリング",
       "filterPlaceholder": "グループでフィルタリングするには入力してください...",
       "noGroupsFound": "一致するグループは見つかりませんでした",
-      "clusterByGroup": "グループごとにクラスタリング",
-      "recenterGraph": "グラフを再中心に配置"
+      "recenterGraph": "グラフを再中心に配置",
+      "matchMode": {
+        "any": "いずれか",
+        "all": "すべて",
+        "anyTitle": "いずれかのグループに一致",
+        "allTitle": "すべてのグループに一致",
+        "ariaLabel": "{title}。クリックして切り替え。"
+      },
+      "filterState": {
+        "included": "含める。クリックして除外。",
+        "excluded": "除外中。クリックして含める。",
+        "includedWithLabel": "{label}: 含める。クリックして除外。",
+        "excludedWithLabel": "{label}: 除外中。クリックして含める。"
+      },
+      "filterAction": {
+        "include": "含める",
+        "exclude": "除外する",
+        "remove": "削除",
+        "removeWithLabel": "{label}を削除"
+      },
+      "filterHelp": {
+        "ariaLabel": "グラフフィルターのヘルプ",
+        "title": "グループフィルターの仕組み",
+        "groupsSection": "グループの含める/除外",
+        "groupsDescription": "デフォルトでは、選択したグループは含める（緑）になります。グループをクリックすると除外（赤）に切り替わり、もう一度クリックで戻せます。",
+        "includingSection": "グループを含める:",
+        "includingDescription": "含めたグループの人物はグラフに表示されます。",
+        "excludingSection": "グループを除外:",
+        "excludingDescription": "除外したグループの人物はグラフに表示されません。",
+        "matchModeSection": "フィルターモード",
+        "anyMode": "いずれか（OR）:",
+        "anyModeDescription": "選択した条件のうち少なくとも1つに一致する人物を表示します。つまり、少なくとも1つの含めたグループに属し、除外したグループには属していない人物です。",
+        "allMode": "すべて（AND）:",
+        "allModeDescription": "選択した条件をすべて満たす人物のみを表示します。つまり、含めたすべてのグループに属し、除外したグループには属していない人物です。",
+        "example": "友だち",
+        "pillTip": "グループ名をクリックして、含める/除外を切り替えます。",
+        "modeTip": "モード: 含めたグループの1つまたはすべてに一致。"
+      },
+      "showAsGroups": "グループで表示",
+      "showIndividuals": "個別に表示",
+      "collapseAllGroups": "すべてのグループを折りたたむ",
+      "unsortedBubbleLabel": "未分類"
     }
   },
   "people": {
@@ -890,7 +946,7 @@
           "birthday": "誕生日",
           "anniversary": "記念日",
           "nameday": "名前の日",
-          "memorial": "追悼日",
+          "memorial": "命日",
           "other": "その他"
         }
       },
@@ -1139,7 +1195,7 @@
       "uploadError": "写真のアップロードに失敗しました",
       "removeError": "写真の削除に失敗しました",
       "formatError": "サポートされていない形式です。JPEG、PNG、GIF、またはWebPを使用してください。",
-      "sizeError": "写真は10MB以下にしてください",
+      "sizeError": "写真は50MB以下にしてください",
       "sourceTitle": "写真を追加",
       "dropzoneText": "ドラッグ＆ドロップ、貼り付け、またはクリックして参照",
       "dropzoneActive": "ここに画像をドロップ",
@@ -1164,6 +1220,7 @@
       "descriptionPlaceholder": "このグループのオプションの説明",
       "color": "色",
       "customColor": "またはカスタムカラーを選択：",
+      "generateRandomColor": "ランダムな色を生成",
       "addPeople": "人を追加（オプション）",
       "addPeoplePlaceholder": "名前を入力して人を追加...",
       "addPeopleHelp": "このグループに今すぐ人を追加することも、後でグループの詳細ページから追加することもできます。",

@@ -29,12 +29,13 @@ export const GET = withAuth(async (_request, session, context) => {
     // Fetch user photo and name order preference
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { photo: true, nameOrder: true },
+      select: { photo: true, nameOrder: true, nameDisplayFormat: true },
     });
     const nameOrder = user?.nameOrder;
+    const nameDisplayFormat = user?.nameDisplayFormat;
 
     // Add center node (the person we're viewing)
-    nodes.push(personToGraphNode(person, true, nameOrder));
+    nodes.push(personToGraphNode(person, true, nameOrder, nameDisplayFormat));
     nodeIds.add(person.id);
 
     // Add user as a node
@@ -47,7 +48,7 @@ export const GET = withAuth(async (_request, session, context) => {
 
     // Add related people as nodes
     person.relationshipsFrom.forEach((rel) => {
-      nodes.push(personToGraphNode(rel.relatedPerson, false, nameOrder));
+      nodes.push(personToGraphNode(rel.relatedPerson, false, nameOrder, nameDisplayFormat));
       nodeIds.add(rel.relatedPersonId);
 
       // If the related person has direct relationship to the user, add them

@@ -118,18 +118,18 @@ describe('People Photo API', () => {
       expect(body.error).toContain('No photo file provided');
     });
 
-    it('should return 400 when photo exceeds 10MB', async () => {
+    it('should return 400 when photo exceeds 50MB', async () => {
       mocks.personFindUnique.mockResolvedValue({ id: 'person-1' });
 
-      // Create a blob that reports a size > 10MB
-      const largeBuffer = new ArrayBuffer(10 * 1024 * 1024 + 1);
+      // Create a blob that reports a size > 50MB
+      const largeBuffer = new ArrayBuffer(50 * 1024 * 1024 + 1);
       const file = new Blob([largeBuffer], { type: 'image/jpeg' });
       const { request, context } = createFormDataRequest('person-1', file);
       const response = await POST(request, context);
       const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body.error).toContain('10MB');
+      expect(body.error).toContain('50MB');
     });
 
     it('should return 404 for non-existent person', async () => {

@@ -1,20 +1,42 @@
 export type DateFormat = 'MDY' | 'DMY' | 'YMD';
 
 /**
- * Parse a date string or Date object as a local date, avoiding timezone issues.
- * Date-only strings (YYYY-MM-DD) are parsed as local dates instead of UTC.
+ * Parse a date-only value as a Date anchored at local midnight on the encoded
+ * calendar day. Accepts `YYYY-MM-DD` and ISO datetime strings (where only the
+ * date prefix is meaningful — Nametag stores calendar dates as UTC-midnight
+ * DateTime values, which would otherwise shift west of UTC under `getDate()`).
+ * Date objects pass through unchanged; for real timestamps use `formatDateTime`.
  */
 export function parseAsLocalDate(date: Date | string): Date {
   if (typeof date === 'string') {
-    // Parse date-only strings (YYYY-MM-DD) as local dates to avoid timezone issues
     const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
     if (dateOnlyPattern.test(date)) {
       const [year, month, day] = date.split('-').map(Number);
       return new Date(year, month - 1, day);
     }
+    // ISO datetime: take the date part and anchor it locally so the calendar
+    // day is preserved across timezones.
+    const isoDatePrefixPattern = /^(\d{4})-(\d{2})-(\d{2})T/;
+    const match = isoDatePrefixPattern.exec(date);
+    if (match) {
+      const [, year, month, day] = match;
+      return new Date(Number(year), Number(month) - 1, Number(day));
+    }
     return new Date(date);
   }
   return date;
+}
+
+/**
+ * Today's calendar date in the viewer's local timezone, as `YYYY-MM-DD`.
+ * Use instead of `new Date().toISOString().split('T')[0]`, which is UTC and
+ * rolls forward after UTC midnight for users west of UTC.
+ */
+export function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function formatDate(date: Date | string, format: DateFormat): string {
@@ -48,7 +70,7 @@ export function formatDateWithoutYear(date: Date | string, format: DateFormat): 
   }
 
   const day = d.getDate();
-  const monthName = d.toLocaleDateString(undefined, { month: 'long' });
+  const monthName = d.toLocaleDateString('en-US', { month: 'long' });
 
   // For DMY format, show "day Month" (e.g., "5 January")
   // For MDY and YMD formats, show "Month day" (e.g., "January 5")

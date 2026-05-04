@@ -27,7 +27,7 @@ export default async function JournalPage({
   const [user, people, entries] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { nameOrder: true, language: true },
+      select: { nameOrder: true, nameDisplayFormat: true, language: true },
     }),
     prisma.person.findMany({
       where: {
@@ -82,6 +82,7 @@ export default async function JournalPage({
   ]);
 
   const nameOrder = user?.nameOrder ?? 'WESTERN';
+  const nameDisplayFormat = user?.nameDisplayFormat || 'FULL';
   const locale = user?.language ?? 'en';
 
   // Serialize Date objects to ISO strings for client components
@@ -118,11 +119,13 @@ export default async function JournalPage({
             currentPersonIds={personFilterIds}
             currentSearch={searchQuery}
             nameOrder={nameOrder}
+            nameDisplayFormat={nameDisplayFormat}
           />
 
           <JournalTimeline
             entries={serializedEntries}
             nameOrder={nameOrder}
+            nameDisplayFormat={nameDisplayFormat}
             locale={locale}
           />
         </div>

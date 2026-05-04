@@ -66,9 +66,9 @@ jobs:
 
             Write release notes in this EXACT format (including the markdown headings):
 
-            ## <A short, descriptive title about the most notable change — under 10 words>
+            ## <A short, plain title describing the most notable change — under 10 words>
 
-            <1-3 sentences in a warm, personal tone explaining what changed at a high level. Write as if you're telling a friend what's new. Don't list every change here — save that for the bullet list below.>
+            <1-2 short sentences plainly stating what changed. No intro phrases. No hype.>
 
             ### Changes
 
@@ -76,8 +76,15 @@ jobs:
             - <Another change>
             - ...
 
-            Rules:
-            - 3-8 bullet points MAX. Combine related commits into one bullet.
+            Tone rules — read carefully:
+            - Plain, factual, understated. Match the size of the change: a small fix gets a small, low-key note.
+            - Do NOT use hype or marketing language. Banned phrases include (non-exhaustive): "we're excited", "we're thrilled", "exciting", "lovely", "delightful", "amazing", "important update", "better than ever", "small but mighty", "we've made", "we've improved". Do not invent emotional framing the change does not warrant.
+            - Do NOT editorialize impact ("makes X easier", "more accurate than ever") unless the commits clearly state a measurable improvement.
+            - No first-person plural cheerleading. Prefer neutral, descriptive phrasing — e.g. "Fixed a bug where photos rendered zoomed in" rather than "We've made a lovely update to photos".
+            - It is fine — and often best — for the summary paragraph to be a single short sentence. If the only change is a small fix, say so plainly.
+
+            Content rules:
+            - 1-8 bullet points MAX. Combine related commits into one bullet. If there is only one user-visible change, use one bullet.
             - Write from the user's perspective. No commit hashes, component names, or technical jargon.
             - Do NOT include invisible changes (refactoring, CI, tests, dependency updates).
             - Only mention breaking changes if there are any — prefix the bullet with "**Breaking:**".

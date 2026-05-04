@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 interface PhotoCropModalProps {
   imageSrc: string;
@@ -11,18 +12,34 @@ interface PhotoCropModalProps {
   onCancel: () => void;
 }
 
+// Server stores the photo at 256x256; 512 gives 2x headroom for retina displays
+// while keeping the upload payload small regardless of source resolution.
+const OUTPUT_SIZE = 512;
+const JPEG_QUALITY = 0.92;
+
+function canvasHasAlpha(ctx: CanvasRenderingContext2D, width: number, height: number): boolean {
+  const { data } = ctx.getImageData(0, 0, width, height);
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] < 255) return true;
+  }
+  return false;
+}
+
+// imageSrc must be a same-origin data URL or blob URL — the alpha scan below
+// uses getImageData(), which throws SecurityError on cross-origin tainted canvases.
 async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = pixelCrop.width;
-      canvas.height = pixelCrop.height;
+      canvas.width = OUTPUT_SIZE;
+      canvas.height = OUTPUT_SIZE;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         reject(new Error('Could not get canvas context'));
         return;
       }
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(
         image,
         pixelCrop.x,
@@ -31,10 +48,14 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
         pixelCrop.height,
         0,
         0,
-        pixelCrop.width,
-        pixelCrop.height
+        OUTPUT_SIZE,
+        OUTPUT_SIZE
       );
-      // Use PNG to preserve transparency; server will convert to JPEG if opaque
+      // Output JPEG by default for compact uploads; only fall back to PNG when
+      // the source actually has transparency (server does not need to convert).
+      const hasAlpha = canvasHasAlpha(ctx, OUTPUT_SIZE, OUTPUT_SIZE);
+      const mimeType = hasAlpha ? 'image/png' : 'image/jpeg';
+      const quality = hasAlpha ? undefined : JPEG_QUALITY;
       canvas.toBlob(
         (blob) => {
           if (blob) {
@@ -43,7 +64,8 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
             reject(new Error('Failed to create blob from canvas'));
           }
         },
-        'image/png'
+        mimeType,
+        quality
       );
     };
     image.onerror = () => reject(new Error('Failed to load image'));
@@ -69,6 +91,7 @@ export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }: PhotoC
       const blob = await getCroppedBlob(imageSrc, croppedAreaPixels);
       onConfirm(blob);
     } catch {
+      toast.error(t('uploadError'));
       setIsProcessing(false);
     }
   };

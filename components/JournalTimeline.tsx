@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 
 interface TimelineEntry {
   id: string;
@@ -22,6 +23,7 @@ interface TimelineEntry {
 interface JournalTimelineProps {
   entries: TimelineEntry[];
   nameOrder: string;
+  nameDisplayFormat?: NameDisplayFormat;
   locale: string;
 }
 
@@ -29,26 +31,6 @@ interface MonthGroup {
   monthKey: string;
   label: string;
   entries: TimelineEntry[];
-}
-
-function formatPersonName(
-  person: { name: string; surname: string | null; nickname: string | null },
-  nameOrder: string
-): string {
-  const displayName = person.nickname ?? person.name;
-
-  if (!person.surname) return displayName;
-
-  if (nameOrder === 'EASTERN') {
-    // Detect CJK characters — omit space if present
-    const hasCjk = /[\u3000-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]/.test(
-      person.surname + displayName
-    );
-    const sep = hasCjk ? '' : ' ';
-    return `${person.surname}${sep}${displayName}`;
-  }
-
-  return `${displayName} ${person.surname}`;
 }
 
 function truncateBody(body: string, maxLength = 150): string {
@@ -111,7 +93,7 @@ function groupByMonth(entries: TimelineEntry[], locale: string): MonthGroup[] {
   });
 }
 
-export default function JournalTimeline({ entries, nameOrder, locale }: JournalTimelineProps) {
+export default function JournalTimeline({ entries, nameOrder, nameDisplayFormat, locale }: JournalTimelineProps) {
   const t = useTranslations('journal');
   const groups = useMemo(() => groupByMonth(entries, locale), [entries, locale]);
 
@@ -204,7 +186,7 @@ export default function JournalTimeline({ entries, nameOrder, locale }: JournalT
                                 key={person.id}
                                 className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
                               >
-                                {formatPersonName(person, nameOrder)}
+                                {formatGraphName(person, nameOrder as 'WESTERN' | 'EASTERN' | undefined, nameDisplayFormat)}
                               </span>
                             ))}
                           </div>

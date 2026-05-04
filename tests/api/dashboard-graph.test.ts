@@ -303,4 +303,215 @@ describe('Dashboard Graph API Route', () => {
       targetLabel: 'Bob',
     });
   });
+
+
+  it('should build AND include filter with AND exclusions', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/dashboard/graph?groupMatchOperator=and&includeGroupIds=g1,g2&excludeGroupIds=g3,g4',
+    );
+
+    personFindMany.mockResolvedValue([]);
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(personFindMany).toHaveBeenCalledTimes(1);
+
+    const queryArg = personFindMany.mock.calls[0][0];
+    // Result should be: (g1 AND g2) AND (NOT g3) AND (NOT g4)
+    expect(queryArg.where).toEqual({
+      userId: 'user123',
+      deletedAt: null,
+      AND: [
+        {
+          AND: [
+            {
+              groups: {
+                some: {
+                  groupId: 'g1',
+                  group: {
+                    deletedAt: null,
+                  },
+                },
+              },
+            },
+            {
+              groups: {
+                some: {
+                  groupId: 'g2',
+                  group: {
+                    deletedAt: null,
+                  },
+                },
+              },
+            },
+          ],
+        },
+        {
+          NOT: {
+            groups: {
+              some: {
+                groupId: 'g3',
+                group: {
+                  deletedAt: null,
+                },
+              },
+            },
+          },
+        },
+        {
+          NOT: {
+            groups: {
+              some: {
+                groupId: 'g4',
+                group: {
+                  deletedAt: null,
+                },
+              },
+            },
+          },
+        },
+      ],
+    });
+  });
+
+  it('should build OR include filter with AND exclusions', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/dashboard/graph?groupMatchOperator=or&includeGroupIds=g1,g2&excludeGroupIds=g3,g4',
+    );
+
+    personFindMany.mockResolvedValue([]);
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(personFindMany).toHaveBeenCalledTimes(1);
+
+    const queryArg = personFindMany.mock.calls[0][0];
+    // Result should be: (g1 OR g2) AND (NOT g3) AND (NOT g4)
+    expect(queryArg.where).toEqual({
+      userId: 'user123',
+      deletedAt: null,
+      AND: [
+        {
+          OR: [
+            {
+              groups: {
+                some: {
+                  groupId: 'g1',
+                  group: {
+                    deletedAt: null,
+                  },
+                },
+              },
+            },
+            {
+              groups: {
+                some: {
+                  groupId: 'g2',
+                  group: {
+                    deletedAt: null,
+                  },
+                },
+              },
+            },
+          ],
+        },
+        {
+          NOT: {
+            groups: {
+              some: {
+                groupId: 'g3',
+                group: {
+                  deletedAt: null,
+                },
+              },
+            },
+          },
+        },
+        {
+          NOT: {
+            groups: {
+              some: {
+                groupId: 'g4',
+                group: {
+                  deletedAt: null,
+                },
+              },
+            },
+          },
+        },
+      ],
+    });
+  });
+
+  it('should build include-only filter inside AND wrapper', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/dashboard/graph?groupMatchOperator=and&includeGroupIds=g1',
+    );
+
+    personFindMany.mockResolvedValue([]);
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(personFindMany).toHaveBeenCalledTimes(1);
+
+    const queryArg = personFindMany.mock.calls[0][0];
+    // Result should be: (g1)
+    expect(queryArg.where).toEqual({
+      userId: 'user123',
+      deletedAt: null,
+      AND: [
+        {
+          AND: [
+            {
+              groups: {
+                some: {
+                  groupId: 'g1',
+                  group: {
+                    deletedAt: null,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('should build exclude-only filter inside AND wrapper', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/dashboard/graph?excludeGroupIds=g1',
+    );
+
+    personFindMany.mockResolvedValue([]);
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(personFindMany).toHaveBeenCalledTimes(1);
+
+    const queryArg = personFindMany.mock.calls[0][0];
+    // Result should be: (NOT g1)
+    expect(queryArg.where).toEqual({
+      userId: 'user123',
+      deletedAt: null,
+      AND: [
+        {
+          NOT: {
+            groups: {
+              some: {
+                groupId: 'g1',
+                group: {
+                  deletedAt: null,
+                },
+              },
+            },
+          },
+        },
+      ],
+    });
+  });
 });

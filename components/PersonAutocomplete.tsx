@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatFullName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { filterPeople } from '@/lib/search';
 
 interface Person {
@@ -21,6 +21,7 @@ interface PersonAutocompleteProps {
   onCreateNew?: (searchTerm: string) => void;
   highlightPersonId?: string;
   nameOrder?: 'WESTERN' | 'EASTERN';
+  nameDisplayFormat?: NameDisplayFormat;
 }
 
 export default function PersonAutocomplete({
@@ -32,6 +33,7 @@ export default function PersonAutocomplete({
   onCreateNew,
   highlightPersonId,
   nameOrder,
+  nameDisplayFormat,
 }: PersonAutocompleteProps) {
   const t = useTranslations('people');
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +44,7 @@ export default function PersonAutocomplete({
 
   // Get the selected person's name
   const selectedPerson = people.find((p) => p.id === value);
-  const displayValue = selectedPerson ? formatFullName(selectedPerson, nameOrder) : searchTerm;
+  const displayValue = selectedPerson ? formatGraphName(selectedPerson, nameOrder, nameDisplayFormat) : searchTerm;
 
   // Filter people based on search term - search in name, surname, and nickname
   const filteredPeople = filterPeople(people, searchTerm, ['name', 'surname', 'nickname']);
@@ -80,7 +82,7 @@ export default function PersonAutocomplete({
   };
 
   const handleSelect = (person: Person) => {
-    onChange(person.id, formatFullName(person, nameOrder));
+    onChange(person.id, formatGraphName(person, nameOrder, nameDisplayFormat));
     setSearchTerm('');
     setIsOpen(false);
     inputRef.current?.blur();

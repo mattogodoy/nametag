@@ -97,14 +97,14 @@ describe('PhotoSourceModal', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it('rejects files exceeding 10MB', () => {
+  it('rejects files exceeding 50MB', () => {
     render(
       <Wrapper>
         <PhotoSourceModal onSelect={mockOnSelect} onClose={mockOnClose} />
       </Wrapper>
     );
 
-    const file = createFile('big.png', 'image/png', 11 * 1024 * 1024);
+    const file = createFile('big.png', 'image/png', 51 * 1024 * 1024);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 

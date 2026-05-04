@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import PersonForm from '@/components/PersonForm';
 import Navigation from '@/components/Navigation';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { canEnableReminder } from '@/lib/billing/subscription';
 import { getTranslations } from 'next-intl/server';
 
@@ -68,7 +68,7 @@ export default async function EditPersonPage({
     canEnableReminder(session.user.id),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { dateFormat: true, nameOrder: true },
+      select: { dateFormat: true, nameOrder: true, nameDisplayFormat: true },
     }),
     prisma.cardDavConnection.findFirst({
       where: { userId: session.user.id },
@@ -82,6 +82,7 @@ export default async function EditPersonPage({
 
   const dateFormat = user?.dateFormat || 'MDY';
   const nameOrder = user?.nameOrder;
+  const nameDisplayFormat = (user?.nameDisplayFormat || 'FULL') as NameDisplayFormat;
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,12 +101,12 @@ export default async function EditPersonPage({
               href={`/people/${person.id}`}
               className="text-primary hover:underline text-sm"
             >
-              {t('backToPerson', { name: formatFullName(person, nameOrder) })}
+              {t('backToPerson', { name: formatGraphName(person, nameOrder, nameDisplayFormat) })}
             </Link>
           </div>
 
           <h1 className="text-3xl font-bold text-foreground mb-6">
-            {t('editPerson', { name: formatFullName(person, nameOrder) })}
+            {t('editPerson', { name: formatGraphName(person, nameOrder, nameDisplayFormat) })}
           </h1>
 
           <div className="bg-surface shadow rounded-lg p-6">

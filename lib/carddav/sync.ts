@@ -5,6 +5,7 @@ import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import type { UnknownProperty } from '@/lib/carddav/vcard-parser';
 import { withRetry, categorizeError } from './retry';
+import { classifyUpdateFailure } from './update-recovery';
 import { getAddressBook } from './address-book';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { updatePersonFromVCard } from './vcard-import';
@@ -13,24 +14,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from './hash';
 import { getAlreadyMappedPersonUids } from './mapped-uids';
 import { createModuleLogger } from '@/lib/logger';
+import { ExternalServiceError } from '@/lib/errors';
+import { updateContext } from '@/lib/logging/context';
 
 const log = createModuleLogger('carddav');
 
 /** Preserved vCard properties stored on CardDavMapping for round-tripping. */
 export type PreservedProperties = UnknownProperty[];
-
-/**
- * Check whether an error represents an HTTP 412 Precondition Failed response.
- * Checks for a numeric `status` property first (structured errors), then
- * falls back to matching the "412" status code in the error message (tsdav
- * wraps HTTP failures as plain Error objects with the status in the message).
- */
-export function is412Error(error: unknown): boolean {
-  if (typeof error === 'object' && error !== null && 'status' in error) {
-    return (error as { status: number }).status === 412;
-  }
-  return error instanceof Error && /\b412\b/.test(error.message);
-}
 
 /**
  * Handle a 412 Precondition Failed on vCard CREATE by adopting the existing
@@ -312,6 +302,11 @@ export async function syncFromServer(
               },
             });
 
+            log.warn(
+              { event: 'carddav.conflict.created', personId: fullMapping.personId, mappingId: mapping.id },
+              'CardDAV conflict created',
+            );
+
             result.conflicts++;
             continue;
           } else if (remoteChanged) {
@@ -521,6 +516,8 @@ export async function syncToServer(
             : mapping.person.surname || 'Unknown',
         });
 
+        updateContext({ personId: mapping.personId });
+
         // Clean up legacy "Unknown vCard Properties" from notes (issue #130)
         if (mapping.person.notes?.includes('--- Unknown vCard Properties ---')) {
           const cleanedNotes = mapping.person.notes
@@ -565,30 +562,77 @@ export async function syncToServer(
           };
 
           let updated: VCard;
+          let recoveredAsGone = false;
           try {
             updated = await withRetry(
               () => client.updateVCard(vCard, vCardData),
               { maxAttempts: 3 }
             );
           } catch (updateError) {
-            if (!is412Error(updateError)) throw updateError;
+            if (!(updateError instanceof ExternalServiceError)) throw updateError;
 
-            // 412: fetch fresh ETag from server and retry once
-            log.warn({ personId: mapping.personId, href: mapping.href }, '412 Precondition Failed — refreshing ETag and retrying');
-            const freshVCard = await client.fetchVCard(addressBook, mapping.href);
-            if (!freshVCard) {
-              throw new Error(`412 recovery failed: could not fetch vCard at ${mapping.href}`);
+            if (updateError.status === 412) {
+              // 412: fetch fresh ETag from server and retry once
+              log.warn({ personId: mapping.personId, href: mapping.href }, '412 Precondition Failed — refreshing ETag and retrying');
+              const freshVCard = await client.fetchVCard(addressBook, mapping.href);
+              if (!freshVCard) {
+                throw new Error(`412 recovery failed: could not fetch vCard at ${mapping.href}`);
+              }
+
+              vCard = { url: mapping.href, etag: freshVCard.etag, data: '' };
+              updated = await client.updateVCard(vCard, vCardData);
+            } else if (
+              updateError.status === 400 ||
+              updateError.status === 404 ||
+              updateError.status === 410
+            ) {
+              // Disambiguate via GET. Google's `carddav/v1` returns 400
+              // INVALID_ARGUMENT both for genuinely-bad bodies AND for PUTs
+              // against server-deleted resources, so we can't trust the
+              // status code alone. 404/410 are the spec-correct "gone"
+              // signals from other servers.
+              const recovery = await classifyUpdateFailure(
+                client,
+                addressBook,
+                mapping.href,
+                vCard.etag,
+              );
+              if (recovery.kind === 'gone') {
+                log.warn(
+                  { event: 'carddav.contact.gone', personId: mapping.personId, href: mapping.href },
+                  'CardDAV resource gone server-side; resetting mapping so next push creates a fresh contact',
+                );
+                await prisma.cardDavMapping.delete({ where: { id: mapping.id } });
+                await prisma.person.update({
+                  where: { id: mapping.personId },
+                  data: { uid: null },
+                });
+                recoveredAsGone = true;
+              } else if (recovery.kind === 'stale-etag') {
+                log.warn(
+                  { personId: mapping.personId, href: mapping.href },
+                  'Server returned a non-412 status with a moved ETag; refreshing and retrying',
+                );
+                vCard = { url: mapping.href, etag: recovery.freshEtag, data: '' };
+                updated = await client.updateVCard(vCard, vCardData);
+              } else {
+                throw updateError;
+              }
+            } else {
+              throw updateError;
             }
+          }
 
-            vCard = { url: mapping.href, etag: freshVCard.etag, data: '' };
-            updated = await client.updateVCard(vCard, vCardData);
+          if (recoveredAsGone) {
+            // Mapping is gone; skip the post-update bookkeeping below.
+            continue;
           }
 
           // Store the new etag
           await prisma.cardDavMapping.update({
             where: { id: mapping.id },
             data: {
-              etag: updated.etag,
+              etag: updated!.etag,
             },
           });
 
@@ -605,7 +649,7 @@ export async function syncToServer(
               { maxAttempts: 3 }
             );
           } catch (createError) {
-            if (!is412Error(createError)) throw createError;
+            if (!(createError instanceof ExternalServiceError && createError.status === 412)) throw createError;
             created = await createOrAdoptVCard(client, addressBook, vCardData, filename, mapping.personId);
           }
 
@@ -630,7 +674,14 @@ export async function syncToServer(
           },
         });
       } catch (error) {
-        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error pushing vCard');
+        log.warn(
+          {
+            event: 'carddav.push.failed',
+            personId: mapping.personId,
+            err: error instanceof Error ? error : new Error(String(error)),
+          },
+          'CardDAV push failed',
+        );
         result.errors++;
         result.errorMessages.push(
           error instanceof Error ? error.message : 'Unknown error'
@@ -711,12 +762,13 @@ export async function syncToServer(
         // was imported from server but not yet mapped) — adopt it and update instead.
         let created: VCard;
         try {
+          updateContext({ personId: person.id });
           created = await withRetry(
             () => client.createVCard(addressBook, vCardData, filename),
             { maxAttempts: 3 }
           );
         } catch (createError) {
-          if (!is412Error(createError)) throw createError;
+          if (!(createError instanceof ExternalServiceError && createError.status === 412)) throw createError;
           created = await createOrAdoptVCard(client, addressBook, vCardData, filename, person.id);
         }
 
@@ -735,7 +787,14 @@ export async function syncToServer(
 
         result.exported++;
       } catch (error) {
-        log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error exporting unmapped contact');
+        log.warn(
+          {
+            event: 'carddav.push.failed',
+            personId: person.id,
+            err: error instanceof Error ? error : new Error(String(error)),
+          },
+          'CardDAV push failed (unmapped)',
+        );
         result.errors++;
         result.errorMessages.push(
           `Failed to export ${person.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -801,6 +860,7 @@ export async function bidirectionalSync(
     };
   }
 
+  const syncStart = Date.now();
   let timedOut = false;
   let timerId: ReturnType<typeof setTimeout> | undefined;
 
@@ -809,7 +869,7 @@ export async function bidirectionalSync(
       const pullResult = await syncFromServer(userId, onProgress);
       const pushResult = await syncToServer(userId, onProgress);
 
-      return {
+      const summary = {
         imported: pullResult.imported,
         exported: pushResult.exported,
         updatedLocally: pullResult.updatedLocally + pushResult.updatedLocally,
@@ -822,6 +882,21 @@ export async function bidirectionalSync(
         ],
         pendingImports: (pullResult.pendingImports || 0) + (pushResult.pendingImports || 0),
       };
+      log.info(
+        {
+          event: 'carddav.sync.finished',
+          imported: summary.imported,
+          exported: summary.exported,
+          updatedLocally: summary.updatedLocally,
+          updatedRemotely: summary.updatedRemotely,
+          conflicts: summary.conflicts,
+          errors: summary.errors,
+          pendingImports: summary.pendingImports,
+          durationMs: Date.now() - syncStart,
+        },
+        'CardDAV sync finished',
+      );
+      return summary;
     };
 
     return await Promise.race([
