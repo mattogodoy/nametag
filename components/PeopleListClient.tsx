@@ -233,7 +233,7 @@ export default function PeopleListClient({
           <select
             value={groupFilter}
             onChange={(e) => handleFilterChange('group', e.target.value)}
-            className="flex-1 sm:flex-initial px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="">{tPeople('allGroups')}</option>
             <option value="none">{tPeople('noGroup')}</option>
@@ -244,7 +244,7 @@ export default function PeopleListClient({
           <select
             value={relationshipFilter}
             onChange={(e) => handleFilterChange('relationship', e.target.value)}
-            className="flex-1 sm:flex-initial px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="">{tPeople('allRelationships')}</option>
             <option value="none">{tPeople('noRelationship')}</option>
