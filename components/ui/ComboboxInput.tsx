@@ -171,7 +171,7 @@ export default function ComboboxInput({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="w-full px-3 py-2 pr-8 text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 pr-8 text-base sm:text-sm border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               role="combobox"
               aria-expanded={isOpen}
               aria-controls={listboxId}
