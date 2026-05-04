@@ -7,8 +7,16 @@ const log = createModuleLogger('locale');
 /**
  * Supported locales
  */
-export const SUPPORTED_LOCALES = ['en', 'es-ES', 'ja-JP', 'nb-NO', 'de-DE', 'zh-CN'] as const;
-export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
+export const SUPPORTED_LOCALES = [
+  'en',
+  'es-ES',
+  'ja-JP',
+  'nb-NO',
+  'de-DE',
+  'zh-CN',
+  'fr-FR',
+] as const;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 /**
  * Default locale
@@ -63,6 +71,10 @@ export function normalizeLocale(locale: string): SupportedLocale {
     return 'zh-CN';
   }
 
+  if (languageCode === 'fr') {
+    return 'fr-FR';
+  }
+
   return DEFAULT_LOCALE;
 }
 
@@ -80,7 +92,10 @@ export async function getLocaleFromCookie(): Promise<SupportedLocale | null> {
 
     return null;
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error reading locale cookie');
+    log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Error reading locale cookie',
+    );
     return null;
   }
 }
@@ -117,7 +132,10 @@ export async function setLocaleCookie(locale: SupportedLocale): Promise<void> {
 
     cookieStore.set(LOCALE_COOKIE_NAME, locale, cookieOptions);
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error setting locale cookie');
+    log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Error setting locale cookie',
+    );
   }
 }
 
@@ -137,7 +155,7 @@ export async function detectBrowserLocale(): Promise<SupportedLocale> {
     // Format: "en-US,en;q=0.9,es;q=0.8"
     const locales = acceptLanguage
       .split(',')
-      .map(lang => {
+      .map((lang) => {
         const [locale, qValue] = lang.trim().split(';');
         const quality = qValue ? parseFloat(qValue.split('=')[1]) : 1.0;
         return { locale: locale.trim(), quality };
@@ -168,11 +186,17 @@ export async function detectBrowserLocale(): Promise<SupportedLocale> {
       if (languageCode === 'de') {
         return 'de-DE';
       }
+      if (languageCode === 'fr') {
+        return 'fr-FR';
+      }
     }
 
     return DEFAULT_LOCALE;
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error detecting browser locale');
+    log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Error detecting browser locale',
+    );
     return DEFAULT_LOCALE;
   }
 }
@@ -180,7 +204,9 @@ export async function detectBrowserLocale(): Promise<SupportedLocale> {
 /**
  * Get user's language preference from database
  */
-export async function getUserLanguageFromDB(userId: string): Promise<SupportedLocale | null> {
+export async function getUserLanguageFromDB(
+  userId: string,
+): Promise<SupportedLocale | null> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -193,7 +219,10 @@ export async function getUserLanguageFromDB(userId: string): Promise<SupportedLo
 
     return null;
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error getting user language from DB');
+    log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Error getting user language from DB',
+    );
     return null;
   }
 }
@@ -229,7 +258,7 @@ export async function getUserLocale(userId?: string): Promise<SupportedLocale> {
  */
 export async function updateUserLanguage(
   userId: string,
-  locale: SupportedLocale
+  locale: SupportedLocale,
 ): Promise<boolean> {
   try {
     await prisma.user.update({
@@ -238,7 +267,10 @@ export async function updateUserLanguage(
     });
     return true;
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error updating user language');
+    log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Error updating user language',
+    );
     return false;
   }
 }

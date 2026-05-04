@@ -6,7 +6,14 @@ import { toast } from 'sonner';
 import 'flag-icons/css/flag-icons.min.css';
 
 interface LanguageSelectorProps {
-  currentLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN';
+  currentLanguage:
+    | 'en'
+    | 'es-ES'
+    | 'ja-JP'
+    | 'nb-NO'
+    | 'de-DE'
+    | 'zh-CN'
+    | 'fr-FR';
 }
 
 const LANGUAGES = [
@@ -16,6 +23,7 @@ const LANGUAGES = [
   { code: 'nb-NO' as const, name: 'Norsk bokmål', flag: 'no' },
   { code: 'de-DE' as const, name: 'Deutsch (German)', flag: 'de' },
   { code: 'zh-CN' as const, name: '简体中文', flag: 'cn' },
+  { code: 'fr-FR' as const, name: 'Français (France)', flag: 'fr' },
 ];
 
 const labelMap = {
@@ -25,6 +33,7 @@ const labelMap = {
   'nb-NO': 'nbNO',
   'de-DE': 'deDE',
   'zh-CN': 'zhCN',
+  'fr-FR': 'frFR',
 } as const;
 
 export default function LanguageSelector({
@@ -38,7 +47,14 @@ export default function LanguageSelector({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLanguageChange = async (
-    newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN',
+    newLanguage:
+      | 'en'
+      | 'es-ES'
+      | 'ja-JP'
+      | 'nb-NO'
+      | 'de-DE'
+      | 'zh-CN'
+      | 'fr-FR',
   ) => {
     if (isLoading || newLanguage === selectedLanguage) return;
 
@@ -127,9 +143,7 @@ export default function LanguageSelector({
       </div>
 
       {isLoading && (
-        <p className="mt-4 text-sm text-primary">
-          {tCommon('loading')}
-        </p>
+        <p className="mt-4 text-sm text-primary">{tCommon('loading')}</p>
       )}
     </div>
   );

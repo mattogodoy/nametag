@@ -16,7 +16,10 @@ export function sharedSchemas(): Record<string, unknown> {
           items: {
             type: 'object',
             properties: {
-              field: { type: 'string', description: 'Dot-separated field path' },
+              field: {
+                type: 'string',
+                description: 'Dot-separated field path',
+              },
               message: { type: 'string' },
             },
           },
@@ -49,11 +52,25 @@ export function sharedSchemas(): Record<string, unknown> {
         middleName: { type: ['string', 'null'] },
         secondLastName: { type: ['string', 'null'] },
         nickname: { type: ['string', 'null'] },
-        lastContact: { type: ['string', 'null'], format: 'date-time', description: 'Date of last contact' },
-        notes: { type: ['string', 'null'], description: 'Markdown-formatted notes' },
-        relationshipToUserId: { type: ['string', 'null'], description: 'ID of the relationship type to the user' },
+        lastContact: {
+          type: ['string', 'null'],
+          format: 'date-time',
+          description: 'Date of last contact',
+        },
+        notes: {
+          type: ['string', 'null'],
+          description: 'Markdown-formatted notes',
+        },
+        relationshipToUserId: {
+          type: ['string', 'null'],
+          description: 'ID of the relationship type to the user',
+        },
         contactReminderEnabled: { type: 'boolean' },
-        contactReminderInterval: { type: ['integer', 'null'], minimum: 1, maximum: 99 },
+        contactReminderInterval: {
+          type: ['integer', 'null'],
+          minimum: 1,
+          maximum: 99,
+        },
         contactReminderIntervalUnit: {
           oneOf: [
             { $ref: '#/components/schemas/ReminderIntervalUnit' },
@@ -66,24 +83,63 @@ export function sharedSchemas(): Record<string, unknown> {
             { type: 'null' },
           ],
         },
-        lastContactReminderSent: { type: ['string', 'null'], format: 'date-time' },
+        lastContactReminderSent: {
+          type: ['string', 'null'],
+          format: 'date-time',
+        },
         cardDavSyncEnabled: { type: 'boolean' },
-        prefix: { type: ['string', 'null'], description: 'Honorific prefix (Dr., Mr.)' },
-        suffix: { type: ['string', 'null'], description: 'Honorific suffix (Jr., III)' },
-        uid: { type: ['string', 'null'], description: 'vCard UID for CardDAV sync' },
-        organization: { type: ['string', 'null'], description: 'Company / organization' },
+        prefix: {
+          type: ['string', 'null'],
+          description: 'Honorific prefix (Dr., Mr.)',
+        },
+        suffix: {
+          type: ['string', 'null'],
+          description: 'Honorific suffix (Jr., III)',
+        },
+        uid: {
+          type: ['string', 'null'],
+          description: 'vCard UID for CardDAV sync',
+        },
+        organization: {
+          type: ['string', 'null'],
+          description: 'Company / organization',
+        },
         jobTitle: { type: ['string', 'null'], description: 'Job title' },
-        photo: { type: ['string', 'null'], description: 'Photo URL or file reference' },
+        photo: {
+          type: ['string', 'null'],
+          description: 'Photo URL or file reference',
+        },
         gender: { type: ['string', 'null'] },
         anniversary: { type: ['string', 'null'], format: 'date-time' },
         deletedAt: { type: ['string', 'null'], format: 'date-time' },
-        phoneNumbers: { type: 'array', items: { $ref: '#/components/schemas/PersonPhone' } },
-        emails: { type: 'array', items: { $ref: '#/components/schemas/PersonEmail' } },
-        addresses: { type: 'array', items: { $ref: '#/components/schemas/PersonAddress' } },
-        urls: { type: 'array', items: { $ref: '#/components/schemas/PersonUrl' } },
-        imHandles: { type: 'array', items: { $ref: '#/components/schemas/PersonIM' } },
-        locations: { type: 'array', items: { $ref: '#/components/schemas/PersonLocation' } },
-        customFields: { type: 'array', items: { $ref: '#/components/schemas/PersonCustomField' } },
+        phoneNumbers: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonPhone' },
+        },
+        emails: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonEmail' },
+        },
+        addresses: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonAddress' },
+        },
+        urls: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonUrl' },
+        },
+        imHandles: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonIM' },
+        },
+        locations: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonLocation' },
+        },
+        customFields: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/PersonCustomField' },
+        },
         groups: {
           type: 'array',
           items: {
@@ -109,7 +165,10 @@ export function sharedSchemas(): Record<string, unknown> {
         userId: { type: 'string', description: 'CUID identifier' },
         name: { type: 'string' },
         description: { type: ['string', 'null'] },
-        color: { type: ['string', 'null'], description: 'Hex color, e.g. #FF5733' },
+        color: {
+          type: ['string', 'null'],
+          description: 'Hex color, e.g. #FF5733',
+        },
         deletedAt: { type: ['string', 'null'], format: 'date-time' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
@@ -123,7 +182,10 @@ export function sharedSchemas(): Record<string, unknown> {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string', description: 'CUID identifier' },
         relatedPersonId: { type: 'string', description: 'CUID identifier' },
-        relationshipTypeId: { type: ['string', 'null'], description: 'CUID identifier' },
+        relationshipTypeId: {
+          type: ['string', 'null'],
+          description: 'CUID identifier',
+        },
         notes: { type: ['string', 'null'] },
         person: {
           oneOf: [
@@ -151,13 +213,20 @@ export function sharedSchemas(): Record<string, unknown> {
     },
     RelationshipType: {
       type: 'object',
-      description: 'A custom type for categorizing relationships (e.g. Parent/Child, Friend)',
+      description:
+        'A custom type for categorizing relationships (e.g. Parent/Child, Friend)',
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
-        name: { type: 'string', description: 'Internal name (UPPER_SNAKE_CASE)' },
+        name: {
+          type: 'string',
+          description: 'Internal name (UPPER_SNAKE_CASE)',
+        },
         label: { type: 'string', description: 'Human-readable display label' },
         color: { type: ['string', 'null'], description: 'Hex color' },
-        inverseId: { type: ['string', 'null'], description: 'CUID – ID of the inverse type (e.g. Child for Parent)' },
+        inverseId: {
+          type: ['string', 'null'],
+          description: 'CUID – ID of the inverse type (e.g. Child for Parent)',
+        },
         inverse: {
           oneOf: [
             { $ref: '#/components/schemas/RelationshipTypeSummary' },
@@ -198,11 +267,15 @@ export function sharedSchemas(): Record<string, unknown> {
     },
     ImportantDate: {
       type: 'object',
-      description: 'A significant date for a person, with optional recurring reminders',
+      description:
+        'A significant date for a person, with optional recurring reminders',
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string', description: 'CUID identifier' },
-        title: { type: 'string', description: 'Label for this date (e.g. Birthday, Anniversary)' },
+        title: {
+          type: 'string',
+          description: 'Label for this date (e.g. Birthday, Anniversary)',
+        },
         date: { type: 'string', format: 'date-time' },
         reminderEnabled: { type: 'boolean' },
         reminderType: {
@@ -211,7 +284,11 @@ export function sharedSchemas(): Record<string, unknown> {
             { type: 'null' },
           ],
         },
-        reminderInterval: { type: ['integer', 'null'], minimum: 1, maximum: 99 },
+        reminderInterval: {
+          type: ['integer', 'null'],
+          minimum: 1,
+          maximum: 99,
+        },
         reminderIntervalUnit: {
           oneOf: [
             { $ref: '#/components/schemas/ReminderIntervalUnit' },
@@ -226,7 +303,8 @@ export function sharedSchemas(): Record<string, unknown> {
     },
     UpcomingEvent: {
       type: 'object',
-      description: 'An upcoming event computed from important dates and contact reminders',
+      description:
+        'An upcoming event computed from important dates and contact reminders',
       properties: {
         id: { type: 'string' },
         personId: { type: 'string', description: 'CUID identifier' },
@@ -240,10 +318,27 @@ export function sharedSchemas(): Record<string, unknown> {
           ],
         },
         date: { type: 'string', format: 'date-time' },
-        daysUntil: { type: 'integer', description: 'Number of days until this event (negative = overdue)' },
-        isYearUnknown: { type: 'boolean', description: 'Whether the original date has an unknown year (e.g. birthday without year)' },
+        daysUntil: {
+          type: 'integer',
+          description: 'Number of days until this event (negative = overdue)',
+        },
+        isYearUnknown: {
+          type: 'boolean',
+          description:
+            'Whether the original date has an unknown year (e.g. birthday without year)',
+        },
       },
-      required: ['id', 'personId', 'personName', 'type', 'title', 'titleKey', 'date', 'daysUntil', 'isYearUnknown'],
+      required: [
+        'id',
+        'personId',
+        'personName',
+        'type',
+        'title',
+        'titleKey',
+        'date',
+        'daysUntil',
+        'isYearUnknown',
+      ],
     },
     GraphNode: {
       type: 'object',
@@ -276,19 +371,33 @@ export function sharedSchemas(): Record<string, unknown> {
         nickname: { type: ['string', 'null'] },
         theme: { type: 'string', enum: ['LIGHT', 'DARK'] },
         dateFormat: { type: 'string', enum: ['MDY', 'DMY', 'YMD'] },
-        language: { type: 'string', description: 'Locale code (e.g. en, es-ES, ja-JP, nb-NO, de-DE)' },
+        language: {
+          type: 'string',
+          description:
+            'Locale code (e.g. en, es-ES, ja-JP, nb-NO, de-DE, fr-FR)',
+        },
         graphMode: {
           oneOf: [
             { type: 'string', enum: ['individuals', 'bubbles'] },
             { type: 'null' },
           ],
-          description: 'Null means the user has not picked a mode yet (defaults to individuals at render time)',
+          description:
+            'Null means the user has not picked a mode yet (defaults to individuals at render time)',
         },
         emailVerified: { type: 'boolean' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
-      required: ['id', 'email', 'name', 'theme', 'dateFormat', 'language', 'createdAt', 'updatedAt'],
+      required: [
+        'id',
+        'email',
+        'name',
+        'theme',
+        'dateFormat',
+        'language',
+        'createdAt',
+        'updatedAt',
+      ],
     },
     ReminderIntervalUnit: {
       type: 'string',
@@ -299,7 +408,10 @@ export function sharedSchemas(): Record<string, unknown> {
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string' },
-        type: { type: 'string', description: 'Phone type (e.g. home, work, mobile, custom)' },
+        type: {
+          type: 'string',
+          description: 'Phone type (e.g. home, work, mobile, custom)',
+        },
         number: { type: 'string' },
         createdAt: { type: 'string', format: 'date-time' },
       },
@@ -310,7 +422,10 @@ export function sharedSchemas(): Record<string, unknown> {
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string' },
-        type: { type: 'string', description: 'Email type (e.g. home, work, custom)' },
+        type: {
+          type: 'string',
+          description: 'Email type (e.g. home, work, custom)',
+        },
         email: { type: 'string', format: 'email' },
         createdAt: { type: 'string', format: 'date-time' },
       },
@@ -321,7 +436,10 @@ export function sharedSchemas(): Record<string, unknown> {
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string' },
-        type: { type: 'string', description: 'Address type (e.g. home, work, custom)' },
+        type: {
+          type: 'string',
+          description: 'Address type (e.g. home, work, custom)',
+        },
         streetLine1: { type: ['string', 'null'] },
         streetLine2: { type: ['string', 'null'] },
         locality: { type: ['string', 'null'], description: 'City' },
@@ -337,7 +455,10 @@ export function sharedSchemas(): Record<string, unknown> {
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string' },
-        type: { type: 'string', description: 'URL type (e.g. homepage, blog, custom)' },
+        type: {
+          type: 'string',
+          description: 'URL type (e.g. homepage, blog, custom)',
+        },
         url: { type: 'string', format: 'uri' },
         createdAt: { type: 'string', format: 'date-time' },
       },
@@ -348,7 +469,11 @@ export function sharedSchemas(): Record<string, unknown> {
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string' },
-        protocol: { type: 'string', description: 'IM protocol (e.g. skype, whatsapp, telegram, signal, other)' },
+        protocol: {
+          type: 'string',
+          description:
+            'IM protocol (e.g. skype, whatsapp, telegram, signal, other)',
+        },
         handle: { type: 'string' },
         createdAt: { type: 'string', format: 'date-time' },
       },
@@ -359,10 +484,16 @@ export function sharedSchemas(): Record<string, unknown> {
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         personId: { type: 'string' },
-        type: { type: 'string', description: 'Location type (e.g. home, work, other)' },
+        type: {
+          type: 'string',
+          description: 'Location type (e.g. home, work, other)',
+        },
         latitude: { type: 'number', format: 'double' },
         longitude: { type: 'number', format: 'double' },
-        label: { type: ['string', 'null'], description: 'Optional label (e.g. Main Office)' },
+        label: {
+          type: ['string', 'null'],
+          description: 'Optional label (e.g. Main Office)',
+        },
         createdAt: { type: 'string', format: 'date-time' },
       },
       required: ['id', 'personId', 'type', 'latitude', 'longitude'],
@@ -381,15 +512,23 @@ export function sharedSchemas(): Record<string, unknown> {
     },
     CardDavConnection: {
       type: 'object',
-      description: 'A CardDAV server connection (password excluded from responses)',
+      description:
+        'A CardDAV server connection (password excluded from responses)',
       properties: {
         id: { type: 'string', description: 'CUID identifier' },
         userId: { type: 'string' },
         serverUrl: { type: 'string', format: 'uri' },
         username: { type: 'string' },
-        provider: { type: ['string', 'null'], description: 'Provider hint: google, icloud, outlook, nextcloud, custom' },
+        provider: {
+          type: ['string', 'null'],
+          description:
+            'Provider hint: google, icloud, outlook, nextcloud, custom',
+        },
         syncEnabled: { type: 'boolean' },
-        autoSyncInterval: { type: 'integer', description: 'Sync interval in seconds (60–86400)' },
+        autoSyncInterval: {
+          type: 'integer',
+          description: 'Sync interval in seconds (60–86400)',
+        },
         lastSyncAt: { type: ['string', 'null'], format: 'date-time' },
         autoExportNew: { type: 'boolean' },
         importMode: { type: 'string', enum: ['manual', 'notify', 'auto'] },
@@ -398,7 +537,17 @@ export function sharedSchemas(): Record<string, unknown> {
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
-      required: ['id', 'userId', 'serverUrl', 'username', 'syncEnabled', 'autoExportNew', 'importMode', 'createdAt', 'updatedAt'],
+      required: [
+        'id',
+        'userId',
+        'serverUrl',
+        'username',
+        'syncEnabled',
+        'autoExportNew',
+        'importMode',
+        'createdAt',
+        'updatedAt',
+      ],
     },
     JournalEntry: {
       type: 'object',
@@ -407,8 +556,15 @@ export function sharedSchemas(): Record<string, unknown> {
         id: { type: 'string', description: 'CUID identifier' },
         userId: { type: 'string', description: 'User ID' },
         title: { type: 'string', description: 'Entry title' },
-        date: { type: 'string', format: 'date-time', description: 'Date of the journal entry' },
-        body: { type: 'string', description: 'Entry content (markdown supported)' },
+        date: {
+          type: 'string',
+          format: 'date-time',
+          description: 'Date of the journal entry',
+        },
+        body: {
+          type: 'string',
+          description: 'Entry content (markdown supported)',
+        },
         people: {
           type: 'array',
           description: 'People tagged in this entry',
@@ -418,7 +574,16 @@ export function sharedSchemas(): Record<string, unknown> {
         updatedAt: { type: 'string', format: 'date-time' },
         deletedAt: { type: ['string', 'null'], format: 'date-time' },
       },
-      required: ['id', 'userId', 'title', 'date', 'body', 'people', 'createdAt', 'updatedAt'],
+      required: [
+        'id',
+        'userId',
+        'title',
+        'date',
+        'body',
+        'people',
+        'createdAt',
+        'updatedAt',
+      ],
     },
   };
 }
