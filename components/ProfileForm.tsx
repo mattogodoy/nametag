@@ -369,13 +369,9 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
               {t('emailChange.warning')}
             </p>
             <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setShowEmailConfirm(false)}
-                className="px-4 py-2 border border-border text-muted rounded-lg font-medium hover:bg-surface-elevated transition-colors"
-              >
+              <Button type="button" variant="secondary" onClick={() => setShowEmailConfirm(false)}>
                 {t('emailChange.cancel')}
-              </button>
+              </Button>
               <Button type="button" onClick={saveProfile} disabled={isLoading}>
                 {isLoading ? t('saving') : t('emailChange.confirm')}
               </Button>
