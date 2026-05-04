@@ -403,7 +403,7 @@ export default function PersonCompare({
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
@@ -619,7 +619,7 @@ export default function PersonCompare({
         (f) => !f.bothEmpty && !f.hasConflict
       ) && (
         <div className="bg-surface border border-border rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             <table className="w-full">
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {scalarFieldStates

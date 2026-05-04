@@ -79,7 +79,7 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto max-w-full">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead>
           <tr>
