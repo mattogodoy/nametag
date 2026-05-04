@@ -39,6 +39,7 @@ export interface UserUsage {
   people: number;
   groups: number;
   reminders: number;
+  customFieldTemplates: number;
 }
 
 /**
@@ -63,7 +64,7 @@ export async function getUserSubscription(
  * Get a user's current usage counts
  */
 export async function getUserUsage(userId: string): Promise<UserUsage> {
-  const [peopleCount, groupsCount, importantDateReminders, contactReminders] =
+  const [peopleCount, groupsCount, importantDateReminders, contactReminders, customFieldTemplatesCount] =
     await Promise.all([
       // Count people
       prisma.person.count({
@@ -89,12 +90,17 @@ export async function getUserUsage(userId: string): Promise<UserUsage> {
           deletedAt: null,
         },
       }),
+      // Count custom field templates
+      prisma.customFieldTemplate.count({
+        where: { userId, deletedAt: null },
+      }),
     ]);
 
   return {
     people: peopleCount,
     groups: groupsCount,
     reminders: importantDateReminders + contactReminders,
+    customFieldTemplates: customFieldTemplatesCount,
   };
 }
 
