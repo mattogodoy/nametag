@@ -612,6 +612,64 @@
       "supportNote": "¡Tu apoyo ayuda a mantener este proyecto vivo y en constante mejora!"
     }
   },
+  "customFields": {
+    "settings": {
+      "title": "Campos personalizados",
+      "description": "Define tus propios campos con tipo y aplícalos a todas tus personas. Úsalos para filtrar tu red — como «quién es vegetariano» o «quién tiene mascotas».",
+      "newButton": "Nuevo campo",
+      "emptyTitle": "Aún no hay campos personalizados",
+      "emptyDescription": "Añade campos como restricciones dietéticas, aficiones o mascotas, y úsalos para filtrar tus personas.",
+      "usageMeter": "{used} de {limit} campos personalizados",
+      "usageMeterUnlimited": "{used} campos personalizados",
+      "valueCount": "{count, plural, =0 {Sin uso} =1 {Usado por 1 persona} other {Usado por # personas}}"
+    },
+    "form": {
+      "nameLabel": "Nombre",
+      "namePlaceholder": "ej. Restricción dietética",
+      "typeLabel": "Tipo",
+      "typeText": "Texto",
+      "typeNumber": "Número",
+      "typeBoolean": "Sí / No",
+      "typeSelect": "Selección única",
+      "typeLockedNotice": "El tipo no se puede cambiar después de la creación.",
+      "optionsLabel": "Opciones",
+      "optionPlaceholder": "Opción",
+      "addOption": "Añadir opción",
+      "removeOption": "Eliminar",
+      "saveButton": "Guardar",
+      "cancelButton": "Cancelar",
+      "deleteButton": "Eliminar"
+    },
+    "delete": {
+      "confirmTitle": "¿Eliminar campo personalizado?",
+      "confirmBody": "{count, plural, =0 {Ninguna persona usa este campo.} =1 {# persona tiene un valor para este campo. El valor quedará oculto.} other {# personas tienen valores para este campo. Sus valores quedarán ocultos.}}",
+      "confirmAction": "Eliminar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "duplicateName": "Ya existe un campo personalizado con este nombre.",
+      "selectRequiresOptions": "Los campos de selección única necesitan al menos una opción.",
+      "notANumber": "Debe ser un número.",
+      "notBoolean": "Debe ser Sí o No.",
+      "notInOptions": "Debe ser una de las opciones disponibles.",
+      "limitReached": "Puedes crear hasta {limit} campo(s) personalizado(s) con tu plan actual."
+    },
+    "person": {
+      "sectionTitle": "Campos personalizados",
+      "booleanYes": "Sí",
+      "booleanNo": "No",
+      "booleanNotSet": "Sin definir",
+      "selectEmpty": "—",
+      "valueOutOfOptions": "Este valor ya no está en las opciones del campo."
+    },
+    "filter": {
+      "moreFilters": "Más filtros",
+      "selectField": "Seleccionar un campo",
+      "applyButton": "Aplicar",
+      "clearLabel": "Limpiar filtro",
+      "chipFormat": "{name}: {value}"
+    }
+  },
   "dashboard": {
     "title": "Panel",
     "greetingMorning": "Buenos días, {name}",

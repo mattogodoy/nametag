@@ -612,6 +612,64 @@
       "supportNote": "您的支持有助于保持该项目的活力并不断改进！"
     }
   },
+  "customFields": {
+    "settings": {
+      "title": "自定义字段",
+      "description": "定义带类型的自定义字段并应用到所有联系人。用它们过滤您的人脉——例如「谁是素食者」或「谁有宠物」。",
+      "newButton": "新建字段",
+      "emptyTitle": "暂无自定义字段",
+      "emptyDescription": "添加饮食限制、爱好或宠物等字段，并用它们来筛选您的联系人。",
+      "usageMeter": "已使用 {used}/{limit} 个自定义字段",
+      "usageMeterUnlimited": "{used} 个自定义字段",
+      "valueCount": "{count, plural, =0 {未使用} =1 {1人使用} other {#人使用}}"
+    },
+    "form": {
+      "nameLabel": "名称",
+      "namePlaceholder": "例如：饮食限制",
+      "typeLabel": "类型",
+      "typeText": "文本",
+      "typeNumber": "数字",
+      "typeBoolean": "是 / 否",
+      "typeSelect": "单选",
+      "typeLockedNotice": "类型在创建后无法更改。",
+      "optionsLabel": "选项",
+      "optionPlaceholder": "选项",
+      "addOption": "添加选项",
+      "removeOption": "删除",
+      "saveButton": "保存",
+      "cancelButton": "取消",
+      "deleteButton": "删除"
+    },
+    "delete": {
+      "confirmTitle": "删除自定义字段？",
+      "confirmBody": "{count, plural, =0 {没有联系人使用此字段。} =1 {#位联系人有此字段的值，该值将被隐藏。} other {#位联系人有此字段的值，这些值将被隐藏。}}",
+      "confirmAction": "删除",
+      "cancel": "取消"
+    },
+    "errors": {
+      "duplicateName": "已存在同名的自定义字段。",
+      "selectRequiresOptions": "单选字段至少需要一个选项。",
+      "notANumber": "必须为数字。",
+      "notBoolean": "必须为是或否。",
+      "notInOptions": "必须是列出的选项之一。",
+      "limitReached": "您当前的套餐最多可创建 {limit} 个自定义字段。"
+    },
+    "person": {
+      "sectionTitle": "自定义字段",
+      "booleanYes": "是",
+      "booleanNo": "否",
+      "booleanNotSet": "未设置",
+      "selectEmpty": "—",
+      "valueOutOfOptions": "此值已不在该字段的选项列表中。"
+    },
+    "filter": {
+      "moreFilters": "更多筛选",
+      "selectField": "选择字段",
+      "applyButton": "应用",
+      "clearLabel": "清除筛选",
+      "chipFormat": "{name}：{value}"
+    }
+  },
   "dashboard": {
     "title": "仪表盘",
     "greetingMorning": "早上好，{name}",

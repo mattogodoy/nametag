@@ -612,6 +612,64 @@
       "supportNote": "あなたのサポートは、このプロジェクトを存続させ、継続的に改善するのに役立ちます！"
     }
   },
+  "customFields": {
+    "settings": {
+      "title": "カスタムフィールド",
+      "description": "独自の型付きフィールドを定義して、すべての人に適用できます。「ベジタリアンは誰か」「ペットを飼っているのは誰か」といった条件でネットワークを絞り込めます。",
+      "newButton": "新しいフィールド",
+      "emptyTitle": "カスタムフィールドがまだありません",
+      "emptyDescription": "食事制限、趣味、ペットなどのフィールドを追加して、人物の絞り込みに活用しましょう。",
+      "usageMeter": "{limit}件中{used}件のカスタムフィールドを使用中",
+      "usageMeterUnlimited": "{used}件のカスタムフィールド",
+      "valueCount": "{count, plural, =0 {未使用} =1 {1人が使用中} other {#人が使用中}}"
+    },
+    "form": {
+      "nameLabel": "名前",
+      "namePlaceholder": "例：食事制限",
+      "typeLabel": "タイプ",
+      "typeText": "テキスト",
+      "typeNumber": "数値",
+      "typeBoolean": "はい / いいえ",
+      "typeSelect": "単一選択",
+      "typeLockedNotice": "作成後はタイプを変更できません。",
+      "optionsLabel": "選択肢",
+      "optionPlaceholder": "選択肢",
+      "addOption": "選択肢を追加",
+      "removeOption": "削除",
+      "saveButton": "保存",
+      "cancelButton": "キャンセル",
+      "deleteButton": "削除"
+    },
+    "delete": {
+      "confirmTitle": "カスタムフィールドを削除しますか？",
+      "confirmBody": "{count, plural, =0 {このフィールドを使用している人はいません。} =1 {#人がこのフィールドに値を持っています。その値は非表示になります。} other {#人がこのフィールドに値を持っています。それらの値は非表示になります。}}",
+      "confirmAction": "削除",
+      "cancel": "キャンセル"
+    },
+    "errors": {
+      "duplicateName": "この名前のカスタムフィールドはすでに存在します。",
+      "selectRequiresOptions": "単一選択フィールドには少なくとも1つの選択肢が必要です。",
+      "notANumber": "数値を入力してください。",
+      "notBoolean": "「はい」または「いいえ」を入力してください。",
+      "notInOptions": "一覧の選択肢のいずれかを選んでください。",
+      "limitReached": "現在のプランでは最大{limit}件のカスタムフィールドを作成できます。"
+    },
+    "person": {
+      "sectionTitle": "カスタムフィールド",
+      "booleanYes": "はい",
+      "booleanNo": "いいえ",
+      "booleanNotSet": "未設定",
+      "selectEmpty": "—",
+      "valueOutOfOptions": "この値はフィールドの選択肢に含まれていません。"
+    },
+    "filter": {
+      "moreFilters": "詳細フィルター",
+      "selectField": "フィールドを選択",
+      "applyButton": "適用",
+      "clearLabel": "フィルターをクリア",
+      "chipFormat": "{name}：{value}"
+    }
+  },
   "dashboard": {
     "title": "ダッシュボード",
     "greetingMorning": "おはようございます、{name}",

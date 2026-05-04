@@ -612,6 +612,64 @@
       "supportNote": "Deine Unterstützung hilft, das Projekt am Leben zu halten und kontinuierlich zu verbessern!"
     }
   },
+  "customFields": {
+    "settings": {
+      "title": "Benutzerdefinierte Felder",
+      "description": "Definiere eigene typisierte Felder und wende sie auf alle deine Personen an. Nutze sie, um dein Netzwerk zu filtern – z. B. «wer ist Vegetarier» oder «wer hat Haustiere».",
+      "newButton": "Neues Feld",
+      "emptyTitle": "Noch keine benutzerdefinierten Felder",
+      "emptyDescription": "Füge Felder wie Ernährungsgewohnheiten, Hobbys oder Haustiere hinzu und nutze sie zum Filtern deiner Personen.",
+      "usageMeter": "{used} von {limit} benutzerdefinierten Feldern",
+      "usageMeterUnlimited": "{used} benutzerdefinierte Felder",
+      "valueCount": "{count, plural, =0 {Nicht in Verwendung} =1 {Von 1 Person verwendet} other {Von # Personen verwendet}}"
+    },
+    "form": {
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Ernährungseinschränkung",
+      "typeLabel": "Typ",
+      "typeText": "Text",
+      "typeNumber": "Zahl",
+      "typeBoolean": "Ja / Nein",
+      "typeSelect": "Einzelauswahl",
+      "typeLockedNotice": "Der Typ kann nach der Erstellung nicht geändert werden.",
+      "optionsLabel": "Optionen",
+      "optionPlaceholder": "Option",
+      "addOption": "Option hinzufügen",
+      "removeOption": "Entfernen",
+      "saveButton": "Speichern",
+      "cancelButton": "Abbrechen",
+      "deleteButton": "Löschen"
+    },
+    "delete": {
+      "confirmTitle": "Benutzerdefiniertes Feld löschen?",
+      "confirmBody": "{count, plural, =0 {Keine Person verwendet dieses Feld.} =1 {# Person hat einen Wert für dieses Feld. Der Wert wird ausgeblendet.} other {# Personen haben Werte für dieses Feld. Ihre Werte werden ausgeblendet.}}",
+      "confirmAction": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "errors": {
+      "duplicateName": "Ein benutzerdefiniertes Feld mit diesem Namen existiert bereits.",
+      "selectRequiresOptions": "Einzelauswahlfelder benötigen mindestens eine Option.",
+      "notANumber": "Muss eine Zahl sein.",
+      "notBoolean": "Muss Ja oder Nein sein.",
+      "notInOptions": "Muss eine der aufgelisteten Optionen sein.",
+      "limitReached": "Mit deinem aktuellen Plan kannst du bis zu {limit} benutzerdefinierte(s) Feld(er) erstellen."
+    },
+    "person": {
+      "sectionTitle": "Benutzerdefinierte Felder",
+      "booleanYes": "Ja",
+      "booleanNo": "Nein",
+      "booleanNotSet": "Nicht gesetzt",
+      "selectEmpty": "—",
+      "valueOutOfOptions": "Dieser Wert ist nicht mehr in den Optionen des Felds."
+    },
+    "filter": {
+      "moreFilters": "Weitere Filter",
+      "selectField": "Feld auswählen",
+      "applyButton": "Anwenden",
+      "clearLabel": "Filter zurücksetzen",
+      "chipFormat": "{name}: {value}"
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "greetingMorning": "Guten Morgen, {name}",

@@ -612,6 +612,64 @@
       "supportNote": "Støtten din hjelper til med å holde dette prosjektet i live og i stadig utvikling!"
     }
   },
+  "customFields": {
+    "settings": {
+      "title": "Egendefinerte felt",
+      "description": "Definer egne typede felt og bruk dem på alle personene dine. Filtrer nettverket ditt — f.eks. «hvem er vegetarianer» eller «hvem har kjæledyr».",
+      "newButton": "Nytt felt",
+      "emptyTitle": "Ingen egendefinerte felt ennå",
+      "emptyDescription": "Legg til felt som kostholdsbegrensninger, hobbyer eller kjæledyr, og bruk dem til å filtrere personene dine.",
+      "usageMeter": "{used} av {limit} egendefinerte felt",
+      "usageMeterUnlimited": "{used} egendefinerte felt",
+      "valueCount": "{count, plural, =0 {Ikke i bruk} =1 {Brukt av 1 person} other {Brukt av # personer}}"
+    },
+    "form": {
+      "nameLabel": "Navn",
+      "namePlaceholder": "f.eks. Kostholdbegrensning",
+      "typeLabel": "Type",
+      "typeText": "Tekst",
+      "typeNumber": "Tall",
+      "typeBoolean": "Ja / Nei",
+      "typeSelect": "Enkeltvalg",
+      "typeLockedNotice": "Typen kan ikke endres etter opprettelse.",
+      "optionsLabel": "Alternativer",
+      "optionPlaceholder": "Alternativ",
+      "addOption": "Legg til alternativ",
+      "removeOption": "Fjern",
+      "saveButton": "Lagre",
+      "cancelButton": "Avbryt",
+      "deleteButton": "Slett"
+    },
+    "delete": {
+      "confirmTitle": "Slette egendefinert felt?",
+      "confirmBody": "{count, plural, =0 {Ingen personer bruker dette feltet.} =1 {# person har en verdi for dette feltet. Verdien vil bli skjult.} other {# personer har verdier for dette feltet. Verdiene deres vil bli skjult.}}",
+      "confirmAction": "Slett",
+      "cancel": "Avbryt"
+    },
+    "errors": {
+      "duplicateName": "Et egendefinert felt med dette navnet finnes allerede.",
+      "selectRequiresOptions": "Enkeltvalg-felt trenger minst ett alternativ.",
+      "notANumber": "Må være et tall.",
+      "notBoolean": "Må være Ja eller Nei.",
+      "notInOptions": "Må være ett av de listede alternativene.",
+      "limitReached": "Du kan opprette opptil {limit} egendefinert(e) felt med din nåværende plan."
+    },
+    "person": {
+      "sectionTitle": "Egendefinerte felt",
+      "booleanYes": "Ja",
+      "booleanNo": "Nei",
+      "booleanNotSet": "Ikke angitt",
+      "selectEmpty": "—",
+      "valueOutOfOptions": "Denne verdien er ikke lenger blant feltets alternativer."
+    },
+    "filter": {
+      "moreFilters": "Flere filtre",
+      "selectField": "Velg et felt",
+      "applyButton": "Bruk",
+      "clearLabel": "Fjern filter",
+      "chipFormat": "{name}: {value}"
+    }
+  },
   "dashboard": {
     "title": "Oversikt",
     "greetingMorning": "God morgen, {name}",
