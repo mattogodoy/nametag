@@ -105,7 +105,7 @@ export default async function JournalPage({
 
       <main className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>

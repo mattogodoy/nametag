@@ -225,11 +225,11 @@ export default function PeopleListClient({
   return (
     <>
       {/* Showing count and filters */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm text-muted">
           {tt.showing}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={groupFilter}
             onChange={(e) => handleFilterChange('group', e.target.value)}
