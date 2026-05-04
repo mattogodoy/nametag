@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.44.6](https://github.com/mattogodoy/nametag/compare/v0.44.5...v0.44.6) (2026-05-04)
+
+
+### Bug Fixes
+
+* clear lint warnings and edge runtime instrumentation error ([b6022fe](https://github.com/mattogodoy/nametag/commit/b6022fe6c91f335eff8656b05ad38e7f0b715890))
+* clear lint warnings and edge-runtime instrumentation error ([0d1791d](https://github.com/mattogodoy/nametag/commit/0d1791deba3579681c3191dc233fd2595d5f68ef))
+* **mobile:** add page overflow guard and iOS focus-zoom fix ([548a9a8](https://github.com/mattogodoy/nametag/commit/548a9a88b73dc4fda3c6bac88ebd2dea16a3a1f2))
+* **mobile:** bound overflow-x-auto wrappers so scroll stays inside cards ([d0f6d2b](https://github.com/mattogodoy/nametag/commit/d0f6d2b8c636e902da290c8c82d10815de109247))
+* **mobile:** enable viewport-fit=cover so safe-area insets apply on iOS ([a1ae7ea](https://github.com/mattogodoy/nametag/commit/a1ae7ea01bf6d412d3992a7e72cf2e86ac726ca7))
+* **mobile:** enlarge modal close button and add bottom safe-area padding ([190e7ae](https://github.com/mattogodoy/nametag/commit/190e7aed6077f887176c9dcb9d083881f039204c))
+* **mobile:** ensure icon-only controls have 44px touch targets ([5b8f392](https://github.com/mattogodoy/nametag/commit/5b8f392b2546a18ecdfe82fa2a554ed16bf5ef6e))
+* **mobile:** ensure icon-only controls have 44px touch targets ([3920126](https://github.com/mattogodoy/nametag/commit/39201265c59c808b0d83ee2ba991055cc1f7a06a))
+* **mobile:** form controls render at 16px on phones, text-sm on desktop ([aee7fea](https://github.com/mattogodoy/nametag/commit/aee7fea641f950228b4e80115c8f56b831d13c5b))
+* **mobile:** match disabled-state and Cancel button heights to migrated Buttons ([ba63573](https://github.com/mattogodoy/nametag/commit/ba63573265fe7b43d207dbd171b38baee802af45))
+* **mobile:** nav and drawer respect safe-area insets ([4269d0c](https://github.com/mattogodoy/nametag/commit/4269d0c83f2e0855f71de1572c573926a99b56bf))
+* **mobile:** people-list filters split 50/50 and header buttons fill row on mobile ([5db8105](https://github.com/mattogodoy/nametag/commit/5db810575a26b6d2ad51bef7c520bc7f4628fca9))
+* **mobile:** photo modals respect bottom safe-area inset ([a3b0c13](https://github.com/mattogodoy/nametag/commit/a3b0c13bcf182fa603cef5e1e078d856fda3a7ca))
+* **mobile:** stack page headers and wrap filter/date rows on narrow viewports ([79e2d8c](https://github.com/mattogodoy/nametag/commit/79e2d8ccc336297520a064041e0fc3bac914d84f))
+* **mobile:** tactical bug bash for mobile experience ([08ce133](https://github.com/mattogodoy/nametag/commit/08ce1339ef81d913d835e8beb4fc3f208ba20e21))
+* **mobile:** unify primary buttons via Button component, restack people-list filters ([8f96c12](https://github.com/mattogodoy/nametag/commit/8f96c120622557638d688a1ac2905418210ae863))
+
 ## [0.44.5](https://github.com/mattogodoy/nametag/compare/v0.44.4...v0.44.5) (2026-05-03)
 
 

@@ -234,7 +234,7 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
               </p>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">

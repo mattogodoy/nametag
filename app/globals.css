@@ -85,3 +85,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Mobile safety net: catch stray horizontal overflow at the page level.
+   Uses `clip` so it does not establish a containing block for fixed/sticky. */
+html {
+  overflow-x: clip;
+}
+
+/* Prevent iOS Safari from zooming on focus when an input renders text under 16px. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

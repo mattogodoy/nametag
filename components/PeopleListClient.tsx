@@ -225,15 +225,15 @@ export default function PeopleListClient({
   return (
     <>
       {/* Showing count and filters */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col-reverse sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2">
         <span className="text-sm text-muted">
           {tt.showing}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <select
             value={groupFilter}
             onChange={(e) => handleFilterChange('group', e.target.value)}
-            className="px-3 py-1.5 text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="">{tPeople('allGroups')}</option>
             <option value="none">{tPeople('noGroup')}</option>
@@ -244,7 +244,7 @@ export default function PeopleListClient({
           <select
             value={relationshipFilter}
             onChange={(e) => handleFilterChange('relationship', e.target.value)}
-            className="px-3 py-1.5 text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="">{tPeople('allRelationships')}</option>
             <option value="none">{tPeople('noRelationship')}</option>
@@ -257,7 +257,7 @@ export default function PeopleListClient({
 
       {/* Table */}
       <div className="bg-surface shadow-sm rounded-lg overflow-hidden border border-border">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-w-full">
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-surface-elevated">
               <tr>
@@ -273,37 +273,37 @@ export default function PeopleListClient({
                 </th>
                 <th className="w-[32px] py-3 px-2" />
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('name')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('name')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tc.name}
                     {sortBy === 'name' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('surname')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('surname')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.surname}
                     {sortBy === 'surname' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('nickname')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('nickname')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.nickname}
                     {sortBy === 'nickname' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('relationship')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('relationship')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.relationshipToUser}
                     {sortBy === 'relationship' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('group')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('group')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.groups}
                     {sortBy === 'group' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('lastContact')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('lastContact')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.lastContact}
                     {sortBy === 'lastContact' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>

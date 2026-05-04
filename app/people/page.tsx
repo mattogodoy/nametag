@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/Button';
 import EmptyState from '@/components/EmptyState';
 import ImportSuccessToast from '@/components/ImportSuccessToast';
 import { canCreateResource } from '@/lib/billing/subscription';
@@ -173,27 +174,21 @@ export default async function PeoplePage({
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <div className="flex space-x-3">
-              <Link
-                href="/people/duplicates"
-                className="px-4 py-2 border border-border text-foreground rounded-lg font-semibold hover:bg-surface transition-colors"
-              >
+            <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+              <Button href="/people/duplicates" variant="secondary" className="flex-1 sm:flex-initial">
                 {t('duplicates.findDuplicates')}
-              </Link>
+              </Button>
               {canCreate.allowed ? (
-                <Link
-                  href="/people/new"
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
-                >
+                <Button href="/people/new" className="flex-1 sm:flex-initial">
                   {t('addPerson')}
-                </Link>
+                </Button>
               ) : (
-                <div className="relative group">
-                  <span className="px-4 py-2 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-block">
+                <div className="relative group flex-1 sm:flex-initial">
+                  <span className="px-4 py-2 min-h-11 sm:min-h-0 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-flex items-center justify-center w-full">
                     {t('addPerson')}
                   </span>
                   <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-surface-elevated text-white text-sm rounded-lg shadow-lg z-10">

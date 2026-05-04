@@ -98,7 +98,7 @@ export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }: PhotoC
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 pb-[env(safe-area-inset-bottom)]">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">{t('cropTitle')}</h2>
         </div>

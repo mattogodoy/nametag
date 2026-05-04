@@ -104,7 +104,7 @@ export default function Modal({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`bg-surface rounded-lg w-full ${sizeClasses[size]} shadow-xl max-h-[90vh] overflow-y-auto`}
+        className={`bg-surface rounded-lg w-full ${sizeClasses[size]} shadow-xl max-h-[90vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-surface z-10">
@@ -116,7 +116,7 @@ export default function Modal({
           </h2>
           <button
             onClick={onClose}
-            className="text-muted hover:text-foreground transition-colors p-1 rounded-lg hover:bg-surface-elevated"
+            className="text-muted hover:text-foreground transition-colors p-1 rounded-lg hover:bg-surface-elevated min-h-11 min-w-11 flex items-center justify-center"
             aria-label={closeAriaLabel || 'Close modal'}
           >
             <svg

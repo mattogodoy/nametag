@@ -270,7 +270,7 @@ export default function PersonActionsMenu({
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           disabled={isExporting}
-          className="h-[42px] px-2 py-2 border border-border text-foreground rounded-lg hover:bg-surface transition-colors disabled:opacity-50"
+          className="h-[42px] px-2 py-2 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 border border-border text-foreground rounded-lg hover:bg-surface transition-colors disabled:opacity-50 flex items-center justify-center"
           aria-label={t('actions')}
           title={t('actions')}
 >
@@ -511,6 +511,7 @@ export default function PersonActionsMenu({
             onChange={(id) => handleMergeSelect(id)}
             placeholder={tMerge('searchPerson')}
             nameOrder={nameOrder}
+            nameDisplayFormat={nameDisplayFormat}
           />
         </div>
       </Modal>

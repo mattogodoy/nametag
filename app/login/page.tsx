@@ -6,6 +6,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { fetchAvailableProviders } from '@/lib/client-features';
 
@@ -213,13 +214,9 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2.5 px-6 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md active:translate-y-px active:shadow-sm"
-            >
+            <Button type="submit" disabled={isLoading} fullWidth>
               {isLoading ? t('signingIn') : t('login')}
-            </button>
+            </Button>
           </div>
 
           <div className="text-center space-y-2">
