@@ -178,17 +178,17 @@ export default async function PeoplePage({
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <div className="flex flex-wrap gap-3">
-              <Button href="/people/duplicates" variant="secondary">
+            <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+              <Button href="/people/duplicates" variant="secondary" className="flex-1 sm:flex-initial">
                 {t('duplicates.findDuplicates')}
               </Button>
               {canCreate.allowed ? (
-                <Button href="/people/new">
+                <Button href="/people/new" className="flex-1 sm:flex-initial">
                   {t('addPerson')}
                 </Button>
               ) : (
-                <div className="relative group">
-                  <span className="px-4 py-2 min-h-11 sm:min-h-0 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-flex items-center justify-center">
+                <div className="relative group flex-1 sm:flex-initial">
+                  <span className="px-4 py-2 min-h-11 sm:min-h-0 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-flex items-center justify-center w-full">
                     {t('addPerson')}
                   </span>
                   <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-surface-elevated text-white text-sm rounded-lg shadow-lg z-10">
