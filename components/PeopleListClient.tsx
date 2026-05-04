@@ -273,37 +273,37 @@ export default function PeopleListClient({
                 </th>
                 <th className="w-[32px] py-3 px-2" />
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('name')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('name')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tc.name}
                     {sortBy === 'name' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('surname')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('surname')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.surname}
                     {sortBy === 'surname' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('nickname')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('nickname')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.nickname}
                     {sortBy === 'nickname' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('relationship')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('relationship')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.relationshipToUser}
                     {sortBy === 'relationship' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('group')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('group')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.groups}
                     {sortBy === 'group' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
-                  <Link href={buildSortUrl('lastContact')} className="flex items-center gap-1 hover:text-foreground">
+                  <Link href={buildSortUrl('lastContact')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tt.lastContact}
                     {sortBy === 'lastContact' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
                   </Link>
