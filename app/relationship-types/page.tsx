@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/Button';
 import EmptyState from '@/components/EmptyState';
 import DeleteRelationshipTypeButton from '@/components/DeleteRelationshipTypeButton';
 import { getTranslations } from 'next-intl/server';
@@ -67,12 +68,9 @@ export default async function RelationshipTypesPage() {
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <Link
-              href="/relationship-types/new"
-              className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
-            >
+            <Button href="/relationship-types/new">
               {t('createNewType')}
-            </Link>
+            </Button>
           </div>
 
           {relationshipTypesWithUsage.length > 0 ? (

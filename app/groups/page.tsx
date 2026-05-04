@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/Button';
 import EmptyState from '@/components/EmptyState';
 import { canCreateResource } from '@/lib/billing/subscription';
 import { getTranslations } from 'next-intl/server';
@@ -75,12 +76,9 @@ export default async function GroupsPage({
               {t('title')}
             </h1>
             {canCreate.allowed ? (
-              <Link
-                href="/groups/new"
-                className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
-              >
+              <Button href="/groups/new">
                 {t('addGroup')}
-              </Link>
+              </Button>
             ) : (
               <div className="relative group">
                 <span className="px-4 py-2 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-block">

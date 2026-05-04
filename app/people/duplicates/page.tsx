@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
 import Navigation from '@/components/Navigation';
 import DuplicatesList, { DuplicateGroupDisplay } from '@/components/DuplicatesList';
 
@@ -43,12 +43,9 @@ export default function DuplicatesPage() {
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <Link
-              href="/people"
-              className="px-4 py-2 border border-border text-foreground rounded-lg font-semibold hover:bg-surface transition-colors"
-            >
+            <Button href="/people" variant="secondary">
               {tCommon('back')}
-            </Link>
+            </Button>
           </div>
 
           {loading ? (

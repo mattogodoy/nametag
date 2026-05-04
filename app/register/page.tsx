@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
+import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { fetchAvailableProviders } from '@/lib/client-features';
 
@@ -340,13 +341,9 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" disabled={isLoading} fullWidth>
               {isLoading ? t('creatingAccount') : t('signUp')}
-            </button>
+            </Button>
           </div>
 
           <div className="text-center">

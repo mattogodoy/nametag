@@ -109,7 +109,7 @@ export default async function JournalPage({
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <Button href="/journal/new" size="sm">
+            <Button href="/journal/new">
               {t('addEntry')}
             </Button>
           </div>

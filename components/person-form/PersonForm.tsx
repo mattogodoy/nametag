@@ -20,6 +20,7 @@ import GroupsSection from './GroupsSection';
 import LastContactSection from './LastContactSection';
 import ImportantDatesManager from '../ImportantDatesManager';
 import MarkdownEditor from '../MarkdownEditor';
+import { Button } from '../ui/Button';
 import CardDavSyncSection from './CardDavSyncSection';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -623,13 +624,9 @@ export default function PersonForm({
             )}
           </div>
         ) : (
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <Button type="submit" disabled={isLoading}>
             {isLoading ? t('saving') : t('save')}
-          </button>
+          </Button>
         )}
       </div>
     </form>

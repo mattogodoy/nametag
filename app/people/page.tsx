@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/Button';
 import EmptyState from '@/components/EmptyState';
 import ImportSuccessToast from '@/components/ImportSuccessToast';
 import { canCreateResource } from '@/lib/billing/subscription';
@@ -178,19 +179,13 @@ export default async function PeoplePage({
               {t('title')}
             </h1>
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/people/duplicates"
-                className="px-4 py-2 border border-border text-foreground rounded-lg font-semibold hover:bg-surface transition-colors"
-              >
+              <Button href="/people/duplicates" variant="secondary">
                 {t('duplicates.findDuplicates')}
-              </Link>
+              </Button>
               {canCreate.allowed ? (
-                <Link
-                  href="/people/new"
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
-                >
+                <Button href="/people/new">
                   {t('addPerson')}
-                </Link>
+                </Button>
               ) : (
                 <div className="relative group">
                   <span className="px-4 py-2 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-block">

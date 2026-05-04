@@ -225,15 +225,15 @@ export default function PeopleListClient({
   return (
     <>
       {/* Showing count and filters */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-4 flex flex-col-reverse sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2">
         <span className="text-sm text-muted">
           {tt.showing}
         </span>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <select
             value={groupFilter}
             onChange={(e) => handleFilterChange('group', e.target.value)}
-            className="px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex-1 sm:flex-initial px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="">{tPeople('allGroups')}</option>
             <option value="none">{tPeople('noGroup')}</option>
@@ -244,7 +244,7 @@ export default function PeopleListClient({
           <select
             value={relationshipFilter}
             onChange={(e) => handleFilterChange('relationship', e.target.value)}
-            className="px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex-1 sm:flex-initial px-3 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="">{tPeople('allRelationships')}</option>
             <option value="none">{tPeople('noRelationship')}</option>
