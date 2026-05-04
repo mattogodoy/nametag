@@ -101,7 +101,7 @@ export default function PhotoSourceModal({ onSelect, onClose }: PhotoSourceModal
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">{t('sourceTitle')}</h2>
           <button
