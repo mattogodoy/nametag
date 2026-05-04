@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.44.5](https://github.com/mattogodoy/nametag/compare/v0.44.4...v0.44.5) (2026-05-03)
+
+
+### Bug Fixes
+
+* **people-merge:** preserve journal entry references when merging contacts ([45661fe](https://github.com/mattogodoy/nametag/commit/45661fe07c1085f4ace19acfa2969c125548e066))
+* **people-merge:** preserve journal entry references when merging contacts ([f514632](https://github.com/mattogodoy/nametag/commit/f514632a1b8130c45a875f79d55452411af8bd74))
+
 ## [0.44.4](https://github.com/mattogodoy/nametag/compare/v0.44.3...v0.44.4) (2026-04-30)
 
 
