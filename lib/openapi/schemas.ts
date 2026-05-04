@@ -101,6 +101,29 @@ export function sharedSchemas(): Record<string, unknown> {
       },
       required: ['id', 'name', 'createdAt', 'updatedAt'],
     },
+    CustomFieldTemplate: {
+      type: 'object',
+      description: 'A user-defined typed custom field template applied to people',
+      properties: {
+        id: { type: 'string' },
+        userId: { type: 'string' },
+        name: { type: 'string', example: 'Dietary restriction' },
+        slug: { type: 'string', example: 'dietary-restriction', description: 'Stable, immutable, derived from name at create time' },
+        type: { type: 'string', enum: ['TEXT', 'NUMBER', 'BOOLEAN', 'SELECT'] },
+        options: { type: 'array', items: { type: 'string' }, description: 'Only meaningful when type=SELECT' },
+        order: { type: 'integer', description: 'Display order' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+        _count: {
+          type: 'object',
+          description: 'Aggregate counts',
+          properties: {
+            values: { type: 'integer', description: 'Number of people with a value for this template' },
+          },
+        },
+      },
+      required: ['id', 'userId', 'name', 'slug', 'type', 'options', 'order'],
+    },
     Group: {
       type: 'object',
       description: 'A user-defined group for organizing people',
