@@ -68,7 +68,7 @@ export default async function PeoplePage({
     relationshipToUserId?: string | null;
     customFieldValues?: {
       some: {
-        value: string;
+        value: string | { equals: string; mode: 'insensitive' };
         template: { slug: string; userId: string; deletedAt: null };
       };
     };
@@ -90,9 +90,13 @@ export default async function PeoplePage({
   }
 
   if (cfFilter) {
+    // Case-insensitive match. Harmless for NUMBER ("42" == "42"), BOOLEAN
+    // ("true"/"false" are lowercase), and SELECT (dropdown values match the
+    // stored option's exact casing). For TEXT, this lets users find values
+    // without remembering the exact casing.
     peopleWhere.customFieldValues = {
       some: {
-        value: cfFilter.value,
+        value: { equals: cfFilter.value, mode: 'insensitive' },
         template: {
           slug: cfFilter.slug,
           userId: session.user.id,
