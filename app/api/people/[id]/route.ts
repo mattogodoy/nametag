@@ -8,6 +8,7 @@ import { autoExportPerson } from '@/lib/carddav/auto-export';
 import { deleteFromCardDav as deleteContactFromCardDav } from '@/lib/carddav/delete-contact';
 import { savePhoto, deletePersonPhotos, isPhotoFilename } from '@/lib/photo-storage';
 import { createModuleLogger } from '@/lib/logger';
+import { applyCustomFieldValues, CustomFieldValidationError } from '@/lib/customFields/persistence';
 
 const log = createModuleLogger('people');
 
@@ -107,6 +108,20 @@ export const PUT = withAuth(async (request, session, context) => {
         resolvedPhoto = photoFilename || photo;
       }
       // Otherwise already a filename — keep as-is
+    }
+
+    // Apply custom field values BEFORE calling updatePerson so that autoUpdatePerson
+    // (which fires inside the service as a background task) reads the fresh values
+    // and the exported vCard is complete.
+    if (validation.data.customFieldValues !== undefined) {
+      try {
+        await applyCustomFieldValues(prisma, session.user.id, id, validation.data.customFieldValues);
+      } catch (err) {
+        if (err instanceof CustomFieldValidationError) {
+          return apiResponse.error(err.message);
+        }
+        throw err;
+      }
     }
 
     // Delegate the DB write (and CardDAV normal-update path) to the service.

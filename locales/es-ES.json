@@ -441,6 +441,7 @@
       "people": "Personas",
       "groups": "Grupos",
       "reminders": "Recordatorios",
+      "customFields": "Campos personalizados",
       "havePromoCode": "¿Tienes un Código de Promoción?",
       "promoCode": "Código promocional",
       "promoCodePlaceholder": "Ingresa código",
@@ -611,6 +612,75 @@
       "supportDevelopment": "Apoyar el Desarrollo",
       "supportMessage": "Si Nametag te resulta útil y quieres apoyar su desarrollo, ¡puedes invitarme a un café! ☕",
       "supportNote": "¡Tu apoyo ayuda a mantener este proyecto vivo y en constante mejora!"
+    }
+  },
+  "customFields": {
+    "settings": {
+      "title": "Campos personalizados",
+      "description": "Define tus propios campos con tipo y aplícalos a todas tus personas. Úsalos para filtrar tu red, como «quién es vegetariano» o «quién tiene mascotas».",
+      "newButton": "Nuevo campo",
+      "emptyTitle": "Aún no hay campos personalizados",
+      "emptyDescription": "Añade campos como restricciones dietéticas, aficiones o mascotas, y úsalos para filtrar tus personas.",
+      "usageMeter": "{used} de {limit} campos personalizados",
+      "usageMeterUnlimited": "{used} campos personalizados",
+      "valueCount": "{count, plural, =0 {Sin uso} =1 {Usado por 1 persona} other {Usado por # personas}}"
+    },
+    "form": {
+      "nameLabel": "Nombre",
+      "namePlaceholder": "ej. Restricción dietética",
+      "typeLabel": "Tipo",
+      "typeText": "Texto",
+      "typeNumber": "Número",
+      "typeBoolean": "Sí / No",
+      "typeSelect": "Selección única",
+      "typeLockedNotice": "El tipo no se puede cambiar después de la creación.",
+      "optionsLabel": "Opciones",
+      "optionPlaceholder": "Opción",
+      "addOption": "Añadir opción",
+      "removeOption": "Eliminar",
+      "saveButton": "Guardar",
+      "savingButton": "Guardando...",
+      "cancelButton": "Cancelar",
+      "deleteButton": "Eliminar"
+    },
+    "delete": {
+      "confirmTitle": "¿Eliminar campo personalizado?",
+      "confirmBody": "{count, plural, =0 {Ninguna persona usa este campo.} =1 {# persona tiene un valor para este campo. El valor quedará oculto.} other {# personas tienen valores para este campo. Sus valores quedarán ocultos.}}",
+      "confirmAction": "Eliminar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "duplicateName": "Ya existe un campo personalizado con este nombre.",
+      "selectRequiresOptions": "Los campos de selección única necesitan al menos una opción.",
+      "notANumber": "Debe ser un número.",
+      "notBoolean": "Debe ser Sí o No.",
+      "notInOptions": "Debe ser una de las opciones disponibles.",
+      "limitReached": "Puedes crear hasta {limit} campo(s) personalizado(s) con tu plan actual.",
+      "reorderFailed": "No se pudo reordenar",
+      "somethingWentWrong": "Algo salió mal",
+      "cannotConnect": "No se puede conectar al servidor"
+    },
+    "person": {
+      "sectionTitle": "Campos personalizados",
+      "booleanYes": "Sí",
+      "booleanNo": "No",
+      "booleanNotSet": "Sin definir",
+      "selectEmpty": "-",
+      "valueOutOfOptions": "Este valor ya no está en las opciones del campo."
+    },
+    "filter": {
+      "moreFilters": "Más filtros",
+      "selectField": "Seleccionar un campo",
+      "applyButton": "Aplicar",
+      "clearLabel": "Limpiar filtro",
+      "chipFormat": "{name}: {value}",
+      "staleFilter": "El filtro ya no es válido. Limpiar"
+    },
+    "row": {
+      "moveUp": "Mover arriba",
+      "moveDown": "Mover abajo",
+      "edit": "Editar",
+      "delete": "Eliminar"
     }
   },
   "dashboard": {
@@ -841,6 +911,7 @@
       "clearLastContact": "Eliminar fecha de último contacto",
       "sectionImportantDates": "Fechas Importantes",
       "sectionNotes": "Notas",
+      "sectionCustomFields": "Campos personalizados",
       "nameLabel": "Nombre",
       "nameRequired": "Nombre *",
       "surnameLabel": "Apellido",
@@ -1145,6 +1216,7 @@
       "imHandles": "cuentas de mensajería",
       "locations": "ubicaciones",
       "customFields": "campos personalizados",
+      "customFieldValues": "valores de campos personalizados",
       "importantDates": "fechas importantes",
       "groups": "grupos",
       "relationships": "relaciones",
@@ -1709,7 +1781,7 @@
     "filterByPerson": "Filtrar por persona",
     "allPeople": "Todas las personas",
     "noEntries": "Aún no hay entradas en el diario",
-    "noEntriesDescription": "Un cafe con amigos, una cena familiar, un reencuentro inesperado — captura los momentos que importan.",
+    "noEntriesDescription": "Un cafe con amigos, una cena familiar, un reencuentro inesperado. Captura los momentos que importan.",
     "writeFirstEntry": "Escribe tu primera entrada",
     "form": {
       "titleLabel": "Título",

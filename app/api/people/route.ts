@@ -4,6 +4,7 @@ import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/a
 import { canCreateResource, canEnableReminder } from '@/lib/billing';
 import { savePhoto } from '@/lib/photo-storage';
 import { createPerson } from '@/lib/services/person';
+import { applyCustomFieldValues, validateCustomFieldValues, CustomFieldValidationError } from '@/lib/customFields/persistence';
 
 // GET /api/people - List all people for the current user
 export const GET = withAuth(async (request, session) => {
@@ -73,6 +74,10 @@ export const GET = withAuth(async (request, session) => {
             include: {
               relatedPerson: true,
             },
+          },
+          customFieldValues: {
+            include: { template: true },
+            where: { template: { deletedAt: null } },
           },
         }),
       },
@@ -153,6 +158,19 @@ export const POST = withAuth(async (request, session) => {
       }
     }
 
+    // Validate customFieldValues BEFORE creating the person so that a validation error
+    // does not leave a half-created person or a stale CardDAV export in flight.
+    if (validation.data.customFieldValues !== undefined) {
+      try {
+        await validateCustomFieldValues(prisma, session.user.id, validation.data.customFieldValues);
+      } catch (err) {
+        if (err instanceof CustomFieldValidationError) {
+          return apiResponse.error(err.message);
+        }
+        throw err;
+      }
+    }
+
     // Create person via service (handles sanitisation, nested writes, CardDAV auto-export).
     // When connected through another person, omit relationshipToUserId so the service
     // does not create a direct user relationship — that link is established below via
@@ -173,6 +191,12 @@ export const POST = withAuth(async (request, session) => {
         });
         (person as Record<string, unknown>).photo = photoFilename;
       }
+    }
+
+    // Apply custom field values if provided (undefined = no-op, [] = clear all).
+    // Validation already passed above, so this step only performs the DB writes.
+    if (validation.data.customFieldValues !== undefined) {
+      await applyCustomFieldValues(prisma, session.user.id, person.id, validation.data.customFieldValues);
     }
 
     // If connected through another person, create bidirectional relationship

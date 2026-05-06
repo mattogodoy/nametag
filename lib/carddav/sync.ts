@@ -9,6 +9,7 @@ import { classifyUpdateFailure } from './update-recovery';
 import { getAddressBook } from './address-book';
 import { readPhotoForExport, isPhotoFilename } from '@/lib/photo-storage';
 import { updatePersonFromVCard } from './vcard-import';
+import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from './hash';
@@ -257,6 +258,7 @@ export async function syncFromServer(
                   imHandles: true,
                   locations: true,
                   customFields: true,
+                  customFieldValues: customFieldValuesInclude(),
                 },
               },
             },
@@ -495,6 +497,7 @@ export async function syncToServer(
             imHandles: true,
             locations: true,
             customFields: true,
+            customFieldValues: customFieldValuesInclude(),
             importantDates: true,
             groups: {
               where: { group: { deletedAt: null } },
@@ -539,6 +542,7 @@ export async function syncToServer(
           importantDates: mapping.person.importantDates || [],
           relationshipsFrom: mapping.person.relationshipsFrom || [],
           groups: mapping.person.groups || [],
+          customFieldValues: mapping.person.customFieldValues || [],
         };
 
         // Load photo from file for export if needed
@@ -714,6 +718,7 @@ export async function syncToServer(
         imHandles: true,
         locations: true,
         customFields: true,
+        customFieldValues: customFieldValuesInclude(),
         importantDates: true,
         relationshipsFrom: {
           include: { relatedPerson: true },
