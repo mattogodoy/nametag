@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.45.0](https://github.com/mattogodoy/nametag/compare/v0.44.7...v0.45.0) (2026-05-06)
+
+
+### Features
+
+* custom fields ([6b54a84](https://github.com/mattogodoy/nametag/commit/6b54a84644189ac82b06afc5d2895826cc0bd7d2))
+* **custom-fields:** case-insensitive people-list filter on custom field values ([ac045ad](https://github.com/mattogodoy/nametag/commit/ac045ad0975f2d6b9f13abcf621fb7494a8b04ad))
+* **custom-fields:** round-trip in JSON export/import, transfer on merge, strict reorder ([1f0ca95](https://github.com/mattogodoy/nametag/commit/1f0ca95af52b4a43ea6defd690e4b4004a446620))
+* **custom-fields:** show template values in merge summary ([e2ec22a](https://github.com/mattogodoy/nametag/commit/e2ec22ac57bfb45c763315c37b00dedbdcae9c60))
+
+
+### Bug Fixes
+
+* **custom-fields:** allow recreating template after soft-delete; translate 409 ([67c3732](https://github.com/mattogodoy/nametag/commit/67c3732085021647db15e289f88b3fcb2e5ba555))
+* **custom-fields:** enforce tier limit on import, bump export version, cache template lookups ([a3e1021](https://github.com/mattogodoy/nametag/commit/a3e1021dcfa69ce7a2e333d115a27d3dcd3acfc9))
+* **custom-fields:** sync template list with server refresh ([ab609a8](https://github.com/mattogodoy/nametag/commit/ab609a85854ba4088421a5b098212666db6e1e8e))
+
 ## [0.44.7](https://github.com/mattogodoy/nametag/compare/v0.44.6...v0.44.7) (2026-05-05)
 
 
