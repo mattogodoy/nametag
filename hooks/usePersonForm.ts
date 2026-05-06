@@ -1,6 +1,7 @@
 'use client';
 
 import { useReducer, useCallback } from 'react';
+import type { CustomFieldValueInput } from '@/lib/customFields/persistence';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
 
@@ -44,11 +45,6 @@ export interface UrlItem {
   url: string;
 }
 
-export interface CustomFieldValueItem {
-  templateId: string;
-  value: string;
-}
-
 export interface FormData {
   name: string;
   surname: string;
@@ -87,7 +83,7 @@ export interface PersonFormState {
   emails: EmailItem[];
   addresses: AddressItem[];
   urls: UrlItem[];
-  customFieldValues: CustomFieldValueItem[];
+  customFieldValues: CustomFieldValueInput[];
 }
 
 type PersonFormAction =
@@ -109,7 +105,7 @@ type PersonFormAction =
   | { type: 'SET_EMAILS'; payload: EmailItem[] }
   | { type: 'SET_ADDRESSES'; payload: AddressItem[] }
   | { type: 'SET_URLS'; payload: UrlItem[] }
-  | { type: 'SET_CUSTOM_FIELD_VALUES'; payload: CustomFieldValueItem[] }
+  | { type: 'SET_CUSTOM_FIELD_VALUES'; payload: CustomFieldValueInput[] }
   | { type: 'RESET'; payload: PersonFormState };
 
 function reducer(state: PersonFormState, action: PersonFormAction): PersonFormState {
@@ -421,7 +417,7 @@ export function usePersonForm(params: {
     []
   );
   const setCustomFieldValues = useCallback(
-    (val: CustomFieldValueItem[]) =>
+    (val: CustomFieldValueInput[]) =>
       dispatch({ type: 'SET_CUSTOM_FIELD_VALUES', payload: val }),
     []
   );

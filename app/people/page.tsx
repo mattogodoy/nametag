@@ -68,7 +68,7 @@ export default async function PeoplePage({
     relationshipToUserId?: string | null;
     customFieldValues?: {
       some: {
-        value: string | { equals: string; mode: 'insensitive' };
+        value: { equals: string; mode: 'insensitive' };
         template: { slug: string; userId: string; deletedAt: null };
       };
     };

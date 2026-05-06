@@ -17,6 +17,7 @@ import PersonAvatar from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import JournalSection from '@/components/JournalSection';
+import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
 function isSafeUrl(url: string): boolean {
   try {
@@ -178,10 +179,7 @@ export default async function PersonDetailsPage({
         imHandles: true,
         locations: true,
         customFields: true,
-        customFieldValues: {
-          include: { template: true },
-          where: { template: { deletedAt: null } },
-        },
+        customFieldValues: customFieldValuesInclude(),
         relationshipsFrom: {
           where: {
             deletedAt: null,

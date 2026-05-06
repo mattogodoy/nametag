@@ -2,11 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import type { CustomFieldTemplate } from '@prisma/client';
+import type { CustomFieldValueInput } from '@/lib/customFields/persistence';
 
-export interface CustomFieldValueInput {
-  templateId: string;
-  value: string;
-}
+export type { CustomFieldValueInput };
 
 interface Props {
   templates: CustomFieldTemplate[];

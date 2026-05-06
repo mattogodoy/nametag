@@ -49,6 +49,7 @@ export default function CustomFieldsManager({
   const [templates, setTemplates] = useState<TemplateWithCount[]>(initialTemplates);
   const [mode, setMode] = useState<Mode>({ kind: 'idle' });
   const [reorderError, setReorderError] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Re-sync local state whenever the server-refreshed prop changes (after
   // create/edit/delete/reorder router.refresh() lands new data).
@@ -87,6 +88,7 @@ export default function CustomFieldsManager({
 
   const submitReorder = async (ids: string[]) => {
     setReorderError(null);
+    setIsReordering(true);
     try {
       const res = await fetch('/api/custom-field-templates/reorder', {
         method: 'PUT',
@@ -101,6 +103,8 @@ export default function CustomFieldsManager({
       }
     } catch {
       setReorderError(tErrors('reorderFailed'));
+    } finally {
+      setIsReordering(false);
     }
   };
 
@@ -175,8 +179,8 @@ export default function CustomFieldsManager({
               <CustomFieldTemplateRow
                 template={template}
                 isEditing={mode.kind === 'edit' && mode.id === template.id}
-                canMoveUp={idx > 0}
-                canMoveDown={idx < templates.length - 1}
+                canMoveUp={idx > 0 && !isReordering}
+                canMoveDown={idx < templates.length - 1 && !isReordering}
                 onEdit={() => setMode({ kind: 'edit', id: template.id })}
                 onDelete={() => setMode({ kind: 'delete', id: template.id })}
                 onMoveUp={() => handleMoveUp(template.id)}

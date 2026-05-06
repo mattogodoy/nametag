@@ -9,6 +9,7 @@ import { buildLocalHash } from './hash';
 import { createModuleLogger } from '@/lib/logger';
 import { ExternalServiceError } from '@/lib/errors';
 import { updateContext } from '@/lib/logging/context';
+import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
 const log = createModuleLogger('carddav');
 import { v4 as uuidv4 } from 'uuid';
@@ -52,10 +53,7 @@ export async function autoExportPerson(personId: string): Promise<void> {
       imHandles: true,
       locations: true,
       customFields: true,
-      customFieldValues: {
-        include: { template: true },
-        where: { template: { deletedAt: null } },
-      },
+      customFieldValues: customFieldValuesInclude(),
       importantDates: true,
       relationshipsFrom: {
         where: { deletedAt: null },
@@ -251,10 +249,7 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
       imHandles: true,
       locations: true,
       customFields: true,
-      customFieldValues: {
-        include: { template: true },
-        where: { template: { deletedAt: null } },
-      },
+      customFieldValues: customFieldValuesInclude(),
       importantDates: true,
       relationshipsFrom: {
         where: { deletedAt: null },
