@@ -62,6 +62,7 @@ export default async function ExportPage() {
     },
     include: {
       groups: {
+        where: { group: { deletedAt: null } },
         include: {
           group: true,
         },

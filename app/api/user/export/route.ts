@@ -44,6 +44,7 @@ export const GET = withAuth(async (request, session) => {
             },
           },
           groups: {
+            where: { group: { deletedAt: null } },
             include: {
               group: {
                 select: {

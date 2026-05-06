@@ -93,6 +93,7 @@ export const POST = withLogging(async function POST(request: Request) {
           },
         },
         groups: {
+          where: { group: { deletedAt: null } },
           include: {
             group: true,
           },

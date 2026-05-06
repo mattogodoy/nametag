@@ -144,6 +144,18 @@ describe('Soft-delete filter regression tests', () => {
       const callArg = mocks.personFindMany.mock.calls[0][0];
       expect(callArg.where).toHaveProperty('deletedAt', null);
     });
+
+    it('should filter soft-deleted groups in nested groups include (issue #255)', async () => {
+      mocks.personFindMany.mockResolvedValue([]);
+
+      const request = new Request('http://localhost/api/people');
+      await getPeople(request);
+
+      expect(mocks.personFindMany).toHaveBeenCalledTimes(1);
+      const callArg = mocks.personFindMany.mock.calls[0][0];
+      expect(callArg.include.groups).toHaveProperty('where');
+      expect(callArg.include.groups.where).toEqual({ group: { deletedAt: null } });
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -315,6 +327,20 @@ describe('Soft-delete filter regression tests', () => {
       const callArg = mocks.personFindMany.mock.calls[0][0];
       expect(callArg.include.importantDates).toHaveProperty('where');
       expect(callArg.include.importantDates.where).toHaveProperty('deletedAt', null);
+    });
+
+    it('should filter soft-deleted groups in nested groups include (issue #255)', async () => {
+      mocks.personFindMany.mockResolvedValue([]);
+      mocks.groupFindMany.mockResolvedValue([]);
+      mocks.relationshipTypeFindMany.mockResolvedValue([]);
+
+      const request = new Request('http://localhost/api/user/export');
+      await exportData(request);
+
+      expect(mocks.personFindMany).toHaveBeenCalledTimes(1);
+      const callArg = mocks.personFindMany.mock.calls[0][0];
+      expect(callArg.include.groups).toHaveProperty('where');
+      expect(callArg.include.groups.where).toEqual({ group: { deletedAt: null } });
     });
   });
 

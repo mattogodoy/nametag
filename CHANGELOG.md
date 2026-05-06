@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.44.7](https://github.com/mattogodoy/nametag/compare/v0.44.6...v0.44.7) (2026-05-05)
+
+
+### Bug Fixes
+
+* deleted groups still shown on people list ([#255](https://github.com/mattogodoy/nametag/issues/255)) ([c78c6ec](https://github.com/mattogodoy/nametag/commit/c78c6ec76c32e9931e142bdbcc8e4f4a58d04184))
+* filter soft-deleted groups from nested person.groups includes ([f4b61df](https://github.com/mattogodoy/nametag/commit/f4b61df7cf866f8a93893f937f966ce16a8ec95a))
+
 ## [0.44.6](https://github.com/mattogodoy/nametag/compare/v0.44.5...v0.44.6) (2026-05-04)
 
 

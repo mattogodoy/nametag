@@ -499,7 +499,10 @@ export async function syncToServer(
             customFields: true,
             customFieldValues: customFieldValuesInclude(),
             importantDates: true,
-            groups: { include: { group: true } },
+            groups: {
+              where: { group: { deletedAt: null } },
+              include: { group: true },
+            },
             relationshipsFrom: { include: { relatedPerson: true } },
           },
         },
@@ -721,6 +724,7 @@ export async function syncToServer(
           include: { relatedPerson: true },
         },
         groups: {
+          where: { group: { deletedAt: null } },
           include: { group: true },
         },
       },

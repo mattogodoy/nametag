@@ -119,7 +119,10 @@ export default async function PeoplePage({
       where: peopleWhere,
       include: {
         relationshipToUser: { select: { label: true, color: true } },
-        groups: { include: { group: { select: { name: true, color: true } } } },
+        groups: {
+          where: { group: { deletedAt: null } },
+          include: { group: { select: { name: true, color: true } } },
+        },
         relationshipsFrom: { select: { id: true } },
         relationshipsTo: { select: { id: true } },
       },

@@ -62,6 +62,7 @@ export async function autoExportPerson(personId: string): Promise<void> {
         },
       },
       groups: {
+        where: { group: { deletedAt: null } },
         include: {
           group: true,
         },
@@ -258,6 +259,7 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
         },
       },
       groups: {
+        where: { group: { deletedAt: null } },
         include: {
           group: true,
         },
