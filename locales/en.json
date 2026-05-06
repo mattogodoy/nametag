@@ -440,6 +440,7 @@
       "people": "People",
       "groups": "Groups",
       "reminders": "Reminders",
+      "customFields": "Custom fields",
       "havePromoCode": "Have a Promotion Code?",
       "promoCode": "Promotion Code",
       "promoCodePlaceholder": "Enter code",
@@ -610,6 +611,75 @@
       "supportDevelopment": "Support Development",
       "supportMessage": "If you find Nametag useful and want to support its development, you can buy me a coffee! ☕",
       "supportNote": "Your support helps keep this project alive and continuously improving!"
+    }
+  },
+  "customFields": {
+    "settings": {
+      "title": "Custom fields",
+      "description": "Define your own typed fields and apply them to all your people. Use them to filter your network, like \"who's vegetarian\" or \"who has pets.\"",
+      "newButton": "New field",
+      "emptyTitle": "No custom fields yet",
+      "emptyDescription": "Add fields like dietary restrictions, hobbies, or pets, and use them to filter your people.",
+      "usageMeter": "{used} of {limit} custom fields",
+      "usageMeterUnlimited": "{used} custom fields",
+      "valueCount": "{count, plural, =0 {Not in use} =1 {Used by 1 person} other {Used by # people}}"
+    },
+    "form": {
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Dietary restriction",
+      "typeLabel": "Type",
+      "typeText": "Text",
+      "typeNumber": "Number",
+      "typeBoolean": "Yes / No",
+      "typeSelect": "Single-select",
+      "typeLockedNotice": "Type can't be changed after creation.",
+      "optionsLabel": "Options",
+      "optionPlaceholder": "Option",
+      "addOption": "Add option",
+      "removeOption": "Remove",
+      "saveButton": "Save",
+      "savingButton": "Saving...",
+      "cancelButton": "Cancel",
+      "deleteButton": "Delete"
+    },
+    "delete": {
+      "confirmTitle": "Delete custom field?",
+      "confirmBody": "{count, plural, =0 {No people use this field.} =1 {# person has a value for this field. The value will be hidden.} other {# people have values for this field. Their values will be hidden.}}",
+      "confirmAction": "Delete",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "duplicateName": "A custom field with this name already exists.",
+      "selectRequiresOptions": "Single-select fields need at least one option.",
+      "notANumber": "Must be a number.",
+      "notBoolean": "Must be Yes or No.",
+      "notInOptions": "Must be one of the listed options.",
+      "limitReached": "You can create up to {limit} custom field(s) on your current plan.",
+      "reorderFailed": "Failed to reorder",
+      "somethingWentWrong": "Something went wrong",
+      "cannotConnect": "Unable to connect to server"
+    },
+    "person": {
+      "sectionTitle": "Custom fields",
+      "booleanYes": "Yes",
+      "booleanNo": "No",
+      "booleanNotSet": "Not set",
+      "selectEmpty": "-",
+      "valueOutOfOptions": "This value is no longer in the field's options."
+    },
+    "filter": {
+      "moreFilters": "More filters",
+      "selectField": "Select a field",
+      "applyButton": "Apply",
+      "clearLabel": "Clear filter",
+      "chipFormat": "{name}: {value}",
+      "staleFilter": "Filter no longer valid. Clear"
+    },
+    "row": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "edit": "Edit",
+      "delete": "Delete"
     }
   },
   "dashboard": {
@@ -840,6 +910,7 @@
       "clearLastContact": "Remove last contact date",
       "sectionImportantDates": "Important Dates",
       "sectionNotes": "Notes",
+      "sectionCustomFields": "Custom fields",
       "nameLabel": "Name",
       "nameRequired": "Name *",
       "surnameLabel": "Last Name",
@@ -1140,6 +1211,7 @@
       "imHandles": "IM handles",
       "locations": "locations",
       "customFields": "custom fields",
+      "customFieldValues": "custom field values",
       "importantDates": "important dates",
       "groups": "groups",
       "relationships": "relationships",
@@ -1704,7 +1776,7 @@
     "filterByPerson": "Filter by person",
     "allPeople": "All people",
     "noEntries": "No journal entries yet",
-    "noEntriesDescription": "A coffee catch-up, a family dinner, running into an old friend — capture the moments that matter.",
+    "noEntriesDescription": "A coffee catch-up, a family dinner, running into an old friend. Capture the moments that matter.",
     "writeFirstEntry": "Write your first entry",
     "form": {
       "titleLabel": "Title",

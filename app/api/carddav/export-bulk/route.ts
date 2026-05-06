@@ -9,6 +9,7 @@ import { buildLocalHash } from '@/lib/carddav/hash';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
 import { z } from 'zod';
+import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
 const log = createModuleLogger('carddav');
 
@@ -84,6 +85,7 @@ export const POST = withLogging(async function POST(request: Request) {
         imHandles: true,
         locations: true,
         customFields: true,
+        customFieldValues: customFieldValuesInclude(),
         importantDates: true,
         relationshipsFrom: {
           include: {

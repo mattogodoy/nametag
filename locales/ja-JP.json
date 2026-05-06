@@ -440,6 +440,7 @@
       "people": "人",
       "groups": "グループ",
       "reminders": "リマインダー",
+      "customFields": "カスタムフィールド",
       "havePromoCode": "プロモーションコードをお持ちですか？",
       "promoCode": "プロモーションコード",
       "promoCodePlaceholder": "コードを入力",
@@ -610,6 +611,75 @@
       "supportDevelopment": "開発をサポート",
       "supportMessage": "Nametagが役に立つと思い、その開発をサポートしたい場合は、コーヒーを買ってください！☕",
       "supportNote": "あなたのサポートは、このプロジェクトを存続させ、継続的に改善するのに役立ちます！"
+    }
+  },
+  "customFields": {
+    "settings": {
+      "title": "カスタムフィールド",
+      "description": "独自の型付きフィールドを定義して、すべての人に適用できます。「ベジタリアンは誰か」「ペットを飼っているのは誰か」といった条件でネットワークを絞り込めます。",
+      "newButton": "新しいフィールド",
+      "emptyTitle": "カスタムフィールドがまだありません",
+      "emptyDescription": "食事制限、趣味、ペットなどのフィールドを追加して、人物の絞り込みに活用しましょう。",
+      "usageMeter": "{limit}件中{used}件のカスタムフィールドを使用中",
+      "usageMeterUnlimited": "{used}件のカスタムフィールド",
+      "valueCount": "{count, plural, =0 {未使用} =1 {1人が使用中} other {#人が使用中}}"
+    },
+    "form": {
+      "nameLabel": "名前",
+      "namePlaceholder": "例：食事制限",
+      "typeLabel": "タイプ",
+      "typeText": "テキスト",
+      "typeNumber": "数値",
+      "typeBoolean": "はい / いいえ",
+      "typeSelect": "単一選択",
+      "typeLockedNotice": "作成後はタイプを変更できません。",
+      "optionsLabel": "選択肢",
+      "optionPlaceholder": "選択肢",
+      "addOption": "選択肢を追加",
+      "removeOption": "削除",
+      "saveButton": "保存",
+      "savingButton": "保存中...",
+      "cancelButton": "キャンセル",
+      "deleteButton": "削除"
+    },
+    "delete": {
+      "confirmTitle": "カスタムフィールドを削除しますか？",
+      "confirmBody": "{count, plural, =0 {このフィールドを使用している人はいません。} =1 {#人がこのフィールドに値を持っています。その値は非表示になります。} other {#人がこのフィールドに値を持っています。それらの値は非表示になります。}}",
+      "confirmAction": "削除",
+      "cancel": "キャンセル"
+    },
+    "errors": {
+      "duplicateName": "この名前のカスタムフィールドはすでに存在します。",
+      "selectRequiresOptions": "単一選択フィールドには少なくとも1つの選択肢が必要です。",
+      "notANumber": "数値を入力してください。",
+      "notBoolean": "「はい」または「いいえ」を入力してください。",
+      "notInOptions": "一覧の選択肢のいずれかを選んでください。",
+      "limitReached": "現在のプランでは最大{limit}件のカスタムフィールドを作成できます。",
+      "reorderFailed": "並び替えに失敗しました",
+      "somethingWentWrong": "エラーが発生しました",
+      "cannotConnect": "サーバーに接続できません"
+    },
+    "person": {
+      "sectionTitle": "カスタムフィールド",
+      "booleanYes": "はい",
+      "booleanNo": "いいえ",
+      "booleanNotSet": "未設定",
+      "selectEmpty": "-",
+      "valueOutOfOptions": "この値はフィールドの選択肢に含まれていません。"
+    },
+    "filter": {
+      "moreFilters": "詳細フィルター",
+      "selectField": "フィールドを選択",
+      "applyButton": "適用",
+      "clearLabel": "フィルターをクリア",
+      "chipFormat": "{name}：{value}",
+      "staleFilter": "フィルターが無効です。クリア"
+    },
+    "row": {
+      "moveUp": "上へ移動",
+      "moveDown": "下へ移動",
+      "edit": "編集",
+      "delete": "削除"
     }
   },
   "dashboard": {
@@ -840,6 +910,7 @@
       "clearLastContact": "最終連絡日を削除",
       "sectionImportantDates": "重要な日付",
       "sectionNotes": "メモ",
+      "sectionCustomFields": "カスタムフィールド",
       "nameLabel": "名前",
       "nameRequired": "名前 *",
       "surnameLabel": "姓",
@@ -1144,6 +1215,7 @@
       "imHandles": "IMアカウント",
       "locations": "所在地",
       "customFields": "カスタムフィールド",
+      "customFieldValues": "カスタムフィールドの値",
       "importantDates": "記念日",
       "groups": "グループ",
       "relationships": "関係",
@@ -1708,7 +1780,7 @@
     "filterByPerson": "人物でフィルター",
     "allPeople": "すべての人物",
     "noEntries": "ジャーナルエントリーがまだありません",
-    "noEntriesDescription": "友人とのコーヒー、家族の夕食、旧友との再会 — 大切な瞬間を記録しましょう。",
+    "noEntriesDescription": "友人とのコーヒー、家族の夕食、旧友との再会。大切な瞬間を記録しましょう。",
     "writeFirstEntry": "最初のエントリーを書く",
     "form": {
       "titleLabel": "タイトル",

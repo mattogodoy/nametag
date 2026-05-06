@@ -200,6 +200,12 @@ export default async function BillingSettingsPage() {
             limit={subscriptionData.limits.reminders.limit}
             isUnlimited={subscriptionData.limits.reminders.isUnlimited}
           />
+          <UsageMeter
+            label={t('customFields')}
+            current={subscriptionData.limits.customFieldTemplates.current}
+            limit={subscriptionData.limits.customFieldTemplates.limit}
+            isUnlimited={subscriptionData.limits.customFieldTemplates.isUnlimited}
+          />
         </div>
       </div>
 

@@ -16,7 +16,14 @@ const ITEMS_PER_PAGE = 50;
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; sortBy?: string; order?: string; group?: string; relationship?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    sortBy?: string;
+    order?: string;
+    group?: string;
+    relationship?: string;
+    cf?: string;
+  }>;
 }) {
   const session = await auth();
   const t = await getTranslations('people');
@@ -43,6 +50,14 @@ export default async function PeoplePage({
   const order = params.order || 'asc';
   const groupFilter = params.group || '';
   const relationshipFilter = params.relationship || '';
+  const cfParam = params.cf || '';
+  let cfFilter: { slug: string; value: string } | null = null;
+  if (cfParam) {
+    const idx = cfParam.indexOf(':');
+    if (idx > 0) {
+      cfFilter = { slug: cfParam.slice(0, idx), value: cfParam.slice(idx + 1) };
+    }
+  }
   const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 
   // Build where clause for people query
@@ -51,6 +66,12 @@ export default async function PeoplePage({
     deletedAt: null;
     groups?: { none: Record<string, never> } | { some: { groupId: string } };
     relationshipToUserId?: string | null;
+    customFieldValues?: {
+      some: {
+        value: { equals: string; mode: 'insensitive' };
+        template: { slug: string; userId: string; deletedAt: null };
+      };
+    };
   } = {
     userId: session.user.id,
     deletedAt: null,
@@ -68,6 +89,23 @@ export default async function PeoplePage({
     peopleWhere.relationshipToUserId = relationshipFilter;
   }
 
+  if (cfFilter) {
+    // Case-insensitive match. Harmless for NUMBER ("42" == "42"), BOOLEAN
+    // ("true"/"false" are lowercase), and SELECT (dropdown values match the
+    // stored option's exact casing). For TEXT, this lets users find values
+    // without remembering the exact casing.
+    peopleWhere.customFieldValues = {
+      some: {
+        value: { equals: cfFilter.value, mode: 'insensitive' },
+        template: {
+          slug: cfFilter.slug,
+          userId: session.user.id,
+          deletedAt: null,
+        },
+      },
+    };
+  }
+
   // Get total count for pagination
   const totalCount = await prisma.person.count({
     where: peopleWhere,
@@ -75,8 +113,8 @@ export default async function PeoplePage({
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-  // Fetch all people, groups, and relationship types in parallel
-  const [allPeople, allGroups, relationshipTypes] = await Promise.all([
+  // Fetch all people, groups, relationship types, and custom field templates in parallel
+  const [allPeople, allGroups, relationshipTypes, customFieldTemplates] = await Promise.all([
     prisma.person.findMany({
       where: peopleWhere,
       include: {
@@ -98,6 +136,10 @@ export default async function PeoplePage({
       where: { userId: session.user.id, deletedAt: null },
       orderBy: { label: 'asc' },
       select: { id: true, label: true, color: true },
+    }),
+    prisma.customFieldTemplate.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     }),
   ]);
 
@@ -205,7 +247,7 @@ export default async function PeoplePage({
             </div>
           </div>
 
-          {totalCount === 0 && !groupFilter && !relationshipFilter ? (
+          {totalCount === 0 && !groupFilter && !relationshipFilter && !cfFilter ? (
             <div className="bg-surface rounded-lg border border-border">
               <EmptyState
                 icon={
@@ -230,9 +272,11 @@ export default async function PeoplePage({
                 order={order}
                 groupFilter={groupFilter}
                 relationshipFilter={relationshipFilter}
+                cfFilter={cfFilter}
                 dateFormat={dateFormat}
                 availableGroups={allGroups}
                 relationshipTypes={relationshipTypes}
+                customFieldTemplates={customFieldTemplates}
                 nameOrder={nameOrder}
                 translations={{
                   surname: t('surname'),

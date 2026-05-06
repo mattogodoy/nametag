@@ -39,7 +39,7 @@ export default async function NewPersonPage({
   const dateFormat = user?.dateFormat || 'MDY';
   const nameOrder = user?.nameOrder || 'WESTERN';
 
-  const [groups, relationshipTypes, people] = await Promise.all([
+  const [groups, relationshipTypes, people, customFieldTemplates] = await Promise.all([
     prisma.group.findMany({
       where: {
         userId: session.user.id,
@@ -80,6 +80,10 @@ export default async function NewPersonPage({
         name: 'asc',
       },
     }),
+    prisma.customFieldTemplate.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+    }),
   ]);
 
   const tierName = TIER_INFO[usageCheck.tier].name;
@@ -111,6 +115,7 @@ export default async function NewPersonPage({
             <div className="bg-surface shadow rounded-lg p-6">
               <PersonForm
                 groups={groups}
+                customFieldTemplates={customFieldTemplates}
                 relationshipTypes={relationshipTypes}
                 availablePeople={people}
                 userName={session.user.name || session.user.email || 'You'}

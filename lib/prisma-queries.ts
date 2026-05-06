@@ -14,6 +14,18 @@ import type { Prisma } from '@prisma/client';
 // Private helpers – composable fragments
 // ---------------------------------------------------------------------------
 
+/**
+ * Prisma `include` fragment for a person's CustomFieldTemplate-backed values,
+ * filtered to active templates only. Use anywhere a Person is loaded for
+ * vCard export, conflict comparison, or detail rendering.
+ */
+export function customFieldValuesInclude() {
+  return {
+    include: { template: true },
+    where: { template: { deletedAt: null } },
+  } as const;
+}
+
 /** Multi-value contact fields (phones, emails, etc.) – always included as `true`. */
 function multiValueFieldsInclude() {
   return {
@@ -24,6 +36,7 @@ function multiValueFieldsInclude() {
     imHandles: true,
     locations: true,
     customFields: true,
+    customFieldValues: customFieldValuesInclude(),
   } as const;
 }
 

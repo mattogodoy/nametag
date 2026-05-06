@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   groupFindMany: vi.fn(),
   relationshipTypeFindMany: vi.fn(),
   journalEntryFindMany: vi.fn(),
+  customFieldTemplateFindMany: vi.fn(),
 }));
 
 // Mock Prisma
@@ -26,6 +27,9 @@ vi.mock('../../lib/prisma', () => ({
     },
     journalEntry: {
       findMany: mocks.journalEntryFindMany,
+    },
+    customFieldTemplate: {
+      findMany: mocks.customFieldTemplateFindMany,
     },
   },
 }));
@@ -65,6 +69,7 @@ describe('Export API', () => {
     imHandles: [],
     locations: [],
     customFields: [],
+    customFieldValues: [],
   };
 
   const nullPersonFields = {
@@ -128,6 +133,9 @@ describe('Export API', () => {
       imHandles: [{ protocol: 'telegram', handle: '@johndoe' }],
       locations: [{ type: 'home', latitude: 39.7817, longitude: -89.6501, label: 'Home' }],
       customFields: [{ key: 'X-HOBBY', value: 'Guitar', type: null }],
+      customFieldValues: [
+        { value: 'vegan', template: { slug: 'diet' } },
+      ],
     },
     {
       id: 'person-2',
@@ -178,6 +186,7 @@ describe('Export API', () => {
     mocks.groupFindMany.mockResolvedValue(mockGroups);
     mocks.relationshipTypeFindMany.mockResolvedValue(mockRelationshipTypes);
     mocks.journalEntryFindMany.mockResolvedValue([]);
+    mocks.customFieldTemplateFindMany.mockResolvedValue([]);
   });
 
   describe('GET /api/user/export', () => {
@@ -192,7 +201,7 @@ describe('Export API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(body.version).toBe('1.0');
+      expect(body.version).toBe('1.1');
       expect(body.people).toHaveLength(3);
       expect(body.groups).toHaveLength(3);
       expect(body.relationshipTypes).toHaveLength(1);
@@ -386,6 +395,64 @@ describe('Export API', () => {
       expect(response.status).toBe(200);
       expect(body.people).toHaveLength(0);
       expect(body.groups).toHaveLength(0);
+    });
+
+    it('should include customFieldTemplates in the export', async () => {
+      mocks.personFindMany.mockResolvedValue(mockPeople);
+      mocks.customFieldTemplateFindMany.mockResolvedValue([
+        {
+          id: 'tpl-1',
+          name: 'Diet',
+          slug: 'diet',
+          type: 'SELECT',
+          options: ['vegan', 'omnivore'],
+          order: 0,
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
+        },
+      ]);
+
+      const request = new Request('http://localhost/api/user/export', { method: 'GET' });
+      const response = await exportData(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.customFieldTemplates).toHaveLength(1);
+      expect(body.customFieldTemplates[0]).toEqual({
+        name: 'Diet',
+        slug: 'diet',
+        type: 'SELECT',
+        options: ['vegan', 'omnivore'],
+        order: 0,
+      });
+    });
+
+    it('should include per-person customFieldValues keyed by slug in the export', async () => {
+      mocks.personFindMany.mockResolvedValue(mockPeople);
+
+      const request = new Request('http://localhost/api/user/export', { method: 'GET' });
+      const response = await exportData(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      const person1 = body.people.find((p: { id: string }) => p.id === 'person-1');
+      expect(person1.customFieldValues).toEqual([{ slug: 'diet', value: 'vegan' }]);
+
+      const person2 = body.people.find((p: { id: string }) => p.id === 'person-2');
+      expect(person2.customFieldValues).toHaveLength(0);
+    });
+
+    it('should include empty customFieldTemplates array when none exist', async () => {
+      mocks.personFindMany.mockResolvedValue(mockPeople);
+      // customFieldTemplateFindMany already returns [] by default in beforeEach
+
+      const request = new Request('http://localhost/api/user/export', { method: 'GET' });
+      const response = await exportData(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.customFieldTemplates).toEqual([]);
     });
   });
 });

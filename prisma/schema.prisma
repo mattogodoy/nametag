@@ -44,16 +44,17 @@ model User {
   updatedAt          DateTime  @updatedAt
 
   // Relations
-  people            Person[]
-  groups            Group[]
-  relationshipTypes RelationshipType[]
-  subscription      Subscription?
-  unsubscribeTokens      UnsubscribeToken[]
-  cardDavConnection      CardDavConnection?
-  cardDavPendingImports  CardDavPendingImport[]
-  duplicateDismissals    DuplicateDismissal[]
+  people                Person[]
+  groups                Group[]
+  relationshipTypes     RelationshipType[]
+  subscription          Subscription?
+  unsubscribeTokens     UnsubscribeToken[]
+  cardDavConnection     CardDavConnection?
+  cardDavPendingImports CardDavPendingImport[]
+  customFieldTemplates  CustomFieldTemplate[]
+  duplicateDismissals   DuplicateDismissal[]
 
-  journalEntries    JournalEntry[]
+  journalEntries        JournalEntry[]
 
   @@unique([provider, providerAccountId])
   @@map("users")
@@ -110,6 +111,7 @@ model Person {
   imHandles          PersonIM[]
   locations          PersonLocation[]
   customFields       PersonCustomField[]
+  customFieldValues  PersonCustomFieldValue[]
   cardDavMapping     CardDavMapping?
   dismissalsAsA      DuplicateDismissal[]   @relation("DismissalPersonA")
   dismissalsAsB      DuplicateDismissal[]   @relation("DismissalPersonB")
@@ -806,4 +808,58 @@ model StripeEvent {
 
   @@index([processedAt])
   @@map("stripe_events")
+}
+
+// ============================================
+// CUSTOM FIELD MODELS
+// ============================================
+
+// CustomFieldTemplate - User-defined typed field schema
+model CustomFieldTemplate {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String
+  slug      String
+  type      CustomFieldType
+  options   String[]        @default([])
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  user   User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  values PersonCustomFieldValue[]
+
+  // Note: uniqueness on (userId, slug) is enforced ONLY for non-deleted rows
+  // via a partial unique index defined in the migration. This lets users
+  // recreate a template with the same name after soft-deleting the previous one.
+  @@index([userId, slug])
+  @@index([userId, deletedAt])
+  @@map("custom_field_templates")
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  SELECT
+}
+
+// PersonCustomFieldValue - Per-person value for a CustomFieldTemplate
+model PersonCustomFieldValue {
+  id         String   @id @default(cuid())
+  personId   String
+  templateId String
+  value      String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  person   Person              @relation(fields: [personId], references: [id], onDelete: Cascade)
+  template CustomFieldTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, templateId])
+  @@index([templateId, value])
+  @@map("person_custom_field_values")
 }

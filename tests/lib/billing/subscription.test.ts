@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   personCount: vi.fn(),
   groupCount: vi.fn(),
   importantDateCount: vi.fn(),
+  customFieldTemplateCount: vi.fn(),
   promotionFindUnique: vi.fn(),
   userPromotionFindUnique: vi.fn(),
   userPromotionCreate: vi.fn(),
@@ -34,6 +35,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     importantDate: {
       count: mocks.importantDateCount,
+    },
+    customFieldTemplate: {
+      count: mocks.customFieldTemplateCount,
     },
     promotion: {
       findUnique: mocks.promotionFindUnique,
@@ -113,12 +117,13 @@ describe('billing/subscription', () => {
   });
 
   describe('getUserUsage', () => {
-    it('should return counts for people, groups, and reminders', async () => {
+    it('should return counts for people, groups, reminders, and customFieldTemplates', async () => {
       mocks.personCount
         .mockResolvedValueOnce(15) // total people
         .mockResolvedValueOnce(3); // contact reminders
       mocks.groupCount.mockResolvedValue(5);
       mocks.importantDateCount.mockResolvedValue(2); // important date reminders
+      mocks.customFieldTemplateCount.mockResolvedValue(4);
 
       const result = await getUserUsage('user-123');
 
@@ -126,6 +131,7 @@ describe('billing/subscription', () => {
         people: 15,
         groups: 5,
         reminders: 5, // 2 + 3
+        customFieldTemplates: 4,
       });
 
       // Verify deletedAt: null is included in all queries
@@ -153,6 +159,7 @@ describe('billing/subscription', () => {
         .mockResolvedValueOnce(4); // contact reminders
       mocks.groupCount.mockResolvedValue(3);
       mocks.importantDateCount.mockResolvedValue(1); // important date reminders
+      mocks.customFieldTemplateCount.mockResolvedValue(0);
 
       const result = await getUserUsage('user-123');
 
@@ -162,10 +169,11 @@ describe('billing/subscription', () => {
 
   describe('canCreateResource', () => {
     beforeEach(() => {
-      // Default: no people, groups, or reminders
+      // Default: no people, groups, reminders, or custom field templates
       mocks.personCount.mockResolvedValue(0);
       mocks.groupCount.mockResolvedValue(0);
       mocks.importantDateCount.mockResolvedValue(0);
+      mocks.customFieldTemplateCount.mockResolvedValue(0);
     });
 
     it('should allow creation when under limit', async () => {
@@ -259,6 +267,7 @@ describe('billing/subscription', () => {
         .mockResolvedValueOnce(2); // contact reminders
       mocks.groupCount.mockResolvedValue(3);
       mocks.importantDateCount.mockResolvedValue(2); // important date reminders
+      mocks.customFieldTemplateCount.mockResolvedValue(0);
 
       const result = await canEnableReminder('user-123');
 

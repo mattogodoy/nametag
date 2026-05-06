@@ -7,6 +7,7 @@ import type { ParsedVCardData } from '@/lib/carddav/types';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging, type RouteContext } from '@/lib/api-utils';
 import { z } from 'zod';
+import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
 const log = createModuleLogger('carddav');
 
@@ -49,6 +50,7 @@ export const POST = withLogging(async function POST(request: Request, context: R
                 imHandles: true,
                 locations: true,
                 customFields: true,
+                customFieldValues: customFieldValuesInclude(),
               },
             },
             connection: true,

@@ -84,6 +84,7 @@ export function sharedSchemas(): Record<string, unknown> {
         imHandles: { type: 'array', items: { $ref: '#/components/schemas/PersonIM' } },
         locations: { type: 'array', items: { $ref: '#/components/schemas/PersonLocation' } },
         customFields: { type: 'array', items: { $ref: '#/components/schemas/PersonCustomField' } },
+        customFieldValues: { type: 'array', items: { $ref: '#/components/schemas/PersonCustomFieldValue' } },
         groups: {
           type: 'array',
           items: {
@@ -100,6 +101,29 @@ export function sharedSchemas(): Record<string, unknown> {
         updatedAt: { type: 'string', format: 'date-time' },
       },
       required: ['id', 'name', 'createdAt', 'updatedAt'],
+    },
+    CustomFieldTemplate: {
+      type: 'object',
+      description: 'A user-defined typed custom field template applied to people',
+      properties: {
+        id: { type: 'string' },
+        userId: { type: 'string' },
+        name: { type: 'string', example: 'Dietary restriction' },
+        slug: { type: 'string', example: 'dietary-restriction', description: 'Stable, immutable, derived from name at create time' },
+        type: { type: 'string', enum: ['TEXT', 'NUMBER', 'BOOLEAN', 'SELECT'] },
+        options: { type: 'array', items: { type: 'string' }, description: 'Only meaningful when type=SELECT' },
+        order: { type: 'integer', description: 'Display order' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+        _count: {
+          type: 'object',
+          description: 'Aggregate counts',
+          properties: {
+            values: { type: 'integer', description: 'Number of people with a value for this template' },
+          },
+        },
+      },
+      required: ['id', 'userId', 'name', 'slug', 'type', 'options', 'order'],
     },
     Group: {
       type: 'object',
@@ -378,6 +402,25 @@ export function sharedSchemas(): Record<string, unknown> {
         createdAt: { type: 'string', format: 'date-time' },
       },
       required: ['id', 'personId', 'key', 'value'],
+    },
+    PersonCustomFieldValue: {
+      type: 'object',
+      description: 'A typed value for a user-defined custom field template, attached to a person',
+      properties: {
+        id: { type: 'string', description: 'CUID identifier' },
+        personId: { type: 'string', description: 'CUID identifier' },
+        templateId: { type: 'string', description: 'CUID identifier of the CustomFieldTemplate' },
+        value: { type: 'string', description: 'Raw string value; semantics depend on template type' },
+        template: {
+          oneOf: [
+            { $ref: '#/components/schemas/CustomFieldTemplate' },
+            { type: 'null' },
+          ],
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+      required: ['id', 'personId', 'templateId', 'value', 'createdAt', 'updatedAt'],
     },
     CardDavConnection: {
       type: 'object',

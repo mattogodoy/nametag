@@ -74,6 +74,7 @@ const mockPerson: PersonWithRelations = {
   imHandles: [],
   locations: [],
   customFields: [],
+  customFieldValues: [],
   importantDates: [],
   relationshipsFrom: [],
   groups: [],

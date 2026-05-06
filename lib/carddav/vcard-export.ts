@@ -14,6 +14,10 @@
 
 import type { PersonWithRelations } from './types';
 import type { UnknownProperty } from './vcard-parser';
+import {
+  buildCustomFieldXLines,
+  filterFreeFormCustomFieldsAgainstTemplates,
+} from '@/lib/customFields/serialize';
 
 export interface VCardOptions {
   includePhoto?: boolean; // Default: true (requires base64 encoding)
@@ -295,14 +299,39 @@ export function personToVCard(
   }
 
   // Custom fields (X- properties)
+  // Template-backed values come first and their keys block matching free-form entries.
   // Deduplicate by normalized key+value to avoid duplicates from imports
   // (e.g., both ROLE and X-ROLE stored as custom fields produce the same X-ROLE output)
+  const templateXLines = buildCustomFieldXLines(
+    person.customFieldValues.map((v) => ({
+      template: {
+        slug: v.template.slug,
+        type: v.template.type,
+        deletedAt: v.template.deletedAt,
+      },
+      value: v.value,
+    }))
+  );
+  const blockedKeys = templateXLines.map((l) => l.key);
+
   if (opts.includeCustomFields) {
-    const seenCustomFields = new Set<string>();
-    person.customFields.forEach((field) => {
+    // Emit template-backed values first
+    for (const line of templateXLines) {
+      lines.push(buildV3Property(line.key, { TYPE: line.params.TYPE }, line.value));
+    }
+
+    // Free-form X- properties, filtered to drop collisions with template keys
+    const seenCustomFields = new Set<string>(blockedKeys);
+    const filteredFreeForm = filterFreeFormCustomFieldsAgainstTemplates(
+      person.customFields,
+      blockedKeys
+    );
+    filteredFreeForm.forEach((field) => {
       const key = field.key.startsWith('X-') ? field.key : `X-${field.key}`;
       const dedupKey = `${key}:${field.value}`;
       if (seenCustomFields.has(dedupKey)) return;
+      // Also drop any free-form entry whose normalised key still collides with a template key
+      if (blockedKeys.includes(key)) return;
       seenCustomFields.add(dedupKey);
       lines.push(buildV3Property(key, {}, field.value));
     });
