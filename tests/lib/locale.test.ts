@@ -87,10 +87,6 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('de')).toBe('de-DE');
     });
 
-    it('should map "de" to "de-DE"', () => {
-      expect(normalizeLocale('de')).toBe('de-DE');
-    });
-
     it('should map "nl" to "nl-NL"', () => {
       expect(normalizeLocale('nl')).toBe('nl-NL');
     });
