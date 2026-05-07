@@ -441,6 +441,7 @@
       "people": "Personen",
       "groups": "Groepen",
       "reminders": "Herinneringen",
+      "customFields": "Aangepaste velden",
       "havePromoCode": "Heeft u een promotiecode?",
       "promoCode": "Promotiecode",
       "promoCodePlaceholder": "Voer code in",
@@ -611,6 +612,75 @@
       "supportDevelopment": "Ontwikkeling ondersteunen",
       "supportMessage": "Als u Nametag nuttig vindt en de ontwikkeling wilt ondersteunen, kunt u een kopje koffie voor mij kopen! ☕",
       "supportNote": "Uw ondersteuning helpt dit project levend te houden en continu te verbeteren!"
+    }
+  },
+  "customFields": {
+    "settings": {
+      "title": "Aangepaste velden",
+      "description": "Definieer uw eigen getypeerde velden en pas ze toe op al uw mensen. Gebruik ze om uw netwerk te filteren, zoals \"wie is vegetarisch\" of \"wie heeft huisdieren.\"",
+      "newButton": "Nieuw veld",
+      "emptyTitle": "Nog geen aangepaste velden",
+      "emptyDescription": "Voeg velden toe zoals dieetbeperkingen, hobby's of huisdieren, en gebruik ze om uw mensen te filteren.",
+      "usageMeter": "{used} van {limit} aangepaste velden",
+      "usageMeterUnlimited": "{used} aangepaste velden",
+      "valueCount": "{count, plural, =0 {Niet in gebruik} =1 {Gebruikt door 1 persoon} other {Gebruikt door # personen}}"
+    },
+    "form": {
+      "nameLabel": "Naam",
+      "namePlaceholder": "bijv. Dieetrestrictie",
+      "typeLabel": "Type",
+      "typeText": "Tekst",
+      "typeNumber": "Nummer",
+      "typeBoolean": "Ja / Nee",
+      "typeSelect": "Enkele selectie",
+      "typeLockedNotice": "Type kan niet worden gewijzigd na creatie.",
+      "optionsLabel": "Opties",
+      "optionPlaceholder": "Optie",
+      "addOption": "Optie toevoegen",
+      "removeOption": "Verwijderen",
+      "saveButton": "Opslaan",
+      "savingButton": "Opslaan...",
+      "cancelButton": "Annuleren",
+      "deleteButton": "Verwijderen"
+    },
+    "delete": {
+      "confirmTitle": "Aangepast veld verwijderen?",
+      "confirmBody": "{count, plural, =0 {Niemand gebruikt dit veld.} =1 {# persoon heeft een waarde voor dit veld. De waarde wordt verborgen.} other {# personen hebben waarden voor dit veld. Hun waarden worden verborgen.}}",
+      "confirmAction": "Verwijderen",
+      "cancel": "Annuleren"
+    },
+    "errors": {
+      "duplicateName": "Er bestaat al een aangepast veld met deze naam.",
+      "selectRequiresOptions": "Velden met enkele selectie hebben minstens één optie nodig.",
+      "notANumber": "Moet een nummer zijn.",
+      "notBoolean": "Moet Ja of Nee zijn.",
+      "notInOptions": "Moet een van de vermelde opties zijn.",
+      "limitReached": "U kunt tot {limit} aangepaste velden maken op uw huidige plan.",
+      "reorderFailed": "Herschikken mislukt",
+      "somethingWentWrong": "Er is iets misgegaan",
+      "cannotConnect": "Kan geen verbinding maken met de server"
+    },
+    "person": {
+      "sectionTitle": "Aangepaste velden",
+      "booleanYes": "Ja",
+      "booleanNo": "Nee",
+      "booleanNotSet": "Niet ingesteld",
+      "selectEmpty": "-",
+      "valueOutOfOptions": "Deze waarde staat niet langer in de opties voor dit veld."
+    },
+    "filter": {
+      "moreFilters": "Meer filters",
+      "selectField": "Selecteer een veld",
+      "applyButton": "Toepassen",
+      "clearLabel": "Filter wissen",
+      "chipFormat": "{name}: {value}",
+      "staleFilter": "Filter niet langer geldig. Wissen"
+    },
+    "row": {
+      "moveUp": "Verplaats omhoog",
+      "moveDown": "Verplaats omlaag",
+      "edit": "Bewerken",
+      "delete": "Verwijderen"
     }
   },
   "dashboard": {
