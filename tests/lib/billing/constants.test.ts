@@ -13,6 +13,7 @@ describe('billing/constants', () => {
         maxPeople: 50,
         maxGroups: 10,
         maxReminders: 5,
+        maxCustomFieldTemplates: 1,
       });
     });
 
@@ -21,6 +22,7 @@ describe('billing/constants', () => {
         maxPeople: 1000,
         maxGroups: 500,
         maxReminders: 100,
+        maxCustomFieldTemplates: 20,
       });
     });
 

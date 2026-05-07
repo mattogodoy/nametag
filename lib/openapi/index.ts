@@ -9,6 +9,7 @@ import { userPaths } from './user';
 import { billingPaths } from './billing';
 import { carddavPaths } from './carddav';
 import { journalPaths } from './journal';
+import { customFieldsPaths } from './customFields';
 import { jsonResponse, ref400, ref401, ref404, pathParam, jsonBody, resp } from './helpers';
 
 // OpenAPI 3.1.0 specification generator for the Nametag API.
@@ -52,6 +53,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       { name: 'Relationships', description: 'Connections between people in your network' },
       { name: 'Relationship Types', description: 'Custom types for relationships (e.g. Parent, Friend)' },
       { name: 'Important Dates', description: 'Birthdays, anniversaries, and other dates with optional reminders' },
+      { name: 'Custom Fields', description: 'User-defined typed fields applied to people' },
       { name: 'Journal', description: 'Journal entries with optional people tags' },
       { name: 'Dashboard', description: 'Dashboard statistics, upcoming events, and network graph' },
       { name: 'User Settings', description: 'Profile, preferences, data export/import, and account management' },
@@ -89,6 +91,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       ...billingPaths(),
       ...carddavPaths(),
       ...journalPaths(),
+      ...customFieldsPaths(),
 
       // Photos (non-person-specific)
       '/api/photos/{personId}': {

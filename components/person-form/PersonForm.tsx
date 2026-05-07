@@ -22,6 +22,8 @@ import ImportantDatesManager from '../ImportantDatesManager';
 import MarkdownEditor from '../MarkdownEditor';
 import { Button } from '../ui/Button';
 import CardDavSyncSection from './CardDavSyncSection';
+import CustomFieldsSection from '../customFields/CustomFieldsSection';
+import type { CustomFieldTemplate } from '@prisma/client';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
 
@@ -94,7 +96,13 @@ export interface PersonFormProps {
       type: string;
       url: string;
     }>;
+    // Only populated in edit mode; undefined on create
+    customFieldValues?: Array<{
+      templateId: string;
+      value: string;
+    }>;
   };
+  customFieldTemplates?: CustomFieldTemplate[];
   groups: Array<{
     id: string;
     name: string;
@@ -132,6 +140,7 @@ export interface PersonFormProps {
 
 export default function PersonForm({
   person,
+  customFieldTemplates = [],
   groups,
   relationshipTypes,
   availablePeople = [],
@@ -166,6 +175,7 @@ export default function PersonForm({
     setEmails,
     setAddresses,
     setUrls,
+    setCustomFieldValues,
   } = usePersonForm({
     person,
     mode,
@@ -194,6 +204,7 @@ export default function PersonForm({
     emails,
     addresses,
     urls,
+    customFieldValues,
   } = state;
 
   const selectedBasePerson =
@@ -294,6 +305,7 @@ export default function PersonForm({
         emails,
         addresses,
         urls,
+        customFieldValues,
         ...(mode === 'create' && knownThroughId !== 'user'
           ? { connectedThroughId: knownThroughId }
           : {}),
@@ -435,6 +447,18 @@ export default function PersonForm({
         <SectionHeader>{t('sectionWorkInfo')}</SectionHeader>
         <WorkInfoSection formData={formData} onFormDataChange={setFormData} />
       </Section>
+
+      {/* Custom Fields Section */}
+      {customFieldTemplates.length > 0 && (
+        <Section>
+          <SectionHeader>{t('sectionCustomFields')}</SectionHeader>
+          <CustomFieldsSection
+            templates={customFieldTemplates}
+            values={customFieldValues}
+            onChange={setCustomFieldValues}
+          />
+        </Section>
+      )}
 
       {/* Contact Information Section */}
       <Section>

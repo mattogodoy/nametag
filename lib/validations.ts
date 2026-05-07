@@ -132,6 +132,52 @@ const customFieldSchema = z.object({
   type: z.string().max(50).nullable().optional(),
 });
 
+// ============================================
+// Custom field schemas
+// ============================================
+
+export const customFieldTypeSchema = z.enum(['TEXT', 'NUMBER', 'BOOLEAN', 'SELECT']);
+
+const optionSchema = z
+  .string()
+  .trim()
+  .min(1, 'Option must not be empty')
+  .max(100, 'Option must be 100 characters or fewer');
+
+export const customFieldTemplateCreateSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Name is required').max(60, 'Name must be 60 characters or fewer'),
+    type: customFieldTypeSchema,
+    options: z.array(optionSchema).max(50, 'Up to 50 options').optional(),
+  })
+  .refine(
+    (val) => val.type !== 'SELECT' || (val.options && val.options.length > 0),
+    { message: 'At least one option is required for single-select fields', path: ['options'] }
+  );
+
+export const customFieldTemplateUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60).optional(),
+    options: z.array(optionSchema).max(50).optional(),
+  })
+  .refine((val) => Object.keys(val).length > 0, {
+    message: 'At least one field must be provided',
+  });
+
+export const customFieldTemplateReorderSchema = z.object({
+  ids: z.array(cuidSchema).min(1).max(200),
+});
+
+export const customFieldValueInputSchema = z.object({
+  templateId: cuidSchema,
+  value: z.string().max(2000),
+});
+
+export const customFieldValuesArraySchema = z
+  .array(customFieldValueInputSchema)
+  .max(200)
+  .optional();
+
 export const createPersonSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   surname: z.string().max(100).nullable().optional(),
@@ -182,6 +228,7 @@ export const createPersonSchema = z.object({
   imHandles: z.array(imHandleSchema).optional(),
   locations: z.array(locationSchema).optional(),
   customFields: z.array(customFieldSchema).optional(),
+  customFieldValues: customFieldValuesArraySchema,
 });
 
 export const updatePersonSchema = createPersonSchema.partial();
@@ -413,6 +460,10 @@ export const importDataSchema = z.object({
       }).nullable().optional(),
       notes: z.string().nullable().optional(),
     })),
+    customFieldValues: z.array(z.object({
+      slug: z.string(),
+      value: z.string(),
+    })).optional(),
   })),
   // Support both old field name (customRelationshipTypes) and new field name (relationshipTypes)
   customRelationshipTypes: z.array(z.object({
@@ -435,6 +486,13 @@ export const importDataSchema = z.object({
     date: z.string(),
     body: z.string(),
     people: z.array(z.string()),
+  })).optional(),
+  customFieldTemplates: z.array(z.object({
+    name: z.string(),
+    slug: z.string(),
+    type: z.enum(['TEXT', 'NUMBER', 'BOOLEAN', 'SELECT']),
+    options: z.array(z.string()).optional(),
+    order: z.number().optional(),
   })).optional(),
 });
 

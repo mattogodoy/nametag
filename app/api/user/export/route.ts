@@ -10,7 +10,7 @@ export const GET = withAuth(async (request, session) => {
     const filterByGroups = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : null;
 
     // Fetch all user data
-    const [user, allPeople, allGroups, relationshipTypes, journalEntries] = await Promise.all([
+    const [user, allPeople, allGroups, relationshipTypes, journalEntries, customFieldTemplates] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -110,6 +110,10 @@ export const GET = withAuth(async (request, session) => {
           customFields: {
             select: { key: true, value: true, type: true },
           },
+          customFieldValues: {
+            where: { template: { deletedAt: null } },
+            select: { value: true, template: { select: { slug: true } } },
+          },
         },
       }),
       prisma.group.findMany({
@@ -130,6 +134,10 @@ export const GET = withAuth(async (request, session) => {
           },
         },
         orderBy: { date: 'desc' },
+      }),
+      prisma.customFieldTemplate.findMany({
+        where: { userId: session.user.id, deletedAt: null },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
       }),
     ]);
 
@@ -156,7 +164,7 @@ export const GET = withAuth(async (request, session) => {
 
     // Build export data structure
     const exportData = {
-      version: '1.0',
+      version: '1.1',
       exportDate: new Date().toISOString(),
       user: {
         email: user?.email,
@@ -230,6 +238,10 @@ export const GET = withAuth(async (request, session) => {
           value: cf.value,
           type: cf.type,
         })),
+        customFieldValues: person.customFieldValues.map((cfv) => ({
+          slug: cfv.template.slug,
+          value: cfv.value,
+        })),
         relationshipToUser: person.relationshipToUser
           ? {
               name: person.relationshipToUser.name,
@@ -262,6 +274,13 @@ export const GET = withAuth(async (request, session) => {
         date: e.date.toISOString(),
         body: e.body,
         people: e.people.map((ep) => formatFullName(ep.person)),
+      })),
+      customFieldTemplates: customFieldTemplates.map((t) => ({
+        name: t.name,
+        slug: t.slug,
+        type: t.type,
+        options: t.options,
+        order: t.order,
       })),
     };
 

@@ -37,6 +37,11 @@ export interface PersonForCompare {
   imHandles: Array<{ protocol: string; handle: string }>;
   locations: Array<{ type: string; latitude: number; longitude: number }>;
   customFields: Array<{ key: string; value: string }>;
+  customFieldValues: Array<{
+    templateId: string;
+    value: string;
+    template: { id: string; name: string };
+  }>;
   importantDates: Array<{ title: string; date: string | Date }>;
   groups: Array<{ group: { id: string; name: string } }>;
   relationshipsFrom?: Array<{ id: string }>;
@@ -137,6 +142,7 @@ function countNonEmptyFields(person: PersonForCompare): number {
   count += person.imHandles.length;
   count += person.locations.length;
   count += person.customFields.length;
+  count += person.customFieldValues.length;
   count += person.importantDates.length;
   count += person.groups.length;
   return count;
@@ -276,6 +282,7 @@ export default function PersonCompare({
     ));
     const primaryLocs = new Set(primary.locations.map((l) => `${l.latitude},${l.longitude}`));
     const primaryCf = new Set(primary.customFields.map((f) => `${f.key}:${f.value}`));
+    const primaryCfvIds = new Set(primary.customFieldValues.map((v) => v.templateId));
     const primaryDates = new Set(primary.importantDates.map((d) =>
       `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`
     ));
@@ -299,6 +306,12 @@ export default function PersonCompare({
         mergedCount: primary.locations.length + secondary.locations.filter((l) => !primaryLocs.has(`${l.latitude},${l.longitude}`)).length },
       { labelKey: 'customFields', fieldKey: 'customFields',
         mergedCount: primary.customFields.length + secondary.customFields.filter((f) => !primaryCf.has(`${f.key}:${f.value}`)).length },
+      // Template-backed custom field values are deduped by templateId because
+      // PersonCustomFieldValue has @@unique([personId, templateId]) — when both
+      // people have a value for the same template, the primary's value wins
+      // (matching mergePersonInto's transfer logic in lib/services/person.ts).
+      { labelKey: 'customFieldValues', fieldKey: 'customFieldValues',
+        mergedCount: primary.customFieldValues.length + secondary.customFieldValues.filter((v) => !primaryCfvIds.has(v.templateId)).length },
       { labelKey: 'importantDates', fieldKey: 'importantDates',
         mergedCount: primary.importantDates.length + secondary.importantDates.filter((d) => {
           const key = `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`;

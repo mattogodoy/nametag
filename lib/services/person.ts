@@ -507,6 +507,7 @@ const mergeFullInclude = {
   imHandles: true,
   locations: true,
   customFields: true,
+  customFieldValues: true,
   importantDates: true,
 } as const;
 
@@ -594,6 +595,9 @@ export async function mergePeople(
   );
   const targetLocations = new Set(target.locations.map((l) => `${l.latitude},${l.longitude}`));
   const targetCustomFields = new Set(target.customFields.map((f) => `${f.key}:${f.value}`));
+  const targetTemplateIds = new Set(
+    target.customFieldValues?.map((v) => v.templateId) ?? []
+  );
   const targetImportantDates = new Set(
     target.importantDates.map((d) =>
       `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`
@@ -617,6 +621,9 @@ export async function mergePeople(
   );
   const customFieldsToTransfer = source.customFields.filter(
     (f) => !targetCustomFields.has(`${f.key}:${f.value}`)
+  );
+  const customFieldValuesToTransfer = (source.customFieldValues ?? []).filter(
+    (v) => !targetTemplateIds.has(v.templateId)
   );
   const importantDatesToTransfer = source.importantDates.filter((d) => {
     const key = `${d.title}:${d.date instanceof Date ? d.date.toISOString() : d.date}`;
@@ -697,6 +704,11 @@ export async function mergePeople(
         items: customFieldsToTransfer,
         transfer: (ids) => tx.personCustomField.updateMany({ where: { id: { in: ids } }, data: { personId: targetId } }),
         cleanup: () => tx.personCustomField.deleteMany({ where: { personId: sourceId } }),
+      },
+      {
+        items: customFieldValuesToTransfer,
+        transfer: (ids) => tx.personCustomFieldValue.updateMany({ where: { id: { in: ids } }, data: { personId: targetId } }),
+        cleanup: () => tx.personCustomFieldValue.deleteMany({ where: { personId: sourceId } }),
       },
       {
         items: importantDatesToTransfer,

@@ -44,6 +44,7 @@ const mocks = vi.hoisted(() => ({
   groupFindFirst: vi.fn(),
   groupCount: vi.fn(),
   importantDateCount: vi.fn(),
+  customFieldTemplateCount: vi.fn(),
   subscriptionFindUnique: vi.fn(),
 }));
 
@@ -60,6 +61,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     importantDate: {
       count: mocks.importantDateCount,
+    },
+    customFieldTemplate: {
+      count: mocks.customFieldTemplateCount,
     },
     subscription: {
       findUnique: mocks.subscriptionFindUnique,
@@ -99,6 +103,8 @@ describe('Import Tier Limits', () => {
     });
 
     mocks.importantDateCount.mockImplementation(async () => 0);
+
+    mocks.customFieldTemplateCount.mockImplementation(async () => 0);
 
     mocks.personFindFirst.mockImplementation(async ({ where }) => {
       return Array.from(mockDataStore.people.values()).find(

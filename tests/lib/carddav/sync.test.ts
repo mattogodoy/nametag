@@ -214,6 +214,7 @@ function makeParsedVCard(uid: string, name: string) {
     importantDates: [],
     categories: [],
     customFields: [],
+    customFieldValues: [],
   };
 }
 
@@ -254,6 +255,7 @@ function makeFullMapping(overrides: Record<string, unknown> = {}) {
       imHandles: [],
       locations: [],
       customFields: [],
+      customFieldValues: [],
       ...(typeof overrides.person === 'object' ? overrides.person : {}),
     },
   };
@@ -686,6 +688,7 @@ describe('CardDAV Sync Engine', () => {
           imHandles: [],
           locations: [],
           customFields: [],
+          customFieldValues: [],
           importantDates: [],
           relationshipsFrom: [],
           groups: [],
@@ -755,6 +758,7 @@ describe('CardDAV Sync Engine', () => {
           imHandles: [],
           locations: [],
           customFields: [],
+          customFieldValues: [],
           importantDates: [],
           relationshipsFrom: [],
           groups: [],
@@ -946,6 +950,7 @@ describe('CardDAV Sync Engine', () => {
           imHandles: [],
           locations: [],
           customFields: [],
+          customFieldValues: [],
           importantDates: [],
           relationshipsFrom: [],
           groups: [],
@@ -1048,6 +1053,7 @@ describe('CardDAV Sync Engine', () => {
         imHandles: [],
         locations: [],
         customFields: [],
+        customFieldValues: [],
         importantDates: [],
         relationshipsFrom: [],
         groups: [],
@@ -1235,6 +1241,7 @@ describe('CardDAV Sync Engine', () => {
         imHandles: [],
         locations: [],
         customFields: [],
+        customFieldValues: [],
         importantDates: [],
         relationshipsFrom: [],
         groups: [],
@@ -1285,6 +1292,7 @@ describe('CardDAV Sync Engine', () => {
         imHandles: [],
         locations: [],
         customFields: [],
+        customFieldValues: [],
         importantDates: [],
         relationshipsFrom: [],
         groups: [],

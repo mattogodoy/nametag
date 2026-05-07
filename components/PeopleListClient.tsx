@@ -11,6 +11,8 @@ import BulkRelationshipModal from './BulkRelationshipModal';
 import PersonAvatar from './PersonPhoto';
 import { formatFullName } from '@/lib/nameUtils';
 import { formatDate, type DateFormat } from '@/lib/date-format';
+import CustomFieldFilter from './customFields/CustomFieldFilter';
+import type { CustomFieldTemplate } from '@prisma/client';
 
 interface PersonRow {
   id: string;
@@ -48,9 +50,11 @@ interface PeopleListClientProps {
   order: string;
   groupFilter: string;
   relationshipFilter: string;
+  cfFilter: { slug: string; value: string } | null;
   dateFormat: DateFormat;
   availableGroups: Group[];
   relationshipTypes: RelationshipType[];
+  customFieldTemplates: CustomFieldTemplate[];
   nameOrder?: 'WESTERN' | 'EASTERN';
   translations: {
     surname: string;
@@ -83,9 +87,11 @@ export default function PeopleListClient({
   order,
   groupFilter,
   relationshipFilter,
+  cfFilter,
   dateFormat,
   availableGroups,
   relationshipTypes,
+  customFieldTemplates,
   nameOrder,
   translations: tt,
   commonTranslations: tc,
@@ -191,6 +197,7 @@ export default function PeopleListClient({
     const params = new URLSearchParams();
     if (groupFilter) params.set('group', groupFilter);
     if (relationshipFilter) params.set('relationship', relationshipFilter);
+    if (cfFilter) params.set('cf', `${cfFilter.slug}:${cfFilter.value}`);
     return params;
   };
 
@@ -215,9 +222,15 @@ export default function PeopleListClient({
     if (sortBy !== 'name') params.set('sortBy', sortBy);
     if (order !== 'asc') params.set('order', order);
     // Preserve existing filters, updating the changed one
-    const filters = { group: groupFilter, relationship: relationshipFilter, [key]: value };
+    const filters: Record<string, string> = {
+      group: groupFilter,
+      relationship: relationshipFilter,
+      cf: cfFilter ? `${cfFilter.slug}:${cfFilter.value}` : '',
+      [key]: value,
+    };
     if (filters.group) params.set('group', filters.group);
     if (filters.relationship) params.set('relationship', filters.relationship);
+    if (filters.cf) params.set('cf', filters.cf);
     params.set('page', '1');
     router.push(`/people?${params.toString()}`);
   };
@@ -252,6 +265,11 @@ export default function PeopleListClient({
               <option key={rt.id} value={rt.id}>{rt.label}</option>
             ))}
           </select>
+          <CustomFieldFilter
+            templates={customFieldTemplates}
+            current={cfFilter}
+            onChange={(value) => handleFilterChange('cf', value)}
+          />
         </div>
       </div>
 

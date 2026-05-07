@@ -441,6 +441,7 @@
       "people": "Personen",
       "groups": "Gruppen",
       "reminders": "Erinnerungen",
+      "customFields": "Benutzerdefinierte Felder",
       "havePromoCode": "Hast du einen Rabattcode?",
       "promoCode": "Rabattcode",
       "promoCodePlaceholder": "Code eingeben",
@@ -611,6 +612,75 @@
       "supportDevelopment": "Entwicklung unterstützen",
       "supportMessage": "Wenn du Nametag nützlich findest und die Entwicklung unterstützen möchtest, kannst du mir einen Kaffee ausgeben! ☕",
       "supportNote": "Deine Unterstützung hilft, das Projekt am Leben zu halten und kontinuierlich zu verbessern!"
+    }
+  },
+  "customFields": {
+    "settings": {
+      "title": "Benutzerdefinierte Felder",
+      "description": "Definiere eigene typisierte Felder und wende sie auf alle deine Personen an. Nutze sie, um dein Netzwerk zu filtern – z. B. «wer ist Vegetarier» oder «wer hat Haustiere».",
+      "newButton": "Neues Feld",
+      "emptyTitle": "Noch keine benutzerdefinierten Felder",
+      "emptyDescription": "Füge Felder wie Ernährungsgewohnheiten, Hobbys oder Haustiere hinzu und nutze sie zum Filtern deiner Personen.",
+      "usageMeter": "{used} von {limit} benutzerdefinierten Feldern",
+      "usageMeterUnlimited": "{used} benutzerdefinierte Felder",
+      "valueCount": "{count, plural, =0 {Nicht in Verwendung} =1 {Von 1 Person verwendet} other {Von # Personen verwendet}}"
+    },
+    "form": {
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Ernährungseinschränkung",
+      "typeLabel": "Typ",
+      "typeText": "Text",
+      "typeNumber": "Zahl",
+      "typeBoolean": "Ja / Nein",
+      "typeSelect": "Einzelauswahl",
+      "typeLockedNotice": "Der Typ kann nach der Erstellung nicht geändert werden.",
+      "optionsLabel": "Optionen",
+      "optionPlaceholder": "Option",
+      "addOption": "Option hinzufügen",
+      "removeOption": "Entfernen",
+      "saveButton": "Speichern",
+      "savingButton": "Wird gespeichert...",
+      "cancelButton": "Abbrechen",
+      "deleteButton": "Löschen"
+    },
+    "delete": {
+      "confirmTitle": "Benutzerdefiniertes Feld löschen?",
+      "confirmBody": "{count, plural, =0 {Keine Person verwendet dieses Feld.} =1 {# Person hat einen Wert für dieses Feld. Der Wert wird ausgeblendet.} other {# Personen haben Werte für dieses Feld. Ihre Werte werden ausgeblendet.}}",
+      "confirmAction": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "errors": {
+      "duplicateName": "Ein benutzerdefiniertes Feld mit diesem Namen existiert bereits.",
+      "selectRequiresOptions": "Einzelauswahlfelder benötigen mindestens eine Option.",
+      "notANumber": "Muss eine Zahl sein.",
+      "notBoolean": "Muss Ja oder Nein sein.",
+      "notInOptions": "Muss eine der aufgelisteten Optionen sein.",
+      "limitReached": "Mit deinem aktuellen Plan kannst du bis zu {limit} benutzerdefinierte(s) Feld(er) erstellen.",
+      "reorderFailed": "Reihenfolge konnte nicht geändert werden",
+      "somethingWentWrong": "Etwas ist schiefgelaufen",
+      "cannotConnect": "Verbindung zum Server nicht möglich"
+    },
+    "person": {
+      "sectionTitle": "Benutzerdefinierte Felder",
+      "booleanYes": "Ja",
+      "booleanNo": "Nein",
+      "booleanNotSet": "Nicht gesetzt",
+      "selectEmpty": "-",
+      "valueOutOfOptions": "Dieser Wert ist nicht mehr in den Optionen des Felds."
+    },
+    "filter": {
+      "moreFilters": "Weitere Filter",
+      "selectField": "Feld auswählen",
+      "applyButton": "Anwenden",
+      "clearLabel": "Filter zurücksetzen",
+      "chipFormat": "{name}: {value}",
+      "staleFilter": "Filter nicht mehr gültig. Zurücksetzen"
+    },
+    "row": {
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "edit": "Bearbeiten",
+      "delete": "Löschen"
     }
   },
   "dashboard": {
@@ -841,6 +911,7 @@
       "clearLastContact": "Letztes Kontaktdatum entfernen",
       "sectionImportantDates": "Wichtige Termine",
       "sectionNotes": "Notizen",
+      "sectionCustomFields": "Benutzerdefinierte Felder",
       "nameLabel": "Vorname",
       "nameRequired": "Vorname *",
       "surnameLabel": "Nachname",
@@ -1145,6 +1216,7 @@
       "imHandles": "IM-Konten",
       "locations": "Standorte",
       "customFields": "benutzerdefinierte Felder",
+      "customFieldValues": "Werte benutzerdefinierter Felder",
       "importantDates": "wichtige Daten",
       "groups": "Gruppen",
       "relationships": "Beziehungen",
@@ -1709,7 +1781,7 @@
     "filterByPerson": "Nach Person filtern",
     "allPeople": "Alle Personen",
     "noEntries": "Noch keine Tagebucheinträge",
-    "noEntriesDescription": "Ein Kaffee mit Freunden, ein Familienessen, ein unverhofftes Wiedersehen — halte die Momente fest, die zahlen.",
+    "noEntriesDescription": "Ein Kaffee mit Freunden, ein Familienessen, ein unverhofftes Wiedersehen. Halte die Momente fest, die zählen.",
     "writeFirstEntry": "Schreib deinen ersten Eintrag",
     "form": {
       "titleLabel": "Titel",
