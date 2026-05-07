@@ -43,6 +43,10 @@ describe('Locale Utilities', () => {
       expect(isSupportedLocale('de-DE')).toBe(true);
     });
 
+    it('should return true for "nl-NL"', () => {
+      expect(isSupportedLocale('nl-NL')).toBe(true);
+    });
+
     it('should return false for unsupported locales', () => {
       expect(isSupportedLocale('fr-FR')).toBe(false);
       expect(isSupportedLocale('it')).toBe(false);
@@ -56,6 +60,7 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('ja-JP')).toBe('ja-JP');
       expect(normalizeLocale('nb-NO')).toBe('nb-NO');
       expect(normalizeLocale('de-DE')).toBe('de-DE');
+      expect(normalizeLocale('nl-NL')).toBe('nl-NL');
     });
 
     it('should map "es" to "es-ES"', () => {
@@ -80,6 +85,10 @@ describe('Locale Utilities', () => {
 
     it('should map "de" to "de-DE"', () => {
       expect(normalizeLocale('de')).toBe('de-DE');
+    });
+
+    it('should map "nl" to "nl-NL"', () => {
+      expect(normalizeLocale('nl')).toBe('nl-NL');
     });
 
     it('should default to "en" for unsupported locales', () => {
@@ -314,6 +323,28 @@ describe('Locale Utilities', () => {
       const locale = await detectBrowserLocale();
 
       expect(locale).toBe('de-DE');
+    });
+
+    it('should detect Dutch from Accept-Language header', async () => {
+      const { headers } = await import('next/headers');
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('nl-NL,nl;q=0.9,en;q=0.8'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('nl-NL');
+    });
+
+    it('should map "nl" to "nl-NL"', async () => {
+      const { headers } = await import('next/headers');
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('nl,en;q=0.9'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('nl-NL');
     });
     
     it('should default to "en" for unsupported languages', async () => {

@@ -57,6 +57,10 @@ export default getRequestConfig(async () => {
             locale = 'de-DE';
             break;
           }
+          if (languageCode === 'nl') {
+            locale = 'nl-NL';
+            break;
+          }
         }
       }
     }
