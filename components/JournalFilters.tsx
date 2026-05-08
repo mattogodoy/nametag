@@ -83,7 +83,7 @@ export default function JournalFilters({ people, currentPersonIds, currentSearch
           defaultValue={currentSearch ?? ''}
           placeholder={t('searchPlaceholder')}
           aria-label={t('searchPlaceholder')}
-          className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+          className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary text-base sm:text-sm"
         />
       </form>
       <PillSelector

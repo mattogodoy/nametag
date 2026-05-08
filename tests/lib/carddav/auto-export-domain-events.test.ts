@@ -76,7 +76,7 @@ const basePerson = {
   id: 'p-1', userId: 'u-1', uid: 'uid-1', name: 'Alice', surname: 'Smith',
   cardDavSyncEnabled: true, deletedAt: null, photo: null,
   phoneNumbers: [], emails: [], addresses: [], urls: [], imHandles: [],
-  locations: [], customFields: [], importantDates: [],
+  locations: [], customFields: [], customFieldValues: [], importantDates: [],
   relationshipsFrom: [], groups: [],
 };
 

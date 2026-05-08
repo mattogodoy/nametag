@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { formatGraphName } from '@/lib/nameUtils';
 import { parseAsLocalDate } from '@/lib/date-format';
 import { getTranslationsForLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';

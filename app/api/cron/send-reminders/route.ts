@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmailBatch, emailTemplates } from '@/lib/email';
 import type { SendBatchEmailItem } from '@/lib/email';
-import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { formatGraphName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
 import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { createModuleLogger, securityLogger } from '@/lib/logger';

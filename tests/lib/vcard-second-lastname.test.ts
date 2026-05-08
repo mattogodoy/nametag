@@ -42,6 +42,7 @@ describe('vCard Second Last Name Handling', () => {
     imHandles: [],
     locations: [],
     customFields: [],
+    customFieldValues: [],
     importantDates: [],
     relationshipsFrom: [],
     groups: [],

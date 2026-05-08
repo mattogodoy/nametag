@@ -76,7 +76,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
   };
 
   return (
-    <nav className="bg-surface border-b border-border">
+    <nav className="bg-surface border-b border-border pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top row: Logo, Search (centered), User menu */}
         <div className="relative z-30 flex items-center justify-between h-16">
@@ -168,7 +168,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="md:hidden fixed top-0 right-0 bottom-0 w-[90%] max-w-md bg-surface shadow-xl z-50 transform transition-transform duration-300 ease-in-out"
+            className="md:hidden fixed top-0 right-0 bottom-0 w-[90%] max-w-md bg-surface shadow-xl z-50 transform transition-transform duration-300 ease-in-out pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)]"
           >
             <div className="h-full flex flex-col">
               {/* Menu header with close button */}

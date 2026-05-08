@@ -98,7 +98,7 @@ export default function LastContactSection({
                 ),
               })
             }
-            className="w-16 px-2 py-1 text-sm border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-16 px-2 py-1 text-base sm:text-sm border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <select
             disabled={!formData.contactReminderEnabled}
@@ -109,7 +109,7 @@ export default function LastContactSection({
                   .value as ReminderIntervalUnit,
               })
             }
-            className="px-2 py-1 text-sm border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-2 py-1 text-base sm:text-sm border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="DAYS">{t('days')}</option>
             <option value="WEEKS">{t('weeks')}</option>

@@ -53,7 +53,7 @@ export const PUT = withAuth(async (request, session, context) => {
       return validation.response;
     }
 
-    const { title, date, body: entryBody, personIds, updateLastContact } = validation.data;
+    const { title, date, hasTime, body: entryBody, personIds, updateLastContact } = validation.data;
 
     const existingEntry = await prisma.journalEntry.findUnique({
       where: {
@@ -79,7 +79,9 @@ export const PUT = withAuth(async (request, session, context) => {
 
     const sanitizedTitle = sanitizeName(title) || title;
     const sanitizedBody = sanitizeNotes(entryBody) || entryBody;
-    const entryDate = new Date(date);
+    const entryDate = hasTime
+      ? new Date(date)
+      : new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
 
     // Remove existing people associations and recreate atomically
     const entry = await prisma.$transaction(async (tx) => {
@@ -92,6 +94,7 @@ export const PUT = withAuth(async (request, session, context) => {
         data: {
           title: sanitizedTitle,
           date: entryDate,
+          hasTime,
           body: sanitizedBody,
           ...(personIds && personIds.length > 0 && {
             people: {

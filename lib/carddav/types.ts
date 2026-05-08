@@ -11,6 +11,8 @@ import type {
   PersonIM,
   PersonLocation,
   PersonCustomField,
+  PersonCustomFieldValue,
+  CustomFieldTemplate,
   ImportantDate,
   Relationship,
   Group,
@@ -32,6 +34,7 @@ export interface PersonWithRelations extends Person {
   imHandles: PersonIM[];
   locations: SerializablePersonLocation[];
   customFields: PersonCustomField[];
+  customFieldValues: (PersonCustomFieldValue & { template: CustomFieldTemplate })[];
   importantDates: ImportantDate[];
   relationshipsFrom: (Relationship & {
     relatedPerson: Person;

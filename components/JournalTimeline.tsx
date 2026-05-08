@@ -9,6 +9,7 @@ interface TimelineEntry {
   id: string;
   title: string;
   date: string;
+  hasTime: boolean;
   body: string;
   people: Array<{
     person: {
@@ -128,30 +129,42 @@ export default function JournalTimeline({ entries, nameOrder, nameDisplayFormat,
           <div className="space-y-0">
             {group.entries.map((entry, index) => {
               const isLast = index === group.entries.length - 1;
-              const dateOnly = entry.date.split('T')[0];
-              const [year, month, day] = dateOnly.split('-').map(Number);
-              const entryDate = new Date(year, month - 1, day);
+              const entryDate = entry.hasTime
+                ? new Date(entry.date)
+                : (() => {
+                    const dateOnly = entry.date.split('T')[0];
+                    const [y, m, d] = dateOnly.split('-').map(Number);
+                    return new Date(y, m - 1, d);
+                  })();
               const dayNumber = entryDate.getDate();
               const weekday = entryDate.toLocaleDateString(locale, { weekday: 'short' });
+              const timeLabel = entry.hasTime
+                ? entryDate.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
+                : null;
               const bodyPreview = truncateBody(entry.body);
 
               return (
                 <div key={entry.id} className="flex gap-0">
                   {/* Date column */}
-                  <div className="w-12 sm:w-16 flex-shrink-0 flex flex-col items-center pt-1 pr-2 sm:pr-3">
+                  <div className="w-14 sm:w-16 flex-shrink-0 flex flex-col items-center pt-1 pr-2 sm:pr-3">
                     <span
                       className="text-2xl font-bold text-foreground leading-none tabular-nums"
-                      aria-label={entryDate.toLocaleDateString(locale, {
-                        weekday: 'long',
-                        day: 'numeric',
-                        month: 'long',
-                      })}
+                      aria-label={
+                        timeLabel
+                          ? `${entryDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}, ${timeLabel}`
+                          : entryDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })
+                      }
                     >
                       {dayNumber}
                     </span>
                     <span className="text-xs text-muted uppercase tracking-wide mt-0.5">
                       {weekday}
                     </span>
+                    {timeLabel && (
+                      <span className="text-xs text-muted tabular-nums mt-0.5 whitespace-nowrap">
+                        {timeLabel}
+                      </span>
+                    )}
                   </div>
 
                   {/* Timeline spine */}

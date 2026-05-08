@@ -89,7 +89,7 @@ export default function PersonVCardRawView({ person }: PersonVCardRawViewProps) 
             </button>
           </div>
 
-          <pre className="bg-background border border-border rounded-lg p-4 overflow-x-auto text-xs font-mono text-foreground whitespace-pre">
+          <pre className="bg-background border border-border rounded-lg p-4 overflow-x-auto max-w-full text-xs font-mono text-foreground whitespace-pre">
             {vcard}
           </pre>
         </div>

@@ -34,9 +34,6 @@ yarn-error.log*
 .env*
 !.env.example
 
-# Production secrets (generated)
-PRODUCTION_SECRETS.txt
-
 # Database backups
 /backups
 /backups/
@@ -63,5 +60,9 @@ next-env.d.ts
 
 # Git worktrees
 .worktrees
+
+# Superpowers
+.superpowers
+/docs/superpowers
 
 /app/generated/prisma

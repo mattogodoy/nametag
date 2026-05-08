@@ -28,6 +28,8 @@ const mocks = vi.hoisted(() => {
   const personLocationDeleteMany = vi.fn();
   const personCustomFieldUpdateMany = vi.fn();
   const personCustomFieldDeleteMany = vi.fn();
+  const personCustomFieldValueUpdateMany = vi.fn();
+  const personCustomFieldValueDeleteMany = vi.fn();
   const importantDateUpdateMany = vi.fn();
   const importantDateDeleteMany = vi.fn();
   const journalEntryPersonFindMany = vi.fn();
@@ -51,6 +53,7 @@ const mocks = vi.hoisted(() => {
     personIM: { updateMany: personIMUpdateMany, deleteMany: personIMDeleteMany },
     personLocation: { updateMany: personLocationUpdateMany, deleteMany: personLocationDeleteMany },
     personCustomField: { updateMany: personCustomFieldUpdateMany, deleteMany: personCustomFieldDeleteMany },
+    personCustomFieldValue: { updateMany: personCustomFieldValueUpdateMany, deleteMany: personCustomFieldValueDeleteMany },
     importantDate: { updateMany: importantDateUpdateMany, deleteMany: importantDateDeleteMany },
     journalEntryPerson: {
       findMany: journalEntryPersonFindMany,
@@ -82,6 +85,8 @@ const mocks = vi.hoisted(() => {
     personLocationDeleteMany,
     personCustomFieldUpdateMany,
     personCustomFieldDeleteMany,
+    personCustomFieldValueUpdateMany,
+    personCustomFieldValueDeleteMany,
     importantDateUpdateMany,
     importantDateDeleteMany,
     journalEntryPersonFindMany,
@@ -735,6 +740,7 @@ describe('mergePeople', () => {
       imHandles: [] as Array<{ id: string; protocol: string; handle: string }>,
       locations: [] as Array<{ id: string; latitude: number; longitude: number }>,
       customFields: [] as Array<{ id: string; key: string; value: string }>,
+      customFieldValues: [] as Array<{ id: string; templateId: string; value: string }>,
       importantDates: [] as Array<{ id: string; title: string; date: Date }>,
       ...overrides,
     };
@@ -773,6 +779,8 @@ describe('mergePeople', () => {
     mocks.mockTxClient.personLocation.deleteMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.personCustomField.updateMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.personCustomField.deleteMany.mockResolvedValue({ count: 0 });
+    mocks.mockTxClient.personCustomFieldValue.updateMany.mockResolvedValue({ count: 0 });
+    mocks.mockTxClient.personCustomFieldValue.deleteMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.importantDate.updateMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.importantDate.deleteMany.mockResolvedValue({ count: 0 });
     // Default: target has no existing journal references → updateMany still
@@ -1012,5 +1020,72 @@ describe('mergePeople', () => {
     await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
 
     expect(mocks.mockTxClient.journalEntryPerson.deleteMany).not.toHaveBeenCalled();
+  });
+
+  // ─── M4: custom field values transfer ─────────────────────────
+
+  it('transfers source customFieldValues for template ids not present on target', async () => {
+    mocks.personFindUnique
+      .mockReset()
+      .mockResolvedValueOnce(
+        makePersonForMerge(PERSON_ID, {
+          customFieldValues: [{ id: 'cfv-target', templateId: 'tpl-A', value: 'yes' }],
+        })
+      )
+      .mockResolvedValueOnce(
+        makePersonForMerge(SOURCE_ID, {
+          customFieldValues: [
+            { id: 'cfv-source-B', templateId: 'tpl-B', value: '42' },  // new template → transfer
+            { id: 'cfv-source-A', templateId: 'tpl-A', value: 'no' },  // duplicate template → skip (target wins)
+          ],
+        })
+      );
+
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    // Only tpl-B value should be transferred
+    expect(mocks.mockTxClient.personCustomFieldValue.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['cfv-source-B'] } },
+      data: { personId: PERSON_ID },
+    });
+    // Cleanup must be called to remove remaining source values
+    expect(mocks.mockTxClient.personCustomFieldValue.deleteMany).toHaveBeenCalledWith({
+      where: { personId: SOURCE_ID },
+    });
+  });
+
+  it('target custom field value wins when both source and target have the same templateId', async () => {
+    mocks.personFindUnique
+      .mockReset()
+      .mockResolvedValueOnce(
+        makePersonForMerge(PERSON_ID, {
+          customFieldValues: [{ id: 'cfv-target-X', templateId: 'tpl-X', value: 'keep-me' }],
+        })
+      )
+      .mockResolvedValueOnce(
+        makePersonForMerge(SOURCE_ID, {
+          customFieldValues: [{ id: 'cfv-source-X', templateId: 'tpl-X', value: 'drop-me' }],
+        })
+      );
+
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    // updateMany must NOT have been called (no values to transfer)
+    expect(mocks.mockTxClient.personCustomFieldValue.updateMany).not.toHaveBeenCalled();
+    // Cleanup must still run
+    expect(mocks.mockTxClient.personCustomFieldValue.deleteMany).toHaveBeenCalledWith({
+      where: { personId: SOURCE_ID },
+    });
+  });
+
+  it('does not call personCustomFieldValue.updateMany when source has no values', async () => {
+    // Default makePersonForMerge has empty customFieldValues
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    expect(mocks.mockTxClient.personCustomFieldValue.updateMany).not.toHaveBeenCalled();
+    // Cleanup still runs (deleteMany with empty result is fine)
+    expect(mocks.mockTxClient.personCustomFieldValue.deleteMany).toHaveBeenCalledWith({
+      where: { personId: SOURCE_ID },
+    });
   });
 });

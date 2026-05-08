@@ -134,6 +134,7 @@ function makePerson(overrides: Record<string, unknown> = {}) {
     imHandles: [],
     locations: [],
     customFields: [],
+    customFieldValues: [],
     importantDates: [],
     relationshipsFrom: [],
     groups: [],

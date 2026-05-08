@@ -59,12 +59,10 @@ export default async function EditJournalEntryPage({
   const nameOrder = (user?.nameOrder ?? 'WESTERN') as 'WESTERN' | 'EASTERN';
   const dateFormat = (user?.dateFormat ?? 'MDY') as 'MDY' | 'DMY' | 'YMD';
 
-  // Serialize date to YYYY-MM-DD string for the form
-  const dateStr = entry.date.toISOString().slice(0, 10);
-
   const initialData = {
     title: entry.title,
-    date: dateStr,
+    dateIso: entry.date.toISOString(),
+    hasTime: entry.hasTime,
     body: entry.body,
     personIds: entry.people.map((p) => p.personId),
   };

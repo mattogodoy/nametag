@@ -146,6 +146,7 @@ describe('CardDAV sync domain events', () => {
       person: {
         id: 'p-1', phoneNumbers: [], emails: [], addresses: [], urls: [],
         imHandles: [], locations: [], customFields: [],
+        customFieldValues: [],
       },
     });
 
@@ -164,7 +165,7 @@ describe('CardDAV sync domain events', () => {
       person: {
         id: 'p-1', notes: null,
         phoneNumbers: [], emails: [], addresses: [], urls: [], imHandles: [],
-        locations: [], customFields: [], importantDates: [], groups: [], relationshipsFrom: [],
+        locations: [], customFields: [], customFieldValues: [], importantDates: [], groups: [], relationshipsFrom: [],
       },
     }]);
     mocks.fetchAddressBooks.mockResolvedValue([{ url: 'https://carddav.example/ab/', raw: {} }]);

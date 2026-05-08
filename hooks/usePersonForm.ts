@@ -1,6 +1,7 @@
 'use client';
 
 import { useReducer, useCallback } from 'react';
+import type { CustomFieldValueInput } from '@/lib/customFields/persistence';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
 
@@ -82,6 +83,7 @@ export interface PersonFormState {
   emails: EmailItem[];
   addresses: AddressItem[];
   urls: UrlItem[];
+  customFieldValues: CustomFieldValueInput[];
 }
 
 type PersonFormAction =
@@ -103,6 +105,7 @@ type PersonFormAction =
   | { type: 'SET_EMAILS'; payload: EmailItem[] }
   | { type: 'SET_ADDRESSES'; payload: AddressItem[] }
   | { type: 'SET_URLS'; payload: UrlItem[] }
+  | { type: 'SET_CUSTOM_FIELD_VALUES'; payload: CustomFieldValueInput[] }
   | { type: 'RESET'; payload: PersonFormState };
 
 function reducer(state: PersonFormState, action: PersonFormAction): PersonFormState {
@@ -143,6 +146,8 @@ function reducer(state: PersonFormState, action: PersonFormAction): PersonFormSt
       return { ...state, addresses: action.payload };
     case 'SET_URLS':
       return { ...state, urls: action.payload };
+    case 'SET_CUSTOM_FIELD_VALUES':
+      return { ...state, customFieldValues: action.payload };
     case 'RESET':
       return action.payload;
     default:
@@ -194,6 +199,7 @@ interface PersonProp {
     country?: string | null;
   }>;
   urls?: Array<{ id?: string; type: string; url: string }>;
+  customFieldValues?: Array<{ templateId: string; value: string }>;
 }
 
 interface AvailablePerson {
@@ -310,6 +316,11 @@ function buildInitialState(params: {
         type: u.type,
         url: u.url,
       })) || [],
+    customFieldValues:
+      person?.customFieldValues?.map((v) => ({
+        templateId: v.templateId,
+        value: v.value,
+      })) || [],
   };
 }
 
@@ -405,6 +416,11 @@ export function usePersonForm(params: {
     (val: UrlItem[]) => dispatch({ type: 'SET_URLS', payload: val }),
     []
   );
+  const setCustomFieldValues = useCallback(
+    (val: CustomFieldValueInput[]) =>
+      dispatch({ type: 'SET_CUSTOM_FIELD_VALUES', payload: val }),
+    []
+  );
   const reset = useCallback(
     (newState: PersonFormState) =>
       dispatch({ type: 'RESET', payload: newState }),
@@ -431,6 +447,7 @@ export function usePersonForm(params: {
     setEmails,
     setAddresses,
     setUrls,
+    setCustomFieldValues,
     reset,
   };
 }

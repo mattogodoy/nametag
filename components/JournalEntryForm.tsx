@@ -21,7 +21,8 @@ interface JournalEntryFormProps {
   entryId?: string;
   initialData?: {
     title: string;
-    date: string;
+    dateIso: string;       // entry.date.toISOString() from the server
+    hasTime: boolean;
     body: string;
     personIds: string[];
   };
@@ -41,6 +42,26 @@ function getTodayString(): string {
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
+}
+
+function getCurrentTimeString(): string {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+function localDateString(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function localTimeString(d: Date): string {
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
 }
 
 export default function JournalEntryForm({
@@ -72,16 +93,32 @@ export default function JournalEntryForm({
       .filter((p): p is PillPerson => p !== undefined);
   };
 
+  const initialIso = initialData?.dateIso;
+  const initialHasTime = initialData?.hasTime ?? false;
+
+  const computeInitialDate = () => {
+    if (!initialIso) return getTodayString();
+    if (initialHasTime) return localDateString(new Date(initialIso));
+    return initialIso.slice(0, 10);
+  };
+  const computeInitialTime = () =>
+    initialIso && initialHasTime ? localTimeString(new Date(initialIso)) : '';
+
   const [title, setTitle] = useState(initialData?.title ?? '');
-  const [date, setDate] = useState(initialData?.date ?? getTodayString());
+  const [date, setDate] = useState(computeInitialDate);
+  const [time, setTime] = useState(computeInitialTime);
+  const [hasTime, setHasTime] = useState(initialHasTime);
   const [body, setBody] = useState(initialData?.body ?? '');
   const [selectedPeople, setSelectedPeople] = useState<PillPerson[]>(resolveInitialSelected);
   const [updateLastContact, setUpdateLastContact] = useState(mode === 'create');
 
   // Warn on unsaved changes
-  const isDirty = title !== (initialData?.title ?? '') ||
+  const isDirty =
+    title !== (initialData?.title ?? '') ||
     body !== (initialData?.body ?? '') ||
-    date !== (initialData?.date ?? getTodayString());
+    date !== computeInitialDate() ||
+    time !== computeInitialTime() ||
+    hasTime !== initialHasTime;
 
   useEffect(() => {
     if (!isDirty) return;
@@ -116,9 +153,14 @@ export default function JournalEntryForm({
       const url = mode === 'create' ? '/api/journal' : `/api/journal/${entryId}`;
       const method = mode === 'create' ? 'POST' : 'PUT';
 
+      const payloadDate = hasTime
+        ? new Date(`${date}T${time}`).toISOString()
+        : date;
+
       const payload = {
         title,
-        date,
+        date: payloadDate,
+        hasTime,
         body,
         personIds: selectedPeople.map((p) => p.id),
         updateLastContact: selectedPeople.length > 0 ? updateLastContact : false,
@@ -184,14 +226,50 @@ export default function JournalEntryForm({
         <label htmlFor="journal-date" className="block text-sm font-medium text-muted mb-1">
           {t('dateLabel')}
         </label>
-        <input
-          type="date"
-          id="journal-date"
-          required
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="date"
+            id="journal-date"
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          {hasTime ? (
+            <>
+              <input
+                type="time"
+                id="journal-time"
+                aria-label={t('timeLabel')}
+                required
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setHasTime(false);
+                  setTime('');
+                }}
+                className="text-sm text-muted hover:text-foreground transition-colors"
+              >
+                {t('removeTime')}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setHasTime(true);
+                if (!time) setTime(getCurrentTimeString());
+              }}
+              className="text-sm text-primary hover:underline"
+            >
+              + {t('addTime')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* People */}

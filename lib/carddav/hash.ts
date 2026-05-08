@@ -85,6 +85,7 @@ export function buildLocalHash(person: {
   imHandles?: unknown[];
   locations?: unknown[];
   customFields?: unknown[];
+  customFieldValues?: Array<{ template: { slug: string; type: string }; value: string }>;
   importantDates?: unknown[];
 }): string {
   const data = {
@@ -109,6 +110,9 @@ export function buildLocalHash(person: {
     imHandles: sortArray((person.imHandles || []).map(normalizeValue)),
     locations: sortArray((person.locations || []).map(normalizeValue)),
     customFields: sortArray((person.customFields || []).map(normalizeValue)),
+    customFieldValues: (person.customFieldValues ?? [])
+      .map((v) => ({ slug: v.template.slug, type: v.template.type, value: v.value }))
+      .sort((a, b) => a.slug.localeCompare(b.slug)),
     importantDates: sortArray((person.importantDates || []).map(normalizeValue)),
   };
 

@@ -31,8 +31,8 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
                 ],
               },
               tierInfo: { type: 'object', description: 'Display metadata for the current tier (name, features, pricing)' },
-              usage: { type: 'object', description: 'Current usage counts (people, groups, reminders)' },
-              limits: { type: 'object', description: 'Plan limits for each resource' },
+              usage: { type: 'object', description: 'Current usage counts (people, groups, reminders, customFieldTemplates)' },
+              limits: { type: 'object', description: 'Plan limits for each resource (people, groups, reminders, customFieldTemplates)' },
               promotion: {
                 oneOf: [
                   {
@@ -90,8 +90,8 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: {
               tier: { type: 'string', enum: ['FREE', 'PERSONAL', 'PRO'] },
-              usage: { type: 'object', description: 'Current usage counts (people, groups, reminders)' },
-              limits: { type: 'object', description: 'Plan limits for each resource' },
+              usage: { type: 'object', description: 'Current usage counts (people, groups, reminders, customFieldTemplates)' },
+              limits: { type: 'object', description: 'Plan limits for each resource (people, groups, reminders, customFieldTemplates)' },
             },
           }),
           '401': ref401(),

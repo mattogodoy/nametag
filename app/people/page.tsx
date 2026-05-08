@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/Button';
 import EmptyState from '@/components/EmptyState';
 import ImportSuccessToast from '@/components/ImportSuccessToast';
 import { canCreateResource } from '@/lib/billing/subscription';
@@ -15,7 +16,14 @@ const ITEMS_PER_PAGE = 50;
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; sortBy?: string; order?: string; group?: string; relationship?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    sortBy?: string;
+    order?: string;
+    group?: string;
+    relationship?: string;
+    cf?: string;
+  }>;
 }) {
   const session = await auth();
   const t = await getTranslations('people');
@@ -42,6 +50,14 @@ export default async function PeoplePage({
   const order = params.order || 'asc';
   const groupFilter = params.group || '';
   const relationshipFilter = params.relationship || '';
+  const cfParam = params.cf || '';
+  let cfFilter: { slug: string; value: string } | null = null;
+  if (cfParam) {
+    const idx = cfParam.indexOf(':');
+    if (idx > 0) {
+      cfFilter = { slug: cfParam.slice(0, idx), value: cfParam.slice(idx + 1) };
+    }
+  }
   const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 
   // Build where clause for people query
@@ -50,6 +66,12 @@ export default async function PeoplePage({
     deletedAt: null;
     groups?: { none: Record<string, never> } | { some: { groupId: string } };
     relationshipToUserId?: string | null;
+    customFieldValues?: {
+      some: {
+        value: { equals: string; mode: 'insensitive' };
+        template: { slug: string; userId: string; deletedAt: null };
+      };
+    };
   } = {
     userId: session.user.id,
     deletedAt: null,
@@ -67,6 +89,23 @@ export default async function PeoplePage({
     peopleWhere.relationshipToUserId = relationshipFilter;
   }
 
+  if (cfFilter) {
+    // Case-insensitive match. Harmless for NUMBER ("42" == "42"), BOOLEAN
+    // ("true"/"false" are lowercase), and SELECT (dropdown values match the
+    // stored option's exact casing). For TEXT, this lets users find values
+    // without remembering the exact casing.
+    peopleWhere.customFieldValues = {
+      some: {
+        value: { equals: cfFilter.value, mode: 'insensitive' },
+        template: {
+          slug: cfFilter.slug,
+          userId: session.user.id,
+          deletedAt: null,
+        },
+      },
+    };
+  }
+
   // Get total count for pagination
   const totalCount = await prisma.person.count({
     where: peopleWhere,
@@ -74,13 +113,16 @@ export default async function PeoplePage({
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-  // Fetch all people, groups, and relationship types in parallel
-  const [allPeople, allGroups, relationshipTypes] = await Promise.all([
+  // Fetch all people, groups, relationship types, and custom field templates in parallel
+  const [allPeople, allGroups, relationshipTypes, customFieldTemplates] = await Promise.all([
     prisma.person.findMany({
       where: peopleWhere,
       include: {
         relationshipToUser: { select: { label: true, color: true } },
-        groups: { include: { group: { select: { name: true, color: true } } } },
+        groups: {
+          where: { group: { deletedAt: null } },
+          include: { group: { select: { name: true, color: true } } },
+        },
         relationshipsFrom: { select: { id: true } },
         relationshipsTo: { select: { id: true } },
       },
@@ -94,6 +136,10 @@ export default async function PeoplePage({
       where: { userId: session.user.id, deletedAt: null },
       orderBy: { label: 'asc' },
       select: { id: true, label: true, color: true },
+    }),
+    prisma.customFieldTemplate.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     }),
   ]);
 
@@ -173,27 +219,21 @@ export default async function PeoplePage({
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <div className="flex space-x-3">
-              <Link
-                href="/people/duplicates"
-                className="px-4 py-2 border border-border text-foreground rounded-lg font-semibold hover:bg-surface transition-colors"
-              >
+            <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+              <Button href="/people/duplicates" variant="secondary" className="flex-1 sm:flex-initial">
                 {t('duplicates.findDuplicates')}
-              </Link>
+              </Button>
               {canCreate.allowed ? (
-                <Link
-                  href="/people/new"
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
-                >
+                <Button href="/people/new" className="flex-1 sm:flex-initial">
                   {t('addPerson')}
-                </Link>
+                </Button>
               ) : (
-                <div className="relative group">
-                  <span className="px-4 py-2 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-block">
+                <div className="relative group flex-1 sm:flex-initial">
+                  <span className="px-4 py-2 min-h-11 sm:min-h-0 bg-muted/50 text-white rounded-lg font-semibold cursor-not-allowed inline-flex items-center justify-center w-full">
                     {t('addPerson')}
                   </span>
                   <div className="invisible group-hover:visible absolute right-0 top-full mt-2 w-64 p-3 bg-surface-elevated text-white text-sm rounded-lg shadow-lg z-10">
@@ -207,7 +247,7 @@ export default async function PeoplePage({
             </div>
           </div>
 
-          {totalCount === 0 && !groupFilter && !relationshipFilter ? (
+          {totalCount === 0 && !groupFilter && !relationshipFilter && !cfFilter ? (
             <div className="bg-surface rounded-lg border border-border">
               <EmptyState
                 icon={
@@ -232,9 +272,11 @@ export default async function PeoplePage({
                 order={order}
                 groupFilter={groupFilter}
                 relationshipFilter={relationshipFilter}
+                cfFilter={cfFilter}
                 dateFormat={dateFormat}
                 availableGroups={allGroups}
                 relationshipTypes={relationshipTypes}
+                customFieldTemplates={customFieldTemplates}
                 nameOrder={nameOrder}
                 translations={{
                   surname: t('surname'),

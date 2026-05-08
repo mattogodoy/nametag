@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/Button';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 
 function ResetPasswordForm() {
@@ -201,13 +202,9 @@ function ResetPasswordForm() {
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" disabled={isLoading} fullWidth>
               {isLoading ? t('resetting') : t('resetPassword')}
-            </button>
+            </Button>
           </div>
 
           <div className="text-center">

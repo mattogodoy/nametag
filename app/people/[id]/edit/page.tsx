@@ -22,7 +22,7 @@ export default async function EditPersonPage({
 
   const { id } = await params;
 
-  const [person, groups, relationshipTypes, reminderCheck, user, cardDavConnection] = await Promise.all([
+  const [person, groups, relationshipTypes, reminderCheck, user, cardDavConnection, customFieldTemplates] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -44,6 +44,10 @@ export default async function EditPersonPage({
         urls: true,
         cardDavMapping: {
           select: { id: true },
+        },
+        customFieldValues: {
+          where: { template: { deletedAt: null } },
+          select: { templateId: true, value: true },
         },
       },
     }),
@@ -73,6 +77,10 @@ export default async function EditPersonPage({
     prisma.cardDavConnection.findFirst({
       where: { userId: session.user.id },
       select: { id: true },
+    }),
+    prisma.customFieldTemplate.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     }),
   ]);
 
@@ -112,6 +120,7 @@ export default async function EditPersonPage({
           <div className="bg-surface shadow rounded-lg p-6">
             <PersonForm
               person={person}
+              customFieldTemplates={customFieldTemplates}
               groups={groups}
               relationshipTypes={relationshipTypes}
               mode="edit"

@@ -142,6 +142,65 @@ describe('Journal API', () => {
       expect(data.entry).toEqual(expect.objectContaining({ title: 'Dinner with friends' }));
     });
 
+    it('should persist hasTime=true and the supplied UTC instant', async () => {
+      mocks.journalEntryCreate.mockResolvedValue({
+        id: 'entry-2',
+        title: 'Quick call with Maria',
+        date: new Date('2026-05-07T22:30:00.000Z'),
+        hasTime: true,
+        body: 'Caught up briefly.',
+        people: [],
+      });
+
+      const request = new Request('http://localhost/api/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Quick call with Maria',
+          date: '2026-05-07T22:30:00.000Z',
+          hasTime: true,
+          body: 'Caught up briefly.',
+          personIds: [],
+          updateLastContact: false,
+        }),
+      });
+      const response = await POST(request);
+
+      expect(response.status).toBe(201);
+      const callArg = mocks.journalEntryCreate.mock.calls[0][0];
+      expect(callArg.data.hasTime).toBe(true);
+      expect(callArg.data.date).toEqual(new Date('2026-05-07T22:30:00.000Z'));
+    });
+
+    it('should persist hasTime=false and midnight UTC for date-only entries', async () => {
+      mocks.journalEntryCreate.mockResolvedValue({
+        id: 'entry-3',
+        title: 'Birthday',
+        date: new Date('2026-03-28T00:00:00.000Z'),
+        hasTime: false,
+        body: 'Family lunch.',
+        people: [],
+      });
+
+      const request = new Request('http://localhost/api/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Birthday',
+          date: '2026-03-28',
+          body: 'Family lunch.',
+          personIds: [],
+          updateLastContact: false,
+        }),
+      });
+      const response = await POST(request);
+
+      expect(response.status).toBe(201);
+      const callArg = mocks.journalEntryCreate.mock.calls[0][0];
+      expect(callArg.data.hasTime).toBe(false);
+      expect(callArg.data.date).toEqual(new Date('2026-03-28T00:00:00.000Z'));
+    });
+
     it('should return 400 for missing title', async () => {
       const request = new Request('http://localhost/api/journal', {
         method: 'POST',
@@ -250,6 +309,98 @@ describe('Journal Detail API', () => {
       const response = await PUT(request, mockContext);
 
       expect(response.status).toBe(404);
+    });
+
+    it('should persist hasTime=true and UTC instant when toggled on', async () => {
+      mocks.journalEntryFindUnique.mockResolvedValue({
+        id: 'entry-1',
+        userId: 'user-123',
+        title: 'Old title',
+        date: new Date('2026-05-07T00:00:00.000Z'),
+        hasTime: false,
+        body: 'Old body.',
+        deletedAt: null,
+      });
+      const updatedEntry = {
+        id: 'entry-1',
+        title: 'Coffee',
+        date: new Date('2026-05-07T22:30:00.000Z'),
+        hasTime: true,
+        body: 'New body.',
+        people: [],
+      };
+      mocks.$transaction.mockImplementation(async (cb: (tx: typeof mocks) => unknown) => {
+        mocks.journalEntryUpdate.mockResolvedValue(updatedEntry);
+        return cb({
+          journalEntryPerson: { deleteMany: mocks.journalEntryPersonDeleteMany },
+          journalEntry: { update: mocks.journalEntryUpdate },
+        } as unknown as typeof mocks);
+      });
+
+      const request = new Request('http://localhost/api/journal/entry-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Coffee',
+          date: '2026-05-07T22:30:00.000Z',
+          hasTime: true,
+          body: 'New body.',
+          personIds: [],
+          updateLastContact: false,
+        }),
+      });
+      const response = await PUT(request, { params: Promise.resolve({ id: 'entry-1' }) });
+
+      expect(response.status).toBe(200);
+      const callArg = mocks.journalEntryUpdate.mock.calls[0][0];
+      expect(callArg.data.hasTime).toBe(true);
+      expect(callArg.data.date).toEqual(new Date('2026-05-07T22:30:00.000Z'));
+    });
+
+    it('should persist hasTime=false and midnight UTC when toggled off', async () => {
+      mocks.journalEntryFindUnique.mockResolvedValue({
+        id: 'entry-1',
+        userId: 'user-123',
+        title: 'Old title',
+        date: new Date('2026-05-07T22:30:00.000Z'),
+        hasTime: true,
+        body: 'Old body.',
+        deletedAt: null,
+      });
+      const updatedEntry = {
+        id: 'entry-1',
+        title: 'Coffee',
+        date: new Date('2026-05-07T00:00:00.000Z'),
+        hasTime: false,
+        body: 'New body.',
+        people: [],
+      };
+      mocks.$transaction.mockImplementation(async (cb: (tx: typeof mocks) => unknown) => {
+        mocks.journalEntryUpdate.mockResolvedValue(updatedEntry);
+        return cb({
+          journalEntryPerson: { deleteMany: mocks.journalEntryPersonDeleteMany },
+          journalEntry: { update: mocks.journalEntryUpdate },
+        } as unknown as typeof mocks);
+      });
+
+      const request = new Request('http://localhost/api/journal/entry-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Coffee',
+          date: '2026-05-07',
+          hasTime: false,
+          body: 'New body.',
+          personIds: [],
+          updateLastContact: false,
+        }),
+      });
+      const response = await PUT(request, { params: Promise.resolve({ id: 'entry-1' }) });
+
+      expect(response.status).toBe(200);
+      const callArg = mocks.journalEntryUpdate.mock.calls[0][0];
+      expect(callArg.data.hasTime).toBe(false);
+      expect(callArg.data.date).toEqual(new Date('2026-05-07T00:00:00.000Z'));
     });
   });
 

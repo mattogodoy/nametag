@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
 import Navigation from '@/components/Navigation';
 import DuplicatesList, { DuplicateGroupDisplay } from '@/components/DuplicatesList';
 
@@ -39,16 +39,13 @@ export default function DuplicatesPage() {
       <Navigation currentPath="/people/duplicates" />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <h1 className="text-3xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <Link
-              href="/people"
-              className="px-4 py-2 border border-border text-foreground rounded-lg font-semibold hover:bg-surface transition-colors"
-            >
+            <Button href="/people" variant="secondary">
               {tCommon('back')}
-            </Link>
+            </Button>
           </div>
 
           {loading ? (

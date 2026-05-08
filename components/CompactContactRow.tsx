@@ -225,7 +225,7 @@ export default function CompactContactRow({
               <select
                 value={selectedRelationshipTypeId}
                 onChange={(e) => onRelationshipChange(pendingImport.id, e.target.value)}
-                className="w-full max-w-xs px-3 py-2 border border-border rounded-lg bg-surface text-foreground text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full max-w-xs px-3 py-2 border border-border rounded-lg bg-surface text-foreground text-base sm:text-sm focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 <option value="">{t('useGlobalRelationship')}</option>
                 <option value="__none__">{t('noRelationship')}</option>

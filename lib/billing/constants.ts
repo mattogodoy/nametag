@@ -10,22 +10,26 @@ export const TIER_LIMITS: Record<
     maxPeople: number;
     maxGroups: number;
     maxReminders: number;
+    maxCustomFieldTemplates: number;
   }
 > = {
   FREE: {
     maxPeople: 50,
     maxGroups: 10,
     maxReminders: 5,
+    maxCustomFieldTemplates: 1,
   },
   PERSONAL: {
     maxPeople: 1000,
     maxGroups: 500,
     maxReminders: 100,
+    maxCustomFieldTemplates: 20,
   },
   PRO: {
     maxPeople: Infinity,
     maxGroups: Infinity,
     maxReminders: Infinity,
+    maxCustomFieldTemplates: Infinity,
   },
 };
 
@@ -82,6 +86,7 @@ export const TIER_INFO: Record<
       'Up to 10 groups',
       'Up to 5 reminders',
       'Basic relationship tracking',
+      '1 custom field',
     ],
   },
   PERSONAL: {
@@ -94,6 +99,7 @@ export const TIER_INFO: Record<
       'Up to 500 groups',
       'Up to 100 reminders',
       'Priority support',
+      'Up to 20 custom fields',
     ],
   },
   PRO: {
@@ -107,6 +113,7 @@ export const TIER_INFO: Record<
       'Unlimited reminders',
       'Priority support',
       'Early access to new features',
+      'Unlimited custom fields',
     ],
   },
 };
@@ -114,7 +121,7 @@ export const TIER_INFO: Record<
 /**
  * Resource types that can be limited
  */
-export type LimitedResource = 'people' | 'groups' | 'reminders';
+export type LimitedResource = 'people' | 'groups' | 'reminders' | 'customFieldTemplates';
 
 /**
  * Get the limit for a specific resource and tier
@@ -128,6 +135,8 @@ export function getTierLimit(tier: SubscriptionTier, resource: LimitedResource):
       return limits.maxGroups;
     case 'reminders':
       return limits.maxReminders;
+    case 'customFieldTemplates':
+      return limits.maxCustomFieldTemplates;
   }
 }
 

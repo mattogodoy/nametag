@@ -44,6 +44,7 @@ function makePerson(overrides: Partial<PersonForCompare> = {}): PersonForCompare
     imHandles: [],
     locations: [],
     customFields: [],
+    customFieldValues: [],
     importantDates: [],
     groups: [],
     relationshipsFrom: [],

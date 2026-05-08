@@ -30,6 +30,7 @@ describe('OpenAPI Specification', () => {
     expect(tagNames).toContain('Dashboard');
     expect(tagNames).toContain('User Settings');
     expect(tagNames).toContain('Billing');
+    expect(tagNames).toContain('Custom Fields');
     expect(tagNames).toContain('Deleted Items');
     expect(tagNames).toContain('System');
   });
@@ -42,6 +43,9 @@ describe('OpenAPI Specification', () => {
     expect(spec.paths['/api/user/profile']).toBeDefined();
     expect(spec.paths['/api/openapi.json']).toBeDefined();
     expect(spec.paths['/api/docs']).toBeDefined();
+    expect(spec.paths['/api/custom-field-templates']).toBeDefined();
+    expect(spec.paths['/api/custom-field-templates/{id}']).toBeDefined();
+    expect(spec.paths['/api/custom-field-templates/reorder']).toBeDefined();
   });
 
   it('should have GET method on all new read endpoints', () => {

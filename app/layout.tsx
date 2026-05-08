@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import SessionProvider from "@/components/SessionProvider";
@@ -15,6 +15,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Nametag - Personal Relationships Manager",
   description: "Manage your relationships, track important details, and visualize your network",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({

@@ -64,6 +64,7 @@ const mocks = vi.hoisted(() => ({
   groupFindFirst: vi.fn(),
   // ImportantDate operations
   importantDateCount: vi.fn(),
+  customFieldTemplateCount: vi.fn(),
   // Promotion operations
   promotionFindUnique: vi.fn(),
   promotionUpdate: vi.fn(),
@@ -98,6 +99,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     importantDate: {
       count: mocks.importantDateCount,
+    },
+    customFieldTemplate: {
+      count: mocks.customFieldTemplateCount,
     },
     promotion: {
       findUnique: mocks.promotionFindUnique,
@@ -143,6 +147,7 @@ describe('Billing Integration Flows', () => {
   beforeEach(() => {
     resetStore();
     vi.clearAllMocks();
+    mocks.customFieldTemplateCount.mockResolvedValue(0);
   });
 
   describe('New User Registration Flow', () => {

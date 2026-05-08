@@ -41,6 +41,7 @@ describe('vCard v3.0 Compliance (RFC 2426)', () => {
     imHandles: [],
     locations: [],
     customFields: [],
+    customFieldValues: [],
     importantDates: [],
     relationshipsFrom: [],
     groups: [],

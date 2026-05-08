@@ -77,7 +77,7 @@ export const POST = withAuth(async (request, session) => {
       return validation.response;
     }
 
-    const { title, date, body: entryBody, personIds, updateLastContact } = validation.data;
+    const { title, date, hasTime, body: entryBody, personIds, updateLastContact } = validation.data;
 
     // Validate personIds belong to the current user
     if (personIds && personIds.length > 0) {
@@ -91,13 +91,16 @@ export const POST = withAuth(async (request, session) => {
 
     const sanitizedTitle = sanitizeName(title) || title;
     const sanitizedBody = sanitizeNotes(entryBody) || entryBody;
-    const entryDate = new Date(date);
+    const entryDate = hasTime
+      ? new Date(date)
+      : new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
 
     const entry = await prisma.journalEntry.create({
       data: {
         userId: session.user.id,
         title: sanitizedTitle,
         date: entryDate,
+        hasTime,
         body: sanitizedBody,
         ...(personIds && personIds.length > 0 && {
           people: {

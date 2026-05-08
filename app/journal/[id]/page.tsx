@@ -8,6 +8,7 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { Button } from '@/components/ui/Button';
 import DeleteJournalEntryButton from '@/components/DeleteJournalEntryButton';
+import JournalEntryDateLine from '@/components/JournalEntryDateLine';
 
 export default async function JournalEntryDetailPage({
   params,
@@ -60,12 +61,6 @@ export default async function JournalEntryDetailPage({
   const nameDisplayFormat = (user?.nameDisplayFormat || 'FULL') as NameDisplayFormat;
   const locale = user?.language ?? 'en';
 
-  const formattedDate = entry.date.toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation
@@ -93,7 +88,7 @@ export default async function JournalEntryDetailPage({
                 <h1 className="text-3xl font-bold text-foreground mb-1">
                   {entry.title}
                 </h1>
-                <p className="text-sm text-muted">{formattedDate}</p>
+                <JournalEntryDateLine dateIso={entry.date.toISOString()} hasTime={entry.hasTime} locale={locale} />
               </div>
               <div className="flex gap-2">
                 <Button href={`/journal/${entry.id}/edit`} size="sm" variant="secondary">
