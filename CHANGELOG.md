@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.47.2](https://github.com/mattogodoy/nametag/compare/v0.47.1...v0.47.2) (2026-05-15)
+
+
+### Bug Fixes
+
+* use blob URL instead of data URL for photo crop to prevent browser freeze ([9cc3f11](https://github.com/mattogodoy/nametag/commit/9cc3f1117530ea1a351fd61b8ca26059aac8dbc4))
+* use blob URL instead of data URL for photo crop to prevent browser freeze ([b4ca2cc](https://github.com/mattogodoy/nametag/commit/b4ca2cc3db3f79dac8e4a92823635bf34e542056)), closes [#275](https://github.com/mattogodoy/nametag/issues/275)
+
 ## [0.47.1](https://github.com/mattogodoy/nametag/compare/v0.47.0...v0.47.1) (2026-05-12)
 
 
