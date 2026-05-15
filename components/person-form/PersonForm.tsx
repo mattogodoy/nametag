@@ -245,14 +245,13 @@ export default function PersonForm({
 
   const handlePhotoSourceSelect = (file: File) => {
     setShowPhotoSourceModal(false);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCropImageSrc(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setCropImageSrc(URL.createObjectURL(file));
   };
 
   const handleCropConfirm = (blob: Blob) => {
+    if (cropImageSrc) {
+      URL.revokeObjectURL(cropImageSrc);
+    }
     setCropImageSrc(null);
     if (photoPreview) {
       URL.revokeObjectURL(photoPreview);
@@ -422,7 +421,12 @@ export default function PersonForm({
         onShowPhotoSourceModal={setShowPhotoSourceModal}
         onPhotoSourceSelect={handlePhotoSourceSelect}
         onCropConfirm={handleCropConfirm}
-        onCropCancel={() => setCropImageSrc(null)}
+        onCropCancel={() => {
+          if (cropImageSrc) {
+            URL.revokeObjectURL(cropImageSrc);
+          }
+          setCropImageSrc(null);
+        }}
         onPhotoRemove={handlePhotoRemove}
       />
 
