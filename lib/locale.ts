@@ -109,7 +109,6 @@ export async function setLocaleCookie(locale: SupportedLocale): Promise<void> {
       httpOnly: boolean;
       sameSite: 'lax';
       domain?: string;
-      secure?: boolean;
     } = {
       path: '/',
       maxAge: 365 * 24 * 60 * 60, // 1 year
@@ -120,11 +119,6 @@ export async function setLocaleCookie(locale: SupportedLocale): Promise<void> {
     // Add domain for cross-subdomain sharing (production only)
     if (process.env.NEXT_PUBLIC_COOKIE_DOMAIN) {
       cookieOptions.domain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
-    }
-
-    // Use secure cookies in production
-    if (process.env.NODE_ENV === 'production') {
-      cookieOptions.secure = true;
     }
 
     cookieStore.set(LOCALE_COOKIE_NAME, locale, cookieOptions);

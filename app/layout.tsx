@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import SessionProvider from "@/components/SessionProvider";
 import ThemeProvider from "@/components/ThemeProvider";
+import LocaleSync from "@/components/LocaleSync";
 import { Toaster } from "sonner";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -59,6 +60,7 @@ export default async function RootLayout({
               {children}
             </ThemeProvider>
           </SessionProvider>
+          <LocaleSync locale={locale} />
           <Toaster position="top-right" richColors />
         </NextIntlClientProvider>
       </body>
