@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.47.3](https://github.com/mattogodoy/nametag/compare/v0.47.2...v0.47.3) (2026-05-18)
+
+
+### Bug Fixes
+
+* **carddav:** preserve local photos when remote vCard has no PHOTO field ([069e6d3](https://github.com/mattogodoy/nametag/commit/069e6d3ec8b7c9acfb990f5864934a61cb9231e1))
+* **carddav:** preserve local photos when remote vCard has no PHOTO field ([862a415](https://github.com/mattogodoy/nametag/commit/862a415abd3fe6904b3410818d4ccf557cc22eef)), closes [#278](https://github.com/mattogodoy/nametag/issues/278)
+* **i18n:** language selection not persisting on self-hosted instances ([0ad2547](https://github.com/mattogodoy/nametag/commit/0ad25479f5a63f373eae1e417a7b1691e743b7b2))
+* **i18n:** language selection not persisting on self-hosted instances ([bd9cd97](https://github.com/mattogodoy/nametag/commit/bd9cd974fc59866b99eccd90e197b87d9bce4232)), closes [#273](https://github.com/mattogodoy/nametag/issues/273)
+
 ## [0.47.2](https://github.com/mattogodoy/nametag/compare/v0.47.1...v0.47.2) (2026-05-15)
 
 
