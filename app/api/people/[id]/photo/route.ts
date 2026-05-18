@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { savePhotoFromBuffer, deletePersonPhotos } from '@/lib/photo-storage';
+import { autoUpdatePerson } from '@/lib/carddav/auto-export';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('people-photo');
@@ -65,6 +66,11 @@ export const POST = withAuth(async (request, session, context) => {
 
     log.info({ personId: id, filename }, 'Photo uploaded');
 
+    autoUpdatePerson(id).catch((error) => {
+      log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: id },
+        'CardDAV auto-update after photo upload failed');
+    });
+
     return apiResponse.ok({ photo: filename });
   } catch (error) {
     return handleApiError(error, 'POST /api/people/[id]/photo');
@@ -100,6 +106,11 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     log.info({ personId: id }, 'Photo deleted');
+
+    autoUpdatePerson(id).catch((error) => {
+      log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: id },
+        'CardDAV auto-update after photo delete failed');
+    });
 
     return apiResponse.ok({ success: true });
   } catch (error) {

@@ -134,7 +134,7 @@ export function buildScalarPersonData(parsedData: ParsedVCardData, skipNameField
     nickname: parsedData.nickname ?? null,
     organization: parsedData.organization ?? null,
     jobTitle: parsedData.jobTitle ?? null,
-    photo: parsedData.photo ?? null,
+    photo: parsedData.photo,
     gender: parsedData.gender ?? null,
     anniversary: parsedData.anniversary ?? null,
     lastContact: parsedData.lastContact ?? null,
@@ -228,14 +228,13 @@ export async function updatePersonFromVCard(
   userId: string,
   options?: { skipNameFields?: boolean },
 ): Promise<void> {
-  // Save photo as file if present (outside transaction since it's filesystem I/O)
-  let photoValue = parsedData.photo;
-  if (photoValue) {
-    const filename = await savePhoto(userId, personId, photoValue);
-    if (filename) {
-      photoValue = filename;
-    }
-    // If savePhoto fails, keep the original value as fallback
+  // Save photo as file if present (outside transaction since it's filesystem I/O).
+  // When the remote vCard has no PHOTO field (undefined), preserve the local photo
+  // rather than clearing it. Many CardDAV servers strip photos from vCards.
+  let photoDbValue: string | undefined;
+  if (parsedData.photo) {
+    const filename = await savePhoto(userId, personId, parsedData.photo);
+    photoDbValue = filename ?? parsedData.photo;
   }
 
   // Delete all multi-value fields and update person in a single atomic transaction
@@ -254,7 +253,7 @@ export async function updatePersonFromVCard(
       where: { id: personId },
       data: {
         ...buildScalarPersonData(parsedData, options?.skipNameFields),
-        photo: photoValue ?? null,
+        photo: photoDbValue,
         uid: parsedData.uid,
 
         // Create new multi-value fields

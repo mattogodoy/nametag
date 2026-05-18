@@ -32,6 +32,22 @@ function buildParsedData(overrides: Partial<ParsedVCardData> = {}): ParsedVCardD
   };
 }
 
+describe('buildScalarPersonData photo handling', () => {
+  it('should return undefined for photo when vCard has no PHOTO field', () => {
+    const data = buildParsedData({ photo: undefined });
+    const result = buildScalarPersonData(data);
+
+    expect(result.photo).toBeUndefined();
+  });
+
+  it('should return the photo data URI when vCard has a PHOTO field', () => {
+    const data = buildParsedData({ photo: 'data:image/jpeg;base64,abc123' });
+    const result = buildScalarPersonData(data);
+
+    expect(result.photo).toBe('data:image/jpeg;base64,abc123');
+  });
+});
+
 describe('buildScalarPersonData with skipNameFields', () => {
   it('should return all fields when skipNameFields is false', () => {
     const data = buildParsedData();

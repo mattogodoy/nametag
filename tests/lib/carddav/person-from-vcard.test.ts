@@ -152,13 +152,13 @@ describe('person-from-vcard', () => {
       expect(data.lastContact).toBeNull();
     });
 
-    it('passes null for photo when remote contact has no photo', async () => {
+    it('preserves local photo when remote vCard has no PHOTO field', async () => {
       const parsedData = makeMinimalParsedData();
 
       await updatePersonFromVCard(PERSON_ID, parsedData, USER_ID);
 
       const data = mocks.personUpdate.mock.calls[0][0].data;
-      expect(data.photo).toBeNull();
+      expect(data.photo).toBeUndefined();
     });
 
     it('preserves actual values when fields are present', async () => {
@@ -292,14 +292,14 @@ describe('person-from-vcard', () => {
       expect(calls.length).toBe(1); // Only the initial restore, not a second update
     });
 
-    it('sets photo to null when restored person has no photo', async () => {
+    it('preserves existing photo when restored vCard has no PHOTO field', async () => {
       const parsedData = makeMinimalParsedData();
       mocks.personUpdate.mockResolvedValue({ id: PERSON_ID });
 
       await restorePersonFromVCardData(USER_ID, PERSON_ID, parsedData);
 
       const data = mocks.personUpdate.mock.calls[0][0].data;
-      expect(data.photo).toBeNull();
+      expect(data.photo).toBeUndefined();
     });
   });
 
