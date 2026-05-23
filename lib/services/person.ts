@@ -413,9 +413,13 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
     include: personUpdateInclude(),
   });
 
-  // CardDAV sync — use stored value as default when input doesn't specify
+  // CardDAV sync — use stored value as default when input doesn't specify.
+  // Skip when sync was just toggled ON: the route handler handles that
+  // transition with an explicit autoExportPerson call. Running both would
+  // race and create duplicate vCards / hit the unique constraint on personId.
   const shouldSync = cardDavSyncEnabled ?? existingPerson.cardDavSyncEnabled;
-  if (shouldSync !== false) {
+  const justEnabled = cardDavSyncEnabled === true && !existingPerson.cardDavSyncEnabled;
+  if (shouldSync !== false && !justEnabled) {
     autoUpdatePerson(person.id).catch((error: unknown) => {
       log.error(
         {

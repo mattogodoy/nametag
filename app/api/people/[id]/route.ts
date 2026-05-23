@@ -152,7 +152,7 @@ export const PUT = withAuth(async (request, session, context) => {
         });
     } else if (cardDavSyncEnabled === true && existingPerson.cardDavSyncEnabled !== true) {
       // Re-sync: do a full export to server instead of the normal update
-      autoExportPerson(id).catch((error) => {
+      autoExportPerson(id, { force: true }).catch((error) => {
         log.error({ err: error instanceof Error ? error : new Error(String(error)), personId: id }, 'Auto-export after sync enable failed');
       });
     }

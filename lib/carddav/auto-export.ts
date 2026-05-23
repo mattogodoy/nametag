@@ -41,7 +41,10 @@ function formatExportFullName(person: {
 /**
  * Auto-export a person to CardDAV server
  */
-export async function autoExportPerson(personId: string): Promise<void> {
+export async function autoExportPerson(
+  personId: string,
+  options?: { force?: boolean },
+): Promise<void> {
   // Get person with all relations
   const person = await prisma.person.findUnique({
     where: { id: personId, deletedAt: null },
@@ -89,8 +92,11 @@ export async function autoExportPerson(personId: string): Promise<void> {
     where: { userId: person.userId },
   });
 
-  if (!connection || !connection.syncEnabled || !connection.autoExportNew) {
-    // Auto-export not enabled, skip
+  if (!connection || !connection.syncEnabled) {
+    return;
+  }
+
+  if (!connection.autoExportNew && !options?.force) {
     return;
   }
 
