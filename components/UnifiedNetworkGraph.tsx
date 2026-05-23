@@ -36,6 +36,7 @@ interface UnifiedNetworkGraphProps {
   chargeStrength?: number;
   refreshKey?: number;
   graphMode?: 'individuals' | 'bubbles' | null;
+  compact?: boolean;
 }
 
 export default function UnifiedNetworkGraph({
@@ -46,6 +47,7 @@ export default function UnifiedNetworkGraph({
   chargeStrength = -400,
   refreshKey,
   graphMode: graphModeProp = null,
+  compact = false,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
   const tPeople = useTranslations('people');
@@ -717,7 +719,11 @@ export default function UnifiedNetworkGraph({
       <div className="relative">
         <canvas
           ref={canvasRef}
-          className="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-surface rounded-lg border border-border"
+          className={`w-full bg-surface rounded-lg border border-border ${
+            compact
+              ? 'h-[400px] sm:h-[500px] lg:h-[600px] xl:h-[700px] 2xl:h-[800px]'
+              : 'h-[400px] sm:h-[500px] lg:h-[70vh] lg:min-h-[600px]'
+          }`}
         />
         <div className="absolute bottom-4 right-4 flex gap-2">
           {groups && (() => {
