@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.47.4](https://github.com/mattogodoy/nametag/compare/v0.47.3...v0.47.4) (2026-05-23)
+
+
+### Bug Fixes
+
+* **carddav:** prevent duplicate vCard creation when enabling sync ([8e36e90](https://github.com/mattogodoy/nametag/commit/8e36e90e56730308a31837830d3ee7ceb2502cab))
+* **carddav:** prevent duplicate vCard creation when enabling sync ([7f42048](https://github.com/mattogodoy/nametag/commit/7f4204807935bced54779ecbf72329c4e2dbe21f)), closes [#282](https://github.com/mattogodoy/nametag/issues/282)
+
 ## [0.47.3](https://github.com/mattogodoy/nametag/compare/v0.47.2...v0.47.3) (2026-05-18)
 
 
