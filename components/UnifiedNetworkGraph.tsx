@@ -36,6 +36,7 @@ interface UnifiedNetworkGraphProps {
   chargeStrength?: number;
   refreshKey?: number;
   graphMode?: 'individuals' | 'bubbles' | null;
+  compact?: boolean;
 }
 
 export default function UnifiedNetworkGraph({
@@ -46,6 +47,7 @@ export default function UnifiedNetworkGraph({
   chargeStrength = -400,
   refreshKey,
   graphMode: graphModeProp = null,
+  compact = false,
 }: UnifiedNetworkGraphProps) {
   const t = useTranslations('dashboard.graph');
   const tPeople = useTranslations('people');
@@ -63,6 +65,7 @@ export default function UnifiedNetworkGraph({
   const dirtyRef = useRef<boolean>(false);
   const rafRef = useRef<number | null>(null);
   const unpinTimeoutRef = useRef<number | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
 
   // Filter state
   const [selectedGroupFilters, setSelectedGroupFilters] = useState<GroupFilterItem[]>([]);
@@ -93,6 +96,47 @@ export default function UnifiedNetworkGraph({
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Recenter simulation when canvas resizes
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const observer = new ResizeObserver(() => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const sim = simRef.current;
+        if (!sim || isDraggingRef.current) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+
+        type CenterForce = ReturnType<typeof forceCenter<SimulationNode>>;
+        type XForce = ReturnType<typeof forceX<SimulationNode>>;
+        type YForce = ReturnType<typeof forceY<SimulationNode>>;
+
+        const center = sim.force('center') as CenterForce | undefined;
+        if (center) center.x(w / 2).y(h / 2);
+
+        const fx = sim.force('centerX') as XForce | undefined;
+        if (fx) fx.x(w / 2);
+
+        const fy = sim.force('centerY') as YForce | undefined;
+        if (fy) fy.y(h / 2);
+
+        sim.alpha(0.3).restart();
+      }, 150);
+    });
+
+    observer.observe(canvas);
+    return () => {
+      observer.disconnect();
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   }, []);
 
   // Re-center the graph view
@@ -587,6 +631,7 @@ export default function UnifiedNetworkGraph({
         if (!d) return;
         dragStartX = event.x;
         dragStartY = event.y;
+        isDraggingRef.current = true;
         if (!event.active && simRef.current) simRef.current.alphaTarget(0.1).restart();
         d.fx = d.x;
         d.fy = d.y;
@@ -601,6 +646,7 @@ export default function UnifiedNetworkGraph({
       .on('end', (event) => {
         const d = event.subject as SimulationNode | null;
         if (!d) return;
+        isDraggingRef.current = false;
         if (!event.active && simRef.current) simRef.current.alphaTarget(0);
         d.fx = null;
         d.fy = null;
@@ -717,7 +763,11 @@ export default function UnifiedNetworkGraph({
       <div className="relative">
         <canvas
           ref={canvasRef}
-          className="w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-surface rounded-lg border border-border"
+          className={`w-full bg-surface rounded-lg border border-border ${
+            compact
+              ? 'h-[400px] sm:h-[500px] lg:h-[600px] xl:h-[700px] 2xl:h-[800px]'
+              : 'h-[400px] sm:h-[500px] lg:h-[70vh] lg:min-h-[600px]'
+          }`}
         />
         <div className="absolute bottom-4 right-4 flex gap-2">
           {groups && (() => {

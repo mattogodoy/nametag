@@ -740,6 +740,7 @@ export default async function PersonDetailsPage({
                   apiEndpoint={`/api/people/${person.id}/graph`}
                   linkDistance={100}
                   chargeStrength={-300}
+                  compact
                   refreshKey={person.relationshipsTo.length + (person.relationshipToUserId ? 1000 : 0)}
                 />
                 <p className="text-xs text-muted mt-2">
