@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { addGroupMemberSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { autoUpdatePerson } from '@/lib/carddav/auto-export';
 
 // POST /api/groups/[id]/members - Add a member to a group
 export const POST = withAuth(async (request, session, context) => {
@@ -62,6 +63,10 @@ export const POST = withAuth(async (request, session, context) => {
         groupId: id,
       },
     });
+
+    if (person.cardDavSyncEnabled) {
+      autoUpdatePerson(personId).catch(() => {});
+    }
 
     return apiResponse.success();
   } catch (error) {
