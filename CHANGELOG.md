@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.48.0](https://github.com/mattogodoy/nametag/compare/v0.47.4...v0.48.0) (2026-05-31)
+
+
+### Features
+
+* add per-user API token authentication for the REST API ([c2aab92](https://github.com/mattogodoy/nametag/commit/c2aab92acfb7fdbcd6fb9af4c63ba02a48b5a3b7)), closes [#286](https://github.com/mattogodoy/nametag/issues/286)
+* **dashboard:** widen graph container to 1920px max ([16e2ee9](https://github.com/mattogodoy/nametag/commit/16e2ee9b6708cc2a591f127692162fa9df568009))
+* **graph:** add compact prop and responsive canvas height ([82cdd95](https://github.com/mattogodoy/nametag/commit/82cdd957b8f766314a70710bb31c1143d279996c)), closes [#274](https://github.com/mattogodoy/nametag/issues/274)
+* **graph:** add ResizeObserver to recenter simulation on resize ([a67d0cf](https://github.com/mattogodoy/nametag/commit/a67d0cf1b5c5fa04d18f8419b37ddb278f19366c))
+* per-user API token authentication for the REST API ([1b04eb4](https://github.com/mattogodoy/nametag/commit/1b04eb4250c777f8a900ba5ac724fe1b305a6728))
+* **person:** use compact graph sizing on detail page ([580759a](https://github.com/mattogodoy/nametag/commit/580759a59c84fcdc3d0723aba215fc97de31e9eb))
+
 ## [0.47.4](https://github.com/mattogodoy/nametag/compare/v0.47.3...v0.47.4) (2026-05-23)
 
 
