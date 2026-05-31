@@ -10,6 +10,7 @@ import { billingPaths } from './billing';
 import { carddavPaths } from './carddav';
 import { journalPaths } from './journal';
 import { customFieldsPaths } from './customFields';
+import { apiTokenPaths } from './apiTokens';
 import { jsonResponse, ref400, ref401, ref404, pathParam, jsonBody, resp } from './helpers';
 
 // OpenAPI 3.1.0 specification generator for the Nametag API.
@@ -57,6 +58,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       { name: 'Journal', description: 'Journal entries with optional people tags' },
       { name: 'Dashboard', description: 'Dashboard statistics, upcoming events, and network graph' },
       { name: 'User Settings', description: 'Profile, preferences, data export/import, and account management' },
+      { name: 'API Tokens', description: 'Create and revoke personal API tokens for programmatic access' },
       { name: 'Billing', description: 'Subscription management, checkout, and payment history (SaaS mode only)' },
       { name: 'Deleted Items', description: 'View and restore soft-deleted items' },
       { name: 'CardDAV', description: 'CardDAV server connection, bidirectional sync, import/export, and conflict resolution' },
@@ -78,6 +80,15 @@ export function generateOpenAPISpec(): OpenAPISpec {
           scheme: 'bearer',
           description: 'Bearer token matching the CRON_SECRET environment variable. Used by background cron jobs.',
         },
+        apiToken: {
+          type: 'http',
+          scheme: 'bearer',
+          description:
+            'Per-user personal API token sent as `Authorization: Bearer <token>`. ' +
+            'Created and revoked in Settings → API Tokens. All endpoints documented with ' +
+            'the `session` scheme also accept a valid `apiToken` (read-only tokens are ' +
+            'restricted to GET/HEAD). The token-management endpoints themselves require a session.',
+        },
       },
       schemas: sharedSchemas(),
     },
@@ -92,6 +103,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       ...carddavPaths(),
       ...journalPaths(),
       ...customFieldsPaths(),
+      ...apiTokenPaths(),
 
       // Photos (non-person-specific)
       '/api/photos/{personId}': {

@@ -49,6 +49,7 @@ model User {
   relationshipTypes     RelationshipType[]
   subscription          Subscription?
   unsubscribeTokens     UnsubscribeToken[]
+  apiTokens             ApiToken[]
   cardDavConnection     CardDavConnection?
   cardDavPendingImports CardDavPendingImport[]
   customFieldTemplates  CustomFieldTemplate[]
@@ -535,6 +536,33 @@ model UnsubscribeToken {
   @@index([entityId, reminderType])
   @@index([expiresAt])
   @@map("unsubscribe_tokens")
+}
+
+// Scope of an API token: read-only or full read/write access.
+enum ApiTokenScope {
+  READ
+  READ_WRITE
+}
+
+// ApiToken Model - Per-user, revocable personal access tokens for the REST API.
+// Sent as `Authorization: Bearer <token>`. Only the SHA-256 hash is stored.
+model ApiToken {
+  id         String        @id @default(cuid())
+  userId     String
+  name       String        // User-provided label (e.g. "MCP server", "backup script")
+  tokenHash  String        @unique // SHA-256 of the plaintext token; plaintext is never stored
+  prefix     String        // First chars of the token, shown in the UI for recognition
+  scope      ApiTokenScope @default(READ_WRITE)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?     // null = never expires
+  createdAt  DateTime      @default(now())
+
+  // Relations
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("api_tokens")
 }
 
 // ============================================

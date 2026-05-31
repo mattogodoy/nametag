@@ -520,6 +520,21 @@ export const createImportantDateSchema = z.object({
 export const updateImportantDateSchema = createImportantDateSchema;
 
 // ============================================
+// API token schemas
+// ============================================
+
+export const createApiTokenSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  scope: z.enum(['READ', 'READ_WRITE']).default('READ_WRITE'),
+  expiresAt: z
+    .string()
+    .datetime('Invalid expiry date')
+    .nullable()
+    .optional()
+    .describe('ISO 8601 expiry timestamp, or null for a token that never expires'),
+});
+
+// ============================================
 // Helper function for API validation
 // ============================================
 

@@ -5,6 +5,18 @@ import { auth } from './auth';
 import { logger, createModuleLogger } from './logger';
 import { validateOrigin } from '@/lib/csrf';
 import { runWithContext, updateContext } from '@/lib/logging/context';
+import { resolveApiToken } from '@/lib/api-tokens';
+
+/** HTTP methods that read but never mutate. Allowed for read-only API tokens. */
+const READ_ONLY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/** Extract a bearer token from the Authorization header, or null if absent. */
+function extractBearerToken(request: Request): string | null {
+  const header = request.headers.get('authorization');
+  if (!header) return null;
+  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+  return match ? match[1].trim() : null;
+}
 
 const httpLog = createModuleLogger('http');
 
@@ -328,11 +340,55 @@ export function withLogging<
  *   return NextResponse.json({ data });
  * });
  */
-export function withAuth(handler: AuthenticatedHandler) {
+/**
+ * Options for {@link withAuth}.
+ */
+export interface WithAuthOptions {
+  /**
+   * Whether `Authorization: Bearer <token>` API-token auth is accepted on this
+   * route. Defaults to true. Set to false for sensitive routes that must only
+   * be reachable from an interactive (cookie) session, e.g. API-token
+   * management itself, to prevent a token from minting or revoking tokens.
+   */
+  allowApiToken?: boolean;
+}
+
+export function withAuth(
+  handler: AuthenticatedHandler,
+  options: WithAuthOptions = {}
+) {
+  const allowApiToken = options.allowApiToken !== false;
+
   return withLogging(async (
     request: Request,
     context?: RouteContext
   ): Promise<Response | NextResponse> => {
+    // API-token (Bearer) auth path: for programmatic clients and MCP servers.
+    // Bearer tokens are not subject to CSRF, so the Origin check is skipped
+    // (a non-browser client has no Origin header to validate anyway).
+    const bearer = allowApiToken ? extractBearerToken(request) : null;
+    if (bearer) {
+      const resolved = await resolveApiToken(bearer);
+
+      if (!resolved) {
+        return apiResponse.unauthorized('Invalid or expired API token');
+      }
+
+      // Read-only tokens may only perform safe (non-mutating) requests.
+      if (resolved.scope === 'READ' && !READ_ONLY_METHODS.has(request.method)) {
+        return apiResponse.forbidden('This API token is read-only');
+      }
+
+      updateContext({ userId: resolved.userId });
+
+      const tokenSession = {
+        user: { id: resolved.userId },
+      } as AuthenticatedSession;
+
+      return handler(request, tokenSession, context as RouteContext);
+    }
+
+    // Session (cookie) auth path.
     if (!validateOrigin(request)) {
       return apiResponse.forbidden('Invalid request origin');
     }
