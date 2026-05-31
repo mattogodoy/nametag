@@ -78,4 +78,4 @@ export const POST = withAuth(async (request, session) => {
   } catch (error) {
     return handleApiError(error, 'billing-cancel');
   }
-});
+}, { allowApiToken: false });

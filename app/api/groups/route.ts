@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createGroupSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
+import { getRandomColor } from '@/lib/colors';
 import { canCreateResource } from '@/lib/billing';
 
 // GET /api/groups - List all groups for the current user
@@ -77,7 +78,7 @@ export const POST = withAuth(async (request, session) => {
         userId: session.user.id,
         name: sanitizedName,
         description: sanitizedDescription,
-        color: color || null,
+        color: color || getRandomColor(),
         // If peopleIds are provided, create PersonGroup associations
         ...(peopleIds && peopleIds.length > 0 && {
           people: {

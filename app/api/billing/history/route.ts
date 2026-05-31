@@ -41,4 +41,4 @@ export const GET = withAuth(async (_request, session) => {
   } catch (error) {
     return handleApiError(error, 'billing-history');
   }
-});
+}, { allowApiToken: false });

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateGroupSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { getRandomColor } from '@/lib/colors';
 
 // GET /api/groups/[id] - Get a single group
 export const GET = withAuth(async (_request, session, context) => {
@@ -85,7 +86,7 @@ export const PUT = withAuth(async (request, session, context) => {
       data: {
         name,
         description: description || null,
-        color: color || null,
+        color: color ?? existingGroup.color ?? getRandomColor(),
       },
     });
 

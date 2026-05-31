@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipTypeSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { getRandomColor } from '@/lib/colors';
 
 export const GET = withAuth(async (_request, session, context) => {
   const { id } = await context.params;
@@ -78,7 +79,7 @@ export const PUT = withAuth(async (request, session, context) => {
         data: {
           name: normalizedName,
           label,
-          color: color || null,
+          color: color ?? existing.color ?? getRandomColor(),
           inverseId: id, // Points to itself
         },
         include: {
@@ -124,7 +125,7 @@ export const PUT = withAuth(async (request, session, context) => {
           userId: session.user.id,
           name: inverseName,
           label: inverseLabel,
-          color: color || null,
+          color: color || getRandomColor(),
           inverseId: id, // Link back to the type being edited
         },
       });
@@ -137,7 +138,7 @@ export const PUT = withAuth(async (request, session, context) => {
       data: {
         name: normalizedName,
         label,
-        color: color || null,
+        color: color ?? existing.color ?? getRandomColor(),
         inverseId: finalInverseId,
       },
       include: {
@@ -155,7 +156,7 @@ export const PUT = withAuth(async (request, session, context) => {
     if (finalInverseId && finalInverseId !== id) {
       await prisma.relationshipType.update({
         where: { id: finalInverseId },
-        data: { color: color || null },
+        data: { color: color ?? existing.color ?? getRandomColor() },
       });
     }
 

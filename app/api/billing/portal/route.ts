@@ -25,4 +25,4 @@ export const POST = withAuth(async (_request, session) => {
     }
     return handleApiError(error, 'billing-portal');
   }
-});
+}, { allowApiToken: false });

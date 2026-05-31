@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createRelationshipTypeSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { getRandomColor } from '@/lib/colors';
 
 export const GET = withAuth(async (_request, session) => {
   // Get all relationship types for the user
@@ -58,7 +59,7 @@ export const POST = withAuth(async (request, session) => {
           userId: session.user.id,
           name: normalizedName,
           label,
-          color: color || null,
+          color: color || getRandomColor(),
         },
       });
 
@@ -107,7 +108,7 @@ export const POST = withAuth(async (request, session) => {
           userId: session.user.id,
           name: inverseName,
           label: inverseLabel,
-          color: color || null,
+          color: color || getRandomColor(),
           // Leave inverseId null for now, will update after creating the main type
         },
       });
@@ -121,7 +122,7 @@ export const POST = withAuth(async (request, session) => {
         userId: session.user.id,
         name: normalizedName,
         label,
-        color: color || null,
+        color: color || getRandomColor(),
         inverseId: finalInverseId,
       },
       include: {

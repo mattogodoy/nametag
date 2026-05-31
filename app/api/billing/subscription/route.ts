@@ -45,4 +45,4 @@ export const GET = withAuth(async (_request, session) => {
   } catch (error) {
     return handleApiError(error, 'billing-subscription-get');
   }
-});
+}, { allowApiToken: false });
