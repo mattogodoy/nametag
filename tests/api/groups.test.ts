@@ -227,7 +227,7 @@ describe('Groups API', () => {
       expect(mocks.groupCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            color: null,
+            color: expect.stringMatching(/^#[0-9a-f]{6}$/),
           }),
         })
       );
