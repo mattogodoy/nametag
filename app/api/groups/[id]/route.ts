@@ -2,6 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { updateGroupSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { getRandomColor } from '@/lib/colors';
+import { syncGroupMembersToCardDav } from '@/lib/carddav/group-sync';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('groups');
 
 // GET /api/groups/[id] - Get a single group
 export const GET = withAuth(async (_request, session, context) => {
@@ -79,6 +83,8 @@ export const PUT = withAuth(async (request, session, context) => {
       return apiResponse.error('A group with this name already exists');
     }
 
+    const nameChanged = name !== existingGroup.name;
+
     const group = await prisma.group.update({
       where: {
         id,
@@ -89,6 +95,13 @@ export const PUT = withAuth(async (request, session, context) => {
         color: color ?? existingGroup.color ?? getRandomColor(),
       },
     });
+
+    if (nameChanged) {
+      syncGroupMembersToCardDav(id, session.user.id).catch((error) => {
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), groupId: id },
+          'CardDAV sync after group rename failed');
+      });
+    }
 
     return apiResponse.ok({ group });
   } catch (error) {
@@ -141,6 +154,8 @@ export const DELETE = withAuth(async (request, session, context) => {
       });
     }
 
+    const memberPersonIds = (existingGroup.people || []).map((p) => p.personId);
+
     // Soft delete the group (set deletedAt instead of removing)
     await prisma.group.update({
       where: {
@@ -150,6 +165,13 @@ export const DELETE = withAuth(async (request, session, context) => {
         deletedAt: new Date(),
       },
     });
+
+    if (memberPersonIds.length > 0 && !deletePeople) {
+      syncGroupMembersToCardDav(id, session.user.id, memberPersonIds).catch((error) => {
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), groupId: id },
+          'CardDAV sync after group deletion failed');
+      });
+    }
 
     return apiResponse.message('Group deleted successfully');
   } catch (error) {

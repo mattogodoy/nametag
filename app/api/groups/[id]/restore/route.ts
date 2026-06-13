@@ -1,5 +1,9 @@
 import { withDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { syncGroupMembersToCardDav } from '@/lib/carddav/group-sync';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('groups');
 
 // POST /api/groups/[id]/restore - Restore a soft-deleted group
 export const POST = withAuth(async (_request, session, context) => {
@@ -28,6 +32,11 @@ export const POST = withAuth(async (_request, session, context) => {
     const restored = await prismaWithDeleted.group.update({
       where: { id },
       data: { deletedAt: null },
+    });
+
+    syncGroupMembersToCardDav(id, session.user.id).catch((error) => {
+      log.error({ err: error instanceof Error ? error : new Error(String(error)), groupId: id },
+        'CardDAV sync after group restore failed');
     });
 
     return apiResponse.ok({ group: restored });

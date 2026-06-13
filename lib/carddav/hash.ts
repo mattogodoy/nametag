@@ -87,6 +87,7 @@ export function buildLocalHash(person: {
   customFields?: unknown[];
   customFieldValues?: Array<{ template: { slug: string; type: string }; value: string }>;
   importantDates?: unknown[];
+  groups?: Array<{ group: { id: string; name: string } }>;
 }): string {
   const data = {
     name: person.name,
@@ -114,6 +115,9 @@ export function buildLocalHash(person: {
       .map((v) => ({ slug: v.template.slug, type: v.template.type, value: v.value }))
       .sort((a, b) => a.slug.localeCompare(b.slug)),
     importantDates: sortArray((person.importantDates || []).map(normalizeValue)),
+    groupNames: (person.groups || [])
+      .map((pg) => pg.group.name)
+      .sort(),
   };
 
   return crypto.createHash('sha256')

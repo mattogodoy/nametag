@@ -1,5 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { autoUpdatePerson } from '@/lib/carddav/auto-export';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('groups');
 
 // DELETE /api/groups/[id]/members/[personId] - Remove a member from a group
 export const DELETE = withAuth(async (_request, session, context) => {
@@ -29,6 +33,18 @@ export const DELETE = withAuth(async (_request, session, context) => {
 
     if (deleted.count === 0) {
       return apiResponse.notFound('Person is not a member of this group');
+    }
+
+    const person = await prisma.person.findUnique({
+      where: { id: personId, userId: session.user.id, deletedAt: null },
+      select: { cardDavSyncEnabled: true },
+    });
+
+    if (person?.cardDavSyncEnabled) {
+      autoUpdatePerson(personId).catch((error) => {
+        log.error({ err: error instanceof Error ? error : new Error(String(error)), personId },
+          'CardDAV auto-update after group member removal failed');
+      });
     }
 
     return apiResponse.success();

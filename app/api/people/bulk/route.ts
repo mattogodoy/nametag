@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { validateRequest, bulkActionSchema } from '@/lib/validations';
 import { deleteFromCardDav as deleteContactFromCardDav } from '@/lib/carddav/delete-contact';
+import { batchSyncPersonsToCardDav } from '@/lib/carddav/group-sync';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('people-bulk');
@@ -129,6 +130,12 @@ export const POST = withAuth(async (request, session) => {
           await prisma.personGroup.createMany({
             data: newMemberships,
             skipDuplicates: true,
+          });
+
+          const affectedPersonIds = [...new Set(newMemberships.map((m) => m.personId))];
+          batchSyncPersonsToCardDav(session.user.id, affectedPersonIds).catch((error) => {
+            log.error({ err: error instanceof Error ? error : new Error(String(error)) },
+              'CardDAV sync after bulk group assignment failed');
           });
         }
 
