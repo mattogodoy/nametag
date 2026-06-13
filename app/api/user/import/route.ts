@@ -5,7 +5,7 @@ import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { isSaasMode } from '@/lib/features';
 import { formatFullName } from '@/lib/nameUtils';
 import { validateRawValue } from '@/lib/customFields/values';
-import type { CustomFieldType } from '@prisma/client';
+import type { CustomFieldType, ReminderIntervalUnit } from '@prisma/client';
 
 import { z } from 'zod';
 
@@ -322,9 +322,21 @@ export const POST = withAuth(async (request, session) => {
             userId: session.user.id,
             name: person.name,
             surname: person.surname,
+            middleName: person.middleName,
+            secondLastName: person.secondLastName,
             nickname: person.nickname,
+            prefix: person.prefix,
+            suffix: person.suffix,
+            organization: person.organization,
+            jobTitle: person.jobTitle,
+            photo: person.photo,
+            gender: person.gender,
+            anniversary: person.anniversary ? new Date(person.anniversary) : null,
             lastContact: person.lastContact ? new Date(person.lastContact) : null,
             notes: person.notes,
+            contactReminderEnabled: person.contactReminderEnabled ?? false,
+            contactReminderInterval: person.contactReminderInterval,
+            contactReminderIntervalUnit: (person.contactReminderIntervalUnit as ReminderIntervalUnit) ?? undefined,
             relationshipToUserId,
           },
         });
@@ -359,6 +371,97 @@ export const POST = withAuth(async (request, session) => {
               });
             }
           }
+        }
+      }
+
+      // Import multi-value contact fields (only for newly created people)
+      if (!existingPerson) {
+        if (person.phoneNumbers?.length) {
+          await prisma.personPhone.createMany({
+            data: person.phoneNumbers.map((p) => ({
+              personId,
+              type: p.type,
+              number: p.number,
+            })),
+          });
+        }
+
+        if (person.emails?.length) {
+          await prisma.personEmail.createMany({
+            data: person.emails.map((e) => ({
+              personId,
+              type: e.type,
+              email: e.email,
+            })),
+          });
+        }
+
+        if (person.addresses?.length) {
+          await prisma.personAddress.createMany({
+            data: person.addresses.map((a) => ({
+              personId,
+              type: a.type,
+              streetLine1: a.streetLine1,
+              streetLine2: a.streetLine2,
+              locality: a.locality,
+              region: a.region,
+              postalCode: a.postalCode,
+              country: a.country,
+            })),
+          });
+        }
+
+        if (person.urls?.length) {
+          await prisma.personUrl.createMany({
+            data: person.urls.map((u) => ({
+              personId,
+              type: u.type,
+              url: u.url,
+            })),
+          });
+        }
+
+        if (person.imHandles?.length) {
+          await prisma.personIM.createMany({
+            data: person.imHandles.map((im) => ({
+              personId,
+              protocol: im.protocol,
+              handle: im.handle,
+            })),
+          });
+        }
+
+        if (person.locations?.length) {
+          await prisma.personLocation.createMany({
+            data: person.locations.map((l) => ({
+              personId,
+              type: l.type,
+              latitude: l.latitude,
+              longitude: l.longitude,
+              label: l.label,
+            })),
+          });
+        }
+
+        if (person.importantDates?.length) {
+          await prisma.importantDate.createMany({
+            data: person.importantDates.map((d) => ({
+              personId,
+              title: d.title,
+              date: new Date(d.date),
+            })),
+          });
+        }
+
+        if (person.customFields?.length) {
+          await prisma.personCustomField.createMany({
+            data: person.customFields.map((cf) => ({
+              personId,
+              key: cf.key,
+              value: cf.value,
+              type: cf.type,
+            })),
+          });
         }
       }
     }
