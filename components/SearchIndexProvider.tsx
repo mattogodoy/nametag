@@ -14,29 +14,32 @@ interface SearchIndexContextType {
 
 const SearchIndexContext = createContext<SearchIndexContextType | undefined>(undefined);
 
+async function fetchAndBuildIndex(
+  indexRef: React.RefObject<MiniSearch<SearchDocument> | null>,
+  setIsReady: (ready: boolean) => void,
+) {
+  try {
+    const response = await fetch('/api/people/search-index');
+    if (!response.ok) return;
+    const data = await response.json();
+
+    indexRef.current = createSearchIndex(data.people);
+    setIsReady(true);
+  } catch {
+    // Silently fail; search falls back to server-side
+  }
+}
+
 export function SearchIndexProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [isReady, setIsReady] = useState(false);
   const indexRef = useRef<MiniSearch<SearchDocument> | null>(null);
 
-  const buildIndex = useCallback(async () => {
-    try {
-      const response = await fetch('/api/people/search-index');
-      if (!response.ok) return;
-      const data = await response.json();
-
-      indexRef.current = createSearchIndex(data.people);
-      setIsReady(true);
-    } catch {
-      // Silently fail; search falls back to server-side
-    }
-  }, []);
-
   useEffect(() => {
     if (session?.user) {
-      buildIndex();
+      fetchAndBuildIndex(indexRef, setIsReady);
     }
-  }, [session, buildIndex]);
+  }, [session]);
 
   const search = useCallback((query: string): PersonSearchResult[] => {
     if (!indexRef.current) return [];
@@ -44,8 +47,8 @@ export function SearchIndexProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const refreshIndex = useCallback(() => {
-    buildIndex();
-  }, [buildIndex]);
+    fetchAndBuildIndex(indexRef, setIsReady);
+  }, []);
 
   return (
     <SearchIndexContext.Provider value={{ search, isReady, refreshIndex }}>
