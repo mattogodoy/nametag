@@ -72,7 +72,7 @@ describe('GET /api/people/search-index', () => {
     ]);
 
     const request = new NextRequest('http://localhost:3000/api/people/search-index');
-    const response = await GET(request, {});
+    const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -101,7 +101,7 @@ describe('GET /api/people/search-index', () => {
     mocks.personFindMany.mockResolvedValue([]);
 
     const request = new NextRequest('http://localhost:3000/api/people/search-index');
-    const response = await GET(request, {});
+    const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -112,7 +112,7 @@ describe('GET /api/people/search-index', () => {
     mocks.personFindMany.mockResolvedValue([]);
 
     const request = new NextRequest('http://localhost:3000/api/people/search-index');
-    await GET(request, {});
+    await GET(request);
 
     expect(mocks.personFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -146,7 +146,7 @@ describe('GET /api/people/search-index', () => {
     ]);
 
     const request = new NextRequest('http://localhost:3000/api/people/search-index');
-    const response = await GET(request, {});
+    const response = await GET(request);
     const data = await response.json();
 
     const person = data.people[0];
