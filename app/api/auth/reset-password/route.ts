@@ -7,6 +7,7 @@ import { handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { hashToken } from '@/lib/token-hash';
 import { validateOrigin } from '@/lib/csrf';
+import { isFeatureEnabled } from '@/lib/features';
 
 export const POST = withLogging(async function POST(request: Request) {
   if (!validateOrigin(request)) {
@@ -20,6 +21,13 @@ export const POST = withLogging(async function POST(request: Request) {
   }
 
   try {
+    if (!isFeatureEnabled('passwordLogin')) {
+      return NextResponse.json(
+        { error: 'Password login is disabled on this instance.' },
+        { status: 403 }
+      );
+    }
+
     const body = await parseRequestBody(request);
     const validation = validateRequest(resetPasswordSchema, body);
 

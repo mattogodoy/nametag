@@ -320,8 +320,10 @@ describe('Auth API', () => {
 
     describe('Self-Hosted Mode (email verification disabled)', () => {
       beforeEach(() => {
-        // Disable email verification for self-hosted mode
-        mocks.isFeatureEnabled.mockReturnValue(false);
+        mocks.isFeatureEnabled.mockImplementation((feature: string) => {
+          if (feature === 'passwordLogin') return true;
+          return false;
+        });
       });
 
       it('should auto-verify users in self-hosted mode', async () => {

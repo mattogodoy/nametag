@@ -140,6 +140,19 @@ async function handleOAuthSignIn(
   const { createPreloadedRelationshipTypes } = await import('@/lib/relationship-types');
   const { normalizeEmail } = await import('@/lib/api-utils');
 
+  const profileData = profile as Record<string, unknown>;
+  const emailVerified = profileData.email_verified === true;
+
+  // For generic OIDC providers, reject unverified emails to prevent account takeover.
+  // Google always verifies emails, so we trust them unconditionally.
+  if (account.provider === 'oidc' && !emailVerified) {
+    log.warn(
+      { event: 'auth.login.failed', reason: 'email_not_verified', provider: account.provider },
+      'OIDC login rejected: provider did not verify email',
+    );
+    throw new Error('OIDC_EMAIL_NOT_VERIFIED');
+  }
+
   const email = normalizeEmail(user.email!);
 
   const existingUser = await prisma.user.findUnique({
@@ -148,6 +161,7 @@ async function handleOAuthSignIn(
 
   if (existingUser) {
     if (!existingUser.provider || !existingUser.providerAccountId) {
+      // No OAuth linked yet; link this provider
       await prisma.user.update({
         where: { id: existingUser.id },
         data: {
@@ -156,19 +170,25 @@ async function handleOAuthSignIn(
           emailVerified: true,
         },
       });
+    } else if (existingUser.provider !== account.provider
+      || existingUser.providerAccountId !== account.providerAccountId) {
+      // Already linked to a different provider/account; reject to prevent takeover
+      log.warn(
+        { event: 'auth.login.failed', reason: 'provider_mismatch', email, existingProvider: existingUser.provider },
+        'OAuth login rejected: account already linked to a different provider',
+      );
+      throw new Error('ACCOUNT_LINKED_TO_DIFFERENT_PROVIDER');
     }
     user.id = existingUser.id;
   } else {
-    const givenName = (profile as Record<string, unknown>).given_name as string | undefined;
-    const familyName = (profile as Record<string, unknown>).family_name as string | undefined;
-    const picture = (profile as Record<string, unknown>).picture as string | undefined;
+    const givenName = profileData.given_name as string | undefined;
+    const familyName = profileData.family_name as string | undefined;
 
     const newUser = await prisma.user.create({
       data: {
         email,
         name: givenName || user.name || 'User',
         surname: familyName || null,
-        photo: picture || null,
         provider: account.provider,
         providerAccountId: account.providerAccountId,
         emailVerified: true,
@@ -223,6 +243,22 @@ const providers = [
           clientId: env.OIDC_CLIENT_ID,
           clientSecret: env.OIDC_CLIENT_SECRET,
           authorization: { params: { scope: 'openid email profile' } },
+          // Fetch claims from /userinfo instead of relying solely on the ID token.
+          // Many providers (Authentik, Keycloak) put email/name only in userinfo.
+          profile(profile: Record<string, unknown>) {
+            if (!profile.email || typeof profile.email !== 'string') {
+              throw new Error('OIDC provider did not return an email address');
+            }
+            return {
+              id: profile.sub as string,
+              email: profile.email,
+              name: (profile.given_name as string | undefined) || (profile.name as string | undefined) || null,
+              surname: (profile.family_name as string | undefined) || null,
+              nickname: null,
+              photo: null,
+              image: null,
+            };
+          },
         },
       ]
     : []),
