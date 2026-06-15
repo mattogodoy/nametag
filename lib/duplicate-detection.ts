@@ -227,22 +227,6 @@ export function compositeSimilarity(a: PersonForComparison, b: PersonForComparis
   return { score, autoFlagged: hasStrongIdMatch };
 }
 
-function personSimilarity(
-  nameA: string,
-  surnameA: string | null,
-  nameB: string,
-  surnameB: string | null
-): number {
-  if (surnameA && surnameB) {
-    const nameSim = stringSimilarity(normalizePart(nameA), normalizePart(nameB));
-    const surSim = stringSimilarity(normalizePart(surnameA), normalizePart(surnameB));
-    return nameSim * FIRST_NAME_WEIGHT + surSim * SURNAME_WEIGHT_INNER;
-  }
-  const fullA = normalizePart([nameA, surnameA].filter(Boolean).join(' '));
-  const fullB = normalizePart([nameB, surnameB].filter(Boolean).join(' '));
-  return stringSimilarity(fullA, fullB);
-}
-
 // ---------------------------------------------------------------------------
 // Union-Find (disjoint-set) data structure
 // ---------------------------------------------------------------------------
@@ -308,42 +292,34 @@ class UnionFind {
 /**
  * Find duplicate candidates for a given person.
  *
- * @param targetName    - First name of the person to check
- * @param targetSurname - Surname of the person (may be null)
- * @param people        - Full list of people to compare against
- * @param targetId      - Optional ID of the target person to exclude from results
+ * @param target   - The person to check for duplicates
+ * @param people   - Full list of people to compare against
+ * @param targetId - Optional ID of the target person to exclude from results
  * @returns Candidates whose similarity exceeds the threshold, sorted descending.
  */
 export function findDuplicates(
-  targetName: string,
-  targetSurname: string | null,
+  target: PersonForComparison,
   people: PersonForComparison[],
   targetId?: string
 ): DuplicateCandidate[] {
   const candidates: DuplicateCandidate[] = [];
 
-  for (const person of people) {
-    // Skip the target person itself
-    if (targetId && person.id === targetId) continue;
+  for (const p of people) {
+    if (targetId && p.id === targetId) continue;
 
-    const similarity = personSimilarity(
-      targetName, targetSurname,
-      person.name, person.surname
-    );
+    const { score, autoFlagged } = compositeSimilarity(target, p);
 
-    if (similarity >= SIMILARITY_THRESHOLD) {
+    if (score >= SIMILARITY_THRESHOLD || autoFlagged) {
       candidates.push({
-        personId: person.id,
-        name: person.name,
-        surname: person.surname,
-        similarity,
+        personId: p.id,
+        name: p.name,
+        surname: p.surname,
+        similarity: score,
       });
     }
   }
 
-  // Sort by similarity descending
   candidates.sort((a, b) => b.similarity - a.similarity);
-
   return candidates;
 }
 
@@ -357,9 +333,9 @@ export function buildDismissalKey(idA: string, idB: string): string {
 /**
  * Find all groups of potential duplicates across a list of people.
  *
- * Uses union-find to cluster people whose names exceed the similarity
- * threshold. Returns only groups of 2 or more, sorted by highest
- * pairwise similarity within each group (descending).
+ * Uses union-find to cluster people whose composite similarity exceeds the
+ * threshold. Returns only groups of 2 or more, sorted by highest pairwise
+ * similarity within each group (descending).
  *
  * @param dismissedPairs - Optional set of "smallerId:largerId" keys to skip.
  */
@@ -369,51 +345,43 @@ export function findAllDuplicateGroups(
 ): DuplicateGroup[] {
   const uf = new UnionFind();
 
-  for (const person of people) {
-    uf.makeSet(person.id);
+  for (const p of people) {
+    uf.makeSet(p.id);
   }
 
-  // Compare every pair using weighted name/surname similarity
   for (let i = 0; i < people.length; i++) {
     for (let j = i + 1; j < people.length; j++) {
       const a = people[i];
       const b = people[j];
 
-      // Skip dismissed pairs
       if (dismissedPairs?.has(buildDismissalKey(a.id, b.id))) continue;
 
-      const similarity = personSimilarity(a.name, a.surname, b.name, b.surname);
+      const { score, autoFlagged } = compositeSimilarity(a, b);
 
-      if (similarity >= SIMILARITY_THRESHOLD) {
+      if (score >= SIMILARITY_THRESHOLD || autoFlagged) {
         uf.union(a.id, b.id);
       }
     }
   }
 
-  // Collect groups by root
   const groups = new Map<string, PersonForComparison[]>();
-  for (const person of people) {
-    const root = uf.find(person.id);
+  for (const p of people) {
+    const root = uf.find(p.id);
     if (!groups.has(root)) {
       groups.set(root, []);
     }
-    groups.get(root)!.push(person);
+    groups.get(root)!.push(p);
   }
 
-  // Build result: only groups with 2+ members
   const result: DuplicateGroup[] = [];
   for (const [, members] of groups) {
     if (members.length < 2) continue;
 
-    // Derive max pairwise similarity within this group
     let maxSim = SIMILARITY_THRESHOLD;
     for (let i = 0; i < members.length; i++) {
       for (let j = i + 1; j < members.length; j++) {
-        const sim = personSimilarity(
-          members[i].name, members[i].surname,
-          members[j].name, members[j].surname
-        );
-        if (sim > maxSim) maxSim = sim;
+        const { score } = compositeSimilarity(members[i], members[j]);
+        if (score > maxSim) maxSim = score;
       }
     }
 
@@ -427,8 +395,6 @@ export function findAllDuplicateGroups(
     });
   }
 
-  // Sort groups by similarity descending
   result.sort((a, b) => b.similarity - a.similarity);
-
   return result;
 }
