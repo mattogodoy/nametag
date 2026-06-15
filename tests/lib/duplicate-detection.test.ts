@@ -58,13 +58,13 @@ describe('findDuplicates (multi-signal)', () => {
     expect(results[0].similarity).toBeGreaterThanOrEqual(0.85);
   });
 
-  it('does not flag accented name variants when name-only (sparsity cap)', () => {
+  it('flags accented name variants when name-only (near-exact bypass)', () => {
     const people: PersonForComparison[] = [
       person({ id: '1', name: 'María', surname: 'García' }),
       person({ id: '2', name: 'Maria', surname: 'Garcia' }),
     ];
     const results = findDuplicates(people[0], people, people[0].id);
-    expect(results).toHaveLength(0);
+    expect(results).toHaveLength(1);
   });
 
   it('detects accented name variants when email also matches', () => {
@@ -119,9 +119,16 @@ describe('compositeSimilarity', () => {
     expect(result.autoFlagged).toBe(false);
   });
 
-  it('scores accented name variants high when name-only', () => {
+  it('bypasses sparsity cap for near-exact name-only matches', () => {
     const a = person({ id: '1', name: 'Maria', surname: 'Garcia' });
     const b = person({ id: '2', name: 'María', surname: 'García' });
+    const result = compositeSimilarity(a, b);
+    expect(result.score).toBe(1.0);
+  });
+
+  it('still caps weak name-only matches at sparsity cap', () => {
+    const a = person({ id: '1', name: 'John', surname: 'Smith' });
+    const b = person({ id: '2', name: 'Jon', surname: 'Smyth' });
     const result = compositeSimilarity(a, b);
     expect(result.score).toBeLessThanOrEqual(0.6);
   });
@@ -142,12 +149,21 @@ describe('compositeSimilarity', () => {
     expect(result.autoFlagged).toBe(true);
   });
 
-  it('auto-flags on phone match even with different names', () => {
+  it('does not auto-flag on phone match alone', () => {
     const a = person({ id: '1', name: 'Jane', surname: 'Doe', phones: ['5551234567'] });
     const b = person({ id: '2', name: 'Janet', surname: 'Do', phones: ['5551234567'] });
     const result = compositeSimilarity(a, b);
-    expect(result.score).toBeGreaterThanOrEqual(0.85);
-    expect(result.autoFlagged).toBe(true);
+    expect(result.autoFlagged).toBe(false);
+  });
+
+  it('uses phone as a composite signal to boost score', () => {
+    const withPhone = person({ id: '1', name: 'Jane', surname: 'Doe', phones: ['5551234567'] });
+    const withPhone2 = person({ id: '2', name: 'Jane', surname: 'Doe', phones: ['5551234567'] });
+    const noPhone = person({ id: '3', name: 'Jane', surname: 'Doe' });
+    const noPhone2 = person({ id: '4', name: 'Jane', surname: 'Doe' });
+    const withPhoneResult = compositeSimilarity(withPhone, withPhone2);
+    const noPhoneResult = compositeSimilarity(noPhone, noPhone2);
+    expect(withPhoneResult.score).toBeGreaterThanOrEqual(noPhoneResult.score);
   });
 
   it('scores birthday exact match', () => {
@@ -159,10 +175,10 @@ describe('compositeSimilarity', () => {
   });
 
   it('scores birthday same month+day different year as 0.5', () => {
-    const a = person({ id: '1', name: 'John', surname: 'Smith', birthdays: [new Date('1990-05-15')] });
-    const b = person({ id: '2', name: 'John', surname: 'Smith', birthdays: [new Date('1985-05-15')] });
+    const a = person({ id: '1', name: 'Roberto', surname: 'Sanchez', birthdays: [new Date('1990-05-15')] });
+    const b = person({ id: '2', name: 'Robert', surname: 'Sanchez', birthdays: [new Date('1985-05-15')] });
     const resultSameDay = compositeSimilarity(a, b);
-    const c = person({ id: '3', name: 'John', surname: 'Smith', birthdays: [new Date('1990-08-20')] });
+    const c = person({ id: '3', name: 'Robert', surname: 'Sanchez', birthdays: [new Date('1990-08-20')] });
     const resultDiffDay = compositeSimilarity(a, c);
     expect(resultSameDay.score).toBeGreaterThan(resultDiffDay.score);
   });

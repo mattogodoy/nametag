@@ -51,6 +51,7 @@ const SIGNAL_WEIGHTS = {
 const SPARSITY_CAP = 0.6;
 const MIN_SIGNALS_FOR_FULL_SCORE = 2;
 const AUTO_FLAG_MIN_SCORE = 0.85;
+const NAME_ONLY_BYPASS_THRESHOLD = 0.95;
 
 // ---------------------------------------------------------------------------
 // Core algorithms
@@ -193,7 +194,7 @@ export function compositeSimilarity(a: PersonForComparison, b: PersonForComparis
   const phone = phoneSignal(a, b);
   const birthday = birthdaySignal(a, b);
 
-  const hasStrongIdMatch = email.exactMatch || phone.exactMatch;
+  const hasStrongIdMatch = email.exactMatch;
 
   const signals: Array<{ weight: number; score: number }> = [
     { weight: SIGNAL_WEIGHTS.name, score: nameScore },
@@ -216,7 +217,7 @@ export function compositeSimilarity(a: PersonForComparison, b: PersonForComparis
   const totalWeight = signals.reduce((sum, s) => sum + s.weight, 0);
   let score = signals.reduce((sum, s) => sum + (s.weight / totalWeight) * s.score, 0);
 
-  if (comparableCount < MIN_SIGNALS_FOR_FULL_SCORE) {
+  if (comparableCount < MIN_SIGNALS_FOR_FULL_SCORE && nameScore < NAME_ONLY_BYPASS_THRESHOLD) {
     score = Math.min(score, SPARSITY_CAP);
   }
 
