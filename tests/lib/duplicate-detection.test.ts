@@ -28,42 +28,6 @@ describe('normalizePhone', () => {
   });
 });
 
-describe('duplicate-detection with accents', () => {
-  const makePerson = (id: string, name: string, surname: string | null) => ({
-    id,
-    name,
-    surname,
-    emails: [] as string[],
-    phones: [] as string[],
-    birthdays: [] as Date[],
-  });
-
-  it('should detect accented and unaccented names as duplicates', () => {
-    const people = [
-      makePerson('1', 'María', 'García'),
-      makePerson('2', 'Maria', 'Garcia'),
-    ];
-
-    const duplicates = findDuplicates('María', 'García', people, '1');
-    expect(duplicates).toHaveLength(1);
-    expect(duplicates[0].personId).toBe('2');
-    expect(duplicates[0].similarity).toBe(1);
-  });
-
-  it('should group accented variants together', () => {
-    const people = [
-      makePerson('1', 'María', 'García'),
-      makePerson('2', 'Maria', 'Garcia'),
-      makePerson('3', 'John', 'Smith'),
-    ];
-
-    const groups = findAllDuplicateGroups(people);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].people).toHaveLength(2);
-    expect(groups[0].similarity).toBe(1);
-  });
-});
-
 function person(overrides: Partial<PersonForComparison> & { id: string; name: string }): PersonForComparison {
   return {
     surname: null,
@@ -73,6 +37,78 @@ function person(overrides: Partial<PersonForComparison> & { id: string; name: st
     ...overrides,
   };
 }
+
+describe('findDuplicates (multi-signal)', () => {
+  it('does not flag "John Abc" vs "John Def" as duplicates (issue #306)', () => {
+    const people: PersonForComparison[] = [
+      person({ id: '1', name: 'John', surname: 'Abc' }),
+      person({ id: '2', name: 'John', surname: 'Def' }),
+    ];
+    const results = findDuplicates(people[0], people, people[0].id);
+    expect(results).toHaveLength(0);
+  });
+
+  it('flags exact email match as duplicate regardless of name', () => {
+    const people: PersonForComparison[] = [
+      person({ id: '1', name: 'Alice', surname: 'Wonderland', emails: ['alice@test.com'] }),
+      person({ id: '2', name: 'Alicia', surname: 'Wonder', emails: ['alice@test.com'] }),
+    ];
+    const results = findDuplicates(people[0], people, people[0].id);
+    expect(results).toHaveLength(1);
+    expect(results[0].similarity).toBeGreaterThanOrEqual(0.85);
+  });
+
+  it('does not flag accented name variants when name-only (sparsity cap)', () => {
+    const people: PersonForComparison[] = [
+      person({ id: '1', name: 'María', surname: 'García' }),
+      person({ id: '2', name: 'Maria', surname: 'Garcia' }),
+    ];
+    const results = findDuplicates(people[0], people, people[0].id);
+    expect(results).toHaveLength(0);
+  });
+
+  it('detects accented name variants when email also matches', () => {
+    const people: PersonForComparison[] = [
+      person({ id: '1', name: 'María', surname: 'García', emails: ['maria@test.com'] }),
+      person({ id: '2', name: 'Maria', surname: 'Garcia', emails: ['maria@test.com'] }),
+    ];
+    const results = findDuplicates(people[0], people, people[0].id);
+    expect(results).toHaveLength(1);
+  });
+});
+
+describe('findAllDuplicateGroups (multi-signal)', () => {
+  it('does not group people with same first name but different surnames when name-only', () => {
+    const people: PersonForComparison[] = [
+      person({ id: '1', name: 'John', surname: 'Abc' }),
+      person({ id: '2', name: 'John', surname: 'Def' }),
+      person({ id: '3', name: 'Jane', surname: 'Smith' }),
+    ];
+    const groups = findAllDuplicateGroups(people);
+    expect(groups).toHaveLength(0);
+  });
+
+  it('groups people sharing an email', () => {
+    const people: PersonForComparison[] = [
+      person({ id: '1', name: 'Bob', surname: 'A', emails: ['bob@test.com'] }),
+      person({ id: '2', name: 'Robert', surname: 'B', emails: ['bob@test.com'] }),
+      person({ id: '3', name: 'Charlie', surname: 'C' }),
+    ];
+    const groups = findAllDuplicateGroups(people);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].people).toHaveLength(2);
+  });
+
+  it('respects dismissed pairs', () => {
+    const people: PersonForComparison[] = [
+      person({ id: '1', name: 'Bob', surname: 'A', emails: ['bob@test.com'] }),
+      person({ id: '2', name: 'Robert', surname: 'B', emails: ['bob@test.com'] }),
+    ];
+    const dismissed = new Set(['1:2']);
+    const groups = findAllDuplicateGroups(people, dismissed);
+    expect(groups).toHaveLength(0);
+  });
+});
 
 describe('compositeSimilarity', () => {
   it('caps name-only matches at sparsity cap (issue #306)', () => {
