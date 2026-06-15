@@ -131,15 +131,102 @@ export function normalizePhone(phone: string): string {
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 
-/**
- * Compute similarity between two people, taking name parts into account.
- *
- * When both have surnames, scores name and surname separately with a
- * weighted average (60% name, 40% surname) so a shared surname alone
- * doesn't inflate the match.
- *
- * Falls back to full-string comparison when either person lacks a surname.
- */
+interface SimilarityResult {
+  score: number;
+  autoFlagged: boolean;
+}
+
+function nameSimilarity(a: PersonForComparison, b: PersonForComparison): number {
+  if (a.surname && b.surname) {
+    const nameSim = stringSimilarity(normalizePart(a.name), normalizePart(b.name));
+    const surSim = stringSimilarity(normalizePart(a.surname), normalizePart(b.surname));
+    return nameSim * FIRST_NAME_WEIGHT + surSim * SURNAME_WEIGHT_INNER;
+  }
+  const fullA = normalizePart([a.name, a.surname].filter(Boolean).join(' '));
+  const fullB = normalizePart([b.name, b.surname].filter(Boolean).join(' '));
+  return stringSimilarity(fullA, fullB);
+}
+
+function emailSignal(a: PersonForComparison, b: PersonForComparison): { comparable: boolean; score: number; exactMatch: boolean } {
+  if (a.emails.length === 0 || b.emails.length === 0) {
+    return { comparable: false, score: 0, exactMatch: false };
+  }
+  const setB = new Set(b.emails);
+  const exactMatch = a.emails.some((e) => setB.has(e));
+  return { comparable: true, score: exactMatch ? 1.0 : 0.0, exactMatch };
+}
+
+function phoneSignal(a: PersonForComparison, b: PersonForComparison): { comparable: boolean; score: number; exactMatch: boolean } {
+  if (a.phones.length === 0 || b.phones.length === 0) {
+    return { comparable: false, score: 0, exactMatch: false };
+  }
+  const setB = new Set(b.phones);
+  const exactMatch = a.phones.some((p) => setB.has(p));
+  return { comparable: true, score: exactMatch ? 1.0 : 0.0, exactMatch };
+}
+
+function birthdaySignal(a: PersonForComparison, b: PersonForComparison): { comparable: boolean; score: number } {
+  if (a.birthdays.length === 0 || b.birthdays.length === 0) {
+    return { comparable: false, score: 0 };
+  }
+  let best = 0;
+  for (const da of a.birthdays) {
+    for (const db of b.birthdays) {
+      if (da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()) {
+        best = 1.0;
+        break;
+      }
+      if (da.getMonth() === db.getMonth() && da.getDate() === db.getDate()) {
+        best = Math.max(best, 0.5);
+      }
+    }
+    if (best === 1.0) break;
+  }
+  // Only treat birthday as comparable when there is at least a partial match
+  // (same month and day). Completely different dates provide no useful signal.
+  return { comparable: best > 0, score: best };
+}
+
+export function compositeSimilarity(a: PersonForComparison, b: PersonForComparison): SimilarityResult {
+  const nameScore = nameSimilarity(a, b);
+  const email = emailSignal(a, b);
+  const phone = phoneSignal(a, b);
+  const birthday = birthdaySignal(a, b);
+
+  const hasStrongIdMatch = email.exactMatch || phone.exactMatch;
+
+  const signals: Array<{ weight: number; score: number }> = [
+    { weight: SIGNAL_WEIGHTS.name, score: nameScore },
+  ];
+  let comparableCount = 1;
+
+  if (email.comparable) {
+    signals.push({ weight: SIGNAL_WEIGHTS.email, score: email.score });
+    comparableCount++;
+  }
+  if (phone.comparable) {
+    signals.push({ weight: SIGNAL_WEIGHTS.phone, score: phone.score });
+    comparableCount++;
+  }
+  if (birthday.comparable) {
+    signals.push({ weight: SIGNAL_WEIGHTS.birthday, score: birthday.score });
+    comparableCount++;
+  }
+
+  const totalWeight = signals.reduce((sum, s) => sum + s.weight, 0);
+  let score = signals.reduce((sum, s) => sum + (s.weight / totalWeight) * s.score, 0);
+
+  if (comparableCount < MIN_SIGNALS_FOR_FULL_SCORE) {
+    score = Math.min(score, SPARSITY_CAP);
+  }
+
+  if (hasStrongIdMatch) {
+    score = Math.max(score, AUTO_FLAG_MIN_SCORE);
+  }
+
+  return { score, autoFlagged: hasStrongIdMatch };
+}
+
 function personSimilarity(
   nameA: string,
   surnameA: string | null,
@@ -151,8 +238,6 @@ function personSimilarity(
     const surSim = stringSimilarity(normalizePart(surnameA), normalizePart(surnameB));
     return nameSim * FIRST_NAME_WEIGHT + surSim * SURNAME_WEIGHT_INNER;
   }
-
-  // Fallback: compare full concatenated strings
   const fullA = normalizePart([nameA, surnameA].filter(Boolean).join(' '));
   const fullB = normalizePart([nameB, surnameB].filter(Boolean).join(' '));
   return stringSimilarity(fullA, fullB);
