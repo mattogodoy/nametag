@@ -7,6 +7,7 @@ import { handleApiError, parseRequestBody, normalizeEmail, withLogging } from '@
 import { getAppUrl } from '@/lib/env';
 import { generateToken, hashToken } from '@/lib/token-hash';
 import { validateOrigin } from '@/lib/csrf';
+import { isFeatureEnabled } from '@/lib/features';
 
 const TOKEN_EXPIRY_HOURS = 1;
 const RESEND_COOLDOWN_MINUTES = 2;
@@ -23,6 +24,13 @@ export const POST = withLogging(async function POST(request: Request) {
   }
 
   try {
+    if (!isFeatureEnabled('passwordLogin')) {
+      return NextResponse.json(
+        { error: 'Password login is disabled on this instance.' },
+        { status: 403 }
+      );
+    }
+
     const body = await parseRequestBody(request);
     const validation = validateRequest(forgotPasswordSchema, body);
 

@@ -1558,7 +1558,9 @@
     "verificationFailed": "无法验证邮箱。请重试。",
     "registerAgain": "再次注册",
     "noVerificationToken": "无验证令牌",
-    "useVerificationLink": "请使用来自验证邮箱的链接。"
+    "useVerificationLink": "请使用来自验证邮箱的链接。",
+    "passwordLoginDisabled": "此实例已禁用密码登录。请使用单点登录选项。",
+    "oidcError": "登录过程中出错。请重试。"
   },
   "forms": {
     "required": "必需",

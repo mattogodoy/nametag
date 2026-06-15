@@ -1554,7 +1554,9 @@
     "verificationFailed": "Unable to verify email. Please try again.",
     "registerAgain": "Register Again",
     "noVerificationToken": "No Verification Token",
-    "useVerificationLink": "Please use the link from your verification email."
+    "useVerificationLink": "Please use the link from your verification email.",
+    "passwordLoginDisabled": "Password login is disabled on this instance. Please use the single sign-on option to log in.",
+    "oidcError": "Something went wrong during sign-in. Please try again."
   },
   "forms": {
     "required": "Required",

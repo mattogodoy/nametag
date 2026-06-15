@@ -1,9 +1,10 @@
 import NextAuth from 'next-auth';
+import type { Account, Profile, User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { randomUUID } from 'crypto';
 import { env } from '@/lib/env';
-import { isSaasMode } from '@/lib/features';
+import { isSaasMode, isFeatureEnabled } from '@/lib/features';
 import { createModuleLogger } from '@/lib/logger';
 import { normalizeLocale } from '@/lib/locale';
 
@@ -129,25 +130,137 @@ export async function authorizeCredentials(credentials: {
   };
 }
 
+async function handleOAuthSignIn(
+  user: User,
+  account: Account,
+  profile: Profile,
+): Promise<void> {
+  const { prisma } = await import('@/lib/prisma');
+  const { createFreeSubscription } = await import('@/lib/billing');
+  const { createPreloadedRelationshipTypes } = await import('@/lib/relationship-types');
+  const { normalizeEmail } = await import('@/lib/api-utils');
+
+  const profileData = profile as Record<string, unknown>;
+  const emailVerified = profileData.email_verified === true;
+
+  // For generic OIDC providers, reject unverified emails to prevent account takeover.
+  // Google always verifies emails, so we trust them unconditionally.
+  if (account.provider === 'oidc' && !emailVerified) {
+    log.warn(
+      { event: 'auth.login.failed', reason: 'email_not_verified', provider: account.provider },
+      'OIDC login rejected: provider did not verify email',
+    );
+    throw new Error('OIDC_EMAIL_NOT_VERIFIED');
+  }
+
+  const email = normalizeEmail(user.email!);
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingUser) {
+    if (!existingUser.provider || !existingUser.providerAccountId) {
+      // No OAuth linked yet; link this provider
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          provider: account.provider,
+          providerAccountId: account.providerAccountId,
+          emailVerified: true,
+        },
+      });
+    } else if (existingUser.provider !== account.provider
+      || existingUser.providerAccountId !== account.providerAccountId) {
+      // Already linked to a different provider/account; reject to prevent takeover
+      log.warn(
+        { event: 'auth.login.failed', reason: 'provider_mismatch', email, existingProvider: existingUser.provider },
+        'OAuth login rejected: account already linked to a different provider',
+      );
+      throw new Error('ACCOUNT_LINKED_TO_DIFFERENT_PROVIDER');
+    }
+    user.id = existingUser.id;
+  } else {
+    const givenName = profileData.given_name as string | undefined;
+    const familyName = profileData.family_name as string | undefined;
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        name: givenName || user.name || 'User',
+        surname: familyName || null,
+        provider: account.provider,
+        providerAccountId: account.providerAccountId,
+        emailVerified: true,
+      },
+    });
+
+    await createFreeSubscription(newUser.id);
+    await createPreloadedRelationshipTypes(prisma, newUser.id);
+
+    user.id = newUser.id;
+  }
+
+  log.info(
+    { event: 'auth.login.succeeded', userId: user.id, method: account.provider },
+    'OAuth login succeeded',
+  );
+}
+
 // Build providers list based on mode
+const oidcConfigured = isFeatureEnabled('oidc');
+
 const providers = [
-  CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        return authorizeCredentials(credentials as { email?: string; password?: string });
-      },
-    }),
-  // Add Google provider only in SaaS mode
+  ...(isFeatureEnabled('passwordLogin')
+    ? [
+        CredentialsProvider({
+          name: 'credentials',
+          credentials: {
+            email: { label: 'Email', type: 'email' },
+            password: { label: 'Password', type: 'password' },
+          },
+          async authorize(credentials) {
+            return authorizeCredentials(credentials as { email?: string; password?: string });
+          },
+        }),
+      ]
+    : []),
   ...(isSaasMode() && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
     ? [
         Google({
           clientId: env.GOOGLE_CLIENT_ID,
           clientSecret: env.GOOGLE_CLIENT_SECRET,
         }),
+      ]
+    : []),
+  ...(oidcConfigured
+    ? [
+        {
+          id: 'oidc',
+          name: env.OIDC_DISPLAY_NAME || 'SSO',
+          type: 'oidc' as const,
+          issuer: env.OIDC_ISSUER_URL,
+          clientId: env.OIDC_CLIENT_ID,
+          clientSecret: env.OIDC_CLIENT_SECRET,
+          authorization: { params: { scope: 'openid email profile' } },
+          // Use /userinfo instead of ID-token claims. Many providers
+          // (Authentik, Keycloak) put email/name only in userinfo.
+          idToken: false,
+          profile(profile: Record<string, unknown>) {
+            if (!profile.email || typeof profile.email !== 'string') {
+              throw new Error('OIDC provider did not return an email address');
+            }
+            return {
+              id: profile.sub as string,
+              email: profile.email,
+              name: (profile.given_name as string | undefined) || (profile.name as string | undefined) || null,
+              surname: (profile.family_name as string | undefined) || null,
+              nickname: null,
+              photo: null,
+              image: null,
+            };
+          },
+        },
       ]
     : []),
 ];
@@ -178,57 +291,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Handle OAuth sign-in
-      if (account?.provider === 'google' && profile) {
-        const { prisma } = await import('@/lib/prisma');
-        const { createFreeSubscription } = await import('@/lib/billing');
-        const { createPreloadedRelationshipTypes } = await import('@/lib/relationship-types');
-        const { normalizeEmail } = await import('@/lib/api-utils');
-
-        // Normalize email to lowercase for case-insensitive lookup
-        const email = normalizeEmail(user.email!);
-
-        // Check if user exists with this email
-        const existingUser = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (existingUser) {
-          // If user exists but doesn't have OAuth linked, link it
-          if (!existingUser.provider || !existingUser.providerAccountId) {
-            await prisma.user.update({
-              where: { id: existingUser.id },
-              data: {
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                emailVerified: true, // OAuth emails are pre-verified
-              },
-            });
-          }
-          // Update user object with existing user's ID for JWT callback
-          user.id = existingUser.id;
-        } else {
-          // Create new user with OAuth
-          const newUser = await prisma.user.create({
-            data: {
-              email,
-              name: profile.given_name || user.name || 'User',
-              surname: profile.family_name || null,
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              emailVerified: true, // OAuth emails are pre-verified
-            },
-          });
-
-          // Create free subscription
-          await createFreeSubscription(newUser.id);
-
-          // Create pre-loaded relationship types
-          await createPreloadedRelationshipTypes(prisma, newUser.id);
-
-          // Update user object with new user's ID for JWT callback
-          user.id = newUser.id;
-        }
+      if (account && profile && (account.provider === 'google' || account.provider === 'oidc')) {
+        await handleOAuthSignIn(user, account, profile);
       }
 
       return true;

@@ -5,6 +5,15 @@ import { z } from 'zod';
  * This ensures all required environment variables are present at startup
  */
 
+// z.coerce.boolean() treats any non-empty string (including 'false') as true.
+// This schema correctly handles 'false' and '0' as falsy values.
+const booleanFromString = z
+  .string()
+  .transform((val) => val !== 'false' && val !== '0' && val !== '')
+  .pipe(z.boolean())
+  .or(z.boolean())
+  .default(false);
+
 const envSchema = z.object({
   // Database - either DATABASE_URL or individual DB_* variables
   DATABASE_URL: z.string().min(1).optional(),
@@ -57,6 +66,15 @@ const envSchema = z.object({
 
   // Disable registration after first user (useful for public-facing self-hosted instances)
   DISABLE_REGISTRATION: z.coerce.boolean().default(false),
+
+  // OIDC provider (self-hosted only)
+  OIDC_ISSUER_URL: z.string().url().optional(),
+  OIDC_CLIENT_ID: z.string().min(1).optional(),
+  OIDC_CLIENT_SECRET: z.string().min(1).optional(),
+  OIDC_DISPLAY_NAME: z.string().min(1).default('SSO'),
+
+  // Disable password login (requires OIDC to be fully configured)
+  DISABLE_PASSWORD_LOGIN: booleanFromString,
 
   // Application URL for generating links in emails (optional, defaults to NEXTAUTH_URL)
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
@@ -168,6 +186,21 @@ export function validateEnv(): Env {
     console.error('  - EMAIL_DOMAIN is required when email is configured (Resend or SMTP)');
     console.error('\nPlease check your .env file.\n');
     throw new Error('Invalid environment configuration');
+  }
+
+  // Validate that OIDC is fully configured when password login is disabled
+  if (result.data.DISABLE_PASSWORD_LOGIN) {
+    const missingOidc = [];
+    if (!result.data.OIDC_ISSUER_URL) missingOidc.push('OIDC_ISSUER_URL');
+    if (!result.data.OIDC_CLIENT_ID) missingOidc.push('OIDC_CLIENT_ID');
+    if (!result.data.OIDC_CLIENT_SECRET) missingOidc.push('OIDC_CLIENT_SECRET');
+
+    if (missingOidc.length > 0) {
+      console.error('\n❌ Invalid environment variables:\n');
+      console.error(`  - DISABLE_PASSWORD_LOGIN requires a fully configured OIDC provider. Missing: ${missingOidc.join(', ')}`);
+      console.error('\nPlease check your .env file.\n');
+      throw new Error(`Invalid environment configuration: DISABLE_PASSWORD_LOGIN requires ${missingOidc.join(', ')}`);
+    }
   }
 
   return result.data;

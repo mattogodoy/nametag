@@ -1550,7 +1550,9 @@
     "verificationFailed": "Kan e-mailadres niet verifiëren. Probeer het opnieuw.",
     "registerAgain": "Opnieuw registreren",
     "noVerificationToken": "Geen verificatietoken",
-    "useVerificationLink": "Gebruik de link uit uw verificatie-e-mail."
+    "useVerificationLink": "Gebruik de link uit uw verificatie-e-mail.",
+    "passwordLoginDisabled": "Wachtwoordaanmelding is uitgeschakeld op deze instantie. Gebruik de optie voor eenmalige aanmelding.",
+    "oidcError": "Er ging iets mis tijdens het inloggen. Probeer het opnieuw."
   },
   "forms": {
     "required": "Vereist",

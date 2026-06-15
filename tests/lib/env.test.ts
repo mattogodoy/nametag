@@ -54,4 +54,102 @@ describe('env validation', () => {
       expect(() => validateEnv()).not.toThrow();
     });
   });
+
+  describe('OIDC configuration', () => {
+    it('should accept valid OIDC configuration', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        OIDC_ISSUER_URL: 'https://auth.example.com/realms/main',
+        OIDC_CLIENT_ID: 'nametag',
+        OIDC_CLIENT_SECRET: 'secret',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).not.toThrow();
+    });
+
+    it('should accept OIDC with display name', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        OIDC_ISSUER_URL: 'https://auth.example.com/realms/main',
+        OIDC_CLIENT_ID: 'nametag',
+        OIDC_CLIENT_SECRET: 'secret',
+        OIDC_DISPLAY_NAME: 'Authentik',
+      } as unknown as NodeJS.ProcessEnv;
+
+      const result = validateEnv();
+      expect(result.OIDC_DISPLAY_NAME).toBe('Authentik');
+    });
+
+    it('should default OIDC_DISPLAY_NAME to SSO', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        OIDC_ISSUER_URL: 'https://auth.example.com/realms/main',
+        OIDC_CLIENT_ID: 'nametag',
+        OIDC_CLIENT_SECRET: 'secret',
+      } as unknown as NodeJS.ProcessEnv;
+
+      const result = validateEnv();
+      expect(result.OIDC_DISPLAY_NAME).toBe('SSO');
+    });
+
+    it('should not require OIDC variables when not configured', () => {
+      process.env = { ...BASE_VALID_ENV } as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).not.toThrow();
+    });
+  });
+
+  describe('DISABLE_PASSWORD_LOGIN', () => {
+    it('should accept DISABLE_PASSWORD_LOGIN when OIDC is fully configured', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        OIDC_ISSUER_URL: 'https://auth.example.com/realms/main',
+        OIDC_CLIENT_ID: 'nametag',
+        OIDC_CLIENT_SECRET: 'secret',
+        DISABLE_PASSWORD_LOGIN: 'true',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).not.toThrow();
+    });
+
+    it('should reject DISABLE_PASSWORD_LOGIN without OIDC_ISSUER_URL', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        OIDC_CLIENT_ID: 'nametag',
+        OIDC_CLIENT_SECRET: 'secret',
+        DISABLE_PASSWORD_LOGIN: 'true',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).toThrow(/OIDC_ISSUER_URL/);
+    });
+
+    it('should reject DISABLE_PASSWORD_LOGIN without OIDC_CLIENT_ID', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        OIDC_ISSUER_URL: 'https://auth.example.com/realms/main',
+        OIDC_CLIENT_SECRET: 'secret',
+        DISABLE_PASSWORD_LOGIN: 'true',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).toThrow(/OIDC_CLIENT_ID/);
+    });
+
+    it('should reject DISABLE_PASSWORD_LOGIN without any OIDC config', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        DISABLE_PASSWORD_LOGIN: 'true',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).toThrow(/OIDC_ISSUER_URL/);
+    });
+
+    it('should not require OIDC when DISABLE_PASSWORD_LOGIN is false', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        DISABLE_PASSWORD_LOGIN: 'false',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).not.toThrow();
+    });
+  });
 });

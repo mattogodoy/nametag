@@ -223,6 +223,11 @@ The database will be automatically set up on first run.
 | `SMTP_REQUIRE_TLS`     | Require STARTTLS for security                                         | `true`                       |
 | `SMTP_FROM`            | Override "from" address (use if server rejects custom addresses)      | Not set                      |
 | `PHOTO_STORAGE_PATH`   | Custom path for photo storage                                         | `/app/data/photos`           |
+| `OIDC_ISSUER_URL`      | OIDC provider issuer URL (enables SSO login)                          | Not set                      |
+| `OIDC_CLIENT_ID`       | OIDC client ID registered with your provider                          | Not set                      |
+| `OIDC_CLIENT_SECRET`   | OIDC client secret                                                    | Not set                      |
+| `OIDC_DISPLAY_NAME`    | Label shown on the SSO login button                                   | `SSO`                        |
+| `DISABLE_PASSWORD_LOGIN` | Hide the password form (requires OIDC to be configured)             | `false`                      |
 | `DISABLE_REGISTRATION` | Disable user registration after first user                            | `false`                      |
 | `NODE_ENV`             | Environment mode                                                      | `production`                 |
 | `LOG_LEVEL`            | Logging verbosity                                                     | `info`                       |
@@ -294,6 +299,48 @@ Most SMTP servers restrict which addresses you can send from:
 **Rate Limiting**: SMTP is configured with connection pooling (max 5 concurrent connections) and rate limiting (5 messages/second). If the rate limit is exceeded, emails are automatically queued and sent with a delay. Note that the queue is in-memory only - if the application restarts, queued messages are lost.
 
 **Note**: The hosted service at [nametag.one](https://nametag.one) requires email verification for security, but self-hosted instances are designed for personal use and auto-verify all accounts.
+
+### OIDC Setup (Optional)
+
+Nametag supports logging in via an external OIDC provider, letting you use your existing identity system (Authentik, Keycloak, Pocket-ID, etc.) instead of managing passwords.
+
+**To enable OIDC:**
+
+1. Register Nametag as a client in your OIDC provider
+2. Set the callback URL to `{NEXTAUTH_URL}/api/auth/callback/oidc`
+3. Add the provider details to your `.env` file:
+   ```bash
+   OIDC_ISSUER_URL=https://auth.example.com/realms/main
+   OIDC_CLIENT_ID=nametag
+   OIDC_CLIENT_SECRET=your-client-secret
+   OIDC_DISPLAY_NAME=Authentik
+   ```
+
+All three connection variables (`OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`) must be set for OIDC to activate. The provider must serve a `/.well-known/openid-configuration` endpoint at the issuer URL.
+
+**Account behavior:**
+
+- On first OIDC login, a Nametag account is created automatically using the email and name from your provider
+- If a Nametag account with the same email already exists, the OIDC identity is linked to it
+- Profile fields are only set on first login; edits in Nametag are not overwritten
+
+**Disabling password login:**
+
+Once OIDC is working, you can optionally hide the password form entirely:
+
+```bash
+DISABLE_PASSWORD_LOGIN=true
+```
+
+This removes the credentials form, the "forgot password" link, and the registration page. New users sign up by logging in through the OIDC provider. The app will refuse to start if this is set without a fully configured OIDC provider.
+
+**Common providers:**
+
+| Provider   | Issuer URL example                                   |
+| ---------- | ---------------------------------------------------- |
+| Authentik  | `https://auth.example.com/application/o/nametag/`    |
+| Keycloak   | `https://keycloak.example.com/realms/myrealm`        |
+| Pocket-ID  | `https://pocket-id.example.com`                      |
 
 ### Redis Setup
 
@@ -436,7 +483,6 @@ Future features and improvements, ordered by priority:
 
 - [ ] **[HELP NEEDED]** Mobile app (Native apps for Android and iOS are preferred)
 - [ ] Add support for SQLite databases
-- [ ] Implement OIDC [[Issue #10](https://github.com/mattogodoy/nametag/issues/10)]
 - [ ] Add notification support [[Issue #6](https://github.com/mattogodoy/nametag/issues/6)]
 - [ ] Add map to show people's locations [[Issue #26](https://github.com/mattogodoy/nametag/issues/26)]
 - [ ] Support multi-user groups [[Issue #37](https://github.com/mattogodoy/nametag/issues/37)]
@@ -458,6 +504,7 @@ Features and improvements that have already been implemented:
 - [x] ~~Add photos to people~~ [[Issue #19](https://github.com/mattogodoy/nametag/issues/19), [PR #135](https://github.com/mattogodoy/nametag/pull/135)]
 - [x] ~~Add custom template titles for important dates~~ [[Issue #23](https://github.com/mattogodoy/nametag/issues/23), [PR #176](https://github.com/mattogodoy/nametag/pull/176)]
 - [x] ~~Add journaling capabilities~~ [[Issue #28](https://github.com/mattogodoy/nametag/issues/28), [PR #192](https://github.com/mattogodoy/nametag/pull/192)]
+- [x] ~~Implement OIDC~~ [[Issue #10](https://github.com/mattogodoy/nametag/issues/10)]
 
 ## License
 

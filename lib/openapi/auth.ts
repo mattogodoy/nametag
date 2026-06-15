@@ -135,7 +135,7 @@ export function authPaths(): Record<string, Record<string, unknown>> {
       get: {
         tags: ['Auth'],
         summary: 'List available authentication providers',
-        description: 'Returns which login methods (credentials, Google OAuth) are enabled on this instance.',
+        description: 'Returns which login methods (credentials, OIDC, Google OAuth) are enabled on this instance.',
         responses: {
           '200': {
             description: 'Available providers',
@@ -149,6 +149,13 @@ export function authPaths(): Record<string, Record<string, unknown>> {
                       properties: {
                         credentials: { type: 'boolean' },
                         google: { type: 'boolean' },
+                        oidc: {
+                          type: 'object',
+                          properties: {
+                            enabled: { type: 'boolean' },
+                            name: { type: 'string' },
+                          },
+                        },
                       },
                     },
                   },

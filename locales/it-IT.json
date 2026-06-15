@@ -1534,7 +1534,9 @@
     "verificationFailed": "Impossibile verificare l'email. Riprova.",
     "registerAgain": "Registrati di nuovo",
     "noVerificationToken": "Nessun token di verifica",
-    "useVerificationLink": "Usa il link dalla tua email di verifica."
+    "useVerificationLink": "Usa il link dalla tua email di verifica.",
+    "passwordLoginDisabled": "L'accesso con password e disabilitato su questa istanza. Utilizzare l'opzione di accesso unico.",
+    "oidcError": "Qualcosa e andato storto durante l'accesso. Riprovare."
   },
   "forms": {
     "required": "Obbligatorio",

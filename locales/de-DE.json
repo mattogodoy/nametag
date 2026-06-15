@@ -1558,7 +1558,9 @@
     "verificationFailed": "E-Mail konnte nicht verifiziert werden. Bitte versuche es erneut.",
     "registerAgain": "Erneut registrieren",
     "noVerificationToken": "Kein Verifizierungstoken",
-    "useVerificationLink": "Bitte nutze den Link aus deiner Bestätigungs-E-Mail."
+    "useVerificationLink": "Bitte nutze den Link aus deiner Bestätigungs-E-Mail.",
+    "passwordLoginDisabled": "Die Anmeldung mit Passwort ist auf dieser Instanz deaktiviert. Bitte verwenden Sie die Single-Sign-On-Option.",
+    "oidcError": "Bei der Anmeldung ist etwas schiefgelaufen. Bitte versuchen Sie es erneut."
   },
   "forms": {
     "required": "Erforderlich",

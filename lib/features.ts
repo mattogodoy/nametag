@@ -45,6 +45,15 @@ export const features = {
 
   /** Enable CardDAV sync integration */
   cardDav: () => true, // Available in all modes
+
+  /** Enable generic OIDC provider (self-hosted only) */
+  oidc: () => !isSaasMode()
+    && !!env.OIDC_ISSUER_URL
+    && !!env.OIDC_CLIENT_ID
+    && !!env.OIDC_CLIENT_SECRET,
+
+  /** Whether password-based login is available */
+  passwordLogin: () => !(env.DISABLE_PASSWORD_LOGIN && features.oidc()),
 };
 
 /**

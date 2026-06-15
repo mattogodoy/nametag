@@ -1558,7 +1558,9 @@
     "verificationFailed": "No se pudo verificar el correo. Por favor, inténtalo de nuevo.",
     "registerAgain": "Registrarse de Nuevo",
     "noVerificationToken": "Sin Token de Verificación",
-    "useVerificationLink": "Por favor, usa el enlace de tu correo de verificación."
+    "useVerificationLink": "Por favor, usa el enlace de tu correo de verificación.",
+    "passwordLoginDisabled": "El inicio de sesion con contrasena esta desactivado en esta instancia. Por favor, use la opcion de inicio de sesion unico.",
+    "oidcError": "Algo salio mal durante el inicio de sesion. Por favor, intentelo de nuevo."
   },
   "forms": {
     "required": "Requerido",

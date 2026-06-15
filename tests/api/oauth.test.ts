@@ -31,18 +31,31 @@ vi.mock('../../lib/prisma', () => ({
 // Mock features
 vi.mock('../../lib/features', () => ({
   isSaasMode: mocks.isSaasMode,
+  isFeatureEnabled: vi.fn((feature: string) => {
+    if (feature === 'oidc') {
+      return !mocks.isSaasMode()
+        && !!mocks.getEnv('OIDC_ISSUER_URL')
+        && !!mocks.getEnv('OIDC_CLIENT_ID')
+        && !!mocks.getEnv('OIDC_CLIENT_SECRET');
+    }
+    if (feature === 'passwordLogin') {
+      const oidcConfigured = !mocks.isSaasMode()
+        && !!mocks.getEnv('OIDC_ISSUER_URL')
+        && !!mocks.getEnv('OIDC_CLIENT_ID')
+        && !!mocks.getEnv('OIDC_CLIENT_SECRET');
+      return !(mocks.getEnv('DISABLE_PASSWORD_LOGIN') && oidcConfigured);
+    }
+    return false;
+  }),
 }));
 
 // Mock env
 vi.mock('../../lib/env', () => ({
-  env: {
-    get GOOGLE_CLIENT_ID() {
-      return mocks.getEnv('GOOGLE_CLIENT_ID');
+  env: new Proxy({}, {
+    get(_, prop: string) {
+      return mocks.getEnv(prop);
     },
-    get GOOGLE_CLIENT_SECRET() {
-      return mocks.getEnv('GOOGLE_CLIENT_SECRET');
-    },
-  },
+  }),
 }));
 
 // Mock logger
@@ -135,6 +148,78 @@ describe('OAuth Authentication', () => {
 
       expect(response.status).toBe(200);
       expect(body.providers.google).toBe(false);
+    });
+
+    it('should return OIDC provider when configured in self-hosted mode', async () => {
+      mocks.isSaasMode.mockReturnValue(false);
+      mocks.getEnv.mockImplementation((key: string) => {
+        const vals: Record<string, string> = {
+          OIDC_ISSUER_URL: 'https://auth.example.com',
+          OIDC_CLIENT_ID: 'nametag',
+          OIDC_CLIENT_SECRET: 'secret',
+          OIDC_DISPLAY_NAME: 'Authentik',
+        };
+        return vals[key];
+      });
+
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.providers.oidc).toEqual({ enabled: true, name: 'Authentik' });
+    });
+
+    it('should return OIDC disabled when not configured', async () => {
+      mocks.isSaasMode.mockReturnValue(false);
+
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
+      const body = await response.json();
+
+      expect(body.providers.oidc).toEqual({ enabled: false, name: 'SSO' });
+    });
+
+    it('should return credentials false when password login is disabled', async () => {
+      mocks.isSaasMode.mockReturnValue(false);
+      mocks.getEnv.mockImplementation((key: string) => {
+        const vals: Record<string, unknown> = {
+          OIDC_ISSUER_URL: 'https://auth.example.com',
+          OIDC_CLIENT_ID: 'nametag',
+          OIDC_CLIENT_SECRET: 'secret',
+          OIDC_DISPLAY_NAME: 'SSO',
+          DISABLE_PASSWORD_LOGIN: true,
+        };
+        return vals[key];
+      });
+
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
+      const body = await response.json();
+
+      expect(body.providers.credentials).toBe(false);
+      expect(body.providers.oidc.enabled).toBe(true);
+    });
+
+    it('should not return OIDC in SaaS mode even if vars are set', async () => {
+      mocks.isSaasMode.mockReturnValue(true);
+      mocks.getEnv.mockImplementation((key: string) => {
+        const vals: Record<string, string> = {
+          GOOGLE_CLIENT_ID: 'test-client-id',
+          GOOGLE_CLIENT_SECRET: 'test-client-secret',
+          OIDC_ISSUER_URL: 'https://auth.example.com',
+          OIDC_CLIENT_ID: 'nametag',
+          OIDC_CLIENT_SECRET: 'secret',
+          OIDC_DISPLAY_NAME: 'SSO',
+        };
+        return vals[key];
+      });
+
+      const request = new Request('http://localhost/api/auth/available-providers');
+      const response = await availableProviders(request);
+      const body = await response.json();
+
+      expect(body.providers.oidc.enabled).toBe(false);
     });
   });
 

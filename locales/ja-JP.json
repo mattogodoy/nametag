@@ -1558,7 +1558,9 @@
     "verificationFailed": "メールを認証できません。もう一度お試しください。",
     "registerAgain": "再登録",
     "noVerificationToken": "認証トークンがありません",
-    "useVerificationLink": "認証メールに記載されているリンクを使用してください。"
+    "useVerificationLink": "認証メールに記載されているリンクを使用してください。",
+    "passwordLoginDisabled": "このインスタンスではパスワードログインが無効になっています。シングルサインオンをご利用ください。",
+    "oidcError": "サインイン中にエラーが発生しました。もう一度お試しください。"
   },
   "forms": {
     "required": "必須",

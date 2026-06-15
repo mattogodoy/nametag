@@ -1558,7 +1558,9 @@
     "verificationFailed": "Kunne ikke bekrefte e-post. Prøv igjen.",
     "registerAgain": "Registrer på nytt",
     "noVerificationToken": "Ingen verifiseringstoken",
-    "useVerificationLink": "Bruk lenken fra verifiserings-e-posten din."
+    "useVerificationLink": "Bruk lenken fra verifiserings-e-posten din.",
+    "passwordLoginDisabled": "Passordinnlogging er deaktivert pa denne instansen. Bruk alternativet for enkel palogging.",
+    "oidcError": "Noe gikk galt under paloggingen. Vennligst prov igjen."
   },
   "forms": {
     "required": "Påkrevd",

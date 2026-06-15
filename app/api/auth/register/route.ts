@@ -27,6 +27,14 @@ export const POST = withLogging(async function POST(request: Request) {
   }
 
   try {
+    // Block password registration when password login is disabled
+    if (!isFeatureEnabled('passwordLogin')) {
+      return NextResponse.json(
+        { error: 'Password registration is disabled. Use the configured SSO provider.' },
+        { status: 403 }
+      );
+    }
+
     // Check if registration is disabled
     if (process.env.DISABLE_REGISTRATION === 'true') {
       const userCount = await prisma.user.count();
