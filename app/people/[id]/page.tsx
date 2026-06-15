@@ -11,6 +11,7 @@ import PersonVCardRawView from '@/components/PersonVCardRawView';
 import PersonActionsMenu from '@/components/PersonActionsMenu';
 import LastContactQuickUpdate from '@/components/LastContactQuickUpdate';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate, type DateFormat } from '@/lib/date-format';
+import { getCountryName } from '@/lib/countries';
 import { formatFullName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PersonAvatar from '@/components/PersonPhoto';
@@ -527,7 +528,7 @@ export default async function PersonDetailsPage({
                                     .filter(Boolean)
                                     .join(', ')}
                                 </div>
-                                {address.country && <div>{address.country}</div>}
+                                {address.country && <div>{getCountryName(address.country) || address.country}</div>}
                               </div>
                             </div>
                           ))}
