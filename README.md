@@ -320,7 +320,7 @@ All three connection variables (`OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, `OIDC_CLIEN
 
 **Account behavior:**
 
-- On first OIDC login, a Nametag account is created automatically using the email, name, and photo from your provider
+- On first OIDC login, a Nametag account is created automatically using the email and name from your provider
 - If a Nametag account with the same email already exists, the OIDC identity is linked to it
 - Profile fields are only set on first login; edits in Nametag are not overwritten
 
