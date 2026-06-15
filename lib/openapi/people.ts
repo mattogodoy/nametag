@@ -311,7 +311,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
       get: {
         tags: ['People'],
         summary: 'Find all duplicate contact groups',
-        description: 'Scans all contacts and returns groups of potential duplicates based on name similarity. Dismissed pairs are excluded.',
+        description: 'Scans all contacts and returns groups of potential duplicates based on name, email, phone, and birthday similarity. Dismissed pairs are excluded.',
         security: [{ session: [] }],
         responses: {
           '200': jsonResponse('Duplicate groups', {

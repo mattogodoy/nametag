@@ -180,8 +180,12 @@ describe('compositeSimilarity', () => {
 
   it('does not apply sparsity cap when 2+ signals are comparable', () => {
     const a = person({ id: '1', name: 'John', surname: 'Smith', birthdays: [new Date('1990-05-15')] });
-    const b = person({ id: '2', name: 'John', surname: 'Smith', birthdays: [new Date('1990-05-15')] });
+    const b = person({ id: '2', name: 'John', surname: 'Smith', birthdays: [new Date('1985-05-15')] });
     const result = compositeSimilarity(a, b);
+    // Name=1.0, Birthday=0.5 (same month+day, different year)
+    // Weighted: (0.4/0.5)*1.0 + (0.1/0.5)*0.5 = 0.9
+    // Without sparsity bypass this would be capped at 0.6
     expect(result.score).toBeGreaterThan(0.6);
+    expect(result.score).toBeLessThanOrEqual(1.0);
   });
 });
