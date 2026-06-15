@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
-import { findAllDuplicateGroups } from '@/lib/duplicate-detection';
+import {
+  findAllDuplicateGroups,
+  mapPersonForComparison,
+  PERSON_SELECT_FOR_COMPARISON,
+} from '@/lib/duplicate-detection';
 
 // GET /api/people/duplicates - Find all duplicate groups
 export const GET = withAuth(async (_request, session) => {
@@ -8,7 +12,7 @@ export const GET = withAuth(async (_request, session) => {
     const [allPeople, dismissals] = await Promise.all([
       prisma.person.findMany({
         where: { userId: session.user.id, deletedAt: null },
-        select: { id: true, name: true, surname: true },
+        select: PERSON_SELECT_FOR_COMPARISON,
       }),
       prisma.duplicateDismissal.findMany({
         where: { userId: session.user.id },
@@ -16,12 +20,12 @@ export const GET = withAuth(async (_request, session) => {
       }),
     ]);
 
-    // Build a set of dismissed pair keys for fast lookup
     const dismissedPairs = new Set(
       dismissals.map((d) => `${d.personAId}:${d.personBId}`)
     );
 
-    const groups = findAllDuplicateGroups(allPeople, dismissedPairs);
+    const mapped = allPeople.map(mapPersonForComparison);
+    const groups = findAllDuplicateGroups(mapped, dismissedPairs);
 
     return apiResponse.ok({ groups });
   } catch (error) {
