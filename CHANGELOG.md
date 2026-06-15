@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.50.0](https://github.com/mattogodoy/nametag/compare/v0.49.1...v0.50.0) (2026-06-15)
+
+
+### Features
+
+* add generic OIDC integration for self-hosted instances ([76b6766](https://github.com/mattogodoy/nametag/commit/76b67667a39eda50e786b86e32b6692cc6c1061b))
+* add generic OIDC provider and extract shared OAuth handler ([3e23427](https://github.com/mattogodoy/nametag/commit/3e2342736e371c977b67ef3f6d6e8c3bdc824250))
+* add oidc and passwordLogin feature flags ([9997d36](https://github.com/mattogodoy/nametag/commit/9997d3692fbfdc8bac84a4d4ffbe107cc073b14f))
+* add OIDC environment variable schema and validation ([872a4cd](https://github.com/mattogodoy/nametag/commit/872a4cdabb5fc7c040ffd23fb81749c19f0e33ce))
+* add OIDC login button to login and register pages ([bf015f4](https://github.com/mattogodoy/nametag/commit/bf015f437de50a7f861902d7b0248d7445a67e4a))
+* add OIDC to available-providers endpoint ([a4e154d](https://github.com/mattogodoy/nametag/commit/a4e154d85f75fa8b9dd51845d32632713abe7c3a))
+* add OIDC-related translation keys to all locales ([39db2dd](https://github.com/mattogodoy/nametag/commit/39db2dd657f9d4ea322686851c122a216689b4c0))
+
+
+### Bug Fixes
+
+* harden OIDC security - email verification, provider mismatch, API guards, userinfo claims ([14a47c0](https://github.com/mattogodoy/nametag/commit/14a47c0af477fae8b33c06acbce8ae61d08afaa8))
+* resolve TypeScript errors in env test ProcessEnv casts ([b2b37dd](https://github.com/mattogodoy/nametag/commit/b2b37dd330513339234ed84543fd05fb588cce3b))
+* set idToken: false on OIDC provider to fetch claims from userinfo ([38d2eeb](https://github.com/mattogodoy/nametag/commit/38d2eeb56d947c73c9844d3910b9c1ea006b4a72))
+
 ## [0.49.1](https://github.com/mattogodoy/nametag/compare/v0.49.0...v0.49.1) (2026-06-15)
 
 
