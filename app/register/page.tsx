@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { OidcSignInButton } from '@/components/OidcSignInButton';
 import { fetchAvailableProviders } from '@/lib/client-features';
 
 export default function RegisterPage() {
@@ -27,6 +28,8 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showGoogleAuth, setShowGoogleAuth] = useState(false);
+  const [showCredentials, setShowCredentials] = useState(true);
+  const [oidcProvider, setOidcProvider] = useState<{ enabled: boolean; name: string } | null>(null);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
@@ -51,6 +54,8 @@ export default function RegisterPage() {
   useEffect(() => {
     fetchAvailableProviders().then((providers) => {
       setShowGoogleAuth(providers.google);
+      setShowCredentials(providers.credentials);
+      setOidcProvider(providers.oidc);
     });
   }, []);
 
@@ -138,6 +143,40 @@ export default function RegisterPage() {
     );
   }
 
+  // Show OIDC-only registration when password login is disabled
+  if (!checkingStatus && !showCredentials) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div className="flex flex-col items-center">
+            <Image
+              src="/logo.svg"
+              alt="Nametag Logo"
+              width={96}
+              height={96}
+              priority
+            />
+            <h2 className="mt-6 text-center text-3xl font-bold text-foreground">
+              {t('createAccountTitle')}
+            </h2>
+          </div>
+          {oidcProvider?.enabled && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted">{t('passwordLoginDisabled')}</p>
+              <OidcSignInButton name={oidcProvider.name} mode="signup" />
+            </div>
+          )}
+          <Link
+            href="/login"
+            className="inline-block text-primary hover:text-primary-dark"
+          >
+            {t('backToLogin')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   // Show disabled message if registration is not enabled
   if (!registrationEnabled) {
     return (
@@ -214,9 +253,14 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {showGoogleAuth && (
-          <div className="mt-8">
-            <GoogleSignInButton mode="signup" />
+        {(showGoogleAuth || oidcProvider?.enabled) && (
+          <div className="mt-8 space-y-3">
+            {oidcProvider?.enabled && (
+              <OidcSignInButton name={oidcProvider.name} mode="signup" />
+            )}
+            {showGoogleAuth && (
+              <GoogleSignInButton mode="signup" />
+            )}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border"></div>

@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { OidcSignInButton } from '@/components/OidcSignInButton';
 import { fetchAvailableProviders } from '@/lib/client-features';
 
 export default function LoginPage() {
@@ -25,15 +26,17 @@ export default function LoginPage() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showGoogleAuth, setShowGoogleAuth] = useState(false);
+  const [showCredentials, setShowCredentials] = useState(true);
+  const [oidcProvider, setOidcProvider] = useState<{ enabled: boolean; name: string } | null>(null);
 
-  // Fetch available providers
   useEffect(() => {
     fetchAvailableProviders().then((providers) => {
       setShowGoogleAuth(providers.google);
+      setShowCredentials(providers.credentials);
+      setOidcProvider(providers.oidc);
     });
   }, []);
 
-  // Countdown timer for cooldown
   useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
@@ -56,7 +59,6 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        // Check if the error is due to unverified email or locked account
         const checkRes = await fetch('/api/auth/check-verification', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -97,13 +99,12 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.status === 429) {
-        // Rate limited
         setResendCooldown(data.retryAfter || 120);
         setError(data.error);
       } else if (response.ok) {
         setResendSuccess(true);
         setError('');
-        setResendCooldown(120); // 2 minute cooldown after successful send
+        setResendCooldown(120);
       } else {
         setError(data.error || tErrors('email.sendFailed'));
       }
@@ -113,6 +114,8 @@ export default function LoginPage() {
       setResendLoading(false);
     }
   }
+
+  const hasOAuthProvider = showGoogleAuth || oidcProvider?.enabled;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -133,112 +136,121 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {showGoogleAuth && (
-          <div className="mt-8">
-            <GoogleSignInButton mode="signin" />
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
+        {hasOAuthProvider && (
+          <div className="mt-8 space-y-3">
+            {oidcProvider?.enabled && (
+              <OidcSignInButton name={oidcProvider.name} mode="signin" />
+            )}
+            {showGoogleAuth && (
+              <GoogleSignInButton mode="signin" />
+            )}
+            {showCredentials && (
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-background text-muted">
+                    {t('orContinueWith')}
+                  </span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-background text-muted">
-                  {t('orContinueWith')}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
-        <form className="mt-8 space-y-6 bg-surface border border-border rounded-lg p-8" onSubmit={handleSubmit}>
-          {resendSuccess && (
-            <div className="bg-primary/10 border border-primary/30 text-primary px-4 py-3 rounded-lg">
-              {t('emailSent')} {t('checkInbox')}
+        {showCredentials && (
+          <form className="mt-8 space-y-6 bg-surface border border-border rounded-lg p-8" onSubmit={handleSubmit}>
+            {resendSuccess && (
+              <div className="bg-primary/10 border border-primary/30 text-primary px-4 py-3 rounded-lg">
+                {t('emailSent')} {t('checkInbox')}
+              </div>
+            )}
+            {error && (
+              <div className="bg-warning/10 border border-warning/30 text-warning px-4 py-3 rounded-lg">
+                <p>{error}</p>
+                {isUnverified && !resendSuccess && (
+                  <div className="mt-2">
+                    {resendCooldown > 0 ? (
+                      <p className="text-sm">
+                        {t('resendCooldown', { seconds: resendCooldown })}
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resendLoading}
+                        className="text-sm font-medium underline hover:no-underline disabled:opacity-50"
+                      >
+                        {resendLoading ? tCommon('loading') : t('resendVerification')}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="rounded-md space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
+                  {t('emailAddress')}
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-muted mb-2">
+                  {t('password')}
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
-          )}
-          {error && (
-            <div className="bg-warning/10 border border-warning/30 text-warning px-4 py-3 rounded-lg">
-              <p>{error}</p>
-              {isUnverified && !resendSuccess && (
-                <div className="mt-2">
-                  {resendCooldown > 0 ? (
-                    <p className="text-sm">
-                      {t('resendCooldown', { seconds: resendCooldown })}
-                    </p>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleResendVerification}
-                      disabled={resendLoading}
-                      className="text-sm font-medium underline hover:no-underline disabled:opacity-50"
-                    >
-                      {resendLoading ? tCommon('loading') : t('resendVerification')}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          <div className="rounded-md space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
-                {t('emailAddress')}
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-muted mb-2">
-                {t('password')}
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-border placeholder-muted text-foreground bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
 
-          <div>
-            <Button type="submit" disabled={isLoading} fullWidth>
-              {isLoading ? t('signingIn') : t('login')}
-            </Button>
-          </div>
+            <div>
+              <Button type="submit" disabled={isLoading} fullWidth>
+                {isLoading ? t('signingIn') : t('login')}
+              </Button>
+            </div>
 
-          <div className="text-center space-y-2">
-            <p className="text-sm text-muted">
-              <Link
-                href="/forgot-password"
-                className="font-medium text-primary hover:text-primary-dark transition-colors"
-              >
-                {t('forgotPassword')}
-              </Link>
-            </p>
-            <p className="text-sm text-muted">
-              {t('dontHaveAccount')}{' '}
-              <Link
-                href="/register"
-                className="font-medium text-primary hover:text-primary-dark transition-colors"
-              >
-                {t('register')}
-              </Link>
-            </p>
-          </div>
-        </form>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted">
+                <Link
+                  href="/forgot-password"
+                  className="font-medium text-primary hover:text-primary-dark transition-colors"
+                >
+                  {t('forgotPassword')}
+                </Link>
+              </p>
+              <p className="text-sm text-muted">
+                {t('dontHaveAccount')}{' '}
+                <Link
+                  href="/register"
+                  className="font-medium text-primary hover:text-primary-dark transition-colors"
+                >
+                  {t('register')}
+                </Link>
+              </p>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
