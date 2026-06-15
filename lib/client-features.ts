@@ -1,11 +1,17 @@
-/**
- * Client-side feature flags
- * Fetches available providers from the server
- */
+interface OidcProviderInfo {
+  enabled: boolean;
+  name: string;
+}
 
-let cachedProviders: { google: boolean } | null = null;
+interface AvailableProviders {
+  google: boolean;
+  credentials: boolean;
+  oidc: OidcProviderInfo;
+}
 
-export async function fetchAvailableProviders(): Promise<{ google: boolean }> {
+let cachedProviders: AvailableProviders | null = null;
+
+export async function fetchAvailableProviders(): Promise<AvailableProviders> {
   if (cachedProviders) {
     return cachedProviders;
   }
@@ -17,6 +23,6 @@ export async function fetchAvailableProviders(): Promise<{ google: boolean }> {
     return cachedProviders!;
   } catch (error) {
     console.error('Failed to fetch available providers:', error);
-    return { google: false };
+    return { google: false, credentials: true, oidc: { enabled: false, name: 'SSO' } };
   }
 }

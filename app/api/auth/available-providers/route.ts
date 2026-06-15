@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
-import { isSaasMode } from '@/lib/features';
+import { isSaasMode, isFeatureEnabled } from '@/lib/features';
 import { env } from '@/lib/env';
 import { withLogging } from '@/lib/api-utils';
 
-/**
- * Returns available authentication providers
- * Used by client-side components to show/hide OAuth buttons
- */
 export const GET = withLogging(async function GET() {
+  const oidcEnabled = isFeatureEnabled('oidc');
+
   const providers = {
-    credentials: true,
+    credentials: isFeatureEnabled('passwordLogin'),
     google: isSaasMode() && !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET,
+    oidc: {
+      enabled: oidcEnabled,
+      name: env.OIDC_DISPLAY_NAME || 'SSO',
+    },
   };
 
   return NextResponse.json({ providers });
