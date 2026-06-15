@@ -1,11 +1,45 @@
 import { describe, it, expect } from 'vitest';
-import { findDuplicates, findAllDuplicateGroups } from '@/lib/duplicate-detection';
+import {
+  normalizeEmail,
+  normalizePhone,
+  findDuplicates,
+  findAllDuplicateGroups,
+} from '@/lib/duplicate-detection';
+
+describe('normalizeEmail', () => {
+  it('lowercases and trims', () => {
+    expect(normalizeEmail('  John@Example.COM  ')).toBe('john@example.com');
+  });
+});
+
+describe('normalizePhone', () => {
+  it('strips non-digits and keeps last 10', () => {
+    expect(normalizePhone('+1 (555) 123-4567')).toBe('5551234567');
+  });
+
+  it('keeps short numbers as-is', () => {
+    expect(normalizePhone('12345')).toBe('12345');
+  });
+
+  it('handles a number with exactly 10 digits', () => {
+    expect(normalizePhone('555-123-4567')).toBe('5551234567');
+  });
+});
 
 describe('duplicate-detection with accents', () => {
+  const makePerson = (id: string, name: string, surname: string | null) => ({
+    id,
+    name,
+    surname,
+    emails: [] as string[],
+    phones: [] as string[],
+    birthdays: [] as Date[],
+  });
+
   it('should detect accented and unaccented names as duplicates', () => {
     const people = [
-      { id: '1', name: 'María', surname: 'García' },
-      { id: '2', name: 'Maria', surname: 'Garcia' },
+      makePerson('1', 'María', 'García'),
+      makePerson('2', 'Maria', 'Garcia'),
     ];
 
     const duplicates = findDuplicates('María', 'García', people, '1');
@@ -16,9 +50,9 @@ describe('duplicate-detection with accents', () => {
 
   it('should group accented variants together', () => {
     const people = [
-      { id: '1', name: 'María', surname: 'García' },
-      { id: '2', name: 'Maria', surname: 'Garcia' },
-      { id: '3', name: 'John', surname: 'Smith' },
+      makePerson('1', 'María', 'García'),
+      makePerson('2', 'Maria', 'Garcia'),
+      makePerson('3', 'John', 'Smith'),
     ];
 
     const groups = findAllDuplicateGroups(people);

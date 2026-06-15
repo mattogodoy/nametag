@@ -27,21 +27,30 @@ export interface PersonForComparison {
   id: string;
   name: string;
   surname: string | null;
+  emails: string[];
+  phones: string[];
+  birthdays: Date[];
 }
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-// Minimum similarity score (0–1) for two names to be considered potential duplicates.
-// 0.75 balances recall (catching "Robert" / "Roberto") vs precision (avoiding false positives).
 const SIMILARITY_THRESHOLD = 0.75;
 
-// When both people have surnames, similarity is a weighted average of
-// first-name similarity (60%) and surname similarity (40%). This prevents
-// shared surnames from inflating the score when first names are different.
-const NAME_WEIGHT = 0.6;
-const SURNAME_WEIGHT = 0.4;
+const FIRST_NAME_WEIGHT = 0.6;
+const SURNAME_WEIGHT_INNER = 0.4;
+
+const SIGNAL_WEIGHTS = {
+  name: 0.4,
+  email: 0.3,
+  phone: 0.2,
+  birthday: 0.1,
+} as const;
+
+const SPARSITY_CAP = 0.6;
+const MIN_SIGNALS_FOR_FULL_SCORE = 2;
+const AUTO_FLAG_MIN_SCORE = 0.85;
 
 // ---------------------------------------------------------------------------
 // Core algorithms
@@ -113,6 +122,15 @@ function normalizePart(s: string): string {
   return normalizeForSearch(s.trim());
 }
 
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
 /**
  * Compute similarity between two people, taking name parts into account.
  *
@@ -131,7 +149,7 @@ function personSimilarity(
   if (surnameA && surnameB) {
     const nameSim = stringSimilarity(normalizePart(nameA), normalizePart(nameB));
     const surSim = stringSimilarity(normalizePart(surnameA), normalizePart(surnameB));
-    return nameSim * NAME_WEIGHT + surSim * SURNAME_WEIGHT;
+    return nameSim * FIRST_NAME_WEIGHT + surSim * SURNAME_WEIGHT_INNER;
   }
 
   // Fallback: compare full concatenated strings
