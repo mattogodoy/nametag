@@ -398,3 +398,41 @@ export function findAllDuplicateGroups(
   result.sort((a, b) => b.similarity - a.similarity);
   return result;
 }
+
+// ---------------------------------------------------------------------------
+// Database mapping
+// ---------------------------------------------------------------------------
+
+interface PersonFromDb {
+  id: string;
+  name: string;
+  surname: string | null;
+  emails: Array<{ email: string }>;
+  phoneNumbers: Array<{ number: string }>;
+  importantDates: Array<{ type: string | null; date: Date }>;
+}
+
+export function mapPersonForComparison(p: PersonFromDb): PersonForComparison {
+  return {
+    id: p.id,
+    name: p.name,
+    surname: p.surname,
+    emails: p.emails.map((e) => normalizeEmail(e.email)),
+    phones: p.phoneNumbers.map((ph) => normalizePhone(ph.number)),
+    birthdays: p.importantDates
+      .filter((d) => d.type === 'birthday')
+      .map((d) => d.date),
+  };
+}
+
+export const PERSON_SELECT_FOR_COMPARISON = {
+  id: true,
+  name: true,
+  surname: true,
+  emails: { select: { email: true } },
+  phoneNumbers: { select: { number: true } },
+  importantDates: {
+    where: { deletedAt: null, type: 'birthday' },
+    select: { type: true, date: true },
+  },
+} as const;
