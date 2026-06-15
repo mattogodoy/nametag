@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.49.1](https://github.com/mattogodoy/nametag/compare/v0.49.0...v0.49.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* **carddav:** heal stuck mappings where photo was never re-exported ([844223a](https://github.com/mattogodoy/nametag/commit/844223a15d0903184080856ba3d40eae70ea15ad)), closes [#278](https://github.com/mattogodoy/nametag/issues/278)
+* **carddav:** re-export photo when remote vCard lacks PHOTO field ([4283001](https://github.com/mattogodoy/nametag/commit/42830019fa3c69eec0d72ea7680a3ed216c9d516))
+* **carddav:** re-export photo when remote vCard lacks PHOTO field ([2e01049](https://github.com/mattogodoy/nametag/commit/2e010499c240d16445b893b87d2fae6a057c1b33)), closes [#278](https://github.com/mattogodoy/nametag/issues/278)
+* display full country name on person detail page ([2d4ed20](https://github.com/mattogodoy/nametag/commit/2d4ed209647c93f45ebe76bc818ab4d9aaba2310))
+* display full country name on person detail page ([b486e66](https://github.com/mattogodoy/nametag/commit/b486e666072e0954b6a025e22e659685f9d9b070)), closes [#302](https://github.com/mattogodoy/nametag/issues/302)
+
 ## [0.49.0](https://github.com/mattogodoy/nametag/compare/v0.48.1...v0.49.0) (2026-06-14)
 
 
