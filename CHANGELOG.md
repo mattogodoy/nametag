@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.51.0](https://github.com/mattogodoy/nametag/compare/v0.50.0...v0.51.0) (2026-06-15)
+
+
+### Features
+
+* expand PersonForComparison and add email/phone normalization helpers ([9582b29](https://github.com/mattogodoy/nametag/commit/9582b298d72de4117fe1e0787afdb0eff5c2326f))
+* implement multi-signal composite similarity scoring ([275b302](https://github.com/mattogodoy/nametag/commit/275b302487d2a0f71b5410680064eb7c8dd94620))
+* update API routes to fetch email/phone/birthday for duplicate detection ([7a48ae3](https://github.com/mattogodoy/nametag/commit/7a48ae32801afe4a67dc8c96e4929d158bf24fe1))
+* update findDuplicates and findAllDuplicateGroups to use composite scoring ([9a3c17b](https://github.com/mattogodoy/nametag/commit/9a3c17be41f9993bc811a4a5cd289fa0d4f15b96))
+
+
+### Bug Fixes
+
+* bypass sparsity cap for near-exact names, remove phone auto-flag ([d7b74e3](https://github.com/mattogodoy/nametag/commit/d7b74e3a684a9ae8e62a79eb749e4cc5951a4417))
+* update OpenAPI description and strengthen sparsity cap test ([6a98ca7](https://github.com/mattogodoy/nametag/commit/6a98ca7918848fa202544f6aed2711e18461640b))
+
 ## [0.50.0](https://github.com/mattogodoy/nametag/compare/v0.49.1...v0.50.0) (2026-06-15)
 
 
