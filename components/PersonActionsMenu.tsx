@@ -22,6 +22,7 @@ interface PersonForSearch {
   name: string;
   surname?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
 }
 
 interface PersonActionsMenuProps {

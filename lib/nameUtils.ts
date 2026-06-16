@@ -78,7 +78,12 @@ export function formatFullName(person: {
   middleName?: string | null;
   secondLastName?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
 }, nameOrder?: 'WESTERN' | 'EASTERN', nameDisplayFormat?: NameDisplayFormat): string {
+  if (person.displayNameOverride) {
+    return person.displayNameOverride;
+  }
+
   return formatPersonName(
     person.name,
     person.surname,
@@ -102,7 +107,12 @@ export function formatGraphName(person: {
   name: string;
   surname?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
 }, nameOrder?: 'WESTERN' | 'EASTERN', nameDisplayFormat?: NameDisplayFormat): string {
+  if (person.displayNameOverride) {
+    return person.displayNameOverride;
+  }
+
   // SHORT: just nickname or name
   if (nameDisplayFormat === 'SHORT') {
     return person.nickname || person.name;

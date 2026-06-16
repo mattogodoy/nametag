@@ -219,6 +219,7 @@ export const createPersonSchema = z.object({
   contactReminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   contactReminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
   cardDavSyncEnabled: z.boolean().optional(),
+  displayNameOverride: z.string().max(200).nullable().optional(),
   cardDavDisplayName: z.string().max(200).nullable().optional(),
 
   // Multi-value vCard fields
@@ -292,6 +293,8 @@ export const mergePersonSchema = z.object({
     middleName: z.string().nullable().optional(),
     secondLastName: z.string().nullable().optional(),
     nickname: z.string().nullable().optional(),
+    displayNameOverride: z.string().nullable().optional(),
+    cardDavDisplayName: z.string().nullable().optional(),
     prefix: z.string().nullable().optional(),
     suffix: z.string().nullable().optional(),
     organization: z.string().nullable().optional(),
@@ -447,6 +450,8 @@ export const importDataSchema = z.object({
     middleName: z.string().nullable().optional(),
     secondLastName: z.string().nullable().optional(),
     nickname: z.string().nullable().optional(),
+    displayNameOverride: z.string().nullable().optional(),
+    cardDavDisplayName: z.string().nullable().optional(),
     prefix: z.string().nullable().optional(),
     suffix: z.string().nullable().optional(),
     organization: z.string().nullable().optional(),

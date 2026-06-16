@@ -29,6 +29,7 @@ export const GET = withAuth(async (request, session) => {
             name: true,
             surname: true,
             nickname: true,
+            displayNameOverride: true,
             deletedAt: true,
           },
           orderBy: { deletedAt: 'desc' },

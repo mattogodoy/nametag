@@ -108,7 +108,7 @@ export const POST = withLogging(async function POST(request: Request, context: R
       // keep_remote to preserve the canonical names in Nametag's database.
       const skipNameFields =
         conflict.mapping.connection.cardDavNameFormat !== 'FULL'
-        || !!conflict.mapping.person.cardDavDisplayName;
+        || !!conflict.mapping.person.displayNameOverride;
 
       // Wrap all operations in a single interactive transaction for atomicity
       await prisma.$transaction(async (tx) => {

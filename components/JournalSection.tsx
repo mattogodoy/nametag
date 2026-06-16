@@ -16,6 +16,8 @@ interface JournalSectionProps {
         id: string;
         name: string;
         surname: string | null;
+        nickname?: string | null;
+        displayNameOverride?: string | null;
       };
     }>;
   } | null;

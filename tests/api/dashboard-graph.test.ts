@@ -481,6 +481,39 @@ describe('Dashboard Graph API Route', () => {
     });
   });
 
+  it('should use displayNameOverride for person node labels', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/dashboard/graph',
+    );
+
+    personFindMany.mockResolvedValue([
+      {
+        id: 'person-1',
+        name: 'Robert',
+        surname: 'Johnson',
+        nickname: 'Dad',
+        displayNameOverride: 'Dad',
+        photo: null,
+        relationshipToUser: null,
+        groups: [],
+        relationshipsFrom: [],
+      },
+    ]);
+
+    const response = await GET(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.nodes).toContainEqual({
+      id: 'person-1',
+      label: 'Dad',
+      groups: [],
+      colors: [],
+      isCenter: false,
+      photo: null,
+    });
+  });
+
   it('should build exclude-only filter inside AND wrapper', async () => {
     const request = new NextRequest(
       'http://localhost:3000/api/dashboard/graph?excludeGroupIds=g1',

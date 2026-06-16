@@ -41,6 +41,7 @@ export default async function JournalEntryDetailPage({
                 name: true,
                 surname: true,
                 nickname: true,
+                displayNameOverride: true,
               },
             },
           },

@@ -71,6 +71,7 @@ export function buildLocalHash(person: {
   prefix?: string | null;
   suffix?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
   organization?: string | null;
   jobTitle?: string | null;
   gender?: string | null;
@@ -97,6 +98,7 @@ export function buildLocalHash(person: {
     prefix: person.prefix,
     suffix: person.suffix,
     nickname: person.nickname,
+    displayNameOverride: person.displayNameOverride,
     organization: person.organization,
     jobTitle: person.jobTitle,
     gender: person.gender,
