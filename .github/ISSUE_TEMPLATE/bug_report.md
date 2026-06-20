@@ -29,7 +29,7 @@ If applicable, add screenshots or screen recordings to help explain your problem
 
 ## Environment
 
-- Nametag:
+- Nametag version:
 - OS:
 - Browser (if applicable):
 - Node version (if running locally):
