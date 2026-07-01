@@ -66,10 +66,11 @@ export function personToVCard(
   }
 
   // FN (Formatted Name) - required
-  // Per-contact override takes priority, then user's CardDAV name format, then full name
+  // App-level display override takes priority, then user's CardDAV name format,
+  // then full name.
   let formattedName: string;
-  if (person.cardDavDisplayName) {
-    formattedName = person.cardDavDisplayName;
+  if (person.displayNameOverride) {
+    formattedName = person.displayNameOverride;
   } else if (opts.cardDavNameFormat === 'FIRST_LAST') {
     const sep = nameSeparator(person.name, person.surname);
     const parts: string[] = [];
@@ -92,10 +93,10 @@ export function personToVCard(
   //
   // iOS and Android ignore FN and derive the display name from N components.
   // To control how names appear on phones, we rewrite N to match the display
-  // intent when a non-FULL format or per-contact override is active.
+  // intent when a non-FULL format or display override is active.
   // The real name data is always preserved in Nametag's database.
   const isCustomFormat = (opts.cardDavNameFormat && opts.cardDavNameFormat !== 'FULL')
-    || !!person.cardDavDisplayName;
+    || !!person.displayNameOverride;
 
   let nFamilyName = '';
   let nGivenName = '';
@@ -103,8 +104,8 @@ export function personToVCard(
   let nPrefix = '';
   let nSuffix = '';
 
-  if (person.cardDavDisplayName) {
-    nGivenName = person.cardDavDisplayName;
+  if (person.displayNameOverride) {
+    nGivenName = person.displayNameOverride;
   } else if (opts.cardDavNameFormat === 'FIRST_LAST') {
     nGivenName = person.name || '';
     nFamilyName = person.surname || '';

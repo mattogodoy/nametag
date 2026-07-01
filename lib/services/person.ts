@@ -30,6 +30,7 @@ export type MergeOverrides = {
   middleName?: string | null;
   secondLastName?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
   prefix?: string | null;
   suffix?: string | null;
   organization?: string | null;
@@ -106,6 +107,7 @@ export async function createPerson(userId: string, data: PersonInput) {
     contactReminderInterval,
     contactReminderIntervalUnit,
     cardDavSyncEnabled,
+    displayNameOverride,
     cardDavDisplayName,
     phoneNumbers,
     emails,
@@ -121,7 +123,11 @@ export async function createPerson(userId: string, data: PersonInput) {
   const sanitizedMiddleName = middleName ? sanitizeName(middleName) : null;
   const sanitizedSecondLastName = secondLastName ? sanitizeName(secondLastName) : null;
   const sanitizedNickname = nickname ? sanitizeName(nickname) : null;
-  const sanitizedCardDavDisplayName = cardDavDisplayName ? sanitizeName(cardDavDisplayName) : null;
+  const resolvedDisplayNameOverride =
+    displayNameOverride !== undefined ? displayNameOverride : cardDavDisplayName;
+  const sanitizedDisplayNameOverride = resolvedDisplayNameOverride
+    ? sanitizeName(resolvedDisplayNameOverride)
+    : null;
   const sanitizedNotes = notes ? sanitizeNotes(notes) : null;
 
   const person = await prisma.person.create({
@@ -146,7 +152,7 @@ export async function createPerson(userId: string, data: PersonInput) {
       contactReminderInterval: contactReminderEnabled ? contactReminderInterval : null,
       contactReminderIntervalUnit: contactReminderEnabled ? contactReminderIntervalUnit : null,
       cardDavSyncEnabled: cardDavSyncEnabled ?? true,
-      cardDavDisplayName: sanitizedCardDavDisplayName,
+      displayNameOverride: sanitizedDisplayNameOverride,
       groups: groupIds
         ? { create: groupIds.map((groupId) => ({ groupId })) }
         : undefined,
@@ -272,6 +278,7 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
     contactReminderInterval,
     contactReminderIntervalUnit,
     cardDavSyncEnabled,
+    displayNameOverride,
     cardDavDisplayName,
     phoneNumbers,
     emails,
@@ -317,9 +324,14 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
     updateData.cardDavSyncEnabled = cardDavSyncEnabled;
   }
 
-  if (cardDavDisplayName !== undefined) {
-    const sanitized = cardDavDisplayName ? sanitizeName(cardDavDisplayName) : null;
-    updateData.cardDavDisplayName = sanitized || null;
+  const shouldUpdateDisplayNameOverride =
+    displayNameOverride !== undefined || cardDavDisplayName !== undefined;
+  const resolvedDisplayNameOverride =
+    displayNameOverride !== undefined ? displayNameOverride : cardDavDisplayName;
+
+  if (shouldUpdateDisplayNameOverride) {
+    const sanitized = resolvedDisplayNameOverride ? sanitizeName(resolvedDisplayNameOverride) : null;
+    updateData.displayNameOverride = sanitized || null;
   }
 
   if (groupIds !== undefined) {
@@ -503,6 +515,7 @@ export async function restorePerson(id: string, userId: string): Promise<string 
 
 const SCALAR_STRING_FIELDS = [
   'name', 'surname', 'middleName', 'secondLastName', 'nickname',
+  'displayNameOverride',
   'prefix', 'suffix', 'organization', 'jobTitle', 'gender', 'photo', 'notes',
 ] as const;
 

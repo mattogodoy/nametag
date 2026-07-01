@@ -49,6 +49,7 @@ describe('GET /api/people/search-index', () => {
         middleName: null,
         secondLastName: null,
         nickname: null,
+        displayNameOverride: 'Majo',
         organization: 'Acme',
         jobTitle: 'Dev',
         notes: 'Test note',
@@ -82,6 +83,7 @@ describe('GET /api/people/search-index', () => {
     expect(person.id).toBe('p1');
     expect(person.name).toBe('Maria');
     expect(person.surname).toBe('Garcia');
+    expect(person.displayNameOverride).toBe('Majo');
     expect(person.organization).toBe('Acme');
     expect(person.phones).toBe('+34 612 345 678');
     expect(person.emails).toBe('maria@acme.com');

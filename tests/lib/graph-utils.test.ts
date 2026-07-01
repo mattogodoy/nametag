@@ -84,6 +84,7 @@ describe('graph-utils', () => {
         name: 'John',
         surname: 'Doe',
         nickname: null,
+        displayNameOverride: null,
         photo: 'photos/person-1.webp',
         groups: [
           { group: { id: 'g-family', name: 'Family', color: '#FF0000' } },
@@ -104,6 +105,7 @@ describe('graph-utils', () => {
         name: 'Jane',
         surname: null,
         nickname: null,
+        displayNameOverride: null,
         photo: null,
         groups: [],
       };

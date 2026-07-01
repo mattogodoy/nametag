@@ -21,6 +21,7 @@ async function deleteSecondaryVCard(
     id: string;
     name: string;
     surname: string | null;
+    displayNameOverride: string | null;
     cardDavMapping: {
       href: string;
       etag: string | null;
@@ -84,7 +85,8 @@ async function deleteSecondaryVCard(
 
       // Try 3: Match by name (FN field)
       if (!match) {
-        const fullName = [secondary.name, secondary.surname].filter(Boolean).join(' ');
+        const fullName = secondary.displayNameOverride
+          || [secondary.name, secondary.surname].filter(Boolean).join(' ');
         if (fullName) {
           const fnMatches = vCards.filter((vc) => {
             const fnMatch = vc.data.match(/^FN[^:]*:(.+)$/mi);
@@ -146,6 +148,7 @@ export const POST = withAuth(async (request, session) => {
           id: true,
           name: true,
           surname: true,
+          displayNameOverride: true,
           cardDavMapping: { include: { connection: true } },
         },
       }),

@@ -325,6 +325,7 @@ export const POST = withAuth(async (request, session) => {
             middleName: person.middleName,
             secondLastName: person.secondLastName,
             nickname: person.nickname,
+            displayNameOverride: person.displayNameOverride ?? person.cardDavDisplayName ?? null,
             prefix: person.prefix,
             suffix: person.suffix,
             organization: person.organization,
@@ -537,11 +538,12 @@ export const POST = withAuth(async (request, session) => {
     if (data.journalEntries && data.journalEntries.length > 0) {
       const allPeople = await prisma.person.findMany({
         where: { userId: session.user.id, deletedAt: null },
-        select: { id: true, name: true, surname: true, middleName: true, secondLastName: true, nickname: true },
+        select: { id: true, name: true, surname: true, middleName: true, secondLastName: true, nickname: true, displayNameOverride: true },
       });
 
       const nameToId = new Map<string, string>();
       for (const p of allPeople) {
+        nameToId.set(formatFullName({ ...p, displayNameOverride: null }).toLowerCase(), p.id);
         nameToId.set(formatFullName(p).toLowerCase(), p.id);
       }
 

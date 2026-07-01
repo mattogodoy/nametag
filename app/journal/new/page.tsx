@@ -28,6 +28,7 @@ export default async function NewJournalEntryPage() {
         name: true,
         surname: true,
         nickname: true,
+        displayNameOverride: true,
       },
       orderBy: { name: 'asc' },
     }),

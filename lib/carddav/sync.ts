@@ -333,7 +333,7 @@ export async function syncFromServer(
             // importing name fields to prevent overwriting real names in the DB.
             const skipNameFields =
               connection.cardDavNameFormat !== 'FULL'
-              || !!fullMapping.person.cardDavDisplayName;
+              || !!fullMapping.person.displayNameOverride;
 
             await updatePersonFromVCard(
               fullMapping.personId,
@@ -363,8 +363,8 @@ export async function syncFromServer(
               const expectedPrefix = '';
               const expectedSuffix = '';
 
-              if (person.cardDavDisplayName) {
-                expectedGiven = person.cardDavDisplayName;
+              if (person.displayNameOverride) {
+                expectedGiven = person.displayNameOverride;
                 expectedFamily = '';
               } else if (connection.cardDavNameFormat === 'FIRST_LAST') {
                 expectedGiven = person.name;

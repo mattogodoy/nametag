@@ -38,6 +38,7 @@ export default async function NewGroupPage() {
       name: true,
       surname: true,
       nickname: true,
+      displayNameOverride: true,
     },
     orderBy: {
       name: 'asc',

@@ -63,6 +63,7 @@ export const GET = withAuth(async (request, session) => {
                   name: true,
                   surname: true,
                   nickname: true,
+                  displayNameOverride: true,
                 },
               },
               relationshipType: {
@@ -128,7 +129,7 @@ export const GET = withAuth(async (request, session) => {
           people: {
             include: {
               person: {
-                select: { id: true, name: true, surname: true, middleName: true, secondLastName: true, nickname: true },
+                select: { id: true, name: true, surname: true, middleName: true, secondLastName: true, nickname: true, displayNameOverride: true },
               },
             },
           },
@@ -186,6 +187,7 @@ export const GET = withAuth(async (request, session) => {
         secondLastName: person.secondLastName,
         surname: person.surname,
         nickname: person.nickname,
+        displayNameOverride: person.displayNameOverride,
         prefix: person.prefix,
         suffix: person.suffix,
         organization: person.organization,
@@ -251,7 +253,7 @@ export const GET = withAuth(async (request, session) => {
         groups: person.groups.map((pg) => pg.group.name),
         relationships: person.relationshipsFrom.map((rel) => ({
           relatedPersonId: rel.relatedPersonId,
-          relatedPersonName: `${rel.relatedPerson.name}${rel.relatedPerson.nickname ? ` '${rel.relatedPerson.nickname}'` : ''}${rel.relatedPerson.surname ? ` ${rel.relatedPerson.surname}` : ''}`,
+          relatedPersonName: rel.relatedPerson.displayNameOverride || `${rel.relatedPerson.name}${rel.relatedPerson.nickname ? ` '${rel.relatedPerson.nickname}'` : ''}${rel.relatedPerson.surname ? ` ${rel.relatedPerson.surname}` : ''}`,
           relationshipType: rel.relationshipType
             ? {
                 name: rel.relationshipType.name,

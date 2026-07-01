@@ -288,6 +288,30 @@ describe('PeopleListClient', () => {
       // Orphan warning icon appears (⚠️)
       expect(screen.getByText('⚠️')).toBeInTheDocument();
     });
+
+    it('keeps the real name primary and shows display override as secondary text', () => {
+      render(
+        <Wrapper>
+          <PeopleListClient
+            {...defaultProps({
+              people: [
+                makePerson({
+                  id: 'p-1',
+                  name: 'Robert',
+                  surname: 'Johnson',
+                  displayNameOverride: 'Dad',
+                  relationshipsFrom: [{ id: 'r-1' }],
+                }),
+              ],
+            })}
+          />
+        </Wrapper>
+      );
+
+      expect(screen.getByRole('link', { name: 'Robert' })).toBeInTheDocument();
+      expect(screen.getByText('Dad')).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Dad' })).not.toBeInTheDocument();
+    });
   });
 
   describe('Group filter', () => {

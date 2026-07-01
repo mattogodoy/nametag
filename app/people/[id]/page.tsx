@@ -155,6 +155,7 @@ export default async function PersonDetailsPage({
                 name: true,
                 surname: true,
                 nickname: true,
+                displayNameOverride: true,
                 photo: true,
               },
             },
@@ -203,6 +204,7 @@ export default async function PersonDetailsPage({
         name: true,
         surname: true,
         nickname: true,
+        displayNameOverride: true,
       },
       orderBy: {
         name: 'asc',
@@ -237,7 +239,13 @@ export default async function PersonDetailsPage({
           where: { person: { deletedAt: null } },
           include: {
             person: {
-              select: { id: true, name: true, surname: true },
+              select: {
+                id: true,
+                name: true,
+                surname: true,
+                nickname: true,
+                displayNameOverride: true,
+              },
             },
           },
         },
@@ -374,13 +382,24 @@ export default async function PersonDetailsPage({
                     <p className="text-foreground">
                       {[
                         person.prefix,
-                        formatFullName(person, nameOrder),
+                        formatFullName({ ...person, displayNameOverride: null }, nameOrder),
                         person.suffix,
                       ]
                         .filter(Boolean)
                         .join(' ')}
                     </p>
                   </div>
+
+                  {person.displayNameOverride && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted mb-1">
+                        {t('form.displayNameOverrideLabel')}
+                      </h4>
+                      <p className="text-foreground">
+                        {person.displayNameOverride}
+                      </p>
+                    </div>
+                  )}
 
                   {person.nickname && (
                     <div>

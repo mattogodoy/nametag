@@ -51,6 +51,7 @@ export interface FormData {
   middleName: string;
   secondLastName: string;
   nickname: string;
+  displayNameOverride: string;
   prefix: string;
   suffix: string;
   organization: string;
@@ -63,7 +64,6 @@ export interface FormData {
   contactReminderInterval: number;
   contactReminderIntervalUnit: ReminderIntervalUnit;
   cardDavSyncEnabled: boolean;
-  cardDavDisplayName: string;
 }
 
 export interface PersonFormState {
@@ -163,6 +163,7 @@ interface PersonProp {
   middleName: string | null;
   secondLastName: string | null;
   nickname: string | null;
+  displayNameOverride?: string | null;
   prefix: string | null;
   suffix: string | null;
   photo?: string | null;
@@ -176,7 +177,6 @@ interface PersonProp {
   contactReminderInterval?: number | null;
   contactReminderIntervalUnit?: ReminderIntervalUnit | null;
   cardDavSyncEnabled?: boolean;
-  cardDavDisplayName?: string | null;
   cardDavMapping?: { id: string } | null;
   importantDates?: Array<{
     id: string;
@@ -211,6 +211,7 @@ interface AvailablePerson {
   middleName: string | null;
   secondLastName: string | null;
   nickname: string | null;
+  displayNameOverride?: string | null;
   groups: Array<{ groupId: string }>;
 }
 
@@ -259,6 +260,7 @@ function buildInitialState(params: {
       middleName: person?.middleName || '',
       secondLastName: person?.secondLastName || '',
       nickname: person?.nickname || '',
+      displayNameOverride: person?.displayNameOverride || '',
       prefix: person?.prefix || '',
       suffix: person?.suffix || '',
       organization: person?.organization || '',
@@ -277,8 +279,6 @@ function buildInitialState(params: {
         'MONTHS',
       cardDavSyncEnabled:
         mode === 'edit' ? (person?.cardDavSyncEnabled ?? true) : false,
-      cardDavDisplayName:
-        mode === 'edit' ? (person?.cardDavDisplayName ?? '') : '',
     },
     importantDates:
       person?.importantDates?.map((d) => ({

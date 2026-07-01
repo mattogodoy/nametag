@@ -93,6 +93,7 @@ describe('POST /api/people/merge', () => {
       id: SECONDARY_ID,
       name: 'Jane',
       surname: 'Doe',
+      displayNameOverride: null,
       cardDavMapping: null,
     });
     mocks.mergePeople.mockResolvedValue(PRIMARY_ID);
@@ -194,6 +195,7 @@ describe('POST /api/people/merge', () => {
         id: SECONDARY_ID,
         name: 'Jane',
         surname: 'Doe',
+        displayNameOverride: null,
         cardDavMapping: MAPPING,
       });
       mocks.deleteVCardDirect.mockResolvedValue(undefined);
@@ -212,6 +214,7 @@ describe('POST /api/people/merge', () => {
         id: SECONDARY_ID,
         name: 'Jane',
         surname: 'Doe',
+        displayNameOverride: null,
         cardDavMapping: { ...MAPPING, etag: '"stale-etag"' },
       });
 
@@ -239,6 +242,7 @@ describe('POST /api/people/merge', () => {
         id: SECONDARY_ID,
         name: 'Jane',
         surname: 'Doe',
+        displayNameOverride: null,
         cardDavMapping: MAPPING,
       });
       mocks.deleteVCardDirect.mockRejectedValue(new Error('Server unreachable'));
@@ -257,6 +261,7 @@ describe('POST /api/people/merge', () => {
         id: SECONDARY_ID,
         name: 'Jane',
         surname: 'Doe',
+        displayNameOverride: null,
         cardDavMapping: MAPPING,
       });
 
@@ -283,6 +288,42 @@ describe('POST /api/people/merge', () => {
       expect(mocks.deleteVCardDirect).toHaveBeenNthCalledWith(3,
         CONNECTION,
         'https://carddav.example.com/contacts/correct-url.vcf',
+        '*',
+      );
+    });
+
+    it('falls back to displayNameOverride when matching by FN after delete returns 404', async () => {
+      mocks.personFindUnique.mockResolvedValue({
+        id: SECONDARY_ID,
+        name: 'Robert',
+        surname: 'Smith',
+        displayNameOverride: 'Dad',
+        cardDavMapping: { ...MAPPING, uid: '' },
+      });
+
+      mocks.deleteVCardDirect
+        .mockRejectedValueOnce(new Error('CardDAV DELETE failed: 404 Not Found'))
+        .mockRejectedValueOnce(new Error('CardDAV DELETE failed: 404 Not Found'))
+        .mockResolvedValueOnce(undefined);
+
+      const mockAddressBook = { url: 'https://carddav.example.com/contacts/', raw: {} };
+      mocks.mockFetchAddressBooks.mockResolvedValueOnce([mockAddressBook]);
+      mocks.mockFetchVCards.mockResolvedValueOnce([
+        { url: 'https://carddav.example.com/contacts/dad.vcf', etag: '"etag-dad"', data: 'BEGIN:VCARD\nFN:Dad\nEND:VCARD' },
+        { url: 'https://carddav.example.com/contacts/robert.vcf', etag: '"etag-robert"', data: 'BEGIN:VCARD\nFN:Robert Smith\nEND:VCARD' },
+      ]);
+
+      mocks.createCardDavClient.mockResolvedValueOnce({
+        fetchAddressBooks: mocks.mockFetchAddressBooks,
+        fetchVCards: mocks.mockFetchVCards,
+      });
+
+      await POST(makeRequest({ primaryId: PRIMARY_ID, secondaryId: SECONDARY_ID }));
+
+      expect(mocks.deleteVCardDirect).toHaveBeenCalledTimes(3);
+      expect(mocks.deleteVCardDirect).toHaveBeenNthCalledWith(3,
+        CONNECTION,
+        'https://carddav.example.com/contacts/dad.vcf',
         '*',
       );
     });
