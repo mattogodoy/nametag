@@ -20,6 +20,9 @@ export const GET = withAuth(async (_request, session, context) => {
       },
       include: {
         people: {
+          where: {
+            person: { deletedAt: null },
+          },
           include: {
             person: true,
           },

@@ -105,6 +105,23 @@ describe('Groups API', () => {
         })
       );
     });
+
+    it('should exclude soft-deleted people from group members', async () => {
+      mocks.groupFindMany.mockResolvedValue([]);
+
+      const request = new Request('http://localhost/api/groups');
+      await GET(request);
+
+      expect(mocks.groupFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            people: expect.objectContaining({
+              where: { person: { deletedAt: null } },
+            }),
+          }),
+        })
+      );
+    });
   });
 
   describe('POST /api/groups', () => {
@@ -296,7 +313,32 @@ describe('Groups API', () => {
             },
           }),
           include: expect.objectContaining({
-            people: expect.any(Object),
+            people: expect.objectContaining({
+              where: { person: { deletedAt: null } },
+            }),
+          }),
+        })
+      );
+    });
+
+    it('should exclude soft-deleted people from created group response', async () => {
+      mocks.groupFindFirst.mockResolvedValue(null);
+      mocks.groupCreate.mockResolvedValue({ id: 'new', name: 'Test', people: [] });
+
+      const request = new Request('http://localhost/api/groups', {
+        method: 'POST',
+        body: JSON.stringify({ name: 'Test' }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await POST(request);
+
+      expect(mocks.groupCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            people: expect.objectContaining({
+              where: { person: { deletedAt: null } },
+            }),
           }),
         })
       );
