@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.51.1](https://github.com/mattogodoy/nametag/compare/v0.51.0...v0.51.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* prevent CardDAV sync from creating duplicate contacts ([43f1032](https://github.com/mattogodoy/nametag/commit/43f1032cf9f974b64e5939168ddde2af8547d10d))
+* prevent CardDAV sync from creating duplicate contacts ([#314](https://github.com/mattogodoy/nametag/issues/314)) ([1354fa1](https://github.com/mattogodoy/nametag/commit/1354fa1d71aca5fef5541a8d9d6580afd96eb59a))
+* reminder toggle ignoring clicks for dates with custom titles ([1c7cafa](https://github.com/mattogodoy/nametag/commit/1c7cafa026ef09ee294b470133c28c86103e01c6))
+
 ## [0.51.0](https://github.com/mattogodoy/nametag/compare/v0.50.1...v0.51.0) (2026-07-03)
 
 
