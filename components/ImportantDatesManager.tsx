@@ -49,6 +49,132 @@ const defaultNewDate: ImportantDate = {
   reminderIntervalUnit: 'YEARS',
 };
 
+function isDateInFuture(dateStr: string): boolean {
+  if (!dateStr) return false;
+  const date = parseAsLocalDate(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date >= today;
+}
+
+// Defined at module scope on purpose: a component created inside the parent's
+// render is a new type each render, so React remounts it (and its DOM) on
+// every parent state change, dropping input focus and in-flight clicks.
+function ReminderFields({
+  date,
+  onChange,
+  idPrefix,
+  canEnable,
+  reminderLimit,
+  t,
+  tForm,
+}: {
+  date: ImportantDate;
+  onChange: (updates: Partial<ImportantDate>) => void;
+  idPrefix: string;
+  canEnable: boolean;
+  reminderLimit?: ReminderLimitInfo;
+  t: ReturnType<typeof useTranslations>;
+  tForm: ReturnType<typeof useTranslations>;
+}) {
+  const isFuture = isDateInFuture(date.date);
+  // Can toggle on if: already enabled (to disable) OR canEnable is true
+  const canToggle = date.reminderEnabled || canEnable;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border">
+      <div className="flex items-center gap-2 mb-3">
+        <button
+          type="button"
+          id={`${idPrefix}-reminder-toggle`}
+          disabled={!canToggle}
+          onClick={() => {
+            if (!canToggle) return;
+            onChange({
+              reminderEnabled: !date.reminderEnabled,
+              reminderType: !date.reminderEnabled ? (isFuture ? 'ONCE' : 'RECURRING') : date.reminderType,
+            });
+          }}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+            date.reminderEnabled ? 'bg-primary' : 'bg-muted'
+          } ${!canToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <span
+            className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+              date.reminderEnabled ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
+        <label
+          htmlFor={`${idPrefix}-reminder-toggle`}
+          className="text-xs font-medium text-muted"
+        >
+          {t('remindMe')}
+        </label>
+      </div>
+      {!canToggle && reminderLimit && !reminderLimit.isUnlimited && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
+          {t('reminderLimitReached', { limit: reminderLimit.limit })}
+        </p>
+      )}
+
+      {date.reminderEnabled && (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            {isFuture && (
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`${idPrefix}-reminder-type`}
+                  checked={date.reminderType === 'ONCE'}
+                  onChange={() => onChange({ reminderType: 'ONCE' })}
+                  className="h-4 w-4 text-primary border-border focus:ring-primary"
+                />
+                <span className="text-xs text-muted">
+                  {t('onlyOnce')}
+                </span>
+              </label>
+            )}
+            <label className="flex items-center space-x-2 cursor-pointer flex-wrap gap-y-1">
+              <input
+                type="radio"
+                name={`${idPrefix}-reminder-type`}
+                checked={date.reminderType === 'RECURRING'}
+                onChange={() => onChange({ reminderType: 'RECURRING' })}
+                className="h-4 w-4 text-primary border-border focus:ring-primary"
+              />
+              <span className="text-xs text-muted">{t('every')}</span>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                value={date.reminderInterval ?? 1}
+                onChange={(e) => onChange({ reminderInterval: Math.max(1, parseInt(e.target.value) || 1) })}
+                disabled={date.reminderType !== 'RECURRING'}
+                className="w-14 px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <select
+                value={date.reminderIntervalUnit ?? 'YEARS'}
+                onChange={(e) => onChange({ reminderIntervalUnit: e.target.value as ReminderIntervalUnit })}
+                disabled={date.reminderType !== 'RECURRING'}
+                className="px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="DAYS">{tForm('days')}</option>
+                <option value="WEEKS">{tForm('weeks')}</option>
+                <option value="MONTHS">{tForm('months')}</option>
+                <option value="YEARS">{tForm('years')}</option>
+              </select>
+              <span className="text-xs text-muted">
+                {t('startingFrom')}
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ImportantDatesManager({
   personId,
   initialDates = [],
@@ -89,14 +215,6 @@ export default function ImportantDatesManager({
   // Check if user can add more reminders
   const canAddReminder = !reminderLimit || reminderLimit.isUnlimited ||
     (reminderLimit.current + newDateHasReminder + editingDateAddsReminder) < reminderLimit.limit;
-
-  const isDateInFuture = (dateStr: string) => {
-    if (!dateStr) return false;
-    const date = parseAsLocalDate(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date >= today;
-  };
 
   const handleAdd = () => {
     if ((!newDate.type && !newDate.title.trim()) || !newDate.date) return;
@@ -242,115 +360,6 @@ export default function ImportantDatesManager({
     return null;
   };
 
-  const ReminderFields = ({
-    date,
-    onChange,
-    idPrefix,
-    canEnable,
-  }: {
-    date: ImportantDate;
-    onChange: (updates: Partial<ImportantDate>) => void;
-    idPrefix: string;
-    canEnable: boolean;
-  }) => {
-    const isFuture = isDateInFuture(date.date);
-    // Can toggle on if: already enabled (to disable) OR canEnable is true
-    const canToggle = date.reminderEnabled || canEnable;
-
-    return (
-      <div className="mt-3 pt-3 border-t border-border">
-        <div className="flex items-center gap-2 mb-3">
-          <button
-            type="button"
-            id={`${idPrefix}-reminder-toggle`}
-            disabled={!canToggle}
-            onClick={() => {
-              if (!canToggle) return;
-              onChange({
-                reminderEnabled: !date.reminderEnabled,
-                reminderType: !date.reminderEnabled ? (isFuture ? 'ONCE' : 'RECURRING') : date.reminderType,
-              });
-            }}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-              date.reminderEnabled ? 'bg-primary' : 'bg-surface-elevated'
-            } ${!canToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <span
-              className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                date.reminderEnabled ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-          <label
-            htmlFor={`${idPrefix}-reminder-toggle`}
-            className={`text-xs font-medium ${canToggle ? 'text-muted' : 'text-muted'}`}
-          >
-            {t('remindMe')}
-          </label>
-        </div>
-        {!canToggle && reminderLimit && !reminderLimit.isUnlimited && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-            {t('reminderLimitReached', { limit: reminderLimit.limit })}
-          </p>
-        )}
-
-        {date.reminderEnabled && (
-          <div className="space-y-3">
-            <div className="space-y-2">
-              {isFuture && (
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`${idPrefix}-reminder-type`}
-                    checked={date.reminderType === 'ONCE'}
-                    onChange={() => onChange({ reminderType: 'ONCE' })}
-                    className="h-4 w-4 text-primary border-border focus:ring-primary"
-                  />
-                  <span className="text-xs text-muted">
-                    {t('onlyOnce')}
-                  </span>
-                </label>
-              )}
-              <label className="flex items-center space-x-2 cursor-pointer flex-wrap gap-y-1">
-                <input
-                  type="radio"
-                  name={`${idPrefix}-reminder-type`}
-                  checked={date.reminderType === 'RECURRING'}
-                  onChange={() => onChange({ reminderType: 'RECURRING' })}
-                  className="h-4 w-4 text-primary border-border focus:ring-primary"
-                />
-                <span className="text-xs text-muted">{t('every')}</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="99"
-                  value={date.reminderInterval ?? 1}
-                  onChange={(e) => onChange({ reminderInterval: Math.max(1, parseInt(e.target.value) || 1) })}
-                  disabled={date.reminderType !== 'RECURRING'}
-                  className="w-14 px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <select
-                  value={date.reminderIntervalUnit ?? 'YEARS'}
-                  onChange={(e) => onChange({ reminderIntervalUnit: e.target.value as ReminderIntervalUnit })}
-                  disabled={date.reminderType !== 'RECURRING'}
-                  className="px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="DAYS">{tForm('days')}</option>
-                  <option value="WEEKS">{tForm('weeks')}</option>
-                  <option value="MONTHS">{tForm('months')}</option>
-                  <option value="YEARS">{tForm('years')}</option>
-                </select>
-                <span className={`text-xs ${date.reminderType === 'RECURRING' ? 'text-muted' : 'text-muted'}`}>
-                  {t('startingFrom')}
-                </span>
-              </label>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div>
       {!isAdding && editingIndex === null && (
@@ -422,6 +431,9 @@ export default function ImportantDatesManager({
                   onChange={(updates) => setEditingDate({ ...editingDate, ...updates })}
                   idPrefix={`edit-${index}`}
                   canEnable={canAddReminder || !!editingDate.reminderEnabled}
+                  reminderLimit={reminderLimit}
+                  t={t}
+                  tForm={tForm}
                 />
                 <div className="flex justify-end space-x-2 pt-2">
                   <button
@@ -551,6 +563,9 @@ export default function ImportantDatesManager({
               onChange={(updates) => setNewDate({ ...newDate, ...updates })}
               idPrefix="new"
               canEnable={canAddReminder}
+              reminderLimit={reminderLimit}
+              t={t}
+              tForm={tForm}
             />
             <div className="flex justify-end space-x-2 pt-2">
               <button

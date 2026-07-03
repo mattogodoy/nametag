@@ -50,17 +50,24 @@ export default function ComboboxInput({
     : null;
 
   useEffect(() => {
+    // Only listen while there is something to close or commit. Firing
+    // onChange on unrelated mousedowns re-renders the parent mid-click,
+    // which can swallow clicks on sibling controls.
+    if (!isOpen && localText === null) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        if (!value && inputText.trim()) {
-          onChange(null, inputText.trim());
+        const trimmed = inputText.trim();
+        if (!value && trimmed && trimmed !== customText) {
+          onChange(null, trimmed);
         }
+        setLocalText(null);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [value, inputText, onChange]);
+  }, [isOpen, localText, value, inputText, customText, onChange]);
 
   const handleSelectOption = useCallback((optionValue: string) => {
     onChange(optionValue);
