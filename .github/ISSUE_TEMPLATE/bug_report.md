@@ -29,6 +29,7 @@ If applicable, add screenshots or screen recordings to help explain your problem
 
 ## Environment
 
+- Nametag version:
 - OS:
 - Browser (if applicable):
 - Node version (if running locally):
@@ -41,5 +42,3 @@ Please include relevant logs (server logs, browser console, stack traces).
 ## Additional context
 
 Add any other context about the problem here.
-
-
