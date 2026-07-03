@@ -15,6 +15,9 @@ export const GET = withAuth(async (_request, session) => {
       },
       include: {
         people: {
+          where: {
+            person: { deletedAt: null },
+          },
           include: {
             person: true,
           },
@@ -92,6 +95,9 @@ export const POST = withAuth(async (request, session) => {
       },
       include: {
         people: {
+          where: {
+            person: { deletedAt: null },
+          },
           include: {
             person: true,
           },

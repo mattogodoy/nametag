@@ -48,7 +48,11 @@ export default async function GroupsPage({
     include: {
       _count: {
         select: {
-          people: true,
+          people: {
+            where: {
+              person: { deletedAt: null },
+            },
+          },
         },
       },
     },
