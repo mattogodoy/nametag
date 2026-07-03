@@ -29,6 +29,7 @@ const testDocuments: SearchDocument[] = [
     middleName: null,
     secondLastName: null,
     nickname: 'Johnny',
+    displayNameOverride: 'Hatter',
     organization: 'Globex',
     jobTitle: 'Designer',
     notes: 'Lives in Berlin',
@@ -126,6 +127,14 @@ describe('search-index', () => {
       expect(results[0].id).toBe('2');
     });
 
+    it('should find people by display name override', () => {
+      const index = createSearchIndex(testDocuments);
+      const results = searchIndex(index, 'Hatter');
+      expect(results).toHaveLength(1);
+      expect(results[0].id).toBe('2');
+      expect(results[0].displayNameOverride).toBe('Hatter');
+    });
+
     it('should support prefix matching', () => {
       const index = createSearchIndex(testDocuments);
       const results = searchIndex(index, 'Gar');
@@ -156,6 +165,7 @@ describe('search-index', () => {
       expect(result).toHaveProperty('name');
       expect(result).toHaveProperty('surname');
       expect(result).toHaveProperty('nickname');
+      expect(result).toHaveProperty('displayNameOverride');
       expect(result).toHaveProperty('photo');
       expect(result).toHaveProperty('score');
     });

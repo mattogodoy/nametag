@@ -193,6 +193,42 @@ export default function PersonalInfoSection({
             className={inputClass}
           />
         </div>
+
+        <div className="md:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <label
+              htmlFor="displayNameOverride"
+              className="block text-sm font-medium text-muted"
+            >
+              {t('displayNameOverrideLabel')}
+            </label>
+            {formData.nickname && !formData.displayNameOverride && (
+              <button
+                type="button"
+                onClick={() =>
+                  onFormDataChange({ displayNameOverride: formData.nickname })
+                }
+                className="text-xs text-primary hover:underline"
+              >
+                {t('displayNameOverrideUseNickname')}
+              </button>
+            )}
+          </div>
+          <input
+            type="text"
+            id="displayNameOverride"
+            value={formData.displayNameOverride}
+            onChange={(e) =>
+              onFormDataChange({ displayNameOverride: e.target.value })
+            }
+            placeholder={t('displayNameOverridePlaceholder')}
+            className={inputClass}
+            maxLength={200}
+          />
+          <p className="text-xs text-muted mt-1">
+            {t('displayNameOverrideHelp')}
+          </p>
+        </div>
       </div>
 
       {mode === 'create' && (

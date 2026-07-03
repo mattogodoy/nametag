@@ -317,6 +317,45 @@ describe('Export API', () => {
       expect(person1.relationships[0].relatedPersonId).toBe('person-2');
     });
 
+    it('should export journal people with stable IDs and canonical names (not display overrides)', async () => {
+      mocks.personFindMany.mockResolvedValue(mockPeople);
+      mocks.journalEntryFindMany.mockResolvedValue([
+        {
+          id: 'entry-1',
+          title: 'Dinner',
+          date: new Date('2026-05-01T00:00:00.000Z'),
+          body: 'Nice dinner',
+          people: [
+            {
+              person: {
+                id: 'person-1',
+                name: 'Robert',
+                surname: 'Johnson',
+                middleName: null,
+                secondLastName: null,
+                nickname: null,
+                displayNameOverride: 'Dad',
+              },
+            },
+          ],
+        },
+      ]);
+
+      const request = new Request('http://localhost/api/user/export', {
+        method: 'GET',
+      });
+
+      const response = await exportData(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.journalEntries).toHaveLength(1);
+      expect(body.journalEntries[0].peopleIds).toEqual(['person-1']);
+      // Canonical name keeps old-version round-trips working; the override is
+      // a display concern and must not leak into identity/matching data.
+      expect(body.journalEntries[0].people).toEqual(['Robert Johnson']);
+    });
+
     it('should include all person fields in export', async () => {
       mocks.personFindMany.mockResolvedValue(mockPeople);
 

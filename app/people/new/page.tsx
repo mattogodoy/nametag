@@ -70,6 +70,7 @@ export default async function NewPersonPage({
         middleName: true,
         secondLastName: true,
         nickname: true,
+        displayNameOverride: true,
         groups: {
           select: {
             groupId: true,

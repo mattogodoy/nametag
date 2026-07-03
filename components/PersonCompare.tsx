@@ -11,6 +11,7 @@ export interface PersonForCompare {
   middleName: string | null;
   secondLastName: string | null;
   nickname: string | null;
+  displayNameOverride?: string | null;
   prefix: string | null;
   suffix: string | null;
   organization: string | null;
@@ -65,6 +66,7 @@ type ScalarFieldKey =
   | 'middleName'
   | 'secondLastName'
   | 'nickname'
+  | 'displayNameOverride'
   | 'prefix'
   | 'suffix'
   | 'organization'
@@ -86,6 +88,7 @@ const SCALAR_FIELDS: ScalarFieldDef[] = [
   { key: 'middleName', labelKey: 'fieldMiddleName' },
   { key: 'secondLastName', labelKey: 'fieldSecondLastName' },
   { key: 'nickname', labelKey: 'fieldNickname' },
+  { key: 'displayNameOverride', labelKey: 'fieldDisplayNameOverride' },
   { key: 'prefix', labelKey: 'fieldPrefix' },
   { key: 'suffix', labelKey: 'fieldSuffix' },
   { key: 'organization', labelKey: 'fieldOrganization' },

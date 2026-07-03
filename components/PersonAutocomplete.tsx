@@ -10,6 +10,7 @@ interface Person {
   name: string;
   surname?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
 }
 
 interface PersonAutocompleteProps {
@@ -47,7 +48,7 @@ export default function PersonAutocomplete({
   const displayValue = selectedPerson ? formatGraphName(selectedPerson, nameOrder, nameDisplayFormat) : searchTerm;
 
   // Filter people based on search term - search in name, surname, and nickname
-  const filteredPeople = filterPeople(people, searchTerm, ['name', 'surname', 'nickname']);
+  const filteredPeople = filterPeople(people, searchTerm, ['name', 'surname', 'nickname', 'displayNameOverride']);
 
   // Close dropdown when clicking outside
   useEffect(() => {

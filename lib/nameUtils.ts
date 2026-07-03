@@ -78,6 +78,37 @@ export function formatFullName(person: {
   middleName?: string | null;
   secondLastName?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
+}, nameOrder?: 'WESTERN' | 'EASTERN', nameDisplayFormat?: NameDisplayFormat): string {
+  if (person.displayNameOverride) {
+    return person.displayNameOverride;
+  }
+
+  return formatPersonName(
+    person.name,
+    person.surname,
+    person.middleName,
+    person.secondLastName,
+    person.nickname,
+    nameOrder,
+    nameDisplayFormat
+  );
+}
+
+/**
+ * Formats a person's canonical (real) full name, ignoring displayNameOverride.
+ * Use this wherever the underlying name data must be shown or matched
+ * (e.g. person details, duplicate detection, import name matching) so that
+ * display overrides never leak into identity contexts.
+ */
+export function formatCanonicalName(person: {
+  name: string;
+  surname?: string | null;
+  middleName?: string | null;
+  secondLastName?: string | null;
+  nickname?: string | null;
+  // Accepted so person objects can be passed as-is, but intentionally unused.
+  displayNameOverride?: string | null;
 }, nameOrder?: 'WESTERN' | 'EASTERN', nameDisplayFormat?: NameDisplayFormat): string {
   return formatPersonName(
     person.name,
@@ -102,7 +133,12 @@ export function formatGraphName(person: {
   name: string;
   surname?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
 }, nameOrder?: 'WESTERN' | 'EASTERN', nameDisplayFormat?: NameDisplayFormat): string {
+  if (person.displayNameOverride) {
+    return person.displayNameOverride;
+  }
+
   // SHORT: just nickname or name
   if (nameDisplayFormat === 'SHORT') {
     return person.nickname || person.name;

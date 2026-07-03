@@ -24,6 +24,7 @@ export const GET = withAuth(async (request, session) => {
       middleName: true,
       secondLastName: true,
       nickname: true,
+      displayNameOverride: true,
       photo: true,
     },
     orderBy: {
@@ -34,7 +35,7 @@ export const GET = withAuth(async (request, session) => {
   const people = filterPeople(
     allPeople,
     query,
-    ['name', 'surname', 'middleName', 'secondLastName', 'nickname']
+    ['name', 'surname', 'middleName', 'secondLastName', 'nickname', 'displayNameOverride']
   ).slice(0, 20);
 
   return apiResponse.ok({ people });

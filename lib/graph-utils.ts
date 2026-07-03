@@ -132,7 +132,7 @@ type Group = Prisma.GroupGetPayload<{
 
 interface Person
   extends Prisma.PersonGetPayload<{
-    select: { id: true; name: true; surname: true; nickname: true; photo: true };
+    select: { id: true; name: true; surname: true; nickname: true; displayNameOverride: true; photo: true };
   }> {
   groups: { group: Group }[];
 }

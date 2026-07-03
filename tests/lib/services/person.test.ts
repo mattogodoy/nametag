@@ -858,6 +858,46 @@ describe('mergePeople', () => {
     expect(data.surname).toBe('Smith');
   });
 
+  it('applies the deprecated cardDavDisplayName alias as displayNameOverride', async () => {
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID, { cardDavDisplayName: 'Mom' });
+    const call = mocks.mockTxClient.person.update.mock.calls.find(
+      (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === PERSON_ID
+    );
+    if (!call) throw new Error('Expected update call for target person');
+    const data = (call[0] as { data: Record<string, unknown> }).data;
+    expect(data.displayNameOverride).toBe('Mom');
+    expect(data).not.toHaveProperty('cardDavDisplayName');
+  });
+
+  it('prefers explicit displayNameOverride over the deprecated alias', async () => {
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID, {
+      displayNameOverride: 'Dad',
+      cardDavDisplayName: 'Mom',
+    });
+    const call = mocks.mockTxClient.person.update.mock.calls.find(
+      (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === PERSON_ID
+    );
+    if (!call) throw new Error('Expected update call for target person');
+    const data = (call[0] as { data: Record<string, unknown> }).data;
+    expect(data.displayNameOverride).toBe('Dad');
+  });
+
+  it('clearing via the alias (null) blocks auto-transfer from source', async () => {
+    mocks.personFindUnique
+      .mockReset()
+      .mockResolvedValueOnce(makePersonForMerge(PERSON_ID, { displayNameOverride: null }))
+      .mockResolvedValueOnce(makePersonForMerge(SOURCE_ID, { displayNameOverride: 'Boss' }));
+
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID, { cardDavDisplayName: null });
+
+    const call = mocks.mockTxClient.person.update.mock.calls.find(
+      (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === PERSON_ID
+    );
+    if (!call) throw new Error('Expected update call for target person');
+    const data = (call[0] as { data: Record<string, unknown> }).data;
+    expect(data.displayNameOverride).toBeNull();
+  });
+
   it('auto-transfers scalar fields that are empty on target', async () => {
     mocks.personFindUnique
       .mockReset()

@@ -14,6 +14,7 @@ interface Person {
   middleName?: string | null;
   secondLastName?: string | null;
   nickname?: string | null;
+  displayNameOverride?: string | null;
   photo?: string | null;
 }
 

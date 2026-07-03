@@ -16,10 +16,10 @@ export const GET = withAuth(async (_request, session) => {
       },
       include: {
         person: {
-          select: { id: true, name: true, surname: true, nickname: true },
+          select: { id: true, name: true, surname: true, nickname: true, displayNameOverride: true },
         },
         relatedPerson: {
-          select: { id: true, name: true, surname: true, nickname: true },
+          select: { id: true, name: true, surname: true, nickname: true, displayNameOverride: true },
         },
         relationshipType: {
           where: { deletedAt: null },

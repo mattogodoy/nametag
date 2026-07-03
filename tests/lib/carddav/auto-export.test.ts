@@ -255,6 +255,57 @@ describe('CardDAV Auto-Export', () => {
       });
     });
 
+    it('should match server-rewritten vCard by FN when person has a displayNameOverride', async () => {
+      mocks.personFindUnique.mockResolvedValue(
+        makePerson({ displayNameOverride: 'Dad' })
+      );
+      // The exported vCard FN is the display override
+      mocks.personToVCard.mockReturnValue('BEGIN:VCARD\nVERSION:4.0\nFN:Dad\nEND:VCARD');
+      // Server (e.g. Google) rewrote the URL and UID of the created vCard
+      mocks.cardDavMappingFindMany.mockResolvedValue([]);
+      mocks.fetchVCards.mockResolvedValue([
+        {
+          url: 'https://carddav.example.com/contacts/server-assigned.vcf',
+          etag: 'server-etag',
+          data: 'BEGIN:VCARD\nVERSION:4.0\nUID:server-uid\nFN:Dad\nEND:VCARD',
+        },
+      ]);
+
+      await autoExportPerson(PERSON_ID);
+
+      expect(mocks.cardDavMappingCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          href: 'https://carddav.example.com/contacts/server-assigned.vcf',
+          etag: 'server-etag',
+          uid: 'server-uid',
+        }),
+      });
+    });
+
+    it('should match server-rewritten vCard by FN when FN includes a quoted nickname', async () => {
+      mocks.personFindUnique.mockResolvedValue(makePerson({ nickname: 'Johnny' }));
+      mocks.personToVCard.mockReturnValue(
+        "BEGIN:VCARD\nVERSION:4.0\nFN:John 'Johnny' Doe\nEND:VCARD"
+      );
+      mocks.cardDavMappingFindMany.mockResolvedValue([]);
+      mocks.fetchVCards.mockResolvedValue([
+        {
+          url: 'https://carddav.example.com/contacts/server-assigned.vcf',
+          etag: 'server-etag',
+          data: "BEGIN:VCARD\nVERSION:4.0\nUID:server-uid\nFN:John 'Johnny' Doe\nEND:VCARD",
+        },
+      ]);
+
+      await autoExportPerson(PERSON_ID);
+
+      expect(mocks.cardDavMappingCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          href: 'https://carddav.example.com/contacts/server-assigned.vcf',
+          uid: 'server-uid',
+        }),
+      });
+    });
+
     it('should throw when person is not found', async () => {
       mocks.personFindUnique.mockResolvedValue(null);
 
