@@ -12,7 +12,7 @@ import PersonActionsMenu from '@/components/PersonActionsMenu';
 import LastContactQuickUpdate from '@/components/LastContactQuickUpdate';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate, type DateFormat } from '@/lib/date-format';
 import { getCountryName } from '@/lib/countries';
-import { formatFullName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { formatCanonicalName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PersonAvatar from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
@@ -382,7 +382,7 @@ export default async function PersonDetailsPage({
                     <p className="text-foreground">
                       {[
                         person.prefix,
-                        formatFullName({ ...person, displayNameOverride: null }, nameOrder),
+                        formatCanonicalName(person, nameOrder),
                         person.suffix,
                       ]
                         .filter(Boolean)

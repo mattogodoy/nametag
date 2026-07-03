@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatCanonicalName, formatFullName } from '@/lib/nameUtils';
 
 export const GET = withAuth(async (request, session) => {
   try {
@@ -253,7 +253,7 @@ export const GET = withAuth(async (request, session) => {
         groups: person.groups.map((pg) => pg.group.name),
         relationships: person.relationshipsFrom.map((rel) => ({
           relatedPersonId: rel.relatedPersonId,
-          relatedPersonName: rel.relatedPerson.displayNameOverride || `${rel.relatedPerson.name}${rel.relatedPerson.nickname ? ` '${rel.relatedPerson.nickname}'` : ''}${rel.relatedPerson.surname ? ` ${rel.relatedPerson.surname}` : ''}`,
+          relatedPersonName: formatFullName(rel.relatedPerson),
           relationshipType: rel.relationshipType
             ? {
                 name: rel.relationshipType.name,
@@ -275,7 +275,11 @@ export const GET = withAuth(async (request, session) => {
         title: e.title,
         date: e.date.toISOString(),
         body: e.body,
-        people: e.people.map((ep) => formatFullName(ep.person)),
+        // Canonical names keep old-version round-trips working; peopleIds are
+        // the stable identity used by import. Display overrides stay out of
+        // matching data.
+        people: e.people.map((ep) => formatCanonicalName(ep.person)),
+        peopleIds: e.people.map((ep) => ep.person.id),
       })),
       customFieldTemplates: customFieldTemplates.map((t) => ({
         name: t.name,

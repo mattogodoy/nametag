@@ -9,7 +9,7 @@ import BulkDeleteModal from './BulkDeleteModal';
 import BulkGroupAssignModal from './BulkGroupAssignModal';
 import BulkRelationshipModal from './BulkRelationshipModal';
 import PersonAvatar from './PersonPhoto';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatCanonicalName } from '@/lib/nameUtils';
 import { formatDate, type DateFormat } from '@/lib/date-format';
 import CustomFieldFilter from './customFields/CustomFieldFilter';
 import type { CustomFieldTemplate } from '@prisma/client';
@@ -167,7 +167,7 @@ export default function PeopleListClient({
 
   const selectedNames = useMemo(() => {
     const fullName = (p: PersonRow) =>
-      formatFullName({ ...p, displayNameOverride: null }, nameOrder);
+      formatCanonicalName(p, nameOrder);
     if (selectAllPages) {
       return people.map(fullName);
     }
@@ -338,7 +338,7 @@ export default function PeopleListClient({
                                  person.relationshipsFrom.length === 0 &&
                                  person.relationshipsTo.length === 0;
                 const isChecked = selectAllPages || selectedIds.has(person.id);
-                const fullDisplayName = formatFullName({ ...person, displayNameOverride: null }, nameOrder);
+                const fullDisplayName = formatCanonicalName(person, nameOrder);
 
                 return (
                   <tr key={person.id} className={`hover:bg-surface-elevated transition-colors ${isChecked ? 'bg-primary/5' : ''}`}>

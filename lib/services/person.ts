@@ -31,6 +31,8 @@ export type MergeOverrides = {
   secondLastName?: string | null;
   nickname?: string | null;
   displayNameOverride?: string | null;
+  /** @deprecated alias for displayNameOverride, kept for API compatibility. */
+  cardDavDisplayName?: string | null;
   prefix?: string | null;
   suffix?: string | null;
   organization?: string | null;
@@ -46,6 +48,18 @@ export type MergeOverrides = {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Resolve the displayNameOverride value from an input that may still use the
+ * deprecated cardDavDisplayName alias. An explicit displayNameOverride always
+ * wins (including an explicit null to clear the field).
+ */
+function resolveDisplayNameOverride(
+  displayNameOverride: string | null | undefined,
+  cardDavDisplayName: string | null | undefined,
+): string | null | undefined {
+  return displayNameOverride !== undefined ? displayNameOverride : cardDavDisplayName;
+}
 
 /** Convert an importantDate input to the Prisma create shape. */
 function mapImportantDate(date: NonNullable<PersonInput['importantDates']>[number]) {
@@ -123,8 +137,7 @@ export async function createPerson(userId: string, data: PersonInput) {
   const sanitizedMiddleName = middleName ? sanitizeName(middleName) : null;
   const sanitizedSecondLastName = secondLastName ? sanitizeName(secondLastName) : null;
   const sanitizedNickname = nickname ? sanitizeName(nickname) : null;
-  const resolvedDisplayNameOverride =
-    displayNameOverride !== undefined ? displayNameOverride : cardDavDisplayName;
+  const resolvedDisplayNameOverride = resolveDisplayNameOverride(displayNameOverride, cardDavDisplayName);
   const sanitizedDisplayNameOverride = resolvedDisplayNameOverride
     ? sanitizeName(resolvedDisplayNameOverride)
     : null;
@@ -324,12 +337,8 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
     updateData.cardDavSyncEnabled = cardDavSyncEnabled;
   }
 
-  const shouldUpdateDisplayNameOverride =
-    displayNameOverride !== undefined || cardDavDisplayName !== undefined;
-  const resolvedDisplayNameOverride =
-    displayNameOverride !== undefined ? displayNameOverride : cardDavDisplayName;
-
-  if (shouldUpdateDisplayNameOverride) {
+  const resolvedDisplayNameOverride = resolveDisplayNameOverride(displayNameOverride, cardDavDisplayName);
+  if (resolvedDisplayNameOverride !== undefined) {
     const sanitized = resolvedDisplayNameOverride ? sanitizeName(resolvedDisplayNameOverride) : null;
     updateData.displayNameOverride = sanitized || null;
   }
@@ -568,6 +577,11 @@ export async function mergePeople(
   const scalarUpdates: Prisma.PersonUpdateInput = {};
 
   if (overrides) {
+    // Honor the deprecated cardDavDisplayName alias, matching create/update.
+    const resolved = resolveDisplayNameOverride(overrides.displayNameOverride, overrides.cardDavDisplayName);
+    if (resolved !== undefined) {
+      overrides = { ...overrides, displayNameOverride: resolved };
+    }
     for (const field of SCALAR_STRING_FIELDS) {
       if (field in overrides) {
         (scalarUpdates as Record<string, unknown>)[field] = overrides[field as ScalarStringField];

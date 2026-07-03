@@ -3,7 +3,7 @@ import { importDataSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, MAX_REQUEST_SIZE, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { isSaasMode } from '@/lib/features';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatCanonicalName } from '@/lib/nameUtils';
 import { validateRawValue } from '@/lib/customFields/values';
 import type { CustomFieldType, ReminderIntervalUnit } from '@prisma/client';
 
@@ -541,10 +541,12 @@ export const POST = withAuth(async (request, session) => {
         select: { id: true, name: true, surname: true, middleName: true, secondLastName: true, nickname: true, displayNameOverride: true },
       });
 
+      // Match by canonical name only: display overrides are mutable display
+      // strings and must never shadow another person's real name.
+      const validPersonIds = new Set(allPeople.map((p) => p.id));
       const nameToId = new Map<string, string>();
       for (const p of allPeople) {
-        nameToId.set(formatFullName({ ...p, displayNameOverride: null }).toLowerCase(), p.id);
-        nameToId.set(formatFullName(p).toLowerCase(), p.id);
+        nameToId.set(formatCanonicalName(p).toLowerCase(), p.id);
       }
 
       for (const entry of data.journalEntries) {
@@ -560,9 +562,15 @@ export const POST = withAuth(async (request, session) => {
         });
         if (existing) continue;
 
-        const resolvedPersonIds = entry.people
-          .map((name: string) => nameToId.get(name.toLowerCase()))
-          .filter((id): id is string => id !== undefined);
+        // Prefer the exported person IDs (stable identity); fall back to
+        // canonical-name matching for older export files without peopleIds.
+        const resolvedPersonIds = entry.peopleIds !== undefined
+          ? entry.peopleIds
+              .map((oldId: string) => personIdMap.get(oldId) ?? (validPersonIds.has(oldId) ? oldId : undefined))
+              .filter((id): id is string => id !== undefined)
+          : entry.people
+              .map((name: string) => nameToId.get(name.toLowerCase()))
+              .filter((id): id is string => id !== undefined);
 
         await prisma.journalEntry.create({
           data: {

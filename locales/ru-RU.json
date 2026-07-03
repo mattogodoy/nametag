@@ -959,6 +959,7 @@
       "displayNameOverrideLabel": "Отображаемое имя",
       "displayNameOverridePlaceholder": "напр. мама, папа, босс",
       "displayNameOverrideHelp": "Заменяет форматированное имя в Nametag и синхронизированных контактах.",
+      "displayNameOverrideUseNickname": "ÐÑÐ¿Ð¾Ð»ÑÐ·Ð¾Ð²Ð°ÑÑ Ð½Ð¸ÐºÐ½ÐµÐ¹Ð¼",
       "companyLabel": "Компания",
       "companyPlaceholder": "Название компании",
       "jobTitleLabel": "Должность",

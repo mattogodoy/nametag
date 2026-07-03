@@ -69,7 +69,7 @@ export function sharedSchemas(): Record<string, unknown> {
         lastContactReminderSent: { type: ['string', 'null'], format: 'date-time' },
         cardDavSyncEnabled: { type: 'boolean' },
         displayNameOverride: { type: ['string', 'null'], maxLength: 200, description: 'Per-person display name override used in Nametag and CardDAV sync' },
-        cardDavDisplayName: { type: ['string', 'null'], maxLength: 200, deprecated: true, description: 'Deprecated alias for displayNameOverride' },
+        cardDavDisplayName: { type: ['string', 'null'], maxLength: 200, deprecated: true, writeOnly: true, description: 'Deprecated input-only alias for displayNameOverride. Accepted in request bodies for backward compatibility; never returned in responses — read displayNameOverride instead.' },
         prefix: { type: ['string', 'null'], description: 'Honorific prefix (Dr., Mr.)' },
         suffix: { type: ['string', 'null'], description: 'Honorific suffix (Jr., III)' },
         uid: { type: ['string', 'null'], description: 'vCard UID for CardDAV sync' },

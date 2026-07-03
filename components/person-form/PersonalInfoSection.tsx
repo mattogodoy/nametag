@@ -195,12 +195,25 @@ export default function PersonalInfoSection({
         </div>
 
         <div className="md:col-span-2">
-          <label
-            htmlFor="displayNameOverride"
-            className="block text-sm font-medium text-muted mb-1"
-          >
-            {t('displayNameOverrideLabel')}
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label
+              htmlFor="displayNameOverride"
+              className="block text-sm font-medium text-muted"
+            >
+              {t('displayNameOverrideLabel')}
+            </label>
+            {formData.nickname && !formData.displayNameOverride && (
+              <button
+                type="button"
+                onClick={() =>
+                  onFormDataChange({ displayNameOverride: formData.nickname })
+                }
+                className="text-xs text-primary hover:underline"
+              >
+                {t('displayNameOverrideUseNickname')}
+              </button>
+            )}
+          </div>
           <input
             type="text"
             id="displayNameOverride"

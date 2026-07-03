@@ -544,6 +544,9 @@ export const importDataSchema = z.object({
     date: z.string(),
     body: z.string(),
     people: z.array(z.string()),
+    // Person IDs as exported (v1.1+). Preferred over name matching on import;
+    // names are kept for readability and for older export files.
+    peopleIds: z.array(z.string()).optional(),
   })).optional(),
   customFieldTemplates: z.array(z.object({
     name: z.string(),
