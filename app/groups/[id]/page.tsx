@@ -42,6 +42,7 @@ export default async function GroupDetailsPage({
                 name: true,
                 surname: true,
                 nickname: true,
+                displayNameOverride: true,
                 photo: true,
               },
             },
@@ -59,6 +60,7 @@ export default async function GroupDetailsPage({
         name: true,
         surname: true,
         nickname: true,
+        displayNameOverride: true,
         photo: true,
       },
       orderBy: {

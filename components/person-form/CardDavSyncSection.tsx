@@ -68,30 +68,6 @@ export default function CardDavSyncSection({
           {t('cardDavSyncDisableWarning')}
         </p>
       )}
-      {formData.cardDavSyncEnabled && (
-        <div className="mt-3">
-          <label
-            htmlFor="carddav-display-name"
-            className="block text-xs font-medium text-muted mb-1"
-          >
-            {t('cardDavDisplayNameLabel')}
-          </label>
-          <input
-            type="text"
-            id="carddav-display-name"
-            value={formData.cardDavDisplayName}
-            onChange={(e) =>
-              onFormDataChange({ cardDavDisplayName: e.target.value })
-            }
-            placeholder={t('cardDavDisplayNamePlaceholder')}
-            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-surface text-foreground placeholder:text-muted focus:ring-2 focus:ring-primary focus:border-transparent"
-            maxLength={200}
-          />
-          <p className="mt-1 text-xs text-muted">
-            {t('cardDavDisplayNameHelp')}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

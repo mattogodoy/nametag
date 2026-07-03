@@ -172,6 +172,20 @@ export function userPaths(): Record<string, Record<string, unknown>> {
               groups: { type: 'array', items: { type: 'object' } },
               people: { type: 'array', items: { type: 'object' } },
               relationshipTypes: { type: 'array', items: { type: 'object' } },
+              journalEntries: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    date: { type: 'string', format: 'date-time' },
+                    body: { type: 'string' },
+                    people: { type: 'array', items: { type: 'string' }, description: 'Canonical person names, kept for readability and older imports' },
+                    peopleIds: { type: 'array', items: { type: 'string' }, description: 'Person IDs, preferred by import for re-linking' },
+                  },
+                },
+              },
               customFieldTemplates: { type: 'array', items: { type: 'object' } },
             },
           }),

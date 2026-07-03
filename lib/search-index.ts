@@ -8,6 +8,7 @@ export interface SearchDocument {
   middleName: string | null;
   secondLastName: string | null;
   nickname: string | null;
+  displayNameOverride?: string | null;
   organization: string | null;
   jobTitle: string | null;
   notes: string | null;
@@ -28,19 +29,20 @@ export interface PersonSearchResult {
   middleName: string | null;
   secondLastName: string | null;
   nickname: string | null;
+  displayNameOverride: string | null;
   photo: string | null;
   score: number;
 }
 
 const INDEXED_FIELDS = [
-  'name', 'surname', 'middleName', 'secondLastName', 'nickname',
+  'name', 'surname', 'middleName', 'secondLastName', 'nickname', 'displayNameOverride',
   'organization', 'jobTitle', 'notes',
   'phones', 'emails', 'addresses', 'urls', 'imHandles',
   'groups', 'customFields',
 ];
 
 const STORED_FIELDS = [
-  'id', 'name', 'surname', 'middleName', 'secondLastName', 'nickname', 'photo',
+  'id', 'name', 'surname', 'middleName', 'secondLastName', 'nickname', 'displayNameOverride', 'photo',
 ];
 
 export function createSearchIndex(documents: SearchDocument[]): MiniSearch<SearchDocument> {
@@ -74,6 +76,7 @@ export function searchIndex(
     middleName: (result.middleName as string | null) ?? null,
     secondLastName: (result.secondLastName as string | null) ?? null,
     nickname: (result.nickname as string | null) ?? null,
+    displayNameOverride: (result.displayNameOverride as string | null) ?? null,
     photo: (result.photo as string | null) ?? null,
     score: result.score,
   }));

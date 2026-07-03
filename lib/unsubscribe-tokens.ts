@@ -181,6 +181,7 @@ export async function getUnsubscribeDetails(
             middleName: true,
             secondLastName: true,
             nickname: true,
+            displayNameOverride: true,
           },
         },
       },
@@ -201,6 +202,7 @@ export async function getUnsubscribeDetails(
         middleName: true,
         secondLastName: true,
         nickname: true,
+        displayNameOverride: true,
       },
     });
 

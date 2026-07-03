@@ -35,7 +35,7 @@ describe('vCard Transformation', () => {
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -87,7 +87,7 @@ describe('vCard Transformation', () => {
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -136,7 +136,7 @@ describe('vCard Transformation', () => {
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -200,7 +200,7 @@ describe('vCard Transformation', () => {
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -248,7 +248,7 @@ describe('vCard Transformation', () => {
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -311,7 +311,7 @@ describe('vCard Transformation', () => {
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -506,7 +506,7 @@ END:VCARD`;
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -640,7 +640,7 @@ END:VCARD`;
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -713,7 +713,7 @@ END:VCARD`;
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -911,7 +911,7 @@ END:VCARD`;
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -963,7 +963,7 @@ END:VCARD`;
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -1015,7 +1015,7 @@ END:VCARD`;
         contactReminderIntervalUnit: null,
         lastContactReminderSent: null,
         cardDavSyncEnabled: true,
-        cardDavDisplayName: null,
+        displayNameOverride: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -1093,7 +1093,7 @@ END:VCARD`;
       contactReminderIntervalUnit: null,
       lastContactReminderSent: null,
       cardDavSyncEnabled: true,
-      cardDavDisplayName: null,
+      displayNameOverride: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
@@ -1113,8 +1113,8 @@ END:VCARD`;
   }
 
   describe('FN field with cardDavNameFormat', () => {
-    it('should use cardDavDisplayName override when set', () => {
-      const person = buildPerson({ cardDavDisplayName: 'Mom' });
+    it('should use displayNameOverride override when set', () => {
+      const person = buildPerson({ displayNameOverride: 'Mom' });
       const vcard = personToVCard(person, { cardDavNameFormat: 'FULL' });
 
       expect(vcard).toContain('FN:Mom');
@@ -1150,8 +1150,8 @@ END:VCARD`;
       expect(vcard).toContain('FN:Maria Gonzalez');
     });
 
-    it('should prioritize cardDavDisplayName over cardDavNameFormat', () => {
-      const person = buildPerson({ cardDavDisplayName: 'Mama' });
+    it('should prioritize displayNameOverride over cardDavNameFormat', () => {
+      const person = buildPerson({ displayNameOverride: 'Mama' });
       const vcard = personToVCard(person, { cardDavNameFormat: 'SHORT' });
 
       expect(vcard).toContain('FN:Mama');
@@ -1218,8 +1218,8 @@ END:VCARD`;
       expect(vcard).toContain('N:Gonzalez;Maria;Elena;Dr.;Jr.');
     });
 
-    it('should put cardDavDisplayName in given-name component of N', () => {
-      const person = buildPerson({ cardDavDisplayName: 'Mom' });
+    it('should put displayNameOverride in given-name component of N', () => {
+      const person = buildPerson({ displayNameOverride: 'Mom' });
       const vcard = personToVCard(person, { cardDavNameFormat: 'FULL' });
       expect(vcard).toContain('N:;Mom;;;');
     });
@@ -1250,7 +1250,7 @@ END:VCARD`;
     });
 
     it('should emit X-NAMETAG-ORIGINAL-N for per-contact override', () => {
-      const person = buildPerson({ cardDavDisplayName: 'Mom' });
+      const person = buildPerson({ displayNameOverride: 'Mom' });
       const vcard = personToVCard(person);
       expect(vcard).toContain('X-NAMETAG-ORIGINAL-N:Gonzalez;Maria;;;');
     });

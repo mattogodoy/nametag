@@ -47,6 +47,7 @@ export default async function EditJournalEntryPage({
         name: true,
         surname: true,
         nickname: true,
+        displayNameOverride: true,
       },
       orderBy: { name: 'asc' },
     }),

@@ -70,7 +70,7 @@ const mockPerson: PersonWithRelations = {
   contactReminderIntervalUnit: null,
   lastContactReminderSent: null,
   cardDavSyncEnabled: true,
-  cardDavDisplayName: null,
+  displayNameOverride: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   phoneNumbers: [],

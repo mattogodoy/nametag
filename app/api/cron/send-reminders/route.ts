@@ -62,6 +62,7 @@ export const GET = withLogging(async function GET(request: Request) {
             middleName: true,
             secondLastName: true,
             nickname: true,
+            displayNameOverride: true,
             userId: true,
             user: {
               select: {

@@ -9,6 +9,7 @@ interface Person {
   name: string;
   surname: string | null;
   nickname: string | null;
+  displayNameOverride?: string | null;
   organization: string | null;
   jobTitle: string | null;
   groups: Array<{
@@ -176,7 +177,7 @@ export default function BulkExportList({ people }: BulkExportListProps) {
 
         {people.map((person) => {
           const isSelected = selectedIds.has(person.id);
-          const displayName = [person.name, person.surname].filter(Boolean).join(' ');
+          const displayName = person.displayNameOverride || [person.name, person.surname].filter(Boolean).join(' ');
 
           return (
             <div

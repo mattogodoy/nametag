@@ -45,6 +45,7 @@ export interface PersonFormProps {
     middleName: string | null;
     secondLastName: string | null;
     nickname: string | null;
+    displayNameOverride?: string | null;
     prefix: string | null;
     suffix: string | null;
     photo?: string | null;
@@ -61,7 +62,6 @@ export interface PersonFormProps {
     contactReminderInterval?: number | null;
     contactReminderIntervalUnit?: ReminderIntervalUnit | null;
     cardDavSyncEnabled?: boolean;
-    cardDavDisplayName?: string | null;
     cardDavMapping?: { id: string } | null;
     importantDates?: Array<{
       id: string;
@@ -122,6 +122,7 @@ export interface PersonFormProps {
     middleName: string | null;
     secondLastName: string | null;
     nickname: string | null;
+    displayNameOverride?: string | null;
     groups: Array<{ groupId: string }>;
   }>;
   userName?: string;

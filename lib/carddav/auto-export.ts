@@ -15,27 +15,14 @@ const log = createModuleLogger('carddav');
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Build formatted full name matching vCard FN field construction.
- * Must match the logic in lib/vcard.ts formatFullName().
+ * Extract the FN (formatted name) value from a raw vCard string.
+ * Used to match server copies against the exact vCard we exported, so the
+ * comparison can never drift from personToVCard's FN logic (display
+ * overrides, name formats, nicknames, ...).
  */
-function formatExportFullName(person: {
-  name: string | null;
-  surname: string | null;
-  middleName: string | null;
-  prefix: string | null;
-  suffix: string | null;
-  secondLastName: string | null;
-  nickname: string | null;
-}): string {
-  const parts: string[] = [];
-  if (person.prefix) parts.push(person.prefix);
-  if (person.name) parts.push(person.name);
-  if (person.middleName) parts.push(person.middleName);
-  if (person.surname) parts.push(person.surname);
-  if (person.secondLastName) parts.push(person.secondLastName);
-  if (person.suffix) parts.push(person.suffix);
-  if (person.nickname && parts.length === 0) parts.push(person.nickname);
-  return parts.join(' ') || 'Unknown';
+function extractVCardFN(vcard: string): string | null {
+  const match = vcard.match(/^FN[^:]*:(.+)$/mi);
+  return match ? match[1].trim() : null;
 }
 
 /**
@@ -176,7 +163,8 @@ export async function autoExportPerson(
 
     try {
       const serverVCards = await client.fetchVCards(addressBook);
-      const fullName = formatExportFullName(person);
+      // Compare against the FN we actually exported, not a re-derived name.
+      const fullName = extractVCardFN(vCardData);
 
       // Get all hrefs already tracked in our DB so we don't accidentally
       // match an existing contact with the same name.
@@ -187,10 +175,9 @@ export async function autoExportPerson(
         })).map((m) => m.href)
       );
 
-      const match = serverVCards.find((vc) => {
+      const match = fullName === null ? undefined : serverVCards.find((vc) => {
         if (existingHrefs.has(vc.url)) return false;
-        const fnMatch = vc.data.match(/^FN[^:]*:(.+)$/mi);
-        return fnMatch && fnMatch[1].trim() === fullName;
+        return extractVCardFN(vc.data) === fullName;
       });
 
       if (match) {

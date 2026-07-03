@@ -1,7 +1,33 @@
 import { describe, it, expect } from 'vitest';
-import { formatPersonName, formatFullName, formatGraphName } from '@/lib/nameUtils';
+import { formatPersonName, formatFullName, formatGraphName, formatCanonicalName } from '@/lib/nameUtils';
 
 describe('nameUtils', () => {
+  describe('formatCanonicalName', () => {
+    it('should ignore displayNameOverride and format from name parts', () => {
+      expect(formatCanonicalName({
+        name: 'Robert',
+        surname: 'Johnson',
+        middleName: 'Michael',
+        secondLastName: null,
+        nickname: 'Dad',
+        displayNameOverride: 'Dad',
+      })).toBe("Robert 'Dad' Michael Johnson");
+    });
+
+    it('should respect nameOrder', () => {
+      expect(formatCanonicalName({
+        name: 'Taro',
+        surname: 'Tanaka',
+        displayNameOverride: 'Boss',
+      }, 'EASTERN')).toBe('Tanaka Taro');
+    });
+
+    it('should match formatFullName output when no override is set', () => {
+      const person = { name: 'Maria', surname: 'Garcia', middleName: null, secondLastName: 'Lopez', nickname: 'Majo' };
+      expect(formatCanonicalName(person)).toBe(formatFullName(person));
+    });
+  });
+
   describe('formatPersonName', () => {
     it('should format name only', () => {
       expect(formatPersonName('John')).toBe('John');
@@ -249,6 +275,15 @@ describe('nameUtils', () => {
   });
 
   describe('formatGraphName with nameDisplayFormat', () => {
+    it('should prioritize displayNameOverride over name display format', () => {
+      expect(formatGraphName({
+        name: 'Robert',
+        surname: 'Johnson',
+        nickname: 'Dad',
+        displayNameOverride: 'Dad',
+      }, undefined, 'FULL')).toBe('Dad');
+    });
+
     // FULL format — shows complete name with nickname in quotes
     it('should show full name with nickname in FULL format', () => {
       expect(formatGraphName({ name: 'Robert', surname: 'Johnson', nickname: 'Dad' }, undefined, 'FULL'))
@@ -338,6 +373,11 @@ describe('nameUtils', () => {
 
   describe('formatFullName with nameDisplayFormat', () => {
     const person = { name: 'Robert', surname: 'Johnson', middleName: 'Michael', secondLastName: null, nickname: 'Dad' };
+
+    it('should prioritize displayNameOverride', () => {
+      expect(formatFullName({ ...person, displayNameOverride: 'Dad' }))
+        .toBe('Dad');
+    });
 
     // FULL format — same as current behavior
     it('should show full name in FULL format', () => {

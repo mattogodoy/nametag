@@ -9,7 +9,7 @@ import BulkDeleteModal from './BulkDeleteModal';
 import BulkGroupAssignModal from './BulkGroupAssignModal';
 import BulkRelationshipModal from './BulkRelationshipModal';
 import PersonAvatar from './PersonPhoto';
-import { formatFullName } from '@/lib/nameUtils';
+import { formatCanonicalName } from '@/lib/nameUtils';
 import { formatDate, type DateFormat } from '@/lib/date-format';
 import CustomFieldFilter from './customFields/CustomFieldFilter';
 import type { CustomFieldTemplate } from '@prisma/client';
@@ -21,6 +21,7 @@ interface PersonRow {
   surname: string | null;
   secondLastName: string | null;
   nickname: string | null;
+  displayNameOverride?: string | null;
   photo: string | null;
   lastContact: Date | null;
   relationshipToUser: { label: string; color: string | null } | null;
@@ -166,14 +167,14 @@ export default function PeopleListClient({
 
   const selectedNames = useMemo(() => {
     const fullName = (p: PersonRow) =>
-      [p.name, p.middleName, p.surname, p.secondLastName].filter(Boolean).join(' ');
+      formatCanonicalName(p, nameOrder);
     if (selectAllPages) {
       return people.map(fullName);
     }
     return people
       .filter((p) => selectedIds.has(p.id))
       .map(fullName);
-  }, [selectedIds, selectAllPages, people]);
+  }, [selectedIds, selectAllPages, people, nameOrder]);
 
   const handleSuccess = useCallback(() => {
     clearSelection();
@@ -337,6 +338,7 @@ export default function PeopleListClient({
                                  person.relationshipsFrom.length === 0 &&
                                  person.relationshipsTo.length === 0;
                 const isChecked = selectAllPages || selectedIds.has(person.id);
+                const fullDisplayName = formatCanonicalName(person, nameOrder);
 
                 return (
                   <tr key={person.id} className={`hover:bg-surface-elevated transition-colors ${isChecked ? 'bg-primary/5' : ''}`}>
@@ -346,30 +348,37 @@ export default function PeopleListClient({
                         checked={isChecked}
                         onChange={() => togglePerson(person.id)}
                         className="w-4 h-4 text-primary bg-surface-elevated border-border rounded focus:ring-primary"
-                        aria-label={formatFullName(person, nameOrder)}
+                        aria-label={fullDisplayName}
                       />
                     </td>
                     <td className="w-[32px] py-4 px-2">
                       <PersonAvatar
                         personId={person.id}
-                        name={formatFullName(person, nameOrder)}
+                        name={fullDisplayName}
                         photo={person.photo}
                         size={32}
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/people/${person.id}`} className="text-primary hover:underline font-medium">
-                          {person.name}
-                        </Link>
-                        {isOrphan && (
-                          <span className="relative group cursor-help">
-                            <span className="text-yellow-500">{'\u26A0\uFE0F'}</span>
-                            <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-foreground bg-surface-elevated rounded-lg whitespace-normal max-w-xs z-50 shadow-lg border border-border">
-                              {tt.orphanWarning}
-                              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-surface-elevated"></span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/people/${person.id}`} className="text-primary hover:underline font-medium">
+                            {person.name}
+                          </Link>
+                          {isOrphan && (
+                            <span className="relative group cursor-help">
+                              <span className="text-yellow-500">{'\u26A0\uFE0F'}</span>
+                              <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-foreground bg-surface-elevated rounded-lg whitespace-normal max-w-xs z-50 shadow-lg border border-border">
+                                {tt.orphanWarning}
+                                <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-surface-elevated"></span>
+                              </span>
                             </span>
-                          </span>
+                          )}
+                        </div>
+                        {person.displayNameOverride && (
+                          <div className="mt-1 text-xs text-muted">
+                            {person.displayNameOverride}
+                          </div>
                         )}
                       </div>
                     </td>
