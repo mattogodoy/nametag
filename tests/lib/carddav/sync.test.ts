@@ -52,8 +52,9 @@ const mocks = vi.hoisted(() => ({
   personToVCard: vi.fn(),
   updatePersonFromVCard: vi.fn(),
 
-  // mapped-uids helper
+  // mapped-uids helpers
   getAlreadyMappedPersonUids: vi.fn(),
+  getUnmappedPersonsByUid: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -130,6 +131,7 @@ vi.mock('@/lib/carddav/retry', () => ({
 
 vi.mock('@/lib/carddav/mapped-uids', () => ({
   getAlreadyMappedPersonUids: mocks.getAlreadyMappedPersonUids,
+  getUnmappedPersonsByUid: mocks.getUnmappedPersonsByUid,
 }));
 
 vi.mock('@/lib/photo-storage', () => ({
@@ -302,6 +304,8 @@ describe('CardDAV Sync Engine', () => {
     mocks.personFindMany.mockResolvedValue([]);
     // Default: no persons already mapped under a different UID
     mocks.getAlreadyMappedPersonUids.mockResolvedValue(new Set());
+    // Default: no unmapped persons with UIDs
+    mocks.getUnmappedPersonsByUid.mockResolvedValue(new Map());
 
     // Default: personToVCard returns a valid vCard string
     mocks.personToVCard.mockReturnValue('BEGIN:VCARD\nVERSION:3.0\nEND:VCARD');
@@ -493,6 +497,41 @@ describe('CardDAV Sync Engine', () => {
         // Should NOT create a pending import
         expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
         expect(result.pendingImports).toBeFalsy();
+      });
+
+      it('should auto-link unmapped person when server vCard has matching UID (issue #314)', async () => {
+        const serverUid = 'google-contact-uid';
+        const existingPersonId = 'person-file-imported';
+
+        // No existing mappings
+        mocks.cardDavMappingFindMany.mockResolvedValue([]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(serverUid, '/contacts/gerda.vcf', 'etag-1', 'Gerda'),
+        ]);
+        mocks.vCardToPerson.mockReturnValue(makeParsedVCard(serverUid, 'Gerda'));
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+        mocks.cardDavMappingCreate.mockResolvedValue({});
+
+        // Person with this UID exists but has no mapping (file-imported)
+        mocks.getUnmappedPersonsByUid.mockResolvedValue(
+          new Map([[serverUid, existingPersonId]])
+        );
+
+        const result = await syncFromServer(USER_ID);
+
+        // Should auto-create a mapping instead of a pending import
+        expect(mocks.cardDavMappingCreate).toHaveBeenCalledWith({
+          data: expect.objectContaining({
+            connectionId: CONNECTION_ID,
+            personId: existingPersonId,
+            uid: serverUid,
+            href: '/contacts/gerda.vcf',
+            etag: 'etag-1',
+            syncStatus: 'synced',
+          }),
+        });
+        expect(mocks.cardDavPendingImportUpsert).not.toHaveBeenCalled();
+        expect(result.imported).toBe(1);
       });
     });
 

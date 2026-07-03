@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from './client';
 import { getAddressBook } from './address-book';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
-import { getAlreadyMappedPersonUids } from './mapped-uids';
+import { getAlreadyMappedPersonUids, getUnmappedPersonsByUid } from './mapped-uids';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('carddav');
@@ -64,6 +64,9 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
     // existingUids check alone would miss them.
     const alreadyMappedPersonUids = await getAlreadyMappedPersonUids(userId);
 
+    // Pre-load unmapped persons by UID for auto-linking
+    const unmappedPersonsByUid = await getUnmappedPersonsByUid(userId);
+
     // Get all existing pending imports
     const existingPending = await prisma.cardDavPendingImport.findMany({
       where: {
@@ -94,8 +97,28 @@ export async function discoverNewContacts(userId: string): Promise<DiscoveryResu
         const uid = parsed.uid;
         serverUids.add(uid);
 
-        // Skip if already imported, already pending, or person already mapped
+        // Skip if already imported or person already mapped
         if (existingUids.has(uid) || pendingUids.has(uid) || alreadyMappedPersonUids.has(uid)) {
+          continue;
+        }
+
+        // Auto-link if person exists with matching UID but no mapping
+        // (e.g. imported via file upload before CardDAV was connected)
+        if (unmappedPersonsByUid.has(uid)) {
+          const personId = unmappedPersonsByUid.get(uid)!;
+          await prisma.cardDavMapping.create({
+            data: {
+              connectionId: connection.id,
+              personId,
+              uid,
+              href: vCard.url,
+              etag: vCard.etag,
+              syncStatus: 'synced',
+              lastSyncedAt: new Date(),
+            },
+          });
+          unmappedPersonsByUid.delete(uid);
+          log.info({ personId, uid }, 'Auto-linked existing person to server vCard by UID');
           continue;
         }
 

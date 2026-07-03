@@ -13,7 +13,7 @@ import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from './hash';
-import { getAlreadyMappedPersonUids } from './mapped-uids';
+import { getAlreadyMappedPersonUids, getUnmappedPersonsByUid } from './mapped-uids';
 import { createModuleLogger } from '@/lib/logger';
 import { ExternalServiceError } from '@/lib/errors';
 import { updateContext } from '@/lib/logging/context';
@@ -177,6 +177,11 @@ export async function syncFromServer(
     // Prevents creating pending imports for contacts whose person is already
     // mapped (e.g. auto-export with server UID rewrite).
     const alreadyMappedPersonUids = await getAlreadyMappedPersonUids(userId);
+
+    // Pre-load unmapped persons by UID so we can auto-link server contacts to
+    // persons that were imported via file upload (they have matching UIDs but
+    // no CardDavMapping yet).
+    const unmappedPersonsByUid = await getUnmappedPersonsByUid(userId);
 
     // Collect all UIDs seen on the server during processing (for stale import cleanup)
     const serverUids = new Set<string>();
@@ -434,6 +439,27 @@ export async function syncFromServer(
             result.updatedLocally++;
           }
           // If only local changed, we'll push in syncToServer
+        } else if (unmappedPersonsByUid.has(parsedData.uid)) {
+          // Person exists with matching UID but has no mapping (e.g. imported
+          // via file upload before CardDAV was connected). Auto-link them.
+          const personId = unmappedPersonsByUid.get(parsedData.uid)!;
+          await prisma.cardDavMapping.create({
+            data: {
+              connectionId: connection.id,
+              personId,
+              uid: parsedData.uid,
+              href: vCard.url,
+              etag: vCard.etag,
+              syncStatus: 'synced',
+              lastSyncedAt: new Date(),
+            },
+          });
+          unmappedPersonsByUid.delete(parsedData.uid);
+          result.imported++;
+          log.info(
+            { personId, uid: parsedData.uid },
+            'Auto-linked existing person to server vCard by UID',
+          );
         } else if (!alreadyMappedPersonUids.has(parsedData.uid)) {
           // New contact from server - add to pending imports
           await prisma.cardDavPendingImport.upsert({
@@ -955,13 +981,21 @@ export async function syncToServer(
 }
 
 /**
- * Bidirectional sync with overall timeout protection.
- * Default timeout is 5 minutes to prevent slow servers from blocking the cron queue.
+ * Bidirectional sync with inactivity-based timeout protection.
+ *
+ * Instead of a fixed overall timeout, uses a watchdog: the timer resets every
+ * time a progress event fires. This allows large accounts (thousands of
+ * contacts) to sync for as long as needed while still catching stuck syncs
+ * (e.g. unresponsive server).
+ *
+ * @param inactivityMs - Max time without progress before timeout (default 5 min).
+ *   Also serves as the initial deadline for the fetch phase, which doesn't
+ *   emit progress events.
  */
 export async function bidirectionalSync(
   userId: string,
   onProgress?: SyncProgressCallback,
-  timeoutMs: number = 5 * 60 * 1000
+  inactivityMs: number = 5 * 60 * 1000
 ): Promise<SyncResult> {
   const lockAcquired = await acquireSyncLock(userId);
   if (!lockAcquired) {
@@ -980,12 +1014,21 @@ export async function bidirectionalSync(
 
   const syncStart = Date.now();
   let timedOut = false;
-  let timerId: ReturnType<typeof setTimeout> | undefined;
+  let watchdogId: ReturnType<typeof setInterval> | undefined;
+  let lastActivityAt = Date.now();
+
+  const resetWatchdog = () => { lastActivityAt = Date.now(); };
+
+  const wrappedOnProgress = (event: SyncProgressEvent) => {
+    resetWatchdog();
+    onProgress?.(event);
+  };
 
   try {
     const syncOperation = async (): Promise<SyncResult> => {
-      const pullResult = await syncFromServer(userId, onProgress);
-      const pushResult = await syncToServer(userId, onProgress);
+      const pullResult = await syncFromServer(userId, wrappedOnProgress);
+      resetWatchdog();
+      const pushResult = await syncToServer(userId, wrappedOnProgress);
 
       const summary = {
         imported: pullResult.imported,
@@ -1019,9 +1062,7 @@ export async function bidirectionalSync(
 
     return await Promise.race([
       syncOperation().finally(() => {
-        clearTimeout(timerId);
-        // If we timed out, the finally block below skipped lock release.
-        // Release it now that the in-flight operation has actually finished.
+        clearInterval(watchdogId);
         if (timedOut) {
           releaseSyncLock(userId).catch((err) =>
             log.error({ err: err instanceof Error ? err : new Error(String(err)) }, 'Failed to release sync lock after timed-out operation completed')
@@ -1029,16 +1070,19 @@ export async function bidirectionalSync(
         }
       }),
       new Promise<never>((_, reject) => {
-        timerId = setTimeout(() => {
-          timedOut = true;
-          reject(new Error('Sync timed out'));
-        }, timeoutMs);
+        watchdogId = setInterval(() => {
+          if (Date.now() - lastActivityAt > inactivityMs) {
+            timedOut = true;
+            clearInterval(watchdogId);
+            reject(new Error('Sync timed out'));
+          }
+        }, 10_000);
       }),
     ]);
   } finally {
-    clearTimeout(timerId);
+    clearInterval(watchdogId);
     // Only release the lock if the sync completed (success or error).
-    // On timeout, the sync operation is still running — releasing the lock
+    // On timeout, the sync operation is still running - releasing the lock
     // would allow overlapping syncs. The stale lock detection (10min threshold
     // in acquireSyncLock) will break the lock if the operation never finishes.
     if (!timedOut) {
