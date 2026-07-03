@@ -19,3 +19,22 @@ export async function getAlreadyMappedPersonUids(userId: string): Promise<Set<st
   });
   return new Set(persons.map((p) => p.uid!));
 }
+
+/**
+ * Returns a map from UID to person ID for all persons (including unmapped ones).
+ *
+ * Used during sync/discovery to auto-link server contacts to existing persons
+ * that were imported via file upload and have matching UIDs but no CardDavMapping.
+ */
+export async function getUnmappedPersonsByUid(userId: string): Promise<Map<string, string>> {
+  const persons = await prisma.person.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      uid: { not: null },
+      cardDavMapping: null,
+    },
+    select: { id: true, uid: true },
+  });
+  return new Map(persons.map((p) => [p.uid!, p.id]));
+}

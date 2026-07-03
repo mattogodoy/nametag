@@ -94,6 +94,7 @@ vi.mock('@/lib/carddav/address-book', () => ({
 }));
 vi.mock('@/lib/carddav/mapped-uids', () => ({
   getAlreadyMappedPersonUids: vi.fn(async () => new Set<string>()),
+  getUnmappedPersonsByUid: vi.fn(async () => new Map<string, string>()),
 }));
 vi.mock('@/lib/carddav/hash', () => ({ buildLocalHash: vi.fn(() => 'hash') }));
 vi.mock('@/lib/carddav/vcard-import', () => ({
