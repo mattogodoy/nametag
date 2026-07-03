@@ -107,6 +107,8 @@ export function formatCanonicalName(person: {
   middleName?: string | null;
   secondLastName?: string | null;
   nickname?: string | null;
+  // Accepted so person objects can be passed as-is, but intentionally unused.
+  displayNameOverride?: string | null;
 }, nameOrder?: 'WESTERN' | 'EASTERN', nameDisplayFormat?: NameDisplayFormat): string {
   return formatPersonName(
     person.name,
