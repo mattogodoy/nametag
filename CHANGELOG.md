@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.51.0](https://github.com/mattogodoy/nametag/compare/v0.50.1...v0.51.0) (2026-07-03)
+
+
+### Features
+
+* add app-wide person display name override ([0f54a2f](https://github.com/mattogodoy/nametag/commit/0f54a2f2877098bb7c19ca1d6bb07ee033bc4a6f))
+
+
+### Bug Fixes
+
+* accept displayNameOverride in formatCanonicalName signature ([364deae](https://github.com/mattogodoy/nametag/commit/364deae2e9f940f8be569e38d434781999e64093))
+* address review findings on display name override ([b511439](https://github.com/mattogodoy/nametag/commit/b511439ee1165405bea5b1d70b37e5fb7a5452a2))
+
 ## [0.50.1](https://github.com/mattogodoy/nametag/compare/v0.50.0...v0.50.1) (2026-06-15)
 
 
