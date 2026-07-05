@@ -65,6 +65,18 @@ async function createTestImage(
   return img.toFormat(format).toBuffer();
 }
 
+// A flat solid-color image compresses to the same size regardless of JPEG
+// quality (no detail for the DCT to discard), so quality-sensitive tests
+// need actual pixel variation to produce a measurable size difference.
+async function createNoisyTestImage(width: number, height: number): Promise<Buffer> {
+  const channels = 3;
+  const raw = Buffer.alloc(width * height * channels);
+  for (let i = 0; i < raw.length; i++) {
+    raw[i] = Math.floor(Math.random() * 256);
+  }
+  return sharp(raw, { raw: { width, height, channels } }).jpeg().toBuffer();
+}
+
 describe('isValidImageBuffer', () => {
   it('should accept JPEG buffers', () => {
     expect(isValidImageBuffer(makeJpegBuffer())).toBe(true);
@@ -203,6 +215,62 @@ describe('processPhoto', () => {
     expect(metadata.width).toBe(256);
     expect(metadata.height).toBe(256);
     expect(output.hasAlpha).toBe(true);
+  });
+
+  it('should respect PHOTO_SIZE env var', async () => {
+    const originalSize = process.env.PHOTO_SIZE;
+    process.env.PHOTO_SIZE = '512';
+    try {
+      const input = await createTestImage(1024, 1024, 'png');
+      const output = await processPhoto(input);
+
+      const metadata = await sharp(output.data).metadata();
+      expect(metadata.width).toBe(512);
+      expect(metadata.height).toBe(512);
+    } finally {
+      if (originalSize === undefined) {
+        delete process.env.PHOTO_SIZE;
+      } else {
+        process.env.PHOTO_SIZE = originalSize;
+      }
+    }
+  });
+
+  it('should respect PHOTO_QUALITY env var', async () => {
+    const originalQuality = process.env.PHOTO_QUALITY;
+    process.env.PHOTO_QUALITY = '95';
+    try {
+      const input = await createNoisyTestImage(512, 512);
+      const highQuality = await processPhoto(input);
+
+      process.env.PHOTO_QUALITY = '20';
+      const lowQuality = await processPhoto(input);
+
+      expect(highQuality.data.length).toBeGreaterThan(lowQuality.data.length);
+    } finally {
+      if (originalQuality === undefined) {
+        delete process.env.PHOTO_QUALITY;
+      } else {
+        process.env.PHOTO_QUALITY = originalQuality;
+      }
+    }
+  });
+
+  it('should default to 256x256 when PHOTO_SIZE is unset', async () => {
+    const originalSize = process.env.PHOTO_SIZE;
+    delete process.env.PHOTO_SIZE;
+    try {
+      const input = await createTestImage(512, 512, 'png');
+      const output = await processPhoto(input);
+
+      const metadata = await sharp(output.data).metadata();
+      expect(metadata.width).toBe(256);
+      expect(metadata.height).toBe(256);
+    } finally {
+      if (originalSize !== undefined) {
+        process.env.PHOTO_SIZE = originalSize;
+      }
+    }
   });
 });
 
