@@ -246,6 +246,15 @@ const providers = [
           // Use /userinfo instead of ID-token claims. Many providers
           // (Authentik, Keycloak) put email/name only in userinfo.
           idToken: false,
+          // Send the `state` parameter (CSRF protection) alongside PKCE.
+          // With idToken:false Auth.js otherwise defaults `checks` to ['pkce']
+          // here and omits `state`. Spec-strict OAuth servers (e.g. Fosite-based
+          // Pocket ID >= v2.10) reject an authorize request without `state`,
+          // which surfaces as a CallbackRouteError / error=Configuration page.
+          // Cast is required: a bare ['pkce', 'state'] literal is inferred as
+          // string[], not the ('pkce' | 'state' | 'nonce' | 'none')[] union that
+          // Auth.js's OIDCConfig.checks expects.
+          checks: ['pkce', 'state'] as ('pkce' | 'state')[],
           profile(profile: Record<string, unknown>) {
             if (!profile.email || typeof profile.email !== 'string') {
               throw new Error('OIDC provider did not return an email address');
