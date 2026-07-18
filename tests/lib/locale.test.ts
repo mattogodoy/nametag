@@ -143,6 +143,7 @@ describe('Locale Utilities', () => {
         nameOrder: 'WESTERN',
         nameDisplayFormat: 'FULL',
         graphMode: null,
+        geocodingEnabled: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -183,6 +184,7 @@ describe('Locale Utilities', () => {
         nameOrder: 'WESTERN',
         nameDisplayFormat: 'FULL',
         graphMode: null,
+        geocodingEnabled: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
