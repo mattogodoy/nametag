@@ -33,6 +33,7 @@
     "flag-icons": "^7.5.0",
     "ioredis": "^5.8.2",
     "isomorphic-dompurify": "^2.34.0",
+    "maplibre-gl": "^5.24.0",
     "minisearch": "^7.2.0",
     "next": "^16.0.10",
     "next-auth": "^5.0.0-beta.30",
