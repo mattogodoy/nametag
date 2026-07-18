@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom';
 import { vi, beforeEach, afterAll } from 'vitest';
 
+// Disable geocoding so integration tests that create people never make real network calls
+process.env.DISABLE_GEOCODING = 'true';
+
 // Mock Next.js router
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
