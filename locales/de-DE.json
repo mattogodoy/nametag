@@ -59,7 +59,8 @@
       "signOut": "Abmelden"
     },
     "journal": "Tagebuch",
-    "createJournal": "Neuer Eintrag"
+    "createJournal": "Neuer Eintrag",
+    "map": "Karte"
   },
   "settings": {
     "title": "Einstellungen",
@@ -663,6 +664,15 @@
       "errorCreate": "Token konnte nicht erstellt werden.",
       "errorRevoke": "Token konnte nicht widerrufen werden.",
       "errorConnection": "Verbindungsfehler. Bitte versuche es erneut."
+    },
+    "map": {
+      "title": "Karte",
+      "description": "Karte und Adress-Lokalisierung",
+      "geocodingTitle": "Adress-Lokalisierung",
+      "geocodingDescription": "Wenn aktiviert, werden die Adressen deiner Kontakte an {provider} gesendet, um ihre Position auf der Karte zu bestimmen. Beim Deaktivieren werden keine neuen Abfragen mehr durchgeführt, vorhandene Positionen bleiben erhalten.",
+      "geocodingLabel": "Adressen automatisch lokalisieren",
+      "success": "Karteneinstellungen gespeichert",
+      "error": "Karteneinstellungen konnten nicht gespeichert werden"
     }
   },
   "customFields": {
@@ -822,6 +832,7 @@
     "contactReminder": "Kontakt-Erinnerung",
     "relationshipToUser": "Beziehung zum Benutzer",
     "noPeople": "Keine Personen gefunden",
+    "showOnMap": "Auf Karte anzeigen",
     "createFirst": "Erstelle deine erste Person",
     "searchPeople": "Personen suchen",
     "showing": "Zeige {start}-{end} von {total} Personen",
@@ -1406,6 +1417,24 @@
     "noMembersYet": "Noch keine Mitglieder",
     "oneMember": "1 Mitglied",
     "membersCount": "{count} Mitglieder"
+  },
+  "map": {
+    "title": "Karte",
+    "loading": "Karte wird geladen...",
+    "loadError": "Kartendaten konnten nicht geladen werden. Bitte erneut versuchen.",
+    "searchPlaceholder": "Nach Name filtern...",
+    "allGroups": "Alle Gruppen",
+    "allCities": "Alle Städte",
+    "allCountries": "Alle Länder",
+    "clearFilters": "Filter zurücksetzen",
+    "pendingBanner": "{count, plural, one {1 Adresse wird noch lokalisiert} other {# Adressen werden noch lokalisiert}}",
+    "failedBanner": "{count, plural, one {1 Adresse konnte nicht lokalisiert werden} other {# Adressen konnten nicht lokalisiert werden}}",
+    "dismiss": "Ausblenden",
+    "emptyTitle": "Noch nichts auf der Karte",
+    "emptyDescription": "Sobald die Adressen deiner Kontakte lokalisiert sind, erscheinen ihre Markierungen hier.",
+    "emptyGeocodingDisabled": "Die Adress-Lokalisierung ist deaktiviert. Du kannst sie unter Einstellungen > Karte aktivieren.",
+    "viewContact": "Kontakt anzeigen",
+    "directions": "Route"
   },
   "relationshipTypes": {
     "title": "Beziehungsarten",

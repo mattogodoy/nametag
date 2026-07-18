@@ -59,7 +59,8 @@
       "signOut": "Uitloggen"
     },
     "journal": "Dagboek",
-    "createJournal": "Nieuwe invoer"
+    "createJournal": "Nieuwe invoer",
+    "map": "Kaart"
   },
   "settings": {
     "title": "Instellingen",
@@ -659,6 +660,15 @@
       "errorCreate": "Token aanmaken mislukt.",
       "errorRevoke": "Token intrekken mislukt.",
       "errorConnection": "Verbindingsfout. Probeer het opnieuw."
+    },
+    "map": {
+      "title": "Kaart",
+      "description": "Kaart en adreslokalisatie",
+      "geocodingTitle": "Adreslokalisatie",
+      "geocodingDescription": "Als dit aanstaat, worden de adressen van uw contacten naar {provider} gestuurd om hun positie op de kaart te bepalen. Als u dit uitzet, worden er geen nieuwe opzoekingen gedaan, maar blijven bestaande posities bewaard.",
+      "geocodingLabel": "Adressen automatisch lokaliseren",
+      "success": "Kaartinstellingen opgeslagen",
+      "error": "Kon de kaartinstellingen niet opslaan"
     }
   },
   "customFields": {
@@ -818,6 +828,7 @@
     "contactReminder": "Contact herinnering",
     "relationshipToUser": "Relatie tot gebruiker",
     "noPeople": "Geen personen gevonden",
+    "showOnMap": "Toon op kaart",
     "createFirst": "Maak uw eerste persoon",
     "searchPeople": "Personen zoeken",
     "showing": "{start}-{end} van {total} personen tonen",
@@ -1398,6 +1409,24 @@
     "noMembersYet": "Nog geen leden",
     "oneMember": "1 lid",
     "membersCount": "{count} leden"
+  },
+  "map": {
+    "title": "Kaart",
+    "loading": "Kaart wordt geladen...",
+    "loadError": "Kon de kaartgegevens niet laden. Probeer het opnieuw.",
+    "searchPlaceholder": "Filter op naam...",
+    "allGroups": "Alle groepen",
+    "allCities": "Alle steden",
+    "allCountries": "Alle landen",
+    "clearFilters": "Filters wissen",
+    "pendingBanner": "{count, plural, one {1 adres wordt nog gelokaliseerd} other {# adressen worden nog gelokaliseerd}}",
+    "failedBanner": "{count, plural, one {1 adres kon niet worden gelokaliseerd} other {# adressen konden niet worden gelokaliseerd}}",
+    "dismiss": "Sluiten",
+    "emptyTitle": "Nog niets op de kaart",
+    "emptyDescription": "Zodra de adressen van uw contacten zijn gelokaliseerd, verschijnen hun markeringen hier.",
+    "emptyGeocodingDisabled": "Adreslokalisatie staat uit. U kunt dit aanzetten bij Instellingen > Kaart.",
+    "viewContact": "Contact bekijken",
+    "directions": "Routebeschrijving"
   },
   "relationshipTypes": {
     "title": "Relatietypen",

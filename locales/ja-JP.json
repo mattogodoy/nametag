@@ -59,7 +59,8 @@
       "signOut": "サインアウト"
     },
     "journal": "ジャーナル",
-    "createJournal": "新しいエントリー"
+    "createJournal": "新しいエントリー",
+    "map": "マップ"
   },
   "settings": {
     "title": "設定",
@@ -663,6 +664,15 @@
       "errorCreate": "トークンの作成に失敗しました。",
       "errorRevoke": "トークンの無効化に失敗しました。",
       "errorConnection": "接続エラーです。もう一度お試しください。"
+    },
+    "map": {
+      "title": "マップ",
+      "description": "マップと住所の位置特定",
+      "geocodingTitle": "住所の位置特定",
+      "geocodingDescription": "有効にすると、連絡先の住所が{provider}に送信され、マップ上の位置が特定されます。無効にすると新しい検索は行われませんが、既存の位置情報は保持されます。",
+      "geocodingLabel": "住所を自動的に位置特定する",
+      "success": "マップ設定を保存しました",
+      "error": "マップ設定を保存できませんでした"
     }
   },
   "customFields": {
@@ -822,6 +832,7 @@
     "contactReminder": "連絡のリマインダー",
     "relationshipToUser": "ユーザーとの関係",
     "noPeople": "人物は見つかりませんでした",
+    "showOnMap": "マップで表示",
     "createFirst": "最初の人物を作成する",
     "searchPeople": "人物を検索",
     "showing": "{total}人中{start}-{end}を表示",
@@ -1406,6 +1417,24 @@
     "noMembersYet": "まだメンバーはいません",
     "oneMember": "1人のメンバー",
     "membersCount": "{count}人のメンバー"
+  },
+  "map": {
+    "title": "マップ",
+    "loading": "マップを読み込んでいます...",
+    "loadError": "マップデータを読み込めませんでした。もう一度お試しください。",
+    "searchPlaceholder": "名前で絞り込み...",
+    "allGroups": "すべてのグループ",
+    "allCities": "すべての都市",
+    "allCountries": "すべての国",
+    "clearFilters": "フィルターをクリア",
+    "pendingBanner": "{count, plural, other {#件の住所を位置特定しています}}",
+    "failedBanner": "{count, plural, other {#件の住所の位置を特定できませんでした}}",
+    "dismiss": "閉じる",
+    "emptyTitle": "マップにはまだ何もありません",
+    "emptyDescription": "連絡先の住所の位置が特定されると、ここにマーカーが表示されます。",
+    "emptyGeocodingDisabled": "住所の位置特定は無効になっています。設定 > マップで有効にできます。",
+    "viewContact": "連絡先を見る",
+    "directions": "経路"
   },
   "relationshipTypes": {
     "title": "関係の種類",

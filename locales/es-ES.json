@@ -59,7 +59,8 @@
       "signOut": "Cerrar sesión"
     },
     "journal": "Diario",
-    "createJournal": "Nueva entrada"
+    "createJournal": "Nueva entrada",
+    "map": "Mapa"
   },
   "settings": {
     "title": "Configuración",
@@ -663,6 +664,15 @@
       "errorCreate": "No se pudo crear el token.",
       "errorRevoke": "No se pudo revocar el token.",
       "errorConnection": "Error de conexión. Inténtalo de nuevo."
+    },
+    "map": {
+      "title": "Mapa",
+      "description": "Mapa y localización de direcciones",
+      "geocodingTitle": "Localización de direcciones",
+      "geocodingDescription": "Cuando está activado, las direcciones de tus contactos se envían a {provider} para determinar su posición en el mapa. Al desactivarlo no se hacen nuevas consultas, pero se conservan las posiciones existentes.",
+      "geocodingLabel": "Localizar direcciones automáticamente",
+      "success": "Ajustes del mapa guardados",
+      "error": "No se pudieron guardar los ajustes del mapa"
     }
   },
   "customFields": {
@@ -822,6 +832,7 @@
     "contactReminder": "Recordatorio de Contacto",
     "relationshipToUser": "Relación con el Usuario",
     "noPeople": "No se encontraron personas",
+    "showOnMap": "Mostrar en el mapa",
     "createFirst": "Crea tu primera persona",
     "searchPeople": "Buscar personas",
     "showing": "Mostrando {start}-{end} de {total} personas",
@@ -1406,6 +1417,24 @@
     "noMembersYet": "Aún no hay miembros",
     "oneMember": "1 miembro",
     "membersCount": "{count} miembros"
+  },
+  "map": {
+    "title": "Mapa",
+    "loading": "Cargando mapa...",
+    "loadError": "No se pudieron cargar los datos del mapa. Inténtalo de nuevo.",
+    "searchPlaceholder": "Filtrar por nombre...",
+    "allGroups": "Todos los grupos",
+    "allCities": "Todas las ciudades",
+    "allCountries": "Todos los países",
+    "clearFilters": "Borrar filtros",
+    "pendingBanner": "{count, plural, one {1 dirección todavía se está localizando} other {# direcciones todavía se están localizando}}",
+    "failedBanner": "{count, plural, one {1 dirección no se pudo localizar} other {# direcciones no se pudieron localizar}}",
+    "dismiss": "Descartar",
+    "emptyTitle": "Aún no hay nada en el mapa",
+    "emptyDescription": "Cuando se localicen las direcciones de tus contactos, sus marcadores aparecerán aquí.",
+    "emptyGeocodingDisabled": "La localización de direcciones está desactivada. Puedes activarla en Ajustes > Mapa.",
+    "viewContact": "Ver contacto",
+    "directions": "Cómo llegar"
   },
   "relationshipTypes": {
     "title": "Tipos de Relación",
