@@ -246,6 +246,7 @@ const providers = [
           // Use /userinfo instead of ID-token claims. Many providers
           // (Authentik, Keycloak) put email/name only in userinfo.
           idToken: false,
+          checks: ['pkce', 'state'] as ('pkce' | 'state')[],
           profile(profile: Record<string, unknown>) {
             if (!profile.email || typeof profile.email !== 'string') {
               throw new Error('OIDC provider did not return an email address');
