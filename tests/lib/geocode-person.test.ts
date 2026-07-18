@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   personFindUnique: vi.fn(),
@@ -6,6 +6,11 @@ const mocks = vi.hoisted(() => ({
   cacheFindUnique: vi.fn(),
   cacheUpsert: vi.fn(),
   geocodeAddress: vi.fn(),
+}));
+
+const envValues = vi.hoisted(() => ({
+  DISABLE_GEOCODING: false,
+  GEOCODER_URL: 'https://geocoder.test',
 }));
 
 vi.mock('../../lib/prisma', () => ({
@@ -17,7 +22,7 @@ vi.mock('../../lib/prisma', () => ({
 }));
 
 vi.mock('@/lib/env', () => ({
-  env: { DISABLE_GEOCODING: false, GEOCODER_URL: 'https://geocoder.test' },
+  env: envValues,
 }));
 
 vi.mock('../../lib/geocoding/provider', () => ({
@@ -67,6 +72,12 @@ describe('geocodeSingleAddress', () => {
     const outcome = await geocodeSingleAddress(address);
     expect(outcome).toBe('skipped');
     expect(mocks.geocodeAddress).not.toHaveBeenCalled();
+    expect(mocks.addressUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'addr-1' },
+        data: expect.objectContaining({ geocodeStatus: 'failed' }),
+      })
+    );
   });
 
   it('skips addresses whose hash is unchanged since last attempt', async () => {
@@ -98,7 +109,12 @@ describe('geocodeSingleAddress', () => {
     const outcome = await geocodeSingleAddress(makeAddress());
 
     expect(outcome).toBe('success');
-    expect(mocks.cacheUpsert).toHaveBeenCalled();
+    expect(mocks.cacheUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { hash: buildAddressHash(makeAddress()) },
+        create: expect.objectContaining({ latitude: 39.78, longitude: -89.65, status: 'success' }),
+      })
+    );
     expect(mocks.addressUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ latitude: 39.78, longitude: -89.65, geocodeStatus: 'success' }),
@@ -136,6 +152,20 @@ describe('geocodePersonAddresses', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.addressUpdateMany.mockResolvedValue({ count: 1 });
+    envValues.DISABLE_GEOCODING = false;
+  });
+
+  afterEach(() => {
+    envValues.DISABLE_GEOCODING = false;
+  });
+
+  it('does nothing when the instance-wide kill switch is enabled', async () => {
+    envValues.DISABLE_GEOCODING = true;
+
+    await geocodePersonAddresses('person-1');
+
+    expect(mocks.personFindUnique).not.toHaveBeenCalled();
+    expect(mocks.geocodeAddress).not.toHaveBeenCalled();
   });
 
   it('does nothing for missing or soft-deleted people', async () => {
