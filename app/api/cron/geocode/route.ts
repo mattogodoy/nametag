@@ -27,7 +27,7 @@ export const GET = withLogging(async function GET(request: Request) {
     }
 
     if (env.DISABLE_GEOCODING) {
-      return NextResponse.json({ success: true, skipped: true, reason: 'Geocoding disabled' });
+      return NextResponse.json({ success: true, disabled: true, reason: 'Geocoding disabled' });
     }
 
     const cronLog = await prisma.cronJobLog.create({

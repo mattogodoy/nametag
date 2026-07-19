@@ -49,7 +49,7 @@ describe('GET /api/cron/geocode', () => {
     mocks.envValues.DISABLE_GEOCODING = true;
     const response = await GET(makeRequest());
     const body = await response.json();
-    expect(body.skipped).toBe(true);
+    expect(body.disabled).toBe(true);
     expect(mocks.addressFindMany).not.toHaveBeenCalled();
   });
 
