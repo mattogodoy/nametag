@@ -20,8 +20,26 @@ export const GET = withAuth(async (request, session) => {
           secondLastName: true,
           nickname: true,
           displayNameOverride: true,
-          addresses: true,
-          locations: true,
+          addresses: {
+            select: {
+              id: true,
+              type: true,
+              locality: true,
+              country: true,
+              latitude: true,
+              longitude: true,
+              geocodeStatus: true,
+            },
+          },
+          locations: {
+            select: {
+              id: true,
+              type: true,
+              label: true,
+              latitude: true,
+              longitude: true,
+            },
+          },
           groups: {
             where: { group: { deletedAt: null } },
             select: { group: { select: { id: true, name: true } } },

@@ -159,13 +159,19 @@ export default function MapView({ markers, focusId }: MapViewProps) {
       const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
       const geometry = features[0].geometry as GeoJSON.Point;
       const center = geometry.coordinates as [number, number];
-      source.getClusterExpansionZoom(clusterId).then((zoom) => {
-        if (prefersReducedMotion()) {
-          map.jumpTo({ center, zoom });
-        } else {
-          map.easeTo({ center, zoom });
-        }
-      });
+      source
+        .getClusterExpansionZoom(clusterId)
+        .then((zoom) => {
+          if (prefersReducedMotion()) {
+            map.jumpTo({ center, zoom });
+          } else {
+            map.easeTo({ center, zoom });
+          }
+        })
+        .catch(() => {
+          // The source can be removed between the click and this promise resolving
+          // (e.g. a theme switch triggers setStyle), making the rejection safe to ignore.
+        });
     });
 
     map.on('click', 'unclustered-point', (event) => {

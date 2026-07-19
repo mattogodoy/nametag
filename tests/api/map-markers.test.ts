@@ -104,6 +104,26 @@ describe('GET /api/map/markers', () => {
       expect.objectContaining({
         where: { userId: 'user-123', deletedAt: null },
         select: expect.objectContaining({
+          addresses: {
+            select: {
+              id: true,
+              type: true,
+              locality: true,
+              country: true,
+              latitude: true,
+              longitude: true,
+              geocodeStatus: true,
+            },
+          },
+          locations: {
+            select: {
+              id: true,
+              type: true,
+              label: true,
+              latitude: true,
+              longitude: true,
+            },
+          },
           groups: expect.objectContaining({
             where: { group: { deletedAt: null } },
           }),
