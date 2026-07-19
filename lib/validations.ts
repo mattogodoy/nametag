@@ -430,6 +430,10 @@ export const updateGraphDisplaySchema = z.object({
   graphMode: z.enum(['individuals', 'bubbles']),
 });
 
+export const updateGeocodingSchema = z.object({
+  geocodingEnabled: z.boolean(),
+});
+
 // ============================================
 // Import schema
 // ============================================

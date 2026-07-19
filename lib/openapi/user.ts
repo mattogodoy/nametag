@@ -2,6 +2,7 @@ import {
   updateProfileSchema, updatePasswordSchema,
   updateThemeSchema, updateDateFormatSchema, updateNameOrderSchema,
   updateNameDisplayFormatSchema, updateGraphDisplaySchema,
+  updateGeocodingSchema,
   importDataSchema,
 } from '../validations';
 import { zodBody, jsonBody, jsonResponse, ref400, ref401, refMessage, resp } from './helpers';
@@ -94,6 +95,24 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         requestBody: zodBody(updateGraphDisplaySchema),
         responses: {
           '200': jsonResponse('Graph display settings updated', {
+            type: 'object',
+            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+          }),
+          '400': ref400(),
+          '401': ref401(),
+        },
+      },
+    },
+    '/api/user/geocoding': {
+      put: {
+        tags: ['User Settings'],
+        summary: 'Update address geocoding preference',
+        description:
+          'Enables or disables automatic geocoding of contact addresses for the map. Re-enabling queues previously skipped addresses for the background geocoder.',
+        security: [{ session: [] }],
+        requestBody: zodBody(updateGeocodingSchema),
+        responses: {
+          '200': jsonResponse('Geocoding preference updated', {
             type: 'object',
             properties: { user: { $ref: '#/components/schemas/UserProfile' } },
           }),
