@@ -15,6 +15,7 @@ export const PUT = withAuth(async (request, session) => {
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: { geocodingEnabled },
+      select: { id: true, geocodingEnabled: true },
     });
 
     if (geocodingEnabled) {

@@ -114,7 +114,15 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         responses: {
           '200': jsonResponse('Geocoding preference updated', {
             type: 'object',
-            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+            properties: {
+              user: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  geocodingEnabled: { type: 'boolean' },
+                },
+              },
+            },
           }),
           '400': ref400(),
           '401': ref401(),

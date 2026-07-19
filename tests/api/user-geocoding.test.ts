@@ -43,13 +43,19 @@ describe('PUT /api/user/geocoding', () => {
   });
 
   it('updates the user preference', async () => {
+    mocks.userUpdate.mockResolvedValue({ id: 'user-123', geocodingEnabled: false });
+
     const response = await PUT(makeRequest({ geocodingEnabled: false }));
     expect(response.status).toBe(200);
     expect(mocks.userUpdate).toHaveBeenCalledWith({
       where: { id: 'user-123' },
       data: { geocodingEnabled: false },
+      select: { id: true, geocodingEnabled: true },
     });
     expect(mocks.addressUpdateMany).not.toHaveBeenCalled();
+
+    const body = await response.json();
+    expect(body.user).toEqual({ id: 'user-123', geocodingEnabled: false });
   });
 
   it('re-queues disabled addresses when turning geocoding on', async () => {
