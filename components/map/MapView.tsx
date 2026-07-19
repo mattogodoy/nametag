@@ -16,6 +16,8 @@ const FOCUS_ZOOM = 15;
 interface MapViewProps {
   markers: MapMarker[];
   focusId: string | null;
+  /** True when any filter is active; the map then fits to the filtered results */
+  hasActiveFilters: boolean;
 }
 
 interface MarkerProperties {
@@ -69,13 +71,13 @@ function toGeoJSON(markers: MapMarker[]): GeoJSON.FeatureCollection<GeoJSON.Poin
   };
 }
 
-export default function MapView({ markers, focusId }: MapViewProps) {
+export default function MapView({ markers, focusId, hasActiveFilters }: MapViewProps) {
   const t = useTranslations('map');
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const currentStyleRef = useRef<string | null>(null);
   const markersRef = useRef<MapMarker[]>(markers);
-  const focusHandledRef = useRef(false);
+  const focusHandledRef = useRef<string | null>(null);
   const isDark = useIsDarkTheme();
   const translationsRef = useRef({ viewContact: t('viewContact'), directions: t('directions') });
   const [webglUnavailable, setWebglUnavailable] = useState(false);
@@ -218,6 +220,9 @@ export default function MapView({ markers, focusId }: MapViewProps) {
     return () => {
       map.remove();
       mapRef.current = null;
+      // The popup (if any) died with the map; let the focus effect re-apply
+      // on the next map instance (StrictMode remounts in dev, for example).
+      focusHandledRef.current = null;
     };
   }, []);
 
@@ -244,37 +249,36 @@ export default function MapView({ markers, focusId }: MapViewProps) {
   // Handle the ?focus= deep link once, after the map and data exist
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !focusId || focusHandledRef.current) return;
+    if (!map || !focusId || focusHandledRef.current === focusId) return;
     const target = markers.find((marker) => marker.id === focusId);
     if (!target) return;
-    focusHandledRef.current = true;
+    focusHandledRef.current = focusId;
 
-    const apply = () => {
-      map.jumpTo({ center: [target.longitude, target.latitude], zoom: FOCUS_ZOOM });
-      openPopup(
-        map,
-        [target.longitude, target.latitude],
-        { id: target.id, personId: target.personId, personName: target.personName, label: target.label },
-        translationsRef.current
-      );
-    };
-    if (map.isStyleLoaded()) {
-      apply();
-    } else {
-      map.once('style.load', apply);
-    }
+    // Camera moves and popups do not depend on the style being loaded, so
+    // apply immediately. Waiting for style.load here is a race: MapLibre's
+    // isStyleLoaded() can still report false after the event already fired,
+    // in which case a once('style.load') listener never runs.
+    map.jumpTo({ center: [target.longitude, target.latitude], zoom: FOCUS_ZOOM });
+    openPopup(
+      map,
+      [target.longitude, target.latitude],
+      { id: target.id, personId: target.personId, personName: target.personName, label: target.label },
+      translationsRef.current
+    );
   }, [focusId, markers]);
 
-  // Fit bounds to visible markers when there is no focus target
+  // Fit the camera to the filtered results while filters are active. With no
+  // filters and no focus target, the map keeps its current view (world view
+  // on arrival), so browsing never yanks the camera around.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || focusId || markers.length === 0) return;
+    if (!map || focusId || !hasActiveFilters || markers.length === 0) return;
     const bounds = new maplibregl.LngLatBounds();
     for (const marker of markers) {
       bounds.extend([marker.longitude, marker.latitude]);
     }
     map.fitBounds(bounds, { padding: 64, maxZoom: 12, animate: !prefersReducedMotion() });
-  }, [markers, focusId]);
+  }, [markers, focusId, hasActiveFilters]);
 
   if (webglUnavailable) {
     return (
@@ -306,7 +310,10 @@ function openPopup(
   labels: { viewContact: string; directions: string }
 ): void {
   const container = document.createElement('div');
-  container.className = 'space-y-1';
+  // MapLibre popups have a white background regardless of app theme, so the
+  // text color must be explicit; inheriting the dark theme's light text
+  // would render white-on-white.
+  container.className = 'space-y-1 text-gray-900';
 
   const name = document.createElement('div');
   name.className = 'font-semibold text-sm';
@@ -324,7 +331,7 @@ function openPopup(
   const contactLink = document.createElement('a');
   contactLink.href = `/people/${encodeURIComponent(props.personId)}`;
   contactLink.textContent = labels.viewContact;
-  contactLink.className = 'underline';
+  contactLink.className = 'underline text-blue-700';
   links.appendChild(contactLink);
 
   const directionsLink = document.createElement('a');
@@ -332,7 +339,7 @@ function openPopup(
   directionsLink.target = '_blank';
   directionsLink.rel = 'noopener noreferrer';
   directionsLink.textContent = labels.directions;
-  directionsLink.className = 'underline';
+  directionsLink.className = 'underline text-blue-700';
   links.appendChild(directionsLink);
 
   container.appendChild(links);

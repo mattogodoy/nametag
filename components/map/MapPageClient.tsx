@@ -122,7 +122,11 @@ function MapPageInner() {
             </div>
           </div>
         ) : (
-          <MapView markers={visibleMarkers} focusId={focusId} />
+          <MapView
+            markers={visibleMarkers}
+            focusId={focusId}
+            hasActiveFilters={Boolean(filters.query || filters.groupId || filters.city || filters.country)}
+          />
         )}
       </div>
     </div>
