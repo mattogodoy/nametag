@@ -52,11 +52,21 @@ export const GET = withLogging(async function GET(request: Request) {
     let skipped = 0;
 
     for (const address of addresses) {
-      const outcome = await geocodeSingleAddress(address);
-      if (outcome === 'success') geocoded++;
-      else if (outcome === 'failed') failed++;
-      else if (outcome === 'pending') pending++;
-      else skipped++;
+      try {
+        const outcome = await geocodeSingleAddress(address);
+        if (outcome === 'success') geocoded++;
+        else if (outcome === 'failed') failed++;
+        else if (outcome === 'pending') pending++;
+        else skipped++;
+      } catch (error) {
+        log.warn({
+          event: 'cron.geocode.item_failed',
+          addressId: address.id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Leave the record eligible for the next run instead of aborting the batch.
+        pending++;
+      }
     }
 
     log.info({

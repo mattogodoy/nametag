@@ -78,4 +78,22 @@ describe('GET /api/cron/geocode', () => {
     );
     expect(mocks.cronLogUpdate).toHaveBeenCalled();
   });
+
+  it('continues the batch when an address throws unexpectedly, counting it as pending', async () => {
+    mocks.addressFindMany.mockResolvedValue([{ id: 'a1' }, { id: 'a2' }]);
+    mocks.geocodeSingleAddress
+      .mockRejectedValueOnce(new Error('unexpected boom'))
+      .mockResolvedValueOnce('success');
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ success: true, processed: 2, geocoded: 1, failed: 0, pending: 1, skipped: 0 });
+    expect(mocks.cronLogUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'completed_with_errors' }),
+      })
+    );
+  });
 });
