@@ -26,7 +26,9 @@ interface MarkerProperties {
 }
 
 function useIsDarkTheme(): boolean {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  );
   useEffect(() => {
     const root = document.documentElement;
     const update = () => setIsDark(root.classList.contains('dark'));
@@ -62,6 +64,7 @@ export default function MapView({ markers, focusId }: MapViewProps) {
   const t = useTranslations('map');
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const currentStyleRef = useRef<string | null>(null);
   const markersRef = useRef<MapMarker[]>(markers);
   const focusHandledRef = useRef(false);
   const isDark = useIsDarkTheme();
@@ -82,12 +85,12 @@ export default function MapView({ markers, focusId }: MapViewProps) {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const primary =
-      getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2563EB';
+    const initialStyle = document.documentElement.classList.contains('dark') ? DARK_STYLE : LIGHT_STYLE;
+    currentStyleRef.current = initialStyle;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: document.documentElement.classList.contains('dark') ? DARK_STYLE : LIGHT_STYLE,
+      style: initialStyle,
       center: [0, 20],
       zoom: 1.5,
       attributionControl: { compact: true },
@@ -98,6 +101,8 @@ export default function MapView({ markers, focusId }: MapViewProps) {
 
     const addDataLayers = () => {
       if (map.getSource(SOURCE_ID)) return;
+      const primary =
+        getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2563EB';
       map.addSource(SOURCE_ID, {
         type: 'geojson',
         data: toGeoJSON(markersRef.current),
@@ -191,6 +196,8 @@ export default function MapView({ markers, focusId }: MapViewProps) {
     const map = mapRef.current;
     if (!map) return;
     const nextStyle = isDark ? DARK_STYLE : LIGHT_STYLE;
+    if (currentStyleRef.current === nextStyle) return;
+    currentStyleRef.current = nextStyle;
     map.setStyle(nextStyle);
   }, [isDark]);
 
