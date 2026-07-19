@@ -67,6 +67,7 @@ describe('geocodeAddress', () => {
 
   it('throws GeocodingProviderError on HTTP errors', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 503));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 503));
     await expect(geocodeAddress(address)).rejects.toBeInstanceOf(GeocodingProviderError);
   });
 
@@ -74,5 +75,27 @@ describe('geocodeAddress', () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ unexpected: true }));
     fetchMock.mockResolvedValueOnce(jsonResponse({ unexpected: true }));
     expect(await geocodeAddress(address)).toBeNull();
+  });
+
+  it('falls back to free-text when the structured query fails transiently', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 503))
+      .mockResolvedValueOnce(jsonResponse([{ lat: '1.5', lon: '2.5' }]));
+
+    const result = await geocodeAddress(address);
+
+    expect(result).toEqual({ latitude: 1.5, longitude: 2.5 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [secondUrl] = fetchMock.mock.calls[1] as [string];
+    expect(secondUrl).toContain('q=');
+  });
+
+  it('rejects with GeocodingProviderError when both structured and free-text queries fail', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 503))
+      .mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 503));
+
+    await expect(geocodeAddress(address)).rejects.toBeInstanceOf(GeocodingProviderError);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

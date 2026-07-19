@@ -68,14 +68,22 @@ export async function geocodeAddress(address: AddressFields): Promise<GeocodeRes
   if (address.postalCode) structured.set('postalcode', address.postalCode);
   if (address.country) structured.set('country', address.country);
 
-  if ([...structured.keys()].length > 0) {
-    const result = await search(structured);
-    if (result) return result;
-  }
-
   const freeText = [street, address.locality, address.region, address.postalCode, address.country]
     .filter(Boolean)
     .join(', ');
+
+  if ([...structured.keys()].length > 0) {
+    try {
+      const result = await search(structured);
+      if (result) return result;
+    } catch (error) {
+      if (!(error instanceof GeocodingProviderError)) throw error;
+      // Structured query failed transiently: fall through to the free-text
+      // attempt below rather than aborting, unless there is nothing to try.
+      if (!freeText) throw error;
+    }
+  }
+
   if (!freeText) return null;
 
   return search(new URLSearchParams({ q: freeText }));
