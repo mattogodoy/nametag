@@ -76,6 +76,27 @@ export default async function ConflictsPage() {
     },
   });
 
+  // Convert Prisma Decimal objects to plain numbers for client components
+  const serializedConflicts = conflicts.map((conflict) => ({
+    ...conflict,
+    mapping: {
+      ...conflict.mapping,
+      person: {
+        ...conflict.mapping.person,
+        addresses: conflict.mapping.person.addresses.map((address) => ({
+          ...address,
+          latitude: address.latitude === null ? null : Number(address.latitude),
+          longitude: address.longitude === null ? null : Number(address.longitude),
+        })),
+        locations: conflict.mapping.person.locations.map((location) => ({
+          ...location,
+          latitude: Number(location.latitude),
+          longitude: Number(location.longitude),
+        })),
+      },
+    },
+  }));
+
   return (
     <>
       <Navigation
@@ -116,7 +137,7 @@ export default async function ConflictsPage() {
               </p>
             </div>
 
-            <ConflictList conflicts={conflicts} />
+            <ConflictList conflicts={serializedConflicts} />
 
             <div className="mt-6 pt-4 border-t border-border">
               <Link

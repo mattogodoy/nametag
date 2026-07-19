@@ -264,7 +264,16 @@ export default async function PersonDetailsPage({
     latitude: Number(loc.latitude),
     longitude: Number(loc.longitude),
   }));
-  const serializedPerson = { ...person, locations: serializedLocations };
+  const serializedAddresses = person.addresses.map((address) => ({
+    ...address,
+    latitude: address.latitude === null ? null : Number(address.latitude),
+    longitude: address.longitude === null ? null : Number(address.longitude),
+  }));
+  const serializedPerson = {
+    ...person,
+    locations: serializedLocations,
+    addresses: serializedAddresses,
+  };
 
   // Filter out people who already have a relationship
   const relatedPersonIds = new Set(
