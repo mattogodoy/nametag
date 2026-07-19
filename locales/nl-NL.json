@@ -1426,7 +1426,8 @@
     "emptyDescription": "Zodra de adressen van uw contacten zijn gelokaliseerd, verschijnen hun markeringen hier.",
     "emptyGeocodingDisabled": "Adreslokalisatie staat uit. U kunt dit aanzetten bij Instellingen > Kaart.",
     "viewContact": "Contact bekijken",
-    "directions": "Routebeschrijving"
+    "directions": "Routebeschrijving",
+    "webglUnavailable": "Uw browser kan de kaart niet weergeven omdat WebGL niet beschikbaar of uitgeschakeld is. Schakel grafische versnelling of WebGL in uw browser in en laad de pagina opnieuw."
   },
   "relationshipTypes": {
     "title": "Relatietypen",

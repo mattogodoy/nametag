@@ -1413,7 +1413,8 @@
     "emptyDescription": "Quando gli indirizzi dei tuoi contatti saranno localizzati, i loro segnaposto appariranno qui.",
     "emptyGeocodingDisabled": "La localizzazione degli indirizzi è disattivata. Puoi attivarla in Impostazioni > Mappa.",
     "viewContact": "Vedi contatto",
-    "directions": "Indicazioni"
+    "directions": "Indicazioni",
+    "webglUnavailable": "Il tuo browser non può visualizzare la mappa perché WebGL non è disponibile o è disattivato. Attiva l'accelerazione grafica o WebGL nel tuo browser e ricarica la pagina."
   },
   "relationshipTypes": {
     "title": "Tipi di relazione",

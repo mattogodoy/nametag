@@ -1434,7 +1434,8 @@
     "emptyDescription": "Når adressene til kontaktene dine er lokalisert, vises markørene deres her.",
     "emptyGeocodingDisabled": "Adresselokalisering er slått av. Du kan slå den på i Innstillinger > Kart.",
     "viewContact": "Vis kontakt",
-    "directions": "Veibeskrivelse"
+    "directions": "Veibeskrivelse",
+    "webglUnavailable": "Nettleseren din kan ikke vise kartet fordi WebGL er utilgjengelig eller deaktivert. Aktiver grafikkakselerasjon eller WebGL i nettleseren din og last inn siden på nytt."
   },
   "relationshipTypes": {
     "title": "Relasjonstyper",

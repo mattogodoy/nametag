@@ -44,6 +44,15 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
+
 function toGeoJSON(markers: MapMarker[]): GeoJSON.FeatureCollection<GeoJSON.Point, MarkerProperties> {
   return {
     type: 'FeatureCollection',
@@ -69,6 +78,7 @@ export default function MapView({ markers, focusId }: MapViewProps) {
   const focusHandledRef = useRef(false);
   const isDark = useIsDarkTheme();
   const translationsRef = useRef({ viewContact: t('viewContact'), directions: t('directions') });
+  const [webglUnavailable, setWebglUnavailable] = useState(false);
 
   // Keep "latest value" refs in sync via effects rather than during render,
   // since the map init effect below registers event handlers once (empty
@@ -85,16 +95,30 @@ export default function MapView({ markers, focusId }: MapViewProps) {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    if (!isWebGLAvailable()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecting a one-time platform capability check into UI state is intentional
+      setWebglUnavailable(true);
+      return;
+    }
+
     const initialStyle = document.documentElement.classList.contains('dark') ? DARK_STYLE : LIGHT_STYLE;
     currentStyleRef.current = initialStyle;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: initialStyle,
-      center: [0, 20],
-      zoom: 1.5,
-      attributionControl: { compact: true },
-    });
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: initialStyle,
+        center: [0, 20],
+        zoom: 1.5,
+        attributionControl: { compact: true },
+      });
+    } catch {
+      // The feature-detection probe above can pass while the real context
+      // creation still fails (e.g. some driver/blocklist combinations).
+      setWebglUnavailable(true);
+      return;
+    }
     mapRef.current = map;
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -251,6 +275,16 @@ export default function MapView({ markers, focusId }: MapViewProps) {
     }
     map.fitBounds(bounds, { padding: 64, maxZoom: 12, animate: !prefersReducedMotion() });
   }, [markers, focusId]);
+
+  if (webglUnavailable) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          <p className="text-muted">{t('webglUnavailable')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="absolute inset-0" aria-label={t('title')} role="application" />;
 }

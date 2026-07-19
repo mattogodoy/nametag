@@ -1434,7 +1434,8 @@
     "emptyDescription": "連絡先の住所の位置が特定されると、ここにマーカーが表示されます。",
     "emptyGeocodingDisabled": "住所の位置特定は無効になっています。設定 > マップで有効にできます。",
     "viewContact": "連絡先を見る",
-    "directions": "経路"
+    "directions": "経路",
+    "webglUnavailable": "WebGLが利用できないか無効になっているため、ブラウザでマップを表示できません。ブラウザでグラフィックアクセラレーションまたはWebGLを有効にして、ページを再読み込みしてください。"
   },
   "relationshipTypes": {
     "title": "関係の種類",

@@ -1434,7 +1434,8 @@
     "emptyDescription": "Sobald die Adressen deiner Kontakte lokalisiert sind, erscheinen ihre Markierungen hier.",
     "emptyGeocodingDisabled": "Die Adress-Lokalisierung ist deaktiviert. Du kannst sie unter Einstellungen > Karte aktivieren.",
     "viewContact": "Kontakt anzeigen",
-    "directions": "Route"
+    "directions": "Route",
+    "webglUnavailable": "Dein Browser kann die Karte nicht anzeigen, weil WebGL nicht verfügbar oder deaktiviert ist. Aktiviere die Grafikbeschleunigung oder WebGL in deinem Browser und lade die Seite neu."
   },
   "relationshipTypes": {
     "title": "Beziehungsarten",

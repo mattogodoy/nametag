@@ -1434,7 +1434,8 @@
     "emptyDescription": "Cuando se localicen las direcciones de tus contactos, sus marcadores aparecerán aquí.",
     "emptyGeocodingDisabled": "La localización de direcciones está desactivada. Puedes activarla en Ajustes > Mapa.",
     "viewContact": "Ver contacto",
-    "directions": "Cómo llegar"
+    "directions": "Cómo llegar",
+    "webglUnavailable": "Tu navegador no puede mostrar el mapa porque WebGL no está disponible o está desactivado. Activa la aceleración gráfica o WebGL en tu navegador y vuelve a cargar la página."
   },
   "relationshipTypes": {
     "title": "Tipos de Relación",
