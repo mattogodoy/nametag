@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+
+### Features
+
+* add a Map tab with clustered markers of contacts' addresses and locations, with filters by name, group, city and country
+* add "Show on map" buttons for addresses and locations on the contact page
+* add automatic address geocoding with a configurable provider (GEOCODER_URL), a per-user privacy toggle in Settings > Map, and a DISABLE_GEOCODING instance flag
+
 ## [0.51.1](https://github.com/mattogodoy/nametag/compare/v0.51.0...v0.51.1) (2026-07-03)
 
 
