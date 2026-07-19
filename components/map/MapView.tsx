@@ -286,7 +286,15 @@ export default function MapView({ markers, focusId }: MapViewProps) {
     );
   }
 
-  return <div ref={containerRef} className="absolute inset-0" aria-label={t('title')} role="application" />;
+  // MapLibre's stylesheet forces position: relative on its container, which
+  // would override Tailwind's `absolute` and collapse the element to zero
+  // height. Positioning lives on an outer div we own; MapLibre gets a child
+  // sized with h-full/w-full, which its position override cannot break.
+  return (
+    <div className="absolute inset-0" aria-label={t('title')} role="application">
+      <div ref={containerRef} className="h-full w-full" />
+    </div>
+  );
 }
 
 // Popup content is built with DOM APIs and textContent (never innerHTML with
