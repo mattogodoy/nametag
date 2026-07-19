@@ -41,12 +41,19 @@ const navIcons: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
     </svg>
   ),
+  map: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+    </svg>
+  ),
 };
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard' },
   { href: '/people', labelKey: 'people', createHref: '/people/new', createLabelKey: 'people' },
   { href: '/groups', labelKey: 'groups', createHref: '/groups/new', createLabelKey: 'groups' },
+  { href: '/map', labelKey: 'map' },
   { href: '/journal', labelKey: 'journal', createHref: '/journal/new', createLabelKey: 'journal' },
   { href: '/relationship-types', labelKey: 'relationshipTypes', createHref: '/relationship-types/new', createLabelKey: 'relationshipTypes' },
 ];
