@@ -175,6 +175,30 @@ export function generateOpenAPISpec(): OpenAPISpec {
         },
       },
 
+      // Cron (geocode)
+      '/api/cron/geocode': {
+        get: {
+          tags: ['Cron'],
+          summary: 'Geocode pending addresses',
+          description: 'Processes a bounded batch of addresses awaiting geocoding for users who have opted in, skipping soft-deleted people. Skips entirely when geocoding is disabled instance-wide.',
+          security: [{ cronBearer: [] }],
+          responses: {
+            '200': jsonResponse('Geocoding batch results', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                processed: { type: 'integer' },
+                geocoded: { type: 'integer' },
+                failed: { type: 'integer' },
+                pending: { type: 'integer' },
+                skipped: { type: 'integer' },
+              },
+            }),
+            '401': ref401(),
+          },
+        },
+      },
+
       // System
       '/api/health': {
         get: {
