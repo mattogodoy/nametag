@@ -1,0 +1,40 @@
+---
+title: Nametag documentation
+description: Documentation for Nametag, a personal relationships manager.
+template: splash
+hero:
+  tagline: A personal relationships manager that helps you remember the people in your life and how they're connected.
+  image:
+    file: ../../assets/screenshots/dashboard-dark.png
+  actions:
+    - text: Get Started
+      link: /getting-started/quick-tour/
+      icon: right-arrow
+      variant: primary
+    - text: Self-Hosting Guide
+      link: /self-hosting/installation/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Explore the docs
+
+<CardGrid>
+  <Card title="Features" icon="document">
+    Learn how to manage people, groups, relationships, and more.
+    [Browse features](/features/people/)
+  </Card>
+  <Card title="Self-Hosting" icon="setting">
+    Deploy Nametag on your own infrastructure with Docker.
+    [Installation guide](/self-hosting/installation/)
+  </Card>
+  <Card title="API Reference" icon="puzzle">
+    Integrate with the Nametag REST API.
+    [API overview](/api/overview/)
+  </Card>
+  <Card title="Contributing" icon="pencil">
+    Set up a development environment and contribute.
+    [Dev setup](/contributing/development/)
+  </Card>
+</CardGrid>

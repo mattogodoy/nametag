@@ -56,6 +56,7 @@
     },
     "userMenu": {
       "settings": "Einstellungen",
+      "documentation": "Dokumentation",
       "signOut": "Abmelden"
     },
     "journal": "Tagebuch",
@@ -612,6 +613,8 @@
       "preRelease": "(Vorabversion)",
       "license": "Lizenz",
       "repository": "Repository",
+      "documentation": "Dokumentation",
+      "documentationDescription": "Anleitungen, Tutorials und Referenzmaterial zur Nutzung von Nametag, Self-Hosting und der REST API.",
       "releaseInformation": "Release-Informationen",
       "viewChangelog": "Sieh dir das vollständige Changelog und die Release Notes auf GitHub an:",
       "releaseNotes": "Release Notes für v{version}",

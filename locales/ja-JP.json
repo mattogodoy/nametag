@@ -56,6 +56,7 @@
     },
     "userMenu": {
       "settings": "設定",
+      "documentation": "ドキュメント",
       "signOut": "サインアウト"
     },
     "journal": "ジャーナル",
@@ -612,6 +613,8 @@
       "preRelease": "（プレリリース）",
       "license": "ライセンス",
       "repository": "リポジトリ",
+      "documentation": "ドキュメント",
+      "documentationDescription": "Nametagの使い方、セルフホスティング、REST APIに関するガイド、チュートリアル、リファレンス。",
       "releaseInformation": "リリース情報",
       "viewChangelog": "GitHubで完全な変更ログとリリースノートを表示する：",
       "releaseNotes": "v{version}のリリースノート",
