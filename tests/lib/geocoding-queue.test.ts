@@ -24,12 +24,12 @@ describe('enqueueGeocodeRequest', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(startTimes).toHaveLength(1);
 
-    await vi.advanceTimersByTimeAsync(999);
+    await vi.advanceTimersByTimeAsync(1099);
     expect(startTimes).toHaveLength(1);
 
     await vi.advanceTimersByTimeAsync(1);
     expect(startTimes).toHaveLength(2);
-    expect(startTimes[1] - startTimes[0]).toBeGreaterThanOrEqual(1000);
+    expect(startTimes[1] - startTimes[0]).toBeGreaterThanOrEqual(1100);
 
     await expect(first).resolves.toBe('ok');
     await expect(second).resolves.toBe('ok');

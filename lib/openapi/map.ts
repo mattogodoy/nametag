@@ -1,4 +1,5 @@
-import { jsonResponse, ref401 } from './helpers';
+import { retryGeocodeSchema } from '../validations';
+import { jsonResponse, ref400, ref401, ref404, zodBody } from './helpers';
 
 export function mapPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -41,10 +42,46 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
               },
               pendingCount: { type: 'integer' },
               failedCount: { type: 'integer' },
+              unlocatedPeople: {
+                type: 'array',
+                description: 'Contacts with addresses the geocoder could not locate, sorted by name',
+                items: {
+                  type: 'object',
+                  properties: {
+                    personId: { type: 'string' },
+                    personName: { type: 'string' },
+                    failedCount: { type: 'integer' },
+                  },
+                },
+              },
               geocodingEnabled: { type: 'boolean' },
             },
           }),
           '401': ref401(),
+        },
+      },
+    },
+    '/api/map/geocode-retry': {
+      post: {
+        tags: ['Map'],
+        summary: 'Retry geocoding an address',
+        description:
+          'Forces a fresh geocoder lookup for one address, bypassing the cached result. Used from the contact page when an address could not be located. Respects the instance kill switch and the user geocoding toggle.',
+        security: [{ session: [] }],
+        requestBody: zodBody(retryGeocodeSchema),
+        responses: {
+          '200': jsonResponse('Retry outcome', {
+            type: 'object',
+            properties: {
+              outcome: {
+                type: 'string',
+                enum: ['success', 'failed', 'pending', 'skipped', 'rate_limited'],
+              },
+            },
+          }),
+          '400': ref400(),
+          '401': ref401(),
+          '404': ref404(),
         },
       },
     },

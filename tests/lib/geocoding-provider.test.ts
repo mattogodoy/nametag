@@ -4,6 +4,12 @@ vi.mock('@/lib/env', () => ({
   env: { GEOCODER_URL: 'https://geocoder.test' },
 }));
 
+// Run queued requests immediately: the provider routes every HTTP request
+// through the rate-limit queue, which would otherwise add real delays here.
+vi.mock('../../lib/geocoding/queue', () => ({
+  enqueueGeocodeRequest: <T,>(task: () => Promise<T>) => task(),
+}));
+
 import { geocodeAddress, GeocodingProviderError } from '../../lib/geocoding/provider';
 
 const address = {
@@ -97,5 +103,21 @@ describe('geocodeAddress', () => {
 
     await expect(geocodeAddress(address)).rejects.toBeInstanceOf(GeocodingProviderError);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('exposes the HTTP status on provider errors', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'slow down' }, 429));
+
+    const error = await geocodeAddress(address).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(GeocodingProviderError);
+    expect((error as GeocodingProviderError).status).toBe(429);
+  });
+
+  it('does not attempt the free-text fallback when rate limited', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'slow down' }, 429));
+
+    await expect(geocodeAddress(address)).rejects.toBeInstanceOf(GeocodingProviderError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

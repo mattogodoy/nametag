@@ -4,11 +4,10 @@ import { env } from '@/lib/env';
 import { createModuleLogger } from '@/lib/logger';
 import { buildAddressHash, hasGeocodableContent } from './hash';
 import { geocodeAddress, GeocodingProviderError, type GeocodeResult } from './provider';
-import { enqueueGeocodeRequest } from './queue';
 
 const log = createModuleLogger('geocoding');
 
-export type GeocodeOutcome = 'success' | 'failed' | 'pending' | 'skipped';
+export type GeocodeOutcome = 'success' | 'failed' | 'pending' | 'skipped' | 'rate_limited';
 
 /**
  * Geocode one address row if it needs it. Uses updateMany for row updates
@@ -51,17 +50,28 @@ export async function geocodeSingleAddress(address: PersonAddress): Promise<Geoc
   try {
     let result: GeocodeResult | null;
     try {
-      result = await enqueueGeocodeRequest(() => geocodeAddress(address));
+      result = await geocodeAddress(address);
     } catch (error) {
+      // A 429 means the provider wants LESS traffic: retrying immediately is
+      // the one thing guaranteed to make it worse. Leave the address pending
+      // and tell the caller to back off.
+      if (error instanceof GeocodingProviderError && error.status === 429) {
+        log.warn({ addressId: address.id }, 'Geocoder rate limited, backing off');
+        await prisma.personAddress.updateMany({
+          where: { id: address.id },
+          data: { geocodeStatus: 'pending' },
+        });
+        return 'rate_limited';
+      }
       if (!(error instanceof GeocodingProviderError)) {
         throw error;
       }
-      // One retry for transient provider failures. The common cause is a
-      // stale kept-alive connection, where the immediate second attempt gets
-      // a fresh socket and succeeds. Going through the queue again keeps the
-      // provider rate limit intact; a second failure falls through to the
-      // outer catch and leaves the address pending for the cron.
-      result = await enqueueGeocodeRequest(() => geocodeAddress(address));
+      // One retry for other transient provider failures. The common cause is
+      // a stale kept-alive connection, where the immediate second attempt
+      // gets a fresh socket and succeeds. Each request goes through the rate
+      // limit queue inside the provider; a second failure falls through to
+      // the outer catch and leaves the address pending for the cron.
+      result = await geocodeAddress(address);
     }
     const status = result ? 'success' : 'failed';
 
@@ -105,6 +115,9 @@ export async function geocodeSingleAddress(address: PersonAddress): Promise<Geoc
       where: { id: address.id },
       data: { geocodeStatus: 'pending' },
     });
+    if (error instanceof GeocodingProviderError && error.status === 429) {
+      return 'rate_limited';
+    }
     return 'pending';
   }
 }
@@ -138,6 +151,11 @@ export async function geocodePersonAddresses(personId: string): Promise<void> {
   }
 
   for (const address of person.addresses) {
-    await geocodeSingleAddress(address);
+    const outcome = await geocodeSingleAddress(address);
+    if (outcome === 'rate_limited') {
+      // The provider asked us to back off; the remaining addresses stay
+      // eligible for the cron, which retries them later.
+      break;
+    }
   }
 }

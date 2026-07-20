@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.53.2](https://github.com/mattogodoy/nametag/compare/v0.53.1...v0.53.2) (2026-07-20)
+
+
+### Bug Fixes
+
+* surface unlocated addresses on the map and allow retrying the lookup ([3ecedb3](https://github.com/mattogodoy/nametag/commit/3ecedb38ce506928c6559b9b1ef56ad8b0be5eec))
+
+## [0.53.1](https://github.com/mattogodoy/nametag/compare/v0.53.0...v0.53.1) (2026-07-20)
+
+
+### Bug Fixes
+
+* respect geocoder rate limits and prevent overlapping cron runs ([620e44f](https://github.com/mattogodoy/nametag/commit/620e44fbcd6fadd19fe00bf0068b28711c3e0749))
+
 ## [0.53.0](https://github.com/mattogodoy/nametag/compare/v0.52.0...v0.53.0) (2026-07-20)
 
 

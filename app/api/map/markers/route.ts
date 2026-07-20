@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { formatCanonicalName, type NameDisplayFormat } from '@/lib/nameUtils';
-import type { MapGroup, MapMarker } from '@/lib/map/types';
+import type { MapGroup, MapMarker, UnlocatedPerson } from '@/lib/map/types';
 
 export const GET = withAuth(async (request, session) => {
   try {
@@ -63,6 +63,7 @@ export const GET = withAuth(async (request, session) => {
 
     const groupsById = new Map<string, MapGroup>();
     const markers: MapMarker[] = [];
+    const unlocatedPeople: UnlocatedPerson[] = [];
 
     for (const person of people) {
       const personName =
@@ -75,6 +76,13 @@ export const GET = withAuth(async (request, session) => {
       const groupIds = person.groups.map((pg) => pg.group.id);
       for (const pg of person.groups) {
         groupsById.set(pg.group.id, pg.group);
+      }
+
+      const personFailedCount = person.addresses.filter(
+        (address) => address.geocodeStatus === 'failed'
+      ).length;
+      if (personFailedCount > 0) {
+        unlocatedPeople.push({ personId: person.id, personName, failedCount: personFailedCount });
       }
 
       for (const address of person.addresses) {
@@ -114,12 +122,14 @@ export const GET = withAuth(async (request, session) => {
     }
 
     const groups = [...groupsById.values()].sort((a, b) => a.name.localeCompare(b.name));
+    unlocatedPeople.sort((a, b) => a.personName.localeCompare(b.personName));
 
     return apiResponse.ok({
       markers,
       groups,
       pendingCount,
       failedCount,
+      unlocatedPeople,
       geocodingEnabled: user?.geocodingEnabled ?? true,
     });
   } catch (error) {
