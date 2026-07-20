@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { createModuleLogger } from '@/lib/logger';
 import { buildAddressHash, hasGeocodableContent } from './hash';
-import { geocodeAddress } from './provider';
+import { geocodeAddress, GeocodingProviderError, type GeocodeResult } from './provider';
 import { enqueueGeocodeRequest } from './queue';
 
 const log = createModuleLogger('geocoding');
@@ -49,7 +49,20 @@ export async function geocodeSingleAddress(address: PersonAddress): Promise<Geoc
   }
 
   try {
-    const result = await enqueueGeocodeRequest(() => geocodeAddress(address));
+    let result: GeocodeResult | null;
+    try {
+      result = await enqueueGeocodeRequest(() => geocodeAddress(address));
+    } catch (error) {
+      if (!(error instanceof GeocodingProviderError)) {
+        throw error;
+      }
+      // One retry for transient provider failures. The common cause is a
+      // stale kept-alive connection, where the immediate second attempt gets
+      // a fresh socket and succeeds. Going through the queue again keeps the
+      // provider rate limit intact; a second failure falls through to the
+      // outer catch and leaves the address pending for the cron.
+      result = await enqueueGeocodeRequest(() => geocodeAddress(address));
+    }
     const status = result ? 'success' : 'failed';
 
     await prisma.geocodeCache.upsert({

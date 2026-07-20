@@ -36,6 +36,9 @@ vi.mock('../../lib/geocoding/queue', () => ({
 }));
 
 import { geocodeSingleAddress, geocodePersonAddresses } from '../../lib/geocoding/geocode-person';
+// Resolves to the mocked module above, so instanceof checks in the
+// implementation and these tests use the same class.
+import { GeocodingProviderError } from '../../lib/geocoding/provider';
 import { buildAddressHash } from '../../lib/geocoding/hash';
 import type { PersonAddress } from '@prisma/client';
 
@@ -145,6 +148,44 @@ describe('geocodeSingleAddress', () => {
     expect(mocks.addressUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: { geocodeStatus: 'pending' } })
     );
+  });
+
+  it('retries once when the provider fails transiently, then succeeds', async () => {
+    mocks.cacheFindUnique.mockResolvedValue(null);
+    mocks.geocodeAddress
+      .mockRejectedValueOnce(new GeocodingProviderError('stale connection'))
+      .mockResolvedValueOnce({ latitude: 39.78, longitude: -89.65 });
+
+    const outcome = await geocodeSingleAddress(makeAddress());
+
+    expect(outcome).toBe('success');
+    expect(mocks.geocodeAddress).toHaveBeenCalledTimes(2);
+    expect(mocks.addressUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ latitude: 39.78, longitude: -89.65, geocodeStatus: 'success' }),
+      })
+    );
+  });
+
+  it('goes pending when the retry also fails', async () => {
+    mocks.cacheFindUnique.mockResolvedValue(null);
+    mocks.geocodeAddress.mockRejectedValue(new GeocodingProviderError('still down'));
+
+    const outcome = await geocodeSingleAddress(makeAddress());
+
+    expect(outcome).toBe('pending');
+    expect(mocks.geocodeAddress).toHaveBeenCalledTimes(2);
+    expect(mocks.cacheUpsert).not.toHaveBeenCalled();
+  });
+
+  it('does not retry unexpected non-provider errors', async () => {
+    mocks.cacheFindUnique.mockResolvedValue(null);
+    mocks.geocodeAddress.mockRejectedValue(new Error('unexpected'));
+
+    const outcome = await geocodeSingleAddress(makeAddress());
+
+    expect(outcome).toBe('pending');
+    expect(mocks.geocodeAddress).toHaveBeenCalledTimes(1);
   });
 });
 
