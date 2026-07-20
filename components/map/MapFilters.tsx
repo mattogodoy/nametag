@@ -100,8 +100,11 @@ export default function MapFilters({ filters, markers, groups, resultCount, onCh
         ))}
       </select>
 
+      {/* Count and clear stay one flex item (no display: contents; Safari
+          fails to wrap contents-children of a flex container), so the pair
+          wraps together when the row runs out of space. */}
       {hasActiveFilters && (
-        <div className="col-span-2 flex items-center justify-between gap-2 sm:contents">
+        <div className="col-span-2 flex items-center justify-between gap-3 sm:ml-auto">
           <span className="text-sm text-muted whitespace-nowrap" role="status">
             {t('resultsCount', { count: resultCount })}
           </span>
