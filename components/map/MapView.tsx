@@ -14,7 +14,7 @@ const SOURCE_ID = 'people';
 const FOCUS_ZOOM = 15;
 // MapLibre scales animation time with camera distance, so long jumps (world
 // view to one city) can run for several seconds. Cap all camera animations.
-const CAMERA_ANIMATION_MS = 600;
+const CAMERA_ANIMATION_MS = 1000;
 
 interface MapViewProps {
   markers: MapMarker[];
