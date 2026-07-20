@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.53.1](https://github.com/mattogodoy/nametag/compare/v0.53.0...v0.53.1) (2026-07-20)
+
+
+### Bug Fixes
+
+* respect geocoder rate limits and prevent overlapping cron runs ([620e44f](https://github.com/mattogodoy/nametag/commit/620e44fbcd6fadd19fe00bf0068b28711c3e0749))
+
 ## [0.53.0](https://github.com/mattogodoy/nametag/compare/v0.52.0...v0.53.0) (2026-07-20)
 
 
