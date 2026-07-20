@@ -434,6 +434,10 @@ export const updateGeocodingSchema = z.object({
   geocodingEnabled: z.boolean(),
 });
 
+export const retryGeocodeSchema = z.object({
+  addressId: z.string().min(1),
+});
+
 // ============================================
 // Import schema
 // ============================================

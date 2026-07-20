@@ -95,6 +95,7 @@ describe('GET /api/map/markers', () => {
       country: null,
     });
     expect(body.groups).toEqual([{ id: 'group-1', name: 'Friends' }]);
+    expect(body.unlocatedPeople).toEqual([]);
     expect(body.geocodingEnabled).toBe(true);
   });
 
@@ -145,6 +146,67 @@ describe('GET /api/map/markers', () => {
 
     expect(body.pendingCount).toBe(4);
     expect(body.failedCount).toBe(2);
+  });
+
+  it('lists people with failed addresses, name-sorted', async () => {
+    const failedAddress = {
+      id: 'addr-f1',
+      type: 'home',
+      locality: 'Nowhere',
+      region: null,
+      country: 'ES',
+      latitude: null,
+      longitude: null,
+      geocodeStatus: 'failed',
+    };
+    mocks.personFindMany.mockResolvedValue([
+      {
+        id: 'person-2',
+        name: 'Zoe',
+        surname: 'Young',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        displayNameOverride: null,
+        addresses: [failedAddress, { ...failedAddress, id: 'addr-f2' }],
+        locations: [],
+        groups: [],
+      },
+      {
+        id: 'person-1',
+        name: 'Alice',
+        surname: 'Smith',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        displayNameOverride: null,
+        addresses: [{ ...failedAddress, id: 'addr-f3' }],
+        locations: [],
+        groups: [],
+      },
+      {
+        id: 'person-3',
+        name: 'Ben',
+        surname: 'Located',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        displayNameOverride: null,
+        addresses: [
+          { ...failedAddress, id: 'addr-ok', geocodeStatus: 'success', latitude: '1', longitude: '2' },
+        ],
+        locations: [],
+        groups: [],
+      },
+    ]);
+
+    const response = await GET(new Request('http://localhost/api/map/markers'));
+    const body = await response.json();
+
+    expect(body.unlocatedPeople).toEqual([
+      { personId: 'person-1', personName: 'Alice Smith', failedCount: 1 },
+      { personId: 'person-2', personName: 'Zoe Young', failedCount: 2 },
+    ]);
   });
 
   it('scopes the pending and failed address count queries to the session user, excluding soft-deleted people', async () => {

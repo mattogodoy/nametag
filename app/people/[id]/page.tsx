@@ -10,6 +10,7 @@ import Navigation from '@/components/Navigation';
 import PersonVCardRawView from '@/components/PersonVCardRawView';
 import PersonActionsMenu from '@/components/PersonActionsMenu';
 import LastContactQuickUpdate from '@/components/LastContactQuickUpdate';
+import RetryGeocodeButton from '@/components/RetryGeocodeButton';
 import { formatDate, formatDateWithoutYear, parseAsLocalDate, type DateFormat } from '@/lib/date-format';
 import { getCountryName } from '@/lib/countries';
 import { formatCanonicalName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
@@ -569,6 +570,14 @@ export default async function PersonDetailsPage({
                                   </svg>
                                   {t('showOnMap')}
                                 </Link>
+                              )}
+                              {address.geocodeStatus === 'failed' && (
+                                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                  <span className="text-sm text-amber-600 dark:text-amber-400">
+                                    {t('addressNotLocated')}
+                                  </span>
+                                  <RetryGeocodeButton addressId={address.id} />
+                                </div>
                               )}
                             </div>
                           ))}
