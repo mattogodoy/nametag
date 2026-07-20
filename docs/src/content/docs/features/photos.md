@@ -31,3 +31,18 @@ Beyond the person's own detail and edit pages, photos appear in a few other plac
 ## Where photos are stored
 
 Photos are stored on disk, not in the database, at the path configured by the `PHOTO_STORAGE_PATH` environment variable. If you're running Nametag with Docker, this needs to point at a persistent volume (the `photo_data` volume defined in `docker-compose.yml`), otherwise uploaded photos will be lost the next time the container restarts. See [Configuration](/self-hosting/configuration/) for details on setting this up.
+
+## Technical details
+
+| Spec | Value |
+| --- | --- |
+| Max upload size | 50 MB |
+| Accepted input formats | JPEG, PNG, GIF, WebP (detected via magic bytes, not file extension) |
+| Output format | JPEG for opaque images, PNG for images with transparency |
+| Output dimensions | Square, default 256x256px (configurable via the `PHOTO_SIZE` environment variable, range 64-4096) |
+| JPEG quality | Default 80 (configurable via the `PHOTO_QUALITY` environment variable, range 1-100) |
+| Crop aspect ratio | 1:1 (square), shown with a round crop shape in the UI |
+| EXIF data | Auto-rotated, then stripped |
+| Storage filename | `{personId}.jpg` or `{personId}.png`, in a per-user directory |
+| Max decoded pixel count | 100 megapixels |
+| Download timeout for URL-based photos | 15 seconds |

@@ -59,3 +59,11 @@ Self-hosted installations are not subject to these limits.
 ## Soft delete
 
 Deleting a group doesn't erase it immediately. It moves to the trash, where it can be restored within 30 days before being permanently removed. See [Trash & Restore](/features/trash/) for how recovery works.
+
+## Field limits
+
+| Field | Limit |
+| --- | --- |
+| Group name | 1-100 characters |
+| Group description | up to 500 characters |
+| Pagination | 24 groups per page |

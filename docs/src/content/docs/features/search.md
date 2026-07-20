@@ -30,3 +30,11 @@ Each result shows:
 - The groups they belong to
 
 Click any result to go straight to that person's detail page.
+
+## Technical details
+
+- **Default max results**: 20
+- **Fuzzy tolerance**: 0.2
+- **Combine mode**: AND (all search words must match)
+- **Prefix matching**: enabled, so results appear as you type
+- **Indexed fields**: name, surname, middle name, second last name, nickname, display name override, organization, job title, notes, phones, emails, addresses, URLs, IM handles, groups, custom fields

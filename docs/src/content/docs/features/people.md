@@ -85,3 +85,30 @@ Select multiple people from the list to delete them, assign them to a group, or 
 ## The person detail page
 
 The detail page for a person brings every section together in one place: name and photo, work info, contact information, addresses, important dates, notes, custom field values, group memberships, your relationship to them, their relationships to other people, and a journal timeline of entries linked to them. It's designed to give you the full picture of a person at a glance, with editing just one click away.
+
+## Field limits
+
+| Field | Limit |
+| --- | --- |
+| Name (first name) | 1-100 characters |
+| Surname, middle name, second last name, nickname | up to 100 characters each |
+| Prefix, suffix | up to 50 characters each |
+| Display name override | up to 200 characters |
+| Organization, job title | up to 200 characters each |
+| Notes | up to 10,000 characters (markdown supported) |
+| Phone number | 1-50 characters |
+| Phone/email/address/URL type labels | 1-50 characters |
+| Street address (per line) | up to 200 characters |
+| City, region, country | up to 100 characters each |
+| Postal code | up to 20 characters |
+| URL | 1-500 characters |
+| IM handle | 1-200 characters |
+| Pagination | 50 contacts per page |
+
+**Type options:**
+
+- **Phone types**: Mobile, Home, Work, Fax, Other
+- **Email types**: Personal, Work, Other
+- **Address types**: Home, Work, Other
+- **URL types**: Personal, Work, Other
+- **IM protocols**: Skype, WhatsApp, Telegram, Signal, Other

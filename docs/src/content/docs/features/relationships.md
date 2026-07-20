@@ -43,3 +43,12 @@ From the Relationship Types page you can create, edit, and soft-delete types. Ea
 ## Relationships in the network graph
 
 Every relationship, whether it's your connection to someone or a connection between two other people, appears as an edge in the [network graph](/features/network-graph/), colored by relationship type. This is what turns your list of contacts into a visual map of how everyone connects.
+
+## Field limits
+
+| Field | Limit |
+| --- | --- |
+| Relationship type name | 1-50 characters |
+| Relationship type label | 1-50 characters |
+| Inverse label | up to 50 characters |
+| Relationship notes | up to 1,000 characters |

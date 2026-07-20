@@ -47,3 +47,15 @@ In SaaS mode, the number of custom field templates you can define depends on you
 - **Pro**: unlimited custom field templates
 
 Self-hosted installations are not subject to these limits.
+
+## Limits and constraints
+
+| Item | Limit |
+| --- | --- |
+| Available field types | TEXT, NUMBER, BOOLEAN, SELECT (4 types total) |
+| Template name | up to 60 characters |
+| SELECT option text | up to 100 characters |
+| Max SELECT options per template | 50 |
+| Max templates in reorder | 200 |
+| Field value max length | 2,000 characters |
+| Max custom field values per person | 200 |

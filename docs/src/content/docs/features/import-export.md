@@ -40,3 +40,12 @@ You can export contacts as standard vCard 4.0 files from a person's detail page,
 ## Data portability
 
 Export everything as JSON to back up or move to another Nametag instance. Export as vCard to take your contacts anywhere that speaks the format. Either way, your data never gets stuck.
+
+## Size limits
+
+| Import/export type | Limit |
+| --- | --- |
+| JSON import | 5 MB max |
+| vCard import (text paste) | 2 MB max |
+| vCard import (file upload) | 2 MB max |
+| JSON export | no size limit, generates a full dump |

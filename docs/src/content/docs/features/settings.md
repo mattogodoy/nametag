@@ -56,3 +56,14 @@ Available in SaaS mode only, on nametag.one. Shows your current plan, usage mete
 ## About
 
 App version, license information, and links to the GitHub repository, release notes, and changelog.
+
+## Preference options
+
+| Setting | Options |
+| --- | --- |
+| Theme | Light, Dark |
+| Date format | MDY, DMY, YMD |
+| Name order | Western (first, then last), Eastern (last, then first) |
+| Name display | Full, Nickname Preferred, Short |
+| Graph mode | Individuals, Bubbles |
+| Supported languages | English, Spanish, Japanese, Norwegian, German, Chinese, Italian, Russian, Dutch (9 total) |

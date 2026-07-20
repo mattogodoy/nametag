@@ -38,3 +38,25 @@ The other contact is deleted once the merge completes.
 ## Orphan detection
 
 Merging and general cleanup can sometimes leave contacts stranded: people with no relationships and no group memberships. Nametag can find these orphaned contacts for you, either for a single person or in bulk across your whole network, so you can decide whether to connect them to your network or remove them.
+
+## Algorithm details
+
+Nametag scores potential duplicate pairs using Levenshtein edit-distance combined with composite signal scoring across several fields.
+
+| Signal | Weight |
+| --- | --- |
+| Name | 40% |
+| Email | 30% |
+| Phone | 20% |
+| Birthday | 10% |
+
+The name signal itself is broken down further: first name contributes a weight of 0.6 to the name score, surname contributes 0.4.
+
+Other rules that affect the final score:
+
+- **Similarity threshold**: pairs scoring below 75% are not flagged as duplicates
+- **Sparsity cap**: if fewer than 2 signals are available for comparison, the score is capped at 60%
+- **Auto-flag on email match**: a matching email boosts the score to at least 85%
+- **Name-only bypass**: if name similarity exceeds 95%, the pair is flagged regardless of how the other signals score
+
+When more than two contacts turn out to be related, Nametag groups them with a Union-Find (disjoint-set) clustering algorithm, so a chain of similar entries is presented as a single cluster instead of overlapping pairs.

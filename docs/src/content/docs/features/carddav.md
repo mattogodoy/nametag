@@ -62,6 +62,19 @@ New contacts found on the CardDAV server that don't yet exist in Nametag show up
 
 If you're setting up sync for the first time and already have contacts in Nametag, use bulk export to push your existing contacts to the CardDAV server in batches.
 
+## Sync technical details
+
+| Setting | Value |
+| --- | --- |
+| Retry attempts | max 3 |
+| Retry initial delay | 1 second |
+| Retry backoff factor | 2x |
+| Retry max delay | 10 seconds |
+| Export batch size | 50 contacts per batch |
+| Delay between export batches | 100ms |
+| Auto-sync interval range | 60 seconds to 24 hours (default: 12 hours) |
+| Cron inter-user delay | 200ms between users |
+
 ## Troubleshooting
 
 - **Wrong password type**: Google and iCloud require an app-specific password, not your regular account password. If sign-in fails, double-check you generated one and are using it here.

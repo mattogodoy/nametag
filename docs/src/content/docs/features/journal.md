@@ -40,3 +40,11 @@ Entry bodies support full markdown rendering: headings, bold and italic text, li
 ## Editing and deleting entries
 
 Open an entry to see it in full, with buttons to edit or delete it. Editing reopens the same form used to create the entry, with everything pre-filled. Deleting asks for confirmation first, since there's no undo for journal entries once you confirm.
+
+## Field limits
+
+| Field | Limit |
+| --- | --- |
+| Title | 1-200 characters |
+| Body | 1-50,000 characters (markdown) |
+| Pagination (API) | 50 entries per page |

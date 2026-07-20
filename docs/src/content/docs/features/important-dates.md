@@ -42,3 +42,11 @@ In SaaS mode, the total number of active reminders (combining important date rem
 - **Pro**: unlimited reminders
 
 Self-hosted installations are not subject to these limits. Turning off a reminder frees up a slot even if the important date itself stays on the person's record.
+
+## Technical details
+
+- **Predefined date types**: Birthday, Anniversary, Name Day, Memorial, plus a custom "Other" type with a free-text title
+- **Date title**: up to 100 characters
+- **Reminder interval range**: 1-99
+- **Reminder interval units**: Days, Weeks, Months, Years
+- **Reminder types**: Once (fires a single time), Recurring (fires every interval, for example every year)

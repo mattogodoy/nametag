@@ -55,3 +55,14 @@ For the curious: the graph is powered by a D3.js force-directed simulation, rend
 ## Performance at scale
 
 Canvas rendering combined with the LOD system means the graph stays responsive even for large networks. If you're tracking 100 or more people, expect the same smooth panning and zooming you'd get with a much smaller network, since Nametag only draws full detail for what's actually visible and legible at the current zoom level.
+
+## Limits and constraints
+
+| Item | Value |
+| --- | --- |
+| Performance warning threshold | 100 nodes |
+| Max nodes shown | 500 nodes |
+| Default degrees of separation | 2 |
+| LOD tier: dots | zoom below 0.6 |
+| LOD tier: labels | zoom between 0.6 and 1.2 |
+| LOD tier: full detail (with photos) | zoom 1.2 and above |
