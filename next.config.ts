@@ -6,6 +6,11 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 const nextConfig: NextConfig = {
   devIndicators: false,
 
+  env: {
+    NEXT_PUBLIC_PHOTO_SIZE: String(process.env.PHOTO_SIZE || '256'),
+    NEXT_PUBLIC_PHOTO_QUALITY: String(process.env.PHOTO_QUALITY || '80'),
+  },
+
   // Externalize Pino from Next.js webpack bundle (uses Node.js native modules)
   serverExternalPackages: ['pino', 'pino-pretty'],
 

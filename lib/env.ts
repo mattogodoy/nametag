@@ -78,6 +78,10 @@ const envSchema = z.object({
 
   // Application URL for generating links in emails (optional, defaults to NEXTAUTH_URL)
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+
+  // Photo processing
+  PHOTO_SIZE: z.coerce.number().int().min(64).max(4096).default(256),
+  PHOTO_QUALITY: z.coerce.number().int().min(1).max(100).default(80),
 });
 
 /**
