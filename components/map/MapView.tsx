@@ -20,12 +20,17 @@ interface MapViewProps {
   markers: MapMarker[];
   focusId: string | null;
   /**
-   * Serialized filter state. Whenever it changes after mount, the camera
-   * fits to the visible markers (including when filters are cleared back to
-   * "all"). Its initial value never triggers a fit, so plain arrival keeps
-   * the world view.
+   * Serialized filter state ("|"-joined values). The camera fits to the
+   * visible markers whenever it changes, and also on arrival when it starts
+   * out non-empty (a shared pre-filtered URL). Only an initially-empty
+   * filter state keeps the world view.
    */
   filtersKey: string;
+}
+
+/** True when every segment of the "|"-joined filter key is empty. */
+function isEmptyFiltersKey(key: string): boolean {
+  return key.split('|').every((part) => part === '');
 }
 
 interface MarkerProperties {
@@ -86,6 +91,7 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
   const currentStyleRef = useRef<string | null>(null);
   const markersRef = useRef<MapMarker[]>(markers);
   const focusHandledRef = useRef<string | null>(null);
+  const appliedFiltersKeyRef = useRef<string | null>(null);
   const isDark = useIsDarkTheme();
   const translationsRef = useRef({ viewContact: t('viewContact'), directions: t('directions') });
   const [webglUnavailable, setWebglUnavailable] = useState(false);
@@ -228,9 +234,11 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     return () => {
       map.remove();
       mapRef.current = null;
-      // The popup (if any) died with the map; let the focus effect re-apply
-      // on the next map instance (StrictMode remounts in dev, for example).
+      // The popup and camera state died with the map; let the focus and
+      // filter-fit effects re-apply on the next map instance (StrictMode
+      // remounts in dev, for example).
       focusHandledRef.current = null;
+      appliedFiltersKeyRef.current = null;
     };
   }, []);
 
@@ -276,20 +284,19 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
   }, [focusId, markers]);
 
   // Fit the camera to the visible markers whenever the user changes filters,
-  // including clearing them back to "all". The initial filter state never
-  // triggers a fit, so plain arrival keeps the world view.
-  const appliedFiltersKeyRef = useRef<string | null>(null);
+  // including clearing them back to "all". Arriving with filters already in
+  // the URL fits immediately; only an initially-empty filter state keeps the
+  // world view on arrival.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || focusId) {
       appliedFiltersKeyRef.current = filtersKey;
       return;
     }
-    if (appliedFiltersKeyRef.current === null || appliedFiltersKeyRef.current === filtersKey) {
-      appliedFiltersKeyRef.current = filtersKey;
-      return;
-    }
+    const previous = appliedFiltersKeyRef.current;
     appliedFiltersKeyRef.current = filtersKey;
+    if (previous === filtersKey) return;
+    if (previous === null && isEmptyFiltersKey(filtersKey)) return;
     if (markers.length === 0) return;
     const bounds = new maplibregl.LngLatBounds();
     for (const marker of markers) {
