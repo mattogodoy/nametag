@@ -12,6 +12,9 @@ const LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 
 const SOURCE_ID = 'people';
 const FOCUS_ZOOM = 15;
+// MapLibre scales animation time with camera distance, so long jumps (world
+// view to one city) can run for several seconds. Cap all camera animations.
+const CAMERA_ANIMATION_MS = 600;
 
 interface MapViewProps {
   markers: MapMarker[];
@@ -191,7 +194,7 @@ export default function MapView({ markers, focusId, hasActiveFilters }: MapViewP
           if (prefersReducedMotion()) {
             map.jumpTo({ center, zoom });
           } else {
-            map.easeTo({ center, zoom });
+            map.easeTo({ center, zoom, duration: CAMERA_ANIMATION_MS });
           }
         })
         .catch(() => {
@@ -277,7 +280,12 @@ export default function MapView({ markers, focusId, hasActiveFilters }: MapViewP
     for (const marker of markers) {
       bounds.extend([marker.longitude, marker.latitude]);
     }
-    map.fitBounds(bounds, { padding: 64, maxZoom: 12, animate: !prefersReducedMotion() });
+    map.fitBounds(bounds, {
+      padding: 64,
+      maxZoom: 12,
+      duration: CAMERA_ANIMATION_MS,
+      animate: !prefersReducedMotion(),
+    });
   }, [markers, focusId, hasActiveFilters]);
 
   if (webglUnavailable) {
