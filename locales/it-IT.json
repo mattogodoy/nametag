@@ -59,7 +59,8 @@
       "signOut": "Esci"
     },
     "journal": "Diario",
-    "createJournal": "Nuova voce"
+    "createJournal": "Nuova voce",
+    "map": "Mappa"
   },
   "settings": {
     "title": "Impostazioni",
@@ -646,6 +647,15 @@
       "errorCreate": "Impossibile creare il token.",
       "errorRevoke": "Impossibile revocare il token.",
       "errorConnection": "Errore di connessione. Riprova."
+    },
+    "map": {
+      "title": "Mappa",
+      "description": "Mappa e localizzazione degli indirizzi",
+      "geocodingTitle": "Localizzazione degli indirizzi",
+      "geocodingDescription": "Quando è attiva, gli indirizzi dei tuoi contatti vengono inviati a {provider} per determinarne la posizione sulla mappa. Disattivandola non vengono fatte nuove richieste, ma le posizioni esistenti vengono conservate.",
+      "geocodingLabel": "Localizza automaticamente gli indirizzi",
+      "success": "Impostazioni della mappa salvate",
+      "error": "Impossibile salvare le impostazioni della mappa"
     }
   },
   "customFields": {
@@ -805,6 +815,7 @@
     "contactReminder": "Promemoria contatto",
     "relationshipToUser": "Relazione con l'utente",
     "noPeople": "Nessuna persona trovata",
+    "showOnMap": "Mostra sulla mappa",
     "createFirst": "Crea la tua prima persona",
     "searchPeople": "Cerca persone",
     "showing": "Visualizzazione {start}-{end} di {total} persone",
@@ -1385,6 +1396,28 @@
     "noMembersYet": "Ancora nessun membro",
     "oneMember": "1 membro",
     "membersCount": "{count} membri"
+  },
+  "map": {
+    "title": "Mappa",
+    "loading": "Caricamento della mappa...",
+    "loadError": "Impossibile caricare i dati della mappa. Riprova.",
+    "searchPlaceholder": "Filtra per nome...",
+    "allGroups": "Tutti i gruppi",
+    "allCities": "Tutte le città",
+    "allRegions": "Tutti gli stati/province",
+    "allCountries": "Tutti i paesi",
+    "clearFilters": "Cancella filtri",
+    "pendingBanner": "{count, plural, one {1 indirizzo è ancora in fase di localizzazione} other {# indirizzi sono ancora in fase di localizzazione}}",
+    "failedBanner": "{count, plural, one {1 indirizzo non è stato localizzato} other {# indirizzi non sono stati localizzati}}",
+    "dismiss": "Chiudi",
+    "resultsCount": "{count, plural, one {1 posizione mostrata} other {# posizioni mostrate}}",
+    "noResults": "Nessuna posizione corrisponde ai tuoi filtri.",
+    "emptyTitle": "Ancora niente sulla mappa",
+    "emptyDescription": "Quando gli indirizzi dei tuoi contatti saranno localizzati, i loro segnaposto appariranno qui.",
+    "emptyGeocodingDisabled": "La localizzazione degli indirizzi è disattivata. Puoi attivarla in Impostazioni > Mappa.",
+    "viewContact": "Vedi contatto",
+    "directions": "Indicazioni",
+    "webglUnavailable": "Il tuo browser non può visualizzare la mappa perché WebGL non è disponibile o è disattivato. Attiva l'accelerazione grafica o WebGL nel tuo browser e ricarica la pagina."
   },
   "relationshipTypes": {
     "title": "Tipi di relazione",

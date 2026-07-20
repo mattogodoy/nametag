@@ -264,7 +264,16 @@ export default async function PersonDetailsPage({
     latitude: Number(loc.latitude),
     longitude: Number(loc.longitude),
   }));
-  const serializedPerson = { ...person, locations: serializedLocations };
+  const serializedAddresses = person.addresses.map((address) => ({
+    ...address,
+    latitude: address.latitude === null ? null : Number(address.latitude),
+    longitude: address.longitude === null ? null : Number(address.longitude),
+  }));
+  const serializedPerson = {
+    ...person,
+    locations: serializedLocations,
+    addresses: serializedAddresses,
+  };
 
   // Filter out people who already have a relationship
   const relatedPersonIds = new Set(
@@ -549,6 +558,18 @@ export default async function PersonDetailsPage({
                                 </div>
                                 {address.country && <div>{getCountryName(address.country) || address.country}</div>}
                               </div>
+                              {address.geocodeStatus === 'success' && address.latitude !== null && address.longitude !== null && (
+                                <Link
+                                  href={`/map?focus=addr_${address.id}`}
+                                  className="inline-flex items-center gap-1 mt-2 text-sm text-primary hover:text-primary-dark transition-colors"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                                  </svg>
+                                  {t('showOnMap')}
+                                </Link>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -641,18 +662,26 @@ export default async function PersonDetailsPage({
                                 {lat}, {lng}
                               </div>
                             </div>
-                            <a
-                              href={`https://www.google.com/maps?q=${lat},${lng}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:text-primary-dark transition-colors"
-                              title={t('viewOnMap')}
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                            </a>
+                            <div className="flex items-center gap-3">
+                              <Link
+                                href={`/map?focus=loc_${location.id}`}
+                                className="text-sm text-primary hover:text-primary-dark transition-colors"
+                              >
+                                {t('showOnMap')}
+                              </Link>
+                              <a
+                                href={`https://www.google.com/maps?q=${lat},${lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary-dark transition-colors"
+                                title={t('viewOnMap')}
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                              </a>
+                            </div>
                           </div>
                         </div>
                       );

@@ -11,6 +11,7 @@ import { carddavPaths } from './carddav';
 import { journalPaths } from './journal';
 import { customFieldsPaths } from './customFields';
 import { apiTokenPaths } from './apiTokens';
+import { mapPaths } from './map';
 import { jsonResponse, ref400, ref401, ref404, pathParam, jsonBody, resp } from './helpers';
 
 // OpenAPI 3.1.0 specification generator for the Nametag API.
@@ -64,6 +65,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       { name: 'CardDAV', description: 'CardDAV server connection, bidirectional sync, import/export, and conflict resolution' },
       { name: 'vCard', description: 'Direct vCard file import and upload for preview' },
       { name: 'Photos', description: 'Person and user photo management' },
+      { name: 'Map', description: 'Map markers and address geocoding' },
       { name: 'Cron', description: 'Background jobs authenticated via CRON_SECRET bearer token' },
       { name: 'System', description: 'Health checks and system endpoints' },
     ],
@@ -104,6 +106,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       ...journalPaths(),
       ...customFieldsPaths(),
       ...apiTokenPaths(),
+      ...mapPaths(),
 
       // Photos (non-person-specific)
       '/api/photos/{personId}': {
@@ -168,6 +171,32 @@ export function generateOpenAPISpec(): OpenAPISpec {
                 },
                 retentionDays: { type: 'integer' },
                 cutoffDate: { type: 'string', format: 'date-time' },
+              },
+            }),
+            '401': ref401(),
+          },
+        },
+      },
+
+      // Cron (geocode)
+      '/api/cron/geocode': {
+        get: {
+          tags: ['Cron'],
+          summary: 'Geocode pending addresses',
+          description: 'Processes a bounded batch of addresses awaiting geocoding for users who have opted in, skipping soft-deleted people. When geocoding is disabled instance-wide, returns { success, disabled, reason } instead of batch counts.',
+          security: [{ cronBearer: [] }],
+          responses: {
+            '200': jsonResponse('Geocoding batch results', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                processed: { type: 'integer' },
+                geocoded: { type: 'integer' },
+                failed: { type: 'integer' },
+                pending: { type: 'integer' },
+                skipped: { type: 'integer' },
+                disabled: { type: 'boolean' },
+                reason: { type: 'string' },
               },
             }),
             '401': ref401(),

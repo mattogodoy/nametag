@@ -22,6 +22,7 @@ model User {
   nameOrder          NameOrder @default(WESTERN)
   nameDisplayFormat  NameDisplayFormat @default(FULL)
   graphMode          String?           // 'individuals' | 'bubbles' | null (unset → individuals)
+  geocodingEnabled   Boolean   @default(true) // Send contact addresses to the geocoder for the map
   language           String?   @default("en") // "en" or "es-ES"
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
@@ -610,12 +611,18 @@ model PersonAddress {
   region      String?  // State/Province
   postalCode  String?
   country     String?
+  latitude      Decimal?  @db.Decimal(10, 8)
+  longitude     Decimal?  @db.Decimal(11, 8)
+  geocodedAt    DateTime?
+  geocodeStatus String?   // "pending" | "success" | "failed" | "disabled"
+  geocodeHash   String?   // SHA-256 of normalized address fields at geocode time
   createdAt   DateTime @default(now())
 
   // Relations
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@index([personId])
+  @@index([geocodeStatus])
   @@map("person_addresses")
 }
 
@@ -664,6 +671,21 @@ model PersonLocation {
 
   @@index([personId])
   @@map("person_locations")
+}
+
+// GeocodeCache - Caches geocoder lookups by normalized-address hash.
+// Needed because person updates recreate PersonAddress rows (deleteMany + create
+// in lib/services/person.ts), which would otherwise wipe geocode results and
+// re-hit the provider on every edit. Failed lookups are cached too.
+model GeocodeCache {
+  hash      String   @id
+  latitude  Decimal? @db.Decimal(10, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+  status    String   // "success" | "failed"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("geocode_cache")
 }
 
 // PersonCustomField - Custom fields (X- properties)

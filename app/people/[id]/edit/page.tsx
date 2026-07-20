@@ -88,6 +88,16 @@ export default async function EditPersonPage({
     notFound();
   }
 
+  // Convert Prisma Decimal objects to plain numbers for client components
+  const serializedPerson = {
+    ...person,
+    addresses: person.addresses.map((address) => ({
+      ...address,
+      latitude: address.latitude === null ? null : Number(address.latitude),
+      longitude: address.longitude === null ? null : Number(address.longitude),
+    })),
+  };
+
   const dateFormat = user?.dateFormat || 'MDY';
   const nameOrder = user?.nameOrder;
   const nameDisplayFormat = (user?.nameDisplayFormat || 'FULL') as NameDisplayFormat;
@@ -119,7 +129,7 @@ export default async function EditPersonPage({
 
           <div className="bg-surface shadow rounded-lg p-6">
             <PersonForm
-              person={person}
+              person={serializedPerson}
               customFieldTemplates={customFieldTemplates}
               groups={groups}
               relationshipTypes={relationshipTypes}

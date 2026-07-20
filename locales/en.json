@@ -59,7 +59,8 @@
       "signOut": "Sign out"
     },
     "journal": "Journal",
-    "createJournal": "New entry"
+    "createJournal": "New entry",
+    "map": "Map"
   },
   "settings": {
     "title": "Settings",
@@ -663,6 +664,15 @@
       "errorCreate": "Failed to create token.",
       "errorRevoke": "Failed to revoke token.",
       "errorConnection": "Connection error. Please try again."
+    },
+    "map": {
+      "title": "Map",
+      "description": "Map and address locating",
+      "geocodingTitle": "Address locating",
+      "geocodingDescription": "When this is on, your contacts' addresses are sent to {provider} to find their position on the map. Turning it off stops new lookups but keeps existing positions.",
+      "geocodingLabel": "Locate addresses automatically",
+      "success": "Map settings saved",
+      "error": "Could not save map settings"
     }
   },
   "customFields": {
@@ -822,6 +832,7 @@
     "contactReminder": "Contact Reminder",
     "relationshipToUser": "Relationship to User",
     "noPeople": "No people found",
+    "showOnMap": "Show on map",
     "createFirst": "Create your first person",
     "searchPeople": "Search people",
     "showing": "Showing {start}-{end} of {total} people",
@@ -1402,6 +1413,28 @@
     "noMembersYet": "No members yet",
     "oneMember": "1 member",
     "membersCount": "{count} members"
+  },
+  "map": {
+    "title": "Map",
+    "loading": "Loading map...",
+    "loadError": "Could not load map data. Please try again.",
+    "searchPlaceholder": "Filter by name...",
+    "allGroups": "All groups",
+    "allCities": "All cities",
+    "allRegions": "All states/provinces",
+    "allCountries": "All countries",
+    "clearFilters": "Clear filters",
+    "pendingBanner": "{count, plural, one {1 address is still being located} other {# addresses are still being located}}",
+    "failedBanner": "{count, plural, one {1 address could not be located} other {# addresses could not be located}}",
+    "dismiss": "Dismiss",
+    "resultsCount": "{count, plural, one {1 location shown} other {# locations shown}}",
+    "noResults": "No locations match your filters.",
+    "emptyTitle": "Nothing on the map yet",
+    "emptyDescription": "When your contacts' addresses are located, their markers will show up here.",
+    "emptyGeocodingDisabled": "Address locating is turned off. You can enable it in Settings > Map.",
+    "viewContact": "View contact",
+    "directions": "Directions",
+    "webglUnavailable": "Your browser cannot display the map because WebGL is unavailable or disabled. Enable graphics acceleration or WebGL in your browser and reload the page."
   },
   "relationshipTypes": {
     "title": "Relationship Types",

@@ -59,7 +59,8 @@
       "signOut": "退出登录"
     },
     "journal": "日记",
-    "createJournal": "新条目"
+    "createJournal": "新条目",
+    "map": "地图"
   },
   "settings": {
     "title": "设置",
@@ -663,6 +664,15 @@
       "errorCreate": "创建令牌失败。",
       "errorRevoke": "撤销令牌失败。",
       "errorConnection": "连接错误，请重试。"
+    },
+    "map": {
+      "title": "地图",
+      "description": "地图与地址定位",
+      "geocodingTitle": "地址定位",
+      "geocodingDescription": "开启后，联系人的地址会发送到 {provider} 以确定其在地图上的位置。关闭后不再进行新的查询，但已有位置会保留。",
+      "geocodingLabel": "自动定位地址",
+      "success": "地图设置已保存",
+      "error": "无法保存地图设置"
     }
   },
   "customFields": {
@@ -822,6 +832,7 @@
     "contactReminder": "联系提醒",
     "relationshipToUser": "与您的关系",
     "noPeople": "未找到联系人",
+    "showOnMap": "在地图上显示",
     "createFirst": "创建您的第一个联系人",
     "searchPeople": "搜索联系人",
     "filterByGroup": "按分组筛选",
@@ -1406,6 +1417,28 @@
     "noMembersYet": "还没有成员",
     "oneMember": "1 个成员",
     "membersCount": "{count} 个成员"
+  },
+  "map": {
+    "title": "地图",
+    "loading": "正在加载地图...",
+    "loadError": "无法加载地图数据，请重试。",
+    "searchPlaceholder": "按姓名筛选...",
+    "allGroups": "所有分组",
+    "allCities": "所有城市",
+    "allRegions": "所有州/省",
+    "allCountries": "所有国家/地区",
+    "clearFilters": "清除筛选",
+    "pendingBanner": "{count, plural, other {还有 # 个地址正在定位}}",
+    "failedBanner": "{count, plural, other {有 # 个地址无法定位}}",
+    "dismiss": "关闭",
+    "resultsCount": "{count, plural, other {正在显示 # 个位置}}",
+    "noResults": "没有符合筛选条件的位置。",
+    "emptyTitle": "地图上还没有内容",
+    "emptyDescription": "联系人地址完成定位后，标记会显示在这里。",
+    "emptyGeocodingDisabled": "地址定位已关闭。您可以在设置 > 地图中开启。",
+    "viewContact": "查看联系人",
+    "directions": "路线",
+    "webglUnavailable": "您的浏览器无法显示地图，因为 WebGL 不可用或已被禁用。请在浏览器中启用图形加速或 WebGL，然后重新加载页面。"
   },
   "relationshipTypes": {
     "title": "关系类型",

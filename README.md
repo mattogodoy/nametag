@@ -125,6 +125,7 @@ services:
         echo '0 8 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/send-reminders > /proc/1/fd/1 2>&1' > /etc/crontabs/root &&
         echo '0 3 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/purge-deleted > /proc/1/fd/1 2>&1' >> /etc/crontabs/root &&
         echo '0 2,10,18 * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/carddav-sync > /proc/1/fd/1 2>&1' >> /etc/crontabs/root &&
+        echo '*/5 * * * * wget -q -O - --header=\"Authorization: Bearer '\"$$CRON_SECRET\"'\" http://app:3000/api/cron/geocode > /proc/1/fd/1 2>&1' >> /etc/crontabs/root &&
         crond -f -l 2
       "
     environment:
@@ -229,6 +230,8 @@ The database will be automatically set up on first run.
 | `OIDC_DISPLAY_NAME`    | Label shown on the SSO login button                                   | `SSO`                        |
 | `DISABLE_PASSWORD_LOGIN` | Hide the password form (requires OIDC to be configured)             | `false`                      |
 | `DISABLE_REGISTRATION` | Disable user registration after first user                            | `false`                      |
+| `GEOCODER_URL`         | Nominatim-compatible geocoder used to place addresses on the map      | `https://nominatim.openstreetmap.org` |
+| `DISABLE_GEOCODING`    | Disable all address geocoding instance-wide                           | `false`                      |
 | `NODE_ENV`             | Environment mode                                                      | `production`                 |
 | `LOG_LEVEL`            | Logging verbosity                                                     | `info`                       |
 
@@ -389,6 +392,23 @@ Set `DISABLE_REGISTRATION=true` in your `.env` file. This allows:
 This is ideal for personal instances where only you (and potentially family members you manually add) should have access. The instance owner can register first, then registration automatically closes.
 
 To allow additional users later, set `DISABLE_REGISTRATION=false` and restart the service.
+
+### Address geocoding (Map feature)
+
+Contact addresses are geocoded in the background so they can be shown on the Map tab.
+New and edited addresses are geocoded right away; a cron endpoint backfills existing
+addresses and retries transient failures:
+
+```
+GET /api/cron/geocode
+Authorization: Bearer <CRON_SECRET>
+```
+
+Schedule it every 5 minutes alongside the CardDAV sync job. Each run processes up to
+50 addresses at 1 request per second against `GEOCODER_URL` (defaults to the public
+OSM Nominatim instance; point it at your own Nominatim or Photon for large datasets
+or stricter privacy). Set `DISABLE_GEOCODING=true` to turn the feature off
+instance-wide. Users can also opt out individually in Settings > Map.
 
 ### Reverse Proxy (Production)
 

@@ -23,13 +23,19 @@ type SerializablePersonLocation = Omit<PersonLocation, 'latitude' | 'longitude'>
   longitude: PersonLocation['longitude'] | number;
 };
 
+/** PersonAddress with latitude/longitude accepting both Prisma Decimal and plain number (serialized for client components) */
+type SerializablePersonAddress = Omit<PersonAddress, 'latitude' | 'longitude'> & {
+  latitude: PersonAddress['latitude'] | number;
+  longitude: PersonAddress['longitude'] | number;
+};
+
 /**
  * Person with all relations loaded (for vCard export)
  */
 export interface PersonWithRelations extends Person {
   phoneNumbers: PersonPhone[];
   emails: PersonEmail[];
-  addresses: PersonAddress[];
+  addresses: SerializablePersonAddress[];
   urls: PersonUrl[];
   imHandles: PersonIM[];
   locations: SerializablePersonLocation[];

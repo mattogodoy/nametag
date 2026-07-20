@@ -67,6 +67,10 @@ const envSchema = z.object({
   // Disable registration after first user (useful for public-facing self-hosted instances)
   DISABLE_REGISTRATION: z.coerce.boolean().default(false),
 
+  // Geocoding for the map feature
+  GEOCODER_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
+  DISABLE_GEOCODING: booleanFromString,
+
   // OIDC provider (self-hosted only)
   OIDC_ISSUER_URL: z.string().url().optional(),
   OIDC_CLIENT_ID: z.string().min(1).optional(),

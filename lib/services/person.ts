@@ -11,6 +11,7 @@ import { prisma, withDeleted } from '@/lib/prisma';
 import { createPersonSchema, updatePersonSchema } from '@/lib/validations';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { autoExportPerson, autoUpdatePerson } from '@/lib/carddav/auto-export';
+import { geocodePersonAddresses } from '@/lib/geocoding/geocode-person';
 import { personUpdateInclude, personDetailsInclude } from '@/lib/prisma-queries';
 import { createModuleLogger } from '@/lib/logger';
 
@@ -242,6 +243,17 @@ export async function createPerson(userId: string, data: PersonInput) {
     });
   }
 
+  // Geocode addresses for the map (background, non-blocking)
+  geocodePersonAddresses(person.id).catch((error: unknown) => {
+    log.error(
+      {
+        err: error instanceof Error ? error : new Error(String(error)),
+        personId: person.id,
+      },
+      'Background geocoding failed',
+    );
+  });
+
   return person;
 }
 
@@ -451,6 +463,17 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
       );
     });
   }
+
+  // Geocode addresses for the map (background, non-blocking)
+  geocodePersonAddresses(person.id).catch((error: unknown) => {
+    log.error(
+      {
+        err: error instanceof Error ? error : new Error(String(error)),
+        personId: person.id,
+      },
+      'Background geocoding failed',
+    );
+  });
 
   return person;
 }

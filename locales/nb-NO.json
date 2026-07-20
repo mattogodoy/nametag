@@ -59,7 +59,8 @@
       "signOut": "Logg ut"
     },
     "journal": "Journal",
-    "createJournal": "Ny oppføring"
+    "createJournal": "Ny oppføring",
+    "map": "Kart"
   },
   "settings": {
     "title": "Innstillinger",
@@ -663,6 +664,15 @@
       "errorCreate": "Kunne ikke opprette token.",
       "errorRevoke": "Kunne ikke tilbakekalle token.",
       "errorConnection": "Tilkoblingsfeil. Prøv igjen."
+    },
+    "map": {
+      "title": "Kart",
+      "description": "Kart og adresselokalisering",
+      "geocodingTitle": "Adresselokalisering",
+      "geocodingDescription": "Når dette er på, sendes kontaktenes adresser til {provider} for å finne posisjonen deres på kartet. Slår du det av, gjøres ingen nye oppslag, men eksisterende posisjoner beholdes.",
+      "geocodingLabel": "Lokaliser adresser automatisk",
+      "success": "Kartinnstillinger lagret",
+      "error": "Kunne ikke lagre kartinnstillingene"
     }
   },
   "customFields": {
@@ -822,6 +832,7 @@
     "contactReminder": "Påminnelse om kontakt",
     "relationshipToUser": "Relasjon til brukeren",
     "noPeople": "Ingen personer funnet",
+    "showOnMap": "Vis på kart",
     "createFirst": "Opprett din første person",
     "searchPeople": "Søk etter personer",
     "showing": "Viser {start}–{end} av {total} personer",
@@ -1406,6 +1417,28 @@
     "noMembersYet": "Ingen medlemmer ennå",
     "oneMember": "1 medlem",
     "membersCount": "{count} medlemmer"
+  },
+  "map": {
+    "title": "Kart",
+    "loading": "Laster kartet...",
+    "loadError": "Kunne ikke laste kartdata. Prøv igjen.",
+    "searchPlaceholder": "Filtrer etter navn...",
+    "allGroups": "Alle grupper",
+    "allCities": "Alle byer",
+    "allRegions": "Alle fylker",
+    "allCountries": "Alle land",
+    "clearFilters": "Nullstill filtre",
+    "pendingBanner": "{count, plural, one {1 adresse blir fortsatt lokalisert} other {# adresser blir fortsatt lokalisert}}",
+    "failedBanner": "{count, plural, one {1 adresse kunne ikke lokaliseres} other {# adresser kunne ikke lokaliseres}}",
+    "dismiss": "Lukk",
+    "resultsCount": "{count, plural, one {1 sted vises} other {# steder vises}}",
+    "noResults": "Ingen steder samsvarer med filtrene dine.",
+    "emptyTitle": "Ingenting på kartet ennå",
+    "emptyDescription": "Når adressene til kontaktene dine er lokalisert, vises markørene deres her.",
+    "emptyGeocodingDisabled": "Adresselokalisering er slått av. Du kan slå den på i Innstillinger > Kart.",
+    "viewContact": "Vis kontakt",
+    "directions": "Veibeskrivelse",
+    "webglUnavailable": "Nettleseren din kan ikke vise kartet fordi WebGL er utilgjengelig eller deaktivert. Aktiver grafikkakselerasjon eller WebGL i nettleseren din og last inn siden på nytt."
   },
   "relationshipTypes": {
     "title": "Relasjonstyper",
