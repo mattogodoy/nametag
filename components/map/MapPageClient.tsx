@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { MapMarkersResponse } from '@/lib/map/types';
@@ -12,12 +13,14 @@ const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
 function MapPageInner() {
   const t = useTranslations('map');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [data, setData] = useState<MapMarkersResponse | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [unlocatedOpen, setUnlocatedOpen] = useState(false);
 
   const filters: MapFilterState = useMemo(
     () => ({
@@ -102,7 +105,15 @@ function MapPageInner() {
           <span>
             {data.pendingCount > 0 && t('pendingBanner', { count: data.pendingCount })}
             {data.pendingCount > 0 && data.failedCount > 0 && ' '}
-            {data.failedCount > 0 && t('failedBanner', { count: data.failedCount })}
+            {data.failedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setUnlocatedOpen(true)}
+                className="underline underline-offset-2 hover:text-foreground transition-colors"
+              >
+                {t('failedBanner', { count: data.failedCount })}
+              </button>
+            )}
           </span>
           <button
             type="button"
@@ -142,6 +153,41 @@ function MapPageInner() {
               </div>
             )}
           </>
+        )}
+
+        {unlocatedOpen && data.unlocatedPeople.length > 0 && (
+          <div
+            className="absolute inset-y-0 right-0 z-20 w-full max-w-sm bg-surface border-l border-border shadow-lg flex flex-col"
+            role="dialog"
+            aria-label={t('unlocatedTitle')}
+          >
+            <div className="flex items-center justify-between gap-4 p-4 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground">{t('unlocatedTitle')}</h2>
+              <button
+                type="button"
+                onClick={() => setUnlocatedOpen(false)}
+                aria-label={tCommon('close')}
+                className="text-muted hover:text-foreground transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="px-4 pt-3 text-sm text-muted">{t('unlocatedHint')}</p>
+            <ul className="flex-1 overflow-y-auto p-2">
+              {data.unlocatedPeople.map((person) => (
+                <li key={person.personId}>
+                  <Link
+                    href={`/people/${person.personId}`}
+                    className="block px-3 py-2 rounded-lg text-foreground hover:bg-surface-elevated transition-colors"
+                  >
+                    {person.personName}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </div>
