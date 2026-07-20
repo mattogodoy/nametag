@@ -27,7 +27,13 @@ vi.mock('@/lib/env', () => ({
 
 vi.mock('../../lib/geocoding/provider', () => ({
   geocodeAddress: mocks.geocodeAddress,
-  GeocodingProviderError: class GeocodingProviderError extends Error {},
+  GeocodingProviderError: class GeocodingProviderError extends Error {
+    readonly status?: number;
+    constructor(message: string, status?: number) {
+      super(message);
+      this.status = status;
+    }
+  },
 }));
 
 // Run queue tasks immediately in tests
@@ -187,6 +193,32 @@ describe('geocodeSingleAddress', () => {
     expect(outcome).toBe('pending');
     expect(mocks.geocodeAddress).toHaveBeenCalledTimes(1);
   });
+
+  it('backs off without retrying when the provider rate limits', async () => {
+    mocks.cacheFindUnique.mockResolvedValue(null);
+    mocks.geocodeAddress.mockRejectedValue(new GeocodingProviderError('slow down', 429));
+
+    const outcome = await geocodeSingleAddress(makeAddress());
+
+    expect(outcome).toBe('rate_limited');
+    expect(mocks.geocodeAddress).toHaveBeenCalledTimes(1);
+    expect(mocks.cacheUpsert).not.toHaveBeenCalled();
+    expect(mocks.addressUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { geocodeStatus: 'pending' } })
+    );
+  });
+
+  it('returns rate_limited when the retry hits a 429', async () => {
+    mocks.cacheFindUnique.mockResolvedValue(null);
+    mocks.geocodeAddress
+      .mockRejectedValueOnce(new GeocodingProviderError('stale connection'))
+      .mockRejectedValueOnce(new GeocodingProviderError('slow down', 429));
+
+    const outcome = await geocodeSingleAddress(makeAddress());
+
+    expect(outcome).toBe('rate_limited');
+    expect(mocks.geocodeAddress).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('geocodePersonAddresses', () => {
@@ -246,5 +278,19 @@ describe('geocodePersonAddresses', () => {
     await geocodePersonAddresses('person-1');
 
     expect(mocks.geocodeAddress).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops geocoding the remaining addresses when rate limited', async () => {
+    mocks.personFindUnique.mockResolvedValue({
+      id: 'person-1',
+      addresses: [makeAddress(), makeAddress({ id: 'addr-2', locality: 'Shelbyville' })],
+      user: { geocodingEnabled: true },
+    });
+    mocks.cacheFindUnique.mockResolvedValue(null);
+    mocks.geocodeAddress.mockRejectedValue(new GeocodingProviderError('slow down', 429));
+
+    await geocodePersonAddresses('person-1');
+
+    expect(mocks.geocodeAddress).toHaveBeenCalledTimes(1);
   });
 });

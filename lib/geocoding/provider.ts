@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { env } from '@/lib/env';
 import type { AddressFields } from './hash';
+import { enqueueGeocodeRequest } from './queue';
 
 export interface GeocodeResult {
   latitude: number;
@@ -9,9 +10,13 @@ export interface GeocodeResult {
 
 /** Transient provider failure (network, 5xx, rate limit). Safe to retry later. */
 export class GeocodingProviderError extends Error {
-  constructor(message: string) {
+  /** HTTP status when the provider responded (e.g. 429); undefined for network errors */
+  readonly status?: number;
+
+  constructor(message: string, status?: number) {
     super(message);
     this.name = 'GeocodingProviderError';
+    this.status = status;
   }
 }
 
@@ -20,37 +25,43 @@ const nominatimResponseSchema = z.array(z.object({ lat: z.string(), lon: z.strin
 // Identify ourselves to the provider, required by the OSM Nominatim usage policy.
 const USER_AGENT = 'Nametag (+https://github.com/mattogodoy/nametag)';
 
+// Every HTTP request goes through the rate-limit queue individually. Wrapping
+// anything coarser (a whole address, which may need a structured attempt plus
+// a free-text fallback) lets bursts of back-to-back requests through and gets
+// the instance 429-banned by the public Nominatim.
 async function search(params: URLSearchParams): Promise<GeocodeResult | null> {
   params.set('format', 'jsonv2');
   params.set('limit', '1');
   const base = env.GEOCODER_URL.replace(/\/+$/, '');
 
-  let response: Response;
-  try {
-    response = await fetch(`${base}/search?${params.toString()}`, {
-      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
-    });
-  } catch (error) {
-    throw new GeocodingProviderError(
-      error instanceof Error ? error.message : 'Network error contacting geocoder'
-    );
-  }
+  return enqueueGeocodeRequest(async () => {
+    let response: Response;
+    try {
+      response = await fetch(`${base}/search?${params.toString()}`, {
+        headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+      });
+    } catch (error) {
+      throw new GeocodingProviderError(
+        error instanceof Error ? error.message : 'Network error contacting geocoder'
+      );
+    }
 
-  if (!response.ok) {
-    throw new GeocodingProviderError(`Geocoder responded with status ${response.status}`);
-  }
+    if (!response.ok) {
+      throw new GeocodingProviderError(`Geocoder responded with status ${response.status}`, response.status);
+    }
 
-  const parsed = nominatimResponseSchema.safeParse(await response.json());
-  if (!parsed.success || parsed.data.length === 0) {
-    return null;
-  }
+    const parsed = nominatimResponseSchema.safeParse(await response.json());
+    if (!parsed.success || parsed.data.length === 0) {
+      return null;
+    }
 
-  const latitude = Number.parseFloat(parsed.data[0].lat);
-  const longitude = Number.parseFloat(parsed.data[0].lon);
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    return null;
-  }
-  return { latitude, longitude };
+    const latitude = Number.parseFloat(parsed.data[0].lat);
+    const longitude = Number.parseFloat(parsed.data[0].lon);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return null;
+    }
+    return { latitude, longitude };
+  });
 }
 
 /**
@@ -78,6 +89,9 @@ export async function geocodeAddress(address: AddressFields): Promise<GeocodeRes
       if (result) return result;
     } catch (error) {
       if (!(error instanceof GeocodingProviderError)) throw error;
+      // The provider is telling us to slow down: more requests (the fallback)
+      // would make it worse, so surface the 429 to the caller immediately.
+      if (error.status === 429) throw error;
       // Structured query failed transiently: fall through to the free-text
       // attempt below rather than aborting, unless there is nothing to try.
       if (!freeText) throw error;

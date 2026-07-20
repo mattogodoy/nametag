@@ -96,4 +96,56 @@ describe('GET /api/cron/geocode', () => {
       })
     );
   });
+
+  it('stops the batch early when the provider rate limits', async () => {
+    mocks.addressFindMany.mockResolvedValue([{ id: 'a1' }, { id: 'a2' }, { id: 'a3' }]);
+    mocks.geocodeSingleAddress
+      .mockResolvedValueOnce('success')
+      .mockResolvedValueOnce('rate_limited');
+
+    const response = await GET(makeRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      success: true,
+      processed: 2,
+      geocoded: 1,
+      failed: 0,
+      pending: 1,
+      skipped: 0,
+      rateLimited: true,
+    });
+    // The third address was never attempted
+    expect(mocks.geocodeSingleAddress).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects overlapping runs while one is in progress', async () => {
+    mocks.addressFindMany.mockResolvedValue([{ id: 'a1' }]);
+    let releaseFirstRun: (value: 'success') => void = () => undefined;
+    mocks.geocodeSingleAddress.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        releaseFirstRun = resolve;
+      })
+    );
+
+    const firstRun = GET(makeRequest());
+    // Give the first run a chance to acquire the lock and start its batch
+    await vi.waitFor(() => {
+      expect(mocks.geocodeSingleAddress).toHaveBeenCalledTimes(1);
+    });
+
+    const secondResponse = await GET(makeRequest());
+    const secondBody = await secondResponse.json();
+    expect(secondBody).toMatchObject({ success: true, alreadyRunning: true });
+
+    releaseFirstRun('success');
+    const firstBody = await (await firstRun).json();
+    expect(firstBody).toMatchObject({ success: true, processed: 1, geocoded: 1 });
+
+    // The lock is released: a subsequent run proceeds normally
+    mocks.addressFindMany.mockResolvedValue([]);
+    const thirdBody = await (await GET(makeRequest())).json();
+    expect(thirdBody).toMatchObject({ success: true, processed: 0 });
+  });
 });

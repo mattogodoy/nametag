@@ -183,7 +183,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
         get: {
           tags: ['Cron'],
           summary: 'Geocode pending addresses',
-          description: 'Processes a bounded batch of addresses awaiting geocoding for users who have opted in, skipping soft-deleted people. When geocoding is disabled instance-wide, returns { success, disabled, reason } instead of batch counts.',
+          description: 'Processes a bounded batch of addresses awaiting geocoding for users who have opted in, skipping soft-deleted people. When geocoding is disabled instance-wide, returns { success, disabled, reason } instead of batch counts. When a run is already in progress, returns { success, alreadyRunning, reason }. When the provider rate limits, the batch stops early and rateLimited is true.',
           security: [{ cronBearer: [] }],
           responses: {
             '200': jsonResponse('Geocoding batch results', {
@@ -195,7 +195,9 @@ export function generateOpenAPISpec(): OpenAPISpec {
                 failed: { type: 'integer' },
                 pending: { type: 'integer' },
                 skipped: { type: 'integer' },
+                rateLimited: { type: 'boolean' },
                 disabled: { type: 'boolean' },
+                alreadyRunning: { type: 'boolean' },
                 reason: { type: 'string' },
               },
             }),

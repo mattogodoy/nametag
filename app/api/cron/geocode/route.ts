@@ -13,11 +13,18 @@ const log = createModuleLogger('cron-geocode');
 // minute, keeping runs short even when a large backlog exists.
 const BATCH_SIZE = 50;
 
+// Guards against overlapping runs in this process (a slow run overlapping the
+// next scheduled one, or a manual trigger during a scheduled run). Overlaps
+// double the geocoder traffic for no benefit since both runs would pick up
+// the same rows.
+let runInProgress = false;
+
 export const GET = withLogging(async function GET(request: Request) {
   const startTime = Date.now();
   updateContext({ jobId: `geocode:${randomUUID()}` });
 
   let cronLogId: string | null = null;
+  let acquiredRunLock = false;
 
   try {
     const authHeader = request.headers.get('authorization');
@@ -29,6 +36,13 @@ export const GET = withLogging(async function GET(request: Request) {
     if (env.DISABLE_GEOCODING) {
       return NextResponse.json({ success: true, disabled: true, reason: 'Geocoding disabled' });
     }
+
+    if (runInProgress) {
+      log.info({ event: 'cron.geocode.already_running' });
+      return NextResponse.json({ success: true, alreadyRunning: true, reason: 'A geocode run is already in progress' });
+    }
+    runInProgress = true;
+    acquiredRunLock = true;
 
     const cronLog = await prisma.cronJobLog.create({
       data: { jobName: 'geocode', status: 'started' },
@@ -50,6 +64,7 @@ export const GET = withLogging(async function GET(request: Request) {
     let failed = 0;
     let pending = 0;
     let skipped = 0;
+    let rateLimited = false;
 
     for (const address of addresses) {
       try {
@@ -57,7 +72,15 @@ export const GET = withLogging(async function GET(request: Request) {
         if (outcome === 'success') geocoded++;
         else if (outcome === 'failed') failed++;
         else if (outcome === 'pending') pending++;
-        else skipped++;
+        else if (outcome === 'rate_limited') {
+          // The provider asked us to back off: stop the batch instead of
+          // feeding it more traffic. Untouched rows stay eligible for the
+          // next run.
+          pending++;
+          rateLimited = true;
+          log.warn({ event: 'cron.geocode.rate_limited', remaining: addresses.length - (geocoded + failed + pending + skipped) });
+          break;
+        } else skipped++;
       } catch (error) {
         log.warn({
           event: 'cron.geocode.item_failed',
@@ -69,13 +92,16 @@ export const GET = withLogging(async function GET(request: Request) {
       }
     }
 
+    const processed = geocoded + failed + pending + skipped;
+
     log.info({
       event: 'cron.geocode.finished',
-      processed: addresses.length,
+      processed,
       geocoded,
       failed,
       pending,
       skipped,
+      rateLimited,
       durationMs: Date.now() - startTime,
     });
 
@@ -84,17 +110,18 @@ export const GET = withLogging(async function GET(request: Request) {
       data: {
         status: pending > 0 ? 'completed_with_errors' : 'completed',
         duration: Date.now() - startTime,
-        message: `Processed ${addresses.length} addresses: ${geocoded} geocoded, ${failed} failed, ${pending} pending, ${skipped} skipped`,
+        message: `Processed ${processed} of ${addresses.length} addresses: ${geocoded} geocoded, ${failed} failed, ${pending} pending, ${skipped} skipped${rateLimited ? ' (stopped early: provider rate limited)' : ''}`,
       },
     });
 
     return NextResponse.json({
       success: true,
-      processed: addresses.length,
+      processed,
       geocoded,
       failed,
       pending,
       skipped,
+      rateLimited,
     });
   } catch (error) {
     if (cronLogId) {
@@ -108,5 +135,9 @@ export const GET = withLogging(async function GET(request: Request) {
       });
     }
     return handleApiError(error, 'cron-geocode');
+  } finally {
+    if (acquiredRunLock) {
+      runInProgress = false;
+    }
   }
 });
