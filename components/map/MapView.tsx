@@ -19,8 +19,13 @@ const CAMERA_ANIMATION_MS = 1000;
 interface MapViewProps {
   markers: MapMarker[];
   focusId: string | null;
-  /** True when any filter is active; the map then fits to the filtered results */
-  hasActiveFilters: boolean;
+  /**
+   * Serialized filter state. Whenever it changes after mount, the camera
+   * fits to the visible markers (including when filters are cleared back to
+   * "all"). Its initial value never triggers a fit, so plain arrival keeps
+   * the world view.
+   */
+  filtersKey: string;
 }
 
 interface MarkerProperties {
@@ -74,7 +79,7 @@ function toGeoJSON(markers: MapMarker[]): GeoJSON.FeatureCollection<GeoJSON.Poin
   };
 }
 
-export default function MapView({ markers, focusId, hasActiveFilters }: MapViewProps) {
+export default function MapView({ markers, focusId, filtersKey }: MapViewProps) {
   const t = useTranslations('map');
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -270,12 +275,22 @@ export default function MapView({ markers, focusId, hasActiveFilters }: MapViewP
     );
   }, [focusId, markers]);
 
-  // Fit the camera to the filtered results while filters are active. With no
-  // filters and no focus target, the map keeps its current view (world view
-  // on arrival), so browsing never yanks the camera around.
+  // Fit the camera to the visible markers whenever the user changes filters,
+  // including clearing them back to "all". The initial filter state never
+  // triggers a fit, so plain arrival keeps the world view.
+  const appliedFiltersKeyRef = useRef<string | null>(null);
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || focusId || !hasActiveFilters || markers.length === 0) return;
+    if (!map || focusId) {
+      appliedFiltersKeyRef.current = filtersKey;
+      return;
+    }
+    if (appliedFiltersKeyRef.current === null || appliedFiltersKeyRef.current === filtersKey) {
+      appliedFiltersKeyRef.current = filtersKey;
+      return;
+    }
+    appliedFiltersKeyRef.current = filtersKey;
+    if (markers.length === 0) return;
     const bounds = new maplibregl.LngLatBounds();
     for (const marker of markers) {
       bounds.extend([marker.longitude, marker.latitude]);
@@ -286,7 +301,7 @@ export default function MapView({ markers, focusId, hasActiveFilters }: MapViewP
       duration: CAMERA_ANIMATION_MS,
       animate: !prefersReducedMotion(),
     });
-  }, [markers, focusId, hasActiveFilters]);
+  }, [markers, focusId, filtersKey]);
 
   if (webglUnavailable) {
     return (

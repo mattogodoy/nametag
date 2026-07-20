@@ -46,9 +46,11 @@ export default function MapFilters({ filters, markers, groups, onChange }: MapFi
         ))}
       </select>
 
+      {/* City and country are mutually exclusive: picking one clears the
+          other, since combining them mostly produces impossible matches. */}
       <select
         value={filters.city}
-        onChange={(e) => onChange({ ...filters, city: e.target.value })}
+        onChange={(e) => onChange({ ...filters, city: e.target.value, country: '' })}
         className={selectClasses}
         aria-label={t('allCities')}
       >
@@ -62,7 +64,7 @@ export default function MapFilters({ filters, markers, groups, onChange }: MapFi
 
       <select
         value={filters.country}
-        onChange={(e) => onChange({ ...filters, country: e.target.value })}
+        onChange={(e) => onChange({ ...filters, country: e.target.value, city: '' })}
         className={selectClasses}
         aria-label={t('allCountries')}
       >
