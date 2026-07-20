@@ -24,6 +24,16 @@ API tokens let you script against Nametag without a browser session. Create one 
 
 Use `READ` scope for anything that only needs to pull data, such as a read-only dashboard or export script, so a leaked token can't modify or delete your contacts.
 
+### Token format
+
+| Property | Detail |
+| --- | --- |
+| Format | `ntag_` prefix followed by 32 random bytes, hex-encoded (69 characters total) |
+| Storage | Only a SHA-256 hash of the full token is stored; the `ntag_` prefix plus a short fragment is kept in plaintext so a token can be identified in a list without ever storing the secret itself |
+| Scopes | `READ`, `READ_WRITE` |
+
+Because the full token is never stored, there's no way for Nametag (or anyone with database access) to recover a lost token. Losing it means revoking it and creating a new one.
+
 ## Endpoints
 
 ### List API tokens

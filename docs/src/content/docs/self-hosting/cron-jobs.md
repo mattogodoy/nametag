@@ -81,3 +81,14 @@ The cron expressions above are reasonable defaults, not requirements. Feel free 
 - `geocode` benefits from running frequently (every 1 to 5 minutes) since it only touches a small, capped batch per run and clears backlogs faster the more often it's invoked.
 
 If you're not using Docker's `alpine` cron container, any scheduler capable of making an authenticated HTTP GET request works: system cron with `curl`, a Kubernetes `CronJob`, GitHub Actions on a schedule, or a managed cron service. The important part is including the `Authorization: Bearer <CRON_SECRET>` header on every request.
+
+## Processing limits per job
+
+| Job | Batch size | Rate limit / delay |
+| --- | --- | --- |
+| `geocode` | 50 addresses per run | 1 request per second to the geocoder |
+| `carddav-sync` | All due users | 200ms delay between users |
+| `purge-deleted` | All eligible items (deleted more than 30 days ago) | None |
+| `send-reminders` | All eligible reminders | None |
+
+`geocode` and `carddav-sync` are throttled because they call external services (your geocoder, and each user's CardDAV server) and shouldn't hammer them. `purge-deleted` and `send-reminders` only touch your own database and don't need batching or a rate limit; they process everything eligible in a single run.

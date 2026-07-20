@@ -52,3 +52,11 @@ With this set, the cron endpoint returns immediately without processing anything
 ## Per-user opt-out
 
 Even without the instance-wide flag, individual users can turn off geocoding for their own account under **Settings > Map**. This is useful on a multi-user self-hosted instance where not everyone wants their contacts' addresses geocoded, even against your own private Nominatim instance.
+
+## Technical specs
+
+| Setting | Value |
+| --- | --- |
+| Batch size | 50 addresses per cron run |
+| Rate limit | 1 request per second to the geocoder |
+| Default provider | OSM Nominatim (`https://nominatim.openstreetmap.org`) |

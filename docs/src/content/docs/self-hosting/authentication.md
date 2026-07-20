@@ -77,3 +77,27 @@ This allows the first user to register normally (when the instance has zero user
 To allow more users to register later, set `DISABLE_REGISTRATION=false` and restart the app. Registration reopens; set it back to `true` once the new accounts exist if you want it closed again.
 
 If you've enabled OIDC and disabled password login, `DISABLE_REGISTRATION` still applies to OIDC-based account creation the same way: only the first login creates an account when the instance is empty, and later logins from new identities are blocked once registration is closed.
+
+## Password and session specs
+
+These aren't configurable, but they're worth knowing:
+
+| Setting | Value |
+| --- | --- |
+| Password length | 8 to 128 characters |
+| Password complexity | Must include an uppercase letter, a lowercase letter, a number, and a special character |
+| Password hashing | bcrypt, 10 rounds |
+| Session max age | 30 days |
+| Session update age | 24 hours (a session is refreshed once this much time has passed since it was issued) |
+| Password reset token expiry | 1 hour |
+| Email verification token expiry | 24 hours |
+
+## API token authentication
+
+Beyond browser sessions and OIDC, Nametag also supports personal API tokens for programmatic access:
+
+- Format: `ntag_` prefix followed by 32 random bytes, hex-encoded
+- Storage: only a SHA-256 hash is stored, with a short plaintext prefix kept for identification in the tokens list
+- Scopes: `READ` (read-only) and `READ_WRITE` (full access)
+
+See [API Tokens](/api/tokens/) for how to create and use them.

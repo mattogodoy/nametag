@@ -86,6 +86,27 @@ SMTP sending uses connection pooling (up to 5 concurrent connections) and is rat
 
 That queue lives in memory only. If the application restarts while messages are queued, those queued messages are lost. This matters most for someone triggering a large batch (for example, a wave of reminder emails) right before a redeploy.
 
+### SMTP connection details
+
+| Setting | Value |
+| --- | --- |
+| Connection pool size | Up to 5 concurrent connections |
+| Max messages per connection | 100 |
+| Send rate limit | 5 messages per second |
+
+Once a pooled connection reaches 100 messages, it's closed and replaced with a fresh one, which is standard behavior for most SMTP servers that cap messages per connection.
+
+### Cooldowns for user-triggered emails
+
+To prevent someone from spamming their own inbox (or someone else's, if they've mistyped an email address), a couple of user-triggered emails have a short cooldown between sends:
+
+| Email | Cooldown |
+| --- | --- |
+| Password reset | 60 seconds |
+| Email verification | 60 seconds |
+
+Requesting either of these again before the cooldown elapses doesn't send a second email; it just returns the same success response so the request doesn't leak whether the address exists.
+
 ## A note on the hosted service
 
 [nametag.one](https://nametag.one) requires email verification for new accounts, since it's a public service. Self-hosted instances are built for personal use and skip that step: accounts are auto-verified whether or not email is configured at all.

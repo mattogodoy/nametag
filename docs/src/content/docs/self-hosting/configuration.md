@@ -83,6 +83,33 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `NODE_ENV` | Environment mode: `development`, `production`, or `test` | `production` |
 | `LOG_LEVEL` | Logging verbosity: `debug`, `info`, `warn`, or `error` | `info` |
 
+## Value constraints and defaults
+
+Some variables are validated against a specific range or format at startup. If a value falls outside these bounds, the app falls back to the default rather than starting with an invalid value.
+
+| Variable | Constraint | Default |
+| --- | --- | --- |
+| `PHOTO_SIZE` | Integer, 64 to 4096 (output photo dimensions in pixels, square) | `256` |
+| `PHOTO_QUALITY` | Integer, 1 to 100 (JPEG compression quality) | `80` |
+| `DB_PORT` | Integer, 1 to 65535 | None, required |
+| `LOG_LEVEL` | One of `debug`, `info`, `warn`, `error` | `info` |
+| `NEXTAUTH_SECRET` | String, minimum 32 characters | None, required |
+| `CRON_SECRET` | String, minimum 16 characters | None, required |
+
+## Request and timeout limits
+
+These limits aren't set through environment variables, they're fixed in the application, but they're worth knowing if you're troubleshooting uploads or slow responses:
+
+| Limit | Value |
+| --- | --- |
+| Default API request body size | 1 MB |
+| Next.js proxy body size (raised for photo uploads) | 50 MB |
+| Database query timeout, default | 10 seconds |
+| Database query timeout, long-running queries | 30 seconds |
+| External API timeout (e.g. geocoder requests) | 10 seconds |
+
+If you're running Nametag behind your own reverse proxy (nginx, Caddy, Traefik), make sure its own body size limit is at least 50 MB too, otherwise photo uploads will be rejected before they even reach Nametag.
+
 Detailed setup for each of these areas lives on its own page:
 
 - [Email](/self-hosting/email/): Resend and SMTP, provider-specific notes

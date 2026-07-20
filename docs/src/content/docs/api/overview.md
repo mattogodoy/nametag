@@ -93,11 +93,35 @@ Storage is Redis-backed in production when Redis is configured (falling back to 
 
 Everyday endpoints like `/api/people` or `/api/groups` are not rate-limited beyond your plan's usage limits.
 
+### Rate limits by endpoint
+
+| Endpoint | Max attempts | Window |
+| --- | --- | --- |
+| Login | 5 | 15 minutes |
+| Register | 3 | 1 hour |
+| Forgot password | 3 | 1 hour |
+| Reset password | 5 | 1 hour |
+| Resend verification | 3 | 15 minutes |
+| Verify email | 10 | 15 minutes |
+| CardDAV test | 10 | 15 minutes |
+| CardDAV sync | 5 | 5 minutes |
+| CardDAV backup | 5 | 15 minutes |
+
 ## Pagination
 
-Most list endpoints (people, groups, relationships, relationship types) return the full collection in one response, since personal networks are typically a few hundred people at most rather than millions of rows.
+The REST endpoints (`/api/people`, `/api/groups`, `/api/relationships`, `/api/relationship-types`) return the full collection in one response, since personal networks are typically a few hundred people at most rather than millions of rows. The one REST endpoint that paginates is journal entries.
 
-The one endpoint that paginates is journal entries. `GET /api/journal` accepts a `page` query parameter and returns a `pagination` object alongside the entries:
+The web app's own list pages (which call these same endpoints and paginate client-side) use these page sizes:
+
+| List | Page size |
+| --- | --- |
+| Default page size (generic fallback used elsewhere in the app) | 20 |
+| Maximum page size allowed by any paginated view | 100 |
+| People page | 50 per page |
+| Groups page | 24 per page |
+| Journal | 50 per page |
+
+`GET /api/journal` accepts a `page` query parameter and returns a `pagination` object alongside the entries:
 
 ```json
 {
@@ -107,6 +131,17 @@ The one endpoint that paginates is journal entries. `GET /api/journal` accepts a
 ```
 
 See [Journal](/api/journal/) for details.
+
+## Request size limits
+
+| Body | Limit |
+| --- | --- |
+| Default API request body | 1 MB |
+| JSON import | 5 MB |
+| vCard import / upload | 2 MB |
+| Photo upload | 50 MB |
+
+Requests over the applicable limit are rejected with `413 Payload Too Large`.
 
 ## Interactive docs
 
