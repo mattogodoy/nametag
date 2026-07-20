@@ -25,6 +25,7 @@ export const GET = withAuth(async (request, session) => {
               id: true,
               type: true,
               locality: true,
+              region: true,
               country: true,
               latitude: true,
               longitude: true,
@@ -89,6 +90,7 @@ export const GET = withAuth(async (request, session) => {
           longitude: Number(address.longitude),
           label: address.type,
           city: address.locality,
+          region: address.region,
           country: address.country,
           groupIds,
         });
@@ -104,6 +106,7 @@ export const GET = withAuth(async (request, session) => {
           longitude: Number(location.longitude),
           label: location.label ?? location.type,
           city: null,
+          region: null,
           country: null,
           groupIds,
         });

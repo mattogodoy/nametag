@@ -1417,6 +1417,7 @@
     "searchPlaceholder": "Filter op naam...",
     "allGroups": "Alle groepen",
     "allCities": "Alle steden",
+    "allRegions": "Alle staten/provincies",
     "allCountries": "Alle landen",
     "clearFilters": "Filters wissen",
     "pendingBanner": "{count, plural, one {1 adres wordt nog gelokaliseerd} other {# adressen worden nog gelokaliseerd}}",

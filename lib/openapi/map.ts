@@ -26,6 +26,7 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
                     longitude: { type: 'number' },
                     label: { type: 'string' },
                     city: { type: ['string', 'null'] },
+                    region: { type: ['string', 'null'], description: 'State/Province' },
                     country: { type: ['string', 'null'] },
                     groupIds: { type: 'array', items: { type: 'string' } },
                   },

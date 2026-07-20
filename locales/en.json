@@ -1421,6 +1421,7 @@
     "searchPlaceholder": "Filter by name...",
     "allGroups": "All groups",
     "allCities": "All cities",
+    "allRegions": "All states/provinces",
     "allCountries": "All countries",
     "clearFilters": "Clear filters",
     "pendingBanner": "{count, plural, one {1 address is still being located} other {# addresses are still being located}}",

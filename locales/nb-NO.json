@@ -1425,6 +1425,7 @@
     "searchPlaceholder": "Filtrer etter navn...",
     "allGroups": "Alle grupper",
     "allCities": "Alle byer",
+    "allRegions": "Alle fylker",
     "allCountries": "Alle land",
     "clearFilters": "Nullstill filtre",
     "pendingBanner": "{count, plural, one {1 adresse blir fortsatt lokalisert} other {# adresser blir fortsatt lokalisert}}",

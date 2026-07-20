@@ -24,6 +24,7 @@ function MapPageInner() {
       query: searchParams.get('q') ?? '',
       groupId: searchParams.get('group') ?? '',
       city: searchParams.get('city') ?? '',
+      region: searchParams.get('region') ?? '',
       country: searchParams.get('country') ?? '',
     }),
     [searchParams]
@@ -54,6 +55,7 @@ function MapPageInner() {
       if (next.query) params.set('q', next.query);
       if (next.groupId) params.set('group', next.groupId);
       if (next.city) params.set('city', next.city);
+      if (next.region) params.set('region', next.region);
       if (next.country) params.set('country', next.country);
       // Changing filters drops the focus deep link on purpose
       const qs = params.toString();
@@ -127,7 +129,7 @@ function MapPageInner() {
             <MapView
               markers={visibleMarkers}
               focusId={focusId}
-              filtersKey={`${filters.query}|${filters.groupId}|${filters.city}|${filters.country}`}
+              filtersKey={`${filters.query}|${filters.groupId}|${filters.city}|${filters.region}|${filters.country}`}
             />
             {visibleMarkers.length === 0 && (
               <div className="absolute inset-0 z-10 flex items-center justify-center p-8 pointer-events-none">

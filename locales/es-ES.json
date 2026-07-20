@@ -1425,6 +1425,7 @@
     "searchPlaceholder": "Filtrar por nombre...",
     "allGroups": "Todos los grupos",
     "allCities": "Todas las ciudades",
+    "allRegions": "Todos los estados/provincias",
     "allCountries": "Todos los países",
     "clearFilters": "Borrar filtros",
     "pendingBanner": "{count, plural, one {1 dirección todavía se está localizando} other {# direcciones todavía se están localizando}}",

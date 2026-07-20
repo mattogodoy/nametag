@@ -46,6 +46,7 @@ describe('GET /api/map/markers', () => {
             id: 'addr-1',
             type: 'home',
             locality: 'London',
+            region: 'Greater London',
             country: 'GB',
             latitude: '51.5',
             longitude: '-0.12',
@@ -81,6 +82,7 @@ describe('GET /api/map/markers', () => {
       latitude: 51.5,
       longitude: -0.12,
       city: 'London',
+      region: 'Greater London',
       country: 'GB',
       groupIds: ['group-1'],
     });
@@ -89,6 +91,7 @@ describe('GET /api/map/markers', () => {
       source: 'location',
       label: 'Cabin',
       city: null,
+      region: null,
       country: null,
     });
     expect(body.groups).toEqual([{ id: 'group-1', name: 'Friends' }]);
@@ -109,6 +112,7 @@ describe('GET /api/map/markers', () => {
               id: true,
               type: true,
               locality: true,
+              region: true,
               country: true,
               latitude: true,
               longitude: true,
@@ -235,6 +239,7 @@ describe('GET /api/map/markers', () => {
             id: 'addr-1',
             type: 'home',
             locality: 'London',
+            region: 'Greater London',
             country: 'GB',
             latitude: '51.5',
             longitude: '-0.12',
@@ -267,6 +272,7 @@ describe('GET /api/map/markers', () => {
             id: 'addr-1',
             type: 'home',
             locality: 'London',
+            region: 'Greater London',
             country: 'GB',
             latitude: '51.5',
             longitude: '-0.12',

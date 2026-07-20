@@ -1404,6 +1404,7 @@
     "searchPlaceholder": "Фильтр по имени...",
     "allGroups": "Все группы",
     "allCities": "Все города",
+    "allRegions": "Все области/регионы",
     "allCountries": "Все страны",
     "clearFilters": "Сбросить фильтры",
     "pendingBanner": "{count, plural, one {# адрес ещё определяется} few {# адреса ещё определяются} many {# адресов ещё определяются} other {# адреса ещё определяются}}",

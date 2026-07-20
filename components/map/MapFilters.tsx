@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import type { MapGroup, MapMarker } from '@/lib/map/types';
-import { distinctCities, distinctCountries, type MapFilterState } from '@/lib/map/filter-markers';
+import { distinctCities, distinctCountries, distinctRegions, type MapFilterState } from '@/lib/map/filter-markers';
 import { getCountryName } from '@/lib/countries';
 
 interface MapFiltersProps {
@@ -17,8 +17,11 @@ interface MapFiltersProps {
 export default function MapFilters({ filters, markers, groups, resultCount, onChange }: MapFiltersProps) {
   const t = useTranslations('map');
   const cities = distinctCities(markers);
+  const regions = distinctRegions(markers);
   const countries = distinctCountries(markers);
-  const hasActiveFilters = Boolean(filters.query || filters.groupId || filters.city || filters.country);
+  const hasActiveFilters = Boolean(
+    filters.query || filters.groupId || filters.city || filters.region || filters.country
+  );
 
   const selectClasses =
     'px-3 py-2 bg-surface border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary';
@@ -48,11 +51,12 @@ export default function MapFilters({ filters, markers, groups, resultCount, onCh
         ))}
       </select>
 
-      {/* City and country are mutually exclusive: picking one clears the
-          other, since combining them mostly produces impossible matches. */}
+      {/* City, state/province and country are mutually exclusive: picking
+          one clears the others, since combining them mostly produces
+          impossible matches. */}
       <select
         value={filters.city}
-        onChange={(e) => onChange({ ...filters, city: e.target.value, country: '' })}
+        onChange={(e) => onChange({ ...filters, city: e.target.value, region: '', country: '' })}
         className={selectClasses}
         aria-label={t('allCities')}
       >
@@ -65,8 +69,22 @@ export default function MapFilters({ filters, markers, groups, resultCount, onCh
       </select>
 
       <select
+        value={filters.region}
+        onChange={(e) => onChange({ ...filters, region: e.target.value, city: '', country: '' })}
+        className={selectClasses}
+        aria-label={t('allRegions')}
+      >
+        <option value="">{t('allRegions')}</option>
+        {regions.map((region) => (
+          <option key={region} value={region}>
+            {region}
+          </option>
+        ))}
+      </select>
+
+      <select
         value={filters.country}
-        onChange={(e) => onChange({ ...filters, country: e.target.value, city: '' })}
+        onChange={(e) => onChange({ ...filters, country: e.target.value, city: '', region: '' })}
         className={selectClasses}
         aria-label={t('allCountries')}
       >
@@ -86,7 +104,7 @@ export default function MapFilters({ filters, markers, groups, resultCount, onCh
       {hasActiveFilters && (
         <button
           type="button"
-          onClick={() => onChange({ query: '', groupId: '', city: '', country: '' })}
+          onClick={() => onChange({ query: '', groupId: '', city: '', region: '', country: '' })}
           className="px-3 py-2 text-sm text-primary hover:text-primary-dark transition-colors"
         >
           {t('clearFilters')}

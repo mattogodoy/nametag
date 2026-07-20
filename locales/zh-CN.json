@@ -1425,6 +1425,7 @@
     "searchPlaceholder": "按姓名筛选...",
     "allGroups": "所有分组",
     "allCities": "所有城市",
+    "allRegions": "所有州/省",
     "allCountries": "所有国家/地区",
     "clearFilters": "清除筛选",
     "pendingBanner": "{count, plural, other {还有 # 个地址正在定位}}",

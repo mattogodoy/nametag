@@ -12,6 +12,8 @@ export interface MapMarker {
   /** Address/location type or label, e.g. "home" */
   label: string;
   city: string | null;
+  /** State/Province (address region), null for GEO locations */
+  region: string | null;
   country: string | null;
   groupIds: string[];
 }

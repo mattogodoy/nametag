@@ -1425,6 +1425,7 @@
     "searchPlaceholder": "名前で絞り込み...",
     "allGroups": "すべてのグループ",
     "allCities": "すべての都市",
+    "allRegions": "すべての都道府県",
     "allCountries": "すべての国",
     "clearFilters": "フィルターをクリア",
     "pendingBanner": "{count, plural, other {#件の住所を位置特定しています}}",
