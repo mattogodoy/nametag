@@ -1430,6 +1430,8 @@
     "pendingBanner": "{count, plural, other {#件の住所を位置特定しています}}",
     "failedBanner": "{count, plural, other {#件の住所の位置を特定できませんでした}}",
     "dismiss": "閉じる",
+    "resultsCount": "{count, plural, other {#件の場所を表示中}}",
+    "noResults": "フィルターに一致する場所はありません。",
     "emptyTitle": "マップにはまだ何もありません",
     "emptyDescription": "連絡先の住所の位置が特定されると、ここにマーカーが表示されます。",
     "emptyGeocodingDisabled": "住所の位置特定は無効になっています。設定 > マップで有効にできます。",

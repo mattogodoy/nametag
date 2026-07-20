@@ -1409,6 +1409,8 @@
     "pendingBanner": "{count, plural, one {1 indirizzo è ancora in fase di localizzazione} other {# indirizzi sono ancora in fase di localizzazione}}",
     "failedBanner": "{count, plural, one {1 indirizzo non è stato localizzato} other {# indirizzi non sono stati localizzati}}",
     "dismiss": "Chiudi",
+    "resultsCount": "{count, plural, one {1 posizione mostrata} other {# posizioni mostrate}}",
+    "noResults": "Nessuna posizione corrisponde ai tuoi filtri.",
     "emptyTitle": "Ancora niente sulla mappa",
     "emptyDescription": "Quando gli indirizzi dei tuoi contatti saranno localizzati, i loro segnaposto appariranno qui.",
     "emptyGeocodingDisabled": "La localizzazione degli indirizzi è disattivata. Puoi attivarla in Impostazioni > Mappa.",

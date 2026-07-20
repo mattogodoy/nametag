@@ -1430,6 +1430,8 @@
     "pendingBanner": "{count, plural, one {1 adresse blir fortsatt lokalisert} other {# adresser blir fortsatt lokalisert}}",
     "failedBanner": "{count, plural, one {1 adresse kunne ikke lokaliseres} other {# adresser kunne ikke lokaliseres}}",
     "dismiss": "Lukk",
+    "resultsCount": "{count, plural, one {1 sted vises} other {# steder vises}}",
+    "noResults": "Ingen steder samsvarer med filtrene dine.",
     "emptyTitle": "Ingenting på kartet ennå",
     "emptyDescription": "Når adressene til kontaktene dine er lokalisert, vises markørene deres her.",
     "emptyGeocodingDisabled": "Adresselokalisering er slått av. Du kan slå den på i Innstillinger > Kart.",

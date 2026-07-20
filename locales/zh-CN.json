@@ -1430,6 +1430,8 @@
     "pendingBanner": "{count, plural, other {还有 # 个地址正在定位}}",
     "failedBanner": "{count, plural, other {有 # 个地址无法定位}}",
     "dismiss": "关闭",
+    "resultsCount": "{count, plural, other {正在显示 # 个位置}}",
+    "noResults": "没有符合筛选条件的位置。",
     "emptyTitle": "地图上还没有内容",
     "emptyDescription": "联系人地址完成定位后，标记会显示在这里。",
     "emptyGeocodingDisabled": "地址定位已关闭。您可以在设置 > 地图中开启。",

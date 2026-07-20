@@ -89,6 +89,7 @@ function MapPageInner() {
     <div className="flex-1 flex flex-col">
       <MapFilters
         filters={filters}
+        resultCount={visibleMarkers.length}
         markers={data.markers}
         groups={data.groups}
         onChange={handleFiltersChange}
@@ -122,11 +123,23 @@ function MapPageInner() {
             </div>
           </div>
         ) : (
-          <MapView
-            markers={visibleMarkers}
-            focusId={focusId}
-            filtersKey={`${filters.query}|${filters.groupId}|${filters.city}|${filters.country}`}
-          />
+          <>
+            <MapView
+              markers={visibleMarkers}
+              focusId={focusId}
+              filtersKey={`${filters.query}|${filters.groupId}|${filters.city}|${filters.country}`}
+            />
+            {visibleMarkers.length === 0 && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center p-8 pointer-events-none">
+                <p
+                  className="px-4 py-2 rounded-lg bg-surface border border-border text-muted shadow"
+                  role="status"
+                >
+                  {t('noResults')}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

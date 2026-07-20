@@ -1426,6 +1426,8 @@
     "pendingBanner": "{count, plural, one {1 address is still being located} other {# addresses are still being located}}",
     "failedBanner": "{count, plural, one {1 address could not be located} other {# addresses could not be located}}",
     "dismiss": "Dismiss",
+    "resultsCount": "{count, plural, one {1 location shown} other {# locations shown}}",
+    "noResults": "No locations match your filters.",
     "emptyTitle": "Nothing on the map yet",
     "emptyDescription": "When your contacts' addresses are located, their markers will show up here.",
     "emptyGeocodingDisabled": "Address locating is turned off. You can enable it in Settings > Map.",

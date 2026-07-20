@@ -1422,6 +1422,8 @@
     "pendingBanner": "{count, plural, one {1 adres wordt nog gelokaliseerd} other {# adressen worden nog gelokaliseerd}}",
     "failedBanner": "{count, plural, one {1 adres kon niet worden gelokaliseerd} other {# adressen konden niet worden gelokaliseerd}}",
     "dismiss": "Sluiten",
+    "resultsCount": "{count, plural, one {1 locatie weergegeven} other {# locaties weergegeven}}",
+    "noResults": "Geen locaties komen overeen met uw filters.",
     "emptyTitle": "Nog niets op de kaart",
     "emptyDescription": "Zodra de adressen van uw contacten zijn gelokaliseerd, verschijnen hun markeringen hier.",
     "emptyGeocodingDisabled": "Adreslokalisatie staat uit. U kunt dit aanzetten bij Instellingen > Kaart.",

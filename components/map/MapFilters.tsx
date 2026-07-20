@@ -9,10 +9,12 @@ interface MapFiltersProps {
   filters: MapFilterState;
   markers: MapMarker[];
   groups: MapGroup[];
+  /** Number of markers matching the active filters */
+  resultCount: number;
   onChange: (next: MapFilterState) => void;
 }
 
-export default function MapFilters({ filters, markers, groups, onChange }: MapFiltersProps) {
+export default function MapFilters({ filters, markers, groups, resultCount, onChange }: MapFiltersProps) {
   const t = useTranslations('map');
   const cities = distinctCities(markers);
   const countries = distinctCountries(markers);
@@ -76,6 +78,11 @@ export default function MapFilters({ filters, markers, groups, onChange }: MapFi
         ))}
       </select>
 
+      {hasActiveFilters && (
+        <span className="text-sm text-muted whitespace-nowrap" role="status">
+          {t('resultsCount', { count: resultCount })}
+        </span>
+      )}
       {hasActiveFilters && (
         <button
           type="button"

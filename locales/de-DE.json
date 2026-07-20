@@ -1430,6 +1430,8 @@
     "pendingBanner": "{count, plural, one {1 Adresse wird noch lokalisiert} other {# Adressen werden noch lokalisiert}}",
     "failedBanner": "{count, plural, one {1 Adresse konnte nicht lokalisiert werden} other {# Adressen konnten nicht lokalisiert werden}}",
     "dismiss": "Ausblenden",
+    "resultsCount": "{count, plural, one {1 Standort angezeigt} other {# Standorte angezeigt}}",
+    "noResults": "Keine Standorte entsprechen deinen Filtern.",
     "emptyTitle": "Noch nichts auf der Karte",
     "emptyDescription": "Sobald die Adressen deiner Kontakte lokalisiert sind, erscheinen ihre Markierungen hier.",
     "emptyGeocodingDisabled": "Die Adress-Lokalisierung ist deaktiviert. Du kannst sie unter Einstellungen > Karte aktivieren.",

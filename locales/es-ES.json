@@ -1430,6 +1430,8 @@
     "pendingBanner": "{count, plural, one {1 dirección todavía se está localizando} other {# direcciones todavía se están localizando}}",
     "failedBanner": "{count, plural, one {1 dirección no se pudo localizar} other {# direcciones no se pudieron localizar}}",
     "dismiss": "Descartar",
+    "resultsCount": "{count, plural, one {Se muestra 1 ubicación} other {Se muestran # ubicaciones}}",
+    "noResults": "Ninguna ubicación coincide con tus filtros.",
     "emptyTitle": "Aún no hay nada en el mapa",
     "emptyDescription": "Cuando se localicen las direcciones de tus contactos, sus marcadores aparecerán aquí.",
     "emptyGeocodingDisabled": "La localización de direcciones está desactivada. Puedes activarla en Ajustes > Mapa.",
