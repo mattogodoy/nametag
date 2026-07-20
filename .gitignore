@@ -66,3 +66,8 @@ next-env.d.ts
 /docs/superpowers
 
 /app/generated/prisma
+
+# Docs site build artifacts
+docs/node_modules
+docs/dist
+docs/.astro
