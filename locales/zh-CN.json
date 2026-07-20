@@ -56,6 +56,7 @@
     },
     "userMenu": {
       "settings": "设置",
+      "documentation": "文档",
       "signOut": "退出登录"
     },
     "journal": "日记",
@@ -612,6 +613,8 @@
       "preRelease": "(预发布)",
       "license": "许可证",
       "repository": "仓库",
+      "documentation": "文档",
+      "documentationDescription": "使用Nametag、自托管和REST API的指南、教程和参考资料。",
       "releaseInformation": "发行信息",
       "viewChangelog": "在 GitHub 上查看完整的更改日志和发行说明：",
       "releaseNotes": "v{version} 的发行说明",

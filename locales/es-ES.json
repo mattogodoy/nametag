@@ -56,6 +56,7 @@
     },
     "userMenu": {
       "settings": "Configuración",
+      "documentation": "Documentacion",
       "signOut": "Cerrar sesión"
     },
     "journal": "Diario",
@@ -612,6 +613,8 @@
       "preRelease": "(prelanzamiento)",
       "license": "Licencia",
       "repository": "Repositorio",
+      "documentation": "Documentacion",
+      "documentationDescription": "Guias, tutoriales y material de referencia para usar Nametag, autoalojamiento y la API REST.",
       "releaseInformation": "Información de Lanzamiento",
       "viewChangelog": "Ver el registro de cambios completo y las notas de lanzamiento en GitHub:",
       "releaseNotes": "Notas de lanzamiento para v{version}",

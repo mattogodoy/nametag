@@ -56,6 +56,7 @@
     },
     "userMenu": {
       "settings": "Настройки",
+      "documentation": "Документация",
       "signOut": "Выйти"
     },
     "journal": "Журнал",
@@ -595,6 +596,8 @@
       "preRelease": "(пре-релиз)",
       "license": "Лицензия",
       "repository": "Репозиторий",
+      "documentation": "Документация",
+      "documentationDescription": "Руководства, учебные материалы и справочная информация по использованию Nametag, самостоятельному размещению и REST API.",
       "releaseInformation": "Информация о релизе",
       "viewChangelog": "Полный журнал изменений и заметки о выпусках доступны на GitHub:",
       "releaseNotes": "Заметки о выпуске v{version}",

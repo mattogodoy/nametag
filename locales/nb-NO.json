@@ -56,6 +56,7 @@
     },
     "userMenu": {
       "settings": "Innstillinger",
+      "documentation": "Dokumentasjon",
       "signOut": "Logg ut"
     },
     "journal": "Journal",
@@ -612,6 +613,8 @@
       "preRelease": "(prerelease)",
       "license": "Lisens",
       "repository": "Repository",
+      "documentation": "Dokumentasjon",
+      "documentationDescription": "Guider, veiledninger og referansemateriale for bruk av Nametag, selvhosting og REST API.",
       "releaseInformation": "Versjonsinformasjon",
       "viewChangelog": "Se hele endringsloggen og versjonsnotatene på GitHub:",
       "releaseNotes": "Versjonsnotater for v{version}",

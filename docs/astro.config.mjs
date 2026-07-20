@@ -5,9 +5,10 @@ export default defineConfig({
   site: 'https://docs.nametag.one',
   integrations: [
     starlight({
-      title: 'Nametag Docs',
+      title: 'Nametag documentation',
       logo: {
         src: './src/assets/logo.svg',
+        replacesTitle: true,
       },
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/mattogodoy/nametag' },
