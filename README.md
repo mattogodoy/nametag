@@ -410,6 +410,35 @@ OSM Nominatim instance; point it at your own Nominatim or Photon for large datas
 or stricter privacy). Set `DISABLE_GEOCODING=true` to turn the feature off
 instance-wide. Users can also opt out individually in Settings > Map.
 
+#### Backfilling existing addresses after upgrading
+
+Addresses created before the Map feature are picked up by the same cron job; no
+manual migration is needed. After upgrading:
+
+1. **Bundled docker-compose:** the `cron` service writes its schedule when the
+   container starts, so recreate it once to pick up the new entry:
+
+   ```bash
+   docker compose up -d cron
+   ```
+
+   **Custom schedulers** (systemd timers, Kubernetes CronJobs, external cron):
+   add the `/api/cron/geocode` call shown above to your schedule.
+
+2. **Wait for the backfill.** Each run locates up to 50 addresses, so the default
+   5 minute schedule works through roughly 600 addresses per hour. The Map tab
+   shows a notice while addresses are still being located.
+
+3. **Optional, immediate backfill:** call the endpoint directly and repeat while
+   the response reports `"processed"` greater than 0:
+
+   ```bash
+   curl -H "Authorization: Bearer $CRON_SECRET" https://your-instance/api/cron/geocode
+   ```
+
+Lookups respect each user's Settings > Map toggle, results are cached, and
+already-located addresses are never sent to the geocoder again.
+
 ### Reverse Proxy (Production)
 
 For production deployments, use a reverse proxy like Nginx or Caddy with SSL:
