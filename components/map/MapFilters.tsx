@@ -23,17 +23,21 @@ export default function MapFilters({ filters, markers, groups, resultCount, onCh
     filters.query || filters.groupId || filters.city || filters.region || filters.country
   );
 
+  // Mobile: search on its own row, the four selects in a 2x2 grid, and the
+  // result count plus clear button sharing one row. Desktop (sm+): a single
+  // wrapping flex row, with the count/clear wrapper dissolved via
+  // sm:contents so its children flow inline like the other items.
   const selectClasses =
-    'px-3 py-2 bg-surface border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary';
+    'w-full sm:w-auto px-3 py-2 bg-surface border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary';
 
   return (
-    <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-surface border-b border-border">
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center px-4 py-3 bg-surface border-b border-border">
       <input
         type="search"
         value={filters.query}
         onChange={(e) => onChange({ ...filters, query: e.target.value })}
         placeholder={t('searchPlaceholder')}
-        className={`${selectClasses} flex-1 min-w-[10rem]`}
+        className={`${selectClasses} col-span-2 sm:flex-1 sm:min-w-[10rem]`}
         aria-label={t('searchPlaceholder')}
       />
 
@@ -97,18 +101,18 @@ export default function MapFilters({ filters, markers, groups, resultCount, onCh
       </select>
 
       {hasActiveFilters && (
-        <span className="text-sm text-muted whitespace-nowrap" role="status">
-          {t('resultsCount', { count: resultCount })}
-        </span>
-      )}
-      {hasActiveFilters && (
-        <button
-          type="button"
-          onClick={() => onChange({ query: '', groupId: '', city: '', region: '', country: '' })}
-          className="px-3 py-2 text-sm text-primary hover:text-primary-dark transition-colors"
-        >
-          {t('clearFilters')}
-        </button>
+        <div className="col-span-2 flex items-center justify-between gap-2 sm:contents">
+          <span className="text-sm text-muted whitespace-nowrap" role="status">
+            {t('resultsCount', { count: resultCount })}
+          </span>
+          <button
+            type="button"
+            onClick={() => onChange({ query: '', groupId: '', city: '', region: '', country: '' })}
+            className="px-3 py-2 text-sm text-primary hover:text-primary-dark transition-colors whitespace-nowrap"
+          >
+            {t('clearFilters')}
+          </button>
+        </div>
       )}
     </div>
   );
