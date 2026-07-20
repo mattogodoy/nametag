@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.53.0](https://github.com/mattogodoy/nametag/compare/v0.52.0...v0.53.0) (2026-07-20)
+
+
+### Features
+
+* add state/province filter to the map ([32636ff](https://github.com/mattogodoy/nametag/commit/32636ffa43fcf429413051a1a1901a923d550631))
+* auto-zoom when arriving with filters in the URL ([f2570fd](https://github.com/mattogodoy/nametag/commit/f2570fd10163ad75ac8a21c0a047d4edf6d9094f))
+* show result count and a no-results notice on the map ([9899843](https://github.com/mattogodoy/nametag/commit/989984318d2fa4c0b6e5ee4fd3dd9dafbc0eadc8))
+
+
+### Bug Fixes
+
+* align map filters in a grid on small screens ([7761d48](https://github.com/mattogodoy/nametag/commit/7761d4869f50be4b188765fc8e468a35bd90ad51))
+* cap map camera animations at a fixed duration ([ea88b61](https://github.com/mattogodoy/nametag/commit/ea88b614c28d7e051e0346e54c7e4a6c31eb4fe8))
+* keep the clear filters button visible at tablet widths ([70bfbb5](https://github.com/mattogodoy/nametag/commit/70bfbb5369706212a290a1ebe0f2820f288648f7))
+* make city and country filters exclusive and refit on filter clears ([e4f7026](https://github.com/mattogodoy/nametag/commit/e4f7026263275bf87ecb3a8346cea7b1c48c3029))
+* retry transient geocoding failures once before deferring to cron ([2899dc2](https://github.com/mattogodoy/nametag/commit/2899dc2ab849c933098bfa4920c1defadbe80583))
+* set map camera animation duration to one second ([06e78e9](https://github.com/mattogodoy/nametag/commit/06e78e96d1aa8b148bf7141a40027924a61abcbc))
+
 ## [Unreleased]
 
 
