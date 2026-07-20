@@ -11,9 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
-* add a Map tab with clustered markers of contacts' addresses and locations, with filters by name, group, city and country
+* add a Map tab with clustered markers of contacts' addresses and locations, with filters by name, group, city, state/province and country
 * add "Show on map" buttons for addresses and locations on the contact page
 * add automatic address geocoding with a configurable provider (GEOCODER_URL), a per-user privacy toggle in Settings > Map, and a DISABLE_GEOCODING instance flag
+
+## [0.52.0](https://github.com/mattogodoy/nametag/compare/v0.51.1...v0.52.0) (2026-07-20)
+
+
+### Features
+
+* make photo compression configurable via env vars ([2d26dfb](https://github.com/mattogodoy/nametag/commit/2d26dfb808d94bc005f84f631f0974e347193b79))
+* make photo size and quality configurable via env vars ([cda4982](https://github.com/mattogodoy/nametag/commit/cda49823d29360f1dd0c3ff42bfaf5a66d381f09)), closes [#320](https://github.com/mattogodoy/nametag/issues/320)
+* pipe photo config to client, document env vars ([f0cb1e0](https://github.com/mattogodoy/nametag/commit/f0cb1e0f8ef6356c8b8fce2ec2b0b1c35ecee5fe))
+
+
+### Bug Fixes
+
+* add state parameter to OIDC authorization requests ([e14896b](https://github.com/mattogodoy/nametag/commit/e14896b27052d0f5d0a6db2f2f3b6833cd58f499))
+* add state parameter to OIDC authorization requests ([c4bd590](https://github.com/mattogodoy/nametag/commit/c4bd590e0b87416317cb2c721e1e168991a48aba)), closes [#337](https://github.com/mattogodoy/nametag/issues/337)
+* exclude soft-deleted contacts from group member counts ([bdbe7c1](https://github.com/mattogodoy/nametag/commit/bdbe7c129f600b90277a516066f78a731e67e017))
+* exclude soft-deleted contacts from group member counts ([176cf54](https://github.com/mattogodoy/nametag/commit/176cf54d18c455ade6884a2f7a368fb172539e93)), closes [#318](https://github.com/mattogodoy/nametag/issues/318)
 
 ## [0.51.1](https://github.com/mattogodoy/nametag/compare/v0.51.0...v0.51.1) (2026-07-03)
 

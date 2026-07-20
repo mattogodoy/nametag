@@ -8,14 +8,20 @@ import { validateServerUrl } from '@/lib/carddav/url-validation';
 const log = createModuleLogger('photos');
 
 const MAX_PHOTO_SIZE = 50 * 1024 * 1024; // 50MB
-const PHOTO_SIZE = 256;
-const JPEG_QUALITY = 80;
 const FETCH_TIMEOUT_MS = 15000;
 // Bound decoded-pixel memory independently of byte size. Sharp's default
 // (268MP) is too generous: an attacker can craft a small file that decodes
 // into hundreds of MB of RGBA pixels. 100MP covers any realistic phone or
 // DSLR sensor (Hasselblad H6D-100c is ~100MP at the high end).
 const SHARP_MAX_INPUT_PIXELS = 100 * 1024 * 1024;
+
+function getPhotoSize(): number {
+  return Number(process.env.PHOTO_SIZE) || 256;
+}
+
+function getJpegQuality(): number {
+  return Number(process.env.PHOTO_QUALITY) || 80;
+}
 
 /**
  * Atomically write data to filePath: write to a temp file in the same
@@ -185,7 +191,9 @@ export function isValidImageBuffer(buffer: Buffer): boolean {
 
 /**
  * Process a photo buffer: validate format, enforce size limit,
- * resize to PHOTO_SIZE x PHOTO_SIZE (cover), convert to JPEG at JPEG_QUALITY, strip EXIF.
+ * resize to PHOTO_SIZE x PHOTO_SIZE (cover), convert to JPEG at PHOTO_QUALITY, strip EXIF.
+ * PHOTO_SIZE and PHOTO_QUALITY are read from the environment (see lib/env.ts), with
+ * defaults of 256 and 80 respectively.
  * Throws on invalid input.
  */
 export async function processPhoto(buffer: Buffer): Promise<{ data: Buffer; hasAlpha: boolean }> {
@@ -197,8 +205,9 @@ export async function processPhoto(buffer: Buffer): Promise<{ data: Buffer; hasA
     throw new Error(`Photo exceeds maximum size of ${MAX_PHOTO_SIZE / (1024 * 1024)}MB`);
   }
 
+  const photoSize = getPhotoSize();
   const image = sharp(buffer, { limitInputPixels: SHARP_MAX_INPUT_PIXELS })
-    .resize(PHOTO_SIZE, PHOTO_SIZE, { fit: 'cover' })
+    .resize(photoSize, photoSize, { fit: 'cover' })
     .rotate(); // auto-rotate based on EXIF before stripping
 
   // Check if the source format has an alpha channel
@@ -211,7 +220,7 @@ export async function processPhoto(buffer: Buffer): Promise<{ data: Buffer; hasA
   }
 
   // No alpha — save as JPEG (smaller file size)
-  return { data: await image.jpeg({ quality: JPEG_QUALITY }).toBuffer(), hasAlpha: false };
+  return { data: await image.jpeg({ quality: getJpegQuality() }).toBuffer(), hasAlpha: false };
 }
 
 /**

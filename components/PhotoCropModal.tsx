@@ -12,10 +12,8 @@ interface PhotoCropModalProps {
   onCancel: () => void;
 }
 
-// Server stores the photo at 256x256; 512 gives 2x headroom for retina displays
-// while keeping the upload payload small regardless of source resolution.
-const OUTPUT_SIZE = 512;
-const JPEG_QUALITY = 0.92;
+const OUTPUT_SIZE = Number(process.env.NEXT_PUBLIC_PHOTO_SIZE || 256) * 2;
+const JPEG_QUALITY = Number(process.env.NEXT_PUBLIC_PHOTO_QUALITY || 80) / 100;
 
 function canvasHasAlpha(ctx: CanvasRenderingContext2D, width: number, height: number): boolean {
   const { data } = ctx.getImageData(0, 0, width, height);
