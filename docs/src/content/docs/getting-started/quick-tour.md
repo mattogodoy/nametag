@@ -21,25 +21,25 @@ From there, a natural next step is creating a [group](/features/groups/) (family
 
 The Dashboard is your home base. It shows an interactive network graph with you at the center, radiating out to everyone you've added and however they're connected to each other. Alongside the graph, you'll see upcoming birthdays and other important dates, so you always know who's coming up.
 
-![Nametag dashboard showing a network graph and upcoming events](../../../assets/screenshots/dashboard-dark.png)
+![Nametag dashboard showing a network graph and upcoming events](/screenshots/dashboard-dark.png)
 
 ### People
 
 The People page is where you manage your contacts: a searchable, filterable list of everyone in your network. Sort by name, surname, group, or last contact date, filter by group or relationship type, and open any person to see their full profile.
 
-![Nametag people list with search and filters](../../../assets/screenshots/people-dark.png)
+![Nametag people list with search and filters](/screenshots/people-dark.png)
 
 ### Groups
 
 Groups are your own color-coded categories, family, friends, work, school, or anything else that makes sense for you. A person can belong to more than one group, and groups are used for filtering throughout the app, including the network graph.
 
-![Nametag groups page with color-coded categories](../../../assets/screenshots/groups-dark.png)
+![Nametag groups page with color-coded categories](/screenshots/groups-dark.png)
 
 ### Journal
 
 The Journal is a running timeline of notes tied to the people you spend time with. Write about a call, a visit, or a conversation, link it to one or more people, and it becomes part of both the shared timeline and that person's own history.
 
-![Nametag journal timeline of notes](../../../assets/screenshots/journal-dark.png)
+![Nametag journal timeline of notes](/screenshots/journal-dark.png)
 
 ### Map
 
@@ -49,7 +49,7 @@ The Map shows your contacts' addresses as markers on a map, geocoded automatical
 
 Relationships in Nametag work at two levels: how you relate to someone ("this is my cousin"), and how people relate to each other ("Alice is Bob's sibling"). Relationship Types is where you define and customize the vocabulary for those connections, with automatic handling of the inverse (mark someone as a parent, and the other person is automatically shown as a child).
 
-![Nametag relationships view showing connections between people](../../../assets/screenshots/relationships-dark.png)
+![Nametag relationships view showing connections between people](/screenshots/relationships-dark.png)
 
 ## Where to next
 

@@ -14,7 +14,6 @@ export default defineConfig({
         { icon: 'external', label: 'Nametag', href: 'https://nametag.one' },
       ],
       customCss: ['./src/styles/custom.css'],
-      defaultLocale: 'root',
       sidebar: [
         {
           label: 'Getting Started',
