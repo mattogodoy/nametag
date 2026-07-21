@@ -21,7 +21,7 @@ export default function PhotoSourceModal({ onSelect, onClose }: PhotoSourceModal
   const validateAndSelect = useCallback((file: File | null) => {
     if (!file) return;
     const isAllowedType = ALLOWED_PHOTO_TYPES.includes(file.type);
-    const isHeicByExtension = !file.type && (/\.heic$/i.test(file.name) || /\.heif$/i.test(file.name));
+    const isHeicByExtension = (!file.type || file.type === 'application/octet-stream') && (/\.heic$/i.test(file.name) || /\.heif$/i.test(file.name));
     if (!isAllowedType && !isHeicByExtension) {
       toast.error(t('formatError'));
       return;
