@@ -88,7 +88,7 @@ describe('POST /api/photos/convert', () => {
     expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 
-  it('should reject files exceeding 50MB', async () => {
+  it('should reject files exceeding 50MB with 413', async () => {
     const formData = new FormData();
     const largeBlob = new Blob([new ArrayBuffer(51 * 1024 * 1024)], { type: 'image/heic' });
     formData.append('photo', largeBlob);
@@ -98,7 +98,7 @@ describe('POST /api/photos/convert', () => {
     });
 
     const response = await POST(largeRequest);
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(413);
     expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 

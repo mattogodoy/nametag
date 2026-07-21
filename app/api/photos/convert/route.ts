@@ -28,7 +28,7 @@ export const POST = withAuth(async (request) => {
     }
 
     if (file.size > MAX_UPLOAD_SIZE) {
-      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`);
+      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`, 413);
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -39,6 +39,7 @@ export const POST = withAuth(async (request) => {
     }
 
     const quality = getJpegQuality();
+    const start = performance.now();
 
     const rawJpeg = await convert({
       buffer: new Uint8Array(buffer),
@@ -50,8 +51,9 @@ export const POST = withAuth(async (request) => {
       .rotate()
       .jpeg({ quality })
       .toBuffer();
+    const durationMs = Math.round(performance.now() - start);
 
-    log.info({ inputBytes: buffer.length, outputBytes: jpegBuffer.length }, 'Converted HEIC to JPEG');
+    log.info({ inputBytes: buffer.length, outputBytes: jpegBuffer.length, durationMs }, 'Converted HEIC to JPEG');
 
     return new Response(new Uint8Array(jpegBuffer), {
       status: 200,

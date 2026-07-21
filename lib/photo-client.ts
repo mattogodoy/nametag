@@ -5,8 +5,11 @@ export function isHeicFile(file: File): boolean {
   if (HEIC_MIME_TYPES.includes(file.type.toLowerCase())) {
     return true;
   }
-  const name = file.name.toLowerCase();
-  return HEIC_EXTENSIONS.some((ext) => name.endsWith(ext));
+  if (!file.type || file.type === 'application/octet-stream') {
+    const name = file.name.toLowerCase();
+    return HEIC_EXTENSIONS.some((ext) => name.endsWith(ext));
+  }
+  return false;
 }
 
 export async function convertHeicToJpeg(file: File): Promise<Blob> {
@@ -19,7 +22,7 @@ export async function convertHeicToJpeg(file: File): Promise<Blob> {
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
+    const body = await response.json().catch(() => null) as { error?: string } | null;
     const message = body?.error || 'Conversion failed';
     throw new Error(message);
   }

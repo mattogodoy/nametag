@@ -30,6 +30,7 @@
     "d3-selection": "^3.0.0",
     "d3-transition": "^3.0.1",
     "d3-zoom": "^3.0.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "flag-icons": "^7.5.0",
     "heic-convert": "^2.1.0",
     "ioredis": "^5.8.2",
@@ -52,6 +53,7 @@
     "sonner": "^2.0.7",
     "stripe": "^20.0.0",
     "tsdav": "^2.1.6",
+    "uuid": "^14.0.1",
     "zod": "^4.1.13"
   },
   "devDependencies": {
