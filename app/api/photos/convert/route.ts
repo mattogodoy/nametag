@@ -44,7 +44,7 @@ export const POST = withAuth(async (request) => {
 
     log.info('Converted HEIC to JPEG');
 
-    return new Response(jpegBuffer, {
+    return new Response(new Uint8Array(jpegBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'image/jpeg',

@@ -39,7 +39,7 @@ function makeHeicBuffer(brand: string = 'heic'): Buffer {
 
 function createConvertRequest(buffer: Buffer, type = 'image/heic'): Request {
   const formData = new FormData();
-  formData.append('photo', new Blob([buffer], { type }));
+  formData.append('photo', new Blob([new Uint8Array(buffer)], { type }));
   return new Request('http://localhost/api/photos/convert', {
     method: 'POST',
     body: formData,
@@ -82,9 +82,6 @@ describe('POST /api/photos/convert', () => {
   });
 
   it('should reject files exceeding 50MB', async () => {
-    const bigBuf = makeHeicBuffer();
-    const request = createConvertRequest(bigBuf);
-    // Simulate size check by using a large blob
     const formData = new FormData();
     const largeBlob = new Blob([new ArrayBuffer(51 * 1024 * 1024)], { type: 'image/heic' });
     formData.append('photo', largeBlob);
