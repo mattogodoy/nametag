@@ -13,7 +13,7 @@ When you add an address to a contact, Nametag geocodes it in the background, con
 
 ## The map interface
 
-The map itself is built on MapLibre GL, giving you smooth zooming, panning, and clustering of nearby markers. Click a marker (or a cluster) to see who it belongs to, with a link to their contact page and a link to get directions.
+The map itself is built on MapLibre GL, giving you smooth zooming, panning, and clustering of nearby markers. Click a marker (or a cluster) to see who it belongs to and the full address it represents, with a link to their contact page and a link to get directions.
 
 ## Filtering
 
@@ -29,7 +29,7 @@ Every filter you set is encoded in the page URL, so a filtered view of the map i
 
 ## Deep linking to a person
 
-Add `?focus=<personId>` to the map URL to center the map on a specific person's location and open their marker's popup automatically. This is how links from other parts of the app (like a person's detail page) jump straight to their spot on the map.
+Add `?focus=<markerId>` to the map URL (where the marker id looks like `addr_<addressId>` or `loc_<locationId>`) to center the map on that marker and open its popup automatically. This is how the "Show on map" links on a person's detail page jump straight to their spot on the map.
 
 ## Auto-zoom
 

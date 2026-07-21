@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { formatCanonicalName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { getCountryName } from '@/lib/countries';
 import type { MapGroup, MapMarker, UnlocatedPerson } from '@/lib/map/types';
 
 export const GET = withAuth(async (request, session) => {
@@ -24,8 +25,11 @@ export const GET = withAuth(async (request, session) => {
             select: {
               id: true,
               type: true,
+              streetLine1: true,
+              streetLine2: true,
               locality: true,
               region: true,
+              postalCode: true,
               country: true,
               latitude: true,
               longitude: true,
@@ -89,6 +93,17 @@ export const GET = withAuth(async (request, session) => {
         if (address.geocodeStatus !== 'success' || address.latitude === null || address.longitude === null) {
           continue;
         }
+        const addressText = [
+          address.streetLine1,
+          address.streetLine2,
+          address.locality,
+          address.region,
+          address.postalCode,
+          address.country ? getCountryName(address.country) || address.country : null,
+        ]
+          .filter((part) => part && part.trim().length > 0)
+          .join(', ');
+
         markers.push({
           id: `addr_${address.id}`,
           source: 'address',
@@ -100,6 +115,7 @@ export const GET = withAuth(async (request, session) => {
           city: address.locality,
           region: address.region,
           country: address.country,
+          addressText: addressText || null,
           groupIds,
         });
       }
@@ -116,6 +132,7 @@ export const GET = withAuth(async (request, session) => {
           city: null,
           region: null,
           country: null,
+          addressText: null,
           groupIds,
         });
       }

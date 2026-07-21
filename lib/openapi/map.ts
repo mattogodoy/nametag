@@ -28,6 +28,10 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
                     label: { type: 'string' },
                     city: { type: ['string', 'null'] },
                     region: { type: ['string', 'null'], description: 'State/Province' },
+                    addressText: {
+                      type: ['string', 'null'],
+                      description: 'Full address as a single line for popups; null for GEO locations',
+                    },
                     country: { type: ['string', 'null'] },
                     groupIds: { type: 'array', items: { type: 'string' } },
                   },

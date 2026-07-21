@@ -14,6 +14,8 @@ export interface MapMarker {
   city: string | null;
   /** State/Province (address region), null for GEO locations */
   region: string | null;
+  /** Full address as a single line for the marker popup; null for GEO locations */
+  addressText: string | null;
   country: string | null;
   groupIds: string[];
 }
