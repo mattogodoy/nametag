@@ -46,10 +46,13 @@ jobs:
             SINCE_DATE="2000-01-01T00:00:00+00:00"
           fi
 
+          # Get the date of the current tag to bound the search
+          TAG_DATE=$(git log --format=%aI "$TAG" -1)
+
           # Fetch merged PRs since the previous tag, excluding release-please bot
           PR_JSON=$(gh pr list \
             --state merged \
-            --search "merged:>=${SINCE_DATE}" \
+            --search "merged:${SINCE_DATE}..${TAG_DATE}" \
             --json number,title,body,author \
             --limit 50 2>/dev/null || echo "[]")
 
@@ -58,7 +61,7 @@ jobs:
             if length == 0 then "NO_PRS_FOUND"
             else
               .[] |
-              "### PR #\(.number): \(.title)\n\(.body[:1500])\n"
+              "### PR #\(.number): \(.title)\n\(.body // "" | .[:1500])\n"
             end
           ')
 
