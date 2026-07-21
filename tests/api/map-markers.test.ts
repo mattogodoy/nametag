@@ -327,6 +327,48 @@ describe('GET /api/map/markers', () => {
     expect(body.markers[0].personName).toBe('Ace');
   });
 
+  it('honors the NICKNAME_PREFERRED name display setting', async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      nameOrder: 'WESTERN',
+      nameDisplayFormat: 'NICKNAME_PREFERRED',
+      geocodingEnabled: true,
+    });
+    mocks.personFindMany.mockResolvedValue([
+      {
+        id: 'person-1',
+        name: 'Alice',
+        surname: 'Smith',
+        middleName: null,
+        secondLastName: null,
+        nickname: 'Ali',
+        displayNameOverride: null,
+        addresses: [
+          {
+            id: 'addr-1',
+            type: 'home',
+            streetLine1: null,
+            streetLine2: null,
+            locality: 'London',
+            region: null,
+            postalCode: null,
+            country: 'GB',
+            latitude: '51.5',
+            longitude: '-0.12',
+            geocodeStatus: 'success',
+          },
+        ],
+        locations: [],
+        groups: [],
+      },
+    ]);
+
+    const response = await GET(new Request('http://localhost/api/map/markers'));
+    const body = await response.json();
+
+    // Nickname replaces the first name, like in the network graph
+    expect(body.markers[0].personName).toBe('Ali Smith');
+  });
+
   it('falls back to the formatted canonical name for personName when there is no override', async () => {
     mocks.personFindMany.mockResolvedValue([
       {
