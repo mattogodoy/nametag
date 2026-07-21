@@ -179,6 +179,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
             },
             '400': ref400(),
             '401': ref401(),
+            '413': { description: 'File too large (max 50MB)' },
           },
         },
       },

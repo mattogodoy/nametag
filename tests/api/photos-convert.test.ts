@@ -91,7 +91,7 @@ describe('POST /api/photos/convert', () => {
     });
 
     const response = await POST(largeRequest);
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(413);
   });
 
   it('should reject requests with no file', async () => {

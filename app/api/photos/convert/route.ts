@@ -27,7 +27,7 @@ export const POST = withAuth(async (request) => {
     }
 
     if (file.size > MAX_UPLOAD_SIZE) {
-      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`);
+      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`, 413);
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -37,12 +37,14 @@ export const POST = withAuth(async (request) => {
       return apiResponse.error('File is not HEIC/HEIF format. Only HEIC files need conversion.');
     }
 
+    const start = performance.now();
     const jpegBuffer = await sharp(buffer, { limitInputPixels: SHARP_MAX_INPUT_PIXELS })
       .rotate()
       .jpeg({ quality: getJpegQuality() })
       .toBuffer();
+    const durationMs = Math.round(performance.now() - start);
 
-    log.info('Converted HEIC to JPEG');
+    log.info({ inputBytes: buffer.length, outputBytes: jpegBuffer.length, durationMs }, 'Converted HEIC to JPEG');
 
     return new Response(new Uint8Array(jpegBuffer), {
       status: 200,
