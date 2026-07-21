@@ -21,28 +21,15 @@ jobs:
   build:
     name: Build Docs
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - name: Build with Astro
+        uses: withastro/action@v3
         with:
+          path: docs
           node-version: 22
-
-      - name: Install dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
-
-      - name: Build docs site
-        run: npx astro build
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/dist
 
   deploy:
     name: Deploy to GitHub Pages
