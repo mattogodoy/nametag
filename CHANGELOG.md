@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.53.3](https://github.com/mattogodoy/nametag/compare/v0.53.2...v0.53.3) (2026-07-21)
+
+
+### Bug Fixes
+
+* add npm ci retry and install verification to docs workflow ([095dc23](https://github.com/mattogodoy/nametag/commit/095dc23d2b006849185627d1bf40a408923deb20))
+* exclude docs/ from root TypeScript compilation ([8d6542b](https://github.com/mattogodoy/nametag/commit/8d6542b2069218d2745c90a0b1768ed77ff87062))
+* show the address in the map marker popup ([39100ab](https://github.com/mattogodoy/nametag/commit/39100abce06566e6cd92048167b02d37eedf6f91))
+
 ## [0.53.2](https://github.com/mattogodoy/nametag/compare/v0.53.1...v0.53.2) (2026-07-20)
 
 
