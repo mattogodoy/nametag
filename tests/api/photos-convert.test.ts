@@ -1,10 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  heicConvert: vi.fn(),
   sharpToBuffer: vi.fn(),
   sharpJpeg: vi.fn(),
   sharpRotate: vi.fn(),
-  sharpMetadata: vi.fn(),
+}));
+
+vi.mock('heic-convert', () => ({
+  default: mocks.heicConvert,
 }));
 
 vi.mock('sharp', () => {
@@ -12,7 +16,6 @@ vi.mock('sharp', () => {
     rotate: () => { mocks.sharpRotate(); return pipeline; },
     jpeg: (opts: unknown) => { mocks.sharpJpeg(opts); return pipeline; },
     toBuffer: () => mocks.sharpToBuffer(),
-    metadata: () => mocks.sharpMetadata(),
   };
   const sharpFn = () => pipeline;
   sharpFn.format = {};
@@ -52,8 +55,9 @@ function createConvertRequest(buffer: Buffer, type = 'image/heic'): Request {
 describe('POST /api/photos/convert', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    const jpegOutput = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]);
-    mocks.sharpToBuffer.mockResolvedValue(jpegOutput);
+    const rawJpeg = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]);
+    mocks.heicConvert.mockResolvedValue(rawJpeg);
+    mocks.sharpToBuffer.mockResolvedValue(rawJpeg);
   });
 
   it('should convert a HEIC buffer to JPEG and return binary response', async () => {
@@ -62,6 +66,7 @@ describe('POST /api/photos/convert', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('image/jpeg');
+    expect(mocks.heicConvert).toHaveBeenCalledOnce();
 
     const resultBuffer = Buffer.from(await response.arrayBuffer());
     expect(resultBuffer[0]).toBe(0xFF);
@@ -80,9 +85,10 @@ describe('POST /api/photos/convert', () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBeDefined();
+    expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 
-  it('should reject files exceeding 50MB', async () => {
+  it('should reject files exceeding 50MB with 413', async () => {
     const formData = new FormData();
     const largeBlob = new Blob([new ArrayBuffer(51 * 1024 * 1024)], { type: 'image/heic' });
     formData.append('photo', largeBlob);
@@ -93,6 +99,7 @@ describe('POST /api/photos/convert', () => {
 
     const response = await POST(largeRequest);
     expect(response.status).toBe(413);
+    expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 
   it('should reject requests with no file', async () => {
