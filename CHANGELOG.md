@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.54.1](https://github.com/mattogodoy/nametag/compare/v0.54.0...v0.54.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* set max output tokens to prevent release notes truncation ([2e594fe](https://github.com/mattogodoy/nametag/commit/2e594fefaa11cd031117ed6ee3a27a211fe2e470))
+
 ## [0.54.0](https://github.com/mattogodoy/nametag/compare/v0.53.3...v0.54.0) (2026-07-21)
 
 
