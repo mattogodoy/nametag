@@ -37,6 +37,7 @@ export interface AddressItem {
   region?: string | null;
   postalCode?: string | null;
   country?: string | null;
+  notes?: string | null;
 }
 
 export interface UrlItem {
@@ -199,6 +200,7 @@ interface PersonProp {
     region?: string | null;
     postalCode?: string | null;
     country?: string | null;
+    notes?: string | null;
   }>;
   urls?: Array<{ id?: string; type: string; url: string }>;
   customFieldValues?: Array<{ templateId: string; value: string }>;
@@ -313,6 +315,7 @@ function buildInitialState(params: {
         region: a.region,
         postalCode: a.postalCode,
         country: a.country,
+        notes: a.notes,
       })) || [],
     urls:
       person?.urls?.map((u) => ({

@@ -1156,6 +1156,7 @@
         "regionPlaceholder": "Fylke",
         "postalCodePlaceholder": "Postnummer",
         "countryPlaceholder": "Land",
+        "notesPlaceholder": "Notater (f.eks. jobber hos Eksempel AS)",
         "typePlaceholder": "Type",
         "customLabelPlaceholder": "Egendefinert etikett (valgfritt)",
         "noAddresses": "Ingen adresser lagt til ennå",

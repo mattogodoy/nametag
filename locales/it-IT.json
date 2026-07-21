@@ -1135,6 +1135,7 @@
         "regionPlaceholder": "Stato/Provincia",
         "postalCodePlaceholder": "Codice postale",
         "countryPlaceholder": "Paese",
+        "notesPlaceholder": "Note (es. lavora presso Azienda Esempio)",
         "typePlaceholder": "Tipo",
         "customLabelPlaceholder": "Etichetta personalizzata (opzionale)",
         "noAddresses": "Ancora nessun indirizzo aggiunto",

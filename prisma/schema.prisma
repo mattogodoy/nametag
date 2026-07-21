@@ -611,6 +611,7 @@ model PersonAddress {
   region      String?  // State/Province
   postalCode  String?
   country     String?
+  notes       String?  // Free-form user notes about this address (never sent to geocoder)
   latitude      Decimal?  @db.Decimal(10, 8)
   longitude     Decimal?  @db.Decimal(11, 8)
   geocodedAt    DateTime?

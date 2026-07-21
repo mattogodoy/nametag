@@ -31,6 +31,15 @@ describe('buildAddressHash', () => {
   it('changes when any field changes', () => {
     expect(buildAddressHash({ ...base, locality: 'Shelbyville' })).not.toBe(buildAddressHash(base));
   });
+
+  it('ignores notes: two addresses differing only in notes produce the same hash', () => {
+    const withNotes = { ...base, notes: 'This is where they work: Random Company' };
+    const withDifferentNotes = { ...base, notes: 'A completely different note' };
+    const withoutNotes = { ...base, notes: null };
+    expect(buildAddressHash(withNotes)).toBe(buildAddressHash(withoutNotes));
+    expect(buildAddressHash(withNotes)).toBe(buildAddressHash(withDifferentNotes));
+    expect(buildAddressHash(withNotes)).toBe(buildAddressHash(base));
+  });
 });
 
 describe('hasGeocodableContent', () => {

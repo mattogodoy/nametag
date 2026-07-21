@@ -27,6 +27,20 @@ function normalizeValue(value: unknown): unknown {
 }
 
 /**
+ * Strip the `notes` field from an address-like object before hashing.
+ * Address notes are a Nametag-only annotation that is never sent to CardDAV
+ * servers, so it must not affect the local-change hash used to decide
+ * whether a person needs to be re-exported. Without this, adding the
+ * `notes` column would flip the hash for every existing contact with an
+ * address the first time it's recomputed.
+ */
+function stripAddressNotes(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  const { notes: _notes, ...rest } = value as Record<string, unknown>;
+  return rest;
+}
+
+/**
  * Sort array items by a stable key for order-independent hashing.
  * Uses 'id' if available, otherwise falls back to 'value', 'number', 'email', 'url', 'handle', 'key'.
  */
@@ -108,7 +122,7 @@ export function buildLocalHash(person: {
     lastContact: normalizeValue(person.lastContact),
     phoneNumbers: sortArray((person.phoneNumbers || []).map(normalizeValue)),
     emails: sortArray((person.emails || []).map(normalizeValue)),
-    addresses: sortArray((person.addresses || []).map(normalizeValue)),
+    addresses: sortArray((person.addresses || []).map((a) => normalizeValue(stripAddressNotes(a)))),
     urls: sortArray((person.urls || []).map(normalizeValue)),
     imHandles: sortArray((person.imHandles || []).map(normalizeValue)),
     locations: sortArray((person.locations || []).map(normalizeValue)),

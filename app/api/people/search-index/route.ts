@@ -29,6 +29,7 @@ export const GET = withAuth(async (_request, session) => {
           region: true,
           postalCode: true,
           country: true,
+          notes: true,
         },
       },
       urls: { select: { url: true } },
@@ -60,7 +61,7 @@ export const GET = withAuth(async (_request, session) => {
     phones: person.phoneNumbers.map((p) => p.number).join(' '),
     emails: person.emails.map((e) => e.email).join(' '),
     addresses: person.addresses
-      .flatMap((a) => [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country])
+      .flatMap((a) => [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country, a.notes])
       .filter(Boolean)
       .join(' '),
     urls: person.urls.map((u) => u.url).join(' '),

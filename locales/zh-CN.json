@@ -1156,6 +1156,7 @@
         "regionPlaceholder": "州/省",
         "postalCodePlaceholder": "邮政编码",
         "countryPlaceholder": "国家",
+        "notesPlaceholder": "备注（例如：在某某公司工作）",
         "typePlaceholder": "类型",
         "customLabelPlaceholder": "自定义标签(可选)",
         "noAddresses": "尚未添加地址",

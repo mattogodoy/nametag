@@ -157,6 +157,7 @@ export interface PersonAddress extends BaseFieldItem {
   region?: string | null;
   postalCode?: string | null;
   country?: string | null;
+  notes?: string | null;
 }
 
 export const addressFieldConfig: FieldConfig<PersonAddress> = {
@@ -171,6 +172,7 @@ export const addressFieldConfig: FieldConfig<PersonAddress> = {
     region: '',
     postalCode: '',
     country: '',
+    notes: '',
   },
   fields: [
     {
@@ -209,6 +211,12 @@ export const addressFieldConfig: FieldConfig<PersonAddress> = {
       placeholderKey: 'countryPlaceholder',
       fullWidth: false,
       selectOptions: countries,
+    },
+    {
+      key: 'notes',
+      inputType: 'textarea',
+      placeholderKey: 'notesPlaceholder',
+      fullWidth: true,
     },
   ],
   typeOptions: [

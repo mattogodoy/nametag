@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   personPhoneDeleteMany: vi.fn(),
   personEmailDeleteMany: vi.fn(),
   personAddressDeleteMany: vi.fn(),
+  personAddressFindMany: vi.fn(),
   personUrlDeleteMany: vi.fn(),
   personIMDeleteMany: vi.fn(),
   personLocationDeleteMany: vi.fn(),
@@ -35,7 +36,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     personPhone: { deleteMany: mocks.personPhoneDeleteMany },
     personEmail: { deleteMany: mocks.personEmailDeleteMany },
-    personAddress: { deleteMany: mocks.personAddressDeleteMany },
+    personAddress: { deleteMany: mocks.personAddressDeleteMany, findMany: mocks.personAddressFindMany },
     personUrl: { deleteMany: mocks.personUrlDeleteMany },
     personIM: { deleteMany: mocks.personIMDeleteMany },
     personLocation: { deleteMany: mocks.personLocationDeleteMany },
@@ -97,7 +98,7 @@ describe('person-from-vcard', () => {
           person: { update: mocks.personUpdate },
           personPhone: { deleteMany: mocks.personPhoneDeleteMany },
           personEmail: { deleteMany: mocks.personEmailDeleteMany },
-          personAddress: { deleteMany: mocks.personAddressDeleteMany },
+          personAddress: { deleteMany: mocks.personAddressDeleteMany, findMany: mocks.personAddressFindMany },
           personUrl: { deleteMany: mocks.personUrlDeleteMany },
           personIM: { deleteMany: mocks.personIMDeleteMany },
           personLocation: { deleteMany: mocks.personLocationDeleteMany },
@@ -110,6 +111,7 @@ describe('person-from-vcard', () => {
 
     mocks.personUpdate.mockResolvedValue({});
     mocks.personCreate.mockResolvedValue({ id: PERSON_ID });
+    mocks.personAddressFindMany.mockResolvedValue([]);
     mocks.savePhoto.mockResolvedValue(null);
   });
 
@@ -214,6 +216,69 @@ describe('person-from-vcard', () => {
         where: { personId: PERSON_ID },
       });
     });
+
+    it('carries over notes from a matching existing address (same 6 core fields)', async () => {
+      mocks.personAddressFindMany.mockResolvedValue([
+        {
+          streetLine1: '1 Main St',
+          streetLine2: null,
+          locality: 'Town',
+          region: 'ST',
+          postalCode: '00000',
+          country: 'US',
+          notes: 'Works at Random Company',
+        },
+      ]);
+      const parsedData = makeMinimalParsedData({
+        addresses: [
+          {
+            type: 'work',
+            streetLine1: '1 Main St',
+            streetLine2: undefined,
+            locality: 'Town',
+            region: 'ST',
+            postalCode: '00000',
+            country: 'US',
+          },
+        ],
+      });
+
+      await updatePersonFromVCard(PERSON_ID, parsedData, USER_ID);
+
+      const data = mocks.personUpdate.mock.calls[0][0].data;
+      expect(data.addresses.create[0].notes).toBe('Works at Random Company');
+    });
+
+    it('does not carry over notes when the address text differs', async () => {
+      mocks.personAddressFindMany.mockResolvedValue([
+        {
+          streetLine1: '1 Main St',
+          streetLine2: null,
+          locality: 'Town',
+          region: 'ST',
+          postalCode: '00000',
+          country: 'US',
+          notes: 'Works at Random Company',
+        },
+      ]);
+      const parsedData = makeMinimalParsedData({
+        addresses: [
+          {
+            type: 'work',
+            streetLine1: '2 Other St',
+            locality: 'Town',
+            region: 'ST',
+            postalCode: '00000',
+            country: 'US',
+          },
+        ],
+      });
+
+      await updatePersonFromVCard(PERSON_ID, parsedData, USER_ID);
+
+      const data = mocks.personUpdate.mock.calls[0][0].data;
+      expect(data.addresses.create[0].notes).toBeNull();
+    });
   });
 
   describe('createPersonFromVCardData', () => {
@@ -300,6 +365,52 @@ describe('person-from-vcard', () => {
 
       const data = mocks.personUpdate.mock.calls[0][0].data;
       expect(data.photo).toBeUndefined();
+    });
+
+    it('carries over notes from the pre-restore address rows', async () => {
+      mocks.personAddressFindMany.mockResolvedValue([
+        {
+          streetLine1: '1 Main St',
+          streetLine2: null,
+          locality: 'Town',
+          region: 'ST',
+          postalCode: '00000',
+          country: 'US',
+          notes: 'This is where they work',
+        },
+      ]);
+      const parsedData = makeMinimalParsedData({
+        addresses: [
+          {
+            type: 'work',
+            streetLine1: '1 Main St',
+            locality: 'Town',
+            region: 'ST',
+            postalCode: '00000',
+            country: 'US',
+          },
+        ],
+      });
+      mocks.personUpdate.mockResolvedValue({ id: PERSON_ID });
+
+      await restorePersonFromVCardData(USER_ID, PERSON_ID, parsedData);
+
+      const data = mocks.personUpdate.mock.calls[0][0].data;
+      expect(data.addresses.create[0].notes).toBe('This is where they work');
+    });
+
+    it('still wipes local addresses when the restored vCard has none (regression guard)', async () => {
+      // Regression guard: the notes carry-over logic must not skip the
+      // deleteMany when the remote vCard has zero addresses, otherwise
+      // stale local addresses would survive a restore that should clear them.
+      const parsedData = makeMinimalParsedData({ addresses: [] });
+      mocks.personUpdate.mockResolvedValue({ id: PERSON_ID });
+
+      await restorePersonFromVCardData(USER_ID, PERSON_ID, parsedData);
+
+      const data = mocks.personUpdate.mock.calls[0][0].data;
+      expect(data.addresses).toEqual({ deleteMany: {}, create: [] });
+      expect(mocks.personAddressFindMany).not.toHaveBeenCalled();
     });
   });
 

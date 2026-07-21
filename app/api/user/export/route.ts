@@ -97,6 +97,7 @@ export const GET = withAuth(async (request, session) => {
               region: true,
               postalCode: true,
               country: true,
+              notes: true,
             },
           },
           urls: {
@@ -220,6 +221,7 @@ export const GET = withAuth(async (request, session) => {
           region: a.region,
           postalCode: a.postalCode,
           country: a.country,
+          notes: a.notes,
         })),
         urls: person.urls.map((u) => ({
           type: u.type,

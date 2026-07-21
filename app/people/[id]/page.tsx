@@ -559,6 +559,11 @@ export default async function PersonDetailsPage({
                                 </div>
                                 {address.country && <div>{getCountryName(address.country) || address.country}</div>}
                               </div>
+                              {address.notes && (
+                                <div className="mt-2 text-sm text-muted whitespace-pre-wrap">
+                                  {address.notes}
+                                </div>
+                              )}
                               {address.geocodeStatus === 'success' && address.latitude !== null && address.longitude !== null && (
                                 <Link
                                   href={`/map?focus=addr_${address.id}`}

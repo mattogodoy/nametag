@@ -1148,6 +1148,7 @@
         "regionPlaceholder": "Staat/Provincie",
         "postalCodePlaceholder": "Postcode",
         "countryPlaceholder": "Land",
+        "notesPlaceholder": "Notities (bijv. werkt bij Voorbeeldbedrijf)",
         "typePlaceholder": "Type",
         "customLabelPlaceholder": "Aangepast label (optioneel)",
         "noAddresses": "Nog geen adressen toegevoegd",

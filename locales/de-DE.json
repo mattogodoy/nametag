@@ -1156,6 +1156,7 @@
         "regionPlaceholder": "Bundesland",
         "postalCodePlaceholder": "Postleitzahl",
         "countryPlaceholder": "Land",
+        "notesPlaceholder": "Notizen (z. B. arbeitet bei Beispiel GmbH)",
         "typePlaceholder": "Typ",
         "customLabelPlaceholder": "Benutzerdefiniertes Label (optional)",
         "noAddresses": "Noch keine Adressen hinzugefügt",

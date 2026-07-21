@@ -103,6 +103,7 @@ const addressSchema = z.object({
   region: z.string().max(100).nullable().optional(), // State/Province
   postalCode: z.string().max(20).nullable().optional(),
   country: z.string().max(100).nullable().optional(),
+  notes: z.string().max(1000).nullable().optional(),
 });
 
 const urlSchema = z.object({
@@ -506,6 +507,7 @@ export const importDataSchema = z.object({
       region: z.string().nullable().optional(),
       postalCode: z.string().nullable().optional(),
       country: z.string().nullable().optional(),
+      notes: z.string().nullable().optional(),
     })).optional(),
     urls: z.array(z.object({
       type: z.string(),

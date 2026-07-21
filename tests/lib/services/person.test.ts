@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
   const personEmailDeleteMany = vi.fn();
   const personAddressUpdateMany = vi.fn();
   const personAddressDeleteMany = vi.fn();
+  const personAddressUpdate = vi.fn();
   const personUrlUpdateMany = vi.fn();
   const personUrlDeleteMany = vi.fn();
   const personIMUpdateMany = vi.fn();
@@ -48,7 +49,7 @@ const mocks = vi.hoisted(() => {
     relationship: { updateMany: relationshipUpdateMany },
     personPhone: { updateMany: personPhoneUpdateMany, deleteMany: personPhoneDeleteMany },
     personEmail: { updateMany: personEmailUpdateMany, deleteMany: personEmailDeleteMany },
-    personAddress: { updateMany: personAddressUpdateMany, deleteMany: personAddressDeleteMany },
+    personAddress: { updateMany: personAddressUpdateMany, deleteMany: personAddressDeleteMany, update: personAddressUpdate },
     personUrl: { updateMany: personUrlUpdateMany, deleteMany: personUrlDeleteMany },
     personIM: { updateMany: personIMUpdateMany, deleteMany: personIMDeleteMany },
     personLocation: { updateMany: personLocationUpdateMany, deleteMany: personLocationDeleteMany },
@@ -77,6 +78,7 @@ const mocks = vi.hoisted(() => {
     personEmailDeleteMany,
     personAddressUpdateMany,
     personAddressDeleteMany,
+    personAddressUpdate,
     personUrlUpdateMany,
     personUrlDeleteMany,
     personIMUpdateMany,
@@ -331,7 +333,21 @@ describe('createPerson', () => {
       region: null,
       postalCode: null,
       country: null,
+      notes: null,
     });
+  });
+
+  it('creates addresses with the provided notes', async () => {
+    const data = {
+      ...makeMinimalPersonData(),
+      addresses: [
+        { type: 'work', streetLine1: '123 Main St', notes: 'This is where they work: Random Company' },
+      ],
+    };
+    await createPerson(USER_ID, data);
+
+    const call = mocks.personCreate.mock.calls[0][0];
+    expect(call.data.addresses.create[0].notes).toBe('This is where they work: Random Company');
   });
 
   it('creates importantDates with correct date transformation', async () => {
@@ -502,7 +518,16 @@ describe('updatePerson', () => {
       type: 'home',
       streetLine1: null,
       streetLine2: null,
+      notes: null,
     });
+  });
+
+  it('persists address notes on update', async () => {
+    await updatePerson(PERSON_ID, USER_ID, {
+      addresses: [{ type: 'home', notes: 'Parents live here' }],
+    });
+    const call = mocks.personUpdate.mock.calls[0][0];
+    expect(call.data.addresses.create[0].notes).toBe('Parents live here');
   });
 
   it('uses deleteMany+create for urls', async () => {
@@ -735,7 +760,7 @@ describe('mergePeople', () => {
       relationshipsTo: [] as Array<{ id: string; personId: string; relatedPersonId: string; deletedAt: null }>,
       phoneNumbers: [] as Array<{ id: string; number: string; type: string }>,
       emails: [] as Array<{ id: string; email: string; type: string }>,
-      addresses: [] as Array<{ id: string; type: string; streetLine1: string | null; streetLine2: string | null; locality: string | null; region: string | null; postalCode: string | null; country: string | null }>,
+      addresses: [] as Array<{ id: string; type: string; streetLine1: string | null; streetLine2: string | null; locality: string | null; region: string | null; postalCode: string | null; country: string | null; notes: string | null }>,
       urls: [] as Array<{ id: string; url: string; type: string }>,
       imHandles: [] as Array<{ id: string; protocol: string; handle: string }>,
       locations: [] as Array<{ id: string; latitude: number; longitude: number }>,
@@ -771,6 +796,7 @@ describe('mergePeople', () => {
     mocks.mockTxClient.personEmail.deleteMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.personAddress.updateMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.personAddress.deleteMany.mockResolvedValue({ count: 0 });
+    mocks.mockTxClient.personAddress.update.mockResolvedValue({});
     mocks.mockTxClient.personUrl.updateMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.personUrl.deleteMany.mockResolvedValue({ count: 0 });
     mocks.mockTxClient.personIM.updateMany.mockResolvedValue({ count: 0 });
@@ -940,6 +966,105 @@ describe('mergePeople', () => {
     expect(mocks.mockTxClient.personPhone.deleteMany).toHaveBeenCalledWith({
       where: { personId: SOURCE_ID },
     });
+  });
+
+  it('transfers a non-duplicate address (with its notes) to target', async () => {
+    mocks.personFindUnique
+      .mockReset()
+      .mockResolvedValueOnce(makePersonForMerge(PERSON_ID))
+      .mockResolvedValueOnce(
+        makePersonForMerge(SOURCE_ID, {
+          addresses: [
+            {
+              id: 'addr1',
+              type: 'home',
+              streetLine1: '1 Main St',
+              streetLine2: null,
+              locality: 'Town',
+              region: null,
+              postalCode: null,
+              country: null,
+              notes: 'Parents live here',
+            },
+          ],
+        })
+      );
+
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    expect(mocks.mockTxClient.personAddress.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['addr1'] } },
+      data: { personId: PERSON_ID },
+    });
+    // Notes travel along automatically since the whole row is re-parented,
+    // not recreated.
+    expect(mocks.mockTxClient.personAddress.update).not.toHaveBeenCalled();
+  });
+
+  it('does not treat differing notes as making two addresses distinct (dedup ignores notes)', async () => {
+    const sharedAddress = {
+      type: 'home',
+      streetLine1: '1 Main St',
+      streetLine2: null,
+      locality: 'Town',
+      region: null,
+      postalCode: null,
+      country: null,
+    };
+    mocks.personFindUnique
+      .mockReset()
+      .mockResolvedValueOnce(
+        makePersonForMerge(PERSON_ID, {
+          addresses: [{ id: 'target-addr', ...sharedAddress, notes: null }],
+        })
+      )
+      .mockResolvedValueOnce(
+        makePersonForMerge(SOURCE_ID, {
+          addresses: [{ id: 'source-addr', ...sharedAddress, notes: 'Works here' }],
+        })
+      );
+
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    // The duplicate address is NOT transferred (it already exists on target)...
+    expect(mocks.mockTxClient.personAddress.updateMany).not.toHaveBeenCalled();
+    // ...but its notes are backfilled onto the matching target address instead
+    // of being silently dropped when the source row is cleaned up.
+    expect(mocks.mockTxClient.personAddress.update).toHaveBeenCalledWith({
+      where: { id: 'target-addr' },
+      data: { notes: 'Works here' },
+    });
+    expect(mocks.mockTxClient.personAddress.deleteMany).toHaveBeenCalledWith({
+      where: { personId: SOURCE_ID },
+    });
+  });
+
+  it('does not overwrite existing target notes when backfilling a duplicate address', async () => {
+    const sharedAddress = {
+      type: 'home',
+      streetLine1: '1 Main St',
+      streetLine2: null,
+      locality: 'Town',
+      region: null,
+      postalCode: null,
+      country: null,
+    };
+    mocks.personFindUnique
+      .mockReset()
+      .mockResolvedValueOnce(
+        makePersonForMerge(PERSON_ID, {
+          addresses: [{ id: 'target-addr', ...sharedAddress, notes: 'Already annotated' }],
+        })
+      )
+      .mockResolvedValueOnce(
+        makePersonForMerge(SOURCE_ID, {
+          addresses: [{ id: 'source-addr', ...sharedAddress, notes: 'Different note' }],
+        })
+      );
+
+    await mergePeople(PERSON_ID, SOURCE_ID, USER_ID);
+
+    expect(mocks.mockTxClient.personAddress.update).not.toHaveBeenCalled();
   });
 
   it('transfers new group memberships to target', async () => {

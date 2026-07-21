@@ -92,6 +92,7 @@ export interface PersonFormProps {
       region?: string | null;
       postalCode?: string | null;
       country?: string | null;
+      notes?: string | null;
     }>;
     urls?: Array<{
       id?: string;

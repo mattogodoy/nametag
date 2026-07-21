@@ -193,6 +193,7 @@ export async function createPerson(userId: string, data: PersonInput) {
                 region: a.region ?? null,
                 postalCode: a.postalCode ?? null,
                 country: a.country ?? null,
+                notes: a.notes ?? null,
               })),
             }
           : undefined,
@@ -394,6 +395,7 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
         region: a.region ?? null,
         postalCode: a.postalCode ?? null,
         country: a.country ?? null,
+        notes: a.notes ?? null,
       })),
     };
   }
@@ -649,13 +651,23 @@ export async function mergePeople(
   const targetEmails = new Set(target.emails.map((e) => e.email.toLowerCase()));
   const targetUrls = new Set(target.urls.map((u) => u.url.toLowerCase()));
   const targetImHandles = new Set(target.imHandles.map((im) => `${im.protocol}:${im.handle}`.toLowerCase()));
-  const targetAddresses = new Set(
-    target.addresses.map((a) =>
-      [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
-        .map((v) => (v ?? '').toLowerCase().trim())
-        .join('|')
-    )
-  );
+  // Address duplicate detection is keyed only on the 6 core address text
+  // fields, matching buildAddressHash's geocodable content. `notes` is a
+  // free-form annotation and must not make two otherwise-identical
+  // addresses look distinct.
+  const addressKey = (a: {
+    streetLine1: string | null;
+    streetLine2: string | null;
+    locality: string | null;
+    region: string | null;
+    postalCode: string | null;
+    country: string | null;
+  }) =>
+    [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
+      .map((v) => (v ?? '').toLowerCase().trim())
+      .join('|');
+  const targetAddressByKey = new Map(target.addresses.map((a) => [addressKey(a), a]));
+  const targetAddresses = new Set(targetAddressByKey.keys());
   const targetLocations = new Set(target.locations.map((l) => `${l.latitude},${l.longitude}`));
   const targetCustomFields = new Set(target.customFields.map((f) => `${f.key}:${f.value}`));
   const targetTemplateIds = new Set(
@@ -673,12 +685,18 @@ export async function mergePeople(
   const imHandlesToTransfer = source.imHandles.filter(
     (im) => !targetImHandles.has(`${im.protocol}:${im.handle}`.toLowerCase())
   );
-  const addressesToTransfer = source.addresses.filter((a) => {
-    const key = [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
-      .map((v) => (v ?? '').toLowerCase().trim())
-      .join('|');
-    return !targetAddresses.has(key);
-  });
+  const addressesToTransfer = source.addresses.filter((a) => !targetAddresses.has(addressKey(a)));
+  // For duplicate addresses (matched on the 6 core fields) that are dropped
+  // rather than transferred, backfill the target's notes if the source had
+  // some and the target's matching address doesn't, so notes are never
+  // silently lost during a merge.
+  const addressNotesToBackfill = source.addresses
+    .filter((a) => targetAddresses.has(addressKey(a)) && a.notes)
+    .map((a) => ({ targetAddressId: targetAddressByKey.get(addressKey(a))!.id, notes: a.notes as string }))
+    .filter((entry) => {
+      const targetAddress = target.addresses.find((a) => a.id === entry.targetAddressId);
+      return targetAddress && !targetAddress.notes;
+    });
   const locationsToTransfer = source.locations.filter(
     (l) => !targetLocations.has(`${l.latitude},${l.longitude}`)
   );
@@ -784,6 +802,12 @@ export async function mergePeople(
       if (items.length > 0) {
         await transfer(items.map((x) => x.id));
       }
+    }
+
+    // (b2) Backfill notes onto duplicate addresses that were dropped instead
+    // of transferred, so source-only notes are preserved on the merge.
+    for (const { targetAddressId, notes } of addressNotesToBackfill) {
+      await tx.personAddress.update({ where: { id: targetAddressId }, data: { notes } });
     }
 
     // (c) Transfer groups

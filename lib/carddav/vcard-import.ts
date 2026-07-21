@@ -28,6 +28,56 @@ export function vCardToPerson(vCardText: string): ParsedVCardData {
   return parseVCard(vCardText);
 }
 
+interface AddressCoreFields {
+  streetLine1?: string | null;
+  streetLine2?: string | null;
+  locality?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+}
+
+function addressKey(a: AddressCoreFields): string {
+  return [a.streetLine1, a.streetLine2, a.locality, a.region, a.postalCode, a.country]
+    .map((v) => (v ?? '').toLowerCase().trim())
+    .join('|');
+}
+
+/**
+ * Carry over Nametag-only `notes` from a person's existing address rows onto
+ * freshly-parsed vCard addresses that match on the 6 core text fields.
+ *
+ * vCard has no concept of address notes, so the delete-then-recreate cycle
+ * used to apply remote changes (see `updatePersonFromVCard` and
+ * `updatePersonFromVCardInTransaction` below) would otherwise silently wipe
+ * out any notes the user had added locally. Matching is best-effort: if the
+ * remote address text changed at all, the notes cannot be carried over and
+ * are lost (there is no stable identifier linking a local address to its
+ * vCard ADR counterpart).
+ */
+function carryOverAddressNotes<T extends AddressCoreFields>(
+  existingAddresses: Array<AddressCoreFields & { notes: string | null }>,
+  parsedAddresses: T[],
+): Array<T & { notes: string | null }> {
+  const notesByKey = new Map<string, string>();
+  for (const a of existingAddresses) {
+    if (a.notes && !notesByKey.has(addressKey(a))) {
+      notesByKey.set(addressKey(a), a.notes);
+    }
+  }
+  return parsedAddresses.map((a) => ({ ...a, notes: notesByKey.get(addressKey(a)) ?? null }));
+}
+
+const addressNotesSelect = {
+  streetLine1: true,
+  streetLine2: true,
+  locality: true,
+  region: true,
+  postalCode: true,
+  country: true,
+  notes: true,
+} as const;
+
 /**
  * Build the Prisma data object for multi-value fields when *creating* a person.
  * Uses nested `create` so everything is inserted in a single Prisma call.
@@ -189,6 +239,23 @@ export async function restorePersonFromVCardData(
   softDeletedPersonId: string,
   parsedData: ParsedVCardData,
 ): Promise<Person> {
+  // Resolves to `[]` (not `undefined`) when the remote vCard has zero
+  // addresses, so the `addresses` key below still runs its deleteMany and
+  // wipes any local addresses that no longer exist on the server. Only
+  // `undefined` (parsedData.addresses itself missing) skips the key
+  // entirely, matching the original buildMultiValueUpdateData semantics.
+  const addressesWithNotes = parsedData.addresses
+    ? parsedData.addresses.length > 0
+      ? carryOverAddressNotes(
+          await prisma.personAddress.findMany({
+            where: { personId: softDeletedPersonId },
+            select: addressNotesSelect,
+          }),
+          parsedData.addresses,
+        )
+      : []
+    : undefined;
+
   const person = await prisma.person.update({
     where: { id: softDeletedPersonId },
     data: {
@@ -197,6 +264,9 @@ export async function restorePersonFromVCardData(
       name: parsedData.name || '',
       uid: parsedData.uid,
       ...buildMultiValueUpdateData(parsedData),
+      addresses: addressesWithNotes
+        ? { deleteMany: {}, create: addressesWithNotes }
+        : undefined,
     },
   });
 
@@ -240,6 +310,18 @@ export async function updatePersonFromVCard(
   // Delete all multi-value fields and update person in a single atomic transaction
   // to prevent partial data loss if either step fails
   await prisma.$transaction(async (tx) => {
+    // Fetch existing addresses before they're deleted so their Nametag-only
+    // `notes` can be carried over onto the freshly-parsed addresses below.
+    const addressesWithNotes = parsedData.addresses?.length
+      ? carryOverAddressNotes(
+          await tx.personAddress.findMany({
+            where: { personId },
+            select: addressNotesSelect,
+          }),
+          parsedData.addresses,
+        )
+      : undefined;
+
     await tx.personPhone.deleteMany({ where: { personId } });
     await tx.personEmail.deleteMany({ where: { personId } });
     await tx.personAddress.deleteMany({ where: { personId } });
@@ -263,8 +345,8 @@ export async function updatePersonFromVCard(
         emails: parsedData.emails
           ? { create: parsedData.emails }
           : undefined,
-        addresses: parsedData.addresses
-          ? { create: parsedData.addresses }
+        addresses: addressesWithNotes
+          ? { create: addressesWithNotes }
           : undefined,
         urls: parsedData.urls
           ? { create: parsedData.urls }
@@ -305,6 +387,18 @@ export async function updatePersonFromVCardInTransaction(
   parsedData: ParsedVCardData,
   options?: { skipNameFields?: boolean },
 ): Promise<void> {
+  // Fetch existing addresses before they're deleted so their Nametag-only
+  // `notes` can be carried over onto the freshly-parsed addresses below.
+  const addressesWithNotes = parsedData.addresses?.length
+    ? carryOverAddressNotes(
+        await tx.personAddress.findMany({
+          where: { personId },
+          select: addressNotesSelect,
+        }),
+        parsedData.addresses,
+      )
+    : undefined;
+
   // Delete all multi-value fields
   await tx.personPhone.deleteMany({ where: { personId } });
   await tx.personEmail.deleteMany({ where: { personId } });
@@ -328,8 +422,8 @@ export async function updatePersonFromVCardInTransaction(
       emails: parsedData.emails
         ? { create: parsedData.emails }
         : undefined,
-      addresses: parsedData.addresses
-        ? { create: parsedData.addresses }
+      addresses: addressesWithNotes
+        ? { create: addressesWithNotes }
         : undefined,
       urls: parsedData.urls
         ? { create: parsedData.urls }

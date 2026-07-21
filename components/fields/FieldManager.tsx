@@ -7,6 +7,7 @@ import {
   CUSTOM_FIELD_PRESETS,
   isSafeUrl,
   type FieldConfig,
+  type FieldDefinition,
   type BaseFieldItem,
   type PersonUrl,
   type PersonLocation,
@@ -180,6 +181,19 @@ export default function FieldManager<T extends BaseFieldItem>({
       );
     }
 
+    if (fieldConfig.namespace === 'addresses') {
+      const addressItem = item as unknown as { notes?: string | null };
+      if (!addressItem.notes) return null;
+      return (
+        <>
+          <p className="text-sm text-foreground mt-1">
+            {fieldConfig.formatSummary(item, t)}
+          </p>
+          <p className="text-xs text-muted mt-1">{addressItem.notes}</p>
+        </>
+      );
+    }
+
     if (fieldConfig.namespace === 'customFields') {
       const cfItem = item as unknown as PersonCustomField;
       return (
@@ -205,44 +219,49 @@ export default function FieldManager<T extends BaseFieldItem>({
     item: T,
     onItemChange: (updated: T) => void
   ): React.ReactNode => {
-    const fullWidthFields = fieldConfig.fields.filter((f) => f.fullWidth && !f.selectOptions);
+    // Textarea full-width fields (e.g. notes) render after the grid/select
+    // rows, so free-form text always sits below the structured fields.
+    const fullWidthFields = fieldConfig.fields.filter(
+      (f) => f.fullWidth && !f.selectOptions && f.inputType !== 'textarea'
+    );
+    const trailingTextareaFields = fieldConfig.fields.filter(
+      (f) => f.fullWidth && !f.selectOptions && f.inputType === 'textarea'
+    );
     const gridFields = fieldConfig.fields.filter((f) => !f.fullWidth && !f.selectOptions);
     const selectField = fieldConfig.fields.find((f) => f.selectOptions);
 
     const rows: React.ReactNode[] = [];
 
-    // Full-width fields first
+    const renderTextareaField = (field: FieldDefinition): React.ReactNode => (
+      <textarea
+        key={field.key}
+        value={getFieldValue(item, field.key)}
+        onChange={(e) =>
+          onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
+        }
+        placeholder={t(field.placeholderKey)}
+        aria-label={t(field.placeholderKey)}
+        rows={2}
+        className={`w-full ${INPUT_BASE}`}
+      />
+    );
+
+    // Full-width text/tel/etc. fields first
     for (const field of fullWidthFields) {
-      if (field.inputType === 'textarea') {
-        rows.push(
-          <textarea
-            key={field.key}
-            value={getFieldValue(item, field.key)}
-            onChange={(e) =>
-              onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
-            }
-            placeholder={t(field.placeholderKey)}
-            aria-label={t(field.placeholderKey)}
-            rows={2}
-            className={`w-full ${INPUT_BASE}`}
-          />
-        );
-      } else {
-        rows.push(
-          <input
-            key={field.key}
-            type={field.inputType}
-            value={getFieldValue(item, field.key)}
-            onChange={(e) =>
-              onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
-            }
-            placeholder={t(field.placeholderKey)}
-            aria-label={t(field.placeholderKey)}
-            className={`w-full ${INPUT_BASE}`}
-            {...(field.inputAttrs as React.InputHTMLAttributes<HTMLInputElement>)}
-          />
-        );
-      }
+      rows.push(
+        <input
+          key={field.key}
+          type={field.inputType}
+          value={getFieldValue(item, field.key)}
+          onChange={(e) =>
+            onItemChange(setFieldValue(item, field.key, e.target.value, field.inputType))
+          }
+          placeholder={t(field.placeholderKey)}
+          aria-label={t(field.placeholderKey)}
+          className={`w-full ${INPUT_BASE}`}
+          {...(field.inputAttrs as React.InputHTMLAttributes<HTMLInputElement>)}
+        />
+      );
     }
 
     // Grid-paired fields (2 per row), with the select appended to the last row
@@ -307,7 +326,13 @@ export default function FieldManager<T extends BaseFieldItem>({
         </div>
       );
     } else if (gridFields.length % 2 !== 0) {
-      // Odd remaining grid fields — already handled above; just ensure no dangling field
+      // Odd remaining grid fields, already handled above; just ensure no dangling field
+    }
+
+    // Trailing textarea fields (e.g. address notes) render last, below all
+    // structured fields.
+    for (const field of trailingTextareaFields) {
+      rows.push(renderTextareaField(field));
     }
 
     return <>{rows}</>;

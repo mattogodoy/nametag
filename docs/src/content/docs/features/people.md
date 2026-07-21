@@ -33,7 +33,7 @@ Phones, emails, addresses, URLs, and IM handles all support multiple entries per
 
 - **Phones**: Mobile, Home, Work, Fax, Other
 - **Emails**: Personal, Work, Other
-- **Addresses**: Home, Work, Other. Each address is structured into street lines, city, state or region, postal code, and country, so it can be geocoded and shown on the Map
+- **Addresses**: Home, Work, Other. Each address is structured into street lines, city, state or region, postal code, and country, so it can be geocoded and shown on the Map. An optional notes field lets you annotate the address itself (for example, "This is where they work: Random Company") without affecting geocoding
 - **Websites**: Personal, Work, Other
 - **IM handles**: tagged by protocol (Skype, WhatsApp, Telegram, Signal, and others)
 
@@ -101,6 +101,7 @@ The detail page for a person brings every section together in one place: name an
 | Street address (per line) | up to 200 characters |
 | City, region, country | up to 100 characters each |
 | Postal code | up to 20 characters |
+| Address notes | up to 1,000 characters |
 | URL | 1-500 characters |
 | IM handle | 1-200 characters |
 | Pagination | 50 contacts per page |

@@ -1135,6 +1135,7 @@
         "regionPlaceholder": "Область / регион",
         "postalCodePlaceholder": "Почтовый индекс",
         "countryPlaceholder": "Страна",
+        "notesPlaceholder": "Заметки (например, работает в компании Пример)",
         "typePlaceholder": "Тип",
         "customLabelPlaceholder": "Пользовательская метка (необязательно)",
         "noAddresses": "Адреса пока не добавлены",

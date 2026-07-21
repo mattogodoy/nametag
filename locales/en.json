@@ -1152,6 +1152,7 @@
         "regionPlaceholder": "State/Province",
         "postalCodePlaceholder": "Postal code",
         "countryPlaceholder": "Country",
+        "notesPlaceholder": "Notes (e.g. works at Random Company)",
         "typePlaceholder": "Type",
         "customLabelPlaceholder": "Custom label (optional)",
         "noAddresses": "No addresses added yet",

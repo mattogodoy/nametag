@@ -1156,6 +1156,7 @@
         "regionPlaceholder": "都道府県",
         "postalCodePlaceholder": "郵便番号",
         "countryPlaceholder": "国",
+        "notesPlaceholder": "メモ（例：サンプル株式会社に勤務）",
         "typePlaceholder": "種類",
         "customLabelPlaceholder": "カスタムラベル（任意）",
         "noAddresses": "住所はまだ追加されていません",

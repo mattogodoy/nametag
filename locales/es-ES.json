@@ -1156,6 +1156,7 @@
         "regionPlaceholder": "Estado/Provincia",
         "postalCodePlaceholder": "Código postal",
         "countryPlaceholder": "País",
+        "notesPlaceholder": "Notas (p. ej. trabaja en Empresa Ejemplo)",
         "typePlaceholder": "Tipo",
         "customLabelPlaceholder": "Etiqueta personalizada (opcional)",
         "noAddresses": "No se han agregado direcciones",

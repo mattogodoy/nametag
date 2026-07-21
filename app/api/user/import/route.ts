@@ -408,6 +408,7 @@ export const POST = withAuth(async (request, session) => {
               region: a.region,
               postalCode: a.postalCode,
               country: a.country,
+              notes: a.notes,
             })),
           });
         }
