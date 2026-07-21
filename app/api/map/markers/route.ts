@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
-import { formatCanonicalName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { getCountryName } from '@/lib/countries';
 import type { MapGroup, MapMarker, UnlocatedPerson } from '@/lib/map/types';
 
@@ -17,8 +17,6 @@ export const GET = withAuth(async (request, session) => {
           id: true,
           name: true,
           surname: true,
-          middleName: true,
-          secondLastName: true,
           nickname: true,
           displayNameOverride: true,
           addresses: {
@@ -70,13 +68,14 @@ export const GET = withAuth(async (request, session) => {
     const unlocatedPeople: UnlocatedPerson[] = [];
 
     for (const person of people) {
-      const personName =
-        person.displayNameOverride ??
-        formatCanonicalName(
-          person,
-          user?.nameOrder ?? undefined,
-          (user?.nameDisplayFormat as NameDisplayFormat | undefined) ?? undefined,
-        );
+      // formatGraphName honors the user's name display settings (FULL,
+      // NICKNAME_PREFERRED, SHORT) and the per-person override, matching how
+      // names render in the network graph and page titles.
+      const personName = formatGraphName(
+        person,
+        user?.nameOrder ?? undefined,
+        (user?.nameDisplayFormat as NameDisplayFormat | undefined) ?? undefined,
+      );
       const groupIds = person.groups.map((pg) => pg.group.id);
       for (const pg of person.groups) {
         groupsById.set(pg.group.id, pg.group);
