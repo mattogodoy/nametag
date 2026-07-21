@@ -1,3 +1,4 @@
+import convert from 'heic-convert';
 import sharp from 'sharp';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { isHeicBuffer } from '@/lib/photo-storage';
@@ -37,12 +38,20 @@ export const POST = withAuth(async (request) => {
       return apiResponse.error('File is not HEIC/HEIF format. Only HEIC files need conversion.');
     }
 
-    const jpegBuffer = await sharp(buffer, { limitInputPixels: SHARP_MAX_INPUT_PIXELS })
+    const quality = getJpegQuality();
+
+    const rawJpeg = await convert({
+      buffer: new Uint8Array(buffer),
+      format: 'JPEG',
+      quality: quality / 100,
+    });
+
+    const jpegBuffer = await sharp(Buffer.from(rawJpeg), { limitInputPixels: SHARP_MAX_INPUT_PIXELS })
       .rotate()
-      .jpeg({ quality: getJpegQuality() })
+      .jpeg({ quality })
       .toBuffer();
 
-    log.info('Converted HEIC to JPEG');
+    log.info({ inputBytes: buffer.length, outputBytes: jpegBuffer.length }, 'Converted HEIC to JPEG');
 
     return new Response(new Uint8Array(jpegBuffer), {
       status: 200,

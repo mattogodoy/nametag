@@ -1,10 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  heicConvert: vi.fn(),
   sharpToBuffer: vi.fn(),
   sharpJpeg: vi.fn(),
   sharpRotate: vi.fn(),
-  sharpMetadata: vi.fn(),
+}));
+
+vi.mock('heic-convert', () => ({
+  default: mocks.heicConvert,
 }));
 
 vi.mock('sharp', () => {
@@ -12,7 +16,6 @@ vi.mock('sharp', () => {
     rotate: () => { mocks.sharpRotate(); return pipeline; },
     jpeg: (opts: unknown) => { mocks.sharpJpeg(opts); return pipeline; },
     toBuffer: () => mocks.sharpToBuffer(),
-    metadata: () => mocks.sharpMetadata(),
   };
   const sharpFn = () => pipeline;
   sharpFn.format = {};
@@ -28,7 +31,10 @@ vi.mock('../../lib/auth', () => ({
   ),
 }));
 
+import { auth } from '../../lib/auth';
 import { POST } from '../../app/api/photos/convert/route';
+
+const mockAuth = vi.mocked(auth);
 
 function makeHeicBuffer(brand: string = 'heic'): Buffer {
   const buf = Buffer.alloc(64);
@@ -49,10 +55,9 @@ function createConvertRequest(buffer: Buffer, type = 'image/heic'): Request {
 describe('POST /api/photos/convert', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    const jpegOutput = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]);
-    mocks.sharpToBuffer.mockResolvedValue(jpegOutput);
-    mocks.sharpJpeg.mockReturnValue(undefined);
-    mocks.sharpRotate.mockReturnValue(undefined);
+    const rawJpeg = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]);
+    mocks.heicConvert.mockResolvedValue(rawJpeg);
+    mocks.sharpToBuffer.mockResolvedValue(rawJpeg);
   });
 
   it('should convert a HEIC buffer to JPEG and return binary response', async () => {
@@ -61,6 +66,7 @@ describe('POST /api/photos/convert', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('image/jpeg');
+    expect(mocks.heicConvert).toHaveBeenCalledOnce();
 
     const resultBuffer = Buffer.from(await response.arrayBuffer());
     expect(resultBuffer[0]).toBe(0xFF);
@@ -79,6 +85,7 @@ describe('POST /api/photos/convert', () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBeDefined();
+    expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 
   it('should reject files exceeding 50MB', async () => {
@@ -92,6 +99,7 @@ describe('POST /api/photos/convert', () => {
 
     const response = await POST(largeRequest);
     expect(response.status).toBe(400);
+    expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 
   it('should reject requests with no file', async () => {
@@ -115,5 +123,12 @@ describe('POST /api/photos/convert', () => {
     const request = createConvertRequest(makeHeicBuffer('mif1'));
     const response = await POST(request);
     expect(response.status).toBe(200);
+  });
+
+  it('should reject unauthenticated requests with 401', async () => {
+    mockAuth.mockResolvedValueOnce(null as never);
+    const request = createConvertRequest(makeHeicBuffer());
+    const response = await POST(request);
+    expect(response.status).toBe(401);
   });
 });
