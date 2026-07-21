@@ -34,7 +34,11 @@ jobs:
 
       - name: Install dependencies
         working-directory: docs
-        run: npm ci
+        run: npm ci || npm ci
+
+      - name: Verify installation
+        working-directory: docs
+        run: npx astro --version
 
       - name: Build docs site
         working-directory: docs
