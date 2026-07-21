@@ -89,6 +89,9 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
   };
 
   const handleCropConfirm = (blob: Blob) => {
+    if (cropImageSrc) {
+      URL.revokeObjectURL(cropImageSrc);
+    }
     setCropImageSrc(null);
 
     if (photoPreview) {
@@ -292,7 +295,12 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
           <PhotoCropModal
             imageSrc={cropImageSrc}
             onConfirm={handleCropConfirm}
-            onCancel={() => setCropImageSrc(null)}
+            onCancel={() => {
+              if (cropImageSrc) {
+                URL.revokeObjectURL(cropImageSrc);
+              }
+              setCropImageSrc(null);
+            }}
           />
         )}
 
