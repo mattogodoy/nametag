@@ -97,6 +97,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
+          max-completion-tokens: '4096'
           prompt: |
             You are writing release notes for Nametag, a personal relationships manager web app.
             The audience is end users and self-hosters.
