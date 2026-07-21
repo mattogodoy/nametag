@@ -21,6 +21,11 @@ const address = {
   country: 'US',
 };
 
+/** URLSearchParams encodes spaces as '+', which decodeURIComponent leaves alone. */
+function decodedUrl(url: string): string {
+  return decodeURIComponent(url.replace(/\+/g, ' '));
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -119,5 +124,66 @@ describe('geocodeAddress', () => {
 
     await expect(geocodeAddress(address)).rejects.toBeInstanceOf(GeocodingProviderError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('never sends the second address line in the structured query', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse([{ lat: '39.78', lon: '-89.65' }]));
+
+    const result = await geocodeAddress({ ...address, streetLine2: 'works at Random Company' });
+
+    expect(result).toEqual({ latitude: 39.78, longitude: -89.65 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain('street=123+Main+St');
+    expect(url).not.toContain('Random');
+  });
+
+  it('lets a meaningful second line contribute via free text before dropping it', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([{ lat: '19.43', lon: '-99.13' }]));
+
+    const result = await geocodeAddress({ ...address, streetLine2: 'Colonia Centro' });
+
+    expect(result).toEqual({ latitude: 19.43, longitude: -99.13 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [secondUrl] = fetchMock.mock.calls[1] as [string];
+    expect(decodedUrl(secondUrl)).toContain('Colonia Centro');
+  });
+
+  it('retries the free-text query without a noisy second line as a last resort', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([{ lat: '39.78', lon: '-89.65' }]));
+
+    const result = await geocodeAddress({ ...address, streetLine2: 'works at Random Company' });
+
+    expect(result).toEqual({ latitude: 39.78, longitude: -89.65 });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const [secondUrl] = fetchMock.mock.calls[1] as [string];
+    const [thirdUrl] = fetchMock.mock.calls[2] as [string];
+    expect(decodedUrl(secondUrl)).toContain('Random Company');
+    expect(decodedUrl(thirdUrl)).not.toContain('Random Company');
+    expect(decodedUrl(thirdUrl)).toContain('123 Main St');
+  });
+
+  it('skips the third attempt when there is no second line', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse([])).mockResolvedValueOnce(jsonResponse([]));
+
+    expect(await geocodeAddress(address)).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('surfaces a transient error instead of a permanent failure when later attempts find nothing', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 503))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]));
+
+    await expect(
+      geocodeAddress({ ...address, streetLine2: 'Suite 12' })
+    ).rejects.toBeInstanceOf(GeocodingProviderError);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });

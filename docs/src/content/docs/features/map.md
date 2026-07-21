@@ -11,6 +11,8 @@ The Map tab shows where your contacts are, plotted on an interactive world map f
 
 When you add an address to a contact, Nametag geocodes it in the background, converting the street address into latitude and longitude using a Nominatim-compatible geocoding service. Once geocoding succeeds, the address appears as a marker on the Map tab. You don't need to do anything beyond entering the address.
 
+The second address line gets special treatment: lookups try the full address first, then retry without the second line. So apartment numbers, building names, or any extra text there can help locate the address but never prevent it from being found.
+
 ## The map interface
 
 The map itself is built on MapLibre GL, giving you smooth zooming, panning, and clustering of nearby markers. Click a marker (or a cluster) to see who it belongs to and the full address it represents, with a link to their contact page and a link to get directions.
