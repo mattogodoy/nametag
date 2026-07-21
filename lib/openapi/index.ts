@@ -149,7 +149,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
         post: {
           tags: ['Photos'],
           summary: 'Convert HEIC photo to JPEG',
-          description: 'Converts a HEIC/HEIF format photo to JPEG. Applies automatic orientation correction and configurable quality. Returns binary JPEG data.',
+          description: 'Accepts a HEIC/HEIF image file and returns a JPEG conversion. Applies automatic orientation correction and configurable quality. Does not store anything.',
           security: [{ session: [] }],
           requestBody: {
             description: 'HEIC photo file to convert',

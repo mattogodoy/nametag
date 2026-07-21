@@ -28,7 +28,10 @@ vi.mock('../../lib/auth', () => ({
   ),
 }));
 
+import { auth } from '../../lib/auth';
 import { POST } from '../../app/api/photos/convert/route';
+
+const mockAuth = vi.mocked(auth);
 
 function makeHeicBuffer(brand: string = 'heic'): Buffer {
   const buf = Buffer.alloc(64);
@@ -51,8 +54,6 @@ describe('POST /api/photos/convert', () => {
     vi.clearAllMocks();
     const jpegOutput = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]);
     mocks.sharpToBuffer.mockResolvedValue(jpegOutput);
-    mocks.sharpJpeg.mockReturnValue(undefined);
-    mocks.sharpRotate.mockReturnValue(undefined);
   });
 
   it('should convert a HEIC buffer to JPEG and return binary response', async () => {
@@ -115,5 +116,12 @@ describe('POST /api/photos/convert', () => {
     const request = createConvertRequest(makeHeicBuffer('mif1'));
     const response = await POST(request);
     expect(response.status).toBe(200);
+  });
+
+  it('should reject unauthenticated requests with 401', async () => {
+    mockAuth.mockResolvedValueOnce(null as never);
+    const request = createConvertRequest(makeHeicBuffer());
+    const response = await POST(request);
+    expect(response.status).toBe(401);
   });
 });
