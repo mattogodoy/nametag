@@ -38,6 +38,7 @@ interface MarkerProperties {
   personId: string;
   personName: string;
   label: string;
+  addressText?: string;
 }
 
 function useIsDarkTheme(): boolean {
@@ -79,6 +80,9 @@ function toGeoJSON(markers: MapMarker[]): GeoJSON.FeatureCollection<GeoJSON.Poin
         personId: marker.personId,
         personName: marker.personName,
         label: marker.label,
+        // Omitted rather than null: null-valued GeoJSON properties do not
+        // survive the round trip through queryRenderedFeatures reliably.
+        ...(marker.addressText ? { addressText: marker.addressText } : {}),
       },
     })),
   };
@@ -278,7 +282,13 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     openPopup(
       map,
       [target.longitude, target.latitude],
-      { id: target.id, personId: target.personId, personName: target.personName, label: target.label },
+      {
+        id: target.id,
+        personId: target.personId,
+        personName: target.personName,
+        label: target.label,
+        ...(target.addressText ? { addressText: target.addressText } : {}),
+      },
       translationsRef.current
     );
   }, [focusId, markers]);
@@ -354,6 +364,13 @@ function openPopup(
   label.className = 'text-xs opacity-70 capitalize';
   label.textContent = props.label;
   container.appendChild(label);
+
+  if (typeof props.addressText === 'string' && props.addressText.length > 0) {
+    const addressLine = document.createElement('div');
+    addressLine.className = 'text-xs max-w-56';
+    addressLine.textContent = props.addressText;
+    container.appendChild(addressLine);
+  }
 
   const links = document.createElement('div');
   links.className = 'flex gap-3 pt-1 text-xs';

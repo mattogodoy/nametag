@@ -45,8 +45,11 @@ describe('GET /api/map/markers', () => {
           {
             id: 'addr-1',
             type: 'home',
+            streetLine1: '10 Downing Street',
+            streetLine2: null,
             locality: 'London',
             region: 'Greater London',
+            postalCode: 'SW1A 2AA',
             country: 'GB',
             latitude: '51.5',
             longitude: '-0.12',
@@ -84,6 +87,7 @@ describe('GET /api/map/markers', () => {
       city: 'London',
       region: 'Greater London',
       country: 'GB',
+      addressText: '10 Downing Street, London, Greater London, SW1A 2AA, United Kingdom',
       groupIds: ['group-1'],
     });
     expect(body.markers[1]).toMatchObject({
@@ -93,6 +97,7 @@ describe('GET /api/map/markers', () => {
       city: null,
       region: null,
       country: null,
+      addressText: null,
     });
     expect(body.groups).toEqual([{ id: 'group-1', name: 'Friends' }]);
     expect(body.unlocatedPeople).toEqual([]);
@@ -112,8 +117,11 @@ describe('GET /api/map/markers', () => {
             select: {
               id: true,
               type: true,
+              streetLine1: true,
+              streetLine2: true,
               locality: true,
               region: true,
+              postalCode: true,
               country: true,
               latitude: true,
               longitude: true,

@@ -14,6 +14,7 @@ function marker(overrides: Partial<MapMarker>): MapMarker {
     city: 'London',
     region: 'Greater London',
     country: 'GB',
+    addressText: null,
     groupIds: ['g1'],
     ...overrides,
   };
