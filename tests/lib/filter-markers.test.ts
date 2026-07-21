@@ -16,6 +16,8 @@ function marker(overrides: Partial<MapMarker>): MapMarker {
     country: 'GB',
     addressText: null,
     groupIds: ['g1'],
+    hasPhoto: false,
+    groupColor: null,
     ...overrides,
   };
 }

@@ -19,6 +19,7 @@ export const GET = withAuth(async (request, session) => {
           surname: true,
           nickname: true,
           displayNameOverride: true,
+          photo: true,
           addresses: {
             select: {
               id: true,
@@ -45,7 +46,7 @@ export const GET = withAuth(async (request, session) => {
           },
           groups: {
             where: { group: { deletedAt: null } },
-            select: { group: { select: { id: true, name: true } } },
+            select: { group: { select: { id: true, name: true, color: true } } },
           },
         },
       }),
@@ -80,6 +81,10 @@ export const GET = withAuth(async (request, session) => {
       for (const pg of person.groups) {
         groupsById.set(pg.group.id, pg.group);
       }
+      const hasPhoto = Boolean(person.photo);
+      // First group (in returned order) that has a color, matching how the
+      // network graph picks a node's fill/ring color.
+      const groupColor = person.groups.find((pg) => pg.group.color)?.group.color ?? null;
 
       const personFailedCount = person.addresses.filter(
         (address) => address.geocodeStatus === 'failed'
@@ -116,6 +121,8 @@ export const GET = withAuth(async (request, session) => {
           country: address.country,
           addressText: addressText || null,
           groupIds,
+          hasPhoto,
+          groupColor,
         });
       }
 
@@ -133,6 +140,8 @@ export const GET = withAuth(async (request, session) => {
           country: null,
           addressText: null,
           groupIds,
+          hasPhoto,
+          groupColor,
         });
       }
     }
