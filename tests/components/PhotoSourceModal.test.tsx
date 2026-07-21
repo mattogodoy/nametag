@@ -170,4 +170,46 @@ describe('PhotoSourceModal', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(mockOnClose).toHaveBeenCalledOnce();
   });
+
+  it('accepts HEIC files by MIME type', () => {
+    render(
+      <Wrapper>
+        <PhotoSourceModal onSelect={mockOnSelect} onClose={mockOnClose} />
+      </Wrapper>
+    );
+
+    const file = createFile('photo.heic', 'image/heic', 1024);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(mockOnSelect).toHaveBeenCalledWith(file);
+  });
+
+  it('accepts HEIC files by extension when MIME type is empty', () => {
+    render(
+      <Wrapper>
+        <PhotoSourceModal onSelect={mockOnSelect} onClose={mockOnClose} />
+      </Wrapper>
+    );
+
+    const file = createFile('photo.heic', '', 1024);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(mockOnSelect).toHaveBeenCalledWith(file);
+  });
+
+  it('accepts HEIF files by MIME type', () => {
+    render(
+      <Wrapper>
+        <PhotoSourceModal onSelect={mockOnSelect} onClose={mockOnClose} />
+      </Wrapper>
+    );
+
+    const file = createFile('photo.heif', 'image/heif', 1024);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(mockOnSelect).toHaveBeenCalledWith(file);
+  });
 });

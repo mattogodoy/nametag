@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
-const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
 const MAX_PHOTO_SIZE = 50 * 1024 * 1024; // 50MB
 
 interface PhotoSourceModalProps {
@@ -20,7 +20,9 @@ export default function PhotoSourceModal({ onSelect, onClose }: PhotoSourceModal
 
   const validateAndSelect = useCallback((file: File | null) => {
     if (!file) return;
-    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+    const isAllowedType = ALLOWED_PHOTO_TYPES.includes(file.type);
+    const isHeicByExtension = !file.type && (/\.heic$/i.test(file.name) || /\.heif$/i.test(file.name));
+    if (!isAllowedType && !isHeicByExtension) {
       toast.error(t('formatError'));
       return;
     }
@@ -144,7 +146,7 @@ export default function PhotoSourceModal({ onSelect, onClose }: PhotoSourceModal
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/gif,image/webp"
+            accept="image/jpeg,image/png,image/gif,image/webp,.heic,.heif"
             onChange={handleFileChange}
             className="hidden"
           />
