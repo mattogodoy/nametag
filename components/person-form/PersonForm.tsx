@@ -25,6 +25,7 @@ import CardDavSyncSection from './CardDavSyncSection';
 import CustomFieldsSection from '../customFields/CustomFieldsSection';
 import type { CustomFieldTemplate } from '@prisma/client';
 import { useSearchIndex } from '@/components/SearchIndexProvider';
+import { isHeicFile, convertHeicToJpeg } from '@/lib/photo-client';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
 
@@ -246,8 +247,22 @@ export default function PersonForm({
     }
   };
 
-  const handlePhotoSourceSelect = (file: File) => {
+  const handlePhotoSourceSelect = async (file: File) => {
     setShowPhotoSourceModal(false);
+
+    if (isHeicFile(file)) {
+      const toastId = toast.loading(tPhoto('converting'));
+      try {
+        const jpegBlob = await convertHeicToJpeg(file);
+        toast.dismiss(toastId);
+        setCropImageSrc(URL.createObjectURL(jpegBlob));
+      } catch {
+        toast.dismiss(toastId);
+        toast.error(tPhoto('convertError'));
+      }
+      return;
+    }
+
     setCropImageSrc(URL.createObjectURL(file));
   };
 
