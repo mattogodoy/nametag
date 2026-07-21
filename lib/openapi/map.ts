@@ -34,6 +34,11 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
                     },
                     country: { type: ['string', 'null'] },
                     groupIds: { type: 'array', items: { type: 'string' } },
+                    hasPhoto: { type: 'boolean', description: 'Whether the contact has a photo' },
+                    groupColor: {
+                      type: ['string', 'null'],
+                      description: "First group's color (in returned order), like the network graph",
+                    },
                   },
                 },
               },
@@ -41,7 +46,11 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
                 type: 'array',
                 items: {
                   type: 'object',
-                  properties: { id: { type: 'string' }, name: { type: 'string' } },
+                  properties: {
+                    id: { type: 'string' },
+                    name: { type: 'string' },
+                    color: { type: ['string', 'null'] },
+                  },
                 },
               },
               pendingCount: { type: 'integer' },

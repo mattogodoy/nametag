@@ -41,6 +41,7 @@ describe('GET /api/map/markers', () => {
         secondLastName: null,
         nickname: null,
         displayNameOverride: null,
+        photo: 'photo.jpg',
         addresses: [
           {
             id: 'addr-1',
@@ -68,7 +69,7 @@ describe('GET /api/map/markers', () => {
         locations: [
           { id: 'loc-1', type: 'other', label: 'Cabin', latitude: '60.1', longitude: '10.2' },
         ],
-        groups: [{ group: { id: 'group-1', name: 'Friends' } }],
+        groups: [{ group: { id: 'group-1', name: 'Friends', color: '#ff2600' } }],
       },
     ]);
 
@@ -89,6 +90,8 @@ describe('GET /api/map/markers', () => {
       country: 'GB',
       addressText: '10 Downing Street, London, Greater London, SW1A 2AA, United Kingdom',
       groupIds: ['group-1'],
+      hasPhoto: true,
+      groupColor: '#ff2600',
     });
     expect(body.markers[1]).toMatchObject({
       id: 'loc_loc-1',
@@ -98,10 +101,75 @@ describe('GET /api/map/markers', () => {
       region: null,
       country: null,
       addressText: null,
+      hasPhoto: true,
+      groupColor: '#ff2600',
     });
-    expect(body.groups).toEqual([{ id: 'group-1', name: 'Friends' }]);
+    expect(body.groups).toEqual([{ id: 'group-1', name: 'Friends', color: '#ff2600' }]);
     expect(body.unlocatedPeople).toEqual([]);
     expect(body.geocodingEnabled).toBe(true);
+  });
+
+  it('defaults hasPhoto to false and groupColor to null when the person has no photo or colored group', async () => {
+    mocks.personFindMany.mockResolvedValue([
+      {
+        id: 'person-1',
+        name: 'Alice',
+        surname: 'Smith',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        displayNameOverride: null,
+        photo: null,
+        addresses: [
+          {
+            id: 'addr-1',
+            type: 'home',
+            locality: 'London',
+            region: null,
+            country: 'GB',
+            latitude: '51.5',
+            longitude: '-0.12',
+            geocodeStatus: 'success',
+          },
+        ],
+        locations: [],
+        groups: [{ group: { id: 'group-1', name: 'Friends', color: null } }],
+      },
+    ]);
+
+    const response = await GET(new Request('http://localhost/api/map/markers'));
+    const body = await response.json();
+
+    expect(body.markers[0].hasPhoto).toBe(false);
+    expect(body.markers[0].groupColor).toBeNull();
+  });
+
+  it('uses the first group with a color when the person belongs to multiple groups', async () => {
+    mocks.personFindMany.mockResolvedValue([
+      {
+        id: 'person-1',
+        name: 'Alice',
+        surname: 'Smith',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        displayNameOverride: null,
+        photo: null,
+        addresses: [],
+        locations: [
+          { id: 'loc-1', type: 'other', label: 'Cabin', latitude: '60.1', longitude: '10.2' },
+        ],
+        groups: [
+          { group: { id: 'group-nocolor', name: 'NoColor', color: null } },
+          { group: { id: 'group-color', name: 'Colored', color: '#00ff00' } },
+        ],
+      },
+    ]);
+
+    const response = await GET(new Request('http://localhost/api/map/markers'));
+    const body = await response.json();
+
+    expect(body.markers[0].groupColor).toBe('#00ff00');
   });
 
   it('scopes the query to the session user and excludes soft-deleted people', async () => {
@@ -113,6 +181,7 @@ describe('GET /api/map/markers', () => {
       expect.objectContaining({
         where: { userId: 'user-123', deletedAt: null },
         select: expect.objectContaining({
+          photo: true,
           addresses: {
             select: {
               id: true,
@@ -139,6 +208,7 @@ describe('GET /api/map/markers', () => {
           },
           groups: expect.objectContaining({
             where: { group: { deletedAt: null } },
+            select: { group: { select: { id: true, name: true, color: true } } },
           }),
         }),
       })
