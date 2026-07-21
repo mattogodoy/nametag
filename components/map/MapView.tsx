@@ -177,7 +177,6 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
   // cleared and rebuilt every time the style (re)loads.
   const registeredColorRef = useRef(new Map<string, string>());
   const ensureIconsRef = useRef<(() => void) | null>(null);
-  const disposedRef = useRef(false);
   const pendingSourceUpdateRef = useRef(false);
 
   // Keep "latest value" refs in sync via effects rather than during render,
@@ -198,10 +197,12 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
   // Initialize the map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    // Reset for this mount: StrictMode's dev double-invoke reuses the same
-    // refs across an unmount/remount cycle, and the previous cleanup below
-    // marks this true.
-    disposedRef.current = false;
+    // Per-map-instance disposed flag. Deliberately a closure variable and
+    // NOT a shared ref: async photo loads started by one map instance can
+    // complete after a StrictMode unmount/remount cycle, and a shared ref
+    // reset by the new mount would let the stale closure operate on the
+    // removed map (whose style is gone, crashing hasImage/addImage).
+    let mapDisposed = false;
 
     if (!isWebGLAvailable()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecting a one-time platform capability check into UI state is intentional
@@ -238,7 +239,7 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
       pendingSourceUpdateRef.current = true;
       queueMicrotask(() => {
         pendingSourceUpdateRef.current = false;
-        if (disposedRef.current) return;
+        if (mapDisposed) return;
         const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
         if (!source) return;
         source.setData(toGeoJSON(markersRef.current, new Set(registeredColorRef.current.keys())));
@@ -263,6 +264,7 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     // images, so re-registering from the bitmap cache is required, but never
     // re-fetches the photo itself).
     const ensureIcons = () => {
+      if (mapDisposed) return;
       let didRegisterAny = false;
       for (const marker of markersRef.current) {
         if (!marker.hasPhoto) continue;
@@ -297,13 +299,15 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
         // compositing stays untainted).
         photoElementCacheRef.current.set(personId, 'loading');
         const img = new Image();
+        // The caches are shared across map instances on purpose (photos and
+        // bitmaps stay valid), but re-entry goes through ensureIconsRef so
+        // it always runs against the LIVE map instance, which self-guards
+        // with its own mapDisposed flag.
         img.onload = () => {
-          if (disposedRef.current) return;
           photoElementCacheRef.current.set(personId, img);
-          ensureIcons();
+          ensureIconsRef.current?.();
         };
         img.onerror = () => {
-          if (disposedRef.current) return;
           photoElementCacheRef.current.set(personId, 'error');
         };
         img.src = `/api/photos/${personId}`;
@@ -436,7 +440,7 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     const registeredColors = registeredColorRef.current;
 
     return () => {
-      disposedRef.current = true;
+      mapDisposed = true;
       ensureIconsRef.current = null;
       // Registered images belonged to this map instance; a remount starts
       // from an empty style with no custom images.
