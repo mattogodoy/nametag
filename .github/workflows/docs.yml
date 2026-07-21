@@ -21,6 +21,9 @@ jobs:
   build:
     name: Build Docs
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -29,20 +32,12 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: docs/package-lock.json
 
       - name: Install dependencies
-        working-directory: docs
-        run: npm ci || npm ci
-
-      - name: Verify installation
-        working-directory: docs
-        run: npx astro --version
+        run: npm install --prefer-offline --no-audit --no-fund
 
       - name: Build docs site
-        working-directory: docs
-        run: npm run build
+        run: npx astro build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
