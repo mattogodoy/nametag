@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { isValidImageBuffer, processPhoto, savePhotoFromBuffer, resetPhotoStorageCache } from '@/lib/photo-storage';
+import { isValidImageBuffer, processPhoto, savePhotoFromBuffer, resetPhotoStorageCache, isHeicBuffer } from '@/lib/photo-storage';
 
 // Helper: create a minimal valid JPEG buffer (magic bytes + padding)
 function makeJpegBuffer(size = 64): Buffer {
@@ -46,6 +46,15 @@ function makeWebpBuffer(): Buffer {
   buf[9] = 0x45;
   buf[10] = 0x42;
   buf[11] = 0x50;
+  return buf;
+}
+
+function makeHeicBuffer(brand: string = 'heic'): Buffer {
+  const buf = Buffer.alloc(64);
+  // Bytes 4-7: 'ftyp'
+  buf.write('ftyp', 4, 'ascii');
+  // Bytes 8-11: brand
+  buf.write(brand, 8, 'ascii');
   return buf;
 }
 
@@ -122,6 +131,49 @@ describe('isValidImageBuffer', () => {
     buf[3] = 0x46; // F
     // No WEBP at offset 8
     expect(isValidImageBuffer(buf)).toBe(false);
+  });
+
+  it('should reject HEIC buffers (not browser-native)', () => {
+    const buf = Buffer.alloc(64);
+    buf.write('ftyp', 4, 'ascii');
+    buf.write('heic', 8, 'ascii');
+    expect(isValidImageBuffer(buf)).toBe(false);
+  });
+});
+
+describe('isHeicBuffer', () => {
+  it('should detect heic brand', () => {
+    expect(isHeicBuffer(makeHeicBuffer('heic'))).toBe(true);
+  });
+
+  it('should detect heix brand', () => {
+    expect(isHeicBuffer(makeHeicBuffer('heix'))).toBe(true);
+  });
+
+  it('should detect mif1 brand', () => {
+    expect(isHeicBuffer(makeHeicBuffer('mif1'))).toBe(true);
+  });
+
+  it('should detect msf1 brand', () => {
+    expect(isHeicBuffer(makeHeicBuffer('msf1'))).toBe(true);
+  });
+
+  it('should detect hevc brand', () => {
+    expect(isHeicBuffer(makeHeicBuffer('hevc'))).toBe(true);
+  });
+
+  it('should reject non-HEIC buffers', () => {
+    expect(isHeicBuffer(makeJpegBuffer())).toBe(false);
+    expect(isHeicBuffer(makePngBuffer())).toBe(false);
+    expect(isHeicBuffer(makeWebpBuffer())).toBe(false);
+  });
+
+  it('should reject buffers too short for ftyp detection', () => {
+    expect(isHeicBuffer(Buffer.alloc(8))).toBe(false);
+  });
+
+  it('should reject empty buffers', () => {
+    expect(isHeicBuffer(Buffer.alloc(0))).toBe(false);
   });
 });
 

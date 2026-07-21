@@ -155,7 +155,7 @@ function parsePhotoData(photoData: string): { buffer: Buffer; ext: string } | nu
 
 /**
  * Detect image format from magic bytes
- * Returns the format ('jpg', 'png', 'gif', 'webp') or null for unknown formats
+ * Returns the format ('jpg', 'png', 'gif', 'webp', 'heic') or null for unknown formats
  */
 function detectFormat(buffer: Buffer): string | null {
   if (buffer.length < 4) return null;
@@ -169,6 +169,14 @@ function detectFormat(buffer: Buffer): string | null {
   // WebP: 52 49 46 46 ... 57 45 42 50
   if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
       buffer.length >= 12 && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) return 'webp';
+  // HEIC/HEIF: ISOBMFF ftyp box at offset 4, then brand at offset 8
+  if (buffer.length >= 12) {
+    const ftyp = buffer.slice(4, 8).toString('ascii');
+    if (ftyp === 'ftyp') {
+      const brand = buffer.slice(8, 12).toString('ascii');
+      if (['heic', 'heix', 'mif1', 'msf1', 'hevc'].includes(brand)) return 'heic';
+    }
+  }
 
   return null;
 }
@@ -183,10 +191,18 @@ function detectImageExtension(buffer: Buffer): string {
 
 /**
  * Check if a buffer contains a supported image format (JPEG, PNG, GIF, WebP)
- * by inspecting magic bytes. Returns false for unknown formats and SVGs.
+ * by inspecting magic bytes. Returns false for unknown formats, SVGs, and HEIC.
  */
 export function isValidImageBuffer(buffer: Buffer): boolean {
-  return detectFormat(buffer) !== null;
+  const format = detectFormat(buffer);
+  return format !== null && format !== 'heic';
+}
+
+/**
+ * Check if a buffer contains a HEIC/HEIF image by inspecting the ISOBMFF ftyp box.
+ */
+export function isHeicBuffer(buffer: Buffer): boolean {
+  return detectFormat(buffer) === 'heic';
 }
 
 /**
