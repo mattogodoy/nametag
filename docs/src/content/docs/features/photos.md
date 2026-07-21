@@ -11,6 +11,8 @@ A photo turns an entry in your network into a face you recognize. Nametag suppor
 
 On a person's edit page, click the photo area to choose an image from your device. Before it's saved, an interactive crop tool lets you adjust the crop area and zoom in or out until the framing looks right, so you don't need to pre-crop images yourself.
 
+HEIC files (the default photo format on Apple devices) are supported. When you select a HEIC image, Nametag automatically converts it to JPEG on the server before opening the crop tool, so no manual conversion is needed.
+
 Photos are compressed on the server for storage efficiency, so uploads stay reasonably sized regardless of the original file.
 
 ## Your own profile photo
@@ -37,7 +39,7 @@ Photos are stored on disk, not in the database, at the path configured by the `P
 | Spec | Value |
 | --- | --- |
 | Max upload size | 50 MB |
-| Accepted input formats | JPEG, PNG, GIF, WebP (detected via magic bytes, not file extension) |
+| Accepted input formats | JPEG, PNG, GIF, WebP (native); HEIC/HEIF (auto-converted to JPEG before crop) |
 | Output format | JPEG for opaque images, PNG for images with transparency |
 | Output dimensions | Square, default 256x256px (configurable via the `PHOTO_SIZE` environment variable, range 64-4096) |
 | JPEG quality | Default 80 (configurable via the `PHOTO_QUALITY` environment variable, range 1-100) |

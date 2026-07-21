@@ -501,6 +501,8 @@ POST /api/people/{id}/photo
 
 `multipart/form-data` with a `photo` field. The image is cropped to 256x256, converted to JPEG, and stripped of EXIF data.
 
+HEIC/HEIF files should be converted to JPEG first using `POST /api/photos/convert` before uploading, since the crop step requires a browser-decodable format.
+
 ```bash
 curl -X POST https://your-instance.example.com/api/people/clx1/photo \
   -H "Authorization: Bearer ntag_xxx" \
