@@ -52,6 +52,7 @@
     "sonner": "^2.0.7",
     "stripe": "^20.0.0",
     "tsdav": "^2.1.6",
+    "uuid": "^14.0.1",
     "zod": "^4.1.13"
   },
   "devDependencies": {
