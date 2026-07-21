@@ -9,6 +9,7 @@ import { Button } from './ui/Button';
 import PersonAvatar from './PersonPhoto';
 import PhotoCropModal from './PhotoCropModal';
 import { getUserPhotoUrl } from '@/lib/photo-url';
+import { isHeicFile, convertHeicToJpeg } from '@/lib/photo-client';
 
 interface ProfileFormProps {
   userId: string;
@@ -43,12 +44,12 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
   const MAX_PHOTO_SIZE = 50 * 1024 * 1024; // 50MB
 
   const emailChanged = formData.email !== currentEmail;
 
-  const handlePhotoSelect = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -56,12 +57,27 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
       fileInputRef.current.value = '';
     }
 
-    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+    const isAllowedType = ALLOWED_PHOTO_TYPES.includes(file.type);
+    const isHeicByExtension = !file.type && (/\.heic$/i.test(file.name) || /\.heif$/i.test(file.name));
+    if (!isAllowedType && !isHeicByExtension) {
       toast.error(tPhoto('formatError'));
       return;
     }
     if (file.size > MAX_PHOTO_SIZE) {
       toast.error(tPhoto('sizeError'));
+      return;
+    }
+
+    if (isHeicFile(file)) {
+      const toastId = toast.loading(tPhoto('converting'));
+      try {
+        const jpegBlob = await convertHeicToJpeg(file);
+        toast.dismiss(toastId);
+        setCropImageSrc(URL.createObjectURL(jpegBlob));
+      } catch {
+        toast.dismiss(toastId);
+        toast.error(tPhoto('convertError'));
+      }
       return;
     }
 
@@ -246,7 +262,7 @@ export default function ProfileForm({ userId, currentName, currentSurname, curre
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
+                accept="image/jpeg,image/png,image/gif,image/webp,.heic,.heif"
                 onChange={handlePhotoSelect}
                 className="hidden"
               />
