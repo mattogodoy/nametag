@@ -21,7 +21,9 @@ const CAMERA_ANIMATION_MS = 1000;
 // nodes (filled/ringed circle, photo clipped on top).
 const ICON_BITMAP_SIZE = 48;
 const ICON_PIXEL_RATIO = 2; // 48 / 2 = 24px displayed icon
-const ICON_RING_WIDTH = 4; // bitmap-space; 2px at display scale
+// Bitmap-space stroke width. The photo clip covers the inner half of the
+// stroke, so the visible ring is 2 bitmap pixels = 1px at display scale.
+const ICON_RING_WIDTH = 4;
 const ICON_FILL_RADIUS = 22; // bitmap-space; leaves room for the ring to stay inside the canvas
 // Same fallback grays the network graph uses for ungrouped nodes.
 const RING_FALLBACK_LIGHT = '#d1d5db';
