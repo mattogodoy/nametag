@@ -70,35 +70,78 @@ async function search(params: URLSearchParams): Promise<GeocodeResult | null> {
  * better with unusual formats. Returns null when the provider finds nothing.
  */
 export async function geocodeAddress(address: AddressFields): Promise<GeocodeResult | null> {
-  const street = [address.streetLine1, address.streetLine2].filter(Boolean).join(', ');
+  const line2 = address.streetLine2?.trim() || null;
+  let firstTransientError: GeocodingProviderError | null = null;
 
+  // Runs one lookup in the cascade. A 429 aborts the whole cascade (the
+  // provider wants LESS traffic); other transient errors are remembered and
+  // the cascade continues, so one flaky attempt cannot mask a fallback that
+  // would have succeeded.
+  const attempt = async (params: URLSearchParams): Promise<GeocodeResult | null> => {
+    try {
+      return await search(params);
+    } catch (error) {
+      if (!(error instanceof GeocodingProviderError)) throw error;
+      if (error.status === 429) throw error;
+      firstTransientError ??= error;
+      return null;
+    }
+  };
+
+  // 1. Structured query, first street line only. Nominatim's street
+  // parameter expects "housenumber streetname"; unit numbers, building
+  // names, or free-form annotations in the second line only break the
+  // match, so the second line never participates here.
   const structured = new URLSearchParams();
-  if (street) structured.set('street', street);
+  if (address.streetLine1) structured.set('street', address.streetLine1);
   if (address.locality) structured.set('city', address.locality);
   if (address.region) structured.set('state', address.region);
   if (address.postalCode) structured.set('postalcode', address.postalCode);
   if (address.country) structured.set('country', address.country);
 
-  const freeText = [street, address.locality, address.region, address.postalCode, address.country]
+  if ([...structured.keys()].length > 0) {
+    const result = await attempt(structured);
+    if (result) return result;
+  }
+
+  // 2. Free text including the second line: the only query where legitimate
+  // second-line content (building names, neighborhoods, colonias) can
+  // contribute or disambiguate.
+  const withoutLine2 = [
+    address.streetLine1,
+    address.locality,
+    address.region,
+    address.postalCode,
+    address.country,
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const withLine2 = [
+    address.streetLine1,
+    line2,
+    address.locality,
+    address.region,
+    address.postalCode,
+    address.country,
+  ]
     .filter(Boolean)
     .join(', ');
 
-  if ([...structured.keys()].length > 0) {
-    try {
-      const result = await search(structured);
-      if (result) return result;
-    } catch (error) {
-      if (!(error instanceof GeocodingProviderError)) throw error;
-      // The provider is telling us to slow down: more requests (the fallback)
-      // would make it worse, so surface the 429 to the caller immediately.
-      if (error.status === 429) throw error;
-      // Structured query failed transiently: fall through to the free-text
-      // attempt below rather than aborting, unless there is nothing to try.
-      if (!freeText) throw error;
-    }
+  if (withLine2) {
+    const result = await attempt(new URLSearchParams({ q: withLine2 }));
+    if (result) return result;
   }
 
-  if (!freeText) return null;
+  // 3. Free text without the second line: rescues addresses whose second
+  // line is noise the provider chokes on (annotations, unit numbers).
+  if (line2 && withoutLine2) {
+    const result = await attempt(new URLSearchParams({ q: withoutLine2 }));
+    if (result) return result;
+  }
 
-  return search(new URLSearchParams({ q: freeText }));
+  // Exhausted without a hit. If any attempt failed transiently, surface the
+  // error so the caller keeps the address pending instead of caching a
+  // permanent failure the provider never actually asserted.
+  if (firstTransientError) throw firstTransientError;
+  return null;
 }
