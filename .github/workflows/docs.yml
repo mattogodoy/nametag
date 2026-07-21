@@ -34,7 +34,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install --prefer-offline --no-audit --no-fund
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Build docs site
         run: npx astro build
