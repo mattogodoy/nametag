@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.54.0](https://github.com/mattogodoy/nametag/compare/v0.53.3...v0.54.0) (2026-07-21)
+
+
+### Features
+
+* accept HEIC/HEIF files in PhotoSourceModal ([448fa9c](https://github.com/mattogodoy/nametag/commit/448fa9c190dff55f47b2ba1b507933031146bebb))
+* add client-side HEIC detection and conversion helper ([7f370b3](https://github.com/mattogodoy/nametag/commit/7f370b3b5977b27732acc7d9ffc90c648c021098))
+* add HEIC magic byte detection to photo-storage ([4c2858c](https://github.com/mattogodoy/nametag/commit/4c2858c062e9f81eeee101c594f95742dba8582e))
+* add HEIC translations and docs ([a60bbd6](https://github.com/mattogodoy/nametag/commit/a60bbd6a083eb92ec22c85f88cc5527e472923e9))
+* add HEIC-to-JPEG conversion endpoint ([98ae1d0](https://github.com/mattogodoy/nametag/commit/98ae1d00dea8af7a52b4706ce94df7b50bd59483))
+* convert HEIC photos before crop in PersonForm ([b948ea3](https://github.com/mattogodoy/nametag/commit/b948ea385de9468710b4057dae430ed34e43465a))
+* convert HEIC photos before crop in ProfileForm ([adc15bc](https://github.com/mattogodoy/nametag/commit/adc15bc7789f93fc020f23f3e0debe647826d7f4))
+* HEIC photo support ([d4bbb24](https://github.com/mattogodoy/nametag/commit/d4bbb2447bb29fafb0578581777f5a80fbfcfb1f))
+* improve release notes with PR descriptions and adaptive tone ([7412544](https://github.com/mattogodoy/nametag/commit/7412544a17b6fdf778b6b358cbb0829795d4506f))
+* render photo thumbnails as map markers ([bf74fee](https://github.com/mattogodoy/nametag/commit/bf74fee2adfa5a46aafeb09e659ab85532371935))
+
+
+### Bug Fixes
+
+* accept application/octet-stream MIME type for HEIC extension fallback ([1b745aa](https://github.com/mattogodoy/nametag/commit/1b745aaeae9637e8fbbc7fb07d4655cb91ea46a3))
+* guard icon registration against disposed map instances ([ca9b103](https://github.com/mattogodoy/nametag/commit/ca9b103eca62af9c475a12b9a4457e060d2e8056))
+* handle null PR bodies and bound date range in release notes ([c37aa45](https://github.com/mattogodoy/nametag/commit/c37aa4524d35ac21768385a93b07b3c4de5d2d78))
+* harden release notes against prompt injection and EOF collision ([35521e1](https://github.com/mattogodoy/nametag/commit/35521e1ebceb8003e9e86744e11952d8fb5dc237))
+* honor name display settings in map marker names ([8d39207](https://github.com/mattogodoy/nametag/commit/8d392074b261d029deb95039aadbf16704314e55))
+* pin docs to public npm registry (removes Artifactory dependency) ([c3f0f3a](https://github.com/mattogodoy/nametag/commit/c3f0f3a38db2da94f02fb24ade7034a82780e531))
+* pin eslint-plugin-react-hooks to 7.0.1 to avoid new lint rules ([37de370](https://github.com/mattogodoy/nametag/commit/37de370676260a0215b422a887dfc9373c518718))
+* pin npm to public registry and purge Spotify Artifactory references ([9ff3b23](https://github.com/mattogodoy/nametag/commit/9ff3b23b396162055afb07f129a0f658308da6b7))
+* pin stripe to 20.0.0 to match expected API version ([4314a85](https://github.com/mattogodoy/nametag/commit/4314a850abaa6808cd1321875b92631717fccb5c))
+* remove sharp from docs dependencies (causes npm crash on CI) ([2f93a35](https://github.com/mattogodoy/nametag/commit/2f93a35dbe3e8b3d1faf49a7df774827fc748e5e))
+* remove sharp from docs dependencies (causes npm crash on CI) ([9c7f7f4](https://github.com/mattogodoy/nametag/commit/9c7f7f4a71580e1559c6f80d464591a057b223be))
+* resolve TypeScript errors in conversion endpoint and clean up test ([6b74732](https://github.com/mattogodoy/nametag/commit/6b74732cd0c4f8f5d06e153585cc4731a6657a1f))
+* retry geocoding without the second address line ([78cbf0a](https://github.com/mattogodoy/nametag/commit/78cbf0a8284941a4971a1400a0dfda53bcac5e71))
+* revoke blob URL on crop confirm/cancel in ProfileForm ([d6894dc](https://github.com/mattogodoy/nametag/commit/d6894dc2d411cc763677df300915321be60e1f6c))
+* switch docs workflow to yarn (npm 10.9.8 crashes on CI runners) ([1e9c63e](https://github.com/mattogodoy/nametag/commit/1e9c63e872aff2b399f9bbf62cb270602bbaac5e))
+* switch docs workflow to yarn (npm 10.9.8 crashes on CI runners) ([19e31f3](https://github.com/mattogodoy/nametag/commit/19e31f3548f497e2213d6a1b20e931f0293f0f95))
+* tighten HEIC detection, add auth test, clean up conversion endpoint ([a992bc3](https://github.com/mattogodoy/nametag/commit/a992bc38010f8e1173bd466cc3050700c4a69f37))
+* use --ignore-scripts for docs npm install to avoid CI crash ([55a0923](https://github.com/mattogodoy/nametag/commit/55a0923814c4bad2b892110aa4a8d7eb21780c18))
+* use 413 status for oversized files and add structured conversion logging ([82b3776](https://github.com/mattogodoy/nametag/commit/82b377667add2d8059bf97119e3b341995b3293e))
+* use heic-convert for HEIC decoding (Sharp lacks HEVC codec) ([c878715](https://github.com/mattogodoy/nametag/commit/c8787158c5848260f24f638c199e0ba96dc937ff))
+* use Node.js 22 for docs workflow (required by Astro 5) ([e9e2314](https://github.com/mattogodoy/nametag/commit/e9e231460f7f274fc4ea4e51c0358c948e2271b1))
+* use npm install instead of npm ci in docs workflow (npm ci crashes on CI) ([f6b8759](https://github.com/mattogodoy/nametag/commit/f6b8759341eecfca629cc73023fdafcadfbd741d))
+* use official withastro/action for docs build (avoids npm crash) ([0640143](https://github.com/mattogodoy/nametag/commit/064014303e7ae754292f8943d49918995765f698))
+
 ## [0.53.3](https://github.com/mattogodoy/nametag/compare/v0.53.2...v0.53.3) (2026-07-21)
 
 
