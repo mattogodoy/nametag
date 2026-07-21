@@ -145,6 +145,43 @@ export function generateOpenAPISpec(): OpenAPISpec {
           },
         },
       },
+      '/api/photos/convert': {
+        post: {
+          tags: ['Photos'],
+          summary: 'Convert HEIC photo to JPEG',
+          description: 'Converts a HEIC/HEIF format photo to JPEG. Applies automatic orientation correction and configurable quality. Returns binary JPEG data.',
+          security: [{ session: [] }],
+          requestBody: {
+            description: 'HEIC photo file to convert',
+            required: true,
+            content: {
+              'multipart/form-data': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    photo: {
+                      type: 'string',
+                      format: 'binary',
+                      description: 'HEIC/HEIF format photo file (max 50MB)',
+                    },
+                  },
+                  required: ['photo'],
+                },
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'Converted JPEG photo',
+              content: {
+                'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+              },
+            },
+            '400': ref400(),
+            '401': ref401(),
+          },
+        },
+      },
 
       // Cron (purge)
       '/api/cron/purge-deleted': {
