@@ -16,6 +16,61 @@ const FOCUS_ZOOM = 15;
 // view to one city) can run for several seconds. Cap all camera animations.
 const CAMERA_ANIMATION_MS = 1000;
 
+// Photo marker icons: rendered offscreen at 2x devicePixelRatio (48px bitmap
+// for a 24px displayed icon), matching how the network graph draws person
+// nodes (filled/ringed circle, photo clipped on top).
+const ICON_BITMAP_SIZE = 48;
+const ICON_PIXEL_RATIO = 2; // 48 / 2 = 24px displayed icon
+const ICON_RING_WIDTH = 4; // bitmap-space; 2px at display scale
+const ICON_FILL_RADIUS = 22; // bitmap-space; leaves room for the ring to stay inside the canvas
+// Same fallback grays the network graph uses for ungrouped nodes.
+const RING_FALLBACK_LIGHT = '#d1d5db';
+const RING_FALLBACK_DARK = '#4b5563';
+
+type PhotoEntry = HTMLImageElement | 'loading' | 'error';
+
+function iconIdFor(personId: string): string {
+  return `person-${personId}`;
+}
+
+function ringColorFor(marker: MapMarker, isDark: boolean): string {
+  return marker.groupColor ?? (isDark ? RING_FALLBACK_DARK : RING_FALLBACK_LIGHT);
+}
+
+/** Draws a circle-clipped photo with a colored ring onto an offscreen canvas, like the network graph's person nodes. */
+function compositeIcon(image: HTMLImageElement, ringColor: string): ImageData | null {
+  const canvas = document.createElement('canvas');
+  canvas.width = ICON_BITMAP_SIZE;
+  canvas.height = ICON_BITMAP_SIZE;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  const center = ICON_BITMAP_SIZE / 2;
+
+  ctx.beginPath();
+  ctx.arc(center, center, ICON_FILL_RADIUS, 0, Math.PI * 2);
+  ctx.fillStyle = ringColor;
+  ctx.fill();
+  ctx.lineWidth = ICON_RING_WIDTH;
+  ctx.strokeStyle = ringColor;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(center, center, ICON_FILL_RADIUS, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.drawImage(
+    image,
+    center - ICON_FILL_RADIUS,
+    center - ICON_FILL_RADIUS,
+    ICON_FILL_RADIUS * 2,
+    ICON_FILL_RADIUS * 2,
+  );
+  ctx.restore();
+
+  return ctx.getImageData(0, 0, ICON_BITMAP_SIZE, ICON_BITMAP_SIZE);
+}
+
 interface MapViewProps {
   markers: MapMarker[];
   focusId: string | null;
@@ -39,6 +94,10 @@ interface MarkerProperties {
   personName: string;
   label: string;
   addressText?: string;
+  /** Registered icon image id, present only once the person's photo icon has loaded */
+  iconId?: string;
+  /** First group's color, used for the plain dot when there is no photo icon yet */
+  dotColor?: string;
 }
 
 function useIsDarkTheme(): boolean {
@@ -69,7 +128,10 @@ function isWebGLAvailable(): boolean {
   }
 }
 
-function toGeoJSON(markers: MapMarker[]): GeoJSON.FeatureCollection<GeoJSON.Point, MarkerProperties> {
+function toGeoJSON(
+  markers: MapMarker[],
+  registeredIconPersonIds: ReadonlySet<string>
+): GeoJSON.FeatureCollection<GeoJSON.Point, MarkerProperties> {
   return {
     type: 'FeatureCollection',
     features: markers.map((marker) => ({
@@ -83,6 +145,10 @@ function toGeoJSON(markers: MapMarker[]): GeoJSON.FeatureCollection<GeoJSON.Poin
         // Omitted rather than null: null-valued GeoJSON properties do not
         // survive the round trip through queryRenderedFeatures reliably.
         ...(marker.addressText ? { addressText: marker.addressText } : {}),
+        ...(marker.hasPhoto && registeredIconPersonIds.has(marker.personId)
+          ? { iconId: iconIdFor(marker.personId) }
+          : {}),
+        ...(marker.groupColor ? { dotColor: marker.groupColor } : {}),
       },
     })),
   };
@@ -97,8 +163,22 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
   const focusHandledRef = useRef<string | null>(null);
   const appliedFiltersKeyRef = useRef<string | null>(null);
   const isDark = useIsDarkTheme();
+  const isDarkRef = useRef(isDark);
   const translationsRef = useRef({ viewContact: t('viewContact'), directions: t('directions') });
   const [webglUnavailable, setWebglUnavailable] = useState(false);
+
+  // Photo marker icon caches. These live for the component's lifetime (not
+  // per map instance) so a theme switch or style reload only has to
+  // re-register already-composited bitmaps, never re-fetch photos.
+  const photoElementCacheRef = useRef(new Map<string, PhotoEntry>());
+  const bitmapCacheRef = useRef(new Map<string, ImageData>());
+  // personId -> ring color currently registered as a map image, scoped to
+  // the CURRENT style: custom images do not survive setStyle, so this is
+  // cleared and rebuilt every time the style (re)loads.
+  const registeredColorRef = useRef(new Map<string, string>());
+  const ensureIconsRef = useRef<(() => void) | null>(null);
+  const disposedRef = useRef(false);
+  const pendingSourceUpdateRef = useRef(false);
 
   // Keep "latest value" refs in sync via effects rather than during render,
   // since the map init effect below registers event handlers once (empty
@@ -111,9 +191,17 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     translationsRef.current = { viewContact: t('viewContact'), directions: t('directions') };
   }, [t]);
 
+  useEffect(() => {
+    isDarkRef.current = isDark;
+  }, [isDark]);
+
   // Initialize the map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    // Reset for this mount: StrictMode's dev double-invoke reuses the same
+    // refs across an unmount/remount cycle, and the previous cleanup below
+    // marks this true.
+    disposedRef.current = false;
 
     if (!isWebGLAvailable()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecting a one-time platform capability check into UI state is intentional
@@ -143,13 +231,100 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
+    // Coalesces synchronous or rapid-fire icon updates (a batch of photo
+    // loads finishing around the same time) into a single setData call.
+    const scheduleSourceUpdate = () => {
+      if (pendingSourceUpdateRef.current) return;
+      pendingSourceUpdateRef.current = true;
+      queueMicrotask(() => {
+        pendingSourceUpdateRef.current = false;
+        if (disposedRef.current) return;
+        const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
+        if (!source) return;
+        source.setData(toGeoJSON(markersRef.current, new Set(registeredColorRef.current.keys())));
+      });
+    };
+
+    const registerBitmap = (personId: string, bitmap: ImageData, color: string) => {
+      const iconId = iconIdFor(personId);
+      if (map.hasImage(iconId)) {
+        map.updateImage(iconId, bitmap);
+      } else {
+        map.addImage(iconId, bitmap, { pixelRatio: ICON_PIXEL_RATIO });
+      }
+      registeredColorRef.current.set(personId, color);
+    };
+
+    // Loads and composites each photo marker's icon (from cache when
+    // possible) and registers it as a map image. Re-entrant and safe to call
+    // repeatedly: markers already registered with the current ring color are
+    // skipped, so this never loops. Called on marker changes, when a photo
+    // finishes loading, and on every style reload (setStyle drops custom
+    // images, so re-registering from the bitmap cache is required, but never
+    // re-fetches the photo itself).
+    const ensureIcons = () => {
+      let didRegisterAny = false;
+      for (const marker of markersRef.current) {
+        if (!marker.hasPhoto) continue;
+        const personId = marker.personId;
+        const color = ringColorFor(marker, isDarkRef.current);
+        if (registeredColorRef.current.get(personId) === color && map.hasImage(iconIdFor(personId))) {
+          continue;
+        }
+
+        const bitmapKey = `${personId}:${color}`;
+        const cachedBitmap = bitmapCacheRef.current.get(bitmapKey);
+        if (cachedBitmap) {
+          registerBitmap(personId, cachedBitmap, color);
+          didRegisterAny = true;
+          continue;
+        }
+
+        const photoEntry = photoElementCacheRef.current.get(personId);
+        if (photoEntry === 'error') continue; // permanently falls back to the dot for this session
+        if (photoEntry === 'loading') continue; // already in flight; onload will re-run ensureIcons
+        if (photoEntry instanceof HTMLImageElement) {
+          const bitmap = compositeIcon(photoEntry, color);
+          if (bitmap) {
+            bitmapCacheRef.current.set(bitmapKey, bitmap);
+            registerBitmap(personId, bitmap, color);
+            didRegisterAny = true;
+          }
+          continue;
+        }
+
+        // Not cached yet: kick off a same-origin photo fetch (canvas
+        // compositing stays untainted).
+        photoElementCacheRef.current.set(personId, 'loading');
+        const img = new Image();
+        img.onload = () => {
+          if (disposedRef.current) return;
+          photoElementCacheRef.current.set(personId, img);
+          ensureIcons();
+        };
+        img.onerror = () => {
+          if (disposedRef.current) return;
+          photoElementCacheRef.current.set(personId, 'error');
+        };
+        img.src = `/api/photos/${personId}`;
+      }
+      if (didRegisterAny) scheduleSourceUpdate();
+    };
+    ensureIconsRef.current = ensureIcons;
+
     const addDataLayers = () => {
       if (map.getSource(SOURCE_ID)) return;
+      // Custom images do not survive setStyle; every registration here is
+      // for the fresh style, even if the underlying bitmap was cached.
+      registeredColorRef.current.clear();
       const primary =
         getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2563EB';
+
+      ensureIcons();
+
       map.addSource(SOURCE_ID, {
         type: 'geojson',
-        data: toGeoJSON(markersRef.current),
+        data: toGeoJSON(markersRef.current, new Set(registeredColorRef.current.keys())),
         cluster: true,
         clusterMaxZoom: 14,
         clusterRadius: 50,
@@ -179,16 +354,32 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
         paint: { 'text-color': '#ffffff' },
       });
 
+      // Plain colored dot: markers without a photo, or whose photo icon
+      // has not registered yet (upgrades to the photo layer once ready).
       map.addLayer({
         id: 'unclustered-point',
         type: 'circle',
         source: SOURCE_ID,
-        filter: ['!', ['has', 'point_count']],
+        filter: ['all', ['!', ['has', 'point_count']], ['!', ['has', 'iconId']]],
         paint: {
-          'circle-color': primary,
+          'circle-color': ['coalesce', ['get', 'dotColor'], primary],
           'circle-radius': 7,
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
+        },
+      });
+
+      // Circular photo thumbnail, ringed with the person's first group
+      // color, matching the network graph's person nodes.
+      map.addLayer({
+        id: 'unclustered-photo',
+        type: 'symbol',
+        source: SOURCE_ID,
+        filter: ['all', ['!', ['has', 'point_count']], ['has', 'iconId']],
+        layout: {
+          'icon-image': ['get', 'iconId'],
+          'icon-size': 1,
+          'icon-allow-overlap': true,
         },
       });
     };
@@ -218,15 +409,18 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
         });
     });
 
-    map.on('click', 'unclustered-point', (event) => {
+    const handleUnclusteredClick = (event: maplibregl.MapLayerMouseEvent) => {
       const feature = event.features?.[0];
       if (!feature) return;
       const props = feature.properties as unknown as MarkerProperties;
       const geometry = feature.geometry as GeoJSON.Point;
       openPopup(map, geometry.coordinates as [number, number], props, translationsRef.current);
-    });
+    };
 
-    for (const layer of ['clusters', 'unclustered-point']) {
+    map.on('click', 'unclustered-point', handleUnclusteredClick);
+    map.on('click', 'unclustered-photo', handleUnclusteredClick);
+
+    for (const layer of ['clusters', 'unclustered-point', 'unclustered-photo']) {
       map.on('mouseenter', layer, () => {
         map.getCanvas().style.cursor = 'pointer';
       });
@@ -235,7 +429,18 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
       });
     }
 
+    // Captured once for the cleanup below: it is always the same Map
+    // instance for the component's lifetime (only ever mutated, never
+    // reassigned), so reading it via this local satisfies the lint rule
+    // without changing behavior.
+    const registeredColors = registeredColorRef.current;
+
     return () => {
+      disposedRef.current = true;
+      ensureIconsRef.current = null;
+      // Registered images belonged to this map instance; a remount starts
+      // from an empty style with no custom images.
+      registeredColors.clear();
       map.remove();
       mapRef.current = null;
       // The popup and camera state died with the map; let the focus and
@@ -256,13 +461,16 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     map.setStyle(nextStyle);
   }, [isDark]);
 
-  // Push marker updates into the source
+  // Push marker updates into the source, and load/register any newly
+  // visible photo icons (upgrading their markers from dot to photo once
+  // ready; see ensureIcons in the map init effect).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    ensureIconsRef.current?.();
     const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
     if (source) {
-      source.setData(toGeoJSON(markers));
+      source.setData(toGeoJSON(markers, new Set(registeredColorRef.current.keys())));
     }
   }, [markers]);
 

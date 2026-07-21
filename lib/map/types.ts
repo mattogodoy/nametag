@@ -18,11 +18,16 @@ export interface MapMarker {
   addressText: string | null;
   country: string | null;
   groupIds: string[];
+  /** Whether the contact has a photo, used to render a photo thumbnail marker instead of a dot */
+  hasPhoto: boolean;
+  /** First group's color (in returned order), like the network graph; null falls back to the default dot color */
+  groupColor: string | null;
 }
 
 export interface MapGroup {
   id: string;
   name: string;
+  color: string | null;
 }
 
 /** A contact with at least one address the geocoder could not locate */
