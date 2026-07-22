@@ -25,11 +25,14 @@ vi.mock('sonner', () => ({
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, params?: Record<string, unknown>) => {
-    if (key === 'importSuccessToast') {
-      return `${params?.imported} imported, ${params?.skipped} skipped`;
+    if (key === 'importSuccessWithUpdatesToast') {
+      return `${params?.imported} imported, ${params?.updated} updated, ${params?.skipped} skipped`;
     }
     if (key === 'importCompleteWithErrors') {
       return `${params?.imported} imported, ${params?.errors} errors`;
+    }
+    if (key === 'allSkippedToast') {
+      return `${params?.skipped} skipped`;
     }
     return key;
   },
@@ -54,7 +57,7 @@ describe('ImportSuccessToast', () => {
     // Mock window.location for URL construction
     Object.defineProperty(window, 'location', {
       writable: true,
-      value: new URL('http://localhost/people?importSuccess=true&imported=5&skipped=2&errors=0'),
+      value: new URL('http://localhost/people?importSuccess=true&imported=5&updated=0&skipped=2&errors=0'),
     });
   });
 
@@ -67,7 +70,7 @@ describe('ImportSuccessToast', () => {
 
       render(<ImportSuccessToast />);
 
-      expect(toast.success).toHaveBeenCalledWith('5 imported, 2 skipped');
+      expect(toast.success).toHaveBeenCalledWith('5 imported, 0 updated, 2 skipped');
     });
 
     it('should handle zero skipped contacts', () => {
@@ -78,7 +81,19 @@ describe('ImportSuccessToast', () => {
 
       render(<ImportSuccessToast />);
 
-      expect(toast.success).toHaveBeenCalledWith('3 imported, 0 skipped');
+      expect(toast.success).toHaveBeenCalledWith('3 imported, 0 updated, 0 skipped');
+    });
+
+    it('should show success toast with updated count', () => {
+      mockSearchParams.set('importSuccess', 'true');
+      mockSearchParams.set('imported', '2');
+      mockSearchParams.set('updated', '3');
+      mockSearchParams.set('skipped', '0');
+      mockSearchParams.set('errors', '0');
+
+      render(<ImportSuccessToast />);
+
+      expect(toast.success).toHaveBeenCalledWith('2 imported, 3 updated, 0 skipped');
     });
 
     it('should handle single contact import', () => {
@@ -133,6 +148,7 @@ describe('ImportSuccessToast', () => {
       const callArg = mockReplace.mock.calls[0][0];
       expect(callArg).not.toContain('importSuccess');
       expect(callArg).not.toContain('imported');
+      expect(callArg).not.toContain('updated');
       expect(callArg).not.toContain('skipped');
       expect(callArg).not.toContain('errors');
     });
@@ -235,7 +251,7 @@ describe('ImportSuccessToast', () => {
       expect(toast.error).not.toHaveBeenCalled();
     });
 
-    it('should not show toast when zero imported with no errors', () => {
+    it('should show warning toast when all contacts were skipped', () => {
       mockSearchParams.set('importSuccess', 'true');
       mockSearchParams.set('imported', '0');
       mockSearchParams.set('skipped', '5');
@@ -243,7 +259,7 @@ describe('ImportSuccessToast', () => {
 
       render(<ImportSuccessToast />);
 
-      // No toast shown if importedCount is 0 and no errors
+      expect(toast.warning).toHaveBeenCalledWith('5 skipped');
       expect(toast.success).not.toHaveBeenCalled();
       expect(toast.error).not.toHaveBeenCalled();
     });

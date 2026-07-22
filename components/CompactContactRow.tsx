@@ -50,6 +50,9 @@ interface CompactContactRowProps {
   relationshipTypes: RelationshipType[];
   selectedRelationshipTypeId: string;
   onRelationshipChange: (contactId: string, relationshipTypeId: string) => void;
+  isExisting?: boolean;
+  willUpdate?: boolean;
+  onToggleUpdate?: (id: string) => void;
 }
 
 export default function CompactContactRow({
@@ -64,6 +67,9 @@ export default function CompactContactRow({
   relationshipTypes,
   selectedRelationshipTypeId,
   onRelationshipChange,
+  isExisting = false,
+  willUpdate = false,
+  onToggleUpdate,
 }: CompactContactRowProps) {
   const t = useTranslations('settings.carddav.import');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -128,12 +134,17 @@ export default function CompactContactRow({
           </svg>
         </button>
 
-        {/* Full name */}
+        {/* Full name + existing badge */}
         <div
-          className="flex-1 font-semibold text-foreground cursor-pointer"
+          className="flex-1 flex items-center gap-2 cursor-pointer"
           onClick={() => onToggle(pendingImport.id)}
         >
-          {fullName}
+          <span className="font-semibold text-foreground">{fullName}</span>
+          {isExisting && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
+              {t('alreadyExists')}
+            </span>
+          )}
         </div>
 
         {/* Group pills (read-only display) */}
@@ -177,6 +188,19 @@ export default function CompactContactRow({
       {/* Expanded details */}
       {isExpanded && (
         <div className="px-3 pb-3 pt-0 border-t border-border mt-2">
+          {isExisting && onToggleUpdate && (
+            <label className="flex items-center gap-2 mt-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={willUpdate}
+                onChange={() => onToggleUpdate(pendingImport.id)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm font-medium text-foreground">
+                {t('updateExisting')}
+              </span>
+            </label>
+          )}
           {parsedData && (
             <div className="mt-2 space-y-1 text-sm text-muted">
               {parsedData.organization && (

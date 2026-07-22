@@ -34,6 +34,7 @@ interface ImportContactsListProps {
   groups: Group[];
   relationshipTypes: RelationshipType[];
   isFileImport?: boolean;
+  existingUids?: string[];
 }
 
 export default function ImportContactsList({
@@ -41,6 +42,7 @@ export default function ImportContactsList({
   groups,
   relationshipTypes,
   isFileImport = false,
+  existingUids = [],
 }: ImportContactsListProps) {
   const t = useTranslations('settings.carddav.import');
   const router = useRouter();
@@ -53,6 +55,9 @@ export default function ImportContactsList({
   const [perContactRelationshipTypeId, setPerContactRelationshipTypeId] = useState<Map<string, string>>(new Map());
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const existingUidSet = useMemo(() => new Set(existingUids), [existingUids]);
+  const [updateExistingIds, setUpdateExistingIds] = useState<Set<string>>(new Set());
 
   const handleToggleContact = (id: string) => {
     const newSelected = new Set(selectedIds);
@@ -91,6 +96,18 @@ export default function ImportContactsList({
     });
   };
 
+  const handleToggleUpdateExisting = (id: string) => {
+    setUpdateExistingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   const handlePerContactRelationshipChange = (contactId: string, relationshipTypeId: string) => {
     setPerContactRelationshipTypeId((prev) => {
       const newMap = new Map(prev);
@@ -104,7 +121,7 @@ export default function ImportContactsList({
   };
 
   // Detect unsaved changes
-  const hasUnsavedChanges = selectedIds.size > 0 || selectedGroupIds.length > 0 || perContactGroups.size > 0 || globalRelationshipTypeId !== '' || perContactRelationshipTypeId.size > 0;
+  const hasUnsavedChanges = selectedIds.size > 0 || selectedGroupIds.length > 0 || perContactGroups.size > 0 || globalRelationshipTypeId !== '' || perContactRelationshipTypeId.size > 0 || updateExistingIds.size > 0;
 
   // Warn before leaving page with unsaved changes
   useEffect(() => {
@@ -161,6 +178,7 @@ export default function ImportContactsList({
           perContactGroups: perContactGroupsObj,
           globalRelationshipTypeId: globalRelationshipTypeId || null,
           perContactRelationshipTypeId: perContactRelObj,
+          updateExistingIds: Array.from(updateExistingIds),
         }),
       });
 
@@ -181,6 +199,7 @@ export default function ImportContactsList({
       const params = new URLSearchParams({
         importSuccess: 'true',
         imported: data.imported.toString(),
+        updated: (data.updated ?? 0).toString(),
         skipped: data.skipped.toString(),
         errors: data.errors.toString(),
       });
@@ -289,6 +308,9 @@ export default function ImportContactsList({
           const isSelected = selectedIds.has(pendingImport.id);
           const contactGroupIds = perContactGroups.get(pendingImport.id) || [];
 
+          const isExisting = existingUidSet.has(pendingImport.uid);
+          const willUpdate = updateExistingIds.has(pendingImport.id);
+
           return (
             <CompactContactRow
               key={pendingImport.id}
@@ -303,6 +325,9 @@ export default function ImportContactsList({
               relationshipTypes={relationshipTypes}
               selectedRelationshipTypeId={perContactRelationshipTypeId.get(pendingImport.id) || ''}
               onRelationshipChange={handlePerContactRelationshipChange}
+              isExisting={isExisting}
+              willUpdate={willUpdate}
+              onToggleUpdate={handleToggleUpdateExisting}
             />
           );
         })}
