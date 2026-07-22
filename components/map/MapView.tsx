@@ -253,6 +253,12 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
+    map.once('idle', () => {
+      containerRef.current
+        ?.querySelector('.maplibregl-ctrl-attrib')
+        ?.classList.remove('maplibregl-compact-show');
+    });
+
     // Coalesces synchronous or rapid-fire icon updates (a batch of photo
     // loads finishing around the same time) into a single setData call.
     const scheduleSourceUpdate = () => {
@@ -475,15 +481,16 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     const handleColocatedClick = (event: maplibregl.MapLayerMouseEvent) => {
       const feature = event.features?.[0];
       if (!feature) return;
-      const geometry = feature.geometry as GeoJSON.Point;
-      const [lng, lat] = geometry.coordinates;
+      const props = feature.properties as unknown as MarkerProperties;
+      const representative = markersRef.current.find((m) => m.id === props.id);
+      if (!representative) return;
       const colocated = markersRef.current.filter(
-        (m) => m.latitude === lat && m.longitude === lng
+        (m) => m.latitude === representative.latitude && m.longitude === representative.longitude
       );
       if (colocated.length === 0) return;
       openColocatedPopup(
         map,
-        geometry.coordinates as [number, number],
+        [representative.longitude, representative.latitude],
         colocated,
         translationsRef.current
       );
