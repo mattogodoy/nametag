@@ -1457,7 +1457,8 @@
     "emptyGeocodingDisabled": "Adresselokalisering er slått av. Du kan slå den på i Innstillinger > Kart.",
     "viewContact": "Vis kontakt",
     "directions": "Veibeskrivelse",
-    "webglUnavailable": "Nettleseren din kan ikke vise kartet fordi WebGL er utilgjengelig eller deaktivert. Aktiver grafikkakselerasjon eller WebGL i nettleseren din og last inn siden på nytt."
+    "webglUnavailable": "Nettleseren din kan ikke vise kartet fordi WebGL er utilgjengelig eller deaktivert. Aktiver grafikkakselerasjon eller WebGL i nettleseren din og last inn siden på nytt.",
+    "colocatedTitle": "{count, plural, one {1 person på dette stedet} other {# personer på dette stedet}}"
   },
   "relationshipTypes": {
     "title": "Relasjonstyper",

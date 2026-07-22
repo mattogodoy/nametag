@@ -1457,7 +1457,8 @@
     "emptyGeocodingDisabled": "住所の位置特定は無効になっています。設定 > マップで有効にできます。",
     "viewContact": "連絡先を見る",
     "directions": "経路",
-    "webglUnavailable": "WebGLが利用できないか無効になっているため、ブラウザでマップを表示できません。ブラウザでグラフィックアクセラレーションまたはWebGLを有効にして、ページを再読み込みしてください。"
+    "webglUnavailable": "WebGLが利用できないか無効になっているため、ブラウザでマップを表示できません。ブラウザでグラフィックアクセラレーションまたはWebGLを有効にして、ページを再読み込みしてください。",
+    "colocatedTitle": "{count, plural, other {この場所に#人}}"
   },
   "relationshipTypes": {
     "title": "関係の種類",

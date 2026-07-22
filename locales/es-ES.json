@@ -1457,7 +1457,8 @@
     "emptyGeocodingDisabled": "La localización de direcciones está desactivada. Puedes activarla en Ajustes > Mapa.",
     "viewContact": "Ver contacto",
     "directions": "Cómo llegar",
-    "webglUnavailable": "Tu navegador no puede mostrar el mapa porque WebGL no está disponible o está desactivado. Activa la aceleración gráfica o WebGL en tu navegador y vuelve a cargar la página."
+    "webglUnavailable": "Tu navegador no puede mostrar el mapa porque WebGL no está disponible o está desactivado. Activa la aceleración gráfica o WebGL en tu navegador y vuelve a cargar la página.",
+    "colocatedTitle": "{count, plural, one {1 persona en esta ubicación} other {# personas en esta ubicación}}"
   },
   "relationshipTypes": {
     "title": "Tipos de Relación",

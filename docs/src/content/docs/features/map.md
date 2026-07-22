@@ -15,7 +15,7 @@ The second address line gets special treatment: lookups try the full address fir
 
 ## The map interface
 
-The map itself is built on MapLibre GL, giving you smooth zooming, panning, and clustering of nearby markers. Contacts with a photo appear as a small circular photo thumbnail, ringed in the color of the first group they belong to; contacts without a photo show as a plain colored dot in that same group color, falling back to the default marker color when they aren't in a colored group. Click a marker (or a cluster) to see who it belongs to and the full address it represents, with a link to their contact page and a link to get directions.
+The map itself is built on MapLibre GL, giving you smooth zooming, panning, and clustering of nearby markers. Contacts with a photo appear as a small circular photo thumbnail, ringed in the color of the first group they belong to; contacts without a photo show as a plain colored dot in that same group color, falling back to the default marker color when they aren't in a colored group. When multiple people share the same address (such as partners or family members living together), the map shows a single count circle at that location instead of stacking individual markers on top of each other. Click a marker to see who it belongs to and the full address, with a link to their contact page and a link to get directions. Clicking a co-located count circle opens a popup listing everyone at that address.
 
 ## Filtering
 

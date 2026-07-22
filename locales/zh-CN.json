@@ -1457,7 +1457,8 @@
     "emptyGeocodingDisabled": "地址定位已关闭。您可以在设置 > 地图中开启。",
     "viewContact": "查看联系人",
     "directions": "路线",
-    "webglUnavailable": "您的浏览器无法显示地图，因为 WebGL 不可用或已被禁用。请在浏览器中启用图形加速或 WebGL，然后重新加载页面。"
+    "webglUnavailable": "您的浏览器无法显示地图，因为 WebGL 不可用或已被禁用。请在浏览器中启用图形加速或 WebGL，然后重新加载页面。",
+    "colocatedTitle": "{count, plural, other {此位置有#人}}"
   },
   "relationshipTypes": {
     "title": "关系类型",
