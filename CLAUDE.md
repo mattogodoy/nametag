@@ -227,6 +227,26 @@ cd docs && rm -rf .astro dist && npm run build
 
 The documentation site is deployed to `docs.nametag.one`. Keeping it in sync with the codebase is as important as keeping translations in sync.
 
+### 9. Release Notes: Breaking Changes Warning
+**Release descriptions MUST highlight breaking changes and required user actions with a visible warning.**
+
+When a release includes changes that require action from users or self-hosters (new or changed environment variables, cron jobs, Docker/docker-compose changes, database migrations, removed or renamed settings, config file changes), add a GitHub alert block at the top of the release description:
+
+```markdown
+> [!WARNING]
+> **Action required before upgrading**
+>
+> - Add `NEW_VAR=value` to your `.env` file
+> - Run `npx prisma migrate deploy` after updating
+> - Update your cron schedule (see docs)
+```
+
+Rules:
+- The warning block goes **before** the feature description, so it is the first thing users see
+- Each bullet must tell the user **what to do**, not just what changed
+- If there are no breaking or action-required changes, omit the block entirely
+- This applies to both automated release notes (handled by the AI prompt in `release-please.yml`) and manually written release descriptions
+
 ## Deployment Modes
 
 Nametag operates in three distinct modes:
