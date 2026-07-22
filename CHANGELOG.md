@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.55.0](https://github.com/mattogodoy/nametag/compare/v0.54.0...v0.55.0) (2026-07-22)
+
+
+### Features
+
+* **map:** add colocation utility for grouping markers by coordinates ([0d6fbd6](https://github.com/mattogodoy/nametag/commit/0d6fbd668ba5b828ee87fbec2e8e4b1cb024652d))
+
+
+### Bug Fixes
+
+* **carddav:** accept null addressBook fields when saving connection ([58359b2](https://github.com/mattogodoy/nametag/commit/58359b25dd61b19c019c3663ad690b4b80f6764a))
+* **carddav:** accept null addressBook fields when saving connection ([58d1880](https://github.com/mattogodoy/nametag/commit/58d1880ba8de9181296e236951df0d6e64230154)), closes [#332](https://github.com/mattogodoy/nametag/issues/332)
+* **map:** show count circle for co-located markers instead of overlapping ([55139f1](https://github.com/mattogodoy/nametag/commit/55139f1af312c26de918b4d08ae103d08dd97d6f)), closes [#361](https://github.com/mattogodoy/nametag/issues/361)
+* **map:** use marker ID lookup for co-located click handler and collapse attribution ([b89b945](https://github.com/mattogodoy/nametag/commit/b89b945069180815c74d2f2aeeaf745f91d711a7))
+* set max output tokens to prevent release notes truncation ([2e594fe](https://github.com/mattogodoy/nametag/commit/2e594fefaa11cd031117ed6ee3a27a211fe2e470))
+* show count circle for co-located map markers ([2f056d3](https://github.com/mattogodoy/nametag/commit/2f056d355ac65098545d63a257f0780d3029203f))
+* show feedback for skipped imports and allow updating existing contacts ([5175409](https://github.com/mattogodoy/nametag/commit/5175409beb99ac7d3c3297de78758aa512e39116))
+* show feedback for skipped imports and allow updating existing contacts ([30b126a](https://github.com/mattogodoy/nametag/commit/30b126a7266b01183588a14b5674e9edaacf1e41)), closes [#359](https://github.com/mattogodoy/nametag/issues/359)
+* warn before navigating away from person edit form with unsaved changes ([f62ef36](https://github.com/mattogodoy/nametag/commit/f62ef36e3878e6396f7ee318aef24fd36637314d)), closes [#321](https://github.com/mattogodoy/nametag/issues/321)
+* warn before navigating away with unsaved changes ([55698a7](https://github.com/mattogodoy/nametag/commit/55698a75157a1124582ba0408fac6bef7cd836cc))
+
 ## [0.54.0](https://github.com/mattogodoy/nametag/compare/v0.53.3...v0.54.0) (2026-07-21)
 
 
