@@ -143,6 +143,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
               additionalProperties: { type: 'array', items: { type: 'string' } },
               description: 'Map of import ID to group IDs for per-contact assignment',
             },
+            updateExistingIds: { type: 'array', items: { type: 'string' }, description: 'IDs of pending imports whose existing person should be updated instead of skipped' },
           },
           required: ['importIds'],
         }),
@@ -152,6 +153,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
             properties: {
               success: { type: 'boolean' },
               imported: { type: 'integer' },
+              updated: { type: 'integer' },
               skipped: { type: 'integer' },
               errors: { type: 'integer' },
               errorMessages: { type: 'array', items: { type: 'string' } },

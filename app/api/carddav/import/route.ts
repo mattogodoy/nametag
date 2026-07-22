@@ -4,7 +4,7 @@ import { prisma, withDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
-import { createPersonFromVCardData, restorePersonFromVCardData } from '@/lib/carddav/vcard-import';
+import { createPersonFromVCardData, restorePersonFromVCardData, updatePersonFromVCard } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
 import { isSaasMode } from '@/lib/features';
@@ -20,6 +20,7 @@ const importSchema = z.object({
   perContactGroups: z.record(z.string(), z.array(z.string())).optional(),
   globalRelationshipTypeId: z.string().nullable().optional(),
   perContactRelationshipTypeId: z.record(z.string(), z.string()).optional(),
+  updateExistingIds: z.array(z.string()).optional(),
 });
 
 export const POST = withLogging(async function POST(request: Request) {
@@ -40,12 +41,13 @@ export const POST = withLogging(async function POST(request: Request) {
       );
     }
 
-    const { importIds, groupIds, globalGroupIds, perContactGroups, globalRelationshipTypeId, perContactRelationshipTypeId } = validationResult.data;
+    const { importIds, groupIds, globalGroupIds, perContactGroups, globalRelationshipTypeId, perContactRelationshipTypeId, updateExistingIds } = validationResult.data;
 
     // Support both old and new API formats
     const globalGroups = globalGroupIds || groupIds || [];
     const contactGroups = perContactGroups || {};
     const contactRelationships = perContactRelationshipTypeId || {};
+    const updateExistingSet = new Set(updateExistingIds || []);
 
     // Get the user's CardDAV connection (may not exist for file-only imports)
     const connection = await prisma.cardDavConnection.findUnique({
@@ -75,6 +77,7 @@ export const POST = withLogging(async function POST(request: Request) {
 
     const results = {
       imported: 0,
+      updated: 0,
       skipped: 0,
       errors: 0,
       errorMessages: [] as string[],
@@ -236,13 +239,23 @@ export const POST = withLogging(async function POST(request: Request) {
         parsedData.organization = parsedData.organization ? sanitizeName(parsedData.organization) ?? parsedData.organization : parsedData.organization;
         parsedData.jobTitle = parsedData.jobTitle ? sanitizeName(parsedData.jobTitle) ?? parsedData.jobTitle : parsedData.jobTitle;
 
+        const shouldUpdate = updateExistingSet.has(pendingImport.id);
+
         // Check for duplicates by UID (O(1) map lookup instead of per-contact query)
         if (parsedData.uid) {
           const existingMapping = existingMappingsByUid.get(parsedData.uid);
 
           if (existingMapping) {
-            results.skipped++;
-            continue; // Skip duplicate
+            if (shouldUpdate) {
+              await updatePersonFromVCard(existingMapping.personId, parsedData, session.user.id);
+              await prisma.cardDavPendingImport.delete({
+                where: { id: pendingImport.id },
+              });
+              results.updated++;
+            } else {
+              results.skipped++;
+            }
+            continue;
           }
         }
 
@@ -253,8 +266,14 @@ export const POST = withLogging(async function POST(request: Request) {
           const existingPerson = existingPersonsByUid.get(parsedData.uid);
 
           if (existingPerson) {
-            // Person already exists — create a CardDAV mapping (if applicable) and clean up
+            // Person already exists
             const isFileImport = pendingImport.uploadedByUserId !== null;
+
+            if (shouldUpdate) {
+              await updatePersonFromVCard(existingPerson.id, parsedData, session.user.id);
+            }
+
+            // Create a CardDAV mapping if applicable
             if (!isFileImport && connection && !mappingsByPersonId.has(existingPerson.id)) {
               const enhancedParsed = parseVCard(pendingImport.vCardData);
               await prisma.cardDavMapping.create({
@@ -278,7 +297,11 @@ export const POST = withLogging(async function POST(request: Request) {
               where: { id: pendingImport.id },
             });
 
-            results.skipped++;
+            if (shouldUpdate) {
+              results.updated++;
+            } else {
+              results.skipped++;
+            }
             continue;
           }
         }
@@ -399,6 +422,7 @@ export const POST = withLogging(async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       imported: results.imported,
+      updated: results.updated,
       skipped: results.skipped,
       errors: results.errors,
       errorMessages: results.errorMessages,

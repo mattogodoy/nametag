@@ -377,7 +377,13 @@
         "noRelationship": "[Ingen]",
         "relationshipPrecedenceHelp": "Du kan overstyre dette for individuelle kontakter ved å utvide dem og velge en annen relasjon.",
         "contactRelationship": "Relasjon til deg: Denne personen er din...",
-        "useGlobalRelationship": "[Bruk global innstilling]"
+        "useGlobalRelationship": "[Bruk global innstilling]",
+        "alreadyExists": "Finnes allerede i Nametag",
+        "updateExisting": "Oppdater eksisterende kontakt",
+        "updated": "{count} kontakter oppdatert",
+        "allSkippedToast": "{skipped, plural, =1 {1 kontakt var allerede i Nametag og ble hoppet over} other {# kontakter var allerede i Nametag og ble hoppet over}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {1 kontakt importert} other {# kontakter importert}}{updated, plural, =0 {} =1 {, 1 kontakt oppdatert} other {, # kontakter oppdatert}}{skipped, plural, =0 {} =1 {, 1 duplikat hoppet over} other {, # duplikater hoppet over}}",
+        "descriptionWithDuplicates": "{count} kontakter funnet, {duplicates} finnes allerede i Nametag"
       },
       "notifications": {
         "newContactsFound": "{count} nye kontakter funnet",

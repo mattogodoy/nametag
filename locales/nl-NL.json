@@ -373,7 +373,13 @@
         "noRelationship": "[Geen]",
         "relationshipPrecedenceHelp": "U kunt dit overschrijven voor individuele contacten door ze uit te vouwen en een andere relatie te selecteren.",
         "contactRelationship": "Relatie tot u: Deze persoon is uw...",
-        "useGlobalRelationship": "[Gebruik globale instelling]"
+        "useGlobalRelationship": "[Gebruik globale instelling]",
+        "alreadyExists": "Bestaat al in Nametag",
+        "updateExisting": "Bestaand contact bijwerken",
+        "updated": "{count} contacten bijgewerkt",
+        "allSkippedToast": "{skipped, plural, =1 {1 contact bestond al in Nametag en is overgeslagen} other {# contacten bestonden al in Nametag en zijn overgeslagen}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {1 contact geimporteerd} other {# contacten geimporteerd}}{updated, plural, =0 {} =1 {, 1 contact bijgewerkt} other {, # contacten bijgewerkt}}{skipped, plural, =0 {} =1 {, 1 duplicaat overgeslagen} other {, # duplicaten overgeslagen}}",
+        "descriptionWithDuplicates": "{count} contacten gevonden, {duplicates} bestaan al in Nametag"
       },
       "notifications": {
         "newContactsFound": "{count} nieuwe contacten gevonden",

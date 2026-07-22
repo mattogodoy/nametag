@@ -58,6 +58,8 @@ Go to **CardDAV > Conflicts** to see a side-by-side comparison of both versions.
 
 New contacts found on the CardDAV server that don't yet exist in Nametag show up as pending imports. Review them and choose which ones to bring in, rather than importing everything automatically.
 
+Contacts that already exist in Nametag (matched by their vCard UID) are marked with an "Already in Nametag" badge. You can still select these contacts and check the **Update existing contact** option to overwrite the existing record with the data from the import. This is useful when re-importing a VCF file with updated information for a contact you already have.
+
 ## Bulk export
 
 If you're setting up sync for the first time and already have contacts in Nametag, use bulk export to push your existing contacts to the CardDAV server in batches.

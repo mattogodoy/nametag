@@ -83,6 +83,21 @@ export default async function ImportPage({
     redirect('/settings/account');
   }
 
+  // Detect which pending imports already exist as active persons (by UID).
+  // This lets the UI show an "Already in Nametag" badge and offer an update option.
+  const pendingUids = pendingImports.map((p) => p.uid).filter(Boolean);
+  const existingPersonsByUid = pendingUids.length > 0
+    ? await prisma.person.findMany({
+        where: {
+          uid: { in: pendingUids },
+          userId: session.user.id,
+          deletedAt: null,
+        },
+        select: { uid: true },
+      })
+    : [];
+  const existingUids = existingPersonsByUid.map((p) => p.uid!).filter(Boolean);
+
   // Get user's groups and relationship types for assignment
   const [groups, relationshipTypes] = await Promise.all([
     prisma.group.findMany({
@@ -125,7 +140,12 @@ export default async function ImportPage({
           ) : (
             <>
               <p className="text-muted mb-6">
-                {t('description', { count: pendingImports.length })}
+                {existingUids.length > 0
+                  ? t('descriptionWithDuplicates', {
+                      count: pendingImports.length,
+                      duplicates: existingUids.length,
+                    })
+                  : t('description', { count: pendingImports.length })}
               </p>
 
               <ImportContactsList
@@ -133,6 +153,7 @@ export default async function ImportPage({
                 groups={groups}
                 relationshipTypes={relationshipTypes}
                 isFileImport={isFileImport}
+                existingUids={existingUids}
               />
             </>
           )}

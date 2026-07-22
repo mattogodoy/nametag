@@ -27,6 +27,7 @@ export default function ImportSuccessToast({
 
     const importSuccess = searchParams.get('importSuccess');
     const imported = searchParams.get('imported');
+    const updated = searchParams.get('updated');
     const skipped = searchParams.get('skipped');
     const errors = searchParams.get('errors');
 
@@ -34,6 +35,7 @@ export default function ImportSuccessToast({
       hasShownToast.current = true;
 
       const importedCount = parseInt(imported || '0', 10);
+      const updatedCount = parseInt(updated || '0', 10);
       const skippedCount = parseInt(skipped || '0', 10);
       const errorsCount = parseInt(errors || '0', 10);
 
@@ -45,12 +47,17 @@ export default function ImportSuccessToast({
             errors: errorsCount,
           })
         );
-      } else if (importedCount > 0) {
+      } else if (importedCount > 0 || updatedCount > 0) {
         toast.success(
-          t('importSuccessToast', {
+          t('importSuccessWithUpdatesToast', {
             imported: importedCount,
+            updated: updatedCount,
             skipped: skippedCount,
           })
+        );
+      } else if (skippedCount > 0) {
+        toast.warning(
+          t('allSkippedToast', { skipped: skippedCount })
         );
       }
 
@@ -61,6 +68,7 @@ export default function ImportSuccessToast({
         const url = new URL(window.location.href);
         url.searchParams.delete('importSuccess');
         url.searchParams.delete('imported');
+        url.searchParams.delete('updated');
         url.searchParams.delete('skipped');
         url.searchParams.delete('errors');
         router.replace(url.pathname + url.search, { scroll: false });
