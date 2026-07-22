@@ -377,7 +377,13 @@
         "noRelationship": "[Keine]",
         "relationshipPrecedenceHelp": "Du kannst dies für einzelne Kontakte überschreiben, indem du sie aufklappst und eine andere Beziehung auswählst.",
         "contactRelationship": "Beziehung zu dir: Diese Person ist dein/e...",
-        "useGlobalRelationship": "[Globale Einstellung verwenden]"
+        "useGlobalRelationship": "[Globale Einstellung verwenden]",
+        "alreadyExists": "Bereits in Nametag vorhanden",
+        "updateExisting": "Bestehenden Kontakt aktualisieren",
+        "updated": "{count} Kontakte aktualisiert",
+        "allSkippedToast": "{skipped, plural, =1 {1 Kontakt war bereits in Nametag und wurde uebersprungen} other {# Kontakte waren bereits in Nametag und wurden uebersprungen}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {1 Kontakt importiert} other {# Kontakte importiert}}{updated, plural, =0 {} =1 {, 1 Kontakt aktualisiert} other {, # Kontakte aktualisiert}}{skipped, plural, =0 {} =1 {, 1 Duplikat uebersprungen} other {, # Duplikate uebersprungen}}",
+        "descriptionWithDuplicates": "{count} Kontakte gefunden, {duplicates} bereits in Nametag"
       },
       "notifications": {
         "newContactsFound": "{count} neue Kontakte gefunden",
