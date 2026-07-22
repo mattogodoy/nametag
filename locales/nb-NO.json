@@ -614,7 +614,7 @@
     "trash": {
       "title": "Papirkurv",
       "description": "Gjenopprett eller slett elementer permanent",
-      "pageDescription": "Elementer du sletter, blir beholdt i 30 dager for de fjernes permanent. Du kan gjenopprette dem eller slette dem umiddelbart.",
+      "pageDescription": "Elementer du sletter, blir beholdt i 30 dager før de fjernes permanent. Du kan gjenopprette dem eller slette dem umiddelbart.",
       "tabs": {
         "people": "Personer",
         "groups": "Grupper",
