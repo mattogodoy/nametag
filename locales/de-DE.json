@@ -611,6 +611,45 @@
       "deleteFailed": "Konto konnte nicht gelöscht werden",
       "importDataFailed": "Daten konnten nicht importiert werden"
     },
+    "trash": {
+      "title": "Papierkorb",
+      "description": "Elemente wiederherstellen oder endgültig löschen",
+      "pageDescription": "Gelöschte Elemente werden 30 Tage lang aufbewahrt, bevor sie endgültig entfernt werden. Du kannst sie wiederherstellen oder sofort löschen.",
+      "tabs": {
+        "people": "Personen",
+        "groups": "Gruppen",
+        "relationships": "Beziehungen",
+        "relationshipTypes": "Beziehungstypen",
+        "importantDates": "Wichtige Daten"
+      },
+      "daysRemaining": "Noch {days} Tage",
+      "lessThanOneDay": "Weniger als 1 Tag verbleibend",
+      "empty": "Keine gelöschten {type} gefunden.",
+      "emptyTypes": {
+        "people": "Personen",
+        "groups": "Gruppen",
+        "relationships": "Beziehungen",
+        "relationshipTypes": "Beziehungstypen",
+        "importantDates": "wichtige Daten"
+      },
+      "restore": "Wiederherstellen",
+      "restoring": "Wird wiederhergestellt...",
+      "permanentDelete": "Endgültig löschen",
+      "deleting": "Wird gelöscht...",
+      "confirmDelete": {
+        "title": "Endgültig löschen?",
+        "message": "Dieses Element ist dann für immer weg. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "messagePerson": "Diese Person und alle zugehörigen Daten (Beziehungen, Gruppenmitgliedschaften, Fotos, benutzerdefinierte Felder) werden endgültig gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirm": "Endgültig löschen",
+        "cancel": "Abbrechen"
+      },
+      "restoreSuccess": "Element erfolgreich wiederhergestellt",
+      "deleteSuccess": "Element endgültig gelöscht",
+      "restoreError": "Element konnte nicht wiederhergestellt werden",
+      "deleteError": "Element konnte nicht gelöscht werden",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "{title} ({date}) für {person}"
+    },
     "about": {
       "title": "Über",
       "description": "Version und Informationen",

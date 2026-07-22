@@ -611,6 +611,45 @@
       "deleteFailed": "Failed to delete account",
       "importDataFailed": "Failed to import data"
     },
+    "trash": {
+      "title": "Trash",
+      "description": "Restore or permanently delete items",
+      "pageDescription": "Items you delete are kept for 30 days before being permanently removed. You can restore them or delete them immediately.",
+      "tabs": {
+        "people": "People",
+        "groups": "Groups",
+        "relationships": "Relationships",
+        "relationshipTypes": "Relationship Types",
+        "importantDates": "Important Dates"
+      },
+      "daysRemaining": "{days} days left",
+      "lessThanOneDay": "Less than 1 day left",
+      "empty": "No deleted {type} found.",
+      "emptyTypes": {
+        "people": "people",
+        "groups": "groups",
+        "relationships": "relationships",
+        "relationshipTypes": "relationship types",
+        "importantDates": "important dates"
+      },
+      "restore": "Restore",
+      "restoring": "Restoring...",
+      "permanentDelete": "Delete permanently",
+      "deleting": "Deleting...",
+      "confirmDelete": {
+        "title": "Delete permanently?",
+        "message": "This item will be gone forever. This action cannot be undone.",
+        "messagePerson": "This person and all their associated data (relationships, group memberships, photos, custom fields) will be permanently deleted. This action cannot be undone.",
+        "confirm": "Delete permanently",
+        "cancel": "Cancel"
+      },
+      "restoreSuccess": "Item restored successfully",
+      "deleteSuccess": "Item permanently deleted",
+      "restoreError": "Failed to restore item",
+      "deleteError": "Failed to delete item",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "{title} ({date}) for {person}"
+    },
     "about": {
       "title": "About",
       "description": "Version and information",
