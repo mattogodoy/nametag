@@ -41,7 +41,7 @@ Photos are stored on disk, not in the database, at the path configured by the `P
 | Max upload size | 50 MB |
 | Accepted input formats | JPEG, PNG, GIF, WebP (native); HEIC/HEIF (auto-converted to JPEG before crop) |
 | Output format | JPEG for opaque images, PNG for images with transparency |
-| Output dimensions | Square, default 256x256px (configurable via the `PHOTO_SIZE` environment variable, range 64-4096) |
+| Output dimensions | Square, at most 256x256px by default (configurable via the `PHOTO_SIZE` environment variable, range 64-4096). Images smaller than the configured size are kept at their original dimensions and never upscaled. |
 | JPEG quality | Default 80 (configurable via the `PHOTO_QUALITY` environment variable, range 1-100) |
 | Crop aspect ratio | 1:1 (square), shown with a round crop shape in the UI |
 | EXIF data | Auto-rotated, then stripped |

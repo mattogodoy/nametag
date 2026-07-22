@@ -68,7 +68,7 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `SMTP_REQUIRE_TLS` | Require STARTTLS | `true` |
 | `SMTP_FROM` | Override the "from" address if your server rejects custom ones | Not set |
 | `PHOTO_STORAGE_PATH` | Custom path for photo storage | `/app/data/photos` |
-| `PHOTO_SIZE` | Photo dimensions in pixels, square, 64 to 4096 | `256` |
+| `PHOTO_SIZE` | Max photo dimensions in pixels (square, 64 to 4096). Smaller images keep their original size. | `256` |
 | `PHOTO_QUALITY` | JPEG quality for opaque photos, 1 to 100 | `80` |
 | `OIDC_ISSUER_URL` | OIDC provider issuer URL, enables SSO login | Not set |
 | `OIDC_CLIENT_ID` | OIDC client ID registered with your provider | Not set |
@@ -89,7 +89,7 @@ Some variables are validated against a specific range or format at startup. If a
 
 | Variable | Constraint | Default |
 | --- | --- | --- |
-| `PHOTO_SIZE` | Integer, 64 to 4096 (output photo dimensions in pixels, square) | `256` |
+| `PHOTO_SIZE` | Integer, 64 to 4096 (max output dimensions in pixels, square; images smaller than this are not upscaled) | `256` |
 | `PHOTO_QUALITY` | Integer, 1 to 100 (JPEG compression quality) | `80` |
 | `DB_PORT` | Integer, 1 to 65535 | None, required |
 | `LOG_LEVEL` | One of `debug`, `info`, `warn`, `error` | `info` |

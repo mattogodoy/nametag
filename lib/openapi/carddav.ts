@@ -19,6 +19,8 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
             autoExportNew: { type: 'boolean' },
             autoSyncInterval: { type: 'integer', minimum: 60, maximum: 86400, description: 'Sync interval in seconds' },
             importMode: { type: 'string', enum: ['manual', 'notify', 'auto'] },
+            addressBookUrl: { type: ['string', 'null'], format: 'uri', description: 'URL of the selected address book' },
+            addressBookName: { type: ['string', 'null'], description: 'Display name of the selected address book' },
             cardDavNameFormat: { type: 'string', enum: ['FULL', 'FIRST_LAST', 'NICKNAME_PREFERRED', 'SHORT'], description: 'Name format used for the vCard FN field when syncing' },
           },
           required: ['serverUrl', 'username', 'password'],
