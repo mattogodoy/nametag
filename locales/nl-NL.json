@@ -1025,6 +1025,7 @@
       "errorConnection": "Kan geen verbinding maken met de server. Controleer uw verbinding en probeer het opnieuw.",
       "successCreated": "{name} is toegevoegd aan uw netwerk",
       "successUpdated": "{name}'s informatie is bijgewerkt",
+      "unsavedChangesWarning": "U hebt niet-opgeslagen wijzigingen. Weet u zeker dat u wilt vertrekken?",
       "reminderLimitReached": "Herinneringslimiet bereikt ({limit}). Upgrade om meer toe te voegen.",
       "days": "dagen",
       "weeks": "weken",

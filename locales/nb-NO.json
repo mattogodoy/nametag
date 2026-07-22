@@ -1029,6 +1029,7 @@
       "errorConnection": "Kan ikke koble til serveren. Kontroller tilkoblingen din og prøv igjen.",
       "successCreated": "{name} er lagt til i nettverket ditt",
       "successUpdated": "Informasjonen om {name} er oppdatert",
+      "unsavedChangesWarning": "Du har ulagrede endringer. Er du sikker på at du vil forlate siden?",
       "reminderLimitReached": "Påminnelsesgrensen er nådd ({limit}). Oppgrader abonnementet ditt for å legge til flere.",
       "days": "dager",
       "weeks": "uker",

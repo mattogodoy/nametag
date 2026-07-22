@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent } from 'react';
+import { FormEvent, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -161,9 +161,11 @@ export default function PersonForm({
   const tPhoto = useTranslations('people.photo');
   const router = useRouter();
   const { refreshIndex } = useSearchIndex();
+  const isSubmittingRef = useRef(false);
 
   const {
     state,
+    isDirty,
     setIsLoading,
     setError,
     setPhotoPreview,
@@ -211,6 +213,60 @@ export default function PersonForm({
     urls,
     customFieldValues,
   } = state;
+
+  const confirmedNavRef = useRef(false);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isSubmittingRef.current || confirmedNavRef.current) return;
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    window.history.pushState({ unsavedGuard: true }, '');
+    const handlePopState = () => {
+      if (isSubmittingRef.current) return;
+      if (window.confirm(t('unsavedChangesWarning'))) {
+        window.history.back();
+      } else {
+        window.history.pushState({ unsavedGuard: true }, '');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isDirty, t]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleClick = (e: MouseEvent) => {
+      if (isSubmittingRef.current) return;
+      const anchor = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
+      if (!anchor) return;
+      if (anchor.hasAttribute('download') || anchor.target === '_blank' || anchor.hasAttribute('data-no-unsaved-guard')) return;
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+      try {
+        const url = new URL(href, window.location.origin);
+        if (url.origin !== window.location.origin) return;
+        if (url.pathname === window.location.pathname) return;
+      } catch {
+        return;
+      }
+      if (!window.confirm(t('unsavedChangesWarning'))) {
+        e.preventDefault();
+        e.stopPropagation();
+      } else {
+        confirmedNavRef.current = true;
+      }
+    };
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, [isDirty, t]);
 
   const selectedBasePerson =
     knownThroughId !== 'user'
@@ -385,6 +441,8 @@ export default function PersonForm({
           ? t('successCreated', { name: displayName })
           : t('successUpdated', { name: displayName })
       );
+
+      isSubmittingRef.current = true;
 
       if (mode === 'edit' && person?.id) {
         router.push(`/people/${person.id}`);
@@ -605,6 +663,7 @@ export default function PersonForm({
       <div className="flex justify-end space-x-4 pt-4">
         <Link
           href="/people"
+          data-no-unsaved-guard
           className="px-6 py-2 border border-border text-muted rounded-lg font-medium hover:bg-surface-elevated transition-colors"
         >
           {t('cancel')}
