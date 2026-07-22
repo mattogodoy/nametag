@@ -377,7 +377,13 @@
         "noRelationship": "[无]",
         "relationshipPrecedenceHelp": "您可以通过展开它们并选择不同的关系来覆盖单个联系人的这个设置。",
         "contactRelationship": "与您的关系：这个人是.....",
-        "useGlobalRelationship": "[使用全局设置]"
+        "useGlobalRelationship": "[使用全局设置]",
+        "alreadyExists": "已存在于Nametag中",
+        "updateExisting": "更新已有联系人",
+        "updated": "已更新{count}个联系人",
+        "allSkippedToast": "{skipped, plural, =1 {1个联系人已在Nametag中, 已跳过} other {#个联系人已在Nametag中, 已跳过}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {已导入1个联系人} other {已导入#个联系人}}{updated, plural, =0 {} =1 {, 已更新1个联系人} other {, 已更新#个联系人}}{skipped, plural, =0 {} =1 {, 已跳过1个重复项} other {, 已跳过#个重复项}}",
+        "descriptionWithDuplicates": "找到{count}个联系人, 其中{duplicates}个已存在于Nametag中"
       },
       "notifications": {
         "newContactsFound": "{count} 个新联系人已找到",
@@ -1029,6 +1035,7 @@
       "errorConnection": "无法连接到服务器。请检查您的连接并重试。",
       "successCreated": "{name} 已添加到您的网络",
       "successUpdated": "{name} 的信息已更新",
+      "unsavedChangesWarning": "您有未保存的更改。确定要离开吗？",
       "reminderLimitReached": "已达到提醒限制({limit})。升级以添加更多。",
       "days": "天",
       "weeks": "周",

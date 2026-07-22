@@ -82,6 +82,10 @@ The People page shows everyone in your network, 50 per page.
 
 Select multiple people from the list to delete them, assign them to a group, or assign a relationship type all at once. See [Bulk Actions](/features/bulk-actions/) for the full workflow.
 
+## Unsaved changes protection
+
+When editing a person, Nametag warns you before navigating away if you have unsaved changes. This applies to the browser back button, the "Back to person" link, the Cancel button, page refresh, and closing the tab. If nothing has changed, navigation proceeds without a prompt.
+
 ## The person detail page
 
 The detail page for a person brings every section together in one place: name and photo, work info, contact information, addresses, important dates, notes, custom field values, group memberships, your relationship to them, their relationships to other people, and a journal timeline of entries linked to them. It's designed to give you the full picture of a person at a glance, with editing just one click away.

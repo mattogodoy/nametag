@@ -377,7 +377,13 @@
         "noRelationship": "[None]",
         "relationshipPrecedenceHelp": "You can override this for individual contacts by expanding them and selecting a different relationship.",
         "contactRelationship": "Relationship to you: This person is your...",
-        "useGlobalRelationship": "[Use global setting]"
+        "useGlobalRelationship": "[Use global setting]",
+        "alreadyExists": "Already in Nametag",
+        "updateExisting": "Update existing contact",
+        "updated": "{count} contacts updated",
+        "allSkippedToast": "{skipped, plural, =1 {1 contact was already in Nametag and was skipped} other {# contacts were already in Nametag and were skipped}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {1 contact imported} other {# contacts imported}}{updated, plural, =0 {} =1 {, 1 contact updated} other {, # contacts updated}}{skipped, plural, =0 {} =1 {, 1 duplicate skipped} other {, # duplicates skipped}}",
+        "descriptionWithDuplicates": "{count} contacts found, {duplicates} already in Nametag"
       },
       "notifications": {
         "newContactsFound": "{count} new contacts found",
@@ -1029,6 +1035,7 @@
       "errorConnection": "Unable to connect to server. Please check your connection and try again.",
       "successCreated": "{name} has been added to your network",
       "successUpdated": "{name}'s information has been updated",
+      "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave?",
       "reminderLimitReached": "Reminder limit reached ({limit}). Upgrade to add more.",
       "days": "days",
       "weeks": "weeks",

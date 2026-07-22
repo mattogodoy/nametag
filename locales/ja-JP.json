@@ -377,7 +377,13 @@
         "noRelationship": "[なし]",
         "relationshipPrecedenceHelp": "個別の連絡先を展開して別の関係を選択することで、これを上書きできます。",
         "contactRelationship": "あなたとの関係: この人はあなたの...",
-        "useGlobalRelationship": "[グローバル設定を使用]"
+        "useGlobalRelationship": "[グローバル設定を使用]",
+        "alreadyExists": "Nametagに登録済み",
+        "updateExisting": "既存の連絡先を更新",
+        "updated": "{count}件の連絡先を更新しました",
+        "allSkippedToast": "{skipped, plural, =1 {1件の連絡先は既にNametagに登録済みのためスキップされました} other {#件の連絡先は既にNametagに登録済みのためスキップされました}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {1件インポート} other {#件インポート}}{updated, plural, =0 {} =1 {, 1件更新} other {, #件更新}}{skipped, plural, =0 {} =1 {, 1件の重複をスキップ} other {, #件の重複をスキップ}}",
+        "descriptionWithDuplicates": "{count}件の連絡先が見つかりました。{duplicates}件は既にNametagに登録済みです"
       },
       "notifications": {
         "newContactsFound": "{count}件の新しい連絡先が見つかりました",
@@ -1029,6 +1035,7 @@
       "errorConnection": "サーバーに接続できません。接続を確認して、もう一度お試しください。",
       "successCreated": "{name}がネットワークに追加されました",
       "successUpdated": "{name}の情報が更新されました",
+      "unsavedChangesWarning": "保存されていない変更があります。このページを離れてもよろしいですか？",
       "reminderLimitReached": "リマインダーの制限に達しました（{limit}）。アップグレードしてさらに追加してください。",
       "days": "日",
       "weeks": "週",

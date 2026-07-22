@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useState, useMemo } from 'react';
 import type { CustomFieldValueInput } from '@/lib/customFields/persistence';
 
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -215,6 +215,18 @@ interface AvailablePerson {
   groups: Array<{ groupId: string }>;
 }
 
+function getDataFingerprint(state: PersonFormState): string {
+  return JSON.stringify({
+    formData: state.formData,
+    importantDates: state.importantDates,
+    phoneNumbers: state.phoneNumbers,
+    emails: state.emails,
+    addresses: state.addresses,
+    urls: state.urls,
+    customFieldValues: state.customFieldValues,
+  });
+}
+
 function buildInitialState(params: {
   person?: PersonProp;
   mode: 'create' | 'edit';
@@ -339,6 +351,15 @@ export function usePersonForm(params: {
 }) {
   const initialState = buildInitialState(params);
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [initialFingerprint] = useState(() => getDataFingerprint(initialState));
+
+  const isDirty = useMemo(
+    () =>
+      getDataFingerprint(state) !== initialFingerprint ||
+      state.pendingPhotoBlob !== null ||
+      state.photoRemoved,
+    [state, initialFingerprint]
+  );
 
   const setIsLoading = useCallback(
     (val: boolean) => dispatch({ type: 'SET_IS_LOADING', payload: val }),
@@ -433,6 +454,7 @@ export function usePersonForm(params: {
 
   return {
     state,
+    isDirty,
     setIsLoading,
     setError,
     setPhotoPreview,

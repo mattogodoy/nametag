@@ -360,7 +360,13 @@
         "noRelationship": "[Нет]",
         "relationshipPrecedenceHelp": "Вы можете переопределить это для отдельных контактов, развернув их и выбрав другую связь.",
         "contactRelationship": "Связь с вами: этот человек ваш...",
-        "useGlobalRelationship": "[Использовать общую настройку]"
+        "useGlobalRelationship": "[Использовать общую настройку]",
+        "alreadyExists": "Уже есть в Nametag",
+        "updateExisting": "Обновить существующий контакт",
+        "updated": "{count} контактов обновлено",
+        "allSkippedToast": "{skipped, plural, =1 {1 контакт уже был в Nametag и был пропущен} other {# контактов уже были в Nametag и были пропущены}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {1 контакт импортирован} other {# контактов импортировано}}{updated, plural, =0 {} =1 {, 1 контакт обновлен} other {, # контактов обновлено}}{skipped, plural, =0 {} =1 {, 1 дубликат пропущен} other {, # дубликатов пропущено}}",
+        "descriptionWithDuplicates": "{count} контактов найдено, {duplicates} уже в Nametag"
       },
       "notifications": {
         "newContactsFound": "Найдено {count} новых контактов",
@@ -1012,6 +1018,7 @@
       "errorConnection": "Не удалось подключиться к серверу. Проверьте соединение и попробуйте снова.",
       "successCreated": "{name} добавлен(а) в вашу сеть",
       "successUpdated": "Информация о {name} обновлена",
+      "unsavedChangesWarning": "У вас есть несохраненные изменения. Вы уверены, что хотите покинуть страницу?",
       "reminderLimitReached": "Достигнут лимит напоминаний ({limit}). Обновите тариф, чтобы добавить больше.",
       "days": "дн.",
       "weeks": "нед.",

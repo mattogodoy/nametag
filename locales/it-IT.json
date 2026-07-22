@@ -360,7 +360,13 @@
         "noRelationship": "[Nessuna]",
         "relationshipPrecedenceHelp": "Puoi sovrascrivere questo per contatti individuali espandendoli e selezionando una relazione diversa.",
         "contactRelationship": "Relazione con te: Questa persona è il tuo...",
-        "useGlobalRelationship": "[Usa impostazione globale]"
+        "useGlobalRelationship": "[Usa impostazione globale]",
+        "alreadyExists": "Gia presente in Nametag",
+        "updateExisting": "Aggiorna contatto esistente",
+        "updated": "{count} contatti aggiornati",
+        "allSkippedToast": "{skipped, plural, =1 {1 contatto era gia in Nametag ed e stato saltato} other {# contatti erano gia in Nametag e sono stati saltati}}",
+        "importSuccessWithUpdatesToast": "{imported, plural, =0 {} =1 {1 contatto importato} other {# contatti importati}}{updated, plural, =0 {} =1 {, 1 contatto aggiornato} other {, # contatti aggiornati}}{skipped, plural, =0 {} =1 {, 1 duplicato saltato} other {, # duplicati saltati}}",
+        "descriptionWithDuplicates": "{count} contatti trovati, {duplicates} gia in Nametag"
       },
       "notifications": {
         "newContactsFound": "{count} nuovi contatti trovati",
@@ -1012,6 +1018,7 @@
       "errorConnection": "Impossibile connettersi al server. Verifica la connessione e riprova.",
       "successCreated": "{name} è stato/a aggiunto/a al tuo network",
       "successUpdated": "Le informazioni di {name} sono state aggiornate",
+      "unsavedChangesWarning": "Hai modifiche non salvate. Sei sicuro di voler uscire?",
       "reminderLimitReached": "Limite promemoria raggiunto ({limit}). Aggiorna per aggiungerne altri.",
       "days": "giorni",
       "weeks": "settimane",
