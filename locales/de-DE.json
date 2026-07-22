@@ -1450,7 +1450,8 @@
     "emptyGeocodingDisabled": "Die Adress-Lokalisierung ist deaktiviert. Du kannst sie unter Einstellungen > Karte aktivieren.",
     "viewContact": "Kontakt anzeigen",
     "directions": "Route",
-    "webglUnavailable": "Dein Browser kann die Karte nicht anzeigen, weil WebGL nicht verfügbar oder deaktiviert ist. Aktiviere die Grafikbeschleunigung oder WebGL in deinem Browser und lade die Seite neu."
+    "webglUnavailable": "Dein Browser kann die Karte nicht anzeigen, weil WebGL nicht verfügbar oder deaktiviert ist. Aktiviere die Grafikbeschleunigung oder WebGL in deinem Browser und lade die Seite neu.",
+    "colocatedTitle": "{count, plural, one {1 Person an diesem Standort} other {# Personen an diesem Standort}}"
   },
   "relationshipTypes": {
     "title": "Beziehungsarten",

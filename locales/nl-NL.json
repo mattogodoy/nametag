@@ -1442,7 +1442,8 @@
     "emptyGeocodingDisabled": "Adreslokalisatie staat uit. U kunt dit aanzetten bij Instellingen > Kaart.",
     "viewContact": "Contact bekijken",
     "directions": "Routebeschrijving",
-    "webglUnavailable": "Uw browser kan de kaart niet weergeven omdat WebGL niet beschikbaar of uitgeschakeld is. Schakel grafische versnelling of WebGL in uw browser in en laad de pagina opnieuw."
+    "webglUnavailable": "Uw browser kan de kaart niet weergeven omdat WebGL niet beschikbaar of uitgeschakeld is. Schakel grafische versnelling of WebGL in uw browser in en laad de pagina opnieuw.",
+    "colocatedTitle": "{count, plural, one {1 persoon op deze locatie} other {# personen op deze locatie}}"
   },
   "relationshipTypes": {
     "title": "Relatietypen",

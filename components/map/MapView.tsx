@@ -5,6 +5,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTranslations } from 'next-intl';
 import type { MapMarker } from '@/lib/map/types';
+import { groupByCoordinates } from '@/lib/map/colocation';
 
 // OpenFreeMap hosted styles: free, no API key, commercial use permitted.
 const DARK_STYLE = 'https://tiles.openfreemap.org/styles/dark';
@@ -100,6 +101,7 @@ interface MarkerProperties {
   iconId?: string;
   /** First group's color, used for the plain dot when there is no photo icon yet */
   dotColor?: string;
+  colocatedCount: number;
 }
 
 function useIsDarkTheme(): boolean {
@@ -134,26 +136,35 @@ function toGeoJSON(
   markers: MapMarker[],
   registeredIconPersonIds: ReadonlySet<string>
 ): GeoJSON.FeatureCollection<GeoJSON.Point, MarkerProperties> {
-  return {
-    type: 'FeatureCollection',
-    features: markers.map((marker) => ({
+  const groups = groupByCoordinates(markers);
+  const features: GeoJSON.Feature<GeoJSON.Point, MarkerProperties>[] = [];
+
+  for (const groupMarkers of groups.values()) {
+    const representative = groupMarkers[0];
+    const count = groupMarkers.length;
+    const isSolo = count === 1;
+
+    features.push({
       type: 'Feature',
-      geometry: { type: 'Point', coordinates: [marker.longitude, marker.latitude] },
+      geometry: { type: 'Point', coordinates: [representative.longitude, representative.latitude] },
       properties: {
-        id: marker.id,
-        personId: marker.personId,
-        personName: marker.personName,
-        label: marker.label,
+        id: representative.id,
+        personId: representative.personId,
+        personName: representative.personName,
+        label: representative.label,
         // Omitted rather than null: null-valued GeoJSON properties do not
         // survive the round trip through queryRenderedFeatures reliably.
-        ...(marker.addressText ? { addressText: marker.addressText } : {}),
-        ...(marker.hasPhoto && registeredIconPersonIds.has(marker.personId)
-          ? { iconId: iconIdFor(marker.personId) }
+        ...(representative.addressText ? { addressText: representative.addressText } : {}),
+        ...(isSolo && representative.hasPhoto && registeredIconPersonIds.has(representative.personId)
+          ? { iconId: iconIdFor(representative.personId) }
           : {}),
-        ...(marker.groupColor ? { dotColor: marker.groupColor } : {}),
+        ...(representative.groupColor ? { dotColor: representative.groupColor } : {}),
+        colocatedCount: count,
       },
-    })),
-  };
+    });
+  }
+
+  return { type: 'FeatureCollection', features };
 }
 
 export default function MapView({ markers, focusId, filtersKey }: MapViewProps) {
@@ -166,7 +177,11 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
   const appliedFiltersKeyRef = useRef<string | null>(null);
   const isDark = useIsDarkTheme();
   const isDarkRef = useRef(isDark);
-  const translationsRef = useRef({ viewContact: t('viewContact'), directions: t('directions') });
+  const translationsRef = useRef({
+    viewContact: t('viewContact'),
+    directions: t('directions'),
+    colocatedTitle: (count: number) => t('colocatedTitle', { count }),
+  });
   const [webglUnavailable, setWebglUnavailable] = useState(false);
 
   // Photo marker icon caches. These live for the component's lifetime (not
@@ -189,7 +204,11 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
   }, [markers]);
 
   useEffect(() => {
-    translationsRef.current = { viewContact: t('viewContact'), directions: t('directions') };
+    translationsRef.current = {
+      viewContact: t('viewContact'),
+      directions: t('directions'),
+      colocatedTitle: (count: number) => t('colocatedTitle', { count }),
+    };
   }, [t]);
 
   useEffect(() => {
@@ -366,7 +385,7 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
         id: 'unclustered-point',
         type: 'circle',
         source: SOURCE_ID,
-        filter: ['all', ['!', ['has', 'point_count']], ['!', ['has', 'iconId']]],
+        filter: ['all', ['!', ['has', 'point_count']], ['!', ['has', 'iconId']], ['==', ['get', 'colocatedCount'], 1]],
         paint: {
           'circle-color': ['coalesce', ['get', 'dotColor'], primary],
           'circle-radius': 7,
@@ -381,12 +400,39 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
         id: 'unclustered-photo',
         type: 'symbol',
         source: SOURCE_ID,
-        filter: ['all', ['!', ['has', 'point_count']], ['has', 'iconId']],
+        filter: ['all', ['!', ['has', 'point_count']], ['has', 'iconId'], ['==', ['get', 'colocatedCount'], 1]],
         layout: {
           'icon-image': ['get', 'iconId'],
           'icon-size': 1,
           'icon-allow-overlap': true,
         },
+      });
+
+      // Co-located markers: multiple people sharing the exact same
+      // coordinates render as a single count circle instead of stacking
+      // overlapping individual markers on top of each other.
+      map.addLayer({
+        id: 'colocated-circle',
+        type: 'circle',
+        source: SOURCE_ID,
+        filter: ['all', ['!', ['has', 'point_count']], ['>', ['get', 'colocatedCount'], 1]],
+        paint: {
+          'circle-color': primary,
+          'circle-opacity': 0.85,
+          'circle-radius': 14,
+        },
+      });
+
+      map.addLayer({
+        id: 'colocated-count',
+        type: 'symbol',
+        source: SOURCE_ID,
+        filter: ['all', ['!', ['has', 'point_count']], ['>', ['get', 'colocatedCount'], 1]],
+        layout: {
+          'text-field': ['to-string', ['get', 'colocatedCount']],
+          'text-size': 12,
+        },
+        paint: { 'text-color': '#ffffff' },
       });
     };
 
@@ -426,7 +472,27 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
     map.on('click', 'unclustered-point', handleUnclusteredClick);
     map.on('click', 'unclustered-photo', handleUnclusteredClick);
 
-    for (const layer of ['clusters', 'unclustered-point', 'unclustered-photo']) {
+    const handleColocatedClick = (event: maplibregl.MapLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      const geometry = feature.geometry as GeoJSON.Point;
+      const [lng, lat] = geometry.coordinates;
+      const colocated = markersRef.current.filter(
+        (m) => m.latitude === lat && m.longitude === lng
+      );
+      if (colocated.length === 0) return;
+      openColocatedPopup(
+        map,
+        geometry.coordinates as [number, number],
+        colocated,
+        translationsRef.current
+      );
+    };
+
+    map.on('click', 'colocated-circle', handleColocatedClick);
+    map.on('click', 'colocated-count', handleColocatedClick);
+
+    for (const layer of ['clusters', 'unclustered-point', 'unclustered-photo', 'colocated-circle', 'colocated-count']) {
       map.on('mouseenter', layer, () => {
         map.getCanvas().style.cursor = 'pointer';
       });
@@ -502,6 +568,7 @@ export default function MapView({ markers, focusId, filtersKey }: MapViewProps) 
         personName: target.personName,
         label: target.label,
         ...(target.addressText ? { addressText: target.addressText } : {}),
+        colocatedCount: 1,
       },
       translationsRef.current
     );
@@ -606,4 +673,70 @@ function openPopup(
   container.appendChild(links);
 
   new maplibregl.Popup({ closeButton: true, offset: 12 }).setLngLat(coordinates).setDOMContent(container).addTo(map);
+}
+
+// Popup for a location shared by multiple people (e.g. partners or family
+// members living together), listing everyone at that address instead of a
+// single person's details.
+function openColocatedPopup(
+  map: maplibregl.Map,
+  coordinates: [number, number],
+  colocatedMarkers: MapMarker[],
+  labels: { viewContact: string; directions: string; colocatedTitle: (count: number) => string }
+): void {
+  const container = document.createElement('div');
+  container.className = 'space-y-1 text-gray-900';
+
+  const title = document.createElement('div');
+  title.className = 'font-semibold text-sm';
+  title.textContent = labels.colocatedTitle(colocatedMarkers.length);
+  container.appendChild(title);
+
+  const addressText = colocatedMarkers.find((m) => m.addressText)?.addressText;
+  if (addressText) {
+    const addressLine = document.createElement('div');
+    addressLine.className = 'text-xs max-w-56 opacity-70';
+    addressLine.textContent = addressText;
+    container.appendChild(addressLine);
+  }
+
+  const topDivider = document.createElement('div');
+  topDivider.className = 'border-t border-gray-200 my-1';
+  container.appendChild(topDivider);
+
+  for (const m of colocatedMarkers) {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-3 py-0.5';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'text-sm';
+    nameEl.textContent = m.personName;
+    row.appendChild(nameEl);
+
+    const link = document.createElement('a');
+    link.href = `/people/${encodeURIComponent(m.personId)}`;
+    link.textContent = labels.viewContact;
+    link.className = 'text-xs underline text-blue-700 whitespace-nowrap';
+    row.appendChild(link);
+
+    container.appendChild(row);
+  }
+
+  const bottomDivider = document.createElement('div');
+  bottomDivider.className = 'border-t border-gray-200 mt-1 pt-1';
+
+  const directionsLink = document.createElement('a');
+  directionsLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
+  directionsLink.target = '_blank';
+  directionsLink.rel = 'noopener noreferrer';
+  directionsLink.textContent = labels.directions;
+  directionsLink.className = 'text-xs underline text-blue-700';
+  bottomDivider.appendChild(directionsLink);
+
+  container.appendChild(bottomDivider);
+
+  new maplibregl.Popup({ closeButton: true, offset: 12 })
+    .setLngLat(coordinates)
+    .setDOMContent(container)
+    .addTo(map);
 }

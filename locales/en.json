@@ -1446,7 +1446,8 @@
     "emptyGeocodingDisabled": "Address locating is turned off. You can enable it in Settings > Map.",
     "viewContact": "View contact",
     "directions": "Directions",
-    "webglUnavailable": "Your browser cannot display the map because WebGL is unavailable or disabled. Enable graphics acceleration or WebGL in your browser and reload the page."
+    "webglUnavailable": "Your browser cannot display the map because WebGL is unavailable or disabled. Enable graphics acceleration or WebGL in your browser and reload the page.",
+    "colocatedTitle": "{count, plural, one {1 person at this location} other {# people at this location}}"
   },
   "relationshipTypes": {
     "title": "Relationship Types",
