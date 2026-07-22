@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => {
   const personCustomFieldDeleteMany = vi.fn();
   const personCustomFieldValueUpdateMany = vi.fn();
   const personCustomFieldValueDeleteMany = vi.fn();
+  const importantDateFindMany = vi.fn();
   const importantDateUpdateMany = vi.fn();
   const importantDateDeleteMany = vi.fn();
   const journalEntryPersonFindMany = vi.fn();
@@ -54,7 +55,7 @@ const mocks = vi.hoisted(() => {
     personLocation: { updateMany: personLocationUpdateMany, deleteMany: personLocationDeleteMany },
     personCustomField: { updateMany: personCustomFieldUpdateMany, deleteMany: personCustomFieldDeleteMany },
     personCustomFieldValue: { updateMany: personCustomFieldValueUpdateMany, deleteMany: personCustomFieldValueDeleteMany },
-    importantDate: { updateMany: importantDateUpdateMany, deleteMany: importantDateDeleteMany },
+    importantDate: { findMany: importantDateFindMany, updateMany: importantDateUpdateMany, deleteMany: importantDateDeleteMany },
     journalEntryPerson: {
       findMany: journalEntryPersonFindMany,
       updateMany: journalEntryPersonUpdateMany,
@@ -87,6 +88,7 @@ const mocks = vi.hoisted(() => {
     personCustomFieldDeleteMany,
     personCustomFieldValueUpdateMany,
     personCustomFieldValueDeleteMany,
+    importantDateFindMany,
     importantDateUpdateMany,
     importantDateDeleteMany,
     journalEntryPersonFindMany,
@@ -122,7 +124,7 @@ vi.mock('../../../lib/prisma', () => ({
     personIM: { updateMany: mocks.personIMUpdateMany, deleteMany: mocks.personIMDeleteMany },
     personLocation: { updateMany: mocks.personLocationUpdateMany, deleteMany: mocks.personLocationDeleteMany },
     personCustomField: { updateMany: mocks.personCustomFieldUpdateMany, deleteMany: mocks.personCustomFieldDeleteMany },
-    importantDate: { updateMany: mocks.importantDateUpdateMany, deleteMany: mocks.importantDateDeleteMany },
+    importantDate: { findMany: mocks.importantDateFindMany, updateMany: mocks.importantDateUpdateMany, deleteMany: mocks.importantDateDeleteMany },
     journalEntryPerson: {
       findMany: mocks.journalEntryPersonFindMany,
       updateMany: mocks.journalEntryPersonUpdateMany,
@@ -236,6 +238,7 @@ beforeEach(() => {
   mocks.autoExportPerson.mockResolvedValue(undefined);
   mocks.autoUpdatePerson.mockResolvedValue(undefined);
   mocks.withDeletedDisconnect.mockResolvedValue(undefined);
+  mocks.importantDateFindMany.mockResolvedValue([]);
 });
 
 // ===========================================================================
@@ -484,12 +487,26 @@ describe('updatePerson', () => {
     });
   });
 
-  it('uses deleteMany+create for importantDates', async () => {
+  it('soft-deletes removed importantDates and recreates kept ones', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([
+      { id: 'date-1' },
+      { id: 'date-2' },
+    ]);
+
     await updatePerson(PERSON_ID, USER_ID, {
-      importantDates: [{ title: 'Birthday', date: '1990-03-14', reminderEnabled: false }],
+      importantDates: [{ id: 'date-1', title: 'Birthday', date: '1990-03-14', reminderEnabled: false }],
+    });
+
+    // date-2 was removed, should be soft-deleted
+    expect(mocks.importantDateUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['date-2'] } },
+      data: { deletedAt: expect.any(Date) },
+    });
+    // date-1 is kept, hard-deleted then recreated
+    expect(mocks.importantDateDeleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ['date-1'] } },
     });
     const call = mocks.personUpdate.mock.calls[0][0];
-    expect(call.data.importantDates.deleteMany).toEqual({});
     expect(call.data.importantDates.create).toHaveLength(1);
   });
 
