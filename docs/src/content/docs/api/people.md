@@ -161,6 +161,23 @@ curl -X POST https://your-instance.example.com/api/people/clx1/restore \
 { "person": { "id": "clx1", "name": "Ada", "deletedAt": null } }
 ```
 
+## Permanently delete a person
+
+```
+DELETE /api/people/{id}/permanent
+```
+
+Permanently deletes a soft-deleted person and all related records (photos, groups, relationships, important dates, and more). The person must already be soft-deleted. This cannot be undone.
+
+```bash
+curl -X DELETE https://your-instance.example.com/api/people/clx1/permanent \
+  -H "Authorization: Bearer ntag_xxx"
+```
+
+```json
+{ "success": true }
+```
+
 ## Search people
 
 ```
@@ -489,6 +506,23 @@ curl -X POST https://your-instance.example.com/api/people/clx1/important-dates/c
 
 ```json
 { "importantDate": { "id": "clxdate1", "deletedAt": null } }
+```
+
+### Permanently delete an important date
+
+```
+DELETE /api/people/{id}/important-dates/{dateId}/permanent
+```
+
+Permanently deletes a soft-deleted important date. This cannot be undone.
+
+```bash
+curl -X DELETE https://your-instance.example.com/api/people/clx1/important-dates/clxdate1/permanent \
+  -H "Authorization: Bearer ntag_xxx"
+```
+
+```json
+{ "success": true }
 ```
 
 ## Photos

@@ -611,6 +611,45 @@
       "deleteFailed": "アカウントの削除に失敗しました",
       "importDataFailed": "データのインポートに失敗しました"
     },
+    "trash": {
+      "title": "ゴミ箱",
+      "description": "アイテムを復元または完全に削除します",
+      "pageDescription": "削除したアイテムは30日間保持された後、完全に削除されます。復元することも、今すぐ削除することもできます。",
+      "tabs": {
+        "people": "人物",
+        "groups": "グループ",
+        "relationships": "関係",
+        "relationshipTypes": "関係の種類",
+        "importantDates": "重要な日付"
+      },
+      "daysRemaining": "残り{days}日",
+      "lessThanOneDay": "残り1日未満",
+      "empty": "削除された{type}は見つかりませんでした。",
+      "emptyTypes": {
+        "people": "人物",
+        "groups": "グループ",
+        "relationships": "関係",
+        "relationshipTypes": "関係の種類",
+        "importantDates": "重要な日付"
+      },
+      "restore": "復元",
+      "restoring": "復元中...",
+      "permanentDelete": "完全に削除",
+      "deleting": "削除中...",
+      "confirmDelete": {
+        "title": "完全に削除しますか？",
+        "message": "この項目は完全に失われます。この操作は元に戻せません。",
+        "messagePerson": "この人物とすべての関連データ（関係、グループへの所属、写真、カスタムフィールド）が完全に削除されます。この操作は元に戻せません。",
+        "confirm": "完全に削除",
+        "cancel": "キャンセル"
+      },
+      "restoreSuccess": "アイテムを復元しました",
+      "deleteSuccess": "アイテムを完全に削除しました",
+      "restoreError": "アイテムの復元に失敗しました",
+      "deleteError": "アイテムの削除に失敗しました",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "{person}の{title}（{date}）"
+    },
     "about": {
       "title": "概要",
       "description": "バージョンと情報",

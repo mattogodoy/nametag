@@ -102,6 +102,22 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
       },
     },
 
+    '/api/relationships/{id}/permanent': {
+      delete: {
+        tags: ['Relationships'],
+        summary: 'Permanently delete a relationship',
+        description: 'Permanently deletes a soft-deleted relationship and its inverse. This cannot be undone.',
+        security: [{ session: [] }],
+        parameters: [pathParam('id', 'Relationship ID')],
+        responses: {
+          '200': refSuccess(),
+          '400': ref400(),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+    },
+
     // Relationship Types
     '/api/relationship-types': {
       get: {
@@ -192,6 +208,21 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: { relationshipType: { $ref: '#/components/schemas/RelationshipType' } },
           }),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+    },
+    '/api/relationship-types/{id}/permanent': {
+      delete: {
+        tags: ['Relationship Types'],
+        summary: 'Permanently delete a relationship type',
+        description: 'Permanently deletes a soft-deleted relationship type and clears any remaining references to it. This cannot be undone.',
+        security: [{ session: [] }],
+        parameters: [pathParam('id', 'Relationship type ID')],
+        responses: {
+          '200': refSuccess(),
+          '400': ref400(),
           '401': ref401(),
           '404': ref404(),
         },

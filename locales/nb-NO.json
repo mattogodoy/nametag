@@ -611,6 +611,45 @@
       "deleteFailed": "Kunne ikke slette kontoen",
       "importDataFailed": "Kunne ikke importere data"
     },
+    "trash": {
+      "title": "Papirkurv",
+      "description": "Gjenopprett eller slett elementer permanent",
+      "pageDescription": "Elementer du sletter, blir beholdt i 30 dager før de fjernes permanent. Du kan gjenopprette dem eller slette dem umiddelbart.",
+      "tabs": {
+        "people": "Personer",
+        "groups": "Grupper",
+        "relationships": "Relasjoner",
+        "relationshipTypes": "Relasjonstyper",
+        "importantDates": "Viktige datoer"
+      },
+      "daysRemaining": "{days} dager igjen",
+      "lessThanOneDay": "Mindre enn 1 dag igjen",
+      "empty": "Ingen slettede {type} funnet.",
+      "emptyTypes": {
+        "people": "personer",
+        "groups": "grupper",
+        "relationships": "relasjoner",
+        "relationshipTypes": "relasjonstyper",
+        "importantDates": "viktige datoer"
+      },
+      "restore": "Gjenopprett",
+      "restoring": "Gjenoppretter...",
+      "permanentDelete": "Slett permanent",
+      "deleting": "Sletter...",
+      "confirmDelete": {
+        "title": "Slette permanent?",
+        "message": "Dette elementet vil være borte for alltid. Denne handlingen kan ikke angres.",
+        "messagePerson": "Denne personen og alle tilhørende data (relasjoner, gruppemedlemskap, bilder, egendefinerte felt) vil bli slettet permanent. Denne handlingen kan ikke angres.",
+        "confirm": "Slett permanent",
+        "cancel": "Avbryt"
+      },
+      "restoreSuccess": "Elementet ble gjenopprettet",
+      "deleteSuccess": "Elementet ble slettet permanent",
+      "restoreError": "Kunne ikke gjenopprette elementet",
+      "deleteError": "Kunne ikke slette elementet",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "{title} ({date}) for {person}"
+    },
     "about": {
       "title": "Om",
       "description": "Versjon og informasjon",
