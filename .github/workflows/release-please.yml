@@ -109,11 +109,21 @@ jobs:
             ---
 
             STEP 1 - CLASSIFY: Read every item above. Classify each as:
+            - BREAKING: a change that requires user action (new/changed env vars, cron jobs, config files, database migrations, Docker changes, removed features, renamed settings)
             - FEATURE: a new capability or significant enhancement
             - FIX: a bug fix or minor improvement
             - INTERNAL: refactoring, CI, tests, deps, docs-only (skip these entirely)
 
-            STEP 2 - WRITE: Produce release notes in one of two formats depending on classification:
+            STEP 2 - WRITE: Produce release notes using the structure below.
+
+            If ANY items were classified as BREAKING, the release notes MUST start with an action-required block before anything else. This block uses the following format:
+
+            > [!WARNING]
+            > **Action required before upgrading**
+            >
+            > - <Clear, specific instruction for each breaking change. State what the user must do, not just what changed. Example: "Add `REDIS_URL` to your `.env` file" or "Run `npx prisma migrate deploy` after updating">
+
+            After the action-required block (or at the top if no BREAKING items), continue with one of these formats:
 
             FORMAT A - Feature release (at least one FEATURE item):
 
@@ -145,7 +155,8 @@ jobs:
             - Omit INTERNAL items entirely.
             - 1-8 bullet points max in the "Other changes" section. Combine related items.
             - If there are no FIX items, omit the "Other changes" section entirely.
-            - Prefix breaking changes with "**Breaking:**".
+            - BREAKING items go in the action-required block at the top, not in "Other changes". Each bullet must tell the user exactly what to do.
+            - If there are no BREAKING items, omit the action-required block entirely.
             - Output ONLY the markdown. No preamble, no sign-off.
 
       - name: Update release with summary
