@@ -18,8 +18,8 @@ const connectionSchema = z.object({
   autoExportNew: z.boolean().optional(),
   autoSyncInterval: z.number().int().min(60).max(86400).optional(), // 1 min to 24 hours
   importMode: z.enum(['manual', 'notify', 'auto']).optional(),
-  addressBookUrl: z.string().url().optional(),
-  addressBookName: z.string().optional(),
+  addressBookUrl: z.string().url().nullish(),
+  addressBookName: z.string().nullish(),
   cardDavNameFormat: z.enum(['FULL', 'FIRST_LAST', 'NICKNAME_PREFERRED', 'SHORT']).optional(),
 });
 
