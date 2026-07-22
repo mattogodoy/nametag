@@ -37,7 +37,6 @@ const mocks = vi.hoisted(() => ({
   // Important date mocks
   importantDateFindUnique: vi.fn(),
   importantDateDelete: vi.fn(),
-  importantDatePersonFindUnique: vi.fn(),
 }));
 
 vi.mock('../../lib/prisma', () => ({
@@ -105,7 +104,7 @@ import { DELETE as deleteImportantDate } from '../../app/api/people/[id]/importa
 
 describe('Permanent delete API', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('DELETE /api/people/[id]/permanent', () => {
@@ -255,7 +254,7 @@ describe('Permanent delete API', () => {
 
   describe('DELETE /api/people/[id]/important-dates/[dateId]/permanent', () => {
     it('should permanently delete a trashed important date', async () => {
-      mocks.importantDatePersonFindUnique.mockResolvedValue({
+      mocks.personFindUnique.mockResolvedValue({
         id: 'p1',
         userId: 'user-123',
       });
