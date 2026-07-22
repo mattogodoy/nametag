@@ -130,6 +130,23 @@ curl -X POST https://your-instance.example.com/api/groups/clxgroup1/restore \
 { "group": { "id": "clxgroup1", "name": "Family", "deletedAt": null } }
 ```
 
+## Permanently delete a group
+
+```
+DELETE /api/groups/{id}/permanent
+```
+
+Permanently deletes a soft-deleted group and its memberships. This cannot be undone.
+
+```bash
+curl -X DELETE https://your-instance.example.com/api/groups/clxgroup1/permanent \
+  -H "Authorization: Bearer ntag_xxx"
+```
+
+```json
+{ "success": true }
+```
+
 ## Add a person to a group
 
 ```

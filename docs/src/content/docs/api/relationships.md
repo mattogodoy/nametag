@@ -132,6 +132,23 @@ curl -X POST https://your-instance.example.com/api/relationships/clxrel1/restore
 { "relationship": { "id": "clxrel1", "deletedAt": null } }
 ```
 
+### Permanently delete a relationship
+
+```
+DELETE /api/relationships/{id}/permanent
+```
+
+Permanently deletes a soft-deleted relationship and its inverse. This cannot be undone.
+
+```bash
+curl -X DELETE https://your-instance.example.com/api/relationships/clxrel1/permanent \
+  -H "Authorization: Bearer ntag_xxx"
+```
+
+```json
+{ "success": true }
+```
+
 ## Relationship types
 
 Relationship types are your own vocabulary for categorizing relationships, e.g. Parent/Child, Friend, Manager. A type can be symmetric (its own inverse, like Friend) or asymmetric with a distinct inverse (Parent -> Child).
@@ -245,4 +262,21 @@ curl -X POST https://your-instance.example.com/api/relationship-types/clxtype1/r
 
 ```json
 { "relationshipType": { "id": "clxtype1", "deletedAt": null } }
+```
+
+### Permanently delete a relationship type
+
+```
+DELETE /api/relationship-types/{id}/permanent
+```
+
+Permanently deletes a soft-deleted relationship type and clears any remaining references to it. This cannot be undone.
+
+```bash
+curl -X DELETE https://your-instance.example.com/api/relationship-types/clxtype1/permanent \
+  -H "Authorization: Bearer ntag_xxx"
+```
+
+```json
+{ "success": true }
 ```
