@@ -1035,6 +1035,7 @@
       "errorConnection": "サーバーに接続できません。接続を確認して、もう一度お試しください。",
       "successCreated": "{name}がネットワークに追加されました",
       "successUpdated": "{name}の情報が更新されました",
+      "unsavedChangesWarning": "保存されていない変更があります。このページを離れてもよろしいですか？",
       "reminderLimitReached": "リマインダーの制限に達しました（{limit}）。アップグレードしてさらに追加してください。",
       "days": "日",
       "weeks": "週",

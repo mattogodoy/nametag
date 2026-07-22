@@ -1035,6 +1035,7 @@
       "errorConnection": "Unable to connect to server. Please check your connection and try again.",
       "successCreated": "{name} has been added to your network",
       "successUpdated": "{name}'s information has been updated",
+      "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave?",
       "reminderLimitReached": "Reminder limit reached ({limit}). Upgrade to add more.",
       "days": "days",
       "weeks": "weeks",

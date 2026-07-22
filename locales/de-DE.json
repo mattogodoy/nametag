@@ -1035,6 +1035,7 @@
       "errorConnection": "Verbindung zum Server nicht möglich. Bitte prüfe deine Verbindung und versuche es erneut.",
       "successCreated": "{name} wurde deinem Netzwerk hinzugefügt",
       "successUpdated": "{name}s Informationen wurden aktualisiert",
+      "unsavedChangesWarning": "Du hast ungespeicherte Änderungen. Möchtest du die Seite wirklich verlassen?",
       "reminderLimitReached": "Erinnerungslimit erreicht ({limit}). Upgrade, um mehr hinzuzufügen.",
       "days": "Tage",
       "weeks": "Wochen",

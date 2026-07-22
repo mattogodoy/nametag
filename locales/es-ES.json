@@ -1035,6 +1035,7 @@
       "errorConnection": "No se puede conectar al servidor. Por favor, verifica tu conexión e inténtalo de nuevo.",
       "successCreated": "{name} ha sido añadido a tu red",
       "successUpdated": "La información de {name} ha sido actualizada",
+      "unsavedChangesWarning": "Tienes cambios sin guardar. ¿Seguro que quieres salir?",
       "reminderLimitReached": "Límite de recordatorios alcanzado ({limit}). Mejora tu plan para añadir más.",
       "days": "días",
       "weeks": "semanas",

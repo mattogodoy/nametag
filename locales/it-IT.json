@@ -1018,6 +1018,7 @@
       "errorConnection": "Impossibile connettersi al server. Verifica la connessione e riprova.",
       "successCreated": "{name} è stato/a aggiunto/a al tuo network",
       "successUpdated": "Le informazioni di {name} sono state aggiornate",
+      "unsavedChangesWarning": "Hai modifiche non salvate. Sei sicuro di voler uscire?",
       "reminderLimitReached": "Limite promemoria raggiunto ({limit}). Aggiorna per aggiungerne altri.",
       "days": "giorni",
       "weeks": "settimane",
