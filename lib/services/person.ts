@@ -363,8 +363,37 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
   }
 
   if (importantDates !== undefined) {
+    // Soft-delete removed dates instead of hard-deleting everything.
+    // IDs present in the input are kept; missing IDs are soft-deleted.
+    const incomingIds = importantDates
+      .map((d) => d.id)
+      .filter((idVal): idVal is string => idVal != null);
+
+    const existingDates = await prisma.importantDate.findMany({
+      where: { personId: id, deletedAt: null },
+      select: { id: true },
+    });
+
+    const removedIds = existingDates
+      .map((d) => d.id)
+      .filter((existingId) => !incomingIds.includes(existingId));
+
+    if (removedIds.length > 0) {
+      await prisma.importantDate.updateMany({
+        where: { id: { in: removedIds } },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    // Hard-delete only the kept dates (they'll be recreated with fresh data).
+    // New dates (no id) are just created.
+    if (incomingIds.length > 0) {
+      await prisma.importantDate.deleteMany({
+        where: { id: { in: incomingIds } },
+      });
+    }
+
     updateData.importantDates = {
-      deleteMany: {},
       create: importantDates.map(mapImportantDate),
     };
   }

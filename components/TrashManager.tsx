@@ -98,6 +98,14 @@ function formatPersonName(person: { name: string; surname: string | null }): str
   return person.surname ? `${person.name} ${person.surname}` : person.name;
 }
 
+function formatDeletedDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (d.getFullYear() === 1604) {
+    return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+  }
+  return d.toLocaleDateString();
+}
+
 export default function TrashManager() {
   const t = useTranslations('settings.trash');
   const [activeTab, setActiveTab] = useState<EntityType>('people');
@@ -158,8 +166,23 @@ export default function TrashManager() {
       const response = await fetch(getRestoreUrl(type, item), { method: 'POST' });
       if (!response.ok) throw new Error('Failed to restore');
       toast.success(t('restoreSuccess'));
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-      setCounts((prev) => ({ ...prev, [type]: prev[type] - 1 }));
+      if (type === 'relationships') {
+        const rel = item as DeletedRelationship;
+        setItems((prev) => prev.filter((i) => {
+          if (i.id === item.id) return false;
+          const other = i as DeletedRelationship;
+          return !(other.person.id === rel.relatedPerson.id && other.relatedPerson.id === rel.person.id);
+        }));
+        const removedCount = items.filter((i) => {
+          if (i.id === item.id) return true;
+          const other = i as DeletedRelationship;
+          return other.person.id === rel.relatedPerson.id && other.relatedPerson.id === rel.person.id;
+        }).length;
+        setCounts((prev) => ({ ...prev, [type]: prev[type] - removedCount }));
+      } else {
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+        setCounts((prev) => ({ ...prev, [type]: prev[type] - 1 }));
+      }
     } catch {
       toast.error(t('restoreError'));
     } finally {
@@ -175,8 +198,23 @@ export default function TrashManager() {
       const response = await fetch(getPermanentDeleteUrl(type, item), { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete');
       toast.success(t('deleteSuccess'));
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-      setCounts((prev) => ({ ...prev, [type]: prev[type] - 1 }));
+      if (type === 'relationships') {
+        const rel = item as DeletedRelationship;
+        setItems((prev) => prev.filter((i) => {
+          if (i.id === item.id) return false;
+          const other = i as DeletedRelationship;
+          return !(other.person.id === rel.relatedPerson.id && other.relatedPerson.id === rel.person.id);
+        }));
+        const removedCount = items.filter((i) => {
+          if (i.id === item.id) return true;
+          const other = i as DeletedRelationship;
+          return other.person.id === rel.relatedPerson.id && other.relatedPerson.id === rel.person.id;
+        }).length;
+        setCounts((prev) => ({ ...prev, [type]: prev[type] - removedCount }));
+      } else {
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+        setCounts((prev) => ({ ...prev, [type]: prev[type] - 1 }));
+      }
       setConfirmDelete(null);
     } catch {
       toast.error(t('deleteError'));
@@ -214,7 +252,7 @@ export default function TrashManager() {
         const date = item as DeletedImportantDate;
         return t('importantDateLabel', {
           title: date.title,
-          date: new Date(date.date).toLocaleDateString(),
+          date: formatDeletedDate(date.date),
           person: formatPersonName(date.person),
         });
       }
@@ -243,7 +281,7 @@ export default function TrashManager() {
   return (
     <div>
       {/* Tabs */}
-      <div className="border-b border-border mb-6 overflow-x-auto">
+      <div className="border-b border-border mb-6 overflow-x-auto overflow-y-hidden">
         <nav className="-mb-px flex space-x-4" aria-label="Tabs">
           {ENTITY_TYPES.map((type) => (
             <button
@@ -301,6 +339,7 @@ export default function TrashManager() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
                     onClick={() => handleRestore(activeTab, item)}
                     disabled={actionLoading === item.id}
                   >
