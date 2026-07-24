@@ -524,7 +524,6 @@ export default function PersonForm({
           peopleWithUser={peopleWithUser}
           relationshipTypes={relationshipTypes}
           nameOrder={nameOrder}
-          hasExistingRelationship={!!person?.relationshipToUserId}
         />
       </Section>
 

@@ -30,7 +30,6 @@ interface PersonalInfoSectionProps {
   peopleWithUser: AvailablePerson[];
   relationshipTypes: RelationshipType[];
   nameOrder?: 'WESTERN' | 'EASTERN';
-  hasExistingRelationship: boolean;
 }
 
 const inputClass =
@@ -70,7 +69,6 @@ export default function PersonalInfoSection({
   peopleWithUser,
   relationshipTypes,
   nameOrder,
-  hasExistingRelationship,
 }: PersonalInfoSectionProps) {
   const t = useTranslations('people.form');
 
@@ -250,7 +248,7 @@ export default function PersonalInfoSection({
         </div>
       )}
 
-      {mode === 'edit' && hasExistingRelationship && (
+      {mode === 'edit' && (
         <div>
           <label
             htmlFor="relationshipToUserId"
@@ -274,12 +272,6 @@ export default function PersonalInfoSection({
               </option>
             ))}
           </select>
-        </div>
-      )}
-
-      {mode === 'edit' && !hasExistingRelationship && (
-        <div className="bg-primary/10 border border-primary text-primary px-4 py-3 rounded">
-          {t('indirectConnection')}
         </div>
       )}
 
