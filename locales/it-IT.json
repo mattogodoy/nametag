@@ -594,6 +594,45 @@
       "deleteFailed": "Eliminazione account fallita",
       "importDataFailed": "Importazione dati fallita"
     },
+    "trash": {
+      "title": "Cestino",
+      "description": "Ripristina o elimina definitivamente gli elementi",
+      "pageDescription": "Gli elementi eliminati vengono conservati per 30 giorni prima di essere rimossi definitivamente. Puoi ripristinarli o eliminarli subito.",
+      "tabs": {
+        "people": "Persone",
+        "groups": "Gruppi",
+        "relationships": "Relazioni",
+        "relationshipTypes": "Tipi di relazione",
+        "importantDates": "Date importanti"
+      },
+      "daysRemaining": "{days} giorni rimanenti",
+      "lessThanOneDay": "Meno di 1 giorno rimanente",
+      "empty": "Nessun elemento eliminato trovato per {type}.",
+      "emptyTypes": {
+        "people": "persone",
+        "groups": "gruppi",
+        "relationships": "relazioni",
+        "relationshipTypes": "tipi di relazione",
+        "importantDates": "date importanti"
+      },
+      "restore": "Ripristina",
+      "restoring": "Ripristino in corso...",
+      "permanentDelete": "Elimina definitivamente",
+      "deleting": "Eliminazione in corso...",
+      "confirmDelete": {
+        "title": "Eliminare definitivamente?",
+        "message": "Questo elemento sarà perso per sempre. Questa azione non può essere annullata.",
+        "messagePerson": "Questa persona e tutti i suoi dati associati (relazioni, appartenenze ai gruppi, foto, campi personalizzati) verranno eliminati definitivamente. Questa azione non può essere annullata.",
+        "confirm": "Elimina definitivamente",
+        "cancel": "Annulla"
+      },
+      "restoreSuccess": "Elemento ripristinato con successo",
+      "deleteSuccess": "Elemento eliminato definitivamente",
+      "restoreError": "Impossibile ripristinare l'elemento",
+      "deleteError": "Impossibile eliminare l'elemento",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "{title} ({date}) per {person}"
+    },
     "about": {
       "title": "Informazioni",
       "description": "Versione e informazioni",

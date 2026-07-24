@@ -30,8 +30,9 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
     const image = new Image();
     image.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = OUTPUT_SIZE;
-      canvas.height = OUTPUT_SIZE;
+      const outSize = Math.min(OUTPUT_SIZE, pixelCrop.width, pixelCrop.height);
+      canvas.width = outSize;
+      canvas.height = outSize;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         reject(new Error('Could not get canvas context'));
@@ -46,12 +47,12 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
         pixelCrop.height,
         0,
         0,
-        OUTPUT_SIZE,
-        OUTPUT_SIZE
+        outSize,
+        outSize
       );
       // Output JPEG by default for compact uploads; only fall back to PNG when
       // the source actually has transparency (server does not need to convert).
-      const hasAlpha = canvasHasAlpha(ctx, OUTPUT_SIZE, OUTPUT_SIZE);
+      const hasAlpha = canvasHasAlpha(ctx, outSize, outSize);
       const mimeType = hasAlpha ? 'image/png' : 'image/jpeg';
       const quality = hasAlpha ? undefined : JPEG_QUALITY;
       canvas.toBlob(

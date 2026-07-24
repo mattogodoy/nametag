@@ -611,6 +611,45 @@
       "deleteFailed": "删除账户失败",
       "importDataFailed": "导入数据失败"
     },
+    "trash": {
+      "title": "回收站",
+      "description": "恢复或永久删除项目",
+      "pageDescription": "已删除的项目会保留 30 天，之后将被永久删除。您可以恢复它们，也可以立即删除。",
+      "tabs": {
+        "people": "联系人",
+        "groups": "群组",
+        "relationships": "关系",
+        "relationshipTypes": "关系类型",
+        "importantDates": "重要日期"
+      },
+      "daysRemaining": "剩余 {days} 天",
+      "lessThanOneDay": "剩余不到 1 天",
+      "empty": "未找到已删除的{type}。",
+      "emptyTypes": {
+        "people": "联系人",
+        "groups": "群组",
+        "relationships": "关系",
+        "relationshipTypes": "关系类型",
+        "importantDates": "重要日期"
+      },
+      "restore": "恢复",
+      "restoring": "正在恢复...",
+      "permanentDelete": "永久删除",
+      "deleting": "正在删除...",
+      "confirmDelete": {
+        "title": "确定要永久删除吗？",
+        "message": "此项目将永久消失，此操作无法撤销。",
+        "messagePerson": "此联系人及其所有关联数据（关系、群组成员身份、照片、自定义字段）都将被永久删除。此操作无法撤销。",
+        "confirm": "永久删除",
+        "cancel": "取消"
+      },
+      "restoreSuccess": "项目已成功恢复",
+      "deleteSuccess": "项目已永久删除",
+      "restoreError": "恢复项目失败",
+      "deleteError": "删除项目失败",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "为{person}设置的{title}（{date}）"
+    },
     "about": {
       "title": "关于",
       "description": "版本和信息",

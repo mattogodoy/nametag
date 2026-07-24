@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.56.0](https://github.com/mattogodoy/nametag/compare/v0.55.0...v0.56.0) (2026-07-22)
+
+
+### Features
+
+* **trash:** add permanent delete API endpoints for all entity types ([8474702](https://github.com/mattogodoy/nametag/commit/847470240644f662d96c317c54082abd0cfddc83))
+* **trash:** add Trash settings page for viewing, restoring, and deleting trashed items ([e9f9ba1](https://github.com/mattogodoy/nametag/commit/e9f9ba106b154958221fd284d3414dea2759db72))
+* **trash:** add Trash settings page with restore and permanent delete UI ([9f9b21f](https://github.com/mattogodoy/nametag/commit/9f9b21f72aeccb90a2c3aa0559debabae43747ec))
+
+
+### Bug Fixes
+
+* **i18n:** correct nb-NO typo in trash pageDescription ([35c7652](https://github.com/mattogodoy/nametag/commit/35c76528e2d0aa6f8d78831184c0be406a6e713f))
+* **photos:** never upscale images smaller than PHOTO_SIZE ([95dcf02](https://github.com/mattogodoy/nametag/commit/95dcf02c3ca0a34f6f2dd1ce9306ff7b3a99502d))
+* **photos:** never upscale images smaller than PHOTO_SIZE ([e833559](https://github.com/mattogodoy/nametag/commit/e833559fca0b88767e8b460721cbeaa49cf19bf8)), closes [#320](https://github.com/mattogodoy/nametag/issues/320)
+* **test:** add importantDate.findMany mock for soft-delete refactor ([09d1e1b](https://github.com/mattogodoy/nametag/commit/09d1e1b4cde5538ee20dcf808d4d026ec555f43a))
+* **test:** use correct mock for important date permanent delete test ([675e24f](https://github.com/mattogodoy/nametag/commit/675e24fd320252aef1f812c50ca6d4bca30bd55c))
+* **trash:** soft-delete important dates on person edit, fix UI polish ([4ec1e5e](https://github.com/mattogodoy/nametag/commit/4ec1e5ec287ca74ae46316dcc460ad67f3569eb3))
+
 ## [0.55.0](https://github.com/mattogodoy/nametag/compare/v0.54.0...v0.55.0) (2026-07-22)
 
 

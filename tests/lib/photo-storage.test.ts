@@ -214,12 +214,21 @@ describe('processPhoto', () => {
   });
 
   it('should convert WebP to JPEG', async () => {
-    const input = await createTestImage(100, 100, 'webp');
+    const input = await createTestImage(300, 300, 'webp');
     const output = await processPhoto(input);
 
     const metadata = await sharp(output.data).metadata();
     expect(metadata.format).toBe('jpeg');
     expect(metadata.width).toBe(256);
+  });
+
+  it('should not upscale images smaller than PHOTO_SIZE', async () => {
+    const input = await createTestImage(100, 100, 'png');
+    const output = await processPhoto(input);
+
+    const metadata = await sharp(output.data).metadata();
+    expect(metadata.width).toBe(100);
+    expect(metadata.height).toBe(100);
   });
 
   it('should convert JPEG input and resize', async () => {

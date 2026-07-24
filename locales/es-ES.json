@@ -611,6 +611,45 @@
       "deleteFailed": "Error al eliminar la cuenta",
       "importDataFailed": "Error al importar los datos"
     },
+    "trash": {
+      "title": "Papelera",
+      "description": "Restaura o elimina elementos de forma permanente",
+      "pageDescription": "Los elementos que eliminas se conservan durante 30 días antes de eliminarse de forma permanente. Puedes restaurarlos o eliminarlos de inmediato.",
+      "tabs": {
+        "people": "Personas",
+        "groups": "Grupos",
+        "relationships": "Relaciones",
+        "relationshipTypes": "Tipos de relación",
+        "importantDates": "Fechas importantes"
+      },
+      "daysRemaining": "{days} días restantes",
+      "lessThanOneDay": "Menos de 1 día restante",
+      "empty": "No se encontraron {type} eliminados.",
+      "emptyTypes": {
+        "people": "personas",
+        "groups": "grupos",
+        "relationships": "relaciones",
+        "relationshipTypes": "tipos de relación",
+        "importantDates": "fechas importantes"
+      },
+      "restore": "Restaurar",
+      "restoring": "Restaurando...",
+      "permanentDelete": "Eliminar permanentemente",
+      "deleting": "Eliminando...",
+      "confirmDelete": {
+        "title": "¿Eliminar permanentemente?",
+        "message": "Este elemento desaparecerá para siempre. Esta acción no se puede deshacer.",
+        "messagePerson": "Esta persona y todos sus datos asociados (relaciones, membresías de grupo, fotos, campos personalizados) se eliminarán de forma permanente. Esta acción no se puede deshacer.",
+        "confirm": "Eliminar permanentemente",
+        "cancel": "Cancelar"
+      },
+      "restoreSuccess": "Elemento restaurado correctamente",
+      "deleteSuccess": "Elemento eliminado permanentemente",
+      "restoreError": "Error al restaurar el elemento",
+      "deleteError": "Error al eliminar el elemento",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "{title} ({date}) para {person}"
+    },
     "about": {
       "title": "Acerca de",
       "description": "Versión e información",

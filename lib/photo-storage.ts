@@ -207,9 +207,10 @@ export function isHeicBuffer(buffer: Buffer): boolean {
 
 /**
  * Process a photo buffer: validate format, enforce size limit,
- * resize to PHOTO_SIZE x PHOTO_SIZE (cover), convert to JPEG at PHOTO_QUALITY, strip EXIF.
- * PHOTO_SIZE and PHOTO_QUALITY are read from the environment (see lib/env.ts), with
- * defaults of 256 and 80 respectively.
+ * resize to at most PHOTO_SIZE x PHOTO_SIZE (cover), convert to JPEG at PHOTO_QUALITY,
+ * strip EXIF.  Images smaller than PHOTO_SIZE are kept at their original dimensions
+ * (never upscaled).  PHOTO_SIZE and PHOTO_QUALITY are read from the environment
+ * (see lib/env.ts), with defaults of 256 and 80 respectively.
  * Throws on invalid input.
  */
 export async function processPhoto(buffer: Buffer): Promise<{ data: Buffer; hasAlpha: boolean }> {
@@ -223,7 +224,7 @@ export async function processPhoto(buffer: Buffer): Promise<{ data: Buffer; hasA
 
   const photoSize = getPhotoSize();
   const image = sharp(buffer, { limitInputPixels: SHARP_MAX_INPUT_PIXELS })
-    .resize(photoSize, photoSize, { fit: 'cover' })
+    .resize(photoSize, photoSize, { fit: 'cover', withoutEnlargement: true })
     .rotate(); // auto-rotate based on EXIF before stripping
 
   // Check if the source format has an alpha channel

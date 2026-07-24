@@ -3,7 +3,7 @@ import {
   createImportantDateSchema, updateImportantDateSchema,
   mergePersonSchema,
 } from '../validations';
-import { zodBody, jsonBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refGraph, resp } from './helpers';
+import { zodBody, jsonBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refGraph, refSuccess, resp } from './helpers';
 
 export function peoplePaths(): Record<string, Record<string, unknown>> {
   return {
@@ -99,6 +99,21 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: { person: { $ref: '#/components/schemas/Person' } },
           }),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+    },
+    '/api/people/{id}/permanent': {
+      delete: {
+        tags: ['People'],
+        summary: 'Permanently delete a person',
+        description: 'Permanently deletes a soft-deleted person and all related records (photos, groups, relationships, important dates, etc). This cannot be undone.',
+        security: [{ session: [] }],
+        parameters: [pathParam('id', 'Person ID')],
+        responses: {
+          '200': refSuccess(),
+          '400': ref400(),
           '401': ref401(),
           '404': ref404(),
         },
@@ -502,6 +517,22 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: { importantDate: { $ref: '#/components/schemas/ImportantDate' } },
           }),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+    },
+
+    '/api/people/{id}/important-dates/{dateId}/permanent': {
+      delete: {
+        tags: ['Important Dates'],
+        summary: 'Permanently delete an important date',
+        description: 'Permanently deletes a soft-deleted important date. This cannot be undone.',
+        security: [{ session: [] }],
+        parameters: [pathParam('id', 'Person ID'), pathParam('dateId', 'Important date ID')],
+        responses: {
+          '200': refSuccess(),
+          '400': ref400(),
           '401': ref401(),
           '404': ref404(),
         },

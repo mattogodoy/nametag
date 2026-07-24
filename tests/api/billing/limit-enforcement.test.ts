@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
   relationshipTypeFindUnique: vi.fn(),
   relationshipCreate: vi.fn(),
   importantDateCount: vi.fn(),
+  importantDateFindMany: vi.fn(),
+  importantDateUpdateMany: vi.fn(),
+  importantDateDeleteMany: vi.fn(),
   // Billing mocks
   canCreateResource: vi.fn(),
   canEnableReminder: vi.fn(),
@@ -45,6 +48,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     importantDate: {
       count: mocks.importantDateCount,
+      findMany: mocks.importantDateFindMany,
+      updateMany: mocks.importantDateUpdateMany,
+      deleteMany: mocks.importantDateDeleteMany,
     },
   },
 }));
@@ -73,6 +79,7 @@ import { POST as createGroup } from '@/app/api/groups/route';
 describe('Billing Limit Enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.importantDateFindMany.mockResolvedValue([]);
     // Default: allow resource creation
     mocks.canCreateResource.mockResolvedValue({
       allowed: true,

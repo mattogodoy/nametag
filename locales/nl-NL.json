@@ -607,6 +607,45 @@
       "deleteFailed": "Account verwijderen mislukt",
       "importDataFailed": "Gegevens importeren mislukt"
     },
+    "trash": {
+      "title": "Prullenbak",
+      "description": "Herstel of verwijder items permanent",
+      "pageDescription": "Items die je verwijdert, worden 30 dagen bewaard voordat ze permanent worden verwijderd. Je kunt ze herstellen of direct verwijderen.",
+      "tabs": {
+        "people": "Personen",
+        "groups": "Groepen",
+        "relationships": "Relaties",
+        "relationshipTypes": "Relatietypes",
+        "importantDates": "Belangrijke datums"
+      },
+      "daysRemaining": "Nog {days} dagen",
+      "lessThanOneDay": "Minder dan 1 dag over",
+      "empty": "Geen verwijderde {type} gevonden.",
+      "emptyTypes": {
+        "people": "personen",
+        "groups": "groepen",
+        "relationships": "relaties",
+        "relationshipTypes": "relatietypes",
+        "importantDates": "belangrijke datums"
+      },
+      "restore": "Herstellen",
+      "restoring": "Bezig met herstellen...",
+      "permanentDelete": "Definitief verwijderen",
+      "deleting": "Bezig met verwijderen...",
+      "confirmDelete": {
+        "title": "Definitief verwijderen?",
+        "message": "Dit item is dan voorgoed verdwenen. Deze actie kan niet ongedaan worden gemaakt.",
+        "messagePerson": "Deze persoon en alle bijbehorende gegevens (relaties, groepslidmaatschappen, foto's, aangepaste velden) worden definitief verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+        "confirm": "Definitief verwijderen",
+        "cancel": "Annuleren"
+      },
+      "restoreSuccess": "Item succesvol hersteld",
+      "deleteSuccess": "Item definitief verwijderd",
+      "restoreError": "Item herstellen mislukt",
+      "deleteError": "Item verwijderen mislukt",
+      "relationshipLabel": "{personA} - {type} - {personB}",
+      "importantDateLabel": "{title} ({date}) voor {person}"
+    },
     "about": {
       "title": "Over",
       "description": "Versie en informatie",

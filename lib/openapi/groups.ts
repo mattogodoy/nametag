@@ -103,6 +103,21 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         },
       },
     },
+    '/api/groups/{id}/permanent': {
+      delete: {
+        tags: ['Groups'],
+        summary: 'Permanently delete a group',
+        description: 'Permanently deletes a soft-deleted group and its memberships. This cannot be undone.',
+        security: [{ session: [] }],
+        parameters: [pathParam('id', 'Group ID')],
+        responses: {
+          '200': refSuccess(),
+          '400': ref400(),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+    },
     '/api/groups/{id}/members': {
       post: {
         tags: ['Groups'],
