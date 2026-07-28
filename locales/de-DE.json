@@ -1287,6 +1287,16 @@
     "jobTitle": "Berufsbezeichnung",
     "contactInformation": "Kontaktinformationen",
     "phoneNumbers": "Telefonnummern",
+    "messagingLinks": {
+      "sendMessage": "Nachricht senden",
+      "openWhatsApp": "In WhatsApp öffnen",
+      "openTelegram": "In Telegram öffnen",
+      "openSignal": "In Signal öffnen",
+      "updateLastContactPrompt": "Letztes Kontaktdatum auf heute aktualisieren?",
+      "updating": "Aktualisiere...",
+      "yes": "Ja",
+      "no": "Nein"
+    },
     "emailAddresses": "E-Mail-Adressen",
     "addresses": "Adressen",
     "onlinePresence": "Online-Präsenz",

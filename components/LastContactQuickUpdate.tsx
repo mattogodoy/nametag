@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -47,6 +47,10 @@ export default function LastContactQuickUpdate({
   const router = useRouter();
   const [lastContact, setLastContact] = useState(currentLastContact);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setLastContact(currentLastContact);
+  }, [currentLastContact]);
 
   async function handleContactedToday() {
     const today = getLocalDateString();

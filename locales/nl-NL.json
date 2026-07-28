@@ -1279,6 +1279,16 @@
     "jobTitle": "Functietitel",
     "contactInformation": "Contactinformatie",
     "phoneNumbers": "Telefoonnummers",
+    "messagingLinks": {
+      "sendMessage": "Bericht sturen",
+      "openWhatsApp": "Openen in WhatsApp",
+      "openTelegram": "Openen in Telegram",
+      "openSignal": "Openen in Signal",
+      "updateLastContactPrompt": "Laatste contactdatum bijwerken naar vandaag?",
+      "updating": "Bijwerken...",
+      "yes": "Ja",
+      "no": "Nee"
+    },
     "emailAddresses": "E-mailadressen",
     "addresses": "Adressen",
     "onlinePresence": "Online aanwezigheid",

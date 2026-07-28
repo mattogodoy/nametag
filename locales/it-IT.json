@@ -1266,6 +1266,16 @@
     "jobTitle": "Titolo lavorativo",
     "contactInformation": "Informazioni contatto",
     "phoneNumbers": "Numeri telefono",
+    "messagingLinks": {
+      "sendMessage": "Invia messaggio",
+      "openWhatsApp": "Apri in WhatsApp",
+      "openTelegram": "Apri in Telegram",
+      "openSignal": "Apri in Signal",
+      "updateLastContactPrompt": "Aggiornare la data dell'ultimo contatto a oggi?",
+      "updating": "Aggiornamento...",
+      "yes": "Si",
+      "no": "No"
+    },
     "emailAddresses": "Indirizzi email",
     "addresses": "Indirizzi",
     "onlinePresence": "Presenza online",
