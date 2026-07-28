@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.57.0](https://github.com/mattogodoy/nametag/compare/v0.56.1...v0.57.0) (2026-07-28)
+
+
+### Features
+
+* add messaging app links for mobile phone numbers ([1c6c0f4](https://github.com/mattogodoy/nametag/commit/1c6c0f4d368cff9a09676fb60d7ed31fdffbb786)), closes [#223](https://github.com/mattogodoy/nametag/issues/223) [#181](https://github.com/mattogodoy/nametag/issues/181)
+
 ## [0.56.1](https://github.com/mattogodoy/nametag/compare/v0.56.0...v0.56.1) (2026-07-28)
 
 
