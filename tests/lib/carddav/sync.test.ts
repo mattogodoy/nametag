@@ -959,6 +959,35 @@ describe('CardDAV Sync Engine', () => {
         );
       });
 
+      it('should exclude soft-deleted important dates from export queries', async () => {
+        mocks.cardDavMappingFindMany.mockResolvedValue([]);
+        mocks.personFindMany.mockResolvedValue([]);
+
+        await syncToServer(USER_ID);
+
+        // Pending mappings query (mapped contacts push)
+        expect(mocks.cardDavMappingFindMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            include: {
+              person: {
+                include: expect.objectContaining({
+                  importantDates: { where: { deletedAt: null } },
+                }),
+              },
+            },
+          })
+        );
+
+        // Unmapped persons query
+        expect(mocks.personFindMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            include: expect.objectContaining({
+              importantDates: { where: { deletedAt: null } },
+            }),
+          })
+        );
+      });
+
       it('should use existing UID when person already has one', async () => {
         mocks.cardDavMappingFindMany.mockResolvedValue([]);
 

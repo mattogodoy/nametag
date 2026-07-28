@@ -255,6 +255,18 @@ describe('CardDAV Auto-Export', () => {
       });
     });
 
+    it('should exclude soft-deleted important dates from the person query', async () => {
+      await autoExportPerson(PERSON_ID);
+
+      expect(mocks.personFindUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            importantDates: { where: { deletedAt: null } },
+          }),
+        })
+      );
+    });
+
     it('should match server-rewritten vCard by FN when person has a displayNameOverride', async () => {
       mocks.personFindUnique.mockResolvedValue(
         makePerson({ displayNameOverride: 'Dad' })
@@ -446,6 +458,20 @@ describe('CardDAV Auto-Export', () => {
   });
 
   describe('autoUpdatePerson', () => {
+    it('should exclude soft-deleted important dates from the person query', async () => {
+      mocks.cardDavMappingFindUnique.mockResolvedValue(makeMapping());
+
+      await autoUpdatePerson(PERSON_ID);
+
+      expect(mocks.personFindUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            importantDates: { where: { deletedAt: null } },
+          }),
+        })
+      );
+    });
+
     it('should update vCard on server when mapping exists and sync enabled', async () => {
       mocks.cardDavMappingFindUnique.mockResolvedValue(makeMapping());
 

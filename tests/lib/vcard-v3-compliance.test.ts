@@ -235,6 +235,185 @@ describe('vCard v3.0 Compliance (RFC 2426)', () => {
       expect(vcard).toContain('item2.X-ABDATE');
     });
 
+    it('should deduplicate identical important dates on export', () => {
+      const person = createTestPerson({
+        importantDates: [
+          {
+            id: 'date-1',
+            personId: 'test-1',
+            type: null,
+            title: 'Anniversary',
+            date: new Date('2020-06-15'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+          {
+            id: 'date-2',
+            personId: 'test-1',
+            type: null,
+            title: 'Anniversary',
+            date: new Date('2020-06-15'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+        ],
+      });
+
+      const vcard = personToVCard(person);
+
+      expect(vcard).toContain('item1.X-ABDATE;VALUE=date-and-or-time:20200615');
+      expect(vcard).not.toContain('item2.X-ABDATE');
+    });
+
+    it('should not emit a generic date duplicating the typed anniversary', () => {
+      const person = createTestPerson({
+        importantDates: [
+          {
+            id: 'date-1',
+            personId: 'test-1',
+            type: 'anniversary',
+            title: '',
+            date: new Date('2020-06-15'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+          {
+            id: 'date-2',
+            personId: 'test-1',
+            type: null,
+            title: 'Anniversary',
+            date: new Date('2020-06-15'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+        ],
+      });
+
+      const vcard = personToVCard(person);
+
+      const abdateCount = (vcard.match(/X-ABDATE/g) || []).length;
+      expect(abdateCount).toBe(1);
+    });
+
+    it('should not emit an X-ABDATE duplicating BDAY', () => {
+      const person = createTestPerson({
+        importantDates: [
+          {
+            id: 'date-1',
+            personId: 'test-1',
+            type: 'birthday',
+            title: '',
+            date: new Date('1990-05-15'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+          {
+            id: 'date-2',
+            personId: 'test-1',
+            type: null,
+            title: 'Birthday',
+            date: new Date('1990-05-15'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+        ],
+      });
+
+      const vcard = personToVCard(person);
+
+      expect(vcard).toContain('BDAY:19900515');
+      expect(vcard).not.toContain('X-ABDATE');
+    });
+
+    it('should keep dates with the same label on different days', () => {
+      const person = createTestPerson({
+        importantDates: [
+          {
+            id: 'date-1',
+            personId: 'test-1',
+            type: null,
+            title: 'Moved',
+            date: new Date('2019-01-20'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+          {
+            id: 'date-2',
+            personId: 'test-1',
+            type: null,
+            title: 'Moved',
+            date: new Date('2021-03-05'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+        ],
+      });
+
+      const vcard = personToVCard(person);
+
+      expect(vcard).toContain('item1.X-ABDATE');
+      expect(vcard).toContain('item2.X-ABDATE');
+    });
+
+    it('should not export soft-deleted important dates', () => {
+      const person = createTestPerson({
+        importantDates: [
+          {
+            id: 'date-1',
+            personId: 'test-1',
+            type: 'birthday',
+            title: '',
+            date: new Date('1990-05-15'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: new Date('2025-01-01'),
+          },
+          {
+            id: 'date-2',
+            personId: 'test-1',
+            type: null,
+            title: 'Moved',
+            date: new Date('2019-01-20'),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: new Date('2025-01-01'),
+          },
+        ],
+      });
+
+      const vcard = personToVCard(person);
+
+      expect(vcard).not.toContain('BDAY');
+      expect(vcard).not.toContain('X-ABDATE');
+    });
+
+    it('should not export legacy X-ANNIVERSARY custom fields', () => {
+      const person = createTestPerson({
+        customFields: [
+          {
+            id: 'cf-1',
+            personId: 'test-1',
+            key: 'X-ANNIVERSARY',
+            value: '20200615',
+            type: null,
+            createdAt: new Date(),
+          },
+        ],
+      });
+
+      const vcard = personToVCard(person);
+
+      expect(vcard).not.toContain('X-ANNIVERSARY');
+    });
+
     it('should not export Birthday as special date (uses BDAY instead)', () => {
       const person = createTestPerson({
         importantDates: [

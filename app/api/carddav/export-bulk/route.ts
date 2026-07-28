@@ -91,7 +91,7 @@ export const POST = withLogging(async function POST(request: Request) {
         locations: true,
         customFields: true,
         customFieldValues: customFieldValuesInclude(),
-        importantDates: true,
+        importantDates: { where: { deletedAt: null } },
         relationshipsFrom: {
           include: {
             relatedPerson: true,

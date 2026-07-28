@@ -150,18 +150,32 @@ export function personToVCard(
 
   let itemCounter = 1;
 
+  // Only live dates are exported. Soft-deleted rows can still reach this
+  // function from callers that load dates without a deletedAt filter, and
+  // exporting them resurrects dates the user removed (issue #373).
+  const activeDates = person.importantDates.filter((d) => !d.deletedAt);
+
+  // Deduplicate by calendar day + label so databases polluted by the sync
+  // loop from issue #373 push a single entry per date instead of every
+  // duplicate row.
+  const seenDates = new Set<string>();
+  const dateKey = (date: Date, label: string) =>
+    `${formatVCardV3Date(date)}:${label.toLowerCase()}`;
+
   // BDAY (Birthday) - get from ImportantDates by type
-  const birthday = person.importantDates.find((d) => d.type === 'birthday');
+  const birthday = activeDates.find((d) => d.type === 'birthday');
   if (birthday) {
     lines.push(`BDAY:${formatVCardV3Date(birthday.date)}`);
+    seenDates.add(dateKey(birthday.date, 'birthday'));
   }
 
   // ANNIVERSARY - get from ImportantDates by type
-  const anniversary = person.importantDates.find((d) => d.type === 'anniversary');
+  const anniversary = activeDates.find((d) => d.type === 'anniversary');
   if (anniversary) {
     const dateValue = formatVCardV3Date(anniversary.date);
     lines.push(`item${itemCounter}.X-ABDATE;VALUE=date-and-or-time:${dateValue}`);
     lines.push(`item${itemCounter}.X-ABLabel:Anniversary`);
+    seenDates.add(dateKey(anniversary.date, 'anniversary'));
     itemCounter++;
   }
 
@@ -172,16 +186,19 @@ export function personToVCard(
   };
 
   // Other dates - everything except birthday and anniversary
-  const otherDates = person.importantDates.filter(
+  const otherDates = activeDates.filter(
     (d) => d.type !== 'birthday' && d.type !== 'anniversary'
   );
 
   otherDates.forEach((date) => {
     // For predefined types: use English display name from EXPORT_LABELS
     // For custom dates: use the title field
-    const label = escapeVCardText(
-      (date.type && EXPORT_LABELS[date.type]) || date.title
-    );
+    const rawLabel = (date.type && EXPORT_LABELS[date.type]) || date.title;
+    const key = dateKey(date.date, rawLabel);
+    if (seenDates.has(key)) return;
+    seenDates.add(key);
+
+    const label = escapeVCardText(rawLabel);
     const dateValue = formatVCardV3Date(date.date);
 
     lines.push(`item${itemCounter}.X-ABDATE;VALUE=date-and-or-time:${dateValue}`);
@@ -382,6 +399,9 @@ export function personToVCard(
     );
     filteredFreeForm.forEach((field) => {
       const key = field.key.startsWith('X-') ? field.key : `X-${field.key}`;
+      // The parser maps X-ANNIVERSARY to important dates now. Rows stored as
+      // custom fields by older versions would re-emit a duplicate date line.
+      if (key.toUpperCase() === 'X-ANNIVERSARY') return;
       const dedupKey = `${key}:${field.value}`;
       if (seenCustomFields.has(dedupKey)) return;
       // Also drop any free-form entry whose normalised key still collides with a template key
