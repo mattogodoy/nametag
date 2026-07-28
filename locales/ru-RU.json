@@ -1266,6 +1266,16 @@
     "jobTitle": "Должность",
     "contactInformation": "Контактная информация",
     "phoneNumbers": "Номера телефонов",
+    "messagingLinks": {
+      "sendMessage": "Отправить сообщение",
+      "openWhatsApp": "Открыть в WhatsApp",
+      "openTelegram": "Открыть в Telegram",
+      "openSignal": "Открыть в Signal",
+      "updateLastContactPrompt": "Обновить дату последнего контакта на сегодня?",
+      "updating": "Обновление...",
+      "yes": "Да",
+      "no": "Нет"
+    },
     "emailAddresses": "Адреса электронной почты",
     "addresses": "Адреса",
     "onlinePresence": "Онлайн-присутствие",

@@ -1283,6 +1283,16 @@
     "jobTitle": "Job Title",
     "contactInformation": "Contact Information",
     "phoneNumbers": "Phone Numbers",
+    "messagingLinks": {
+      "sendMessage": "Send message",
+      "openWhatsApp": "Open in WhatsApp",
+      "openTelegram": "Open in Telegram",
+      "openSignal": "Open in Signal",
+      "updateLastContactPrompt": "Update last contact date to today?",
+      "updating": "Updating...",
+      "yes": "Yes",
+      "no": "No"
+    },
     "emailAddresses": "Email Addresses",
     "addresses": "Addresses",
     "onlinePresence": "Online Presence",

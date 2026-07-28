@@ -1287,6 +1287,16 @@
     "jobTitle": "役職",
     "contactInformation": "連絡先情報",
     "phoneNumbers": "電話番号",
+    "messagingLinks": {
+      "sendMessage": "メッセージを送信",
+      "openWhatsApp": "WhatsAppで開く",
+      "openTelegram": "Telegramで開く",
+      "openSignal": "Signalで開く",
+      "updateLastContactPrompt": "最終連絡日を今日に更新しますか?",
+      "updating": "更新中...",
+      "yes": "はい",
+      "no": "いいえ"
+    },
     "emailAddresses": "メールアドレス",
     "addresses": "住所",
     "onlinePresence": "オンラインプレゼンス",
