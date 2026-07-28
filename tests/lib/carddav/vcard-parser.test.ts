@@ -560,14 +560,102 @@ END:VCARD`;
 VERSION:3.0
 FN:Test
 item1.X-ABDATE:20230615
+item1.X-ABLabel:Custom Date
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.importantDates).toHaveLength(1);
+      expect(parsed.importantDates[0].type).toBeNull();
+      expect(parsed.importantDates[0].title).toBe('Custom Date');
+      expect(parsed.importantDates[0].date.getFullYear()).toBe(2023);
+    });
+
+    it('should map X-ABDATE with Anniversary label to predefined type', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.X-ABDATE:20230615
 item1.X-ABLabel:Anniversary
 END:VCARD`;
 
       const parsed = parseVCard(vCard);
 
       expect(parsed.importantDates).toHaveLength(1);
-      expect(parsed.importantDates[0].title).toBe('Anniversary');
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(2023);
+      expect(parsed.importantDates[0].type).toBe('anniversary');
+      expect(parsed.importantDates[0].title).toBe('');
+    });
+
+    it('should map X-ABDATE with Birthday label to predefined type', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.X-ABDATE:19900515
+item1.X-ABLabel:Birthday
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.importantDates).toHaveLength(1);
+      expect(parsed.importantDates[0].type).toBe('birthday');
+    });
+
+    it('should parse X-ANNIVERSARY as importantDate, not custom field', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+X-ANNIVERSARY:20200101
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.importantDates).toHaveLength(1);
+      expect(parsed.importantDates[0].type).toBe('anniversary');
+      expect(parsed.customFields.find(f => f.key === 'X-ANNIVERSARY')).toBeUndefined();
+    });
+
+    it('should parse X-ANNIVERSARY with TYPE as importantDate', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+X-ANNIVERSARY;TYPE=Name day:20200301
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.importantDates).toHaveLength(1);
+      expect(parsed.importantDates[0].type).toBeNull();
+      expect(parsed.importantDates[0].title).toBe('name day');
+    });
+
+    it('should dedup importantDates from X-ABDATE and X-ANNIVERSARY', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+item1.X-ABDATE:20200615
+item1.X-ABLabel:Anniversary
+X-ANNIVERSARY:20200615
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.importantDates).toHaveLength(1);
+      expect(parsed.importantDates[0].type).toBe('anniversary');
+    });
+
+    it('should dedup BDAY and X-ABDATE with Birthday label', () => {
+      const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:Test
+BDAY:19900515
+item1.X-ABDATE:19900515
+item1.X-ABLabel:Birthday
+END:VCARD`;
+
+      const parsed = parseVCard(vCard);
+
+      expect(parsed.importantDates).toHaveLength(1);
+      expect(parsed.importantDates[0].type).toBe('birthday');
     });
 
     it('should parse X-SOCIALPROFILE as IM handle', () => {

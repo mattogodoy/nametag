@@ -80,6 +80,19 @@ export function parseVCard(vCardText: string): ParsedVCardDataEnhanced {
   // Collect unknown properties
   data.unknownProperties = collectUnknownProperties(properties, handledProperties);
 
+  // Deduplicate importantDates: X-ABDATE and X-ANNIVERSARY (or BDAY and
+  // Apple-added X-ABDATE) can describe the same date. Key on the calendar
+  // day + type so genuinely different dates on the same day are preserved.
+  const seenDates = new Set<string>();
+  data.importantDates = data.importantDates.filter((d) => {
+    const dayKey = d.date.toISOString().slice(0, 10);
+    const typeKey = d.type || d.title.toLowerCase();
+    const key = `${dayKey}:${typeKey}`;
+    if (seenDates.has(key)) return false;
+    seenDates.add(key);
+    return true;
+  });
+
   return data;
 }
 
@@ -506,11 +519,45 @@ function processProperty(
 
     // Vendor-specific properties
     case 'X-ABDATE': {
-      // Apple custom date with label in item group
+      // Apple custom date with label in item group.
+      // Map well-known labels to predefined types so they survive round-trips.
       const date = parseVCardDate(prop.value);
       if (date && prop.group) {
         const label = getItemGroupLabel(prop.group, itemGroups) || 'Important Date';
-        data.importantDates.push({ type: null, title: label, date });
+        const normalised = label.toLowerCase();
+        if (normalised === 'birthday') {
+          data.importantDates.push({ type: 'birthday', title: '', date });
+        } else if (normalised === 'anniversary') {
+          data.importantDates.push({ type: 'anniversary', title: '', date });
+        } else {
+          data.importantDates.push({ type: null, title: label, date });
+        }
+      }
+      return true;
+    }
+
+    case 'X-ANNIVERSARY': {
+      // Android/generic date extension. Parse like ANNIVERSARY to avoid it
+      // falling through to custom fields and creating persistent duplicates.
+      const date = parseVCardDate(prop.value);
+      if (date) {
+        const typeParam = prop.params.TYPE;
+        const type = Array.isArray(typeParam) ? typeParam[0] : typeParam;
+
+        if (type && type.toUpperCase() === 'LAST-CONTACT') {
+          data.lastContact = date;
+        } else if (!type) {
+          data.importantDates.push({ type: 'anniversary', title: '', date });
+        } else {
+          const normalised = type.toLowerCase();
+          if (normalised === 'anniversary') {
+            data.importantDates.push({ type: 'anniversary', title: '', date });
+          } else if (normalised === 'birthday') {
+            data.importantDates.push({ type: 'birthday', title: '', date });
+          } else {
+            data.importantDates.push({ type: null, title: type, date });
+          }
+        }
       }
       return true;
     }

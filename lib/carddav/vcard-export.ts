@@ -8,7 +8,7 @@
  * vCard 3.0 format details:
  * - Date format: YYYYMMDD (not YYYY-MM-DD)
  * - Photo encoding: ENCODING=b parameter (not data URI)
- * - Special dates: Both X-ABDATE (Apple) and X-ANNIVERSARY (Android) for compatibility
+ * - Special dates: X-ABDATE with X-ABLabel (Apple format, widely supported)
  * - Line folding: 75 character limit with CRLF + SPACE continuation
  */
 
@@ -162,7 +162,6 @@ export function personToVCard(
     const dateValue = formatVCardV3Date(anniversary.date);
     lines.push(`item${itemCounter}.X-ABDATE;VALUE=date-and-or-time:${dateValue}`);
     lines.push(`item${itemCounter}.X-ABLabel:Anniversary`);
-    lines.push(`X-ANNIVERSARY:${dateValue}`);
     itemCounter++;
   }
 
@@ -185,12 +184,8 @@ export function personToVCard(
     );
     const dateValue = formatVCardV3Date(date.date);
 
-    // X-ABDATE format (Apple)
     lines.push(`item${itemCounter}.X-ABDATE;VALUE=date-and-or-time:${dateValue}`);
     lines.push(`item${itemCounter}.X-ABLabel:${label}`);
-
-    // X-ANNIVERSARY format (Android)
-    lines.push(`X-ANNIVERSARY;TYPE=${label.toUpperCase()}:${dateValue}`);
 
     itemCounter++;
   });

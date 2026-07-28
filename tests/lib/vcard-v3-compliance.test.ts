@@ -178,8 +178,8 @@ describe('vCard v3.0 Compliance (RFC 2426)', () => {
     });
   });
 
-  describe('Special dates (X-ABDATE and X-ANNIVERSARY)', () => {
-    it('should export both X-ABDATE and X-ANNIVERSARY for important dates', () => {
+  describe('Special dates (X-ABDATE)', () => {
+    it('should export X-ABDATE for important dates without X-ANNIVERSARY duplicates', () => {
       const person = createTestPerson({
         importantDates: [
           {
@@ -196,12 +196,12 @@ describe('vCard v3.0 Compliance (RFC 2426)', () => {
 
       const vcard = personToVCard(person);
 
-      // Apple format
+      // Apple format only
       expect(vcard).toContain('item1.X-ABDATE;VALUE=date-and-or-time:20200615');
       expect(vcard).toContain('item1.X-ABLabel:Anniversary');
 
-      // Android format
-      expect(vcard).toContain('X-ANNIVERSARY;TYPE=ANNIVERSARY:20200615');
+      // No duplicate X-ANNIVERSARY line
+      expect(vcard).not.toContain('X-ANNIVERSARY');
     });
 
     it('should use item grouping for multiple important dates', () => {
