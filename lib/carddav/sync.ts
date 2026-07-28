@@ -627,7 +627,7 @@ export async function syncToServer(
             locations: true,
             customFields: true,
             customFieldValues: customFieldValuesInclude(),
-            importantDates: true,
+            importantDates: { where: { deletedAt: null } },
             groups: {
               where: { group: { deletedAt: null } },
               include: { group: true },
@@ -850,7 +850,7 @@ export async function syncToServer(
         locations: true,
         customFields: true,
         customFieldValues: customFieldValuesInclude(),
-        importantDates: true,
+        importantDates: { where: { deletedAt: null } },
         relationshipsFrom: {
           include: { relatedPerson: true },
         },

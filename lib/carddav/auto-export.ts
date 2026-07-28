@@ -44,7 +44,7 @@ export async function autoExportPerson(
       locations: true,
       customFields: true,
       customFieldValues: customFieldValuesInclude(),
-      importantDates: true,
+      importantDates: { where: { deletedAt: null } },
       relationshipsFrom: {
         where: { deletedAt: null },
         include: {
@@ -253,7 +253,7 @@ export async function autoUpdatePerson(personId: string): Promise<void> {
       locations: true,
       customFields: true,
       customFieldValues: customFieldValuesInclude(),
-      importantDates: true,
+      importantDates: { where: { deletedAt: null } },
       relationshipsFrom: {
         where: { deletedAt: null },
         include: {
