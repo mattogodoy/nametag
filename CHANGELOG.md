@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.56.1](https://github.com/mattogodoy/nametag/compare/v0.56.0...v0.56.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* dedupe important dates on export and stop exporting soft-deleted ones ([09baac9](https://github.com/mattogodoy/nametag/commit/09baac9469c95016345f17b5d470c6151f2d2ae5))
+* show "Relationship to you" dropdown in edit mode for all people ([e3f0b81](https://github.com/mattogodoy/nametag/commit/e3f0b8180a265eaaeb1eb80627aaf1b381ad37ae))
+* show Relationship to you dropdown in edit mode for all people ([9d2f4d3](https://github.com/mattogodoy/nametag/commit/9d2f4d304e6adabba4ee0a82e26b1c8f0a964e63))
+* stop duplicate date entries in CardDAV vCards ([a21c9d6](https://github.com/mattogodoy/nametag/commit/a21c9d68df94252b5e7bfcc0158ba552f4f70265))
+* stop duplicate date entries in CardDAV vCards ([#373](https://github.com/mattogodoy/nametag/issues/373)) ([1428bf3](https://github.com/mattogodoy/nametag/commit/1428bf342ec9e7c40bccd4c7034db846328163b4))
+
 ## [0.56.0](https://github.com/mattogodoy/nametag/compare/v0.55.0...v0.56.0) (2026-07-22)
 
 
