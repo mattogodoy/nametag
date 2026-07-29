@@ -25,8 +25,12 @@ interface ThemeProviderProps {
   initialTheme?: Theme;
 }
 
-// Must match --background in app/globals.css for each theme.
-const THEME_COLORS: Record<Theme, string> = {
+/*
+ * Must match --background in app/globals.css for each theme. Exported so a test
+ * can assert that against the stylesheet: these values are a duplicate of what
+ * really lives in CSS, and nothing else would notice them drifting apart.
+ */
+export const THEME_COLORS: Record<Theme, string> = {
   LIGHT: '#F7F6F3',
   DARK: '#121110',
 };
