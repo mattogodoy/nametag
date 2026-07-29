@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
+import InstallPrompt from '@/components/InstallPrompt';
 import { prisma } from '@/lib/prisma';
 import UnifiedNetworkGraph from '@/components/UnifiedNetworkGraph';
 import GraphFilterHelpModal from '@/components/GraphFilterHelpModal';
@@ -68,6 +69,8 @@ export default async function DashboardPage() {
               {t(greetingKey, { name: session.user.nickname || session.user.name || '' })}
             </h1>
           </div>
+
+          <InstallPrompt />
 
           {/* Upcoming Events */}
           {upcomingEvents.length > 0 && (
