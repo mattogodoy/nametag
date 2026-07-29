@@ -89,8 +89,8 @@ export default function LastContactQuickUpdate({
       <h4 className="text-sm font-medium text-muted mb-1">
         {t('lastTimeTalked')}
       </h4>
-      <div className="flex items-center gap-2">
-        <p className="text-foreground">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-foreground min-w-0">
           {parsedDate ? (
             <>
               {formatDate(parsedDate, dateFormat)}{' '}

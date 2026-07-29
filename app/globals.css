@@ -84,10 +84,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 
 /* Mobile safety net: catch stray horizontal overflow at the page level.
-   Uses `clip` so it does not establish a containing block for fixed/sticky. */
+   `clip` on html avoids creating a containing block for fixed/sticky.
+   `hidden` on body covers older mobile browsers that ignore clip on html. */
 html {
   overflow-x: clip;
 }

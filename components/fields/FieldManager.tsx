@@ -329,7 +329,7 @@ export default function FieldManager<T extends BaseFieldItem>({
 
     return (
       <div
-        className={`flex items-center gap-2 p-3 ${accentBg} rounded-lg border-2 ${accentBorder}`}
+        className={`flex flex-wrap items-center gap-2 p-3 ${accentBg} rounded-lg border-2 ${accentBorder}`}
       >
         {typeOptions && (
           <TypeComboBox
@@ -348,24 +348,26 @@ export default function FieldManager<T extends BaseFieldItem>({
           }
           placeholder={t(field.placeholderKey)}
           aria-label={t(field.placeholderKey)}
-          className={`flex-1 ${INPUT_BASE}`}
+          className={`flex-1 min-w-[120px] ${INPUT_BASE}`}
           autoFocus={isAddForm}
         />
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={!isValid(item)}
-          className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {confirmLabel}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
-        >
-          {t('cancel')}
-        </button>
+        <div className="flex gap-2 ml-auto">
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!isValid(item)}
+            className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {confirmLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
+          >
+            {t('cancel')}
+          </button>
+        </div>
       </div>
     );
   };
@@ -494,22 +496,24 @@ export default function FieldManager<T extends BaseFieldItem>({
             }
             placeholder={t(field.placeholderKey)}
             aria-label={t(field.placeholderKey)}
-            className={`flex-1 ${INPUT_BASE}`}
+            className={`flex-1 min-w-[120px] ${INPUT_BASE}`}
           />
-          <button
-            type="button"
-            onClick={handleSaveEdit}
-            className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
-          >
-            {t('save')}
-          </button>
-          <button
-            type="button"
-            onClick={handleCancelEdit}
-            className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
-          >
-            {t('cancel')}
-          </button>
+          <div className="flex gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={handleSaveEdit}
+              className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
+            >
+              {t('save')}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="px-3 py-2 bg-surface-elevated text-foreground rounded-lg hover:bg-surface-elevated/80"
+            >
+              {t('cancel')}
+            </button>
+          </div>
         </>
       );
     }
@@ -611,7 +615,7 @@ export default function FieldManager<T extends BaseFieldItem>({
       // Single-field inline layout
       return (
         <>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {badgeEl && (
               <div className="flex items-center gap-2 mb-1">{badgeEl}</div>
             )}
@@ -685,7 +689,7 @@ export default function FieldManager<T extends BaseFieldItem>({
         {items.map((item, index) => (
           <div
             key={item.id ?? `new-${index}`}
-            className={`${isMultiField ? 'p-3' : 'flex items-center gap-2 p-3'} bg-surface-elevated rounded-lg`}
+            className={`${isMultiField ? 'p-3' : 'flex flex-wrap items-center gap-2 p-3'} bg-surface-elevated rounded-lg`}
           >
             {editingIndex === index && editingItem
               ? renderEditInline(editingItem, (updated) => setEditingItem(updated))

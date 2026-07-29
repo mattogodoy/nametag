@@ -325,7 +325,7 @@ export default function TrashManager() {
           {items.map((item) => {
             const days = getDaysRemaining(getDeletedAt(item));
             return (
-              <li key={item.id} className="flex items-center justify-between py-3 gap-4">
+              <li key={item.id} className="flex flex-wrap items-center justify-between py-3 gap-x-4 gap-y-2">
                 <div className="flex items-center gap-2 min-w-0">
                   {renderColorDot(activeTab, item)}
                   <span className="text-foreground truncate">
