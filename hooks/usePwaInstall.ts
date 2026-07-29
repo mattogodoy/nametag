@@ -47,8 +47,16 @@ export function usePwaInstall(): PwaInstallState {
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
-  // Detected in an effect rather than during render so server and client
-  // markup match on the first pass.
+  /*
+   * Detected in an effect rather than during render so server and client markup
+   * agree on the first pass. Reading these during render would have the server
+   * (no window) disagree with the client and produce a hydration mismatch, so a
+   * lazy useState initialiser is not an option here.
+   *
+   * eslint-plugin-react-hooks 7 flags setState in an effect as an error. The
+   * suppression matches the existing convention in this codebase, for example
+   * components/map/MapView.tsx and components/TypeComboBox.tsx.
+   */
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecting a one-time platform capability check into UI state is intentional
     setIsStandalone(detectStandalone());
@@ -80,9 +88,23 @@ export function usePwaInstall(): PwaInstallState {
     if (!installEvent) {
       return;
     }
-    await installEvent.prompt();
-    // The event can only be used once.
+    /*
+     * Cleared BEFORE awaiting, not after. The captured event is single-use, so a
+     * second click arriving while prompt() is still pending would invoke it
+     * twice, which is browser-defined behaviour. Clearing first also removes the
+     * button, so the race cannot be triggered from the UI at all.
+     */
     setInstallEvent(null);
+    try {
+      await installEvent.prompt();
+    } catch {
+      /*
+       * Browsers can reject this, for example when the install UI is dismissed
+       * abnormally. Caught here rather than at the call sites so callers can
+       * safely fire and forget: there is nothing useful to tell the user, and
+       * the event is spent either way.
+       */
+    }
   }, [installEvent]);
 
   return {

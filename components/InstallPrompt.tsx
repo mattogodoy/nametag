@@ -7,6 +7,30 @@ import { usePwaInstall } from '@/hooks/usePwaInstall';
 
 const DISMISS_KEY = 'nametag.installPromptDismissed';
 
+/*
+ * localStorage can throw rather than merely return null: Safari in private mode
+ * and storage-disabled configurations raise SecurityError on access, and setItem
+ * can raise QuotaExceededError. An unhandled throw inside dismiss() would abort
+ * the handler before the state update, leaving a banner whose dismiss button
+ * does nothing. Forgetting a dismissal is much better than a stuck banner, so
+ * both directions degrade to session-only behaviour.
+ */
+function readDismissed(): boolean {
+  try {
+    return window.localStorage.getItem(DISMISS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function rememberDismissed(): void {
+  try {
+    window.localStorage.setItem(DISMISS_KEY, '1');
+  } catch {
+    // Dismissal holds for this page view only.
+  }
+}
+
 /**
  * One-time, dismissible install nudge. Rendered on the dashboard only, so it
  * cannot interrupt someone mid-task.
@@ -19,12 +43,13 @@ export default function InstallPrompt() {
   // Read in an effect: localStorage is not available during server render.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecting a one-time platform check (persisted dismissal) into UI state is intentional
-    setDismissed(window.localStorage.getItem(DISMISS_KEY) === '1');
+    setDismissed(readDismissed());
   }, []);
 
   function dismiss() {
-    window.localStorage.setItem(DISMISS_KEY, '1');
+    // State first, so the banner closes even if persistence is unavailable.
     setDismissed(true);
+    rememberDismissed();
   }
 
   if (isStandalone || dismissed) {

@@ -86,13 +86,92 @@ describe('InstallPrompt banner', () => {
     expect(screen.getByRole('button', { name: 'Install' })).toBeInTheDocument();
   });
 
-  it('calls the captured prompt when Install is clicked', async () => {
+  it('suppresses the browser mini-infobar so ours is the only prompt', () => {
+    render(<InstallPrompt />, { wrapper: Wrapper });
+
+    const event = new Event('beforeinstallprompt') as Event & { prompt: () => Promise<void> };
+    event.prompt = vi.fn().mockResolvedValue(undefined);
+    const preventDefault = vi.spyOn(event, 'preventDefault');
+
+    act(() => {
+      window.dispatchEvent(event);
+    });
+
+    // Without preventDefault, Chrome shows its own install bar alongside our
+    // banner. Nothing else in this file would notice that line going missing.
+    expect(preventDefault).toHaveBeenCalled();
+  });
+
+  it('calls the captured prompt when Install is clicked, then retires the button', async () => {
     render(<InstallPrompt />, { wrapper: Wrapper });
     const prompt = fireInstallPromptEvent();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+    // act, because promptInstall is async: without it the assertions below run
+    // before the state update flushes and the post-click behaviour is untested.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+    });
 
     expect(prompt).toHaveBeenCalledTimes(1);
+    // The captured event is single-use, so the button must not stay clickable.
+    expect(screen.queryByRole('button', { name: 'Install' })).not.toBeInTheDocument();
+  });
+
+  it('does not call prompt twice when Install is double-clicked', async () => {
+    render(<InstallPrompt />, { wrapper: Wrapper });
+
+    let releasePrompt: (() => void) | undefined;
+    const prompt = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          releasePrompt = resolve;
+        })
+    );
+    fireInstallPromptEvent(prompt);
+
+    const button = screen.getByRole('button', { name: 'Install' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await act(async () => {
+      releasePrompt?.();
+    });
+
+    // Invoking a spent BeforeInstallPromptEvent a second time is
+    // browser-defined, so the hook has to make it unreachable.
+    expect(prompt).toHaveBeenCalledTimes(1);
+  });
+
+  it('still dismisses when localStorage is unavailable', () => {
+    // Safari private mode throws on access rather than returning null.
+    const real = window.localStorage;
+    const denied = () => {
+      throw new Error('SecurityError');
+    };
+    Object.defineProperty(window, 'localStorage', {
+      writable: true,
+      configurable: true,
+      value: { getItem: denied, setItem: denied, clear: () => {} },
+    });
+
+    // try/finally, not a bare override: beforeEach calls localStorage.clear(),
+    // so leaving a throwing stub in place would cascade into every later test.
+    try {
+      render(<InstallPrompt />, { wrapper: Wrapper });
+      fireInstallPromptEvent();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      // A banner whose dismiss button silently does nothing is worse than one
+      // that forgets the dismissal on the next page load.
+      expect(screen.queryByText('Install Nametag')).not.toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'localStorage', {
+        writable: true,
+        configurable: true,
+        value: real,
+      });
+    }
   });
 
   it('renders nothing when already running installed', () => {
