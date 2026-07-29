@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.57.1](https://github.com/mattogodoy/nametag/compare/v0.57.0...v0.57.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* prevent horizontal overflow on mobile ([d4d9bc5](https://github.com/mattogodoy/nametag/commit/d4d9bc534604eaa2e2bfa9d2769a62c87c1053a0))
+* prevent horizontal overflow on mobile in inline forms and item rows ([5591f09](https://github.com/mattogodoy/nametag/commit/5591f09675eb101074d696cdedcdbeff3f9e4fbf))
+* tooltip whitespace-nowrap extending page scroll width on mobile ([d8b8ff2](https://github.com/mattogodoy/nametag/commit/d8b8ff21a0ceee020f7c6e2957ab23a4896884a1))
+
 ## [0.57.0](https://github.com/mattogodoy/nametag/compare/v0.56.1...v0.57.0) (2026-07-28)
 
 
