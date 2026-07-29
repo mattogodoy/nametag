@@ -19,6 +19,7 @@ import PersonAvatar from '@/components/PersonPhoto';
 import { getTranslations } from 'next-intl/server';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import JournalSection from '@/components/JournalSection';
+import MessagingLinks from '@/components/MessagingLinks';
 import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
 function isSafeUrl(url: string): boolean {
@@ -509,6 +510,9 @@ export default async function PersonDetailsPage({
                               >
                                 {phone.number}
                               </a>
+                              {phone.type === 'Mobile' && (
+                                <MessagingLinks phoneNumber={phone.number} personId={person.id} />
+                              )}
                             </div>
                           ))}
                         </div>

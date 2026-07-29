@@ -1287,6 +1287,16 @@
     "jobTitle": "职位",
     "contactInformation": "联系信息",
     "phoneNumbers": "电话号码",
+    "messagingLinks": {
+      "sendMessage": "发送消息",
+      "openWhatsApp": "在WhatsApp中打开",
+      "openTelegram": "在Telegram中打开",
+      "openSignal": "在Signal中打开",
+      "updateLastContactPrompt": "将最后联系日期更新为今天?",
+      "updating": "更新中...",
+      "yes": "是",
+      "no": "否"
+    },
     "emailAddresses": "邮箱地址",
     "addresses": "地址",
     "onlinePresence": "在线状态",

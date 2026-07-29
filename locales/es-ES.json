@@ -1287,6 +1287,16 @@
     "jobTitle": "Cargo",
     "contactInformation": "Información de Contacto",
     "phoneNumbers": "Números de Teléfono",
+    "messagingLinks": {
+      "sendMessage": "Enviar mensaje",
+      "openWhatsApp": "Abrir en WhatsApp",
+      "openTelegram": "Abrir en Telegram",
+      "openSignal": "Abrir en Signal",
+      "updateLastContactPrompt": "Actualizar fecha de ultimo contacto a hoy?",
+      "updating": "Actualizando...",
+      "yes": "Si",
+      "no": "No"
+    },
     "emailAddresses": "Direcciones de Correo",
     "addresses": "Direcciones",
     "onlinePresence": "Presencia en Línea",

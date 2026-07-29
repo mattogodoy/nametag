@@ -1287,6 +1287,16 @@
     "jobTitle": "Stillingstittel",
     "contactInformation": "Kontaktinformasjon",
     "phoneNumbers": "Telefonnumre",
+    "messagingLinks": {
+      "sendMessage": "Send melding",
+      "openWhatsApp": "Åpne i WhatsApp",
+      "openTelegram": "Åpne i Telegram",
+      "openSignal": "Åpne i Signal",
+      "updateLastContactPrompt": "Oppdatere siste kontaktdato til i dag?",
+      "updating": "Oppdaterer...",
+      "yes": "Ja",
+      "no": "Nei"
+    },
     "emailAddresses": "E-postadresser",
     "addresses": "Adresser",
     "onlinePresence": "Tilstedeværelse på nett",
