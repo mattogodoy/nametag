@@ -127,6 +127,8 @@
       "graphModeBubbles": "Immer als Gruppen anzeigen",
       "graphDisplaySuccess": "Anzeige aktualisiert",
       "graphDisplayError": "Anzeige konnte nicht aktualisiert werden",
+      "installTitle": "App installieren",
+      "installDescription": "Füge Nametag zu deinem Startbildschirm oder Desktop hinzu.",
       "language": {
         "title": "Sprache",
         "description": "Wähle deine bevorzugte Sprache",
@@ -1976,6 +1978,31 @@
       "writeOne": "Einen schreiben",
       "viewAll": "Alle Einträge anzeigen",
       "newEntry": "Neuer Eintrag"
+    }
+  },
+  "pwa": {
+    "description": "Behalte den Überblick über die Menschen in deinem Leben.",
+    "shortcuts": {
+      "addPerson": "Person hinzufügen",
+      "search": "Suchen",
+      "dashboard": "Übersicht"
+    },
+    "offline": {
+      "title": "Du bist offline",
+      "message": "Nametag benötigt eine Verbindung, um deine Kontakte anzuzeigen. Prüfe dein Netzwerk und versuche es erneut.",
+      "retry": "Erneut versuchen"
+    },
+    "install": {
+      "title": "Nametag installieren",
+      "description": "Füge Nametag zu deinem Startbildschirm hinzu, für eine schnellere Vollbild-Erfahrung.",
+      "button": "Installieren",
+      "installed": "Nametag ist auf diesem Gerät installiert.",
+      "iosTitle": "Zum Startbildschirm hinzufügen",
+      "iosStep1": "Tippe in Safari auf die Teilen-Schaltfläche",
+      "iosStep2": "Scrolle nach unten und tippe auf «Zum Home-Bildschirm»",
+      "iosStep3": "Tippe auf «Hinzufügen»",
+      "dismiss": "Jetzt nicht",
+      "unsupported": "Dein Browser unterstützt das Installieren von Apps nicht."
     }
   }
 }

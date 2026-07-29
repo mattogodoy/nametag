@@ -127,6 +127,8 @@
       "graphModeBubbles": "Mostrar siempre grupos",
       "graphDisplaySuccess": "Visualización actualizada",
       "graphDisplayError": "No se pudo actualizar la visualización",
+      "installTitle": "Instalar aplicación",
+      "installDescription": "Añade Nametag a tu pantalla de inicio o escritorio.",
       "language": {
         "title": "Idioma",
         "description": "Elige tu idioma",
@@ -1976,6 +1978,31 @@
       "writeOne": "Escribe una",
       "viewAll": "Ver todas las entradas",
       "newEntry": "Nueva entrada"
+    }
+  },
+  "pwa": {
+    "description": "Organiza a las personas de tu vida.",
+    "shortcuts": {
+      "addPerson": "Añadir persona",
+      "search": "Buscar",
+      "dashboard": "Panel"
+    },
+    "offline": {
+      "title": "Sin conexión",
+      "message": "Nametag necesita conexión para mostrar tus contactos. Comprueba tu red e inténtalo de nuevo.",
+      "retry": "Reintentar"
+    },
+    "install": {
+      "title": "Instalar Nametag",
+      "description": "Añade Nametag a tu pantalla de inicio para una experiencia más rápida y a pantalla completa.",
+      "button": "Instalar",
+      "installed": "Nametag está instalado en este dispositivo.",
+      "iosTitle": "Añadir a la pantalla de inicio",
+      "iosStep1": "Toca el botón Compartir en Safari",
+      "iosStep2": "Desliza hacia abajo y toca Añadir a pantalla de inicio",
+      "iosStep3": "Toca Añadir",
+      "dismiss": "Ahora no",
+      "unsupported": "Tu navegador no permite instalar aplicaciones."
     }
   }
 }

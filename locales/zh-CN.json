@@ -127,6 +127,8 @@
       "graphModeBubbles": "始终按组显示",
       "graphDisplaySuccess": "显示已更新",
       "graphDisplayError": "无法更新显示",
+      "installTitle": "安装应用",
+      "installDescription": "将 Nametag 添加到主屏幕或桌面。",
       "language": {
         "title": "语言",
         "description": "选择您偏好的语言",
@@ -1976,6 +1978,31 @@
       "writeOne": "写一条",
       "viewAll": "查看所有条目",
       "newEntry": "新条目"
+    }
+  },
+  "pwa": {
+    "description": "记录你生活中重要的人。",
+    "shortcuts": {
+      "addPerson": "添加联系人",
+      "search": "搜索",
+      "dashboard": "仪表板"
+    },
+    "offline": {
+      "title": "当前处于离线状态",
+      "message": "Nametag 需要联网才能显示你的联系人。请检查网络后重试。",
+      "retry": "重试"
+    },
+    "install": {
+      "title": "安装 Nametag",
+      "description": "将 Nametag 添加到主屏幕，获得更快的全屏体验。",
+      "button": "安装",
+      "installed": "Nametag 已安装在此设备上。",
+      "iosTitle": "添加到主屏幕",
+      "iosStep1": "在 Safari 中点按“共享”按钮",
+      "iosStep2": "向下滚动并点按“添加到主屏幕”",
+      "iosStep3": "点按“添加”",
+      "dismiss": "暂不",
+      "unsupported": "你的浏览器不支持安装应用。"
     }
   }
 }
