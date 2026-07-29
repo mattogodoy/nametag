@@ -33,6 +33,23 @@ const labelMap = {
   'nl-NL': 'nlNL',
 } as const;
 
+/**
+ * The service worker precaches /offline, so that copy is stuck in whatever
+ * language it was fetched in. Ask the worker to refresh it after a language
+ * change. Must be awaited before the reload below, which kills the page.
+ */
+async function recacheOfflinePage(): Promise<void> {
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+    return;
+  }
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    registration.active?.postMessage({ type: 'RECACHE_OFFLINE' });
+  } catch {
+    // A stale offline page is not worth blocking the language change over.
+  }
+}
+
 export default function LanguageSelector({
   currentLanguage,
 }: LanguageSelectorProps) {
@@ -70,6 +87,8 @@ export default function LanguageSelector({
       document.cookie = `NEXT_LOCALE=${newLanguage}; path=/; max-age=${365 * 24 * 60 * 60}; samesite=lax${domainAttr}`;
 
       toast.success(tSuccess('languageChanged'));
+
+      await recacheOfflinePage();
 
       // Refresh the page to apply new locale
       window.location.reload();

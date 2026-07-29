@@ -39,6 +39,13 @@ describe('LanguageSelector Component', () => {
     global.fetch = vi.fn();
     delete (window as any).location;
     (window as any).location = { reload: vi.fn() };
+    // Reset navigator.serviceWorker before every test so a mock set by one
+    // test cannot leak into the next.
+    Object.defineProperty(navigator, 'serviceWorker', {
+      writable: true,
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it('should render language selector with description', () => {
@@ -189,6 +196,50 @@ describe('LanguageSelector Component', () => {
 
     await waitFor(() => {
       expect(document.cookie).toContain('NEXT_LOCALE=es-ES');
+    });
+  });
+
+  it('asks the service worker to re-cache the offline page', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    const postMessage = vi.fn();
+    Object.defineProperty(navigator, 'serviceWorker', {
+      writable: true,
+      configurable: true,
+      value: {
+        ready: Promise.resolve({ active: { postMessage } }),
+      },
+    });
+
+    render(<LanguageSelector currentLanguage="en" />);
+    fireEvent.click(screen.getByRole('button', { name: /Español/i }));
+
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith({ type: 'RECACHE_OFFLINE' });
+    });
+  });
+
+  it('still reloads when the browser has no service worker', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    // Older Safari and any browser with workers disabled.
+    Object.defineProperty(navigator, 'serviceWorker', {
+      writable: true,
+      configurable: true,
+      value: undefined,
+    });
+
+    render(<LanguageSelector currentLanguage="en" />);
+    fireEvent.click(screen.getByRole('button', { name: /Español/i }));
+
+    await waitFor(() => {
+      expect(window.location.reload).toHaveBeenCalled();
     });
   });
 });
