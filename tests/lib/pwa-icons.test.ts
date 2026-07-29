@@ -38,12 +38,13 @@ describe('PWA icons', () => {
 
       it('is not a blank square', async () => {
         const { channels } = await sharp(full).stats();
-        // The paper ground is #F7F6F3 and the tag is #ff2600. Their red
-        // channels are nearly identical (247 vs 255), so red-channel
-        // variance is capped near 4 regardless of composition and can never
-        // clear a threshold of 5. The blue channel has real contrast
-        // (243 vs 0), so it is the meaningful signal for "not blank".
-        expect(channels[2].stdev).toBeGreaterThan(5);
+        // Measure the blue channel, not red. The paper ground is #F7F6F3
+        // (B=243) and the tag is #ff2600 (B=0), so blue separates them by 243.
+        // Red would be useless here: 247 against 255 is a range of 8, which
+        // caps stdev near 4 on a correct render. Real renders measure
+        // 62.9 to 90.8 on blue, so 20 is a meaningful floor without being
+        // brittle to small compositional changes.
+        expect(channels[2].stdev).toBeGreaterThan(20);
       });
     });
   }
