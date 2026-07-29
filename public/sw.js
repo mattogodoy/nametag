@@ -18,7 +18,11 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(VERSION)
-      .then((cache) => cache.addAll(PRECACHE))
+      // Added one at a time and tolerant of failure. addAll is atomic, so a
+      // single bad URL would reject the install, skip skipWaiting(), and discard
+      // the worker with no log and no offline support at all. A partial cache
+      // beats none: OFFLINE_URL is the only entry that really matters.
+      .then((cache) => Promise.allSettled(PRECACHE.map((url) => cache.add(url))))
       .then(() => self.skipWaiting())
   );
 });
@@ -46,17 +50,24 @@ self.addEventListener('message', (event) => {
 });
 
 /*
- * Content-hashed or otherwise immutable, and free of personal data.
- * skipWaiting() and clients.claim() above are only safe because this is the
- * entire cacheable surface: there is no version skew risk between a cached
- * asset and a running page.
+ * Content-hashed by the build, so a given URL's bytes never change. This is the
+ * only surface served cache-first, and it is what makes skipWaiting() plus
+ * clients.claim() safe: a page loaded before a deploy, then adopted by the new
+ * worker, still finds the exact chunks it asked for.
  */
-function isCacheableAsset(url) {
-  return (
-    url.pathname.startsWith('/_next/static/') ||
-    url.pathname.startsWith('/icons/') ||
-    url.pathname === '/logo.svg'
-  );
+function isImmutableAsset(url) {
+  return url.pathname.startsWith('/_next/static/');
+}
+
+/*
+ * Ours, small, and needed for the offline page to render with no network, but
+ * NOT content-hashed: /logo.svg keeps its name when its contents change. Served
+ * stale-while-revalidate rather than cache-first, because VERSION is a constant
+ * so the activate purge never evicts anything. Without the revalidation a
+ * redesigned logo would be served from disk forever on existing installs.
+ */
+function isRevalidatingAsset(url) {
+  return url.pathname.startsWith('/icons/') || url.pathname === '/logo.svg';
 }
 
 self.addEventListener('fetch', (event) => {
@@ -97,7 +108,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (isCacheableAsset(url)) {
+  if (isImmutableAsset(url)) {
     event.respondWith(
       caches.open(VERSION).then((cache) =>
         cache.match(request).then((cached) => {
@@ -112,6 +123,26 @@ self.addEventListener('fetch', (event) => {
           });
         })
       )
+    );
+    return;
+  }
+
+  if (isRevalidatingAsset(url)) {
+    const opened = caches.open(VERSION);
+    const refresh = opened.then((cache) =>
+      fetch(request).then((response) => {
+        if (response.ok) {
+          cache.put(request, response.clone());
+        }
+        return response;
+      })
+    );
+    // waitUntil must be called synchronously during dispatch, which is why the
+    // refresh promise is built before respondWith rather than inside it. It
+    // keeps the worker alive until the background refresh settles.
+    event.waitUntil(refresh.catch(() => {}));
+    event.respondWith(
+      opened.then((cache) => cache.match(request)).then((cached) => cached || refresh)
     );
   }
 });
