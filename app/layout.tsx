@@ -29,6 +29,17 @@ export const metadata: Metadata = {
   icons: {
     apple: "/icons/apple-touch-icon.png",
   },
+  /*
+   * Next emits the standard `mobile-web-app-capable` for `appleWebApp.capable`,
+   * but iOS Safari only reads Apple's prefixed spelling, so it has to be added
+   * by hand. The manifest's `display: standalone` already delivers standalone
+   * mode on iOS 11.3 and later, making this belt and braces rather than
+   * load-bearing, but it is also the tag that makes apple-touch-startup-image
+   * work if splash screens are ever added.
+   */
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
