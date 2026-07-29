@@ -18,12 +18,26 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Nametag - Personal Relationships Manager",
   description: "Manage your relationships, track important details, and visualize your network",
+  // iOS ignores the manifest for these, so they have to be meta tags.
+  appleWebApp: {
+    capable: true,
+    title: "Nametag",
+    // 'black-translucent' would extend the web view under the status bar and
+    // require safe-area padding work on Navigation. Not worth it here.
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Pre-hydration default matching the default DARK theme. ThemeProvider
+  // corrects this on the client for users whose saved theme is LIGHT.
+  themeColor: "#121110",
 };
 
 export default async function RootLayout({
