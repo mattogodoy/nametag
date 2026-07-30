@@ -50,12 +50,24 @@ _Relationships page_
 
 ## Features
 
-- Track people with flexible attributes (name, birthday, important dates, and notes for everything else)
-- Map relationships between people (family, friends, colleagues)
-- Visualize your network with interactive graphs
+- Track people with flexible attributes (name, birthday, important dates, photos, and user-defined custom fields)
+- Map relationships between people with custom relationship types
+- Visualize your network with interactive force-directed graphs
 - Organize contacts into custom groups
+- Interactive map view with geocoded addresses and clustered markers
+- Journal for logging interactions and notes over time
 - Set reminders for important dates and staying in touch
-- Full dark mode support
+- CardDAV sync with Google Contacts, iCloud, Outlook, and Nextcloud
+- vCard and JSON import/export
+- Duplicate detection and contact merging
+- Global fuzzy search with accent-insensitive matching
+- REST API with OpenAPI documentation and token authentication
+- OIDC / SSO authentication support
+- Installable as a PWA
+- Trash with soft-delete and restore
+- Bulk operations (delete, group assignment, relationships)
+- Messaging app quick links (WhatsApp, Signal, Telegram, and more)
+- Full dark and light theme support
 - Multiple languages (English, Spanish, Japanese, Norwegian, German, Chinese, Italian, Russian, Dutch)
 - Mobile-responsive design
 - Multi-platform Docker support (AMD64 and ARM64)
@@ -95,13 +107,12 @@ Future features and improvements, ordered by priority:
 - [ ] Add notification support [[Issue #6](https://github.com/mattogodoy/nametag/issues/6)]
 - [ ] Support multi-user groups [[Issue #37](https://github.com/mattogodoy/nametag/issues/37)]
 - [ ] Immich integration [[Issue #46](https://github.com/mattogodoy/nametag/issues/46)]
-- [ ] **[HELP NEEDED]** Additional language translations (French, German, Portuguese, etc.)
+- [ ] **[HELP NEEDED]** Additional language translations (French, Portuguese, Korean, etc.)
 
 ### Done
 
 Features and improvements that have already been implemented:
 
-- [x] ~~Add map to show people's locations [[Issue #26](https://github.com/mattogodoy/nametag/issues/26)]~~
 - [x] ~~UI/UX improvements and accessibility enhancements~~
 - [x] ~~Documentation improvements (API, deployment, functionality, development, etc)~~
 - [x] ~~SMTP support~~ [[Issue #4](https://github.com/mattogodoy/nametag/issues/4), [PR #21](https://github.com/mattogodoy/nametag/pull/21)]
@@ -114,6 +125,18 @@ Features and improvements that have already been implemented:
 - [x] ~~Add custom template titles for important dates~~ [[Issue #23](https://github.com/mattogodoy/nametag/issues/23), [PR #176](https://github.com/mattogodoy/nametag/pull/176)]
 - [x] ~~Add journaling capabilities~~ [[Issue #28](https://github.com/mattogodoy/nametag/issues/28), [PR #192](https://github.com/mattogodoy/nametag/pull/192)]
 - [x] ~~Implement OIDC~~ [[Issue #10](https://github.com/mattogodoy/nametag/issues/10)]
+- [x] ~~Add map to show people's locations~~ [[Issue #26](https://github.com/mattogodoy/nametag/issues/26), [PR #341](https://github.com/mattogodoy/nametag/pull/341)]
+- [x] ~~Full-text fuzzy search~~ [[PR #301](https://github.com/mattogodoy/nametag/pull/301)]
+- [x] ~~Configurable photo compression~~ [[PR #331](https://github.com/mattogodoy/nametag/pull/331)]
+- [x] ~~HEIC photo support~~ [[PR #357](https://github.com/mattogodoy/nametag/pull/357)]
+- [x] ~~Messaging app quick links~~ [[PR #375](https://github.com/mattogodoy/nametag/pull/375)]
+- [x] ~~PWA / installable app with offline support~~ [[PR #379](https://github.com/mattogodoy/nametag/pull/379)]
+- [x] ~~Duplicate detection and contact merging~~
+- [x] ~~Custom field templates~~
+- [x] ~~Trash with soft-delete and restore~~
+- [x] ~~Data import/export (JSON)~~
+- [x] ~~Bulk operations~~
+- [x] ~~Eastern name order support~~
 
 ## License
 
