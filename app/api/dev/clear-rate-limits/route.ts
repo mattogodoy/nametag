@@ -1,29 +1,29 @@
 import { NextResponse } from 'next/server';
 import { getRedis } from '@/lib/redis';
-import { logger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { logger, securityLogger } from '@/lib/logger';
+import { getClientIp, withLogging } from '@/lib/api-utils';
+import { hasValidBearerSecret } from '@/lib/shared-secret';
 
 /**
- * Development-only endpoint to clear rate limits
+ * Maintenance endpoint to clear rate limits, used during development and when
+ * an operator needs to unblock a locked-out account.
+ *
+ * Requires `Authorization: Bearer $CRON_SECRET` in every environment. The
+ * previous guard also accepted any request when `NODE_ENV !== 'production'`,
+ * which fails open: the standalone server is started with `node server.js`,
+ * which does not set NODE_ENV, so a self-hosted deployment that did not set it
+ * explicitly exposed unauthenticated rate-limit clearing.
  *
  * Usage:
  *   DELETE /api/dev/clear-rate-limits?type=register
  *   DELETE /api/dev/clear-rate-limits?all=true
  */
 export const DELETE = withLogging(async function DELETE(request: Request) {
-  // Only allow in development/test or with CRON_SECRET
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  
-  const isAuthorized = 
-    process.env.NODE_ENV !== 'production' ||
-    (authHeader && cronSecret && authHeader === `Bearer ${cronSecret}`);
-
-  if (!isAuthorized) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+  if (!hasValidBearerSecret(request, process.env.CRON_SECRET)) {
+    securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', {
+      endpoint: 'clear-rate-limits',
+    });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const redis = getRedis();
@@ -65,18 +65,19 @@ export const DELETE = withLogging(async function DELETE(request: Request) {
     // Delete all matching keys
     await redis.del(...keys);
 
+    // The keys themselves are deliberately not returned: a rate-limit key
+    // embeds the client IP and, for login and password reset, the email
+    // address that was attempted.
     return NextResponse.json({
       message: 'Rate limits cleared successfully',
       pattern,
       count: keys.length,
-      keys: keys.slice(0, 10), // Show first 10 keys
     });
   } catch (error) {
     logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error clearing rate limits');
     return NextResponse.json(
-      { error: 'Failed to clear rate limits', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to clear rate limits' },
       { status: 500 }
     );
   }
 });
-

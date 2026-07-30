@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { encryptPassword } from '@/lib/carddav/encryption';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 
 const log = createModuleLogger('carddav');
@@ -35,13 +34,11 @@ const updateConnectionSchema = z.object({
   cardDavNameFormat: z.enum(['FULL', 'FIRST_LAST', 'NICKNAME_PREFERRED', 'SHORT']).optional(),
 });
 
-export const POST = withLogging(async function POST(request: Request) {
+// Connection management stores and rotates CardDAV credentials, so all three
+// handlers stay session-only: an API token must not be able to read, replace,
+// or delete the stored server credentials.
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const validationResult = connectionSchema.safeParse(body);
@@ -128,15 +125,10 @@ export const POST = withLogging(async function POST(request: Request) {
       { status: 500 }
     );
   }
-});
+}, { allowApiToken: false });
 
-export const PUT = withLogging(async function PUT(request: Request) {
+export const PUT = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const validationResult = updateConnectionSchema.safeParse(body);
@@ -260,15 +252,10 @@ export const PUT = withLogging(async function PUT(request: Request) {
       { status: 500 }
     );
   }
-});
+}, { allowApiToken: false });
 
-export const DELETE = withLogging(async function DELETE(_request: Request) {
+export const DELETE = withAuth(async (_request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Check if connection exists
     const existingConnection = await prisma.cardDavConnection.findUnique({
@@ -306,4 +293,4 @@ export const DELETE = withLogging(async function DELETE(_request: Request) {
       { status: 500 }
     );
   }
-});
+}, { allowApiToken: false });

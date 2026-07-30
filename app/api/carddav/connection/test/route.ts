@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 
 const log = createModuleLogger('carddav');
@@ -15,14 +14,10 @@ const connectionTestSchema = z.object({
   password: z.string().min(1),
 });
 
-export const POST = withLogging(async function POST(request: Request) {
+// Dials whatever host the caller supplies, so it stays session-only: an API
+// token must not be able to drive outbound requests to an arbitrary server.
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const rateLimitResponse = checkRateLimit(request, 'carddavTest', session.user.id);
     if (rateLimitResponse) return rateLimitResponse;
 
@@ -145,4 +140,4 @@ export const POST = withLogging(async function POST(request: Request) {
       { status: 500 }
     );
   }
-});
+}, { allowApiToken: false });

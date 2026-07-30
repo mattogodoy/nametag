@@ -92,3 +92,19 @@ If you're not using Docker's `alpine` cron container, any scheduler capable of m
 | `send-reminders` | All eligible reminders | None |
 
 `geocode` and `carddav-sync` are throttled because they call external services (your geocoder, and each user's CardDAV server) and shouldn't hammer them. `purge-deleted` and `send-reminders` only touch your own database and don't need batching or a rate limit; they process everything eligible in a single run.
+
+## Clearing rate limits
+
+`CRON_SECRET` also authenticates one maintenance endpoint, useful when someone has locked themselves out by failing login too many times:
+
+```bash
+# Clear one category of rate limit
+curl -X DELETE "https://your-instance.example.com/api/dev/clear-rate-limits?type=login" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+# Clear all of them
+curl -X DELETE "https://your-instance.example.com/api/dev/clear-rate-limits?all=true" \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+It requires Redis, and it requires the bearer token in every environment, including development. Earlier versions accepted any request when `NODE_ENV` was not exactly `production`, which meant a deployment that did not set `NODE_ENV` left it open; the standalone server is started with `node server.js`, which does not set that variable on its own. The official Docker image always sets it, so image-based deployments were unaffected.

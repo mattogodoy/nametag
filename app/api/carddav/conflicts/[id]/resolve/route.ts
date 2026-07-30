@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/vcard-import';
 import type { ParsedVCardData } from '@/lib/carddav/types';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging, type RouteContext } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
@@ -15,14 +14,8 @@ const resolveSchema = z.object({
   resolution: z.enum(['keep_local', 'keep_remote', 'merged']),
 });
 
-export const POST = withLogging(async function POST(request: Request, context: RouteContext) {
+export const POST = withAuth(async (request, session, context) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await context.params;
     const validationResult = resolveSchema.safeParse(await request.json());
 

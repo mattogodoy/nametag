@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { bidirectionalSync } from '@/lib/carddav/sync';
 import { env } from '@/lib/env';
 import { handleApiError, withLogging, getClientIp } from '@/lib/api-utils';
+import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { runWithContext, updateContext } from '@/lib/logging/context';
 
@@ -17,8 +18,7 @@ export const GET = withLogging(async function GET(request: Request) {
   let cronLogId: string | null = null;
 
   try {
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
+    if (!hasValidBearerSecret(request, env.CRON_SECRET)) {
       securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', { endpoint: 'carddav-sync' });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

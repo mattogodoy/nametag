@@ -1,23 +1,19 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { decryptPassword } from '@/lib/carddav/encryption';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 
 const log = createModuleLogger('carddav');
 
-export const POST = withLogging(async function POST(request: Request) {
+// Accepts arbitrary server credentials in the body and dials the given host, so
+// it stays session-only: an API token must not be able to drive outbound
+// requests to a server of the caller's choosing.
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const rateLimitResponse = checkRateLimit(request, 'carddavBackup', session.user.id);
     if (rateLimitResponse) return rateLimitResponse;
 
@@ -129,4 +125,4 @@ export const POST = withLogging(async function POST(request: Request) {
       { status: 500 }
     );
   }
-});
+}, { allowApiToken: false });

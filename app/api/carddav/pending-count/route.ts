@@ -1,27 +1,16 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getAlreadyMappedPersonUids } from '@/lib/carddav/mapped-uids';
-import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
-const log = createModuleLogger('carddav');
-
-export const GET = withLogging(async function GET(_request: Request) {
+export const GET = withAuth(async (_request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get connection
     const connection = await prisma.cardDavConnection.findUnique({
       where: { userId: session.user.id },
     });
 
     if (!connection) {
-      return NextResponse.json({ count: 0 });
+      return apiResponse.ok({ count: 0 });
     }
 
     // Exclude pending imports whose person is already mapped (under any UID)
@@ -36,12 +25,8 @@ export const GET = withLogging(async function GET(_request: Request) {
       },
     });
 
-    return NextResponse.json({ count });
+    return apiResponse.ok({ count });
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error getting pending count');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'carddav-pending-count');
   }
 });

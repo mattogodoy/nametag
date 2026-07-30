@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { handleApiError, withLogging, getClientIp } from '@/lib/api-utils';
+import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { updateContext } from '@/lib/logging/context';
 import { geocodeSingleAddress } from '@/lib/geocoding/geocode-person';
@@ -27,8 +28,7 @@ export const GET = withLogging(async function GET(request: Request) {
   let acquiredRunLock = false;
 
   try {
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
+    if (!hasValidBearerSecret(request, env.CRON_SECRET)) {
       securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', { endpoint: 'geocode' });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
