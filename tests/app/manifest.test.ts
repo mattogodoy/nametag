@@ -49,13 +49,13 @@ describe('app/manifest.ts', () => {
     expect(result.orientation).toBeUndefined();
   });
 
-  it('declares both any and maskable icons at 192 and 512', async () => {
+  it('declares both any and maskable icons at 192, 512 and 1024', async () => {
     const result = await manifest();
     const icons = result.icons ?? [];
 
-    expect(icons).toHaveLength(4);
+    expect(icons).toHaveLength(6);
     for (const purpose of ['any', 'maskable']) {
-      for (const size of ['192x192', '512x512']) {
+      for (const size of ['192x192', '512x512', '1024x1024']) {
         const match = icons.find((i) => i.purpose === purpose && i.sizes === size);
         expect(match, `${purpose} ${size}`).toBeDefined();
         expect(match?.type).toBe('image/png');
@@ -67,8 +67,10 @@ describe('app/manifest.ts', () => {
     const result = await manifest();
     const srcs = (result.icons ?? []).map((i) => i.src).sort();
     expect(srcs).toEqual([
+      '/icons/icon-1024.png',
       '/icons/icon-192.png',
       '/icons/icon-512.png',
+      '/icons/maskable-1024.png',
       '/icons/maskable-192.png',
       '/icons/maskable-512.png',
     ]);

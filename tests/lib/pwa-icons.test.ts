@@ -11,6 +11,8 @@ const EXPECTED = [
   { file: 'maskable-192.png', size: 192 },
   { file: 'maskable-512.png', size: 512 },
   { file: 'apple-touch-icon.png', size: 180 },
+  { file: 'icon-1024.png', size: 1024 },
+  { file: 'maskable-1024.png', size: 1024 },
 ];
 
 describe('PWA icons', () => {

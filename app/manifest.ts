@@ -49,6 +49,13 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: '/icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
       { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      // 1024: Android draws the splash screen icon at more device pixels than
+      // 512 on high density screens, so without this Chrome upscales the 512
+      // asset and it looks pixelated. The maskable variant needs it even more,
+      // since its safe zone padding and Android's own crop already throw away
+      // a chunk of the source resolution before any upscaling happens.
+      { src: '/icons/icon-1024.png', sizes: '1024x1024', type: 'image/png', purpose: 'any' },
+      { src: '/icons/maskable-1024.png', sizes: '1024x1024', type: 'image/png', purpose: 'maskable' },
     ],
     // Android and desktop long-press menu. Ignored by iOS.
     shortcuts: [

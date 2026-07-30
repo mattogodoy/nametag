@@ -36,6 +36,10 @@ const TARGETS: Target[] = [
   { file: 'maskable-192.png', size: 192, fraction: 0.62 },
   { file: 'maskable-512.png', size: 512, fraction: 0.62 },
   { file: 'apple-touch-icon.png', size: 180, fraction: 0.78 },
+  // 1024 variants: on high density Android devices, the splash screen icon is
+  // drawn at more device pixels than 512, so Chrome upscales the 512 asset.
+  { file: 'icon-1024.png', size: 1024, fraction: 0.78 },
+  { file: 'maskable-1024.png', size: 1024, fraction: 0.62 },
 ];
 
 interface BBox {
