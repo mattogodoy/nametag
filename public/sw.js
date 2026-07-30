@@ -34,8 +34,15 @@ self.addEventListener('activate', (event) => {
       .then((names) =>
         Promise.all(names.filter((name) => name !== VERSION).map((name) => caches.delete(name)))
       )
-      // Refresh the offline page, whose copy is frozen in whatever language
-      // the user had when it was first cached.
+      /*
+       * This precache only ever runs once per browser: sw.js is a static file
+       * whose bytes do not change between deploys, so the worker never sees a
+       * byte-diff and this activate handler never fires again after first
+       * install. It does NOT keep the offline snapshot current on every deploy.
+       * ServiceWorkerRegistration (postMessage on every registration) and the
+       * language-change handler in LanguageSelector are what actually keep it
+       * current, by asking the already-active worker to re-fetch it.
+       */
       .then(() => caches.open(VERSION).then((cache) => cache.add(OFFLINE_URL).catch(() => {})))
       .then(() => self.clients.claim())
   );

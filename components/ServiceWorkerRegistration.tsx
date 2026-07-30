@@ -26,7 +26,22 @@ export default function ServiceWorkerRegistration() {
 
     // Offline support is a progressive enhancement, so a failure here is not
     // worth surfacing to the user.
-    void navigator.serviceWorker.register('/sw.js').catch(() => {});
+    void navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        /*
+         * Refresh the precached offline page on every load. sw.js is a static file
+         * whose bytes never change between deploys, so the worker's activate handler
+         * fires only once per install and cannot keep this snapshot current with the
+         * live build, theme or locale.
+         *
+         * `active` is null immediately after a first-ever registration, while the
+         * worker is still installing. That is fine: the refresh lands on the next
+         * load instead.
+         */
+        registration.active?.postMessage({ type: 'RECACHE_OFFLINE' });
+      })
+      .catch(() => {});
   }, []);
 
   return null;
