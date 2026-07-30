@@ -6,6 +6,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import { SearchIndexProvider } from "@/components/SearchIndexProvider";
 import LocaleSync from "@/components/LocaleSync";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import OfflineNavigationGuard from "@/components/OfflineNavigationGuard";
 import { Toaster } from "sonner";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -92,6 +93,7 @@ export default async function RootLayout({
           </SessionProvider>
           <LocaleSync locale={locale} />
           <ServiceWorkerRegistration />
+          <OfflineNavigationGuard />
           <Toaster position="top-right" richColors />
         </NextIntlClientProvider>
       </body>

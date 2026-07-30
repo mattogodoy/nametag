@@ -77,6 +77,15 @@ function isRevalidatingAsset(url) {
   return url.pathname.startsWith('/icons/') || url.pathname === '/logo.svg';
 }
 
+/*
+ * Safari does not always report mode 'navigate' the way Chromium does,
+ * particularly for a standalone launch, so `destination` is checked as well.
+ * A document request is a navigation whichever way it is labelled.
+ */
+function isNavigation(request) {
+  return request.mode === 'navigate' || request.destination === 'document';
+}
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
 
@@ -95,7 +104,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (request.mode === 'navigate') {
+  if (isNavigation(request)) {
     // Network first, and the response is never written to the cache.
     event.respondWith(
       fetch(request).catch(() =>

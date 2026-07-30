@@ -12,6 +12,7 @@ interface FakeRequest {
   url: string;
   method: string;
   mode: string;
+  destination: string;
 }
 
 interface FakeEvent {
@@ -109,7 +110,7 @@ function dispatchLifecycle(scope: Scope, type: string, data?: { type?: string })
 function dispatchFetch(
   scope: Scope,
   url: string,
-  init: { method?: string; mode?: string } = {}
+  init: { method?: string; mode?: string; destination?: string } = {}
 ): { responded: boolean; settled: Promise<unknown> } {
   const pending: Promise<unknown>[] = [];
   let responded = false;
@@ -119,6 +120,7 @@ function dispatchFetch(
       url,
       method: init.method ?? 'GET',
       mode: init.mode ?? 'no-cors',
+      destination: init.destination ?? '',
     },
     respondWith: (value) => {
       responded = true;
@@ -178,6 +180,19 @@ describe('public/sw.js', () => {
       expect(dispatchFetch(scope, `${ORIGIN}/people`, { mode: 'navigate' }).responded).toBe(true);
     });
 
+    /*
+     * Safari does not always set mode: 'navigate', particularly for a
+     * standalone (installed) launch. A document request has to be treated as
+     * a navigation regardless of how its mode is labelled, or the offline
+     * page never gets a chance to render on iOS.
+     */
+    it('intercepts a document request even when mode is not navigate', () => {
+      expect(
+        dispatchFetch(scope, `${ORIGIN}/people`, { mode: 'cors', destination: 'document' })
+          .responded
+      ).toBe(true);
+    });
+
     it('intercepts immutable build output', () => {
       expect(dispatchFetch(scope, `${ORIGIN}/_next/static/chunks/main.js`).responded).toBe(true);
     });
@@ -193,6 +208,13 @@ describe('public/sw.js', () => {
       expect(dispatchFetch(scope, `${ORIGIN}/api/people`, { mode: 'navigate' }).responded).toBe(
         false
       );
+      // Same ordering check, but via the destination-based detection added for
+      // Safari: an /api/ path must never be served by the navigation branch
+      // even when it looks like a document request.
+      expect(
+        dispatchFetch(scope, `${ORIGIN}/api/people`, { mode: 'cors', destination: 'document' })
+          .responded
+      ).toBe(false);
     });
 
     it('never intercepts optimised images', () => {
