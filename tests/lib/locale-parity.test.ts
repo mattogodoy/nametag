@@ -13,65 +13,10 @@ const REFERENCE = 'en.json';
  * Do not add to this list. When one of these is fixed, delete it from here and
  * the test will keep it fixed.
  */
-const KNOWN_MISSING: Record<string, string[]> = {
-  'it-IT.json': [
-    'settings.carddav.cardDavNameFormatLabel',
-    'settings.carddav.cardDavNameFormatHelp',
-    'settings.carddav.cardDavNameFormat_FULL',
-    'settings.carddav.cardDavNameFormatDesc_FULL',
-    'settings.carddav.cardDavNameFormat_FIRST_LAST',
-    'settings.carddav.cardDavNameFormatDesc_FIRST_LAST',
-    'settings.carddav.cardDavNameFormat_NICKNAME_PREFERRED',
-    'settings.carddav.cardDavNameFormatDesc_NICKNAME_PREFERRED',
-    'settings.carddav.cardDavNameFormat_SHORT',
-    'settings.carddav.cardDavNameFormatDesc_SHORT',
-    'settings.carddav.cardDavNameFormatExample',
-    'settings.carddav.cardDavNameFormatExampleValue_FULL',
-    'settings.carddav.cardDavNameFormatExampleValue_FIRST_LAST',
-    'settings.carddav.cardDavNameFormatExampleValue_NICKNAME_PREFERRED',
-    'settings.carddav.cardDavNameFormatExampleValue_SHORT',
-    'settings.carddav.cardDavNameFormatWarning',
-    'settings.carddav.syncedContactsLabel',
-    'settings.carddav.pendingUploads',
-  ],
-  'ru-RU.json': [
-    'settings.carddav.cardDavNameFormatLabel',
-    'settings.carddav.cardDavNameFormatHelp',
-    'settings.carddav.cardDavNameFormat_FULL',
-    'settings.carddav.cardDavNameFormatDesc_FULL',
-    'settings.carddav.cardDavNameFormat_FIRST_LAST',
-    'settings.carddav.cardDavNameFormatDesc_FIRST_LAST',
-    'settings.carddav.cardDavNameFormat_NICKNAME_PREFERRED',
-    'settings.carddav.cardDavNameFormatDesc_NICKNAME_PREFERRED',
-    'settings.carddav.cardDavNameFormat_SHORT',
-    'settings.carddav.cardDavNameFormatDesc_SHORT',
-    'settings.carddav.cardDavNameFormatExample',
-    'settings.carddav.cardDavNameFormatExampleValue_FULL',
-    'settings.carddav.cardDavNameFormatExampleValue_FIRST_LAST',
-    'settings.carddav.cardDavNameFormatExampleValue_NICKNAME_PREFERRED',
-    'settings.carddav.cardDavNameFormatExampleValue_SHORT',
-    'settings.carddav.cardDavNameFormatWarning',
-    'settings.carddav.syncedContactsLabel',
-    'settings.carddav.pendingUploads',
-  ],
-  'nl-NL.json': [
-    'settings.carddav.cardDavNameFormat_FIRST_LAST',
-    'settings.carddav.cardDavNameFormatDesc_FIRST_LAST',
-    'settings.carddav.cardDavNameFormatExampleValue_FIRST_LAST',
-    'settings.carddav.cardDavNameFormatWarning',
-  ],
-};
+const KNOWN_MISSING: Record<string, string[]> = {};
 
 /** Keys present in a translation file but absent from en.json. Dead keys. */
-const KNOWN_EXTRA: Record<string, string[]> = {
-  'de-DE.json': ['people.form.emails.accountLocked.subject', 'people.form.emails.accountLocked.body'],
-  'es-ES.json': ['people.form.emails.accountLocked.subject', 'people.form.emails.accountLocked.body'],
-  'ja-JP.json': ['people.form.emails.accountLocked.subject', 'people.form.emails.accountLocked.body'],
-  'nb-NO.json': ['people.form.emails.accountLocked.subject', 'people.form.emails.accountLocked.body'],
-  'zh-CN.json': ['people.form.emails.accountLocked.subject', 'people.form.emails.accountLocked.body'],
-  'it-IT.json': ['settings.carddav.syncedContacts'],
-  'ru-RU.json': ['settings.carddav.syncedContacts'],
-};
+const KNOWN_EXTRA: Record<string, string[]> = {};
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 

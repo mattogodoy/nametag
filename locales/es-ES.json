@@ -1182,10 +1182,6 @@
           "personal": "Personal",
           "work": "Trabajo",
           "other": "Otro"
-        },
-        "accountLocked": {
-          "subject": "Cuenta bloqueada temporalmente",
-          "body": "Tu cuenta ha sido bloqueada temporalmente debido a demasiados intentos de inicio de sesión fallidos. Se desbloqueará automáticamente en 30 minutos. Si no intentaste iniciar sesión, restablece tu contraseña inmediatamente."
         }
       },
       "addresses": {
