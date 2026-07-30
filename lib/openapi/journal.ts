@@ -1,7 +1,7 @@
 import {
   createJournalEntrySchema, updateJournalEntrySchema,
 } from '../validations';
-import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage } from './helpers';
+import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, sessionOrToken } from './helpers';
 
 export function journalPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -10,7 +10,7 @@ export function journalPaths(): Record<string, Record<string, unknown>> {
         tags: ['Journal'],
         summary: 'List journal entries',
         description: 'Returns journal entries for the authenticated user, ordered by date descending. Supports filtering by person and text search.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 }, description: 'Page number' },
           { name: 'person', in: 'query', schema: { type: 'string' }, description: 'Filter by person ID' },
@@ -39,7 +39,7 @@ export function journalPaths(): Record<string, Record<string, unknown>> {
         tags: ['Journal'],
         summary: 'Create a journal entry',
         description: 'Creates a new journal entry with optional people tags. Can optionally update lastContact for tagged people.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(createJournalEntrySchema),
         responses: {
           '201': jsonResponse('Journal entry created', {
@@ -56,7 +56,7 @@ export function journalPaths(): Record<string, Record<string, unknown>> {
         tags: ['Journal'],
         summary: 'Get a journal entry by ID',
         description: 'Returns a single journal entry with tagged people.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Journal entry ID')],
         responses: {
           '200': jsonResponse('Journal entry details', {
@@ -71,7 +71,7 @@ export function journalPaths(): Record<string, Record<string, unknown>> {
         tags: ['Journal'],
         summary: 'Update a journal entry',
         description: 'Updates title, date, body, and people tags. Can optionally update lastContact.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Journal entry ID')],
         requestBody: zodBody(updateJournalEntrySchema),
         responses: {
@@ -88,7 +88,7 @@ export function journalPaths(): Record<string, Record<string, unknown>> {
         tags: ['Journal'],
         summary: 'Delete a journal entry',
         description: 'Soft-deletes a journal entry.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Journal entry ID')],
         responses: {
           '200': refMessage(),

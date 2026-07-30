@@ -1,7 +1,7 @@
 import {
   createGroupSchema, updateGroupSchema, addGroupMemberSchema,
 } from '../validations';
-import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refSuccess, resp } from './helpers';
+import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refSuccess, resp, sessionOrToken } from './helpers';
 
 export function groupsPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -10,7 +10,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Groups'],
         summary: 'List all groups',
         description: 'Returns all groups for the authenticated user, with their members.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('List of groups', {
             type: 'object',
@@ -25,7 +25,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Groups'],
         summary: 'Create a new group',
         description: 'Creates a group with a name, optional description/color, and optional initial members.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(createGroupSchema),
         responses: {
           '201': jsonResponse('Group created', {
@@ -43,7 +43,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Groups'],
         summary: 'Get a group by ID',
         description: 'Returns a single group with its member list.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Group ID')],
         responses: {
           '200': jsonResponse('Group details', {
@@ -58,7 +58,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Groups'],
         summary: 'Update a group',
         description: 'Updates the name, description, and/or color of a group.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Group ID')],
         requestBody: zodBody(updateGroupSchema),
         responses: {
@@ -75,7 +75,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Groups'],
         summary: 'Delete a group',
         description: 'Soft-deletes a group. Optionally also soft-deletes all people in the group.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [
           pathParam('id', 'Group ID'),
           { name: 'deletePeople', in: 'query', schema: { type: 'boolean' }, description: 'Also delete all people in this group' },
@@ -91,7 +91,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
       post: {
         tags: ['Groups'],
         summary: 'Restore a deleted group',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Group ID')],
         responses: {
           '200': jsonResponse('Group restored', {
@@ -109,7 +109,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Groups'],
         summary: 'Permanently delete a group',
         description: 'Permanently deletes a soft-deleted group and its memberships. This cannot be undone.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Group ID')],
         responses: {
           '200': refSuccess(),
@@ -124,7 +124,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Groups'],
         summary: 'Add a person to a group',
         description: 'Adds an existing person as a member of the specified group.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Group ID')],
         requestBody: zodBody(addGroupMemberSchema),
         responses: {
@@ -139,7 +139,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
       delete: {
         tags: ['Groups'],
         summary: 'Remove a person from a group',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Group ID'), pathParam('personId', 'Person ID')],
         responses: {
           '200': refSuccess(),
@@ -155,7 +155,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Deleted Items'],
         summary: 'List soft-deleted items',
         description: 'Returns items deleted within the retention period (30 days), filtered by type.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [
           {
             name: 'type',

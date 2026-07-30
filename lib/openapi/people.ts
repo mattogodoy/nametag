@@ -3,7 +3,7 @@ import {
   createImportantDateSchema, updateImportantDateSchema,
   mergePersonSchema,
 } from '../validations';
-import { zodBody, jsonBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refGraph, refSuccess, resp } from './helpers';
+import { zodBody, jsonBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refGraph, refSuccess, resp, sessionOrToken } from './helpers';
 import { DEFAULT_PEOPLE_PAGE_SIZE, MAX_PEOPLE_PAGE_SIZE } from '../constants';
 
 export function peoplePaths(): Record<string, Record<string, unknown>> {
@@ -16,7 +16,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
           'Returns a page of people belonging to the authenticated user, sorted alphabetically by name. ' +
           `Defaults to ${DEFAULT_PEOPLE_PAGE_SIZE} per page; pass \`limit\` and \`offset\` to walk the rest. ` +
           'Includes relationship-to-user info and group memberships.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [
           {
             name: 'limit',
@@ -77,7 +77,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Create a new person',
         description: 'Adds a new person to your network. Can include group memberships, important dates, and a relationship type to you (or connected through another person).',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(createPersonSchema),
         responses: {
           '201': jsonResponse('Person created', {
@@ -95,7 +95,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Get a person by ID',
         description: 'Returns full details for a single person, including their relationships, groups, and important dates.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': jsonResponse('Person details', {
@@ -110,7 +110,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Update a person',
         description: 'Updates any fields of an existing person. Group memberships and important dates are replaced in full when provided.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         requestBody: zodBody(updatePersonSchema),
         responses: {
@@ -127,7 +127,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Delete a person',
         description: 'Soft-deletes a person. Optionally also deletes orphaned people who were only connected through this person.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         requestBody: zodBody(deletePersonSchema),
         responses: {
@@ -142,7 +142,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Restore a deleted person',
         description: 'Restores a soft-deleted person back to active status.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': jsonResponse('Person restored', {
@@ -160,7 +160,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Permanently delete a person',
         description: 'Permanently deletes a soft-deleted person and all related records (photos, groups, relationships, important dates, etc). This cannot be undone.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': refSuccess(),
@@ -175,7 +175,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Search people by name',
         description: 'Searches across name, surname, middle name, second last name, and nickname. Case-insensitive. Returns up to 20 results.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [
           { name: 'q', in: 'query', required: true, schema: { type: 'string' }, description: 'Search query (min 1 character)' },
         ],
@@ -198,7 +198,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
           'Returns all searchable data for the authenticated user\'s contacts in a flat, ' +
           'denormalized format optimized for client-side indexing. Multi-value fields ' +
           '(phones, emails, addresses, etc.) are joined into single strings.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('Search index data', {
             type: 'object',
@@ -240,7 +240,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Find orphaned connections',
         description: 'Returns people who are only connected to the network through this person. Useful before deletion to warn about people who would become disconnected.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': jsonResponse('Orphan list', {
@@ -268,7 +268,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Bulk actions on people',
         description: 'Perform bulk operations on multiple people. Supports delete (soft-delete with optional orphan and CardDAV cleanup), add to groups, and set relationship type. Specify either personIds or selectAll: true.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({
           type: 'object',
           required: ['action'],
@@ -327,7 +327,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Find orphans for bulk deletion',
         description: 'Computes the aggregate list of people who would become disconnected from the network if the specified people were deleted. Used to warn before bulk delete.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -362,7 +362,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Get relationship graph for a person',
         description: 'Returns a D3-compatible graph (nodes and edges) centered on the specified person, showing their direct connections.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': refGraph(),
@@ -378,7 +378,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Find all duplicate contact groups',
         description: 'Scans all contacts and returns groups of potential duplicates based on name, email, phone, and birthday similarity. Dismissed pairs are excluded.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('Duplicate groups', {
             type: 'object',
@@ -414,7 +414,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Find duplicate candidates for a person',
         description: 'Returns contacts similar to the specified person, sorted by similarity descending. Dismissed pairs are excluded.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': jsonResponse('Duplicate candidates', {
@@ -444,7 +444,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Dismiss a duplicate pair',
         description: 'Marks two contacts as not duplicates so they no longer appear in duplicate detection results.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({
           type: 'object',
           required: ['personAId', 'personBId'],
@@ -471,7 +471,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['People'],
         summary: 'Merge two contacts',
         description: 'Merges the secondary contact into the primary contact. Relationships, groups, multi-value fields, and important dates are transferred. The secondary contact is soft-deleted after merge.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(mergePersonSchema),
         responses: {
           '200': jsonResponse('Merge result', {
@@ -493,7 +493,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Important Dates'],
         summary: 'List important dates for a person',
         description: 'Returns all important dates associated with a person, sorted by date ascending.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': jsonResponse('Important dates list', {
@@ -510,7 +510,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Important Dates'],
         summary: 'Create an important date',
         description: 'Adds a new important date to a person with optional reminder configuration.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         requestBody: zodBody(createImportantDateSchema),
         responses: {
@@ -530,7 +530,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Important Dates'],
         summary: 'Update an important date',
         description: 'Updates the title, date, and/or reminder settings for an important date.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID'), pathParam('dateId', 'Important date ID')],
         requestBody: zodBody(updateImportantDateSchema),
         responses: {
@@ -547,7 +547,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Important Dates'],
         summary: 'Delete an important date',
         description: 'Soft-deletes an important date. Can be restored within the retention period.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID'), pathParam('dateId', 'Important date ID')],
         responses: {
           '200': refMessage(),
@@ -561,7 +561,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Important Dates'],
         summary: 'Restore a deleted important date',
         description: 'Restores a soft-deleted important date.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID'), pathParam('dateId', 'Important date ID')],
         responses: {
           '200': jsonResponse('Important date restored', {
@@ -580,7 +580,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Important Dates'],
         summary: 'Permanently delete an important date',
         description: 'Permanently deletes a soft-deleted important date. This cannot be undone.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID'), pathParam('dateId', 'Important date ID')],
         responses: {
           '200': refSuccess(),
@@ -597,7 +597,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Photos'],
         summary: 'Upload or replace a person photo',
         description: 'Upload a photo for a person. The image is cropped to 256x256, converted to JPEG, and EXIF data is stripped.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         requestBody: {
           required: true,
@@ -634,7 +634,7 @@ export function peoplePaths(): Record<string, Record<string, unknown>> {
         tags: ['Photos'],
         summary: 'Remove a person photo',
         description: 'Deletes the photo associated with a person.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Person ID')],
         responses: {
           '200': refMessage(),

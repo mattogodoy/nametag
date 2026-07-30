@@ -2,6 +2,28 @@ import { z } from 'zod';
 
 export type JsonSchema = Record<string, unknown>;
 
+/**
+ * Security for an endpoint reachable with either a browser session or a
+ * personal API token. This is the default for authenticated endpoints: withAuth
+ * accepts `Authorization: Bearer <token>` unless the route opts out.
+ */
+export function sessionOrToken() {
+  return [{ session: [] }, { apiToken: [] }];
+}
+
+/**
+ * Security for an endpoint that rejects bearer tokens, matching
+ * `withAuth(handler, { allowApiToken: false })`.
+ *
+ * Used where a token must not be able to escalate its own reach: token
+ * management, billing, and the CardDAV endpoints that read or replace stored
+ * server credentials. `tests/api/openapi-coverage.test.ts` checks that this
+ * stays in step with the route options.
+ */
+export function sessionOnly() {
+  return [{ session: [] }];
+}
+
 export function pathParam(name: string, description: string) {
   return {
     name,

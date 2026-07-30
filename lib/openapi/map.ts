@@ -1,5 +1,5 @@
 import { retryGeocodeSchema } from '../validations';
-import { jsonResponse, ref400, ref401, ref404, zodBody } from './helpers';
+import { jsonResponse, ref400, ref401, ref404, zodBody, sessionOrToken } from './helpers';
 
 export function mapPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -9,7 +9,7 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
         summary: 'Get map markers',
         description:
           'Returns all plottable points for the current user: successfully geocoded addresses and vCard GEO locations, plus the groups they belong to and counts of addresses still pending or failed geocoding.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('Map markers', {
             type: 'object',
@@ -80,7 +80,7 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
         summary: 'Retry geocoding an address',
         description:
           'Forces a fresh geocoder lookup for one address, bypassing the cached result. Used from the contact page when an address could not be located. Respects the instance kill switch and the user geocoding toggle.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(retryGeocodeSchema),
         responses: {
           '200': jsonResponse('Retry outcome', {

@@ -2,7 +2,7 @@ import {
   createRelationshipSchema, updateRelationshipSchema,
   createRelationshipTypeSchema, updateRelationshipTypeSchema,
 } from '../validations';
-import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refSuccess, resp } from './helpers';
+import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refSuccess, resp, sessionOrToken } from './helpers';
 
 export function relationshipsPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -11,7 +11,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationships'],
         summary: 'List all relationships',
         description: 'Returns all relationships between people in the authenticated user\'s network, including person and type details.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('List of relationships', {
             type: 'object',
@@ -26,7 +26,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationships'],
         summary: 'Create a relationship',
         description: 'Creates a bidirectional relationship between two people. Automatically creates the inverse relationship.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(createRelationshipSchema),
         responses: {
           '201': jsonResponse('Relationship created', {
@@ -44,7 +44,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationships'],
         summary: 'Get a relationship by ID',
         description: 'Returns a single relationship with person and type details.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship ID')],
         responses: {
           '200': jsonResponse('Relationship details', {
@@ -59,7 +59,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationships'],
         summary: 'Update a relationship',
         description: 'Changes the type and/or notes of an existing relationship. Also updates the inverse relationship.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship ID')],
         requestBody: zodBody(updateRelationshipSchema),
         responses: {
@@ -76,7 +76,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationships'],
         summary: 'Delete a relationship',
         description: 'Soft-deletes a relationship and its inverse.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship ID')],
         responses: {
           '200': refMessage(),
@@ -89,7 +89,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
       post: {
         tags: ['Relationships'],
         summary: 'Restore a deleted relationship',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship ID')],
         responses: {
           '200': jsonResponse('Relationship restored', {
@@ -108,7 +108,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationships'],
         summary: 'Permanently delete a relationship',
         description: 'Permanently deletes a soft-deleted relationship and its inverse. This cannot be undone.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship ID')],
         responses: {
           '200': refSuccess(),
@@ -125,7 +125,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationship Types'],
         summary: 'List all relationship types',
         description: 'Returns all custom relationship types for the user, including inverse type info.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('List of relationship types', {
             type: 'object',
@@ -140,7 +140,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationship Types'],
         summary: 'Create a relationship type',
         description: 'Creates a new relationship type. Can be symmetric (e.g. Friend <-> Friend) or asymmetric with an inverse (e.g. Parent -> Child). If inverseLabel is provided, the inverse type is auto-created.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(createRelationshipTypeSchema),
         responses: {
           '201': jsonResponse('Relationship type created', {
@@ -156,7 +156,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
       get: {
         tags: ['Relationship Types'],
         summary: 'Get a relationship type by ID',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship type ID')],
         responses: {
           '200': jsonResponse('Relationship type details', {
@@ -171,7 +171,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationship Types'],
         summary: 'Update a relationship type',
         description: 'Updates label, color, inverse, or symmetric status of a relationship type.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship type ID')],
         requestBody: zodBody(updateRelationshipTypeSchema),
         responses: {
@@ -188,7 +188,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationship Types'],
         summary: 'Delete a relationship type',
         description: 'Soft-deletes a relationship type. Fails if the type is currently in use by any relationships.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship type ID')],
         responses: {
           '200': refSuccess(),
@@ -202,7 +202,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
       post: {
         tags: ['Relationship Types'],
         summary: 'Restore a deleted relationship type',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship type ID')],
         responses: {
           '200': jsonResponse('Relationship type restored', {
@@ -220,7 +220,7 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Relationship Types'],
         summary: 'Permanently delete a relationship type',
         description: 'Permanently deletes a soft-deleted relationship type and clears any remaining references to it. This cannot be undone.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Relationship type ID')],
         responses: {
           '200': refSuccess(),

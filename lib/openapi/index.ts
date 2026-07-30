@@ -12,7 +12,7 @@ import { journalPaths } from './journal';
 import { customFieldsPaths } from './customFields';
 import { apiTokenPaths } from './apiTokens';
 import { mapPaths } from './map';
-import { jsonResponse, ref400, ref401, ref404, pathParam, jsonBody, resp } from './helpers';
+import { jsonResponse, ref400, ref401, ref404, refSuccess, pathParam, jsonBody, resp, sessionOrToken } from './helpers';
 
 // OpenAPI 3.1.0 specification generator for the Nametag API.
 // Request body schemas are generated from Zod validation schemas (single source of truth).
@@ -87,9 +87,11 @@ export function generateOpenAPISpec(): OpenAPISpec {
           scheme: 'bearer',
           description:
             'Per-user personal API token sent as `Authorization: Bearer <token>`. ' +
-            'Created and revoked in Settings → API Tokens. All endpoints documented with ' +
-            'the `session` scheme also accept a valid `apiToken` (read-only tokens are ' +
-            'restricted to GET/HEAD). The token-management endpoints themselves require a session.',
+            'Created and revoked in Settings → API Tokens. Read-only (`READ`) tokens are ' +
+            'restricted to GET, HEAD, and OPTIONS; a write attempt returns 403. ' +
+            'Each endpoint lists the schemes it accepts: those showing only `session` ' +
+            'reject bearer tokens outright, which covers token management, billing, and ' +
+            'the CardDAV endpoints that read or replace stored server credentials.',
         },
       },
       schemas: sharedSchemas(),
@@ -114,7 +116,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Photos'],
           summary: 'Get person photo',
           description: 'Returns the photo image for a person. Served from disk with appropriate MIME type and caching headers.',
-          security: [{ session: [] }],
+          security: sessionOrToken(),
           parameters: [pathParam('personId', 'Person ID')],
           responses: {
             '200': {
@@ -132,7 +134,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Photos'],
           summary: 'Get current user photo',
           description: 'Returns the photo image for the logged-in user.',
-          security: [{ session: [] }],
+          security: sessionOrToken(),
           responses: {
             '200': {
               description: 'Photo image',
@@ -150,7 +152,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Photos'],
           summary: 'Convert HEIC photo to JPEG',
           description: 'Accepts a HEIC/HEIF image file and returns a JPEG conversion. Applies automatic orientation correction and configurable quality. Does not store anything.',
-          security: [{ session: [] }],
+          security: sessionOrToken(),
           requestBody: {
             description: 'HEIC photo file to convert',
             required: true,
@@ -216,6 +218,31 @@ export function generateOpenAPISpec(): OpenAPISpec {
         },
       },
 
+      // Cron (reminders)
+      '/api/cron/send-reminders': {
+        get: {
+          tags: ['Cron'],
+          summary: 'Send due reminder emails',
+          description:
+            'Sends reminder emails for important dates and contact reminders that are due. ' +
+            'Each email carries a one-time unsubscribe token. Intended to run once a day.',
+          security: [{ cronBearer: [] }],
+          responses: {
+            '200': jsonResponse('Reminder run results', {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                sent: { type: 'integer' },
+                errors: { type: 'integer' },
+                processedImportantDates: { type: 'integer' },
+                processedContactReminders: { type: 'integer' },
+              },
+            }),
+            '401': ref401(),
+          },
+        },
+      },
+
       // Cron (geocode)
       '/api/cron/geocode': {
         get: {
@@ -272,6 +299,92 @@ export function generateOpenAPISpec(): OpenAPISpec {
               },
             }),
             '503': resp('Unhealthy'),
+          },
+        },
+      },
+      '/api/log-error': {
+        post: {
+          tags: ['System'],
+          summary: 'Report a client-side error',
+          description:
+            'Records an error that occurred in the browser. Unauthenticated by necessity, ' +
+            'since an error that breaks the session still needs to be reportable, so the ' +
+            'payload is treated as untrusted: the body is capped at 64KB, each field is ' +
+            'accepted only if it is a string and then truncated, and reports are rate ' +
+            'limited per IP.',
+          requestBody: jsonBody({
+            type: 'object',
+            properties: {
+              message: { type: 'string', maxLength: 1024 },
+              stack: { type: 'string', maxLength: 8192 },
+              digest: { type: 'string', maxLength: 256 },
+              url: { type: 'string', maxLength: 2048 },
+              userAgent: { type: 'string', maxLength: 512 },
+            },
+          }),
+          responses: {
+            '200': refSuccess(),
+            '400': ref400(),
+            '413': resp('Report body too large'),
+            '429': resp('Too many reports from this client'),
+          },
+        },
+      },
+      '/api/webhooks/stripe': {
+        post: {
+          tags: ['System'],
+          summary: 'Stripe webhook receiver',
+          description:
+            'Receives Stripe subscription and payment events. Authenticated by the ' +
+            '`stripe-signature` header rather than a session or token, and idempotent: ' +
+            'a repeated event id is acknowledged without being reprocessed. ' +
+            'Only active in SaaS mode.',
+          responses: {
+            '200': jsonResponse('Event acknowledged', {
+              type: 'object',
+              properties: { received: { type: 'boolean' } },
+            }),
+            '400': resp('Missing or invalid signature'),
+            '500': resp('Webhook secret not configured, or handler failure'),
+          },
+        },
+      },
+      '/api/dev/clear-rate-limits': {
+        delete: {
+          tags: ['System'],
+          summary: 'Clear rate limits',
+          description:
+            'Clears stored rate-limit counters, for unblocking an account that has locked ' +
+            'itself out. Requires `Authorization: Bearer $CRON_SECRET` in every environment, ' +
+            'and requires Redis. The matched keys are not returned, since they embed client ' +
+            'IPs and attempted email addresses.',
+          security: [{ cronBearer: [] }],
+          parameters: [
+            {
+              name: 'type',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Clear only this category, for example `login`. Required unless `all=true`.',
+            },
+            {
+              name: 'all',
+              in: 'query',
+              schema: { type: 'boolean' },
+              description: 'Clear every category.',
+            },
+          ],
+          responses: {
+            '200': jsonResponse('Counters cleared', {
+              type: 'object',
+              properties: {
+                message: { type: 'string' },
+                pattern: { type: 'string' },
+                count: { type: 'integer' },
+              },
+            }),
+            '400': ref400(),
+            '401': ref401(),
+            '503': resp('Redis not available'),
           },
         },
       },

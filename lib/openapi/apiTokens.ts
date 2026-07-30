@@ -1,13 +1,5 @@
 import { createApiTokenSchema } from '../validations';
-import {
-  zodBody,
-  jsonResponse,
-  ref400,
-  ref401,
-  ref404,
-  refSuccess,
-  pathParam,
-} from './helpers';
+import { zodBody, jsonResponse, ref400, ref401, ref404, refSuccess, pathParam, sessionOnly } from './helpers';
 
 const apiTokenObject = {
   type: 'object',
@@ -46,7 +38,7 @@ export function apiTokenPaths(): Record<string, Record<string, unknown>> {
         summary: 'List API tokens',
         description:
           "Lists the current user's API tokens. Never returns the secret value. Session (cookie) auth only.",
-        security: [{ session: [] }],
+        security: sessionOnly(),
         responses: {
           '200': jsonResponse('User API tokens', {
             type: 'object',
@@ -62,7 +54,7 @@ export function apiTokenPaths(): Record<string, Record<string, unknown>> {
         summary: 'Create an API token',
         description:
           'Creates a new API token. The plaintext token is returned ONCE in the response and cannot be retrieved again. Session (cookie) auth only.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         requestBody: zodBody(createApiTokenSchema),
         responses: {
           '201': jsonResponse('Created token (plaintext shown once)', {
@@ -80,7 +72,7 @@ export function apiTokenPaths(): Record<string, Record<string, unknown>> {
         summary: 'Revoke an API token',
         description:
           'Permanently revokes (deletes) an API token. Session (cookie) auth only.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         parameters: [pathParam('id', 'API token ID')],
         responses: {
           '200': refSuccess(),

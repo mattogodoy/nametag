@@ -3,16 +3,7 @@ import {
   customFieldTemplateUpdateSchema,
   customFieldTemplateReorderSchema,
 } from '../validations';
-import {
-  zodBody,
-  pathParam,
-  jsonResponse,
-  ref400,
-  ref401,
-  ref404,
-  refSuccess,
-  resp,
-} from './helpers';
+import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refSuccess, resp, sessionOrToken } from './helpers';
 
 export function customFieldsPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -21,7 +12,7 @@ export function customFieldsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Custom Fields'],
         summary: 'List custom field templates',
         description: 'Returns active custom field templates for the authenticated user, ordered by display order.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('List of templates', {
             type: 'object',
@@ -39,7 +30,7 @@ export function customFieldsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Custom Fields'],
         summary: 'Create a custom field template',
         description: 'Creates a typed custom field schema. Slug is derived from name and immutable.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(customFieldTemplateCreateSchema),
         responses: {
           '201': jsonResponse('Template created', {
@@ -57,7 +48,7 @@ export function customFieldsPaths(): Record<string, Record<string, unknown>> {
       get: {
         tags: ['Custom Fields'],
         summary: 'Get a custom field template',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Template ID')],
         responses: {
           '200': jsonResponse('Template', {
@@ -72,7 +63,7 @@ export function customFieldsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Custom Fields'],
         summary: 'Update a custom field template',
         description: 'Updates name and/or options. Type and slug are immutable.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Template ID')],
         requestBody: zodBody(customFieldTemplateUpdateSchema),
         responses: {
@@ -88,7 +79,7 @@ export function customFieldsPaths(): Record<string, Record<string, unknown>> {
       delete: {
         tags: ['Custom Fields'],
         summary: 'Soft-delete a custom field template',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Template ID')],
         responses: {
           '200': refSuccess(),
@@ -102,7 +93,7 @@ export function customFieldsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Custom Fields'],
         summary: 'Reorder templates',
         description: "Reorders the user's custom field templates. The provided id list determines the new display order.",
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(customFieldTemplateReorderSchema),
         responses: {
           '200': refSuccess(),
