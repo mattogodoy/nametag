@@ -7,11 +7,19 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
+    // Default ignores of eslint-config-next. The `**/` prefix matters: build
+    // output also appears inside nested checkouts (git worktrees under
+    // .claude/, sibling clones), and a bare ".next/**" only matches the root.
+    "**/.next/**",
+    "**/out/**",
+    "**/build/**",
+    "**/next-env.d.ts",
+    // Agent and editor scratch directories, including their build artifacts.
+    ".claude/**",
+    // Playwright and coverage output.
+    "**/playwright-report/**",
+    "**/test-results/**",
+    "**/coverage/**",
   ]),
   // Global rules
   {
