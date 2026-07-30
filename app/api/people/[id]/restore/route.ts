@@ -1,15 +1,13 @@
-import { withDeleted } from '@/lib/prisma';
+import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // POST /api/people/[id]/restore - Restore a soft-deleted person
 export const POST = withAuth(async (_request, session, context) => {
-  const prismaWithDeleted = withDeleted();
-
   try {
     const { id } = await context.params;
 
     // Find the soft-deleted person (using raw client to bypass soft-delete filter)
-    const person = await prismaWithDeleted.person.findUnique({
+    const person = await prismaIncludingDeleted.person.findUnique({
       where: {
         id,
         userId: session.user.id,
@@ -25,7 +23,7 @@ export const POST = withAuth(async (_request, session, context) => {
     }
 
     // Restore the person by clearing deletedAt
-    const restored = await prismaWithDeleted.person.update({
+    const restored = await prismaIncludingDeleted.person.update({
       where: { id },
       data: { deletedAt: null },
     });
@@ -33,7 +31,5 @@ export const POST = withAuth(async (_request, session, context) => {
     return apiResponse.ok({ person: restored });
   } catch (error) {
     return handleApiError(error, 'people-restore');
-  } finally {
-    await prismaWithDeleted.$disconnect();
   }
 });

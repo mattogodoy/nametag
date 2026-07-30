@@ -92,6 +92,7 @@ type ExtendedPrismaClient = ReturnType<typeof createExtendedClient>;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: ExtendedPrismaClient | undefined;
+  prismaIncludingDeleted: PrismaClient | undefined;
 };
 
 export const prisma = globalForPrisma.prisma ?? createExtendedClient();
@@ -99,16 +100,23 @@ export const prisma = globalForPrisma.prisma ?? createExtendedClient();
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 /**
- * Returns a raw Prisma client without soft-delete filtering.
- * Use this for:
+ * Prisma client without the soft-delete filter, so queries see soft-deleted
+ * rows. Use it for:
  * - Restore operations (need to find soft-deleted records)
  * - Purge operations (need to permanently delete old records)
- * - Admin/debugging queries
+ * - Trash listings
  *
- * IMPORTANT: Always call .$disconnect() when done to avoid connection leaks.
+ * A shared singleton with its own connection pool, like `prisma`. Callers must
+ * NOT disconnect it: it outlives any single request.
+ *
+ * Every read through this client is unfiltered, so scope it deliberately. Reach
+ * for `prisma` unless the query is specifically about deleted rows.
  */
-export function withDeleted(): PrismaClient {
-  return createBaseClient();
+export const prismaIncludingDeleted: PrismaClient =
+  globalForPrisma.prismaIncludingDeleted ?? createBaseClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prismaIncludingDeleted = prismaIncludingDeleted;
 }
 
 // Graceful shutdown handlers - guarded to prevent duplicate registration during hot reload
@@ -116,7 +124,10 @@ const globalForShutdown = globalThis as unknown as { __prismaShutdownRegistered?
 if (!globalForShutdown.__prismaShutdownRegistered) {
   globalForShutdown.__prismaShutdownRegistered = true;
   const gracefulShutdown = async () => {
-    await prisma.$disconnect();
+    await Promise.allSettled([
+      prisma.$disconnect(),
+      prismaIncludingDeleted.$disconnect(),
+    ]);
     process.exit(0);
   };
   process.on('SIGINT', gracefulShutdown);

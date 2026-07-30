@@ -1,15 +1,13 @@
-import { withDeleted } from '@/lib/prisma';
+import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // POST /api/people/[id]/important-dates/[dateId]/restore - Restore a soft-deleted important date
 export const POST = withAuth(async (_request, session, context) => {
-  const prismaWithDeleted = withDeleted();
-
   try {
     const { id, dateId } = await context.params;
 
     // Check if person exists and belongs to user
-    const person = await prismaWithDeleted.person.findUnique({
+    const person = await prismaIncludingDeleted.person.findUnique({
       where: {
         id,
         userId: session.user.id,
@@ -21,7 +19,7 @@ export const POST = withAuth(async (_request, session, context) => {
     }
 
     // Find the soft-deleted important date (using raw client to bypass soft-delete filter)
-    const importantDate = await prismaWithDeleted.importantDate.findUnique({
+    const importantDate = await prismaIncludingDeleted.importantDate.findUnique({
       where: {
         id: dateId,
         personId: id,
@@ -38,7 +36,7 @@ export const POST = withAuth(async (_request, session, context) => {
 
     // Check for uniqueness conflict with predefined types
     if (importantDate.type) {
-      const existing = await prismaWithDeleted.importantDate.findFirst({
+      const existing = await prismaIncludingDeleted.importantDate.findFirst({
         where: {
           personId: id,
           type: importantDate.type,
@@ -53,7 +51,7 @@ export const POST = withAuth(async (_request, session, context) => {
     }
 
     // Restore the important date by clearing deletedAt
-    const restored = await prismaWithDeleted.importantDate.update({
+    const restored = await prismaIncludingDeleted.importantDate.update({
       where: { id: dateId },
       data: { deletedAt: null },
     });
@@ -61,7 +59,5 @@ export const POST = withAuth(async (_request, session, context) => {
     return apiResponse.ok({ importantDate: restored });
   } catch (error) {
     return handleApiError(error, 'important-date-restore');
-  } finally {
-    await prismaWithDeleted.$disconnect();
   }
 });

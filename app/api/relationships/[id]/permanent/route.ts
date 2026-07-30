@@ -1,14 +1,12 @@
-import { withDeleted } from '@/lib/prisma';
+import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // DELETE /api/relationships/[id]/permanent - Permanently delete a trashed relationship
 export const DELETE = withAuth(async (_request, session, context) => {
-  const prismaWithDeleted = withDeleted();
-
   try {
     const { id } = await context.params;
 
-    const relationship = await prismaWithDeleted.relationship.findUnique({
+    const relationship = await prismaIncludingDeleted.relationship.findUnique({
       where: { id },
       include: { person: true },
     });
@@ -26,7 +24,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
     }
 
     // Delete the inverse relationship if it's also trashed
-    const inverse = await prismaWithDeleted.relationship.findFirst({
+    const inverse = await prismaIncludingDeleted.relationship.findFirst({
       where: {
         personId: relationship.relatedPersonId,
         relatedPersonId: relationship.personId,
@@ -35,15 +33,13 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (inverse) {
-      await prismaWithDeleted.relationship.delete({ where: { id: inverse.id } });
+      await prismaIncludingDeleted.relationship.delete({ where: { id: inverse.id } });
     }
 
-    await prismaWithDeleted.relationship.delete({ where: { id } });
+    await prismaIncludingDeleted.relationship.delete({ where: { id } });
 
     return apiResponse.ok({ success: true });
   } catch (error) {
     return handleApiError(error, 'relationships-permanent-delete');
-  } finally {
-    await prismaWithDeleted.$disconnect();
   }
 });

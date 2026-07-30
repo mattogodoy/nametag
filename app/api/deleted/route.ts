@@ -1,12 +1,10 @@
-import { withDeleted } from '@/lib/prisma';
+import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 const RETENTION_DAYS = 30;
 
 // GET /api/deleted - List soft-deleted items by type
 export const GET = withAuth(async (request, session) => {
-  const prismaWithDeleted = withDeleted();
-
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
@@ -19,7 +17,7 @@ export const GET = withAuth(async (request, session) => {
 
     switch (type) {
       case 'people':
-        deleted = await prismaWithDeleted.person.findMany({
+        deleted = await prismaIncludingDeleted.person.findMany({
           where: {
             userId: session.user.id,
             deletedAt: { not: null, gte: cutoffDate },
@@ -37,7 +35,7 @@ export const GET = withAuth(async (request, session) => {
         break;
 
       case 'groups':
-        deleted = await prismaWithDeleted.group.findMany({
+        deleted = await prismaIncludingDeleted.group.findMany({
           where: {
             userId: session.user.id,
             deletedAt: { not: null, gte: cutoffDate },
@@ -54,7 +52,7 @@ export const GET = withAuth(async (request, session) => {
         break;
 
       case 'relationships':
-        deleted = await prismaWithDeleted.relationship.findMany({
+        deleted = await prismaIncludingDeleted.relationship.findMany({
           where: {
             person: { userId: session.user.id },
             deletedAt: { not: null, gte: cutoffDate },
@@ -77,7 +75,7 @@ export const GET = withAuth(async (request, session) => {
         break;
 
       case 'relationshipTypes':
-        deleted = await prismaWithDeleted.relationshipType.findMany({
+        deleted = await prismaIncludingDeleted.relationshipType.findMany({
           where: {
             userId: session.user.id,
             deletedAt: { not: null, gte: cutoffDate },
@@ -94,7 +92,7 @@ export const GET = withAuth(async (request, session) => {
         break;
 
       case 'importantDates':
-        deleted = await prismaWithDeleted.importantDate.findMany({
+        deleted = await prismaIncludingDeleted.importantDate.findMany({
           where: {
             person: { userId: session.user.id },
             deletedAt: { not: null, gte: cutoffDate },
@@ -125,7 +123,5 @@ export const GET = withAuth(async (request, session) => {
     });
   } catch (error) {
     return handleApiError(error, 'deleted-list');
-  } finally {
-    await prismaWithDeleted.$disconnect();
   }
 });

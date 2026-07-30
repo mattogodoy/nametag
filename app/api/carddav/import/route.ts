@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma, withDeleted } from '@/lib/prisma';
+import { prisma, prismaIncludingDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
@@ -132,22 +132,17 @@ export const POST = withAuth(async (request, session) => {
         : []
     );
 
-    // Use withDeleted() to bypass soft-delete filtering and find soft-deleted records
-    const rawClient = withDeleted();
-    let softDeletedPersons: Awaited<ReturnType<typeof rawClient.person.findMany>> = [];
-    try {
-      softDeletedPersons = allUIDs.length > 0
-        ? await rawClient.person.findMany({
-            where: {
-              uid: { in: allUIDs },
-              userId: session.user.id,
-              deletedAt: { not: null },
-            },
-          })
-        : [];
-    } finally {
-      await rawClient.$disconnect();
-    }
+    // Bypass soft-delete filtering so a previously deleted contact can be
+    // matched by UID and restored instead of duplicated.
+    const softDeletedPersons = allUIDs.length > 0
+      ? await prismaIncludingDeleted.person.findMany({
+          where: {
+            uid: { in: allUIDs },
+            userId: session.user.id,
+            deletedAt: { not: null },
+          },
+        })
+      : [];
 
     // Create a Map for O(1) lookup during import
     const softDeletedMap = new Map(

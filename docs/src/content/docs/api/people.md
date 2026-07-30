@@ -15,24 +15,55 @@ All endpoints on this page require authentication (session cookie or API token) 
 GET /api/people
 ```
 
-Returns all people for the authenticated user, sorted alphabetically by name.
+Returns a page of people for the authenticated user, sorted alphabetically by name.
 
 **Query parameters**
 
 | Parameter | Type | Description |
 | --- | --- | --- |
+| `limit` | integer | Page size. Defaults to `100`, capped at `500`. Must be a positive integer. |
+| `offset` | integer | People to skip before the page starts. Defaults to `0`. |
 | `groupIds` | string | Comma-separated group IDs. Only people belonging to at least one of these groups are returned. |
 | `includeDetails` | boolean | Defaults to `true`. Set to `false` to skip multi-value fields (phones, emails, addresses, URLs, IM handles, locations, custom fields) for a lighter list-view payload. |
-| `includeAll` | boolean | Set to `true` to also include important dates, person-to-person relationships, and typed custom field values. Used by data export. |
+| `includeAll` | boolean | Set to `true` to also include important dates, person-to-person relationships, and typed custom field values. Used by data export. Also returns every person rather than a page, so an export is never truncated. |
 
 ```bash
-curl https://your-instance.example.com/api/people?includeDetails=false \
+curl "https://your-instance.example.com/api/people?limit=50&offset=0" \
   -H "Authorization: Bearer ntag_xxx"
 ```
 
 ```json
-{ "people": [ { "id": "clx1", "name": "Ada", "surname": "Lovelace" } ] }
+{
+  "people": [ { "id": "clx1", "name": "Ada", "surname": "Lovelace" } ],
+  "pagination": { "total": 214, "limit": 50, "offset": 0, "hasMore": true }
+}
 ```
+
+### Paging through everyone
+
+`total` counts the people matching your filter, ignoring the page. Keep requesting while `hasMore` is `true`, advancing `offset` by your `limit`:
+
+```bash
+offset=0
+while :; do
+  page=$(curl -s "https://your-instance.example.com/api/people?limit=100&offset=$offset" \
+    -H "Authorization: Bearer ntag_xxx")
+  echo "$page" | jq -r '.people[].name'
+  [ "$(echo "$page" | jq -r '.pagination.hasMore')" = "true" ] || break
+  offset=$((offset + 100))
+done
+```
+
+Because the sort is by name, adding or renaming a person between requests can shift rows across page boundaries. For a consistent snapshot of everything at once, use `includeAll=true`, which returns the full set and omits `pagination`.
+
+### Technical details
+
+| Limit | Value |
+| --- | --- |
+| Default page size | 100 |
+| Maximum page size | 500 |
+| Response without `limit` | First 100 people, plus a `pagination` object |
+| Response with `includeAll=true` | Every person, no `pagination` object |
 
 ## Create a person
 

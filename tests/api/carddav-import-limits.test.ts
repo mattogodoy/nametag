@@ -30,9 +30,8 @@ const mocks = vi.hoisted(() => ({
   personGroupCreateMany: vi.fn(),
   groupFindMany: vi.fn(),
   relationshipTypeFindMany: vi.fn(),
-  // withDeleted mock
-  withDeletedPersonFindMany: vi.fn(),
-  withDeletedDisconnect: vi.fn(),
+  // Client that sees soft-deleted rows
+  deletedAwarePersonFindMany: vi.fn(),
   // Billing mocks
   canCreateResource: vi.fn(),
   getUserUsage: vi.fn(),
@@ -72,12 +71,11 @@ vi.mock('@/lib/prisma', () => ({
       findMany: mocks.relationshipTypeFindMany,
     },
   },
-  withDeleted: () => ({
+  prismaIncludingDeleted: {
     person: {
-      findMany: mocks.withDeletedPersonFindMany,
+      findMany: mocks.deletedAwarePersonFindMany,
     },
-    $disconnect: mocks.withDeletedDisconnect,
-  }),
+  },
 }));
 
 // Mock billing module
@@ -167,8 +165,7 @@ describe('CardDAV Import Tier Limits', () => {
     mocks.personFindMany.mockResolvedValue([]);
 
     // Default: no soft-deleted persons
-    mocks.withDeletedPersonFindMany.mockResolvedValue([]);
-    mocks.withDeletedDisconnect.mockResolvedValue(undefined);
+    mocks.deletedAwarePersonFindMany.mockResolvedValue([]);
 
     // Default: no relationship types
     mocks.relationshipTypeFindMany.mockResolvedValue([]);
