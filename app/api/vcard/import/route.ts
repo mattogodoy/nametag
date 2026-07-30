@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 import { isSaasMode } from '@/lib/features';
 import { canCreateResource, getUserUsage } from '@/lib/billing';
 
@@ -15,13 +14,8 @@ const log = createModuleLogger('vcard');
  * POST /api/vcard/import
  * Import contacts from raw vCard file content
  */
-export const POST = withLogging(async function POST(request: Request) {
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Read raw vCard text
     const vcardText = await request.text();

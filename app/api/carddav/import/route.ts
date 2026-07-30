@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma, withDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData, restorePersonFromVCardData, updatePersonFromVCard } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 import { isSaasMode } from '@/lib/features';
 import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { z } from 'zod';
@@ -23,13 +22,8 @@ const importSchema = z.object({
   updateExistingIds: z.array(z.string()).optional(),
 });
 
-export const POST = withLogging(async function POST(request: Request) {
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const validationResult = importSchema.safeParse(body);

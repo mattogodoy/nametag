@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 vi.mock('@/lib/locale', () => ({
+  SUPPORTED_LOCALES: ['en', 'es-ES'],
   isSupportedLocale: (locale: string) => ['en', 'es-ES'].includes(locale),
   setLocaleCookie: vi.fn(),
 }));
@@ -122,7 +123,10 @@ describe('Language API Endpoint', () => {
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
 
-    it('should return 500 for invalid JSON', async () => {
+    it('should return 400 for invalid JSON', async () => {
+      // A malformed body is the client's mistake, not a server fault. The route
+      // used to surface it as a 500 because it called request.json() directly;
+      // parseRequestBody classifies it as InvalidJsonError instead.
       vi.mocked(auth).mockResolvedValue({
         user: { id: 'user1', email: 'test@example.com' },
       } as any);
@@ -133,8 +137,10 @@ describe('Language API Endpoint', () => {
       });
 
       const response = await PUT(request);
+      const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Invalid JSON');
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
 

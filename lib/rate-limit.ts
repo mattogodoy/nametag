@@ -74,6 +74,13 @@ export const rateLimitConfigs = {
     maxAttempts: 10,
     windowMs: 15 * 60 * 1000,
   },
+  // Client-side error reports: 60 per 5 minutes. The endpoint is
+  // unauthenticated, so this caps how much a single client can write to the
+  // log while still allowing a genuinely broken page to report itself.
+  clientErrorLog: {
+    maxAttempts: 60,
+    windowMs: 5 * 60 * 1000,
+  },
 } as const;
 
 export type RateLimitType = keyof typeof rateLimitConfigs;

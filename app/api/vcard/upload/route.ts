@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 
 const log = createModuleLogger('vcard');
 
@@ -11,13 +10,8 @@ const log = createModuleLogger('vcard');
  * POST /api/vcard/upload
  * Upload vCard file and prepare for import (creates temporary pending imports)
  */
-export const POST = withLogging(async function POST(request: Request) {
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Read raw vCard text
     const vcardText = await request.text();

@@ -1,22 +1,12 @@
-import { auth } from '@/lib/auth';
 import { bidirectionalSync } from '@/lib/carddav/sync';
 import type { SyncProgressEvent } from '@/lib/carddav/sync';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 
 const log = createModuleLogger('carddav');
 
-export const POST = withLogging(async function POST(request: Request) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
+export const POST = withAuth(async (request, session) => {
   const rateLimitResponse = checkRateLimit(request, 'carddavSync', session.user.id);
   if (rateLimitResponse) return rateLimitResponse;
 

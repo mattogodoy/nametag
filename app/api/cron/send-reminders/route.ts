@@ -5,6 +5,7 @@ import type { SendBatchEmailItem } from '@/lib/email';
 import { formatGraphName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
 import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
+import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
 import { parseAsLocalDate } from '@/lib/date-format';
@@ -20,9 +21,7 @@ export const GET = withLogging(async function GET(request: Request) {
 
   try {
     // Verify the cron secret
-    const authHeader = request.headers.get('authorization');
-
-    if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
+    if (!hasValidBearerSecret(request, env.CRON_SECRET)) {
       securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', {
         endpoint: 'send-reminders',
       });

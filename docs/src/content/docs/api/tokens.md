@@ -24,6 +24,18 @@ API tokens let you script against Nametag without a browser session. Create one 
 
 Use `READ` scope for anything that only needs to pull data, such as a read-only dashboard or export script, so a leaked token can't modify or delete your contacts.
 
+### Endpoints that require a session
+
+A few endpoints reject bearer tokens regardless of scope and accept only a browser session. They fall into three groups:
+
+| Endpoints | Why |
+| --- | --- |
+| `/api/user/api-tokens*` | A token must never be able to mint or revoke other tokens. |
+| `/api/billing/*` | Subscription and payment changes stay tied to an interactive session. |
+| `/api/carddav/connection`, `/api/carddav/connection/test`, `/api/carddav/backup` | These read or replace stored CardDAV credentials, and the last two dial whatever host the caller supplies. |
+
+Requests to these with a bearer token return `401`.
+
 ### Token format
 
 | Property | Detail |

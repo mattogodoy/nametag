@@ -79,6 +79,16 @@ vi.mock('@/lib/carddav/vcard-import', () => ({
 
 // Mock logger
 vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+  securityLogger: {
+    authFailure: vi.fn(),
+    rateLimitExceeded: vi.fn(),
+  },
   createModuleLogger: () => ({
     info: vi.fn(),
     error: vi.fn(),
@@ -87,10 +97,8 @@ vi.mock('@/lib/logger', () => ({
   }),
 }));
 
-// Mock api-utils (withLogging is a pass-through wrapper)
-vi.mock('@/lib/api-utils', () => ({
-  withLogging: (fn: (...args: unknown[]) => unknown) => fn,
-}));
+// api-utils is deliberately NOT mocked: the route is wrapped in the real
+// withAuth, so these tests also cover its session and same-origin handling.
 
 // Import after mocking
 import { POST } from '@/app/api/vcard/import/route';

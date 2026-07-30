@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from '@/lib/carddav/client';
 import { getAddressBook } from '@/lib/carddav/address-book';
@@ -7,7 +6,7 @@ import { personToVCard } from '@/lib/carddav/vcard-export';
 import { v4 as uuidv4 } from 'uuid';
 import { buildLocalHash } from '@/lib/carddav/hash';
 import { createModuleLogger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import { withAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
@@ -17,13 +16,8 @@ const exportBulkSchema = z.object({
   personIds: z.array(z.string()).min(1, 'No contacts selected for export'),
 });
 
-export const POST = withLogging(async function POST(request: Request) {
+export const POST = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const validationResult = exportBulkSchema.safeParse(body);

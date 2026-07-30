@@ -5,6 +5,7 @@ import {
   updateGeocodingSchema,
   importDataSchema,
 } from '../validations';
+import { SUPPORTED_LOCALES } from '../locale';
 import { zodBody, jsonBody, jsonResponse, ref400, ref401, refMessage, resp } from './helpers';
 
 export function userPaths(): Record<string, Record<string, unknown>> {
@@ -167,7 +168,9 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         requestBody: jsonBody({
           type: 'object',
           properties: {
-            language: { type: 'string', enum: ['en', 'es-ES', 'ja-JP', 'nb-NO', 'de-DE'] },
+            // Derived from the canonical locale list so the spec cannot drift
+            // when a new language is added.
+            language: { type: 'string', enum: [...SUPPORTED_LOCALES] },
           },
           required: ['language'],
         }),
@@ -176,6 +179,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: { success: { type: 'boolean' }, language: { type: 'string' } },
           }),
+          '400': ref400(),
           '401': ref401(),
         },
       },

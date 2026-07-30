@@ -1,33 +1,23 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { isSupportedLocale, setLocaleCookie } from '@/lib/locale';
-import { logger } from '@/lib/logger';
-import { withLogging } from '@/lib/api-utils';
+import {
+  isSupportedLocale,
+  setLocaleCookie,
+  SUPPORTED_LOCALES,
+} from '@/lib/locale';
+import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 
 /**
  * PUT /api/user/language
  * Update user's language preference
  */
-export const PUT = withLogging(async function PUT(request: Request) {
+export const PUT = withAuth(async (request, session) => {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+    const body = await parseRequestBody<{ language?: unknown }>(request);
     const { language } = body;
 
-    // Validate language
-    if (!language || !isSupportedLocale(language)) {
-      return NextResponse.json(
-        { error: 'Invalid language. Supported languages: en, es-ES, ja-JP, nb-NO, de-DE, zh-CN, it-IT, ru-RU, nl-NL'},
-        { status: 400 }
+    if (typeof language !== 'string' || !isSupportedLocale(language)) {
+      return apiResponse.error(
+        `Invalid language. Supported languages: ${SUPPORTED_LOCALES.join(', ')}`
       );
     }
 
@@ -40,15 +30,8 @@ export const PUT = withLogging(async function PUT(request: Request) {
     // Set cookie for immediate effect
     await setLocaleCookie(language);
 
-    return NextResponse.json({
-      success: true,
-      language,
-    });
+    return apiResponse.ok({ success: true, language });
   } catch (error) {
-    logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error updating language');
-    return NextResponse.json(
-      { error: 'Failed to update language' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'user-language');
   }
 });
