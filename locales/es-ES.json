@@ -2002,7 +2002,7 @@
       "iosStep2": "Desliza hacia abajo y toca Añadir a pantalla de inicio",
       "iosStep3": "Toca Añadir",
       "dismiss": "Ahora no",
-      "unsupported": "Tu navegador no permite instalar aplicaciones."
+      "unsupported": "Tu navegador puede permitir instalarla desde su propio menú. Busca Añadir a pantalla de inicio, Instalar o Añadir al Dock."
     }
   }
 }

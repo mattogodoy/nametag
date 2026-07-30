@@ -2002,7 +2002,7 @@
       "iosStep2": "Scrolle nach unten und tippe auf «Zum Home-Bildschirm»",
       "iosStep3": "Tippe auf «Hinzufügen»",
       "dismiss": "Jetzt nicht",
-      "unsupported": "Dein Browser unterstützt das Installieren von Apps nicht."
+      "unsupported": "Dein Browser kann die App möglicherweise über sein eigenes Menü installieren. Suche nach «Zum Home-Bildschirm», «Installieren» oder «Zum Dock hinzufügen»."
     }
   }
 }

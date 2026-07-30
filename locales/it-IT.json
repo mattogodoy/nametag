@@ -1981,7 +1981,7 @@
       "iosStep2": "Scorri verso il basso e tocca «Aggiungi a Home»",
       "iosStep3": "Tocca «Aggiungi»",
       "dismiss": "Non ora",
-      "unsupported": "Il tuo browser non supporta l'installazione delle app."
+      "unsupported": "Il tuo browser potrebbe consentire l'installazione dal suo menu. Cerca «Aggiungi a Home», «Installa» o «Aggiungi al Dock»."
     }
   }
 }

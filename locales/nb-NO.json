@@ -2002,7 +2002,7 @@
       "iosStep2": "Bla ned og trykk «Legg til på Hjem-skjerm»",
       "iosStep3": "Trykk «Legg til»",
       "dismiss": "Ikke nå",
-      "unsupported": "Nettleseren din støtter ikke installering av apper."
+      "unsupported": "Nettleseren din kan kanskje installere appen fra sin egen meny. Se etter Legg til på Hjem-skjerm, Installer eller Legg til i Dock."
     }
   }
 }

@@ -39,7 +39,18 @@ function detectIos(): boolean {
   if (typeof window === 'undefined') {
     return false;
   }
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  const ua = window.navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) {
+    return true;
+  }
+  /*
+   * iPadOS 13 and later send a desktop macOS user agent by default, so the regex
+   * above misses every modern iPad. A Mac has no touchscreen, so touch points
+   * separate them. Deliberately does NOT match macOS Safari: its install flow is
+   * File then Add to Dock, not the iOS Share sheet, so it is served by the
+   * generic copy instead.
+   */
+  return /Macintosh/i.test(ua) && window.navigator.maxTouchPoints > 1;
 }
 
 export function usePwaInstall(): PwaInstallState {

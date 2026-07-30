@@ -1994,7 +1994,7 @@
       "iosStep2": "Scroll naar beneden en tik op «Zet op beginscherm»",
       "iosStep3": "Tik op «Voeg toe»",
       "dismiss": "Niet nu",
-      "unsupported": "Je browser ondersteunt het installeren van apps niet."
+      "unsupported": "Je browser kan de app misschien installeren via het eigen menu. Zoek naar «Zet op beginscherm», «Installeren» of «Voeg toe aan Dock»."
     }
   }
 }

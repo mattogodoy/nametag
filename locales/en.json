@@ -1998,7 +1998,7 @@
       "iosStep2": "Scroll down and tap Add to Home Screen",
       "iosStep3": "Tap Add",
       "dismiss": "Not now",
-      "unsupported": "Your browser does not support installing apps."
+      "unsupported": "Your browser may be able to install this from its own menu. Look for Add to Home Screen, Install, or Add to Dock."
     }
   }
 }
