@@ -33,14 +33,14 @@ const labelMap = {
   'nl-NL': 'nlNL',
 } as const;
 
+/** How long to wait for an active worker before giving up on the refresh. */
+const RECACHE_TIMEOUT_MS = 1000;
+
 /**
  * The service worker precaches /offline, so that copy is stuck in whatever
  * language it was fetched in. Ask the worker to refresh it after a language
  * change. Must be awaited before the reload below, which kills the page.
  */
-/** How long to wait for an active worker before giving up on the refresh. */
-const RECACHE_TIMEOUT_MS = 1000;
-
 async function recacheOfflinePage(): Promise<void> {
   if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
     return;

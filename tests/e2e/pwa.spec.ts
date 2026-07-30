@@ -58,10 +58,20 @@ test.describe('PWA manifest and icons', () => {
     }
   });
 
-  test('emits the apple touch icon and web app meta tags', async ({ page }) => {
+  test('emits the apple touch icon and web app meta tags', async ({ page, request }) => {
     await page.goto('/login');
 
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
+    const appleTouchIcon = page.locator('link[rel="apple-touch-icon"]');
+    await expect(appleTouchIcon).toHaveCount(1);
+
+    // Asserting the link exists is not enough: a typo in the layout's path
+    // would still pass that check. Fetch it, like the manifest icons already are.
+    const href = await appleTouchIcon.getAttribute('href');
+    expect(href).toBeTruthy();
+    const response = await request.get(href as string);
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-type']).toContain('image/png');
+
     // Both spellings must be present. Next emits the unprefixed one for
     // appleWebApp.capable, and iOS Safari reads only the apple- prefixed one,
     // which is supplied via metadata.other.

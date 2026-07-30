@@ -10,6 +10,7 @@ import { Toaster } from "sonner";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUserLocale } from "@/lib/locale";
+import { THEME_COLORS } from "@/lib/theme-colors";
 import "./globals.css";
 
 // Use system fonts instead of Google Fonts to avoid network calls during Docker build
@@ -48,7 +49,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   // Pre-hydration default matching the default DARK theme. ThemeProvider
   // corrects this on the client for users whose saved theme is LIGHT.
-  themeColor: "#121110",
+  themeColor: THEME_COLORS.DARK,
 };
 
 export default async function RootLayout({

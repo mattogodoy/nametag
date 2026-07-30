@@ -1,8 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useLayoutEffect, ReactNode } from 'react';
+import { THEME_COLORS, type Theme } from '@/lib/theme-colors';
 
-type Theme = 'LIGHT' | 'DARK';
+export { THEME_COLORS };
 
 interface ThemeContextType {
   theme: Theme;
@@ -24,16 +25,6 @@ interface ThemeProviderProps {
   children: ReactNode;
   initialTheme?: Theme;
 }
-
-/*
- * Must match --background in app/globals.css for each theme. Exported so a test
- * can assert that against the stylesheet: these values are a duplicate of what
- * really lives in CSS, and nothing else would notice them drifting apart.
- */
-export const THEME_COLORS: Record<Theme, string> = {
-  LIGHT: '#F7F6F3',
-  DARK: '#121110',
-};
 
 /*
  * Keeps <meta name="theme-color"> in step with the active theme. This tints the
