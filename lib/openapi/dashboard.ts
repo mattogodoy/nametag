@@ -1,4 +1,4 @@
-import { jsonResponse, ref401, refGraph } from './helpers';
+import { jsonResponse, ref401, refGraph, sessionOrToken } from './helpers';
 
 export function dashboardPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -8,7 +8,7 @@ export function dashboardPaths(): Record<string, Record<string, unknown>> {
         summary: 'Get dashboard statistics',
         description:
           'Returns upcoming events (important dates and contact reminders due within 30 days), plus total people and group counts.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('Dashboard stats', {
             type: 'object',
@@ -31,7 +31,7 @@ export function dashboardPaths(): Record<string, Record<string, unknown>> {
         summary: 'Get full network graph',
         description:
           'Returns a D3-compatible graph of all people and their relationships, centered on the user. Supports filtering by group inclusion and exclusion with configurable match modes.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [
           {
             name: 'includeGroupIds',

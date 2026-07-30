@@ -1,4 +1,4 @@
-import { jsonBody, pathParam, jsonResponse, ref400, ref401, ref404, refSuccess, resp } from './helpers';
+import { jsonBody, pathParam, jsonResponse, ref400, ref401, ref404, refSuccess, resp, sessionOnly, sessionOrToken } from './helpers';
 
 export function carddavPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -7,7 +7,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Create CardDAV connection',
         description: 'Creates a new CardDAV server connection for the authenticated user. Only one connection per user is allowed.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -39,7 +39,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Update CardDAV connection',
         description: 'Updates the existing CardDAV connection settings. Password is optional (only updated if provided).',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -69,7 +69,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Delete CardDAV connection',
         description: 'Disconnects and deletes the CardDAV connection, removing all sync mappings and pending imports.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         responses: {
           '200': refSuccess(),
           '401': ref401(),
@@ -82,7 +82,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Test CardDAV credentials',
         description: 'Tests connectivity to a CardDAV server with the given credentials without saving them.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -115,7 +115,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
           'Triggers a full bidirectional sync with the CardDAV server. Returns a Server-Sent Events stream with progress updates. ' +
           'Event types: `progress` (sync progress updates), `complete` (final results with counts), `error` (error message). ' +
           'The `complete` event data includes: imported, exported, updatedLocally, updatedRemotely, conflicts, errors, errorMessages, pendingImports.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': {
             description: 'SSE stream of sync progress',
@@ -134,7 +134,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Import selected contacts',
         description: 'Imports previously discovered pending contacts into Nametag. Supports assigning groups globally or per-contact.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -172,7 +172,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Bulk export contacts',
         description: 'Exports selected Nametag contacts to the connected CardDAV server. Processes in batches of 50.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -202,7 +202,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Resolve a sync conflict',
         description: 'Resolves a bidirectional sync conflict by keeping the local version, remote version, or a merged result.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [pathParam('id', 'Conflict ID')],
         requestBody: jsonBody({
           type: 'object',
@@ -225,7 +225,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Discover new contacts',
         description: 'Scans the CardDAV server for contacts not yet imported and creates pending import records.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('Discovery result', {
             type: 'object',
@@ -245,7 +245,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Get pending import count',
         description: 'Returns the number of contacts discovered on the CardDAV server but not yet imported.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('Pending count', {
             type: 'object',
@@ -262,7 +262,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['CardDAV'],
         summary: 'Download vCard backup',
         description: 'Downloads all contacts from the connected CardDAV server as a single .vcf file.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         responses: {
           '200': {
             description: 'vCard file download',
@@ -287,7 +287,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['vCard'],
         summary: 'Import vCard file',
         description: 'Parses and directly imports contacts from raw vCard data into Nametag. Maximum file size: 2 MB.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: {
           required: true,
           content: {
@@ -317,7 +317,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
         tags: ['vCard'],
         summary: 'Upload vCard for preview',
         description: 'Parses vCard data and creates pending import records for review before importing. Maximum file size: 2 MB.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: {
           required: true,
           content: {

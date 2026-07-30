@@ -6,7 +6,7 @@ import {
   importDataSchema,
 } from '../validations';
 import { SUPPORTED_LOCALES } from '../locale';
-import { zodBody, jsonBody, jsonResponse, ref400, ref401, refMessage, resp } from './helpers';
+import { zodBody, jsonBody, jsonResponse, ref400, ref401, refMessage, resp, sessionOrToken } from './helpers';
 
 export function userPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -15,7 +15,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Get current user profile',
         description: 'Returns the authenticated user\'s profile information and preferences.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': jsonResponse('User profile', {
             type: 'object',
@@ -28,7 +28,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Update user profile',
         description: 'Updates name, surname, nickname, and/or email. If email is changed, a verification email is sent and the account is marked as unverified.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updateProfileSchema),
         responses: {
           '200': jsonResponse('Profile updated', {
@@ -48,7 +48,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Change password',
         description: 'Changes the user\'s password. Requires the current password for verification.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updatePasswordSchema),
         responses: {
           '200': refMessage(),
@@ -61,7 +61,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
       put: {
         tags: ['User Settings'],
         summary: 'Update theme preference',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updateThemeSchema),
         responses: {
           '200': jsonResponse('Theme updated', {
@@ -76,7 +76,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
       put: {
         tags: ['User Settings'],
         summary: 'Update date format preference',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updateDateFormatSchema),
         responses: {
           '200': jsonResponse('Date format updated', {
@@ -92,7 +92,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Update network-graph display preferences',
         description: 'Updates the user\'s network-graph display mode (individuals or bubbles).',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updateGraphDisplaySchema),
         responses: {
           '200': jsonResponse('Graph display settings updated', {
@@ -110,7 +110,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         summary: 'Update address geocoding preference',
         description:
           'Enables or disables automatic geocoding of contact addresses for the map. Re-enabling queues previously skipped addresses for the background geocoder.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updateGeocodingSchema),
         responses: {
           '200': jsonResponse('Geocoding preference updated', {
@@ -134,7 +134,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
       put: {
         tags: ['User Settings'],
         summary: 'Update name display order preference',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updateNameOrderSchema),
         responses: {
           '200': jsonResponse('Name order updated', {
@@ -149,7 +149,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
       put: {
         tags: ['User Settings'],
         summary: 'Update name display format preference',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(updateNameDisplayFormatSchema),
         responses: {
           '200': jsonResponse('Name display format updated', {
@@ -164,7 +164,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
       put: {
         tags: ['User Settings'],
         summary: 'Update language preference',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -189,7 +189,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Export user data',
         description: 'Exports all user data (people, groups, relationships, relationship types) as JSON. Optionally filter by groups.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         parameters: [
           { name: 'groupIds', in: 'query', schema: { type: 'string' }, description: 'Comma-separated group IDs to filter export' },
         ],
@@ -229,7 +229,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Validate import data',
         description: 'Validates a data import payload without actually importing. Returns counts and conflict information.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({ type: 'object', description: 'Export-format JSON data' }),
         responses: {
           '200': jsonResponse('Validation result', {
@@ -250,7 +250,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Import user data',
         description: 'Imports people, groups, relationships, and relationship types from a Nametag export JSON file.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: zodBody(importDataSchema),
         responses: {
           '200': jsonResponse('Import result', {
@@ -279,7 +279,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['User Settings'],
         summary: 'Delete account',
         description: 'Permanently deletes the user account and all associated data. Requires typing "DELETE" to confirm.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -300,7 +300,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['Photos'],
         summary: 'Upload or replace user photo',
         description: 'Upload a photo for the logged-in user. The image is cropped to 256x256, converted to JPEG, and EXIF data is stripped.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         requestBody: {
           required: true,
           content: {
@@ -335,7 +335,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         tags: ['Photos'],
         summary: 'Remove user photo',
         description: 'Deletes the photo associated with the logged-in user.',
-        security: [{ session: [] }],
+        security: sessionOrToken(),
         responses: {
           '200': refMessage(),
           '401': ref401(),

@@ -34,7 +34,13 @@ curl https://your-instance.example.com/api/people \
   -H "Authorization: Bearer ntag_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
-API tokens work on nearly every endpoint that accepts a session cookie. The token management endpoints themselves (`/api/user/api-tokens`) are the one exception: creating and revoking tokens always requires a session, since letting a token manage other tokens would be a security hole. See [API Tokens](/api/tokens/) for scopes, expiry, and full examples.
+API tokens work on nearly every endpoint that accepts a session cookie. A few reject them and require a browser session:
+
+- `/api/user/api-tokens*`, so a token can never mint or revoke other tokens
+- `/api/billing/*`, so subscription and payment changes stay tied to an interactive session
+- `/api/carddav/connection`, `/api/carddav/connection/test`, and `/api/carddav/backup`, which read or replace stored CardDAV credentials, and where the last two dial whatever host the caller supplies
+
+Requests to those with a bearer token return `401`. Each endpoint's accepted schemes are listed in the [OpenAPI spec](/api/openapi.json), and see [API Tokens](/api/tokens/) for scopes, expiry, and full examples.
 
 ## Response format
 

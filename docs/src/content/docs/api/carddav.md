@@ -31,7 +31,7 @@ POST /api/carddav/connection
 
 ```bash
 curl -X POST https://your-instance.example.com/api/carddav/connection \
-  -H "Authorization: Bearer ntag_xxx" \
+  --cookie "authjs.session-token=..." \
   -H "Content-Type: application/json" \
   -d '{
     "serverUrl": "https://contacts.icloud.com/",
@@ -58,7 +58,7 @@ Same fields as create, except `password` is optional (only changed if provided).
 
 ```bash
 curl -X PUT https://your-instance.example.com/api/carddav/connection \
-  -H "Authorization: Bearer ntag_xxx" \
+  --cookie "authjs.session-token=..." \
   -H "Content-Type: application/json" \
   -d '{ "serverUrl": "https://contacts.icloud.com/", "username": "ada@example.com", "autoSyncInterval": 900 }'
 ```
@@ -77,7 +77,7 @@ Disconnects and deletes the connection along with all sync mappings and pending 
 
 ```bash
 curl -X DELETE https://your-instance.example.com/api/carddav/connection \
-  -H "Authorization: Bearer ntag_xxx"
+  --cookie "authjs.session-token=..."
 ```
 
 ```json
@@ -94,7 +94,7 @@ Tests connectivity without saving credentials.
 
 ```bash
 curl -X POST https://your-instance.example.com/api/carddav/connection/test \
-  -H "Authorization: Bearer ntag_xxx" \
+  --cookie "authjs.session-token=..." \
   -H "Content-Type: application/json" \
   -d '{ "serverUrl": "https://contacts.icloud.com/", "username": "ada@example.com", "password": "app-specific-password" }'
 ```
@@ -220,7 +220,7 @@ Downloads every contact from the connected server as a single `.vcf` file.
 
 ```bash
 curl -X POST https://your-instance.example.com/api/carddav/backup \
-  -H "Authorization: Bearer ntag_xxx" \
+  --cookie "authjs.session-token=..." \
   -o nametag-backup.vcf
 ```
 

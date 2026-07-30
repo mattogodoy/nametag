@@ -1,4 +1,4 @@
-import { jsonBody, jsonResponse, ref400, ref401, refMessage, resp } from './helpers';
+import { jsonBody, jsonResponse, ref400, ref401, refMessage, resp, sessionOnly } from './helpers';
 
 export function billingPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -7,7 +7,7 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
         tags: ['Billing'],
         summary: 'Get subscription details',
         description: 'Returns the current subscription status, tier info, usage, limits, and active promotion.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         responses: {
           '200': jsonResponse('Subscription details', {
             type: 'object',
@@ -60,7 +60,7 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
         tags: ['Billing'],
         summary: 'Create a checkout session',
         description: 'Creates a Stripe checkout session for subscribing to a paid plan.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -84,7 +84,7 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
         tags: ['Billing'],
         summary: 'Get current usage',
         description: 'Returns usage counts against plan limits.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         responses: {
           '200': jsonResponse('Usage info', {
             type: 'object',
@@ -102,7 +102,7 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
       get: {
         tags: ['Billing'],
         summary: 'Get payment history',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         responses: {
           '200': jsonResponse('Payment history', {
             type: 'object',
@@ -136,7 +136,7 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
         tags: ['Billing'],
         summary: 'Open Stripe billing portal',
         description: 'Returns a URL to the Stripe customer portal for managing payment methods and invoices.',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         responses: {
           '200': jsonResponse('Portal URL', {
             type: 'object',
@@ -150,7 +150,7 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
       post: {
         tags: ['Billing'],
         summary: 'Cancel subscription',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         requestBody: jsonBody({
           type: 'object',
           properties: {
@@ -168,7 +168,7 @@ export function billingPaths(): Record<string, Record<string, unknown>> {
       post: {
         tags: ['Billing'],
         summary: 'Apply a promotion code',
-        security: [{ session: [] }],
+        security: sessionOnly(),
         requestBody: jsonBody({
           type: 'object',
           properties: { code: { type: 'string' } },
