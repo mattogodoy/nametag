@@ -17,7 +17,6 @@ const mocks = vi.hoisted(() => ({
   cardDavMappingDeleteMany: vi.fn(),
   duplicateDismissalDeleteMany: vi.fn(),
   journalEntryPersonDeleteMany: vi.fn(),
-  disconnect: vi.fn(),
   deletePersonPhotos: vi.fn(),
   // Group mocks
   groupFindUnique: vi.fn(),
@@ -40,7 +39,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../lib/prisma', () => ({
-  withDeleted: () => ({
+  prismaIncludingDeleted: {
     person: {
       findUnique: mocks.personFindUnique,
       findFirst: mocks.personFindFirst,
@@ -80,8 +79,7 @@ vi.mock('../../lib/prisma', () => ({
     cardDavMapping: { deleteMany: mocks.cardDavMappingDeleteMany },
     duplicateDismissal: { deleteMany: mocks.duplicateDismissalDeleteMany },
     journalEntryPerson: { deleteMany: mocks.journalEntryPersonDeleteMany },
-    $disconnect: mocks.disconnect,
-  }),
+  },
 }));
 
 vi.mock('../../lib/photo-storage', () => ({

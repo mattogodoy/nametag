@@ -30,7 +30,6 @@ const mocks = vi.hoisted(() => ({
   createPersonFromVCardData: vi.fn(),
   restorePersonFromVCardData: vi.fn(),
   rawFindMany: vi.fn(),
-  rawDisconnect: vi.fn(),
 }));
 
 vi.mock('@/lib/auth');
@@ -57,10 +56,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     relationshipType: { findMany: mocks.findManyRelationshipType },
   },
-  withDeleted: () => ({
+  prismaIncludingDeleted: {
     person: { findMany: mocks.rawFindMany },
-    $disconnect: mocks.rawDisconnect,
-  }),
+  },
 }));
 
 vi.mock('@/lib/carddav/vcard-import', () => ({
@@ -116,7 +114,6 @@ describe('POST /api/carddav/import — relationship assignment', () => {
     mocks.findManyMapping.mockResolvedValue([]);
     mocks.findManyPerson.mockResolvedValue([]);
     mocks.rawFindMany.mockResolvedValue([]);
-    mocks.rawDisconnect.mockResolvedValue(undefined);
     // Default: no groups
     mocks.findManyGroup.mockResolvedValue([]);
     mocks.findManyPersonGroup.mockResolvedValue([]);

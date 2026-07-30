@@ -5,8 +5,20 @@ import { canCreateResource, canEnableReminder } from '@/lib/billing';
 import { savePhoto } from '@/lib/photo-storage';
 import { createPerson } from '@/lib/services/person';
 import { applyCustomFieldValues, validateCustomFieldValues, CustomFieldValidationError } from '@/lib/customFields/persistence';
+import { DEFAULT_PEOPLE_PAGE_SIZE, MAX_PEOPLE_PAGE_SIZE } from '@/lib/constants';
 
-// GET /api/people - List all people for the current user
+/**
+ * Parse a non-negative integer query param. Returns `undefined` when absent and
+ * `null` when present but not a valid non-negative integer, so the caller can
+ * tell "not asked for" from "asked for nonsense".
+ */
+function parseNonNegativeInt(raw: string | null): number | null | undefined {
+  if (raw === null) return undefined;
+  if (!/^\d+$/.test(raw)) return null;
+  return Number.parseInt(raw, 10);
+}
+
+// GET /api/people - List people for the current user, one page at a time
 export const GET = withAuth(async (request, session) => {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,6 +27,26 @@ export const GET = withAuth(async (request, session) => {
     // When includeDetails=false, skip multi-value relations (phones, emails, etc.)
     // for lighter list-view responses. Defaults to true for backward compatibility.
     const includeDetails = searchParams.get('includeDetails') !== 'false';
+
+    const requestedLimit = parseNonNegativeInt(searchParams.get('limit'));
+    if (requestedLimit === null || requestedLimit === 0) {
+      return apiResponse.error('limit must be a positive integer');
+    }
+
+    const requestedOffset = parseNonNegativeInt(searchParams.get('offset'));
+    if (requestedOffset === null) {
+      return apiResponse.error('offset must be a non-negative integer');
+    }
+
+    // An export must be complete, so includeAll opts out of the default page
+    // size. An explicit limit still applies, and the cap always applies.
+    const limit =
+      requestedLimit !== undefined
+        ? Math.min(requestedLimit, MAX_PEOPLE_PAGE_SIZE)
+        : includeAll
+          ? undefined
+          : DEFAULT_PEOPLE_PAGE_SIZE;
+    const offset = requestedOffset ?? 0;
 
     // Build where clause
     const where: { userId: string; deletedAt: null; groups?: { some: { groupId: { in: string[] } } } } = {
@@ -84,9 +116,26 @@ export const GET = withAuth(async (request, session) => {
       orderBy: {
         name: 'asc',
       },
+      ...(limit !== undefined && { take: limit, skip: offset }),
     });
 
-    return apiResponse.ok({ people });
+    if (limit === undefined) {
+      return apiResponse.ok({ people });
+    }
+
+    // Counted over the same `where` as the page, so the total and hasMore
+    // describe the set the caller is actually walking.
+    const total = await prisma.person.count({ where });
+
+    return apiResponse.ok({
+      people,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + people.length < total,
+      },
+    });
   } catch (error) {
     return handleApiError(error, 'people-list');
   }

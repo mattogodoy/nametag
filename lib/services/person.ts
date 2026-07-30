@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
-import { prisma, withDeleted } from '@/lib/prisma';
+import { prisma, prismaIncludingDeleted } from '@/lib/prisma';
 import { createPersonSchema, updatePersonSchema } from '@/lib/validations';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { autoExportPerson, autoUpdatePerson } from '@/lib/carddav/auto-export';
@@ -548,26 +548,20 @@ export async function deletePerson(id: string, userId: string): Promise<string |
  * Returns the restored person's id, or null if not found / not owned.
  */
 export async function restorePerson(id: string, userId: string): Promise<string | null> {
-  const rawPrisma = withDeleted();
+  const existingPerson = await prismaIncludingDeleted.person.findUnique({
+    where: { id, userId },
+  });
 
-  try {
-    const existingPerson = await rawPrisma.person.findUnique({
-      where: { id, userId },
-    });
-
-    if (!existingPerson || existingPerson.deletedAt === null) {
-      return null;
-    }
-
-    await rawPrisma.person.update({
-      where: { id },
-      data: { deletedAt: null },
-    });
-
-    return id;
-  } finally {
-    await rawPrisma.$disconnect();
+  if (!existingPerson || existingPerson.deletedAt === null) {
+    return null;
   }
+
+  await prismaIncludingDeleted.person.update({
+    where: { id },
+    data: { deletedAt: null },
+  });
+
+  return id;
 }
 
 // ---------------------------------------------------------------------------

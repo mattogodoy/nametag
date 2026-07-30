@@ -1,14 +1,12 @@
-import { withDeleted } from '@/lib/prisma';
+import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 // DELETE /api/groups/[id]/permanent - Permanently delete a trashed group
 export const DELETE = withAuth(async (_request, session, context) => {
-  const prismaWithDeleted = withDeleted();
-
   try {
     const { id } = await context.params;
 
-    const group = await prismaWithDeleted.group.findUnique({
+    const group = await prismaIncludingDeleted.group.findUnique({
       where: { id, userId: session.user.id },
     });
 
@@ -21,15 +19,13 @@ export const DELETE = withAuth(async (_request, session, context) => {
     }
 
     // Delete memberships first
-    await prismaWithDeleted.personGroup.deleteMany({ where: { groupId: id } });
+    await prismaIncludingDeleted.personGroup.deleteMany({ where: { groupId: id } });
 
     // Delete the group
-    await prismaWithDeleted.group.delete({ where: { id } });
+    await prismaIncludingDeleted.group.delete({ where: { id } });
 
     return apiResponse.ok({ success: true });
   } catch (error) {
     return handleApiError(error, 'groups-permanent-delete');
-  } finally {
-    await prismaWithDeleted.$disconnect();
   }
 });

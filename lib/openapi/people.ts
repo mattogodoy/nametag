@@ -4,22 +4,72 @@ import {
   mergePersonSchema,
 } from '../validations';
 import { zodBody, jsonBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refGraph, refSuccess, resp } from './helpers';
+import { DEFAULT_PEOPLE_PAGE_SIZE, MAX_PEOPLE_PAGE_SIZE } from '../constants';
 
 export function peoplePaths(): Record<string, Record<string, unknown>> {
   return {
     '/api/people': {
       get: {
         tags: ['People'],
-        summary: 'List all people',
-        description: 'Returns all people belonging to the authenticated user, sorted alphabetically by name. Includes relationship-to-user info and group memberships.',
+        summary: 'List people',
+        description:
+          'Returns a page of people belonging to the authenticated user, sorted alphabetically by name. ' +
+          `Defaults to ${DEFAULT_PEOPLE_PAGE_SIZE} per page; pass \`limit\` and \`offset\` to walk the rest. ` +
+          'Includes relationship-to-user info and group memberships.',
         security: [{ session: [] }],
+        parameters: [
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: MAX_PEOPLE_PAGE_SIZE, default: DEFAULT_PEOPLE_PAGE_SIZE },
+            description: `Page size. Values above ${MAX_PEOPLE_PAGE_SIZE} are capped.`,
+          },
+          {
+            name: 'offset',
+            in: 'query',
+            schema: { type: 'integer', minimum: 0, default: 0 },
+            description: 'Number of people to skip before the page starts.',
+          },
+          {
+            name: 'groupIds',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Comma-separated group IDs. Only people in at least one of them are returned.',
+          },
+          {
+            name: 'includeDetails',
+            in: 'query',
+            schema: { type: 'boolean', default: true },
+            description: 'Set to false to omit multi-value fields (phones, emails, addresses) for a lighter response.',
+          },
+          {
+            name: 'includeAll',
+            in: 'query',
+            schema: { type: 'boolean', default: false },
+            description:
+              'Export mode: adds important dates, relationships, and custom field values, and returns every person ' +
+              'rather than a page (so an export is never silently truncated). The `pagination` object is omitted. ' +
+              'An explicit `limit` still applies.',
+          },
+        ],
         responses: {
-          '200': jsonResponse('List of people', {
+          '200': jsonResponse('Page of people', {
             type: 'object',
             properties: {
               people: { type: 'array', items: { $ref: '#/components/schemas/Person' } },
+              pagination: {
+                type: 'object',
+                description: 'Omitted when includeAll=true is used without an explicit limit.',
+                properties: {
+                  total: { type: 'integer', description: 'People matching the filter, ignoring the page.' },
+                  limit: { type: 'integer' },
+                  offset: { type: 'integer' },
+                  hasMore: { type: 'boolean' },
+                },
+              },
             },
           }),
+          '400': ref400(),
           '401': ref401(),
         },
       },

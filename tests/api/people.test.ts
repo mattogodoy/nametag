@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   personFindUnique: vi.fn(),
   personFindMany: vi.fn(),
   personFindFirst: vi.fn(),
+  personCount: vi.fn(),
   personCreate: vi.fn(),
   personUpdate: vi.fn(),
   personUpdateMany: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('../../lib/prisma', () => ({
       findUnique: mocks.personFindUnique,
       findMany: mocks.personFindMany,
       findFirst: mocks.personFindFirst,
+      count: mocks.personCount,
       create: mocks.personCreate,
       update: mocks.personUpdate,
       updateMany: mocks.personUpdateMany,
@@ -77,6 +79,7 @@ describe('People API', () => {
       ];
 
       mocks.personFindMany.mockResolvedValue(mockPeople);
+      mocks.personCount.mockResolvedValue(mockPeople.length);
 
       const request = new Request('http://localhost/api/people');
       const response = await GET(request);
@@ -84,6 +87,12 @@ describe('People API', () => {
 
       expect(response.status).toBe(200);
       expect(body.people).toEqual(mockPeople);
+      expect(body.pagination).toEqual({
+        total: 2,
+        limit: 100,
+        offset: 0,
+        hasMore: false,
+      });
       expect(mocks.personFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId: 'user-123', deletedAt: null },
@@ -93,6 +102,7 @@ describe('People API', () => {
 
     it('should order people by name ascending', async () => {
       mocks.personFindMany.mockResolvedValue([]);
+      mocks.personCount.mockResolvedValue(0);
 
       const request = new Request('http://localhost/api/people');
       await GET(request);
@@ -106,6 +116,7 @@ describe('People API', () => {
 
     it('should include relationships and groups', async () => {
       mocks.personFindMany.mockResolvedValue([]);
+      mocks.personCount.mockResolvedValue(0);
 
       const request = new Request('http://localhost/api/people');
       await GET(request);

@@ -6,9 +6,9 @@ config();
 import * as bcrypt from 'bcryptjs';
 
 async function main() {
-  // Dynamically import prisma after env is loaded
-  const { withDeleted } = await import('../lib/prisma');
-  const prisma = withDeleted();
+  // Dynamically import prisma after env is loaded. The seed wipes and rebuilds
+  // the database, so it uses the client that sees soft-deleted rows too.
+  const { prismaIncludingDeleted: prisma } = await import('../lib/prisma');
   console.log('🌱 Starting database seed...');
 
   // Clear existing data

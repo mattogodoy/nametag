@@ -36,9 +36,9 @@ const mocks = vi.hoisted(() => {
   const journalEntryPersonFindMany = vi.fn();
   const journalEntryPersonUpdateMany = vi.fn();
   const journalEntryPersonDeleteMany = vi.fn();
-  const withDeletedPersonFindUnique = vi.fn();
-  const withDeletedPersonUpdate = vi.fn();
-  const withDeletedDisconnect = vi.fn();
+  const deletedAwarePersonFindUnique = vi.fn();
+  const deletedAwarePersonUpdate = vi.fn();
+  const deletedAwareDisconnect = vi.fn();
   const autoExportPerson = vi.fn();
   const autoUpdatePerson = vi.fn();
 
@@ -94,9 +94,9 @@ const mocks = vi.hoisted(() => {
     journalEntryPersonFindMany,
     journalEntryPersonUpdateMany,
     journalEntryPersonDeleteMany,
-    withDeletedPersonFindUnique,
-    withDeletedPersonUpdate,
-    withDeletedDisconnect,
+    deletedAwarePersonFindUnique,
+    deletedAwarePersonUpdate,
+    deletedAwareDisconnect,
     autoExportPerson,
     autoUpdatePerson,
     mockTxClient,
@@ -131,13 +131,13 @@ vi.mock('../../../lib/prisma', () => ({
       deleteMany: mocks.journalEntryPersonDeleteMany,
     },
   },
-  withDeleted: vi.fn(() => ({
+  prismaIncludingDeleted: {
     person: {
-      findUnique: mocks.withDeletedPersonFindUnique,
-      update: mocks.withDeletedPersonUpdate,
+      findUnique: mocks.deletedAwarePersonFindUnique,
+      update: mocks.deletedAwarePersonUpdate,
     },
-    $disconnect: mocks.withDeletedDisconnect,
-  })),
+    $disconnect: mocks.deletedAwareDisconnect,
+  },
 }));
 
 vi.mock('../../../lib/carddav/auto-export', () => ({
@@ -237,7 +237,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.autoExportPerson.mockResolvedValue(undefined);
   mocks.autoUpdatePerson.mockResolvedValue(undefined);
-  mocks.withDeletedDisconnect.mockResolvedValue(undefined);
+  mocks.deletedAwareDisconnect.mockResolvedValue(undefined);
   mocks.importantDateFindMany.mockResolvedValue([]);
 });
 
@@ -671,35 +671,35 @@ describe('deletePerson', () => {
 
 describe('restorePerson', () => {
   beforeEach(() => {
-    mocks.withDeletedPersonFindUnique.mockResolvedValue({
+    mocks.deletedAwarePersonFindUnique.mockResolvedValue({
       id: PERSON_ID,
       userId: USER_ID,
       deletedAt: new Date('2024-01-01'),
     });
-    mocks.withDeletedPersonUpdate.mockResolvedValue({ id: PERSON_ID });
+    mocks.deletedAwarePersonUpdate.mockResolvedValue({ id: PERSON_ID });
   });
 
   it('returns null when person not found', async () => {
-    mocks.withDeletedPersonFindUnique.mockResolvedValue(null);
+    mocks.deletedAwarePersonFindUnique.mockResolvedValue(null);
     const result = await restorePerson(PERSON_ID, USER_ID);
     expect(result).toBeNull();
-    expect(mocks.withDeletedPersonUpdate).not.toHaveBeenCalled();
+    expect(mocks.deletedAwarePersonUpdate).not.toHaveBeenCalled();
   });
 
   it('returns null when person is not soft-deleted', async () => {
-    mocks.withDeletedPersonFindUnique.mockResolvedValue({
+    mocks.deletedAwarePersonFindUnique.mockResolvedValue({
       id: PERSON_ID,
       userId: USER_ID,
       deletedAt: null,
     });
     const result = await restorePerson(PERSON_ID, USER_ID);
     expect(result).toBeNull();
-    expect(mocks.withDeletedPersonUpdate).not.toHaveBeenCalled();
+    expect(mocks.deletedAwarePersonUpdate).not.toHaveBeenCalled();
   });
 
   it('clears deletedAt on restore', async () => {
     await restorePerson(PERSON_ID, USER_ID);
-    const call = mocks.withDeletedPersonUpdate.mock.calls[0][0];
+    const call = mocks.deletedAwarePersonUpdate.mock.calls[0][0];
     expect(call.where).toEqual({ id: PERSON_ID });
     expect(call.data).toEqual({ deletedAt: null });
   });
@@ -709,15 +709,24 @@ describe('restorePerson', () => {
     expect(result).toBe(PERSON_ID);
   });
 
-  it('always calls disconnect on the raw client', async () => {
+  it('looks the person up scoped to the owning user', async () => {
     await restorePerson(PERSON_ID, USER_ID);
-    expect(mocks.withDeletedDisconnect).toHaveBeenCalled();
+    expect(mocks.deletedAwarePersonFindUnique).toHaveBeenCalledWith({
+      where: { id: PERSON_ID, userId: USER_ID },
+    });
   });
 
-  it('calls disconnect even if findUnique throws', async () => {
-    mocks.withDeletedPersonFindUnique.mockRejectedValue(new Error('db error'));
+  it('never disconnects the shared client', async () => {
+    // prismaIncludingDeleted is a process-wide singleton with its own pool.
+    // Disconnecting it here would tear the pool out from under other requests.
+    await restorePerson(PERSON_ID, USER_ID);
+    expect(mocks.deletedAwareDisconnect).not.toHaveBeenCalled();
+  });
+
+  it('propagates a lookup failure and still does not disconnect', async () => {
+    mocks.deletedAwarePersonFindUnique.mockRejectedValue(new Error('db error'));
     await expect(restorePerson(PERSON_ID, USER_ID)).rejects.toThrow('db error');
-    expect(mocks.withDeletedDisconnect).toHaveBeenCalled();
+    expect(mocks.deletedAwareDisconnect).not.toHaveBeenCalled();
   });
 });
 

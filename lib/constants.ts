@@ -4,6 +4,16 @@
  */
 
 /**
+ * Page size applied to GET /api/people when the caller does not pass `limit`.
+ * The endpoint joins every multi-value relation per person, so an unbounded
+ * response grows quickly for a large address book.
+ */
+export const DEFAULT_PEOPLE_PAGE_SIZE = 100;
+
+/** Upper bound on `limit` for GET /api/people, whatever the caller asks for. */
+export const MAX_PEOPLE_PAGE_SIZE = 500;
+
+/**
  * Security-related constants
  */
 export const SECURITY = {

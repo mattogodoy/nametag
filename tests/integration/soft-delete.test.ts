@@ -72,9 +72,6 @@ const mockEnv = vi.hoisted(() => ({
   NEXTAUTH_URL: 'http://localhost:3000',
 }));
 
-// Track if withDeleted was used
-let withDeletedClient: any = null;
-
 // Mock Prisma
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -123,53 +120,50 @@ vi.mock('../../lib/prisma', () => ({
       deleteMany: mocks.cardDavMappingDeleteMany,
     },
   },
-  withDeleted: vi.fn(() => {
-    withDeletedClient = {
-      person: {
-        findUnique: mocks.personFindUnique,
-        findMany: mocks.personFindMany,
-        update: mocks.personUpdate,
-        updateMany: mocks.personUpdateMany,
-        deleteMany: mocks.personDeleteMany,
-      },
-      group: {
-        findUnique: mocks.groupFindUnique,
-        findMany: mocks.groupFindMany,
-        update: mocks.groupUpdate,
-        deleteMany: mocks.groupDeleteMany,
-      },
-      relationship: {
-        findUnique: mocks.relationshipFindUnique,
-        findFirst: mocks.relationshipFindFirst,
-        findMany: mocks.relationshipFindMany,
-        update: mocks.relationshipUpdate,
-        updateMany: mocks.relationshipUpdateMany,
-        deleteMany: mocks.relationshipDeleteMany,
-      },
-      relationshipType: {
-        findFirst: mocks.relationshipTypeFindFirst,
-        findMany: mocks.relationshipTypeFindMany,
-        update: mocks.relationshipTypeUpdate,
-        updateMany: mocks.relationshipTypeUpdateMany,
-        deleteMany: mocks.relationshipTypeDeleteMany,
-      },
-      importantDate: {
-        findUnique: mocks.importantDateFindUnique,
-        findMany: mocks.importantDateFindMany,
-        update: mocks.importantDateUpdate,
-        deleteMany: mocks.importantDateDeleteMany,
-      },
-      personGroup: {
-        deleteMany: mocks.personGroupDeleteMany,
-      },
-      cronJobLog: {
-        create: mocks.cronJobLogCreate,
-        update: mocks.cronJobLogUpdate,
-      },
-      $disconnect: vi.fn(),
-    };
-    return withDeletedClient;
-  }),
+  prismaIncludingDeleted: {
+    person: {
+      findUnique: mocks.personFindUnique,
+      findMany: mocks.personFindMany,
+      update: mocks.personUpdate,
+      updateMany: mocks.personUpdateMany,
+      deleteMany: mocks.personDeleteMany,
+    },
+    group: {
+      findUnique: mocks.groupFindUnique,
+      findMany: mocks.groupFindMany,
+      update: mocks.groupUpdate,
+      deleteMany: mocks.groupDeleteMany,
+    },
+    relationship: {
+      findUnique: mocks.relationshipFindUnique,
+      findFirst: mocks.relationshipFindFirst,
+      findMany: mocks.relationshipFindMany,
+      update: mocks.relationshipUpdate,
+      updateMany: mocks.relationshipUpdateMany,
+      deleteMany: mocks.relationshipDeleteMany,
+    },
+    relationshipType: {
+      findFirst: mocks.relationshipTypeFindFirst,
+      findMany: mocks.relationshipTypeFindMany,
+      update: mocks.relationshipTypeUpdate,
+      updateMany: mocks.relationshipTypeUpdateMany,
+      deleteMany: mocks.relationshipTypeDeleteMany,
+    },
+    importantDate: {
+      findUnique: mocks.importantDateFindUnique,
+      findMany: mocks.importantDateFindMany,
+      update: mocks.importantDateUpdate,
+      deleteMany: mocks.importantDateDeleteMany,
+    },
+    personGroup: {
+      deleteMany: mocks.personGroupDeleteMany,
+    },
+    cronJobLog: {
+      create: mocks.cronJobLogCreate,
+      update: mocks.cronJobLogUpdate,
+    },
+    $disconnect: vi.fn(),
+  },
 }));
 
 // Mock auth
@@ -220,7 +214,6 @@ describe('Soft Delete Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetStore();
-    withDeletedClient = null;
 
     // Setup cronJobLog mocks
     mocks.cronJobLogCreate.mockResolvedValue({ id: 'cron-1' });
