@@ -2,6 +2,17 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import OfflineNotice from '@/components/OfflineNotice';
+import { useIsOffline } from '@/hooks/useIsOffline';
+
+/*
+ * Rendering OfflineNotice from every error boundary has a side benefit beyond
+ * the calmer copy: its client chunk used to be referenced only by the /offline
+ * route, which almost nobody visits while online, so it was never cached and
+ * could not hydrate during an offline navigation. Reusing it here puts it in
+ * routes people actually browse, so the service worker warms its cache during
+ * normal use.
+ */
 
 export default function Error({
   error,
@@ -10,6 +21,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const isOffline = useIsOffline();
+
   useEffect(() => {
     // Log the error
     console.error('Page error:', error);
@@ -27,6 +40,12 @@ export default function Error({
       // Ignore if logging fails
     });
   }, [error]);
+
+  // A failed request while the device is offline is not a crash. Show the calm
+  // offline page rather than an alarming "something went wrong".
+  if (isOffline) {
+    return <OfflineNotice />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">

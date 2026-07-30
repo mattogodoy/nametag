@@ -1,4 +1,36 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+
+/**
+ * The demo account used below persists a `language` preference in the
+ * database (self-hosted, shared across manual and automated testing), so
+ * which locale actually renders after login is not something this suite
+ * controls or should assume. Building the offline copy check from every
+ * locale file, rather than hardcoding the English strings, keeps the
+ * assertion correct no matter which language the account is currently set to.
+ */
+function localizedOfflineCopy(): { titles: string[]; retries: string[] } {
+  const localesDir = path.join(__dirname, '../../locales');
+  const titles: string[] = [];
+  const retries: string[] = [];
+  for (const file of fs.readdirSync(localesDir)) {
+    if (!file.endsWith('.json')) continue;
+    const messages = JSON.parse(fs.readFileSync(path.join(localesDir, file), 'utf-8'));
+    const offline = messages?.pwa?.offline;
+    if (offline?.title) titles.push(offline.title);
+    if (offline?.retry) retries.push(offline.retry);
+  }
+  return { titles, retries };
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function anyOf(values: string[]): RegExp {
+  return new RegExp(values.map(escapeRegExp).join('|'));
+}
 
 /**
  * E2E: installability and offline behaviour.
@@ -100,7 +132,7 @@ test.describe('Offline behaviour', () => {
     await page.goto('/offline');
 
     await expect(page.getByRole('heading', { name: /offline/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /try again/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /try again/i })).toHaveAttribute('href', '/');
     // No redirect to /login: the worker must be able to serve this pre-auth.
     expect(new URL(page.url()).pathname).toBe('/offline');
   });
@@ -177,7 +209,63 @@ test.describe('Offline behaviour', () => {
     await context.setOffline(true);
     await page.goto('/dashboard');
 
-    await expect(page.getByRole('button', { name: /try again/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /try again/i })).toHaveAttribute('href', '/');
+
+    await context.setOffline(false);
+  });
+
+  test('shows the offline page, not the generic error, when a soft navigation fails', async ({
+    page,
+    context,
+  }) => {
+    // page.goto is a HARD navigation and never exercises the code path this
+    // test is guarding: in a running app, in-app navigation is a Next.js SOFT
+    // navigation that fetches an RSC payload rather than a document. The
+    // service worker deliberately never caches those (they carry contact
+    // data), so offline they fail and the nearest error.tsx renders. Only a
+    // real in-app click reproduces that.
+    //
+    // Next.js's <Link> auto-prefetches routes that sit in the viewport (the
+    // top nav is always visible), which would otherwise satisfy the later
+    // click from an in-memory router cache instead of hitting the network,
+    // masking the exact bug this test exists to catch. Blocking requests
+    // carrying the `next-router-prefetch` header (set only on those
+    // speculative fetches, never on the real navigation triggered by a
+    // click) forces every navigation below to go to the network for real.
+    await page.route('**/*', async (route) => {
+      if (route.request().headers()['next-router-prefetch']) {
+        await route.abort();
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await page.fill('input[name="email"]', 'demo@nametag.one');
+    await page.fill('input[name="password"]', 'password123');
+    await page.click('button[type="submit"]');
+    await expect(page).toHaveURL('/dashboard', { timeout: 5000 });
+
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+
+    // The dashboard's top nav links to /people; this is a normal in-app
+    // <Link>, so clicking it triggers a client-side soft navigation. Matched
+    // by href rather than accessible name because the nav label is
+    // translated and the demo account's locale is not something this test
+    // controls (see localizedOfflineCopy above).
+    await page.locator('a[href="/people"]').first().click();
+
+    const { titles, retries } = localizedOfflineCopy();
+    await expect(page.getByText(anyOf(titles))).toBeVisible();
+    await expect(page.getByRole('link', { name: anyOf(retries) })).toHaveAttribute('href', '/');
+    // The nearest boundary for a failed /people navigation is
+    // app/people/error.tsx, whose fallback copy is hardcoded English
+    // (pre-existing, out of scope) regardless of locale, so this check is
+    // locale-independent.
+    await expect(page.getByText(/failed to load people/i)).not.toBeVisible();
 
     await context.setOffline(false);
   });
