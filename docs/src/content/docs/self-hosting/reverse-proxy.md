@@ -66,3 +66,11 @@ NEXTAUTH_URL=https://yourdomain.com
 ## Docker networking notes
 
 If your proxy and Nametag run as separate Docker Compose projects, put them on a shared external network so the proxy can reach the app by container name without exposing Nametag's port publicly. The production `docker-compose.yml` in the repository already defines a `proxy` network for exactly this: attach your reverse proxy container to `nametag-network` (external) instead of publishing `3000:3000` directly to the host.
+
+## HTTPS and app installation
+
+Nametag can be installed to a phone home screen or desktop as an app, but browsers only offer that for sites served over HTTPS. `localhost` is the one exception.
+
+If you reach your instance over plain HTTP, the effect is uneven rather than total. iOS Safari honors `apple-mobile-web-app-capable` and "Add to Home Screen" regardless of HTTPS, so an iPhone or iPad user still gets a standalone app icon that opens without browser chrome. What you lose over HTTP: the service worker will not register, so there is no offline fallback page, and Android and desktop get no install prompt at all, since Chrome requires HTTPS for `beforeinstallprompt`. Nothing logs an error, because from the browser's point of view nothing is wrong.
+
+Terminating TLS at your reverse proxy, as described above, is enough. See [Installing the App](/features/install/) for what installation gets you.

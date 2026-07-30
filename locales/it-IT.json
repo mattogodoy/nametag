@@ -127,6 +127,8 @@
       "graphModeBubbles": "Mostra sempre i gruppi",
       "graphDisplaySuccess": "Visualizzazione del grafo aggiornata",
       "graphDisplayError": "Impossibile aggiornare la visualizzazione del grafo",
+      "installTitle": "Installa app",
+      "installDescription": "Aggiungi Nametag alla schermata Home o al desktop.",
       "language": {
         "title": "Lingua",
         "description": "Scegli la tua lingua preferita",
@@ -1955,6 +1957,31 @@
       "writeOne": "Scrivine una",
       "viewAll": "Visualizza tutte le voci",
       "newEntry": "Nuova voce"
+    }
+  },
+  "pwa": {
+    "description": "Tieni traccia delle persone della tua vita.",
+    "shortcuts": {
+      "addPerson": "Aggiungi persona",
+      "search": "Cerca",
+      "dashboard": "Dashboard"
+    },
+    "offline": {
+      "title": "Sei offline",
+      "message": "Nametag ha bisogno di una connessione per mostrare i tuoi contatti. Controlla la rete e riprova.",
+      "retry": "Riprova"
+    },
+    "install": {
+      "title": "Installa Nametag",
+      "description": "Aggiungi Nametag alla schermata Home per un'esperienza più rapida e a schermo intero.",
+      "button": "Installa",
+      "installed": "Nametag è installato su questo dispositivo.",
+      "iosTitle": "Aggiungi alla schermata Home",
+      "iosStep1": "Tocca il pulsante Condividi in Safari",
+      "iosStep2": "Scorri verso il basso e tocca «Aggiungi a Home»",
+      "iosStep3": "Tocca «Aggiungi»",
+      "dismiss": "Non ora",
+      "unsupported": "Il tuo browser potrebbe consentire l'installazione dal suo menu. Cerca «Aggiungi a Home», «Installa» o «Aggiungi al Dock»."
     }
   }
 }

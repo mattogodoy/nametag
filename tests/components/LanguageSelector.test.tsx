@@ -39,6 +39,13 @@ describe('LanguageSelector Component', () => {
     global.fetch = vi.fn();
     delete (window as any).location;
     (window as any).location = { reload: vi.fn() };
+    // Reset navigator.serviceWorker before every test so a mock set by one
+    // test cannot leak into the next.
+    Object.defineProperty(navigator, 'serviceWorker', {
+      writable: true,
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it('should render language selector with description', () => {
@@ -190,5 +197,84 @@ describe('LanguageSelector Component', () => {
     await waitFor(() => {
       expect(document.cookie).toContain('NEXT_LOCALE=es-ES');
     });
+  });
+
+  it('asks the service worker to re-cache the offline page', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    const postMessage = vi.fn();
+    Object.defineProperty(navigator, 'serviceWorker', {
+      writable: true,
+      configurable: true,
+      value: {
+        // A controller must be present, or the helper returns early by design.
+        controller: {},
+        ready: Promise.resolve({ active: { postMessage } }),
+      },
+    });
+
+    render(<LanguageSelector currentLanguage="en" />);
+    fireEvent.click(screen.getByRole('button', { name: /Español/i }));
+
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith({ type: 'RECACHE_OFFLINE' });
+    });
+  });
+
+  it('still reloads when the browser has no service worker', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    // Older Safari and any browser with workers disabled.
+    Object.defineProperty(navigator, 'serviceWorker', {
+      writable: true,
+      configurable: true,
+      value: undefined,
+    });
+
+    render(<LanguageSelector currentLanguage="en" />);
+    fireEvent.click(screen.getByRole('button', { name: /Español/i }));
+
+    await waitFor(() => {
+      expect(window.location.reload).toHaveBeenCalled();
+    });
+  });
+
+  it('reloads even when the service worker never becomes ready', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    vi.useFakeTimers();
+    try {
+      /*
+       * A controller is present but `ready` never settles. That is what a failed
+       * registration looks like, and registration failures are swallowed, so this
+       * is reachable in production and not just a theoretical state. Without the
+       * timeout race the reload below would never happen and the language change
+       * would hang forever.
+       */
+      Object.defineProperty(navigator, 'serviceWorker', {
+        writable: true,
+        configurable: true,
+        value: { controller: {}, ready: new Promise<never>(() => {}) },
+      });
+
+      render(<LanguageSelector currentLanguage="en" />);
+      fireEvent.click(screen.getByRole('button', { name: /Español/i }));
+
+      // Flushes the awaited fetch as well as tripping the timeout.
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(window.location.reload).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -127,6 +127,8 @@
       "graphModeBubbles": "常にグループで表示",
       "graphDisplaySuccess": "表示を更新しました",
       "graphDisplayError": "表示の更新に失敗しました",
+      "installTitle": "アプリをインストール",
+      "installDescription": "Nametag をホーム画面またはデスクトップに追加します。",
       "language": {
         "title": "言語",
         "description": "お好みの言語を選択してください",
@@ -1976,6 +1978,31 @@
       "writeOne": "書いてみる",
       "viewAll": "すべてのエントリーを見る",
       "newEntry": "新しいエントリー"
+    }
+  },
+  "pwa": {
+    "description": "大切な人たちの情報を整理しましょう。",
+    "shortcuts": {
+      "addPerson": "人を追加",
+      "search": "検索",
+      "dashboard": "ダッシュボード"
+    },
+    "offline": {
+      "title": "オフラインです",
+      "message": "連絡先を表示するにはインターネット接続が必要です。ネットワークを確認して、もう一度お試しください。",
+      "retry": "再試行"
+    },
+    "install": {
+      "title": "Nametag をインストール",
+      "description": "ホーム画面に追加すると、全画面でより快適に使えます。",
+      "button": "インストール",
+      "installed": "このデバイスにインストール済みです。",
+      "iosTitle": "ホーム画面に追加",
+      "iosStep1": "Safari の共有ボタンをタップします",
+      "iosStep2": "下にスクロールして「ホーム画面に追加」をタップします",
+      "iosStep3": "「追加」をタップします",
+      "dismiss": "後で",
+      "unsupported": "ブラウザのメニューからインストールできる場合があります。「ホーム画面に追加」「インストール」「Dock に追加」を探してください。"
     }
   }
 }

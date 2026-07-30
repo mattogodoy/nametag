@@ -127,6 +127,8 @@
       "graphModeBubbles": "Altijd groepen tonen",
       "graphDisplaySuccess": "Diagram weergave bijgewerkt",
       "graphDisplayError": "Diagram weergave bijwerken mislukt",
+      "installTitle": "App installeren",
+      "installDescription": "Voeg Nametag toe aan je beginscherm of bureaublad.",
       "language": {
         "title": "Taal",
         "description": "Kies uw voorkeurstaal",
@@ -1968,6 +1970,31 @@
       "writeOne": "Schrijf er een",
       "viewAll": "Alle invoeren bekijken",
       "newEntry": "Nieuwe invoer"
+    }
+  },
+  "pwa": {
+    "description": "Houd overzicht over de mensen in je leven.",
+    "shortcuts": {
+      "addPerson": "Persoon toevoegen",
+      "search": "Zoeken",
+      "dashboard": "Dashboard"
+    },
+    "offline": {
+      "title": "Je bent offline",
+      "message": "Nametag heeft een verbinding nodig om je contacten te tonen. Controleer je netwerk en probeer het opnieuw.",
+      "retry": "Opnieuw proberen"
+    },
+    "install": {
+      "title": "Nametag installeren",
+      "description": "Voeg Nametag toe aan je beginscherm voor een snellere, schermvullende ervaring.",
+      "button": "Installeren",
+      "installed": "Nametag is op dit apparaat geïnstalleerd.",
+      "iosTitle": "Toevoegen aan beginscherm",
+      "iosStep1": "Tik op de deelknop in Safari",
+      "iosStep2": "Scroll naar beneden en tik op «Zet op beginscherm»",
+      "iosStep3": "Tik op «Voeg toe»",
+      "dismiss": "Niet nu",
+      "unsupported": "Je browser kan de app misschien installeren via het eigen menu. Zoek naar «Zet op beginscherm», «Installeren» of «Voeg toe aan Dock»."
     }
   }
 }

@@ -127,6 +127,8 @@
       "graphModeBubbles": "Vis alltid som grupper",
       "graphDisplaySuccess": "Visning oppdatert",
       "graphDisplayError": "Kunne ikke oppdatere visningen",
+      "installTitle": "Installer app",
+      "installDescription": "Legg Nametag til på startskjermen eller skrivebordet.",
       "language": {
         "title": "Språk",
         "description": "Velg språket ditt",
@@ -1976,6 +1978,31 @@
       "writeOne": "Skriv en",
       "viewAll": "Vis alle oppføringer",
       "newEntry": "Ny oppføring"
+    }
+  },
+  "pwa": {
+    "description": "Hold oversikt over menneskene i livet ditt.",
+    "shortcuts": {
+      "addPerson": "Legg til person",
+      "search": "Søk",
+      "dashboard": "Oversikt"
+    },
+    "offline": {
+      "title": "Du er frakoblet",
+      "message": "Nametag trenger tilkobling for å vise kontaktene dine. Sjekk nettverket og prøv igjen.",
+      "retry": "Prøv igjen"
+    },
+    "install": {
+      "title": "Installer Nametag",
+      "description": "Legg Nametag til på startskjermen for en raskere fullskjermopplevelse.",
+      "button": "Installer",
+      "installed": "Nametag er installert på denne enheten.",
+      "iosTitle": "Legg til på startskjermen",
+      "iosStep1": "Trykk på Del-knappen i Safari",
+      "iosStep2": "Bla ned og trykk «Legg til på Hjem-skjerm»",
+      "iosStep3": "Trykk «Legg til»",
+      "dismiss": "Ikke nå",
+      "unsupported": "Nettleseren din kan kanskje installere appen fra sin egen meny. Se etter Legg til på Hjem-skjerm, Installer eller Legg til i Dock."
     }
   }
 }

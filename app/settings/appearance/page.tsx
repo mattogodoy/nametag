@@ -6,6 +6,7 @@ import NameOrderSelector from '@/components/NameOrderSelector';
 import NameDisplayFormatSelector from '@/components/NameDisplayFormatSelector';
 import LanguageSelector from '@/components/LanguageSelector';
 import GraphDisplaySelector from '@/components/GraphDisplaySelector';
+import InstallAppSettings from '@/components/InstallAppSettings';
 import { prisma } from '@/lib/prisma';
 import { getUserLocale, type SupportedLocale } from '@/lib/locale';
 import { getTranslations } from 'next-intl/server';
@@ -93,6 +94,17 @@ export default async function AppearanceSettingsPage() {
           {t('graphModeDescription')}
         </p>
         <GraphDisplaySelector currentMode={currentGraphMode} />
+      </div>
+
+      {/* Install App Settings */}
+      <div className="bg-surface shadow rounded-lg p-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">
+          {t('installTitle')}
+        </h2>
+        <p className="text-muted mb-6">
+          {t('installDescription')}
+        </p>
+        <InstallAppSettings />
       </div>
     </div>
   );

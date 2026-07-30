@@ -110,6 +110,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // Without this, browsers can serve a stale worker from HTTP cache and
+        // updates never reach users.
+        source: '/sw.js',
+        headers: [
+          ...securityHeaders,
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
     ];
   },
 };

@@ -127,6 +127,8 @@
       "graphModeBubbles": "Always show groups",
       "graphDisplaySuccess": "Graph display updated",
       "graphDisplayError": "Failed to update graph display",
+      "installTitle": "Install app",
+      "installDescription": "Add Nametag to your home screen or desktop.",
       "language": {
         "title": "Language",
         "description": "Choose your preferred language",
@@ -1972,6 +1974,31 @@
       "writeOne": "Write one",
       "viewAll": "View all entries",
       "newEntry": "New entry"
+    }
+  },
+  "pwa": {
+    "description": "Keep track of the people in your life.",
+    "shortcuts": {
+      "addPerson": "Add person",
+      "search": "Search",
+      "dashboard": "Dashboard"
+    },
+    "offline": {
+      "title": "You're offline",
+      "message": "Nametag needs a connection to show your people. Check your network and try again.",
+      "retry": "Try again"
+    },
+    "install": {
+      "title": "Install Nametag",
+      "description": "Add Nametag to your home screen for a faster, full screen experience.",
+      "button": "Install",
+      "installed": "Nametag is installed on this device.",
+      "iosTitle": "Add to your home screen",
+      "iosStep1": "Tap the Share button in Safari",
+      "iosStep2": "Scroll down and tap Add to Home Screen",
+      "iosStep3": "Tap Add",
+      "dismiss": "Not now",
+      "unsupported": "Your browser may be able to install this from its own menu. Look for Add to Home Screen, Install, or Add to Dock."
     }
   }
 }
