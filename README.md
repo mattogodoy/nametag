@@ -93,17 +93,17 @@ Future features and improvements, ordered by priority:
 - [ ] **[HELP NEEDED]** Mobile app (Native apps for Android and iOS are preferred)
 - [ ] Add support for SQLite databases
 - [ ] Add notification support [[Issue #6](https://github.com/mattogodoy/nametag/issues/6)]
-- [ ] Add map to show people's locations [[Issue #26](https://github.com/mattogodoy/nametag/issues/26)]
 - [ ] Support multi-user groups [[Issue #37](https://github.com/mattogodoy/nametag/issues/37)]
 - [ ] Immich integration [[Issue #46](https://github.com/mattogodoy/nametag/issues/46)]
 - [ ] **[HELP NEEDED]** Additional language translations (French, German, Portuguese, etc.)
-- [ ] **[HELP NEEDED]** UI/UX improvements and accessibility enhancements
-- [ ] **[HELP NEEDED]** Documentation improvements (API, deployment, functionality, development, etc)
 
 ### Done
 
 Features and improvements that have already been implemented:
 
+- [x] ~~Add map to show people's locations [[Issue #26](https://github.com/mattogodoy/nametag/issues/26)]~~
+- [x] ~~UI/UX improvements and accessibility enhancements~~
+- [x] ~~Documentation improvements (API, deployment, functionality, development, etc)~~
 - [x] ~~SMTP support~~ [[Issue #4](https://github.com/mattogodoy/nametag/issues/4), [PR #21](https://github.com/mattogodoy/nametag/pull/21)]
 - [x] ~~Option to disable registration~~ [[Issue #9](https://github.com/mattogodoy/nametag/issues/9), [PR #17](https://github.com/mattogodoy/nametag/pull/17)]
 - [x] ~~ARM build for docker images~~ [[Issue #14](https://github.com/mattogodoy/nametag/issues/14), [PR #18](https://github.com/mattogodoy/nametag/pull/18)]
