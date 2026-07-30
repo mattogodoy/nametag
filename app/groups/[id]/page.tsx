@@ -6,6 +6,7 @@ import DeleteGroupButton from '@/components/DeleteGroupButton';
 import Navigation from '@/components/Navigation';
 import GroupMembersManager from '@/components/GroupMembersManager';
 import { getTranslations } from 'next-intl/server';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 
 export default async function GroupDetailsPage({
@@ -23,7 +24,7 @@ export default async function GroupDetailsPage({
 
   const { id } = await params;
 
-  const [group, allPeople, user] = await Promise.all([
+  const [group, allPeople, preferences] = await Promise.all([
     prisma.group.findUnique({
       where: {
         id,
@@ -67,13 +68,9 @@ export default async function GroupDetailsPage({
         name: 'asc',
       },
     }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { nameOrder: true, nameDisplayFormat: true },
-    }),
+    getUserDisplayPreferences(session.user.id),
   ]);
-  const nameOrder = user?.nameOrder || 'WESTERN';
-  const nameDisplayFormat = user?.nameDisplayFormat || 'FULL';
+  const { nameOrder, nameDisplayFormat } = preferences;
 
   if (!group) {
     notFound();

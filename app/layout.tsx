@@ -9,10 +9,10 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import OfflineNavigationGuard from "@/components/OfflineNavigationGuard";
 import { Toaster } from "sonner";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { getUserLocale } from "@/lib/locale";
 import { THEME_COLORS } from "@/lib/theme-colors";
 import "./globals.css";
+import { DISPLAY_PREFERENCE_DEFAULTS, getUserDisplayPreferences } from '@/lib/user-preferences';
 
 // Use system fonts instead of Google Fonts to avoid network calls during Docker build
 // This is more performant and doesn't require external requests during build time
@@ -61,16 +61,10 @@ export default async function RootLayout({
   const session = await auth();
 
   // Get user's theme preference from database
-  let initialTheme: 'LIGHT' | 'DARK' = 'DARK';
+  let initialTheme = DISPLAY_PREFERENCE_DEFAULTS.theme;
   if (session?.user?.id) {
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { theme: true },
-      });
-      if (user?.theme) {
-        initialTheme = user.theme;
-      }
+      initialTheme = (await getUserDisplayPreferences(session.user.id)).theme;
     } catch {
       // Fall back to default theme if DB is unavailable
     }

@@ -4,7 +4,7 @@ import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/vcard-import';
 import type { ParsedVCardData } from '@/lib/carddav/types';
 import { createModuleLogger } from '@/lib/logger';
-import { withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 import { customFieldValuesInclude } from '@/lib/prisma-queries';
 
@@ -53,23 +53,17 @@ export const POST = withAuth(async (request, session, context) => {
     });
 
     if (!conflict) {
-      return NextResponse.json(
-        { error: 'Conflict not found' },
-        { status: 404 }
-      );
+      return apiResponse.notFound('Conflict not found');
     }
 
     // Verify user owns this connection
     if (conflict.mapping.connection.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return apiResponse.forbidden();
     }
 
     // Already resolved?
     if (conflict.resolvedAt) {
-      return NextResponse.json(
-        { error: 'Conflict already resolved' },
-        { status: 400 }
-      );
+      return apiResponse.error('Conflict already resolved');
     }
 
     if (resolution === 'keep_local') {
@@ -168,12 +162,8 @@ export const POST = withAuth(async (request, session, context) => {
       });
     }
 
-    return NextResponse.json({ success: true });
+    return apiResponse.success();
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error resolving conflict');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'carddav-conflict-resolve');
   }
 });

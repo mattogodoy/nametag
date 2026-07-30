@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  personFindUnique: vi.fn(),
   personDelete: vi.fn(),
   personGroupDeleteMany: vi.fn(),
   importantDateDeleteMany: vi.fn(),
@@ -19,11 +18,10 @@ const mocks = vi.hoisted(() => ({
   journalEntryPersonDeleteMany: vi.fn(),
   deletePersonPhotos: vi.fn(),
   // Group mocks
-  groupFindUnique: vi.fn(),
+  groupFindFirst: vi.fn(),
   groupDelete: vi.fn(),
   groupPersonGroupDeleteMany: vi.fn(),
   // Relationship mocks
-  relationshipFindUnique: vi.fn(),
   relationshipDelete: vi.fn(),
   relationshipFindFirst: vi.fn(),
   personFindFirst: vi.fn(),
@@ -34,33 +32,31 @@ const mocks = vi.hoisted(() => ({
   relationshipUpdateMany: vi.fn(),
   relationshipTypeUpdateMany: vi.fn(),
   // Important date mocks
-  importantDateFindUnique: vi.fn(),
+  importantDateFindFirst: vi.fn(),
   importantDateDelete: vi.fn(),
 }));
 
 vi.mock('../../lib/prisma', () => ({
   prismaIncludingDeleted: {
     person: {
-      findUnique: mocks.personFindUnique,
       findFirst: mocks.personFindFirst,
       delete: mocks.personDelete,
       updateMany: mocks.personUpdateMany,
     },
     personGroup: { deleteMany: mocks.personGroupDeleteMany },
     importantDate: {
-      findUnique: mocks.importantDateFindUnique,
+      findFirst: mocks.importantDateFindFirst,
       delete: mocks.importantDateDelete,
       deleteMany: mocks.importantDateDeleteMany,
     },
     relationship: {
-      findUnique: mocks.relationshipFindUnique,
       findFirst: mocks.relationshipFindFirst,
       delete: mocks.relationshipDelete,
       deleteMany: mocks.relationshipDeleteMany,
       updateMany: mocks.relationshipUpdateMany,
     },
     group: {
-      findUnique: mocks.groupFindUnique,
+      findFirst: mocks.groupFindFirst,
       delete: mocks.groupDelete,
     },
     relationshipType: {
@@ -107,7 +103,7 @@ describe('Permanent delete API', () => {
 
   describe('DELETE /api/people/[id]/permanent', () => {
     it('should return 404 when person not found', async () => {
-      mocks.personFindUnique.mockResolvedValue(null);
+      mocks.personFindFirst.mockResolvedValue(null);
 
       const request = new Request('http://localhost/api/people/p1/permanent');
       const context = { params: Promise.resolve({ id: 'p1' }) };
@@ -117,7 +113,7 @@ describe('Permanent delete API', () => {
     });
 
     it('should return 400 when person is not deleted', async () => {
-      mocks.personFindUnique.mockResolvedValue({
+      mocks.personFindFirst.mockResolvedValue({
         id: 'p1',
         userId: 'user-123',
         deletedAt: null,
@@ -131,7 +127,7 @@ describe('Permanent delete API', () => {
     });
 
     it('should permanently delete a trashed person and cascade', async () => {
-      mocks.personFindUnique.mockResolvedValue({
+      mocks.personFindFirst.mockResolvedValue({
         id: 'p1',
         userId: 'user-123',
         deletedAt: new Date(),
@@ -167,7 +163,7 @@ describe('Permanent delete API', () => {
 
   describe('DELETE /api/groups/[id]/permanent', () => {
     it('should return 404 when group not found', async () => {
-      mocks.groupFindUnique.mockResolvedValue(null);
+      mocks.groupFindFirst.mockResolvedValue(null);
 
       const request = new Request('http://localhost/api/groups/g1/permanent');
       const context = { params: Promise.resolve({ id: 'g1' }) };
@@ -177,7 +173,7 @@ describe('Permanent delete API', () => {
     });
 
     it('should permanently delete a trashed group and its memberships', async () => {
-      mocks.groupFindUnique.mockResolvedValue({
+      mocks.groupFindFirst.mockResolvedValue({
         id: 'g1',
         userId: 'user-123',
         deletedAt: new Date(),
@@ -200,17 +196,18 @@ describe('Permanent delete API', () => {
 
   describe('DELETE /api/relationships/[id]/permanent', () => {
     it('should permanently delete a trashed relationship and its inverse', async () => {
-      mocks.relationshipFindUnique.mockResolvedValue({
-        id: 'r1',
-        personId: 'p1',
-        relatedPersonId: 'p2',
-        deletedAt: new Date(),
-        person: { userId: 'user-123' },
-      });
-      mocks.relationshipFindFirst.mockResolvedValue({
-        id: 'r2',
-        deletedAt: new Date(),
-      });
+      // First findFirst resolves the relationship itself, second finds the inverse.
+      mocks.relationshipFindFirst
+        .mockResolvedValueOnce({
+          id: 'r1',
+          personId: 'p1',
+          relatedPersonId: 'p2',
+          deletedAt: new Date(),
+        })
+        .mockResolvedValueOnce({
+          id: 'r2',
+          deletedAt: new Date(),
+        });
       mocks.relationshipDelete.mockResolvedValue({ id: 'r1' });
 
       const request = new Request('http://localhost/api/relationships/r1/permanent');
@@ -222,6 +219,11 @@ describe('Permanent delete API', () => {
       expect(body.success).toBe(true);
       // Should delete both the relationship and its inverse
       expect(mocks.relationshipDelete).toHaveBeenCalledTimes(2);
+      // Ownership must be part of the lookup, not a check after the fact.
+      expect(mocks.relationshipFindFirst.mock.calls[0][0].where).toEqual({
+        id: 'r1',
+        person: { userId: 'user-123' },
+      });
     });
   });
 
@@ -252,11 +254,11 @@ describe('Permanent delete API', () => {
 
   describe('DELETE /api/people/[id]/important-dates/[dateId]/permanent', () => {
     it('should permanently delete a trashed important date', async () => {
-      mocks.personFindUnique.mockResolvedValue({
+      mocks.personFindFirst.mockResolvedValue({
         id: 'p1',
         userId: 'user-123',
       });
-      mocks.importantDateFindUnique.mockResolvedValue({
+      mocks.importantDateFindFirst.mockResolvedValue({
         id: 'd1',
         personId: 'p1',
         deletedAt: new Date(),

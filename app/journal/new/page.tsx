@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import Navigation from '@/components/Navigation';
 import JournalEntryForm from '@/components/JournalEntryForm';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function NewJournalEntryPage() {
   const session = await auth();
@@ -13,11 +14,8 @@ export default async function NewJournalEntryPage() {
     redirect('/login');
   }
 
-  const [user, availablePeople] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { nameOrder: true, dateFormat: true },
-    }),
+  const [preferences, availablePeople] = await Promise.all([
+    getUserDisplayPreferences(session.user.id),
     prisma.person.findMany({
       where: {
         userId: session.user.id,
@@ -34,8 +32,7 @@ export default async function NewJournalEntryPage() {
     }),
   ]);
 
-  const nameOrder = (user?.nameOrder ?? 'WESTERN') as 'WESTERN' | 'EASTERN';
-  const dateFormat = (user?.dateFormat ?? 'MDY') as 'MDY' | 'DMY' | 'YMD';
+  const { nameOrder, dateFormat } = preferences;
 
   return (
     <div className="min-h-screen bg-background">

@@ -98,6 +98,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: { group: { $ref: '#/components/schemas/Group' } },
           }),
+          '400': ref400(),
           '401': ref401(),
           '404': ref404(),
         },

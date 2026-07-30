@@ -10,6 +10,7 @@ import { formatDate, formatDateWithoutYear } from '@/lib/date-format';
 import { getUpcomingEvents } from '@/lib/upcoming-events';
 import { getTranslations } from 'next-intl/server';
 import PersonAvatar from '@/components/PersonPhoto';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -19,12 +20,7 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  // Fetch user's date format preference
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { dateFormat: true, graphMode: true },
-  });
-  const dateFormat = user?.dateFormat || 'MDY';
+  const { dateFormat, graphMode } = await getUserDisplayPreferences(session.user.id);
 
   // Fetch groups, upcoming events, and people count
   const [groups, upcomingEvents, peopleCount] = await Promise.all([
@@ -135,7 +131,7 @@ export default async function DashboardPage() {
               apiEndpoint="/api/dashboard/graph"
               groups={groups}
               centerNodeNonClickable={true}
-              graphMode={(user?.graphMode === 'individuals' || user?.graphMode === 'bubbles') ? user.graphMode : null}
+              graphMode={graphMode}
             />
           </div>
         </div>

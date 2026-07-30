@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import GroupForm from '@/components/GroupForm';
 import Navigation from '@/components/Navigation';
 import { getTranslations } from 'next-intl/server';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function EditGroupPage({
   params,
@@ -32,11 +33,7 @@ export default async function EditGroupPage({
     notFound();
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { nameOrder: true },
-  });
-  const nameOrder = user?.nameOrder || 'WESTERN';
+  const { nameOrder } = await getUserDisplayPreferences(session.user.id);
 
   return (
     <div className="min-h-screen bg-background">

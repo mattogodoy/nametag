@@ -1,5 +1,6 @@
 import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { requireTrashedRecord } from '@/lib/api/trash-guards';
 import { deletePersonPhotos } from '@/lib/photo-storage';
 
 // DELETE /api/people/[id]/permanent - Permanently delete a trashed person
@@ -7,17 +8,14 @@ export const DELETE = withAuth(async (_request, session, context) => {
   try {
     const { id } = await context.params;
 
-    const person = await prismaIncludingDeleted.person.findUnique({
-      where: { id, userId: session.user.id },
-    });
-
-    if (!person) {
-      return apiResponse.notFound('Person not found');
-    }
-
-    if (!person.deletedAt) {
-      return apiResponse.error('Person is not deleted');
-    }
+    const guard = await requireTrashedRecord(
+      () =>
+        prismaIncludingDeleted.person.findFirst({
+          where: { id, userId: session.user.id },
+        }),
+      { notFound: 'Person not found', notDeleted: 'Person is not deleted' }
+    );
+    if (!guard.ok) return guard.response;
 
     // Delete photo files
     await deletePersonPhotos(session.user.id, id);

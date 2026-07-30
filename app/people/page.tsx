@@ -10,6 +10,7 @@ import ImportSuccessToast from '@/components/ImportSuccessToast';
 import { canCreateResource } from '@/lib/billing/subscription';
 import { getTranslations } from 'next-intl/server';
 import PeopleListClient from '@/components/PeopleListClient';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 const ITEMS_PER_PAGE = 50;
 
@@ -37,12 +38,7 @@ export default async function PeoplePage({
   const canCreate = await canCreateResource(session.user.id, 'people');
 
   // Fetch user's date format preference
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { dateFormat: true, nameOrder: true },
-  });
-  const dateFormat = user?.dateFormat || 'MDY';
-  const nameOrder = user?.nameOrder || 'WESTERN';
+  const { dateFormat, nameOrder } = await getUserDisplayPreferences(session.user.id);
 
   const params = await searchParams;
   const currentPage = Number(params.page) || 1;

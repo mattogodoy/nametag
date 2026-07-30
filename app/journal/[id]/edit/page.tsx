@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import Navigation from '@/components/Navigation';
 import JournalEntryForm from '@/components/JournalEntryForm';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function EditJournalEntryPage({
   params,
@@ -19,7 +20,7 @@ export default async function EditJournalEntryPage({
 
   const { id } = await params;
 
-  const [entry, user, availablePeople] = await Promise.all([
+  const [entry, preferences, availablePeople] = await Promise.all([
     prisma.journalEntry.findUnique({
       where: {
         id,
@@ -33,10 +34,7 @@ export default async function EditJournalEntryPage({
         },
       },
     }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { nameOrder: true, dateFormat: true },
-    }),
+    getUserDisplayPreferences(session.user.id),
     prisma.person.findMany({
       where: {
         userId: session.user.id,
@@ -57,8 +55,7 @@ export default async function EditJournalEntryPage({
     notFound();
   }
 
-  const nameOrder = (user?.nameOrder ?? 'WESTERN') as 'WESTERN' | 'EASTERN';
-  const dateFormat = (user?.dateFormat ?? 'MDY') as 'MDY' | 'DMY' | 'YMD';
+  const { nameOrder, dateFormat } = preferences;
 
   const initialData = {
     title: entry.title,

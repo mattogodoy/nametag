@@ -7,6 +7,7 @@ import LimitReachedMessage from '@/components/LimitReachedMessage';
 import { canCreateResource } from '@/lib/billing/subscription';
 import { TIER_INFO } from '@/lib/billing/constants';
 import { getTranslations } from 'next-intl/server';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function NewGroupPage() {
   const session = await auth();
@@ -21,11 +22,7 @@ export default async function NewGroupPage() {
   const tierName = TIER_INFO[usageCheck.tier].name;
 
   // Fetch user's name order preference
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { nameOrder: true },
-  });
-  const nameOrder = user?.nameOrder || 'WESTERN';
+  const { nameOrder } = await getUserDisplayPreferences(session.user.id);
 
   // Fetch available people to add to the group
   const availablePeople = await prisma.person.findMany({

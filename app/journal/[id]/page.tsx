@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import Navigation from '@/components/Navigation';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { formatGraphName } from '@/lib/nameUtils';
 import { Button } from '@/components/ui/Button';
 import DeleteJournalEntryButton from '@/components/DeleteJournalEntryButton';
 import JournalEntryDateLine from '@/components/JournalEntryDateLine';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function JournalEntryDetailPage({
   params,
@@ -24,7 +25,7 @@ export default async function JournalEntryDetailPage({
 
   const { id } = await params;
 
-  const [entry, user] = await Promise.all([
+  const [entry, preferences] = await Promise.all([
     prisma.journalEntry.findUnique({
       where: {
         id,
@@ -48,19 +49,14 @@ export default async function JournalEntryDetailPage({
         },
       },
     }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { nameOrder: true, nameDisplayFormat: true, language: true, dateFormat: true },
-    }),
+    getUserDisplayPreferences(session.user.id),
   ]);
 
   if (!entry) {
     notFound();
   }
 
-  const nameOrder = user?.nameOrder ?? 'WESTERN';
-  const nameDisplayFormat = (user?.nameDisplayFormat || 'FULL') as NameDisplayFormat;
-  const locale = user?.language ?? 'en';
+  const { nameOrder, nameDisplayFormat, language: locale } = preferences;
 
   return (
     <div className="min-h-screen bg-background">

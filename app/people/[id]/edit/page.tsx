@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import PersonForm from '@/components/PersonForm';
 import Navigation from '@/components/Navigation';
-import { formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
+import { formatGraphName } from '@/lib/nameUtils';
 import { canEnableReminder } from '@/lib/billing/subscription';
 import { getTranslations } from 'next-intl/server';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function EditPersonPage({
   params,
@@ -22,7 +23,7 @@ export default async function EditPersonPage({
 
   const { id } = await params;
 
-  const [person, groups, relationshipTypes, reminderCheck, user, cardDavConnection, customFieldTemplates] = await Promise.all([
+  const [person, groups, relationshipTypes, reminderCheck, preferences, cardDavConnection, customFieldTemplates] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -70,10 +71,7 @@ export default async function EditPersonPage({
       },
     }),
     canEnableReminder(session.user.id),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { dateFormat: true, nameOrder: true, nameDisplayFormat: true },
-    }),
+    getUserDisplayPreferences(session.user.id),
     prisma.cardDavConnection.findFirst({
       where: { userId: session.user.id },
       select: { id: true },
@@ -98,9 +96,7 @@ export default async function EditPersonPage({
     })),
   };
 
-  const dateFormat = user?.dateFormat || 'MDY';
-  const nameOrder = user?.nameOrder;
-  const nameDisplayFormat = (user?.nameDisplayFormat || 'FULL') as NameDisplayFormat;
+  const { dateFormat, nameOrder, nameDisplayFormat } = preferences;
 
   return (
     <div className="min-h-screen bg-background">
