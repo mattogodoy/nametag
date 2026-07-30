@@ -20,7 +20,16 @@ export default function OfflineNotice() {
         />
         <h1 className="text-2xl font-bold text-foreground mb-3">{t('title')}</h1>
         <p className="text-muted mb-8">{t('message')}</p>
-        <Button variant="primary" onClick={() => window.location.reload()}>
+        {/*
+         * A link, not an onClick handler. This component's client chunk is only
+         * ever requested by someone who visits /offline while online (it appears
+         * in no other route's client reference manifest), so when the service
+         * worker serves this page for a failed navigation, hydration never
+         * completes and any JS handler would be permanently dead. Button with
+         * href server-renders a plain anchor, which works with zero JavaScript
+         * and simply re-enters the worker's navigate branch on click.
+         */}
+        <Button variant="primary" href="/">
           {t('retry')}
         </Button>
       </div>

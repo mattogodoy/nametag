@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import OfflineNotice from '@/components/OfflineNotice';
 import enMessages from '../../locales/en.json';
@@ -25,27 +25,10 @@ describe('OfflineNotice', () => {
     expect(screen.getByText(/needs a connection to show your people/i)).toBeInTheDocument();
   });
 
-  it('offers a retry button', () => {
+  it('offers a retry link to home', () => {
     render(<OfflineNotice />, { wrapper: Wrapper });
 
-    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
-  });
-
-  it('reloads the page when retry is clicked', () => {
-    const reload = vi.fn();
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      configurable: true,
-      // href is needed alongside reload: next/image resolves its src against
-      // window.location.href during render, and a bare stub without it makes
-      // the URL constructor throw.
-      value: { reload, href: window.location.href },
-    });
-
-    render(<OfflineNotice />, { wrapper: Wrapper });
-    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
-
-    expect(reload).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('link', { name: /try again/i })).toHaveAttribute('href', '/');
   });
 
   /*
@@ -62,7 +45,7 @@ describe('OfflineNotice', () => {
     );
 
     expect(screen.getByText('Sin conexión')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Reintentar' })).toHaveAttribute('href', '/');
     expect(screen.queryByText("You're offline")).not.toBeInTheDocument();
   });
 });
