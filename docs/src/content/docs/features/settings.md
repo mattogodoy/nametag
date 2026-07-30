@@ -23,6 +23,10 @@ Your name, surname, nickname, email address, and profile photo. Photo uploads su
 
 Also configured from Appearance, graph mode controls how your network graph renders: **Individuals** shows each person as their own node, while **Bubbles** groups people together by their group membership. See [Network Graph](/features/network-graph/) for more.
 
+### Install app
+
+Shows how to add Nametag to your home screen or desktop. On Android and desktop this is an install button; on iOS it is step-by-step instructions, because Safari has no install API. If you are already running the installed app, this section just confirms that. See [Installing the App](/features/install/).
+
 ## Security
 
 Change your password. You'll need to enter your current password to confirm the change.
