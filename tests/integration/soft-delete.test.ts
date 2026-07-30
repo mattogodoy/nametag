@@ -120,9 +120,14 @@ vi.mock('../../lib/prisma', () => ({
       deleteMany: mocks.cardDavMappingDeleteMany,
     },
   },
+  // The trash routes scope ownership inside the lookup, so they use findFirst
+  // where they once used findUnique. This double answers either the same way:
+  // which method a given route picks is asserted in permanent-delete.test.ts,
+  // while these tests are about restore and purge behaviour.
   prismaIncludingDeleted: {
     person: {
       findUnique: mocks.personFindUnique,
+      findFirst: mocks.personFindUnique,
       findMany: mocks.personFindMany,
       update: mocks.personUpdate,
       updateMany: mocks.personUpdateMany,
@@ -130,6 +135,7 @@ vi.mock('../../lib/prisma', () => ({
     },
     group: {
       findUnique: mocks.groupFindUnique,
+      findFirst: mocks.groupFindUnique,
       findMany: mocks.groupFindMany,
       update: mocks.groupUpdate,
       deleteMany: mocks.groupDeleteMany,

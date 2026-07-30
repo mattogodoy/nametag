@@ -6,6 +6,7 @@ import Navigation from '@/components/Navigation';
 import JournalTimeline from '@/components/JournalTimeline';
 import JournalFilters from '@/components/JournalFilters';
 import { Button } from '@/components/ui/Button';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function JournalPage({
   searchParams,
@@ -24,11 +25,8 @@ export default async function JournalPage({
   const personFilterIds = personFilterParam ? personFilterParam.split(',').filter(Boolean) : [];
   const searchQuery = params.q;
 
-  const [user, people, entries] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { nameOrder: true, nameDisplayFormat: true, language: true },
-    }),
+  const [preferences, people, entries] = await Promise.all([
+    getUserDisplayPreferences(session.user.id),
     prisma.person.findMany({
       where: {
         userId: session.user.id,
@@ -83,9 +81,7 @@ export default async function JournalPage({
     }),
   ]);
 
-  const nameOrder = user?.nameOrder ?? 'WESTERN';
-  const nameDisplayFormat = user?.nameDisplayFormat || 'FULL';
-  const locale = user?.language ?? 'en';
+  const { nameOrder, nameDisplayFormat, language: locale } = preferences;
 
   // Serialize Date objects to ISO strings for client components
   const serializedEntries = entries.map((entry) => ({

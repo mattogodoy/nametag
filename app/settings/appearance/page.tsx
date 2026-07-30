@@ -7,9 +7,9 @@ import NameDisplayFormatSelector from '@/components/NameDisplayFormatSelector';
 import LanguageSelector from '@/components/LanguageSelector';
 import GraphDisplaySelector from '@/components/GraphDisplaySelector';
 import InstallAppSettings from '@/components/InstallAppSettings';
-import { prisma } from '@/lib/prisma';
-import { getUserLocale, type SupportedLocale } from '@/lib/locale';
+import { getUserLocale, isSupportedLocale, type SupportedLocale } from '@/lib/locale';
 import { getTranslations } from 'next-intl/server';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function AppearanceSettingsPage() {
   const session = await auth();
@@ -21,18 +21,20 @@ export default async function AppearanceSettingsPage() {
   // Get translations
   const t = await getTranslations('settings.appearance');
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { theme: true, dateFormat: true, language: true, nameOrder: true, nameDisplayFormat: true, graphMode: true },
-  });
+  const {
+    theme: currentTheme,
+    dateFormat: currentDateFormat,
+    language,
+    nameOrder: currentNameOrder,
+    nameDisplayFormat: currentNameDisplayFormat,
+    graphMode: currentGraphMode,
+  } = await getUserDisplayPreferences(session.user.id);
 
-  const currentTheme = user?.theme || 'DARK';
-  const currentDateFormat = user?.dateFormat || 'MDY';
-  const currentLanguage = (user?.language as SupportedLocale) || (await getUserLocale(session.user.id));
-  const currentNameOrder = (user?.nameOrder as 'WESTERN' | 'EASTERN') || 'WESTERN';
-  const currentNameDisplayFormat = (user?.nameDisplayFormat as 'FULL' | 'NICKNAME_PREFERRED' | 'SHORT') || 'FULL';
-  const currentGraphMode: 'individuals' | 'bubbles' =
-    user?.graphMode === 'bubbles' ? 'bubbles' : 'individuals';
+  // The stored language may predate a locale being supported, so fall back to
+  // the request's detected locale rather than rendering an unsupported code.
+  const currentLanguage: SupportedLocale = isSupportedLocale(language)
+    ? language
+    : await getUserLocale(session.user.id);
 
   return (
     <div className="space-y-6">

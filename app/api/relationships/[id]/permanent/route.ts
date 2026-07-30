@@ -1,27 +1,27 @@
 import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { requireTrashedRecord } from '@/lib/api/trash-guards';
 
 // DELETE /api/relationships/[id]/permanent - Permanently delete a trashed relationship
 export const DELETE = withAuth(async (_request, session, context) => {
   try {
     const { id } = await context.params;
 
-    const relationship = await prismaIncludingDeleted.relationship.findUnique({
-      where: { id },
-      include: { person: true },
-    });
+    // Ownership lives on the relationship's person, so it goes in the lookup:
+    // another user's relationship reads as missing rather than forbidden.
+    const guard = await requireTrashedRecord(
+      () =>
+        prismaIncludingDeleted.relationship.findFirst({
+          where: { id, person: { userId: session.user.id } },
+        }),
+      {
+        notFound: 'Relationship not found',
+        notDeleted: 'Relationship is not deleted',
+      }
+    );
+    if (!guard.ok) return guard.response;
 
-    if (!relationship) {
-      return apiResponse.notFound('Relationship not found');
-    }
-
-    if (relationship.person.userId !== session.user.id) {
-      return apiResponse.unauthorized();
-    }
-
-    if (!relationship.deletedAt) {
-      return apiResponse.error('Relationship is not deleted');
-    }
+    const relationship = guard.record;
 
     // Delete the inverse relationship if it's also trashed
     const inverse = await prismaIncludingDeleted.relationship.findFirst({

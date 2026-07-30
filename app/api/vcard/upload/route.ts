@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
-import { withAuth } from '@/lib/api-utils';
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 const log = createModuleLogger('vcard');
 
@@ -17,14 +16,11 @@ export const POST = withAuth(async (request, session) => {
     const vcardText = await request.text();
 
     if (vcardText.length > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large. Maximum size is 2MB.' }, { status: 413 });
+      return apiResponse.payloadTooLarge('File too large. Maximum size is 2MB.');
     }
 
     if (!vcardText || !vcardText.trim().startsWith('BEGIN:VCARD')) {
-      return NextResponse.json(
-        { error: 'Invalid vCard file' },
-        { status: 400 }
-      );
+      return apiResponse.error('Invalid vCard file');
     }
 
     // Delete any existing pending file imports for this user
@@ -79,15 +75,11 @@ export const POST = withAuth(async (request, session) => {
       }
     }
 
-    return NextResponse.json({
+    return apiResponse.ok({
       success: true,
       count: createdImports.length,
     });
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'vCard upload failed');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'vcard-upload');
   }
 });

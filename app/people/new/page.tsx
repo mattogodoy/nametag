@@ -7,6 +7,7 @@ import LimitReachedMessage from '@/components/LimitReachedMessage';
 import { canCreateResource, canEnableReminder } from '@/lib/billing/subscription';
 import { TIER_INFO } from '@/lib/billing/constants';
 import { getTranslations } from 'next-intl/server';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 export default async function NewPersonPage({
   searchParams,
@@ -23,21 +24,17 @@ export default async function NewPersonPage({
   const params = await searchParams;
 
   // Check if user can create more people and reminders
-  const [usageCheck, reminderCheck, user, cardDavConnection] = await Promise.all([
+  const [usageCheck, reminderCheck, preferences, cardDavConnection] = await Promise.all([
     canCreateResource(session.user.id, 'people'),
     canEnableReminder(session.user.id),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { dateFormat: true, nameOrder: true },
-    }),
+    getUserDisplayPreferences(session.user.id),
     prisma.cardDavConnection.findFirst({
       where: { userId: session.user.id },
       select: { id: true },
     }),
   ]);
 
-  const dateFormat = user?.dateFormat || 'MDY';
-  const nameOrder = user?.nameOrder || 'WESTERN';
+  const { dateFormat, nameOrder } = preferences;
 
   const [groups, relationshipTypes, people, customFieldTemplates] = await Promise.all([
     prisma.group.findMany({

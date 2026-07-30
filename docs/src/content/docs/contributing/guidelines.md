@@ -58,6 +58,30 @@ Soft-deletable models: `Person`, `Group`, `Relationship`, `RelationshipType`, `I
 - The only exceptions are trash and restore routes, and delete helpers that intentionally operate on deleted records.
 - When adding a new query on any of these models, always ask: should this exclude soft-deleted records?
 
+### Writing a trash route
+
+The routes that operate on deleted records (restore and permanent delete) use `prismaIncludingDeleted` from `lib/prisma.ts`, a shared client with the soft-delete filter turned off. It is a singleton with its own connection pool, so never call `$disconnect()` on it.
+
+Guard the entry conditions with `requireTrashedRecord` from `lib/api/trash-guards.ts` rather than hand-rolling them:
+
+```typescript
+const guard = await requireTrashedRecord(
+  () => prismaIncludingDeleted.person.findFirst({
+    where: { id, userId: session.user.id },
+  }),
+  { notFound: 'Person not found', notDeleted: 'Person is not deleted' },
+);
+if (!guard.ok) return guard.response;
+```
+
+Scope ownership inside the lookup, as above, rather than fetching the record and comparing afterwards. A record belonging to another user then reads as `404`, the same as one that does not exist. Answering `403` would confirm the id is real.
+
+For a child record, express ownership through its parent:
+
+```typescript
+where: { id: dateId, personId: id, person: { userId: session.user.id } }
+```
+
 ## OpenAPI specification
 
 Every API endpoint change must be reflected in the OpenAPI spec under `lib/openapi/`.

@@ -1,22 +1,23 @@
 import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { requireTrashedRecord } from '@/lib/api/trash-guards';
 
 // DELETE /api/relationship-types/[id]/permanent - Permanently delete a trashed relationship type
 export const DELETE = withAuth(async (_request, session, context) => {
   try {
     const { id } = await context.params;
 
-    const relationshipType = await prismaIncludingDeleted.relationshipType.findFirst({
-      where: { id, userId: session.user.id },
-    });
-
-    if (!relationshipType) {
-      return apiResponse.notFound('Relationship type not found');
-    }
-
-    if (!relationshipType.deletedAt) {
-      return apiResponse.error('Relationship type is not deleted');
-    }
+    const guard = await requireTrashedRecord(
+      () =>
+        prismaIncludingDeleted.relationshipType.findFirst({
+          where: { id, userId: session.user.id },
+        }),
+      {
+        notFound: 'Relationship type not found',
+        notDeleted: 'Relationship type is not deleted',
+      }
+    );
+    if (!guard.ok) return guard.response;
 
     // Clear references before deleting
     await prismaIncludingDeleted.person.updateMany({
