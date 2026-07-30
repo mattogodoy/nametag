@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.58.0](https://github.com/mattogodoy/nametag/compare/v0.57.1...v0.58.0) (2026-07-30)
+
+
+### Features
+
+* installable PWA with offline fallback ([b51ae00](https://github.com/mattogodoy/nametag/commit/b51ae00363c667c869da77d8f256237c9dd58cb1))
+* **pwa:** add apple web app metadata and sync theme-color ([821dd7d](https://github.com/mattogodoy/nametag/commit/821dd7d607c5034b72df1851dc85fa0623b02195))
+* **pwa:** add install prompt and settings section ([c767eba](https://github.com/mattogodoy/nametag/commit/c767eba0e04c3350b87ad983e137b8dbc898ec48))
+
+
+### Bug Fixes
+
+* add 1024px PWA icons to prevent splash screen upscaling ([a7fe8af](https://github.com/mattogodoy/nametag/commit/a7fe8af54ac46415956889585889294c5cdc3d77))
+* add missing CardDAV translations for Italian, Russian and Dutch ([e5e355d](https://github.com/mattogodoy/nametag/commit/e5e355d33a707bd785c68bc5b0a55b94a07a6e17))
+* add missing CardDAV translations for Italian, Russian and Dutch ([b8a8929](https://github.com/mattogodoy/nametag/commit/b8a89291b025a844d9cc5436ede6c8fc751d5a86)), closes [#380](https://github.com/mattogodoy/nametag/issues/380)
+* detect iPadOS and give honest install guidance for unsupported browsers ([dd69183](https://github.com/mattogodoy/nametag/commit/dd6918328526640a7d6e06da78d96e69a50f3369))
+* hard-navigate offline instead of hanging on a stalled soft navigation ([09dbacb](https://github.com/mattogodoy/nametag/commit/09dbacb2d3963e11cb4213c47e4d8917d86626b9))
+* make offline page retry a link so it works with no JavaScript ([63c8553](https://github.com/mattogodoy/nametag/commit/63c8553f657b3724f41bdce0bd3967912383e491))
+* **pwa:** add apple-mobile-web-app-capable meta tag for iOS Safari ([20ee8be](https://github.com/mattogodoy/nametag/commit/20ee8bec4df9126e67a42bc6ddcdfe2ee0c05d28))
+* **pwa:** close install-prompt race, storage-throw, and rejection gaps ([b5613a3](https://github.com/mattogodoy/nametag/commit/b5613a3c0b432f0fa35d28a326dccac4dd8addc7))
+* **pwa:** guard offline recache against a worker that never becomes ready ([6f0b343](https://github.com/mattogodoy/nametag/commit/6f0b343bbd6d0c42e32e799d62f20b55b932ea17))
+* **pwa:** refresh cached offline page after language change ([cabf853](https://github.com/mattogodoy/nametag/commit/cabf853841d12046fd4ff6af78257beab8249f1b))
+* **pwa:** seed locale cookie and wait for hydration in e2e tests ([286affd](https://github.com/mattogodoy/nametag/commit/286affd88fd1fb0ac35fa4feebbcf245e25ac699))
+* **pwa:** tolerate partial precache failure and revalidate non-hashed assets ([d359467](https://github.com/mattogodoy/nametag/commit/d359467fb717e617c7d5322df562686b3978edf6))
+* refresh the precached offline page on every service worker registration ([4e9cc5d](https://github.com/mattogodoy/nametag/commit/4e9cc5dea4bef26126687482e80ca5ef3985d06d))
+* show offline page instead of generic error on failed soft navigation ([1cf8ddd](https://github.com/mattogodoy/nametag/commit/1cf8ddd89ed94e583ba8243659638517e45bd670))
+
 ## [0.57.1](https://github.com/mattogodoy/nametag/compare/v0.57.0...v0.57.1) (2026-07-29)
 
 
