@@ -9,6 +9,22 @@ import { test, expect } from '@playwright/test';
  *   PLAYWRIGHT_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/pwa.spec.ts --project=chromium
  */
 
+/*
+ * components/LocaleSync.tsx reloads the page roughly 30 to 50ms after first load
+ * whenever the NEXT_LOCALE cookie disagrees with the server-resolved locale,
+ * which on a fresh browser context means EVERY first navigation. That reload
+ * tears down any page.evaluate context and makes the service worker assertions
+ * below race against it. Seeding the cookie makes LocaleSync short-circuit,
+ * which is also what a returning user looks like.
+ *
+ * This is pre-existing app behaviour, unrelated to the PWA work.
+ */
+test.beforeEach(async ({ context, baseURL }) => {
+  await context.addCookies([
+    { name: 'NEXT_LOCALE', value: 'en', url: baseURL ?? 'http://localhost:3000' },
+  ]);
+});
+
 test.describe('PWA manifest and icons', () => {
   test('links a manifest that parses and declares both icon purposes', async ({ page, request }) => {
     await page.goto('/login');
@@ -103,6 +119,10 @@ test.describe('Offline behaviour', () => {
 
   test('caches nothing beyond the static allowlist', async ({ page }) => {
     await page.goto('/login');
+    // Wait for hydration before touching the form. Without this, under parallel
+    // load the click can land before React attaches and the form submits
+    // natively as a GET, which never reaches /dashboard.
+    await page.waitForLoadState('networkidle');
     await page.fill('input[name="email"]', 'demo@nametag.one');
     await page.fill('input[name="password"]', 'password123');
     await page.click('button[type="submit"]');
