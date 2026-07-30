@@ -38,13 +38,37 @@ const labelMap = {
  * language it was fetched in. Ask the worker to refresh it after a language
  * change. Must be awaited before the reload below, which kills the page.
  */
+/** How long to wait for an active worker before giving up on the refresh. */
+const RECACHE_TIMEOUT_MS = 1000;
+
 async function recacheOfflinePage(): Promise<void> {
   if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
     return;
   }
+  /*
+   * The important guard. serviceWorker.ready NEVER settles when no worker is
+   * registered, and registration is production-only and swallows its own
+   * failures. Awaiting it unguarded would make the reload below unreachable in
+   * development always, and in production whenever registration failed, leaving
+   * the language change hung with the button stuck disabled. A null controller
+   * means there is no worker to notify anyway, so returning early is both the
+   * fast path and the safe one.
+   */
+  if (!navigator.serviceWorker.controller) {
+    return;
+  }
   try {
-    const registration = await navigator.serviceWorker.ready;
-    registration.active?.postMessage({ type: 'RECACHE_OFFLINE' });
+    /*
+     * Belt and braces for the narrow window where a worker is active but has not
+     * yet claimed this page. A stale offline page must never strand the reload.
+     */
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), RECACHE_TIMEOUT_MS);
+      }),
+    ]);
+    registration?.active?.postMessage({ type: 'RECACHE_OFFLINE' });
   } catch {
     // A stale offline page is not worth blocking the language change over.
   }

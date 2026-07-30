@@ -210,6 +210,8 @@ describe('LanguageSelector Component', () => {
       writable: true,
       configurable: true,
       value: {
+        // A controller must be present, or the helper returns early by design.
+        controller: {},
         ready: Promise.resolve({ active: { postMessage } }),
       },
     });
@@ -241,5 +243,38 @@ describe('LanguageSelector Component', () => {
     await waitFor(() => {
       expect(window.location.reload).toHaveBeenCalled();
     });
+  });
+
+  it('reloads even when the service worker never becomes ready', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    vi.useFakeTimers();
+    try {
+      /*
+       * A controller is present but `ready` never settles. That is what a failed
+       * registration looks like, and registration failures are swallowed, so this
+       * is reachable in production and not just a theoretical state. Without the
+       * timeout race the reload below would never happen and the language change
+       * would hang forever.
+       */
+      Object.defineProperty(navigator, 'serviceWorker', {
+        writable: true,
+        configurable: true,
+        value: { controller: {}, ready: new Promise<never>(() => {}) },
+      });
+
+      render(<LanguageSelector currentLanguage="en" />);
+      fireEvent.click(screen.getByRole('button', { name: /Español/i }));
+
+      // Flushes the awaited fetch as well as tripping the timeout.
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(window.location.reload).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
