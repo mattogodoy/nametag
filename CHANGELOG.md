@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.58.1](https://github.com/mattogodoy/nametag/compare/v0.58.0...v0.58.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* close CSRF gap on 12 routes and harden three open endpoints ([93bf4e3](https://github.com/mattogodoy/nametag/commit/93bf4e3de862e2b43cc07b6709d42a569302c9f7))
+* close CSRF gap on 12 routes and harden three open endpoints ([4ad5ea0](https://github.com/mattogodoy/nametag/commit/4ad5ea0ddacee794467cd71c1310152f26d3b3f7))
+* make OpenAPI security match the code, and enforce spec coverage ([afc8bbe](https://github.com/mattogodoy/nametag/commit/afc8bbe39151e25718dfdddff71d34b91f3b30e6))
+* make OpenAPI security match the code, and enforce spec coverage ([90f59c7](https://github.com/mattogodoy/nametag/commit/90f59c70468c995fe8c4db6b17aaf34ef2144b41))
+
 ## [0.58.0](https://github.com/mattogodoy/nametag/compare/v0.57.1...v0.58.0) (2026-07-30)
 
 
