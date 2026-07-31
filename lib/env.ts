@@ -36,10 +36,10 @@ const envSchema = z.object({
   // Email (SMTP) - Optional alternative to Resend
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().min(1).max(65535).optional(),
-  SMTP_SECURE: z.coerce.boolean().default(false).optional(),
+  SMTP_SECURE: booleanFromString.default(false).optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_REQUIRE_TLS: z.coerce.boolean().default(true).optional(),
+  SMTP_REQUIRE_TLS: booleanFromString.default(true).optional(),
   SMTP_FROM: z.string().optional(), // Override from address (e.g., for servers that reject custom from addresses)
 
   // Google OAuth - Only required in SaaS mode
@@ -62,10 +62,10 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   // SaaS mode - enables billing and tier limits (undocumented, for internal use)
-  SAAS_MODE: z.coerce.boolean().default(false),
+  SAAS_MODE: booleanFromString.default(false),
 
   // Disable registration after first user (useful for public-facing self-hosted instances)
-  DISABLE_REGISTRATION: z.coerce.boolean().default(false),
+  DISABLE_REGISTRATION: booleanFromString.default(false),
 
   // Geocoding for the map feature
   GEOCODER_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
@@ -109,7 +109,7 @@ export function validateEnv(): Env {
 
   if (!result.success) {
     const errors = result.error.issues.map(
-      (issue) => `  - ${issue.path.join('.')}: ${issue.message}`
+      (issue) => `  - ${issue.path.join('.')}: ${issue.message}`,
     );
 
     console.error('\n❌ Invalid environment variables:\n');
@@ -133,7 +133,9 @@ export function validateEnv(): Env {
       console.error('  - Database configuration is incomplete.');
       console.error('\n  You must provide either:');
       console.error('    1. DATABASE_URL (connection string), OR');
-      console.error('    2. All of: DB_HOST, DB_PORT, DB_NAME, DB_USER (and optionally DB_PASSWORD)');
+      console.error(
+        '    2. All of: DB_HOST, DB_PORT, DB_NAME, DB_USER (and optionally DB_PASSWORD)',
+      );
       console.error(`\n  Missing: ${missingVars.join(', ')}`);
       console.error('\nPlease check your .env file.\n');
       throw new Error('Invalid environment configuration');
@@ -158,13 +160,18 @@ export function validateEnv(): Env {
     if (!result.data.EMAIL_DOMAIN) missing.push('EMAIL_DOMAIN');
     if (!result.data.GOOGLE_CLIENT_ID) missing.push('GOOGLE_CLIENT_ID');
     if (!result.data.GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
-    if (!result.data.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');
+    if (!result.data.STRIPE_WEBHOOK_SECRET)
+      missing.push('STRIPE_WEBHOOK_SECRET');
 
     if (missing.length > 0) {
       console.error('\n❌ Invalid environment variables:\n');
-      console.error(`  - The following are required when SAAS_MODE is enabled: ${missing.join(', ')}`);
+      console.error(
+        `  - The following are required when SAAS_MODE is enabled: ${missing.join(', ')}`,
+      );
       console.error('\nPlease check your .env file.\n');
-      throw new Error(`Invalid environment configuration: missing ${missing.join(', ')}`);
+      throw new Error(
+        `Invalid environment configuration: missing ${missing.join(', ')}`,
+      );
     }
   }
 
@@ -175,23 +182,27 @@ export function validateEnv(): Env {
     result.data.SMTP_USER,
     result.data.SMTP_PASS,
   ];
-  const hasAnySmtpConfig = smtpVars.some(v => v !== undefined);
+  const hasAnySmtpConfig = smtpVars.some((v) => v !== undefined);
 
   if (hasAnySmtpConfig && (!result.data.SMTP_HOST || !result.data.SMTP_PORT)) {
     console.error('\n❌ Invalid environment variables:\n');
-    console.error('  - If any SMTP_* variable is set, both SMTP_HOST and SMTP_PORT are required');
+    console.error(
+      '  - If any SMTP_* variable is set, both SMTP_HOST and SMTP_PORT are required',
+    );
     console.error('\nPlease check your .env file.\n');
     throw new Error('Invalid environment configuration');
   }
 
   // Validate that EMAIL_DOMAIN is set if either email provider is configured
   const hasEmailProvider =
-    (result.data.RESEND_API_KEY) ||
+    result.data.RESEND_API_KEY ||
     (result.data.SMTP_HOST && result.data.SMTP_PORT);
 
   if (hasEmailProvider && !result.data.EMAIL_DOMAIN) {
     console.error('\n❌ Invalid environment variables:\n');
-    console.error('  - EMAIL_DOMAIN is required when email is configured (Resend or SMTP)');
+    console.error(
+      '  - EMAIL_DOMAIN is required when email is configured (Resend or SMTP)',
+    );
     console.error('\nPlease check your .env file.\n');
     throw new Error('Invalid environment configuration');
   }
@@ -205,9 +216,13 @@ export function validateEnv(): Env {
 
     if (missingOidc.length > 0) {
       console.error('\n❌ Invalid environment variables:\n');
-      console.error(`  - DISABLE_PASSWORD_LOGIN requires a fully configured OIDC provider. Missing: ${missingOidc.join(', ')}`);
+      console.error(
+        `  - DISABLE_PASSWORD_LOGIN requires a fully configured OIDC provider. Missing: ${missingOidc.join(', ')}`,
+      );
       console.error('\nPlease check your .env file.\n');
-      throw new Error(`Invalid environment configuration: DISABLE_PASSWORD_LOGIN requires ${missingOidc.join(', ')}`);
+      throw new Error(
+        `Invalid environment configuration: DISABLE_PASSWORD_LOGIN requires ${missingOidc.join(', ')}`,
+      );
     }
   }
 

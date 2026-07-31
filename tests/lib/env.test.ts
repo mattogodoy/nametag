@@ -30,6 +30,36 @@ describe('env validation', () => {
     process.env = originalEnv;
   });
 
+  describe('boolean environment variables', () => {
+    const keys = [
+      'SMTP_SECURE',
+      'SMTP_REQUIRE_TLS',
+      'DISABLE_REGISTRATION',
+    ] as const;
+
+    it.each(keys)('should parse %s=false as false', (key) => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        [key]: 'false',
+      } as NodeJS.ProcessEnv;
+
+      const result = validateEnv();
+
+      expect(result[key]).toBe(false);
+    });
+
+    it.each(keys)('should parse %s=true as true', (key) => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        [key]: 'true',
+      } as NodeJS.ProcessEnv;
+
+      const result = validateEnv();
+
+      expect(result[key]).toBe(true);
+    });
+  });
+
   describe('STRIPE_WEBHOOK_SECRET', () => {
     it('should require STRIPE_WEBHOOK_SECRET when SAAS_MODE is true', () => {
       const envWithoutStripe = { ...SAAS_REQUIRED_ENV };
