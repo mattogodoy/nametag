@@ -36,7 +36,7 @@ const envSchema = z.object({
   // Email (SMTP) - Optional alternative to Resend
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().min(1).max(65535).optional(),
-  SMTP_SECURE: booleanFromString.default(false).optional(),
+  SMTP_SECURE: booleanFromString.optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_REQUIRE_TLS: booleanFromString.default(true).optional(),
@@ -62,10 +62,10 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   // SaaS mode - enables billing and tier limits (undocumented, for internal use)
-  SAAS_MODE: booleanFromString.default(false),
+  SAAS_MODE: booleanFromString,
 
   // Disable registration after first user (useful for public-facing self-hosted instances)
-  DISABLE_REGISTRATION: booleanFromString.default(false),
+  DISABLE_REGISTRATION: booleanFromString,
 
   // Geocoding for the map feature
   GEOCODER_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
