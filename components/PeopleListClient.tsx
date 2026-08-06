@@ -9,7 +9,7 @@ import BulkDeleteModal from './BulkDeleteModal';
 import BulkGroupAssignModal from './BulkGroupAssignModal';
 import BulkRelationshipModal from './BulkRelationshipModal';
 import PersonAvatar from './PersonPhoto';
-import { formatCanonicalName } from '@/lib/nameUtils';
+import { formatCanonicalName, type NameDisplayFormat } from '@/lib/nameUtils';
 import { formatDate, type DateFormat } from '@/lib/date-format';
 import CustomFieldFilter from './customFields/CustomFieldFilter';
 import type { CustomFieldTemplate } from '@prisma/client';
@@ -57,7 +57,9 @@ interface PeopleListClientProps {
   relationshipTypes: RelationshipType[];
   customFieldTemplates: CustomFieldTemplate[];
   nameOrder?: 'WESTERN' | 'EASTERN';
+  nameDisplayFormat?: NameDisplayFormat;
   translations: {
+    fullName: string;
     surname: string;
     nickname: string;
     relationshipToUser: string;
@@ -79,6 +81,49 @@ interface PeopleListClientProps {
   };
 }
 
+/**
+ * The linked name in a person row, plus the orphan marker and any display
+ * override. Rendered twice per row: once for the combined mobile column and
+ * once for the first-name column shown from md up.
+ */
+function NameCell({
+  href,
+  label,
+  isOrphan,
+  orphanWarning,
+  displayNameOverride,
+}: {
+  href: string;
+  label: string;
+  isOrphan: boolean;
+  orphanWarning: string;
+  displayNameOverride?: string | null;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <Link href={href} className="text-primary hover:underline font-medium">
+          {label}
+        </Link>
+        {isOrphan && (
+          <span className="relative group cursor-help">
+            <span className="text-yellow-500">{'⚠️'}</span>
+            <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-foreground bg-surface-elevated rounded-lg whitespace-normal max-w-xs z-50 shadow-lg border border-border">
+              {orphanWarning}
+              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-surface-elevated"></span>
+            </span>
+          </span>
+        )}
+      </div>
+      {displayNameOverride && (
+        <div className="mt-1 text-xs text-muted">
+          {displayNameOverride}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PeopleListClient({
   people,
   totalCount,
@@ -94,6 +139,7 @@ export default function PeopleListClient({
   relationshipTypes,
   customFieldTemplates,
   nameOrder,
+  nameDisplayFormat,
   translations: tt,
   commonTranslations: tc,
 }: PeopleListClientProps) {
@@ -210,6 +256,10 @@ export default function PeopleListClient({
     return `/people?${params.toString()}`;
   };
 
+  // Sort the combined column by whichever part the reader sees first, so the
+  // list looks alphabetical in the order it is actually displayed.
+  const fullNameSortKey = nameOrder === 'EASTERN' ? 'surname' : 'name';
+
   const buildPageUrl = (page: number) => {
     const params = buildFilterParams();
     params.set('page', page.toString());
@@ -291,7 +341,16 @@ export default function PeopleListClient({
                   />
                 </th>
                 <th className="w-[32px] py-3 px-2" />
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
+                {/* Narrow screens have no room for the separate name parts, so
+                    they get a single combined column instead (see the Name,
+                    Surname and Nickname headers below). */}
+                <th className="md:hidden px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
+                  <Link href={buildSortUrl(fullNameSortKey)} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
+                    {tt.fullName}
+                    {sortBy === fullNameSortKey && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
+                  </Link>
+                </th>
+                <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                   <Link href={buildSortUrl('name')} className="flex items-center gap-1 hover:text-foreground py-2 -my-2 min-h-11 sm:min-h-0">
                     {tc.name}
                     {sortBy === 'name' && <span className="text-primary">{order === 'asc' ? '\u2191' : '\u2193'}</span>}
@@ -339,6 +398,10 @@ export default function PeopleListClient({
                                  person.relationshipsTo.length === 0;
                 const isChecked = selectAllPages || selectedIds.has(person.id);
                 const fullDisplayName = formatCanonicalName(person, nameOrder);
+                // What the combined mobile column shows. Unlike fullDisplayName
+                // (avatar initials, checkbox label) this also applies the user's
+                // name display format, so SHORT collapses it to a first name.
+                const combinedName = formatCanonicalName(person, nameOrder, nameDisplayFormat);
 
                 return (
                   <tr key={person.id} className={`hover:bg-surface-elevated transition-colors ${isChecked ? 'bg-primary/5' : ''}`}>
@@ -359,28 +422,23 @@ export default function PeopleListClient({
                         size={32}
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Link href={`/people/${person.id}`} className="text-primary hover:underline font-medium">
-                            {person.name}
-                          </Link>
-                          {isOrphan && (
-                            <span className="relative group cursor-help">
-                              <span className="text-yellow-500">{'\u26A0\uFE0F'}</span>
-                              <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-foreground bg-surface-elevated rounded-lg whitespace-normal max-w-xs z-50 shadow-lg border border-border">
-                                {tt.orphanWarning}
-                                <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-surface-elevated"></span>
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                        {person.displayNameOverride && (
-                          <div className="mt-1 text-xs text-muted">
-                            {person.displayNameOverride}
-                          </div>
-                        )}
-                      </div>
+                    <td className="md:hidden px-6 py-4 whitespace-nowrap">
+                      <NameCell
+                        href={`/people/${person.id}`}
+                        label={combinedName}
+                        isOrphan={isOrphan}
+                        orphanWarning={tt.orphanWarning}
+                        displayNameOverride={person.displayNameOverride}
+                      />
+                    </td>
+                    <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                      <NameCell
+                        href={`/people/${person.id}`}
+                        label={person.name}
+                        isOrphan={isOrphan}
+                        orphanWarning={tt.orphanWarning}
+                        displayNameOverride={person.displayNameOverride}
+                      />
                     </td>
                     <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-foreground">
                       {person.surname || '\u2014'}
