@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.58.3](https://github.com/mattogodoy/nametag/compare/v0.58.2...v0.58.3) (2026-08-06)
+
+
+### Bug Fixes
+
+* implement SAAS_MODE tests and remove redundant .defaults ([c871f5d](https://github.com/mattogodoy/nametag/commit/c871f5d137e852a1a45b0e3c6dd4e3b62d7738ee))
+* remove ESLint auto-fix-on-save from VS Code settings ([3b85520](https://github.com/mattogodoy/nametag/commit/3b855203b8c371c5773f52c633a86b9f637a9e46))
+* remove ESLint auto-fix-on-save from VS Code settings ([20fe4ce](https://github.com/mattogodoy/nametag/commit/20fe4ce096bfd973107739100ef44c78626ef700))
+* resolve env booleans from being treated as strings ([0db866b](https://github.com/mattogodoy/nametag/commit/0db866bc1637b12d741504f135215c2a5f793058))
+* undo eslint auto fixers and prettier linting ([4f3b918](https://github.com/mattogodoy/nametag/commit/4f3b918d659fa68751ffadb37b98d4afe48d41ae))
+
 ## [0.58.2](https://github.com/mattogodoy/nametag/compare/v0.58.1...v0.58.2) (2026-08-01)
 
 
