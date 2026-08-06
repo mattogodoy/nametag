@@ -30,6 +30,54 @@ describe('env validation', () => {
     process.env = originalEnv;
   });
 
+  describe('boolean environment variables', () => {
+    const keys = [
+      'SMTP_SECURE',
+      'SMTP_REQUIRE_TLS',
+      'DISABLE_REGISTRATION',
+    ] as const;
+
+    it.each(keys)('should parse %s=false as false', (key) => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        [key]: 'false',
+      } as NodeJS.ProcessEnv;
+
+      const result = validateEnv();
+
+      expect(result[key]).toBe(false);
+    });
+
+    it.each(keys)('should parse %s=true as true', (key) => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        [key]: 'true',
+      } as NodeJS.ProcessEnv;
+
+      const result = validateEnv();
+
+      expect(result[key]).toBe(true);
+    });
+
+    it('should parse SAAS_MODE=false as false', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        SAAS_MODE: 'false',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(validateEnv().SAAS_MODE).toBe(false);
+    });
+
+    it('should parse SAAS_MODE=true as true', () => {
+      process.env = {
+        ...SAAS_REQUIRED_ENV,
+        SAAS_MODE: 'true',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(validateEnv().SAAS_MODE).toBe(true);
+    });
+  });
+
   describe('STRIPE_WEBHOOK_SECRET', () => {
     it('should require STRIPE_WEBHOOK_SECRET when SAAS_MODE is true', () => {
       const envWithoutStripe = { ...SAAS_REQUIRED_ENV };
@@ -46,9 +94,8 @@ describe('env validation', () => {
     });
 
     it('should not require STRIPE_WEBHOOK_SECRET when SAAS_MODE is not enabled', () => {
-      // Note: z.coerce.boolean() coerces any non-empty string to true,
-      // so omitting SAAS_MODE (which defaults to false) is the correct way
-      // to test non-SaaS mode.
+      // Note: booleanFromString defaults omitted values to false,
+      // so omitting SAAS_MODE is the correct way to test non-SaaS mode.
       process.env = { ...BASE_VALID_ENV } as NodeJS.ProcessEnv;
 
       expect(() => validateEnv()).not.toThrow();
