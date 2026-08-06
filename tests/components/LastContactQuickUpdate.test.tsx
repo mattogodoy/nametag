@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { getLocalDateString } from '@/lib/date-format';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
@@ -44,10 +45,30 @@ describe('LastContactQuickUpdate', () => {
     global.fetch = vi.fn();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // The component derives relative time and "is today" from the current clock,
+  // so tests that depend on it pin the clock. A real "now" makes them drift
+  // across midnight and across the spring DST jump.
+  //
+  // Late-evening UTC is deliberate: east of UTC the local date is already the
+  // next day, so building a date via toISOString() lands on the wrong calendar
+  // day and these tests catch it. Mid-March keeps clear of every DST switch.
+  function pinClock() {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-15T23:30:00Z'));
+  }
+
   it('renders last contact date and relative time when date exists', () => {
+    pinClock();
+    // Step back a day in local terms and serialise locally. Mixing the two,
+    // by stepping back locally then calling toISOString(), lands two calendar
+    // days back whenever local and UTC disagree on the date.
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const isoDate = yesterday.toISOString().split('T')[0];
+    const isoDate = getLocalDateString(yesterday);
 
     render(
       <Wrapper>
@@ -109,11 +130,12 @@ describe('LastContactQuickUpdate', () => {
   });
 
   it('hides the button when last contact is today', () => {
+    pinClock();
     render(
       <Wrapper>
         <LastContactQuickUpdate
           personId="person-1"
-          currentLastContact={new Date().toISOString()}
+          currentLastContact={getLocalDateString()}
           dateFormat="MDY"
         />
       </Wrapper>
