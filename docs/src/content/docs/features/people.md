@@ -63,6 +63,8 @@ If you've defined custom field templates in Settings (text, number, boolean, or 
 
 The People page shows everyone in your network, 50 per page.
 
+**Columns adapt to your screen width.** On wide screens the list breaks names into separate Name, Surname and Nickname columns, so each one can be sorted on its own. On narrow screens there is no room for all three, so they collapse into a single **Full Name** column showing the complete name. That column follows your [name order and name display format](/features/settings/) settings, so a Short name display format shows only the nickname or first name there too.
+
 **Sorting** is available by:
 
 - Name

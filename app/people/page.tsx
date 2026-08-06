@@ -38,7 +38,7 @@ export default async function PeoplePage({
   const canCreate = await canCreateResource(session.user.id, 'people');
 
   // Fetch user's date format preference
-  const { dateFormat, nameOrder } = await getUserDisplayPreferences(session.user.id);
+  const { dateFormat, nameOrder, nameDisplayFormat } = await getUserDisplayPreferences(session.user.id);
 
   const params = await searchParams;
   const currentPage = Number(params.page) || 1;
@@ -274,7 +274,9 @@ export default async function PeoplePage({
                 relationshipTypes={relationshipTypes}
                 customFieldTemplates={customFieldTemplates}
                 nameOrder={nameOrder}
+                nameDisplayFormat={nameDisplayFormat}
                 translations={{
+                  fullName: t('fullName'),
                   surname: t('surname'),
                   nickname: t('nickname'),
                   relationshipToUser: t('relationshipToUser'),
