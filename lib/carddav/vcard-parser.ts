@@ -584,7 +584,7 @@ function processProperty(
 
     // Server-authored metadata that has no user-facing meaning in Nametag.
     // We consume it so it doesn't leak into unknownProperties, but we do NOT
-    // preserve it — round-tripping REV/PRODID accumulates duplicates and has
+    // preserve it. Round-tripping REV/PRODID accumulates duplicates and has
     // caused CardDAV push failures when exported values carry odd escaping.
     case 'REV':
     case 'PRODID':
@@ -776,6 +776,12 @@ function parseSocialProfile(
 
 /**
  * Parse vCard date (supports multiple formats)
+ *
+ * Calendar dates are anchored at UTC midnight, matching how the rest of
+ * Nametag stores them (see `lib/date-format.ts` and the important-dates API)
+ * and how `formatVCardV3Date` reads them back. Building them at local midnight
+ * instead put every date on the previous UTC day for users east of UTC, so
+ * each sync shifted dates one day earlier and rewrote the vCard every cycle.
  */
 function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Date | null {
   if (!dateStr) {
@@ -790,7 +796,7 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
       const month = parseInt(yearMatch[2], 10);
       const day = parseInt(yearMatch[3], 10);
       // Use year 1604 to indicate unknown year (matches Apple convention)
-      return new Date(1604, month - 1, day);
+      return new Date(Date.UTC(1604, month - 1, day));
     }
   }
 
@@ -805,7 +811,7 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
         const month = parseInt(parts[0], 10);
         const day = parseInt(parts[1], 10);
         // Use year 1604 to indicate unknown year (matches Apple convention)
-        return new Date(1604, month - 1, day);
+        return new Date(Date.UTC(1604, month - 1, day));
       }
     }
 
@@ -814,7 +820,7 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
       const month = parseInt(rest.substring(0, 2), 10);
       const day = parseInt(rest.substring(2, 4), 10);
       // Use year 1604 to indicate unknown year (matches Apple convention)
-      return new Date(1604, month - 1, day);
+      return new Date(Date.UTC(1604, month - 1, day));
     }
   }
 
@@ -823,7 +829,7 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
     const year = parseInt(dateStr.substring(0, 4), 10);
     const month = parseInt(dateStr.substring(4, 6), 10);
     const day = parseInt(dateStr.substring(6, 8), 10);
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day));
   }
 
   // Handle YYYY-MM-DD or ISO 8601

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.58.2](https://github.com/mattogodoy/nametag/compare/v0.58.1...v0.58.2) (2026-08-01)
+
+
+### Bug Fixes
+
+* anchor parsed vCard dates to UTC to stop per-sync date drift ([67ce49e](https://github.com/mattogodoy/nametag/commit/67ce49e39ff95b6f4289ca9429d41dc5c7719c7e))
+* anchor parsed vCard dates to UTC to stop per-sync date drift ([f5c56f4](https://github.com/mattogodoy/nametag/commit/f5c56f454e08a1c2c49afb11328d8040aa9b457f))
+
 ## [0.58.1](https://github.com/mattogodoy/nametag/compare/v0.58.0...v0.58.1) (2026-07-30)
 
 
