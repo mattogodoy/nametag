@@ -59,10 +59,12 @@ Nametag uses [release-please](https://github.com/googleapis/release-please) for 
 
 1. Commits land on `master` using conventional commit format.
 2. release-please automatically maintains an open **Release PR** that accumulates all unreleased changes, auto-suggests the next version based on commit types, updates `CHANGELOG.md` with grouped entries, and bumps the `package.json` version.
-3. An AI step generates a human-readable release summary in the PR body.
-4. A maintainer reviews and edits the PR: adjusting the version, rewriting the notes, or accepting it as-is.
-5. Merging the PR creates the release: a git tag and a GitHub Release.
+3. A maintainer reviews and edits the PR: adjusting the version, rewriting the notes, or accepting it as-is.
+4. Merging the PR creates the release: a git tag and a GitHub Release.
+5. An AI step rewrites the GitHub Release notes into a human-readable summary for end users and self-hosters, based on the pull requests included in the release.
 6. The release triggers Docker image builds and publishing automatically.
+
+The summary step calls the Gemini API and needs a `GEMINI_API_KEY` repository secret. It only runs on the `mattogodoy/nametag` repository, so forks are unaffected. It can also be re-run by hand from the Actions tab, using the "Release Please" workflow's manual trigger and passing an existing tag.
 
 ### Controlling versions
 
