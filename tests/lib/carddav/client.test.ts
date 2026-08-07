@@ -80,6 +80,35 @@ describe('CardDavClient error handling', () => {
     ).rejects.toBeInstanceOf(ExternalServiceError);
   });
 
+  it('does not reuse the stale ETag when the server omits one on PUT (issue #392)', async () => {
+    // RFC 6352 only recommends returning an ETag on PUT, so a server may
+    // legally omit it. Falling back to the old etag would store it as though
+    // it were fresh, making every later pull see a phantom remote change.
+    updateVCardMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const client = await createCardDavClient(connection);
+    const updated = await client.updateVCard(
+      { url: '/contacts/abc.vcf', etag: '"stale"', data: '' },
+      'BEGIN:VCARD\r\nEND:VCARD'
+    );
+
+    expect(updated.etag).toBe('');
+  });
+
+  it('keeps the ETag returned by the server on PUT', async () => {
+    updateVCardMock.mockResolvedValueOnce(
+      new Response('', { status: 200, headers: { etag: '"fresh"' } })
+    );
+
+    const client = await createCardDavClient(connection);
+    const updated = await client.updateVCard(
+      { url: '/contacts/abc.vcf', etag: '"stale"', data: '' },
+      'BEGIN:VCARD\r\nEND:VCARD'
+    );
+
+    expect(updated.etag).toBe('"fresh"');
+  });
+
   it('throws ExternalServiceError on 400 from deleteVCard', async () => {
     deleteVCardMock.mockResolvedValueOnce(
       new Response('nope', { status: 400, statusText: 'Bad Request' })

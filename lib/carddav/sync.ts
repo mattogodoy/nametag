@@ -240,12 +240,34 @@ export async function syncFromServer(
         }
 
         if (mapping) {
-          const remoteChanged = mapping.etag !== vCard.etag;
+          let remoteChanged = mapping.etag !== vCard.etag;
+          const remoteHash = buildLocalHash(parsedData);
 
           // Check if both local and remote changed since last sync
           const localChanged = mapping.lastLocalChange &&
             mapping.lastSyncedAt &&
             mapping.lastLocalChange > mapping.lastSyncedAt;
+
+          // A moved etag does not always mean the contact changed. Servers may
+          // omit the ETag on PUT (we then store an empty one) or re-serialize
+          // the card after we upload it, as Google and iCloud both do. Taking
+          // the etag at face value makes Nametag re-import the vCard it just
+          // wrote, every cycle, silently overwriting the person with whatever
+          // the parser produced (issue #392). Compare the parsed content
+          // against the hash recorded at the last import: if it matches, only
+          // the etag moved, so record the new etag and treat the remote as
+          // unchanged.
+          if (remoteChanged && mapping.remoteVersion === remoteHash) {
+            await prisma.cardDavMapping.update({
+              where: { id: mapping.id },
+              data: { etag: vCard.etag, href: vCard.url },
+            });
+            log.info(
+              { event: 'carddav.etag_refresh', personId: mapping.personId },
+              'Remote etag moved but content is unchanged; refreshing etag without re-importing',
+            );
+            remoteChanged = false;
+          }
 
           if (!remoteChanged && !localChanged) {
             // Heal stuck mappings left by pre-862a415 syncs: local person
@@ -288,8 +310,6 @@ export async function syncFromServer(
           if (!fullMapping) {
             continue;
           }
-
-          const remoteHash = buildLocalHash(parsedData);
 
           if (localChanged && remoteChanged) {
             // CONFLICT - both changed
