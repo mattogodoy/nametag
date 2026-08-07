@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 
 * implement SAAS_MODE tests and remove redundant .defaults ([c871f5d](https://github.com/mattogodoy/nametag/commit/c871f5d137e852a1a45b0e3c6dd4e3b62d7738ee))
-* remove ESLint auto-fix-on-save from VS Code settings ([3b85520](https://github.com/mattogodoy/nametag/commit/3b855203b8c371c5773f52c633a86b9f637a9e46))
 * remove ESLint auto-fix-on-save from VS Code settings ([20fe4ce](https://github.com/mattogodoy/nametag/commit/20fe4ce096bfd973107739100ef44c78626ef700))
 * resolve env booleans from being treated as strings ([0db866b](https://github.com/mattogodoy/nametag/commit/0db866bc1637b12d741504f135215c2a5f793058))
 * undo eslint auto fixers and prettier linting ([4f3b918](https://github.com/mattogodoy/nametag/commit/4f3b918d659fa68751ffadb37b98d4afe48d41ae))
@@ -30,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* anchor parsed vCard dates to UTC to stop per-sync date drift ([67ce49e](https://github.com/mattogodoy/nametag/commit/67ce49e39ff95b6f4289ca9429d41dc5c7719c7e))
 * anchor parsed vCard dates to UTC to stop per-sync date drift ([f5c56f4](https://github.com/mattogodoy/nametag/commit/f5c56f454e08a1c2c49afb11328d8040aa9b457f))
 
 ## [0.58.1](https://github.com/mattogodoy/nametag/compare/v0.58.0...v0.58.1) (2026-07-30)
@@ -38,9 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* close CSRF gap on 12 routes and harden three open endpoints ([93bf4e3](https://github.com/mattogodoy/nametag/commit/93bf4e3de862e2b43cc07b6709d42a569302c9f7))
 * close CSRF gap on 12 routes and harden three open endpoints ([4ad5ea0](https://github.com/mattogodoy/nametag/commit/4ad5ea0ddacee794467cd71c1310152f26d3b3f7))
-* make OpenAPI security match the code, and enforce spec coverage ([afc8bbe](https://github.com/mattogodoy/nametag/commit/afc8bbe39151e25718dfdddff71d34b91f3b30e6))
 * make OpenAPI security match the code, and enforce spec coverage ([90f59c7](https://github.com/mattogodoy/nametag/commit/90f59c70468c995fe8c4db6b17aaf34ef2144b41))
 
 ## [0.58.0](https://github.com/mattogodoy/nametag/compare/v0.57.1...v0.58.0) (2026-07-30)
@@ -56,7 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 
 * add 1024px PWA icons to prevent splash screen upscaling ([a7fe8af](https://github.com/mattogodoy/nametag/commit/a7fe8af54ac46415956889585889294c5cdc3d77))
-* add missing CardDAV translations for Italian, Russian and Dutch ([e5e355d](https://github.com/mattogodoy/nametag/commit/e5e355d33a707bd785c68bc5b0a55b94a07a6e17))
 * add missing CardDAV translations for Italian, Russian and Dutch ([b8a8929](https://github.com/mattogodoy/nametag/commit/b8a89291b025a844d9cc5436ede6c8fc751d5a86)), closes [#380](https://github.com/mattogodoy/nametag/issues/380)
 * detect iPadOS and give honest install guidance for unsupported browsers ([dd69183](https://github.com/mattogodoy/nametag/commit/dd6918328526640a7d6e06da78d96e69a50f3369))
 * hard-navigate offline instead of hanging on a stalled soft navigation ([09dbacb](https://github.com/mattogodoy/nametag/commit/09dbacb2d3963e11cb4213c47e4d8917d86626b9))
@@ -94,7 +89,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * dedupe important dates on export and stop exporting soft-deleted ones ([09baac9](https://github.com/mattogodoy/nametag/commit/09baac9469c95016345f17b5d470c6151f2d2ae5))
 * show "Relationship to you" dropdown in edit mode for all people ([e3f0b81](https://github.com/mattogodoy/nametag/commit/e3f0b8180a265eaaeb1eb80627aaf1b381ad37ae))
 * show Relationship to you dropdown in edit mode for all people ([9d2f4d3](https://github.com/mattogodoy/nametag/commit/9d2f4d304e6adabba4ee0a82e26b1c8f0a964e63))
-* stop duplicate date entries in CardDAV vCards ([a21c9d6](https://github.com/mattogodoy/nametag/commit/a21c9d68df94252b5e7bfcc0158ba552f4f70265))
 * stop duplicate date entries in CardDAV vCards ([#373](https://github.com/mattogodoy/nametag/issues/373)) ([1428bf3](https://github.com/mattogodoy/nametag/commit/1428bf342ec9e7c40bccd4c7034db846328163b4))
 
 ## [0.56.0](https://github.com/mattogodoy/nametag/compare/v0.55.0...v0.56.0) (2026-07-22)
@@ -110,7 +104,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 
 * **i18n:** correct nb-NO typo in trash pageDescription ([35c7652](https://github.com/mattogodoy/nametag/commit/35c76528e2d0aa6f8d78831184c0be406a6e713f))
-* **photos:** never upscale images smaller than PHOTO_SIZE ([95dcf02](https://github.com/mattogodoy/nametag/commit/95dcf02c3ca0a34f6f2dd1ce9306ff7b3a99502d))
 * **photos:** never upscale images smaller than PHOTO_SIZE ([e833559](https://github.com/mattogodoy/nametag/commit/e833559fca0b88767e8b460721cbeaa49cf19bf8)), closes [#320](https://github.com/mattogodoy/nametag/issues/320)
 * **test:** add importantDate.findMany mock for soft-delete refactor ([09d1e1b](https://github.com/mattogodoy/nametag/commit/09d1e1b4cde5538ee20dcf808d4d026ec555f43a))
 * **test:** use correct mock for important date permanent delete test ([675e24f](https://github.com/mattogodoy/nametag/commit/675e24fd320252aef1f812c50ca6d4bca30bd55c))
@@ -126,13 +119,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **carddav:** accept null addressBook fields when saving connection ([58359b2](https://github.com/mattogodoy/nametag/commit/58359b25dd61b19c019c3663ad690b4b80f6764a))
 * **carddav:** accept null addressBook fields when saving connection ([58d1880](https://github.com/mattogodoy/nametag/commit/58d1880ba8de9181296e236951df0d6e64230154)), closes [#332](https://github.com/mattogodoy/nametag/issues/332)
 * **map:** show count circle for co-located markers instead of overlapping ([55139f1](https://github.com/mattogodoy/nametag/commit/55139f1af312c26de918b4d08ae103d08dd97d6f)), closes [#361](https://github.com/mattogodoy/nametag/issues/361)
 * **map:** use marker ID lookup for co-located click handler and collapse attribution ([b89b945](https://github.com/mattogodoy/nametag/commit/b89b945069180815c74d2f2aeeaf745f91d711a7))
 * set max output tokens to prevent release notes truncation ([2e594fe](https://github.com/mattogodoy/nametag/commit/2e594fefaa11cd031117ed6ee3a27a211fe2e470))
 * show count circle for co-located map markers ([2f056d3](https://github.com/mattogodoy/nametag/commit/2f056d355ac65098545d63a257f0780d3029203f))
-* show feedback for skipped imports and allow updating existing contacts ([5175409](https://github.com/mattogodoy/nametag/commit/5175409beb99ac7d3c3297de78758aa512e39116))
 * show feedback for skipped imports and allow updating existing contacts ([30b126a](https://github.com/mattogodoy/nametag/commit/30b126a7266b01183588a14b5674e9edaacf1e41)), closes [#359](https://github.com/mattogodoy/nametag/issues/359)
 * warn before navigating away from person edit form with unsaved changes ([f62ef36](https://github.com/mattogodoy/nametag/commit/f62ef36e3878e6396f7ee318aef24fd36637314d)), closes [#321](https://github.com/mattogodoy/nametag/issues/321)
 * warn before navigating away with unsaved changes ([55698a7](https://github.com/mattogodoy/nametag/commit/55698a75157a1124582ba0408fac6bef7cd836cc))
@@ -166,12 +157,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * pin npm to public registry and purge Spotify Artifactory references ([9ff3b23](https://github.com/mattogodoy/nametag/commit/9ff3b23b396162055afb07f129a0f658308da6b7))
 * pin stripe to 20.0.0 to match expected API version ([4314a85](https://github.com/mattogodoy/nametag/commit/4314a850abaa6808cd1321875b92631717fccb5c))
 * remove sharp from docs dependencies (causes npm crash on CI) ([2f93a35](https://github.com/mattogodoy/nametag/commit/2f93a35dbe3e8b3d1faf49a7df774827fc748e5e))
-* remove sharp from docs dependencies (causes npm crash on CI) ([9c7f7f4](https://github.com/mattogodoy/nametag/commit/9c7f7f4a71580e1559c6f80d464591a057b223be))
 * resolve TypeScript errors in conversion endpoint and clean up test ([6b74732](https://github.com/mattogodoy/nametag/commit/6b74732cd0c4f8f5d06e153585cc4731a6657a1f))
 * retry geocoding without the second address line ([78cbf0a](https://github.com/mattogodoy/nametag/commit/78cbf0a8284941a4971a1400a0dfda53bcac5e71))
 * revoke blob URL on crop confirm/cancel in ProfileForm ([d6894dc](https://github.com/mattogodoy/nametag/commit/d6894dc2d411cc763677df300915321be60e1f6c))
 * switch docs workflow to yarn (npm 10.9.8 crashes on CI runners) ([1e9c63e](https://github.com/mattogodoy/nametag/commit/1e9c63e872aff2b399f9bbf62cb270602bbaac5e))
-* switch docs workflow to yarn (npm 10.9.8 crashes on CI runners) ([19e31f3](https://github.com/mattogodoy/nametag/commit/19e31f3548f497e2213d6a1b20e931f0293f0f95))
 * tighten HEIC detection, add auth test, clean up conversion endpoint ([a992bc3](https://github.com/mattogodoy/nametag/commit/a992bc38010f8e1173bd466cc3050700c4a69f37))
 * use --ignore-scripts for docs npm install to avoid CI crash ([55a0923](https://github.com/mattogodoy/nametag/commit/55a0923814c4bad2b892110aa4a8d7eb21780c18))
 * use 413 status for oversized files and add structured conversion logging ([82b3776](https://github.com/mattogodoy/nametag/commit/82b377667add2d8059bf97119e3b341995b3293e))
@@ -243,9 +232,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* add state parameter to OIDC authorization requests ([e14896b](https://github.com/mattogodoy/nametag/commit/e14896b27052d0f5d0a6db2f2f3b6833cd58f499))
 * add state parameter to OIDC authorization requests ([c4bd590](https://github.com/mattogodoy/nametag/commit/c4bd590e0b87416317cb2c721e1e168991a48aba)), closes [#337](https://github.com/mattogodoy/nametag/issues/337)
-* exclude soft-deleted contacts from group member counts ([bdbe7c1](https://github.com/mattogodoy/nametag/commit/bdbe7c129f600b90277a516066f78a731e67e017))
 * exclude soft-deleted contacts from group member counts ([176cf54](https://github.com/mattogodoy/nametag/commit/176cf54d18c455ade6884a2f7a368fb172539e93)), closes [#318](https://github.com/mattogodoy/nametag/issues/318)
 
 ## [0.51.1](https://github.com/mattogodoy/nametag/compare/v0.51.0...v0.51.1) (2026-07-03)
@@ -253,7 +240,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* prevent CardDAV sync from creating duplicate contacts ([43f1032](https://github.com/mattogodoy/nametag/commit/43f1032cf9f974b64e5939168ddde2af8547d10d))
 * prevent CardDAV sync from creating duplicate contacts ([#314](https://github.com/mattogodoy/nametag/issues/314)) ([1354fa1](https://github.com/mattogodoy/nametag/commit/1354fa1d71aca5fef5541a8d9d6580afd96eb59a))
 * reminder toggle ignoring clicks for dates with custom titles ([1c7cafa](https://github.com/mattogodoy/nametag/commit/1c7cafa026ef09ee294b470133c28c86103e01c6))
 
@@ -308,9 +294,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 
 * **carddav:** heal stuck mappings where photo was never re-exported ([844223a](https://github.com/mattogodoy/nametag/commit/844223a15d0903184080856ba3d40eae70ea15ad)), closes [#278](https://github.com/mattogodoy/nametag/issues/278)
-* **carddav:** re-export photo when remote vCard lacks PHOTO field ([4283001](https://github.com/mattogodoy/nametag/commit/42830019fa3c69eec0d72ea7680a3ed216c9d516))
 * **carddav:** re-export photo when remote vCard lacks PHOTO field ([2e01049](https://github.com/mattogodoy/nametag/commit/2e010499c240d16445b893b87d2fae6a057c1b33)), closes [#278](https://github.com/mattogodoy/nametag/issues/278)
-* display full country name on person detail page ([2d4ed20](https://github.com/mattogodoy/nametag/commit/2d4ed209647c93f45ebe76bc818ab4d9aaba2310))
 * display full country name on person detail page ([b486e66](https://github.com/mattogodoy/nametag/commit/b486e666072e0954b6a025e22e659685f9d9b070)), closes [#302](https://github.com/mattogodoy/nametag/issues/302)
 
 ## [0.49.0](https://github.com/mattogodoy/nametag/compare/v0.48.1...v0.49.0) (2026-06-14)
@@ -332,10 +316,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * address review findings for CardDAV group sync ([59f8b92](https://github.com/mattogodoy/nametag/commit/59f8b92a489788183f7a88140a67cfc7f72e2c8a))
 * extract fetchAndBuildIndex to satisfy react-hooks/set-state-in-effect lint rule ([762f859](https://github.com/mattogodoy/nametag/commit/762f85912bfc89d416d3e4ea97bbde843d1d05a6))
-* import all contact fields from JSON export ([e9c0c04](https://github.com/mattogodoy/nametag/commit/e9c0c04ddc636a9e906315dfced04b7049c8dad0))
 * import all contact fields from JSON export ([9b71ad1](https://github.com/mattogodoy/nametag/commit/9b71ad1c631ccddb37815fa217ef15d6bc8d3f11)), closes [#298](https://github.com/mattogodoy/nametag/issues/298)
 * remove unnecessary RouteContext arg from search-index test ([c315d92](https://github.com/mattogodoy/nametag/commit/c315d922dd563bace30aaaba8757e0b87671adc7))
-* sync group changes to CardDAV server ([7e9e344](https://github.com/mattogodoy/nametag/commit/7e9e344aca418bc2f83358164250e080ea351d8e))
 * sync group changes to CardDAV server ([f67c442](https://github.com/mattogodoy/nametag/commit/f67c4426fe03660de19107752487aa64b340b819)), closes [#287](https://github.com/mattogodoy/nametag/issues/287)
 * use accented chars in accent-insensitive test, add AND rationale comment ([f77387e](https://github.com/mattogodoy/nametag/commit/f77387ed2b7ece4d83f7c921c3cf6e49ac418828))
 
@@ -344,7 +326,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* harden API routes for bearer token compatibility ([43de2d3](https://github.com/mattogodoy/nametag/commit/43de2d345d5b548bed9b001734a0937311544bc8))
 * harden API routes for bearer token compatibility ([b5e570a](https://github.com/mattogodoy/nametag/commit/b5e570adc6cf35f6bbe4b95c97564dd09d49a6e6))
 * update groups test to expect random color default ([8b4d4d5](https://github.com/mattogodoy/nametag/commit/8b4d4d53bf9aff12947972e333ad6e18704cc92b))
 
@@ -365,7 +346,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **carddav:** prevent duplicate vCard creation when enabling sync ([8e36e90](https://github.com/mattogodoy/nametag/commit/8e36e90e56730308a31837830d3ee7ceb2502cab))
 * **carddav:** prevent duplicate vCard creation when enabling sync ([7f42048](https://github.com/mattogodoy/nametag/commit/7f4204807935bced54779ecbf72329c4e2dbe21f)), closes [#282](https://github.com/mattogodoy/nametag/issues/282)
 
 ## [0.47.3](https://github.com/mattogodoy/nametag/compare/v0.47.2...v0.47.3) (2026-05-18)
@@ -373,9 +353,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **carddav:** preserve local photos when remote vCard has no PHOTO field ([069e6d3](https://github.com/mattogodoy/nametag/commit/069e6d3ec8b7c9acfb990f5864934a61cb9231e1))
 * **carddav:** preserve local photos when remote vCard has no PHOTO field ([862a415](https://github.com/mattogodoy/nametag/commit/862a415abd3fe6904b3410818d4ccf557cc22eef)), closes [#278](https://github.com/mattogodoy/nametag/issues/278)
-* **i18n:** language selection not persisting on self-hosted instances ([0ad2547](https://github.com/mattogodoy/nametag/commit/0ad25479f5a63f373eae1e417a7b1691e743b7b2))
 * **i18n:** language selection not persisting on self-hosted instances ([bd9cd97](https://github.com/mattogodoy/nametag/commit/bd9cd974fc59866b99eccd90e197b87d9bce4232)), closes [#273](https://github.com/mattogodoy/nametag/issues/273)
 
 ## [0.47.2](https://github.com/mattogodoy/nametag/compare/v0.47.1...v0.47.2) (2026-05-15)
@@ -383,7 +361,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* use blob URL instead of data URL for photo crop to prevent browser freeze ([9cc3f11](https://github.com/mattogodoy/nametag/commit/9cc3f1117530ea1a351fd61b8ca26059aac8dbc4))
 * use blob URL instead of data URL for photo crop to prevent browser freeze ([b4ca2cc](https://github.com/mattogodoy/nametag/commit/b4ca2cc3db3f79dac8e4a92823635bf34e542056)), closes [#275](https://github.com/mattogodoy/nametag/issues/275)
 
 ## [0.47.1](https://github.com/mattogodoy/nametag/compare/v0.47.0...v0.47.1) (2026-05-12)
@@ -492,7 +469,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **mobile:** enable viewport-fit=cover so safe-area insets apply on iOS ([a1ae7ea](https://github.com/mattogodoy/nametag/commit/a1ae7ea01bf6d412d3992a7e72cf2e86ac726ca7))
 * **mobile:** enlarge modal close button and add bottom safe-area padding ([190e7ae](https://github.com/mattogodoy/nametag/commit/190e7aed6077f887176c9dcb9d083881f039204c))
 * **mobile:** ensure icon-only controls have 44px touch targets ([5b8f392](https://github.com/mattogodoy/nametag/commit/5b8f392b2546a18ecdfe82fa2a554ed16bf5ef6e))
-* **mobile:** ensure icon-only controls have 44px touch targets ([3920126](https://github.com/mattogodoy/nametag/commit/39201265c59c808b0d83ee2ba991055cc1f7a06a))
 * **mobile:** form controls render at 16px on phones, text-sm on desktop ([aee7fea](https://github.com/mattogodoy/nametag/commit/aee7fea641f950228b4e80115c8f56b831d13c5b))
 * **mobile:** match disabled-state and Cancel button heights to migrated Buttons ([ba63573](https://github.com/mattogodoy/nametag/commit/ba63573265fe7b43d207dbd171b38baee802af45))
 * **mobile:** nav and drawer respect safe-area insets ([4269d0c](https://github.com/mattogodoy/nametag/commit/4269d0c83f2e0855f71de1572c573926a99b56bf))
@@ -507,7 +483,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **people-merge:** preserve journal entry references when merging contacts ([45661fe](https://github.com/mattogodoy/nametag/commit/45661fe07c1085f4ace19acfa2969c125548e066))
 * **people-merge:** preserve journal entry references when merging contacts ([f514632](https://github.com/mattogodoy/nametag/commit/f514632a1b8130c45a875f79d55452411af8bd74))
 
 ## [0.44.4](https://github.com/mattogodoy/nametag/compare/v0.44.3...v0.44.4) (2026-04-30)
@@ -517,7 +492,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **dates:** preserve calendar date across timezones (closes [#218](https://github.com/mattogodoy/nametag/issues/218)) ([b1a6106](https://github.com/mattogodoy/nametag/commit/b1a6106cf04201bfd17580148a0f92edb3445162))
 * **dates:** preserve calendar date across timezones for last contact, anniversary, and vCard export ([68acf63](https://github.com/mattogodoy/nametag/commit/68acf632a28503693ea36f5bb15d16c7f2f7f739))
-* **important-dates:** show reminder limit message and rename Memorial to Date of Death ([617022c](https://github.com/mattogodoy/nametag/commit/617022c6e54dd3219fef2942af1ffb7f1a744ec1))
 * **important-dates:** show reminder limit message and rename Memorial to Date of Death ([25c734b](https://github.com/mattogodoy/nametag/commit/25c734b44d5af648023889b8e077b59b8a5618a5)), closes [#203](https://github.com/mattogodoy/nametag/issues/203)
 
 ## [0.44.3](https://github.com/mattogodoy/nametag/compare/v0.44.2...v0.44.3) (2026-04-29)
@@ -525,7 +499,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **photos:** downsize crops client-side and lift 10MB upload ceiling ([1290105](https://github.com/mattogodoy/nametag/commit/1290105fe0987e2f0bd294bff9737a5003501d87))
 * **photos:** downsize crops client-side and lift 10MB upload ceiling ([55ce430](https://github.com/mattogodoy/nametag/commit/55ce430d5dda75feae03e01cbe5d311e100210a9))
 
 ## [0.44.2](https://github.com/mattogodoy/nametag/compare/v0.44.1...v0.44.2) (2026-04-29)
@@ -533,7 +506,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **graph:** clone edges per recompose so forceLink sees fresh string ids ([e2f994b](https://github.com/mattogodoy/nametag/commit/e2f994b3e5cbda09b7c0e157f3cdf0e77557d3f1))
 * **graph:** clone edges per recompose so forceLink sees fresh string ids ([ecf46a3](https://github.com/mattogodoy/nametag/commit/ecf46a3061623e45c6d5f95353d935d100961cbb))
 
 ## [0.44.1](https://github.com/mattogodoy/nametag/compare/v0.44.0...v0.44.1) (2026-04-28)
@@ -541,7 +513,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **graph:** photos render at default zoom, no more black-circle stub ([341fa6a](https://github.com/mattogodoy/nametag/commit/341fa6af8573a01ca55f92af51fa217fe50d6b66))
 * **graph:** photos render at default zoom, no more black-circle stub ([0bf19f1](https://github.com/mattogodoy/nametag/commit/0bf19f108cee36bb876dc95214a725858fdb46ea))
 
 ## [0.44.0](https://github.com/mattogodoy/nametag/compare/v0.43.3...v0.44.0) (2026-04-28)
@@ -556,9 +527,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **carddav:** recover from server-deleted contacts instead of looping forever ([0f2248a](https://github.com/mattogodoy/nametag/commit/0f2248aa248ab865836a25b15bb722e20800ec88))
 * **carddav:** recover from server-deleted contacts instead of looping forever ([c3784d8](https://github.com/mattogodoy/nametag/commit/c3784d8bc4bb8569d222381c998ecd628e9d7a78))
-* **carddav:** use item grouping for non-standard EMAIL/TEL/ADR labels ([161de9f](https://github.com/mattogodoy/nametag/commit/161de9fe146843ab221caa49b024f9052e82b095))
 * **carddav:** use item grouping for non-standard EMAIL/TEL/ADR labels ([bd71618](https://github.com/mattogodoy/nametag/commit/bd716188ea1d6c687401ec44d18d196dcfc6fa26))
 
 ## [0.43.2](https://github.com/mattogodoy/nametag/compare/v0.43.1...v0.43.2) (2026-04-22)
@@ -566,7 +535,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* **carddav:** drop REV/PRODID round-trip and fix backslash unescape ([af1b922](https://github.com/mattogodoy/nametag/commit/af1b922e00589c3a77ded206cb223138766bf636))
 * **carddav:** drop REV/PRODID round-trip and fix backslash unescape ([8b01d79](https://github.com/mattogodoy/nametag/commit/8b01d7972e5cfbe66656454d9e7a4dc18367ab6c))
 
 ## [0.43.1](https://github.com/mattogodoy/nametag/compare/v0.43.0...v0.43.1) (2026-04-22)
@@ -574,7 +542,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
-* **carddav:** log outgoing vCard on push failure ([7417d2d](https://github.com/mattogodoy/nametag/commit/7417d2dd2eb7e7f3f04b2c93154a84d981a4e6db))
 * **carddav:** log outgoing vCard on push failure ([c8aedab](https://github.com/mattogodoy/nametag/commit/c8aedabd38a0c93952a048cab71a9861f235eff8))
 
 
@@ -643,7 +610,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* use native ARM64 runner instead of QEMU emulation ([0a3b224](https://github.com/mattogodoy/nametag/commit/0a3b224062dc640a22d7e04cc74b7e928f57ac19))
 * use native ARM64 runner instead of QEMU emulation ([fb1e053](https://github.com/mattogodoy/nametag/commit/fb1e05300ba1128bf875631f11c6c92a7d17b7dd))
 
 ## [0.42.1](https://github.com/mattogodoy/nametag/compare/v0.42.0...v0.42.1) (2026-04-09)
@@ -651,9 +617,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* add z-index for navbar to fix search stacking issue ([d213f06](https://github.com/mattogodoy/nametag/commit/d213f0632a865ae84e2320ea48f721f32779e1cf))
 * add z-index for navbar to fix search stacking issue ([3db785d](https://github.com/mattogodoy/nametag/commit/3db785d2d950def517fa15f8d5cdeedbb92109c4))
-* make orphan warning tooltip readable in light mode ([2571814](https://github.com/mattogodoy/nametag/commit/2571814f2a1055b389a5708218c34e4180248c1b))
 * make orphan warning tooltip readable in light mode ([b48876f](https://github.com/mattogodoy/nametag/commit/b48876f2e5a5450d1d8d5cd347e1bd44f182612b)), closes [#209](https://github.com/mattogodoy/nametag/issues/209)
 
 ## [0.42.0](https://github.com/mattogodoy/nametag/compare/v0.41.0...v0.42.0) (2026-03-31)
@@ -666,9 +630,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* prevent UniqueConstraintViolation on personId during CardDAV import ([e7c809f](https://github.com/mattogodoy/nametag/commit/e7c809f80c67d76cec5bb02e1bf2d3db5eb62766))
 * prevent UniqueConstraintViolation on personId during CardDAV import ([f1841de](https://github.com/mattogodoy/nametag/commit/f1841de340acaa6825d2d24ea1acd44a27c1d307)), closes [#197](https://github.com/mattogodoy/nametag/issues/197)
-* suppress already-mapped contacts from CardDAV import UI ([e2a87c5](https://github.com/mattogodoy/nametag/commit/e2a87c51e865c3bffd1ae089c0bdbab308e5bbd2))
 * suppress already-mapped contacts from CardDAV import UI ([ef05544](https://github.com/mattogodoy/nametag/commit/ef05544612279124c5ce1998f672de2d58e465d7))
 
 ## [0.41.0](https://github.com/mattogodoy/nametag/compare/v0.40.0...v0.41.0) (2026-03-29)
@@ -747,7 +709,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
-* UI overhaul — warm palette, accessibility, design tokens, performance ([7b45f74](https://github.com/mattogodoy/nametag/commit/7b45f7454e42de31b1b932f545b44dc1bce193d8))
 * UI overhaul — warm palette, accessibility, design tokens, performance ([1374679](https://github.com/mattogodoy/nametag/commit/137467965cf89beae83eec21897f742dc2a00e5f))
 
 ## [0.39.2](https://github.com/mattogodoy/nametag/compare/v0.39.1...v0.39.2) (2026-03-23)
@@ -755,7 +716,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* resolve CSRF origin rejection and legacy date validation on self-hosted setups ([da610ab](https://github.com/mattogodoy/nametag/commit/da610ab5200f9b21a5ea8d286ee6346fd7011d4f))
 * resolve CSRF origin rejection and legacy date validation on self-hosted setups ([ac3a8ad](https://github.com/mattogodoy/nametag/commit/ac3a8adbc3cbf799878a9d4c8bb9526fe633401c)), closes [#180](https://github.com/mattogodoy/nametag/issues/180)
 
 ## [0.39.1](https://github.com/mattogodoy/nametag/compare/v0.39.0...v0.39.1) (2026-03-18)
@@ -904,7 +864,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * show 0-0 instead of 1-0 when filters return no results ([daa4c98](https://github.com/mattogodoy/nametag/commit/daa4c98b70fa16d88096b95d2a9020f808a8aa23))
 * show empty table instead of empty state when filters yield no results ([ace787b](https://github.com/mattogodoy/nametag/commit/ace787be7a1957155cf83c446fdf7008e3820fc4))
 * use useSyncExternalStore for BackLink sessionStorage read ([e5e9c3a](https://github.com/mattogodoy/nametag/commit/e5e9c3a2c3f721f816adc9b21b046c1f36145e1b))
-* use useSyncExternalStore for BackLink sessionStorage read ([f11a73a](https://github.com/mattogodoy/nametag/commit/f11a73a4650a4fc987fe699619e6a41256668909))
 
 ## [0.34.0](https://github.com/mattogodoy/nametag/compare/v0.33.0...v0.34.0) (2026-03-10)
 
@@ -979,7 +938,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* normalize unknown-year dates for non-YEARS reminder intervals ([e32d5f6](https://github.com/mattogodoy/nametag/commit/e32d5f658f84970a1a84d5e5ee068eccc605ed3f))
 * normalize unknown-year dates for non-YEARS reminder intervals ([0653f3c](https://github.com/mattogodoy/nametag/commit/0653f3cba570b2f9f0b706912edffe02d79ab7f8))
 
 ## [0.31.0](https://github.com/mattogodoy/nametag/compare/v0.30.0...v0.31.0) (2026-03-05)
@@ -1102,9 +1060,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* handle symmetric relationship types with null inverseId ([094953f](https://github.com/mattogodoy/nametag/commit/094953f90c7d5bb5ce100f847ceb435b5cd2ae0c))
 * handle symmetric relationship types with null inverseId ([6ed69b9](https://github.com/mattogodoy/nametag/commit/6ed69b9491a267d386c50ee9212077e83385509b))
-* remove non-null assertions on route context.params ([eff1260](https://github.com/mattogodoy/nametag/commit/eff1260d080e6343b598ede2cf02454874e4d2f0))
 * remove non-null assertions on route context.params ([7972025](https://github.com/mattogodoy/nametag/commit/7972025540b9097abc60e143dbd3bdf415b3ddb0)), closes [#78](https://github.com/mattogodoy/nametag/issues/78)
 
 ## [0.27.2](https://github.com/mattogodoy/nametag/compare/v0.27.1...v0.27.2) (2026-03-02)
@@ -1142,7 +1098,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * clarify CardDAV import relationship labels in all languages ([ca65f55](https://github.com/mattogodoy/nametag/commit/ca65f55fa6786abac0fb8783fa0d44d51be85f04))
 * filter soft-deleted importantDates from API responses ([06c928e](https://github.com/mattogodoy/nametag/commit/06c928e56b42a67f9bd2eef1fe3e393be02c8277))
 * filter soft-deleted importantDates from GET and PUT responses ([3b36558](https://github.com/mattogodoy/nametag/commit/3b365589cf03bd2f683fce8a2a08d5036f389d2c)), closes [#56](https://github.com/mattogodoy/nametag/issues/56)
-* handle empty PR output in release-please workflow ([3007131](https://github.com/mattogodoy/nametag/commit/3007131e783a477aea22b8b4a92824399f22c93d))
 * handle empty PR output in release-please workflow ([1cbab07](https://github.com/mattogodoy/nametag/commit/1cbab074e6740dea4a405101833ac45f7eb3848c))
 * lowercase relationship type in graph edge labels ([7c74673](https://github.com/mattogodoy/nametag/commit/7c7467308610a7970a6e942de158fac8db63f640))
 * shorten graph edge labels and handle user direction ([aed93a8](https://github.com/mattogodoy/nametag/commit/aed93a836fb558b511ab2ddf70518c865b06ab73))
@@ -1156,7 +1111,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* include all person fields in JSON export ([9bd8991](https://github.com/mattogodoy/nametag/commit/9bd89917e9323ae8c88839ca816936f6ff488fc9))
 * include all person fields in JSON export ([56cd239](https://github.com/mattogodoy/nametag/commit/56cd2393fb31c379c9a47a04657b33955e5b495c)), closes [#106](https://github.com/mattogodoy/nametag/issues/106) [#107](https://github.com/mattogodoy/nametag/issues/107)
 * prepend AI release notes to GitHub releases ([0886c16](https://github.com/mattogodoy/nametag/commit/0886c16a4f795486f38c52743bca12b08f918fb3))
 * tighten AI release notes prompt to avoid truncation ([9fddcd3](https://github.com/mattogodoy/nametag/commit/9fddcd3224e53af66ac324083b4538e106c1d260))

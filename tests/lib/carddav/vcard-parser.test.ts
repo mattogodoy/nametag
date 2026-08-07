@@ -379,9 +379,10 @@ END:VCARD`;
       const parsed = parseVCard(vCard);
 
       expect(parsed.importantDates).toHaveLength(1);
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(1604); // Year unknown marker
-      expect(parsed.importantDates[0].date.getMonth()).toBe(4);
-      expect(parsed.importantDates[0].date.getDate()).toBe(15);
+      // Calendar dates are stored as UTC midnight, so assert the UTC instant.
+      // Local getters would report the previous day west of UTC, and 1604
+      // predates standard time so every zone has an offset there.
+      expect(parsed.importantDates[0].date.toISOString()).toBe('1604-05-15T00:00:00.000Z'); // 1604 = year unknown marker
     });
 
     it('should parse BDAY with year-omitted (v3 format)', () => {
@@ -394,9 +395,7 @@ END:VCARD`;
       const parsed = parseVCard(vCard);
 
       expect(parsed.importantDates).toHaveLength(1);
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(1604);
-      expect(parsed.importantDates[0].date.getMonth()).toBe(4);
-      expect(parsed.importantDates[0].date.getDate()).toBe(15);
+      expect(parsed.importantDates[0].date.toISOString()).toBe('1604-05-15T00:00:00.000Z');
     });
 
     it('should parse BDAY in compact format (v3)', () => {
@@ -409,7 +408,7 @@ END:VCARD`;
       const parsed = parseVCard(vCard);
 
       expect(parsed.importantDates).toHaveLength(1);
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(1990);
+      expect(parsed.importantDates[0].date.toISOString()).toBe('1990-05-15T00:00:00.000Z');
     });
 
     it('should handle X-APPLE-OMIT-YEAR parameter', () => {
@@ -421,7 +420,7 @@ END:VCARD`;
 
       const parsed = parseVCard(vCard);
 
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(1604);
+      expect(parsed.importantDates[0].date.toISOString()).toBe('1604-05-15T00:00:00.000Z');
     });
 
     it('should parse ANNIVERSARY', () => {
@@ -448,7 +447,7 @@ END:VCARD`;
       const parsed = parseVCard(vCard);
 
       expect(parsed.lastContact).toBeDefined();
-      expect(parsed.lastContact?.getFullYear()).toBe(2023);
+      expect(parsed.lastContact?.toISOString()).toBe('2023-12-25T00:00:00.000Z');
     });
   });
 
@@ -568,7 +567,7 @@ END:VCARD`;
       expect(parsed.importantDates).toHaveLength(1);
       expect(parsed.importantDates[0].type).toBeNull();
       expect(parsed.importantDates[0].title).toBe('Custom Date');
-      expect(parsed.importantDates[0].date.getFullYear()).toBe(2023);
+      expect(parsed.importantDates[0].date.toISOString()).toBe('2023-06-15T00:00:00.000Z');
     });
 
     it('should map X-ABDATE with Anniversary label to predefined type', () => {
@@ -937,7 +936,7 @@ END:VCARD`;
 
       const birthday = parsed.importantDates.find(d => d.type === 'birthday');
       expect(birthday?.title).toBe('');
-      expect(birthday?.date.getFullYear()).toBe(1604); // Year unknown
+      expect(birthday?.date.toISOString()).toBe('1604-01-22T00:00:00.000Z'); // 1604 = year unknown
     });
   });
 
