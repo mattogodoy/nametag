@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.58.4](https://github.com/mattogodoy/nametag/compare/v0.58.3...v0.58.4) (2026-08-07)
+
+
+### Bug Fixes
+
+* **people:** show the full name in the people list on narrow screens ([50a1072](https://github.com/mattogodoy/nametag/commit/50a10721a108b1acc798bdc2e3201eeacfc370e6))
+* **people:** show the full name in the people list on narrow screens ([47c1c36](https://github.com/mattogodoy/nametag/commit/47c1c36ab08199f3cdd9977e8f2e8503264a6c0e))
+
 ## [0.58.3](https://github.com/mattogodoy/nametag/compare/v0.58.2...v0.58.3) (2026-08-06)
 
 
