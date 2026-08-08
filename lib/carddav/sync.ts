@@ -258,9 +258,21 @@ export async function syncFromServer(
           // the etag moved, so record the new etag and treat the remote as
           // unchanged.
           if (remoteChanged && mapping.remoteVersion === remoteHash) {
+            // The hash only covers fields that map onto a Person, so an edit
+            // confined to a round-tripped property (SOURCE, KIND, LOGO,
+            // CLIENTPIDMAP and the like) looks identical here. Re-read them
+            // alongside the etag, otherwise the next push would re-emit the
+            // copy we stored earlier and revert the server's edit.
+            const guardParsed = parseVCard(vCard.data);
             await prisma.cardDavMapping.update({
               where: { id: mapping.id },
-              data: { etag: vCard.etag, href: vCard.url },
+              data: {
+                etag: vCard.etag,
+                href: vCard.url,
+                preservedProperties: guardParsed.unknownProperties.length > 0
+                  ? guardParsed.unknownProperties
+                  : undefined,
+              },
             });
             log.info(
               { event: 'carddav.etag_refresh', personId: mapping.personId },

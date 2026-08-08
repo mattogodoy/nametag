@@ -735,6 +735,86 @@ describe('CardDAV Sync Engine', () => {
         expect(result.updatedLocally).toBe(1);
       });
 
+      it('should refresh preserved properties when skipping the import', async () => {
+        // buildLocalHash only covers fields Nametag maps onto a Person, so a
+        // server-side edit confined to a round-tripped property (SOURCE, KIND,
+        // LOGO, CLIENTPIDMAP and friends) hashes identically. Acknowledging the
+        // new etag without re-reading those properties would leave the stored
+        // copy stale, and the next push would revert the server's edit.
+        const uid = 'preserved-uid';
+        const mappingId = 'mapping-preserved';
+        const parsed = makeParsedVCard(uid, 'Frank');
+
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({
+            id: mappingId,
+            uid,
+            etag: 'etag-stale',
+            lastLocalChange: null,
+            lastSyncedAt: new Date('2025-01-01'),
+            remoteVersion: buildLocalHash(parsed),
+            preservedProperties: [{ key: 'SOURCE', value: 'http://old/x.vcf', params: {} }],
+          }),
+        ]);
+        mocks.fetchVCards.mockResolvedValue([
+          {
+            url: '/contacts/preserved.vcf',
+            etag: 'etag-new',
+            data: 'BEGIN:VCARD\nVERSION:3.0\nUID:' + uid
+              + '\nFN:Frank\nN:Frank;;;;\nSOURCE:http://new/x.vcf\nEND:VCARD',
+          },
+        ]);
+        mocks.vCardToPerson.mockReturnValue(parsed);
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+
+        await syncFromServer(USER_ID);
+
+        expect(mocks.updatePersonFromVCard).not.toHaveBeenCalled();
+        expect(mocks.cardDavMappingUpdate).toHaveBeenCalledWith({
+          where: { id: mappingId },
+          data: expect.objectContaining({
+            etag: 'etag-new',
+            preservedProperties: [
+              expect.objectContaining({ key: 'SOURCE', value: 'http://new/x.vcf' }),
+            ],
+          }),
+        });
+      });
+
+      it('should still heal a photo mismatch when the import is skipped', async () => {
+        // Servers that strip PHOTO also tend to be the ones that move the etag
+        // without changing anything else, so the guard must not swallow the
+        // re-export that puts the photo back (see 862a415, 2e01049, 844223a).
+        const uid = 'guard-photo-uid';
+        const mappingId = 'mapping-guard-photo';
+        const parsed = makeParsedVCard(uid, 'Frank');
+
+        mocks.cardDavMappingFindMany.mockResolvedValue([
+          makeLightMapping({
+            id: mappingId,
+            uid,
+            etag: 'etag-stale',
+            lastLocalChange: null,
+            lastSyncedAt: new Date('2025-01-01'),
+            remoteVersion: buildLocalHash(parsed),
+            person: { photo: 'local-photo.jpg' },
+          }),
+        ]);
+        mocks.fetchVCards.mockResolvedValue([
+          makeVCard(uid, '/contacts/guard-photo.vcf', 'etag-new', 'Frank'),
+        ]);
+        mocks.vCardToPerson.mockReturnValue(parsed);
+        mocks.cardDavPendingImportCount.mockResolvedValue(0);
+
+        await syncFromServer(USER_ID);
+
+        expect(mocks.updatePersonFromVCard).not.toHaveBeenCalled();
+        expect(mocks.cardDavMappingUpdate).toHaveBeenCalledWith({
+          where: { id: mappingId },
+          data: expect.objectContaining({ syncStatus: 'pending' }),
+        });
+      });
+
       it('should not raise a conflict when the local side changed and only the etag moved', async () => {
         const uid = 'false-conflict-uid';
         const mappingId = 'mapping-false-conflict';
