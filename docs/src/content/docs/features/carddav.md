@@ -77,6 +77,14 @@ If you're setting up sync for the first time and already have contacts in Nameta
 | Auto-sync interval range | 60 seconds to 24 hours (default: 12 hours) |
 | Cron inter-user delay | 200ms between users |
 
+### How Nametag decides a contact changed
+
+Nametag tracks each synced contact's ETag, a version marker the server updates whenever the contact's data changes. When the ETag moves, the contact is pulled back in.
+
+An ETag on its own isn't always a reliable signal. Some servers don't return one when Nametag uploads a contact, and others (Google and iCloud among them) rewrite the contact after receiving it, which moves the ETag even though nothing actually changed. To avoid re-importing contacts it just wrote, Nametag also compares a content fingerprint of the incoming contact against the last version it imported. If the fingerprint matches, it records the new ETag and leaves the contact alone.
+
+This is also why a contact edited only in Nametag won't be flagged as a conflict just because the server reshuffled its copy.
+
 ## Troubleshooting
 
 - **Wrong password type**: Google and iCloud require an app-specific password, not your regular account password. If sign-in fails, double-check you generated one and are using it here.
