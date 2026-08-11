@@ -130,6 +130,12 @@ export async function consumeUnsubscribeToken(
       where: { id: unsubToken.entityId },
       data: { contactReminderEnabled: false },
     });
+  } else if (unsubToken.reminderType === 'WEEKLY_DIGEST') {
+    // For weekly digest tokens, entityId holds the user id rather than an entity id
+    await prisma.user.update({
+      where: { id: unsubToken.entityId },
+      data: { weeklyDigestEnabled: false },
+    });
   }
 
   return {

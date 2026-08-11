@@ -1931,6 +1931,7 @@
       "title": "Disabled Successfully",
       "importantDate": "You will no longer receive reminders for this event. You can re-enable this reminder anytime from your settings.",
       "contact": "You will no longer receive reminders to contact this person. You can re-enable this reminder anytime from your settings.",
+      "weeklyDigest": "You will no longer receive the weekly summary email. You can re-enable it anytime from your settings.",
       "reEnableInSettings": "Manage Reminder Settings",
       "goToDashboard": "Go to Dashboard"
     },

@@ -1931,6 +1931,7 @@
       "title": "Deaktivert",
       "importantDate": "Du vil ikke lenger motta påminnelser om denne hendelsen. Du kan aktivere påminnelsen igjen når som helst i innstillingene dine.",
       "contact": "Du vil ikke lenger motta påminnelser om å kontakte denne personen. Du kan aktivere påminnelsen igjen når som helst i innstillingene dine.",
+      "weeklyDigest": "Du vil ikke lenger motta den ukentlige oppsummeringen på e-post. Du kan aktivere den igjen når som helst i innstillingene dine.",
       "reEnableInSettings": "Administrer påminnelsesinnstillinger",
       "goToDashboard": "Gå til dashbordet"
     },

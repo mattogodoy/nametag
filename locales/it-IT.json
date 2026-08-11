@@ -1931,6 +1931,7 @@
       "title": "Disabilitato con successo",
       "importantDate": "Non riceverai più promemoria per questo evento. Puoi riabilitare questo promemoria in qualsiasi momento dalle tue impostazioni.",
       "contact": "Non riceverai più promemoria per ricontattare questa persona. Puoi riabilitare questo promemoria in qualsiasi momento dalle tue impostazioni.",
+      "weeklyDigest": "Non riceverai più l'email con il riepilogo settimanale. Puoi riabilitarla in qualsiasi momento dalle tue impostazioni.",
       "reEnableInSettings": "Gestisci impostazioni promemoria",
       "goToDashboard": "Vai alla dashboard"
     },

@@ -92,9 +92,11 @@ function UnsubscribeContent() {
             {t('success.title')}
           </h1>
           <p className="text-muted mb-6">
-            {reminderType === 'IMPORTANT_DATE'
-              ? t('success.importantDate')
-              : t('success.contact')}
+            {reminderType === 'IMPORTANT_DATE' && t('success.importantDate')}
+            {reminderType === 'WEEKLY_DIGEST' && t('success.weeklyDigest')}
+            {reminderType !== 'IMPORTANT_DATE' &&
+              reminderType !== 'WEEKLY_DIGEST' &&
+              t('success.contact')}
           </p>
           <div className="space-y-3">
             <Link
