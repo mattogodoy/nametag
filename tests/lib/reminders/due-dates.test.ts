@@ -4,6 +4,7 @@ import {
   getIntervalMs,
   shouldSendImportantDateReminder,
   shouldSendContactReminder,
+  shouldSendLeadReminder,
 } from '@/lib/reminders/due-dates';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00`);
@@ -214,6 +215,123 @@ describe('shouldSendImportantDateReminder, RECURRING non-YEARS interval, unknown
     // year rather than resyncing to the calendar day of the actual event.
     expect(
       shouldSendImportantDateReminder({ ...base, date: unknownYearDate }, d('2026-05-10'))
+    ).toBe(true);
+  });
+});
+
+describe('shouldSendLeadReminder', () => {
+  const occurrence = d('2026-05-12');
+
+  it('fires on the exact lead day', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: d('2026-05-05'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(true);
+  });
+
+  it('does not fire before the window opens', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: d('2026-05-04'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(false);
+  });
+
+  // Catch-up: the user set a 7-day lead when the event was already 4 days out.
+  // Telling them late beats not telling them at all.
+  it('fires mid-window when it has not fired for this occurrence yet', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: d('2026-05-08'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(true);
+  });
+
+  it('does not fire again later in the same window', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: d('2026-05-08'),
+        leadDays: 7,
+        lastLeadReminderSent: d('2026-05-05'),
+      })
+    ).toBe(false);
+  });
+
+  it('fires again next year, since the previous send predates this window', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: d('2026-05-05'),
+        leadDays: 7,
+        lastLeadReminderSent: d('2025-05-05'),
+      })
+    ).toBe(true);
+  });
+
+  // The day-of email owns the event day. A lead email there would duplicate it.
+  it('does not fire on the occurrence day itself', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: occurrence,
+        leadDays: 7,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(false);
+  });
+
+  it('does not fire after the occurrence has passed', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: d('2026-05-13'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(false);
+  });
+
+  it('never fires when lead days is 0', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: occurrence,
+        today: d('2026-05-12'),
+        leadDays: 0,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(false);
+  });
+
+  it('handles a window that crosses a month boundary', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2026-06-03'),
+        today: d('2026-05-27'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(true);
+  });
+
+  it('handles a 30 day window that crosses a year boundary', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2027-01-10'),
+        today: d('2026-12-11'),
+        leadDays: 30,
+        lastLeadReminderSent: null,
+      })
     ).toBe(true);
   });
 });

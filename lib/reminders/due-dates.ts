@@ -184,3 +184,54 @@ export function shouldSendContactReminder(
 
   return true;
 }
+
+export interface LeadReminderInput {
+  /** The next time this event occurs, from getNextOccurrence(). */
+  nextOccurrence: Date;
+  today: Date;
+  /** Already resolved through resolveLeadDays(). 0 means day-of only. */
+  leadDays: number;
+  lastLeadReminderSent: Date | null;
+}
+
+/**
+ * Whether an advance-notice email is due today for this occurrence.
+ *
+ * The window runs from `nextOccurrence - leadDays` up to, but not including,
+ * the occurrence itself, which the day-of reminder owns.
+ *
+ * The `lastLeadReminderSent < windowStart` check does double duty. Within a
+ * window it prevents a repeat send. Across occurrences it re-arms, because
+ * last year's send necessarily predates this year's window. That is why no
+ * per-occurrence tracking table is needed.
+ *
+ * A consequence worth knowing: if the window is already open when the user
+ * first sets a lead time, the email fires that same day rather than being
+ * skipped. Late notice beats none.
+ */
+export function shouldSendLeadReminder({
+  nextOccurrence,
+  today,
+  leadDays,
+  lastLeadReminderSent,
+}: LeadReminderInput): boolean {
+  if (leadDays <= 0) return false;
+
+  const occurrence = startOfDay(nextOccurrence);
+  const todayStart = startOfDay(today);
+
+  const windowStart = new Date(occurrence);
+  windowStart.setDate(windowStart.getDate() - leadDays);
+
+  if (todayStart.getTime() < windowStart.getTime()) return false;
+  if (todayStart.getTime() >= occurrence.getTime()) return false;
+
+  if (
+    lastLeadReminderSent &&
+    startOfDay(lastLeadReminderSent).getTime() >= windowStart.getTime()
+  ) {
+    return false;
+  }
+
+  return true;
+}
