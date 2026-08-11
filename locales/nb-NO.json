@@ -1840,6 +1840,16 @@
       "button": "Åpne Nametag",
       "unsubscribe": "Deaktiver denne påminnelsen"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}s {eventType} er om {daysUntil} dager",
+      "subjectOneDay": "{personName}s {eventType} er i morgen",
+      "heading": "Kommer snart",
+      "infoBox": "{personName}s {eventType} er {date}, om {daysUntil} dager.",
+      "infoBoxOneDay": "{personName}s {eventType} er i morgen, {date}.",
+      "body": "Et lite varsel så du har tid til å planlegge noe.",
+      "button": "Åpne Nametag",
+      "unsubscribe": "Deaktiver denne påminnelsen"
+    },
     "contactReminder": {
       "subject": "Tid for å ta igjen med {personName}",
       "heading": "Hold kontakten",

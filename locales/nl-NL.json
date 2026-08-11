@@ -1840,6 +1840,16 @@
       "button": "Nametag openen",
       "unsubscribe": "Deze herinnering uitschakelen"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}'s {eventType} is over {daysUntil} dagen",
+      "subjectOneDay": "{personName}'s {eventType} is morgen",
+      "heading": "Bijna zover",
+      "infoBox": "{personName}'s {eventType} is op {date}, over {daysUntil} dagen.",
+      "infoBoxOneDay": "{personName}'s {eventType} is morgen, op {date}.",
+      "body": "Een klein berichtje zodat je tijd hebt om iets te plannen.",
+      "button": "Nametag openen",
+      "unsubscribe": "Deze herinnering uitschakelen"
+    },
     "contactReminder": {
       "subject": "Tijd om bij te praten met {personName}",
       "heading": "Blijf in contact",

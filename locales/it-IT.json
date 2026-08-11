@@ -1840,6 +1840,16 @@
       "button": "Apri Nametag",
       "unsubscribe": "Disabilita questo promemoria"
     },
+    "importantDateLeadReminder": {
+      "subject": "Il/la {eventType} di {personName} è tra {daysUntil} giorni",
+      "subjectOneDay": "Il/la {eventType} di {personName} è domani",
+      "heading": "Tra poco",
+      "infoBox": "Il/la {eventType} di {personName} è il {date}, tra {daysUntil} giorni.",
+      "infoBoxOneDay": "Il/la {eventType} di {personName} è domani, il {date}.",
+      "body": "Un piccolo preavviso per darti il tempo di organizzare qualcosa.",
+      "button": "Apri Nametag",
+      "unsubscribe": "Disabilita questo promemoria"
+    },
     "contactReminder": {
       "subject": "È tempo di ricontattare {personName}",
       "heading": "Resta in contatto",

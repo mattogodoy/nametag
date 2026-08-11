@@ -1840,6 +1840,16 @@
       "button": "打开 Nametag",
       "unsubscribe": "禁用此提醒"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName} 的 {eventType} 还有 {daysUntil} 天",
+      "subjectOneDay": "{personName} 的 {eventType} 是明天",
+      "heading": "快到了",
+      "infoBox": "{personName} 的 {eventType} 在 {date}，还有 {daysUntil} 天。",
+      "infoBoxOneDay": "{personName} 的 {eventType} 是明天，{date}。",
+      "body": "提前通知一下，让你有时间准备。",
+      "button": "打开 Nametag",
+      "unsubscribe": "禁用此提醒"
+    },
     "contactReminder": {
       "subject": "是时候与 {personName} 赶上了",
       "heading": "保持联系",

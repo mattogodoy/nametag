@@ -1840,6 +1840,16 @@
       "button": "Открыть Nametag",
       "unsubscribe": "Отключить это напоминание"
     },
+    "importantDateLeadReminder": {
+      "subject": "{eventType} у {personName} через {daysUntil} дней",
+      "subjectOneDay": "{eventType} у {personName} завтра",
+      "heading": "Уже скоро",
+      "infoBox": "{eventType} у {personName} состоится {date}, через {daysUntil} дней.",
+      "infoBoxOneDay": "{eventType} у {personName} состоится завтра, {date}.",
+      "body": "Небольшое напоминание заранее, чтобы у вас было время подготовиться.",
+      "button": "Открыть Nametag",
+      "unsubscribe": "Отключить это напоминание"
+    },
     "contactReminder": {
       "subject": "Время пообщаться с {personName}",
       "heading": "Оставайтесь на связи",

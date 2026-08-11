@@ -703,6 +703,48 @@ export const emailTemplates = {
     };
   },
 
+  importantDateLeadReminder: async (
+    personName: string,
+    eventType: string,
+    date: string,
+    daysUntil: number,
+    unsubscribeUrl: string,
+    locale: SupportedLocale = 'en'
+  ) => {
+    const t = await getTranslationsForLocale(locale, 'emails.importantDateLeadReminder');
+    const isTomorrow = daysUntil === 1;
+    const subject = isTomorrow
+      ? t('subjectOneDay', { personName, eventType })
+      : t('subject', { personName, eventType, daysUntil });
+    const infoPlain = isTomorrow
+      ? t('infoBoxOneDay', { personName, eventType, date })
+      : t('infoBox', { personName, eventType, date, daysUntil });
+    const infoHtml = isTomorrow
+      ? t('infoBoxOneDay', {
+          personName: `<strong>${escapeHtml(personName)}</strong>`,
+          eventType: escapeHtml(eventType),
+          date: `<strong>${escapeHtml(date)}</strong>`,
+        })
+      : t('infoBox', {
+          personName: `<strong>${escapeHtml(personName)}</strong>`,
+          eventType: escapeHtml(eventType),
+          date: `<strong>${escapeHtml(date)}</strong>`,
+          daysUntil,
+        });
+
+    return {
+      subject,
+      html: await wrapInTemplate(`
+        ${emailHeading(t('heading'))}
+        ${emailInfoBox(infoHtml, 'info')}
+        ${emailParagraph(t('body'))}
+        ${emailButton(`${APP_URL}/dashboard`, t('button'))}
+        ${await emailUnsubscribeFooter(unsubscribeUrl, locale)}
+      `, locale),
+      text: `${subject} ${infoPlain} ${t('body')}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
+    };
+  },
+
   contactReminder: async (personName: string, lastContactDate: string | null, interval: string, unsubscribeUrl: string, locale: SupportedLocale = 'en') => {
     const t = await getTranslationsForLocale(locale, 'emails.contactReminder');
     const lastContactText = lastContactDate ? ` (${t('lastContact', { date: escapeHtml(lastContactDate) })})` : '';

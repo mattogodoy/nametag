@@ -1840,6 +1840,16 @@
       "button": "Open Nametag",
       "unsubscribe": "Disable this reminder"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}'s {eventType} is in {daysUntil} days",
+      "subjectOneDay": "{personName}'s {eventType} is tomorrow",
+      "heading": "Coming up soon",
+      "infoBox": "{personName}'s {eventType} is on {date}, {daysUntil} days from now.",
+      "infoBoxOneDay": "{personName}'s {eventType} is tomorrow, {date}.",
+      "body": "A little notice so you have time to plan something.",
+      "button": "Open Nametag",
+      "unsubscribe": "Disable this reminder"
+    },
     "contactReminder": {
       "subject": "Time to catch up with {personName}",
       "heading": "Stay in Touch",

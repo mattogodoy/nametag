@@ -1840,6 +1840,16 @@
       "button": "Nametag öffnen",
       "unsubscribe": "Diese Erinnerung deaktivieren"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}s {eventType} ist in {daysUntil} Tagen",
+      "subjectOneDay": "{personName}s {eventType} ist morgen",
+      "heading": "Bald ist es soweit",
+      "infoBox": "{personName}s {eventType} ist am {date}, in {daysUntil} Tagen.",
+      "infoBoxOneDay": "{personName}s {eventType} ist morgen, am {date}.",
+      "body": "Ein kleiner Hinweis, damit du Zeit hast, dir etwas zu überlegen.",
+      "button": "Nametag öffnen",
+      "unsubscribe": "Diese Erinnerung deaktivieren"
+    },
     "contactReminder": {
       "subject": "Zeit, dich bei {personName} zu melden",
       "heading": "In Kontakt bleiben",
