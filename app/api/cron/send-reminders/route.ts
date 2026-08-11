@@ -16,8 +16,10 @@ import {
   shouldSendLeadReminder,
 } from '@/lib/reminders/due-dates';
 import { resolveLeadDays } from '@/lib/reminders/lead-days';
-import { getNextOccurrence, getDaysUntil } from '@/lib/upcoming-events';
+import { getNextOccurrence, getDaysUntil, getUpcomingEvents } from '@/lib/upcoming-events';
 import { parseAsLocalDate } from '@/lib/date-format';
+import { isDigestDueToday, selectDigestEvents } from '@/lib/reminders/digest';
+import { isSaasMode } from '@/lib/features';
 
 const log = createModuleLogger('cron');
 
@@ -87,7 +89,7 @@ export const GET = withLogging(async function GET(request: Request) {
 
     interface PendingReminder {
       email: SendBatchEmailItem;
-      type: 'important_date' | 'important_date_lead' | 'contact';
+      type: 'important_date' | 'important_date_lead' | 'contact' | 'weekly_digest';
       entityId: string;
       logMeta: Record<string, string>;
     }
@@ -283,9 +285,100 @@ export const GET = withLogging(async function GET(request: Request) {
       }
     }
 
+    // Weekly digest pass. Runs inside the same daily job so self-hosters do
+    // not need to add a cron line. The weekday is per-user; the hour is
+    // whatever the instance's cron is scheduled for.
+    //
+    // This whole pass is isolated in its own try/catch: a problem here
+    // (a bad query, a template error) must not take down the day-of,
+    // lead, and contact reminders collected above, which still need to
+    // reach sendEmailBatch below.
+    try {
+      const digestCandidates = await prisma.user.findMany({
+        where: { weeklyDigestEnabled: true },
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          language: true,
+          dateFormat: true,
+          weeklyDigestEnabled: true,
+          weeklyDigestWeekday: true,
+          lastWeeklyDigestSent: true,
+        },
+      });
+
+      const digestUsers = digestCandidates.filter(
+        (user) =>
+          isDigestDueToday(user, today) &&
+          (!isSaasMode() || user.emailVerified)
+      );
+
+      const DIGEST_BATCH_SIZE = 50;
+
+      for (let i = 0; i < digestUsers.length; i += DIGEST_BATCH_SIZE) {
+        const batch = digestUsers.slice(i, i + DIGEST_BATCH_SIZE);
+
+        for (const user of batch) {
+          const upcoming = await getUpcomingEvents(user.id);
+          const { events, overflowCount } = selectDigestEvents(upcoming);
+
+          // A quiet week sends nothing. An email that says "no events" every
+          // week trains people to ignore the ones that matter.
+          if (events.length === 0) continue;
+
+          const userLanguage = (user.language as SupportedLocale) || 'en';
+          const tEvents = await getTranslationsForLocale(userLanguage, 'dashboard');
+
+          const rows = events.map((event) => ({
+            personName: event.personName,
+            eventTitle: event.title ?? tEvents(event.titleKey ?? 'timeToCatchUp'),
+            formattedDate: formatDateForEmail(event.date, user.dateFormat, userLanguage),
+            daysUntil: event.daysUntil,
+          }));
+
+          const unsubscribeToken = await createUnsubscribeToken({
+            userId: user.id,
+            reminderType: 'WEEKLY_DIGEST',
+            entityId: user.id,
+          });
+
+          const template = await emailTemplates.weeklyDigest(
+            rows,
+            overflowCount,
+            `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
+            userLanguage
+          );
+
+          pendingReminders.push({
+            email: {
+              to: user.email,
+              subject: template.subject,
+              html: template.html,
+              text: template.text,
+              from: 'reminders',
+            },
+            type: 'weekly_digest',
+            entityId: user.id,
+            logMeta: { userEmail: user.email, eventCount: String(rows.length) },
+          });
+        }
+
+        if (i + DIGEST_BATCH_SIZE < digestUsers.length) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+      }
+    } catch (digestError) {
+      log.error(
+        { errorMessage: digestError instanceof Error ? digestError.message : 'Unknown error' },
+        'Weekly digest pass failed'
+      );
+    }
+
     // Send all reminders as a batch
     let sentCount = 0;
     let errorCount = 0;
+    let digestsSent = 0;
 
     if (pendingReminders.length > 0) {
       const batchResult = await sendEmailBatch(pendingReminders.map(r => r.email));
@@ -307,6 +400,13 @@ export const GET = withLogging(async function GET(request: Request) {
               data: { lastLeadReminderSent: new Date() },
             });
             log.info({ ...reminder.logMeta }, 'Lead reminder sent');
+          } else if (reminder.type === 'weekly_digest') {
+            await prisma.user.update({
+              where: { id: reminder.entityId },
+              data: { lastWeeklyDigestSent: new Date() },
+            });
+            log.info({ ...reminder.logMeta }, 'Weekly digest sent');
+            digestsSent++;
           } else {
             await prisma.person.update({
               where: { id: reminder.entityId },
@@ -327,6 +427,7 @@ export const GET = withLogging(async function GET(request: Request) {
       errors: errorCount,
       processedImportantDates: importantDates.length,
       processedContactReminders: peopleWithContactReminders.length,
+      digestsSent,
     }, 'Reminders processed');
 
     // Log cron job completion
@@ -337,7 +438,7 @@ export const GET = withLogging(async function GET(request: Request) {
         data: {
           status: 'completed',
           duration,
-          message: `Sent ${sentCount} reminders, ${errorCount} errors`,
+          message: `Sent ${sentCount} reminders (${digestsSent} digests), ${errorCount} errors`,
         },
       });
     }
@@ -348,6 +449,7 @@ export const GET = withLogging(async function GET(request: Request) {
       errors: errorCount,
       processedImportantDates: importantDates.length,
       processedContactReminders: peopleWithContactReminders.length,
+      digestsSent,
     });
   } catch (error) {
     // Log cron job failure
