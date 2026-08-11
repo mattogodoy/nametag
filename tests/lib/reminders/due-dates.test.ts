@@ -143,3 +143,77 @@ describe('shouldSendContactReminder', () => {
     ).toBe(false);
   });
 });
+
+describe('shouldSendImportantDateReminder, RECURRING yearly, Feb 29 birthday', () => {
+  const base = {
+    reminderType: 'RECURRING' as const,
+    reminderInterval: 1,
+    reminderIntervalUnit: 'YEARS' as const,
+    lastReminderSent: null,
+  };
+  // A birthday actually recorded on a leap day.
+  const feb29 = new Date(1992, 1, 29);
+
+  it('never fires during a non-leap year, because Feb 29 does not exist on the calendar that year', () => {
+    // Surprising: there is no "closest day" fallback to Feb 28 or Mar 1. The
+    // YEARS branch requires today's month/day to exactly equal the event's
+    // month/day, and that day simply does not occur in a non-leap year, so
+    // the reminder is silently skipped 3 years out of 4.
+    expect(shouldSendImportantDateReminder({ ...base, date: feb29 }, d('2026-02-28'))).toBe(false);
+    expect(shouldSendImportantDateReminder({ ...base, date: feb29 }, d('2026-03-01'))).toBe(false);
+  });
+
+  it('fires again on Feb 29 of the next leap year', () => {
+    expect(shouldSendImportantDateReminder({ ...base, date: feb29 }, d('2028-02-29'))).toBe(true);
+  });
+});
+
+describe('shouldSendImportantDateReminder, RECURRING non-YEARS interval, unknown-year sentinel (year <= 1604)', () => {
+  const base = {
+    reminderType: 'RECURRING' as const,
+    reminderInterval: 1,
+    reminderIntervalUnit: 'MONTHS' as const,
+    lastReminderSent: null,
+  };
+  // year <= 1604 marks "we only know the month and day, not the year" (e.g. a
+  // birthday with an unknown year). Constructed with three numeric arguments
+  // where the year is outside 0-99, so there is no Date year-1900 remapping
+  // to account for; getFullYear() reports exactly 1604.
+  const unknownYearDate = new Date(1604, 4, 15); // May 15, unknown year
+
+  it('anchors to this year\'s occurrence once it has arrived', () => {
+    expect(
+      shouldSendImportantDateReminder({ ...base, date: unknownYearDate }, d('2026-05-15'))
+    ).toBe(true);
+  });
+
+  it('does not fire well before this year\'s occurrence, when the code falls back to last year as the anchor', () => {
+    expect(
+      shouldSendImportantDateReminder({ ...base, date: unknownYearDate }, d('2026-01-01'))
+    ).toBe(false);
+  });
+
+  it('fires 5 days early because 1 MONTH is approximated as 30 days, drifting off the true May 15 anniversary', () => {
+    // Surprising and worth flagging: when today is still before this year's
+    // May 15, the code anchors to last year's May 15 (2025) and counts
+    // forward in fixed 30-day steps. 12 steps of 30 days is 360 days, five
+    // days short of the real 365-day gap to this year's May 15, so the count
+    // lands on May 10, 2026, not May 15. shouldSendImportantDateReminder
+    // returns true on May 10 for this never-sent reminder, meaning the
+    // sentinel path fires a genuinely different day than the actual
+    // anniversary. Because both May 10 (via the drifted, reduced-year
+    // anchor) and May 15 (via the fresh, non-reduced anchor evaluated on
+    // that exact day, see the test above) return true, the interval math has
+    // two distinct "hit" days within the same yearly cycle for this
+    // never-sent reminder. In production, whichever day the cron job first
+    // observes as true wins and populates lastReminderSent, after which
+    // subsequent checks compare against that lastReminderSent date instead
+    // of re-deriving the anchor, so the reminder does not fire twice in the
+    // same cycle. But every future occurrence keeps counting in 30-day steps
+    // from whatever day it first fired, so the drift compounds year over
+    // year rather than resyncing to the calendar day of the actual event.
+    expect(
+      shouldSendImportantDateReminder({ ...base, date: unknownYearDate }, d('2026-05-10'))
+    ).toBe(true);
+  });
+});
