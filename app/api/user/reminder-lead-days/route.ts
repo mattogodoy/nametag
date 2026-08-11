@@ -13,27 +13,14 @@ export const PUT = withAuth(async (request, session) => {
 
     const { days } = validation.data;
 
-    const updatedUser = await prisma.user.update({
+    // select is an allowlist: only these two columns can ever reach the
+    // response, so the password hash and other sensitive columns never
+    // enter process memory for this request in the first place.
+    const user = await prisma.user.update({
       where: { id: session.user.id },
       data: { defaultReminderLeadDays: days },
+      select: { id: true, defaultReminderLeadDays: true },
     });
-
-    // prisma.user.update() returns every column on the row, including the
-    // password hash and other sensitive tokens. Strip those before the row
-    // reaches the response body; only safe profile fields go out.
-    const {
-      password: _password,
-      emailVerifyToken: _emailVerifyToken,
-      emailVerifyExpires: _emailVerifyExpires,
-      emailVerifySentAt: _emailVerifySentAt,
-      passwordResetToken: _passwordResetToken,
-      passwordResetExpires: _passwordResetExpires,
-      passwordResetSentAt: _passwordResetSentAt,
-      failedLoginAttempts: _failedLoginAttempts,
-      lockedUntil: _lockedUntil,
-      providerAccountId: _providerAccountId,
-      ...user
-    } = updatedUser;
 
     return apiResponse.ok({ user });
   } catch (error) {

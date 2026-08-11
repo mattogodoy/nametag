@@ -36,6 +36,7 @@ describe('PUT /api/user/reminder-lead-days', () => {
     expect(mocks.userUpdate).toHaveBeenCalledWith({
       where: { id: 'user-123' },
       data: { defaultReminderLeadDays: 7 },
+      select: { id: true, defaultReminderLeadDays: true },
     });
   });
 
@@ -44,6 +45,11 @@ describe('PUT /api/user/reminder-lead-days', () => {
       put('http://localhost/api/user/reminder-lead-days', { days: 0 })
     );
     expect(response.status).toBe(200);
+    expect(mocks.userUpdate).toHaveBeenCalledWith({
+      where: { id: 'user-123' },
+      data: { defaultReminderLeadDays: 0 },
+      select: { id: true, defaultReminderLeadDays: true },
+    });
   });
 
   it('rejects a negative value', async () => {
@@ -87,6 +93,7 @@ describe('PUT /api/user/weekly-digest', () => {
     expect(mocks.userUpdate).toHaveBeenCalledWith({
       where: { id: 'user-123' },
       data: { weeklyDigestEnabled: true, weeklyDigestWeekday: 1 },
+      select: { id: true, weeklyDigestEnabled: true, weeklyDigestWeekday: true },
     });
   });
 
