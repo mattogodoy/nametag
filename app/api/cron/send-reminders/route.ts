@@ -289,10 +289,13 @@ export const GET = withLogging(async function GET(request: Request) {
     // not need to add a cron line. The weekday is per-user; the hour is
     // whatever the instance's cron is scheduled for.
     //
-    // This whole pass is isolated in its own try/catch: a problem here
-    // (a bad query, a template error) must not take down the day-of,
-    // lead, and contact reminders collected above, which still need to
-    // reach sendEmailBatch below.
+    // The outer try/catch here only guards genuine setup failure (mainly the
+    // candidate query itself): a problem here must not take down the
+    // day-of, lead, and contact reminders collected above, which still need
+    // to reach sendEmailBatch below. Once we have a list of digest users,
+    // each user is handled in its own inner try/catch, so one bad record
+    // (a malformed row, one failing getUpcomingEvents/token/template call)
+    // costs exactly that one user's digest, not everyone queued after them.
     try {
       const digestCandidates = await prisma.user.findMany({
         where: { weeklyDigestEnabled: true },
@@ -320,48 +323,60 @@ export const GET = withLogging(async function GET(request: Request) {
         const batch = digestUsers.slice(i, i + DIGEST_BATCH_SIZE);
 
         for (const user of batch) {
-          const upcoming = await getUpcomingEvents(user.id);
-          const { events, overflowCount } = selectDigestEvents(upcoming);
+          try {
+            const upcoming = await getUpcomingEvents(user.id);
+            const { events, overflowCount } = selectDigestEvents(upcoming);
 
-          // A quiet week sends nothing. An email that says "no events" every
-          // week trains people to ignore the ones that matter.
-          if (events.length === 0) continue;
+            // A quiet week sends nothing. An email that says "no events" every
+            // week trains people to ignore the ones that matter.
+            if (events.length === 0) continue;
 
-          const userLanguage = (user.language as SupportedLocale) || 'en';
-          const tEvents = await getTranslationsForLocale(userLanguage, 'dashboard');
+            const userLanguage = (user.language as SupportedLocale) || 'en';
+            const tEvents = await getTranslationsForLocale(userLanguage, 'dashboard');
 
-          const rows = events.map((event) => ({
-            personName: event.personName,
-            eventTitle: event.title ?? tEvents(event.titleKey ?? 'timeToCatchUp'),
-            formattedDate: formatDateForEmail(event.date, user.dateFormat, userLanguage),
-            daysUntil: event.daysUntil,
-          }));
+            const rows = events.map((event) => ({
+              personName: event.personName,
+              eventTitle: event.title ?? tEvents(event.titleKey ?? 'timeToCatchUp'),
+              formattedDate: formatDateForEmail(event.date, user.dateFormat, userLanguage),
+              daysUntil: event.daysUntil,
+            }));
 
-          const unsubscribeToken = await createUnsubscribeToken({
-            userId: user.id,
-            reminderType: 'WEEKLY_DIGEST',
-            entityId: user.id,
-          });
+            const unsubscribeToken = await createUnsubscribeToken({
+              userId: user.id,
+              reminderType: 'WEEKLY_DIGEST',
+              entityId: user.id,
+            });
 
-          const template = await emailTemplates.weeklyDigest(
-            rows,
-            overflowCount,
-            `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
-            userLanguage
-          );
+            const template = await emailTemplates.weeklyDigest(
+              rows,
+              overflowCount,
+              `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
+              userLanguage
+            );
 
-          pendingReminders.push({
-            email: {
-              to: user.email,
-              subject: template.subject,
-              html: template.html,
-              text: template.text,
-              from: 'reminders',
-            },
-            type: 'weekly_digest',
-            entityId: user.id,
-            logMeta: { userEmail: user.email, eventCount: String(rows.length) },
-          });
+            pendingReminders.push({
+              email: {
+                to: user.email,
+                subject: template.subject,
+                html: template.html,
+                text: template.text,
+                from: 'reminders',
+              },
+              type: 'weekly_digest',
+              entityId: user.id,
+              logMeta: { userEmail: user.email, eventCount: String(rows.length) },
+            });
+          } catch (userDigestError) {
+            log.error(
+              {
+                userId: user.id,
+                errorMessage:
+                  userDigestError instanceof Error ? userDigestError.message : 'Unknown error',
+              },
+              'Weekly digest failed for user, skipping'
+            );
+            continue;
+          }
         }
 
         if (i + DIGEST_BATCH_SIZE < digestUsers.length) {
