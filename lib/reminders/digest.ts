@@ -46,10 +46,15 @@ export interface DigestSelection {
  * The lower bound of 0 matters: getUpcomingEvents() reports overdue contact
  * reminders with a negative daysUntil, and a user with a long backlog would
  * otherwise receive all of it in their first digest.
+ *
+ * The upper bound is exclusive so that consecutive digests partition the
+ * calendar instead of overlapping. An event exactly DIGEST_WINDOW_DAYS out
+ * belongs to next week's digest, which will see it at daysUntil 0; including
+ * it here as well would announce the same event twice.
  */
 export function selectDigestEvents(events: UpcomingEvent[]): DigestSelection {
   const inWindow = events
-    .filter((e) => e.daysUntil >= 0 && e.daysUntil <= DIGEST_WINDOW_DAYS)
+    .filter((e) => e.daysUntil >= 0 && e.daysUntil < DIGEST_WINDOW_DAYS)
     .sort((a, b) => a.daysUntil - b.daysUntil);
 
   return {

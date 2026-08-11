@@ -156,13 +156,18 @@ export function getIntervalMs(interval: number, unit: string): number {
   }
 }
 
+/** The same interval as whole days. MONTHS and YEARS stay approximate. */
+export function getIntervalDays(interval: number, unit: string): number {
+  return Math.round(getIntervalMs(interval, unit) / MS_PER_DAY);
+}
+
 export function shouldSendContactReminder(
   person: ContactReminderInput,
   today: Date
 ): boolean {
   const interval = person.contactReminderInterval || 1;
   const unit = person.contactReminderIntervalUnit || 'MONTHS';
-  const intervalDays = Math.round(getIntervalMs(interval, unit) / MS_PER_DAY);
+  const intervalDays = getIntervalDays(interval, unit);
 
   // Calculate when the reminder should be sent
   // If no lastContact, use lastContactReminderSent or send immediately
@@ -212,6 +217,11 @@ export interface LeadReminderInput {
   /** Already resolved through resolveLeadDays(). 0 means day-of only. */
   leadDays: number;
   lastLeadReminderSent: Date | null;
+  /**
+   * Whole days between consecutive occurrences, for RECURRING dates. Omit for
+   * ONCE, which never repeats. Used only to clamp the lead window.
+   */
+  intervalDays?: number | null;
 }
 
 /**
@@ -228,20 +238,32 @@ export interface LeadReminderInput {
  * A consequence worth knowing: if the window is already open when the user
  * first sets a lead time, the email fires that same day rather than being
  * skipped. Late notice beats none.
+ *
+ * That re-arming trick only holds while windows do not overlap. A 7-day lead
+ * on a date recurring every 3 days would reach back past the previous
+ * occurrence, so the previous send would sit inside the current window and
+ * silently suppress every other occurrence. Clamping the lead to the interval
+ * keeps consecutive windows disjoint, at the cost of shortening the notice for
+ * dates that recur faster than the requested lead time, which is the only
+ * sensible reading of "tell me 7 days before" for something happening weekly.
  */
 export function shouldSendLeadReminder({
   nextOccurrence,
   today,
   leadDays,
   lastLeadReminderSent,
+  intervalDays,
 }: LeadReminderInput): boolean {
   if (leadDays <= 0) return false;
+
+  const effectiveLeadDays =
+    intervalDays && intervalDays > 0 ? Math.min(leadDays, intervalDays) : leadDays;
 
   const occurrence = startOfDay(nextOccurrence);
   const todayStart = startOfDay(today);
 
   const windowStart = new Date(occurrence);
-  windowStart.setDate(windowStart.getDate() - leadDays);
+  windowStart.setDate(windowStart.getDate() - effectiveLeadDays);
 
   if (todayStart.getTime() < windowStart.getTime()) return false;
   if (todayStart.getTime() >= occurrence.getTime()) return false;

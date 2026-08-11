@@ -344,3 +344,134 @@ describe('shouldSendLeadReminder', () => {
     ).toBe(true);
   });
 });
+
+// Re-arming works by checking that the previous send predates the current
+// window. That only holds while windows are disjoint. A lead longer than the
+// recurrence interval would reach back past the previous occurrence, so the
+// previous send would sit inside the current window and suppress it. Clamping
+// the lead to the interval keeps the windows from touching.
+describe('shouldSendLeadReminder, lead longer than the recurrence interval', () => {
+  it('still fires for the next occurrence when the unclamped window would swallow the last send', () => {
+    // Every 3 days, but a 7-day lead. Occurrence on the 12th, the previous one
+    // was the 9th, and its lead email went out on the 6th. Unclamped, this
+    // window opens on the 5th and the 6th send blocks it.
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2026-05-12'),
+        today: d('2026-05-09'),
+        leadDays: 7,
+        lastLeadReminderSent: d('2026-05-06'),
+        intervalDays: 3,
+      })
+    ).toBe(true);
+  });
+
+  it('still suppresses a second send inside the clamped window', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2026-05-12'),
+        today: d('2026-05-10'),
+        leadDays: 7,
+        lastLeadReminderSent: d('2026-05-09'),
+        intervalDays: 3,
+      })
+    ).toBe(false);
+  });
+
+  it('does not open the window earlier than the clamp allows', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2026-05-12'),
+        today: d('2026-05-08'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+        intervalDays: 3,
+      })
+    ).toBe(false);
+  });
+
+  it('leaves the full lead intact when the interval is longer', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2026-05-12'),
+        today: d('2026-05-05'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+        intervalDays: 365,
+      })
+    ).toBe(true);
+  });
+
+  it('leaves the full lead intact when no interval is supplied, as for ONCE', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2026-05-12'),
+        today: d('2026-05-05'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+        intervalDays: null,
+      })
+    ).toBe(true);
+  });
+
+  // Every occurrence in a fast-recurring series should get exactly one advance
+  // email, rather than every other one.
+  it('fires for each occurrence in a run of alternating windows', () => {
+    let lastLeadReminderSent: Date | null = null;
+    const fired: string[] = [];
+
+    // Occurrences every 3 days from the 12th, lead clamped to 3.
+    for (const occurrenceIso of ['2026-05-12', '2026-05-15', '2026-05-18']) {
+      const nextOccurrence = d(occurrenceIso);
+      // Walk the three days before each occurrence.
+      for (let offset = 3; offset >= 1; offset--) {
+        const today = new Date(nextOccurrence);
+        today.setDate(today.getDate() - offset);
+        if (
+          shouldSendLeadReminder({
+            nextOccurrence,
+            today,
+            leadDays: 7,
+            lastLeadReminderSent,
+            intervalDays: 3,
+          })
+        ) {
+          fired.push(occurrenceIso);
+          lastLeadReminderSent = today;
+        }
+      }
+    }
+
+    expect(fired).toEqual(['2026-05-12', '2026-05-15', '2026-05-18']);
+  });
+});
+
+// The path that was silently broken before calendar-date reads landed: the
+// stored value is UTC midnight, and comparing it against a local-midnight
+// `today` suppressed the email everywhere except UTC. Fixtures use `stored()`
+// so a regression shows up rather than being masked by local construction.
+describe('ONCE important date with a lead time', () => {
+  const date = stored(2026, 5, 15); // 15 June 2026
+  const once = {
+    date,
+    reminderType: 'ONCE' as const,
+    reminderInterval: null,
+    reminderIntervalUnit: null,
+    lastReminderSent: null,
+  };
+
+  it('agrees the day-of email would fire on the occurrence', () => {
+    expect(shouldSendImportantDateReminder(once, d('2026-06-15'))).toBe(true);
+  });
+
+  it('sends the advance email on the lead day', () => {
+    expect(
+      shouldSendLeadReminder({
+        nextOccurrence: d('2026-06-15'),
+        today: d('2026-06-08'),
+        leadDays: 7,
+        lastLeadReminderSent: null,
+      })
+    ).toBe(true);
+  });
+});

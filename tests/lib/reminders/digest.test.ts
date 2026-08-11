@@ -83,7 +83,7 @@ describe('isDigestDueToday', () => {
 
 describe('selectDigestEvents', () => {
   it('keeps events inside the next 7 days', () => {
-    const result = selectDigestEvents([event(0), event(3), event(7)]);
+    const result = selectDigestEvents([event(0), event(3), event(6)]);
     expect(result.events).toHaveLength(3);
     expect(result.overflowCount).toBe(0);
   });
@@ -91,6 +91,14 @@ describe('selectDigestEvents', () => {
   it('drops events beyond 7 days', () => {
     const result = selectDigestEvents([event(3), event(8), event(30)]);
     expect(result.events).toHaveLength(1);
+  });
+
+  // The upper bound is exclusive so consecutive digests partition the calendar.
+  // An event exactly 7 days out is day 0 of next week's digest; counting it in
+  // both would announce the same birthday two weeks running.
+  it('leaves an event exactly 7 days out to next week', () => {
+    const result = selectDigestEvents([event(6), event(7)]);
+    expect(result.events.map((e) => e.daysUntil)).toEqual([6]);
   });
 
   // getUpcomingEvents returns negative daysUntil for overdue catch-ups.
@@ -103,7 +111,7 @@ describe('selectDigestEvents', () => {
   });
 
   it('caps the list and reports the overflow count', () => {
-    const many = Array.from({ length: 30 }, (_, i) => event(i % 8, `e-${i}`));
+    const many = Array.from({ length: 30 }, (_, i) => event(i % 7, `e-${i}`));
     const result = selectDigestEvents(many);
     expect(result.events).toHaveLength(DIGEST_MAX_ROWS);
     expect(result.overflowCount).toBe(5);
@@ -116,15 +124,15 @@ describe('selectDigestEvents', () => {
   });
 
   it('sorts events by daysUntil in ascending order', () => {
-    const unordered = [event(5, 'e-5'), event(0, 'e-0'), event(7, 'e-7'), event(2, 'e-2')];
+    const unordered = [event(5, 'e-5'), event(0, 'e-0'), event(6, 'e-6'), event(2, 'e-2')];
     const result = selectDigestEvents(unordered);
     expect(result.events).toHaveLength(4);
     const daysUntilSequence = result.events.map((e) => e.daysUntil);
-    expect(daysUntilSequence).toEqual([0, 2, 5, 7]);
+    expect(daysUntilSequence).toEqual([0, 2, 5, 6]);
   });
 
   it('does not mutate the input array', () => {
-    const original = [event(5, 'e-5'), event(0, 'e-0'), event(7, 'e-7'), event(2, 'e-2')];
+    const original = [event(5, 'e-5'), event(0, 'e-0'), event(6, 'e-6'), event(2, 'e-2')];
     const originalOrder = original.map((e) => e.daysUntil);
     selectDigestEvents(original);
     const finalOrder = original.map((e) => e.daysUntil);

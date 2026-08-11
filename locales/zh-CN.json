@@ -1964,6 +1964,7 @@
       "contact": "您将不再收到联系此人的提醒。您可以随时从设置中重新启用此提醒。",
       "weeklyDigest": "您将不再收到每周摘要邮件。您可以随时从设置中重新启用它。",
       "reEnableInSettings": "管理提醒设置",
+      "reEnableDigestInSettings": "管理通知设置",
       "goToDashboard": "转到仪表盘"
     },
     "error": {

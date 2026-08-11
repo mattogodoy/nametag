@@ -33,6 +33,8 @@ Once a reminder is on for a date, a second control lets you choose how far ahead
 
 Whatever you choose, the day-of reminder always fires. Advance notice adds an earlier heads-up; it never replaces the reminder on the day itself.
 
+If a recurring date comes round more often than the lead time you asked for, for example a 7 day advance notice on something that repeats every 3 days, the notice is shortened to the length of the interval. Each occurrence still gets exactly one heads-up, just a proportionally earlier one, rather than some occurrences being announced and others silently skipped.
+
 ## The dashboard upcoming events widget
 
 Your dashboard shows a list of upcoming birthdays, anniversaries, and other important dates across your whole network, sorted by how soon they're coming up. It's a quick way to see what's approaching without opening each person individually.

@@ -549,6 +549,43 @@ describe('updatePerson', () => {
     expect(call.data.importantDates.create).toHaveLength(1);
   });
 
+  // Kept dates are deleted and recreated, which would otherwise reset the
+  // reminder bookkeeping. Losing it re-arms mail that already went out: saving
+  // an unrelated field would resend the advance notice for every date still
+  // inside its lead window, and the day-of reminder for anything due today.
+  it('carries reminder send timestamps across the recreate of kept importantDates', async () => {
+    const lastReminderSent = new Date('2026-03-14T09:00:00Z');
+    const lastLeadReminderSent = new Date('2026-02-12T09:00:00Z');
+
+    mocks.importantDateFindMany.mockResolvedValue([
+      { id: 'date-1', lastReminderSent, lastLeadReminderSent },
+    ]);
+
+    await updatePerson(PERSON_ID, USER_ID, {
+      importantDates: [
+        { id: 'date-1', title: 'Birthday', date: '1990-03-14', reminderEnabled: false },
+      ],
+    });
+
+    const call = mocks.personUpdate.mock.calls[0][0];
+    expect(call.data.importantDates.create[0]).toMatchObject({
+      lastReminderSent,
+      lastLeadReminderSent,
+    });
+  });
+
+  it('leaves send timestamps unset for newly added importantDates', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([]);
+
+    await updatePerson(PERSON_ID, USER_ID, {
+      importantDates: [{ title: 'Birthday', date: '1990-03-14', reminderEnabled: false }],
+    });
+
+    const created = mocks.personUpdate.mock.calls[0][0].data.importantDates.create[0];
+    expect(created.lastReminderSent).toBeUndefined();
+    expect(created.lastLeadReminderSent).toBeUndefined();
+  });
+
   it('uses deleteMany+create for addresses with null coercion', async () => {
     await updatePerson(PERSON_ID, USER_ID, {
       addresses: [{ type: 'home' }],

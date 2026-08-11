@@ -1964,6 +1964,7 @@
       "contact": "Ya no recibirás recordatorios para contactar a esta persona. Puedes reactivar este recordatorio en cualquier momento desde tu configuración.",
       "weeklyDigest": "Ya no recibirás el resumen semanal por correo electrónico. Puedes reactivarlo en cualquier momento desde tu configuración.",
       "reEnableInSettings": "Administrar configuración de recordatorios",
+      "reEnableDigestInSettings": "Administrar configuración de notificaciones",
       "goToDashboard": "Ir al panel"
     },
     "error": {

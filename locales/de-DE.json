@@ -1964,6 +1964,7 @@
       "contact": "Du erhältst keine Erinnerungen mehr, diese Person zu kontaktieren. Du kannst diese Erinnerung jederzeit in den Einstellungen wieder aktivieren.",
       "weeklyDigest": "Du erhältst die wöchentliche Übersicht nicht mehr per E-Mail. Du kannst sie jederzeit in den Einstellungen wieder aktivieren.",
       "reEnableInSettings": "Erinnerungseinstellungen verwalten",
+      "reEnableDigestInSettings": "Benachrichtigungseinstellungen verwalten",
       "goToDashboard": "Zum Dashboard"
     },
     "error": {

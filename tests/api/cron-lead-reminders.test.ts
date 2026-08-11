@@ -177,6 +177,56 @@ describe('send-reminders lead reminders', () => {
     expect(mocks.importantDateUpdate).not.toHaveBeenCalled();
   });
 
+  // With no provider configured sendEmailBatch reports success with `skipped`
+  // so the cron completes cleanly. Nothing was delivered, so stamping would
+  // burn the advance notice for its whole lead window with no way to recover
+  // it once email is set up.
+  it('does not stamp when email is not configured and the send is skipped', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([makeDate()]);
+    mocks.sendEmailBatch.mockResolvedValue({
+      results: [{ success: true, skipped: true, message: 'Email not configured' }],
+    });
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(mocks.importantDateUpdate).not.toHaveBeenCalled();
+    expect(body.sent).toBe(0);
+    expect(body.errors).toBe(0);
+    expect(body.skipped).toBe(1);
+  });
+
+  // The lead path for ONCE dates reads a stored UTC-midnight value and compares
+  // it against a local-midnight today. Anywhere but UTC that mismatch silently
+  // suppressed the email while the day-of reminder kept working.
+  it('sends a lead reminder for a ONCE date', async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const occurrence = new Date(today);
+    occurrence.setDate(occurrence.getDate() + 7);
+
+    mocks.importantDateFindMany.mockResolvedValue([
+      makeDayOfDate({
+        date: new Date(
+          Date.UTC(occurrence.getFullYear(), occurrence.getMonth(), occurrence.getDate())
+        ),
+        reminderLeadDays: 7,
+      }),
+    ]);
+    mocks.sendEmailBatch.mockResolvedValue({ results: [{ success: true }] });
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(body.sent).toBe(1);
+    expect(mocks.importantDateUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'date-A' },
+        data: { lastLeadReminderSent: expect.any(Date) },
+      })
+    );
+  });
+
   it('stamps the correct column on the correct record when a batch mixes a day-of and a lead reminder', async () => {
     const dayOf = makeDayOfDate();
     const lead = makeDate({ id: 'date-B', person: { ...makeDate().person, id: 'person-B' } });

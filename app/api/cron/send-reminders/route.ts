@@ -15,6 +15,7 @@ import {
   shouldSendImportantDateReminder,
   shouldSendContactReminder,
   shouldSendLeadReminder,
+  getIntervalDays,
 } from '@/lib/reminders/due-dates';
 import { resolveLeadDays } from '@/lib/reminders/lead-days';
 import { getNextOccurrence, getDaysUntil, getUpcomingEvents } from '@/lib/upcoming-events';
@@ -181,6 +182,16 @@ export const GET = withLogging(async function GET(request: Request) {
           nextOccurrence
         );
 
+        // Only RECURRING dates can have overlapping lead windows, so ONCE
+        // passes no interval and keeps the full requested notice.
+        const intervalDays =
+          importantDate.reminderType === 'RECURRING'
+            ? getIntervalDays(
+                importantDate.reminderInterval || 1,
+                importantDate.reminderIntervalUnit || 'YEARS'
+              )
+            : null;
+
         const leadDue =
           dayOfWouldFireOnOccurrence &&
           shouldSendLeadReminder({
@@ -188,6 +199,7 @@ export const GET = withLogging(async function GET(request: Request) {
             today,
             leadDays,
             lastLeadReminderSent: importantDate.lastLeadReminderSent,
+            intervalDays,
           });
 
         if (leadDue) {
@@ -415,6 +427,7 @@ export const GET = withLogging(async function GET(request: Request) {
     // Send all reminders as a batch
     let sentCount = 0;
     let errorCount = 0;
+    let skippedCount = 0;
     let digestsSent = 0;
 
     if (pendingReminders.length > 0) {
@@ -423,6 +436,17 @@ export const GET = withLogging(async function GET(request: Request) {
       for (let i = 0; i < pendingReminders.length; i++) {
         const reminder = pendingReminders[i];
         const result = batchResult.results[i];
+
+        // No email provider configured: sendEmailBatch reports success with
+        // `skipped` so the cron still completes cleanly. Nothing was delivered,
+        // so nothing may be stamped. Stamping here would burn the send for good:
+        // the day-of reminder would be marked sent for that occurrence, the
+        // digest for that week, and the advance notice for its whole lead
+        // window, none of which are recoverable once email is configured.
+        if (result.skipped) {
+          skippedCount++;
+          continue;
+        }
 
         if (result.success) {
           if (reminder.type === 'important_date') {
@@ -462,6 +486,7 @@ export const GET = withLogging(async function GET(request: Request) {
     log.info({
       sent: sentCount,
       errors: errorCount,
+      skipped: skippedCount,
       processedImportantDates: importantDates.length,
       processedContactReminders: peopleWithContactReminders.length,
       digestsSent,
@@ -475,7 +500,9 @@ export const GET = withLogging(async function GET(request: Request) {
         data: {
           status: 'completed',
           duration,
-          message: `Sent ${sentCount} reminders (${digestsSent} digests), ${errorCount} errors`,
+          message:
+            `Sent ${sentCount} reminders (${digestsSent} digests), ${errorCount} errors` +
+            (skippedCount > 0 ? `, ${skippedCount} skipped (email not configured)` : ''),
         },
       });
     }
@@ -484,6 +511,7 @@ export const GET = withLogging(async function GET(request: Request) {
       success: true,
       sent: sentCount,
       errors: errorCount,
+      skipped: skippedCount,
       processedImportantDates: importantDates.length,
       processedContactReminders: peopleWithContactReminders.length,
       digestsSent,

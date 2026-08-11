@@ -47,7 +47,7 @@ Scans for four kinds of reminders that are due: important date reminders (birthd
 
 The weekly digest adds no new schedule of its own. It piggybacks on this same daily run: each user picks a weekday (Sunday through Saturday) in their notification settings, and the digest goes out on that weekday at whatever hour this job already runs. There's no per-user timezone, so "8:00am" in the example schedule below means 8:00am in the container's own timezone for every user, regardless of where they are. A user with no events in the coming week gets nothing that week, on purpose, rather than an empty digest.
 
-If email isn't configured on your instance, this job effectively has nothing to send and completes as a no-op. There's no error, it just skips delivery.
+If email isn't configured on your instance, this job effectively has nothing to send and completes as a no-op. There's no error, it just skips delivery. Skipped reminders are not recorded as sent, so nothing is lost: the `skipped` count in the response tells you how many were due, and once you configure email they go out on the next run rather than having been silently consumed.
 
 ### `purge-deleted`, daily at 3:00am
 

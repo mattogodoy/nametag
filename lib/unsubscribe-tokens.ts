@@ -215,6 +215,12 @@ export async function getUnsubscribeDetails(
     if (person) {
       entityName = formatFullName(person, nameOrder);
     }
+  } else if (unsubToken.reminderType === 'WEEKLY_DIGEST') {
+    // The digest is an account-level setting rather than a reminder attached to
+    // a person or a date, so there is no entity to name.
+    const userLocale = await getUserLocale(unsubToken.userId);
+    const tDigest = await getTranslationsForLocale(userLocale, 'emails.weeklyDigest');
+    entityName = tDigest('heading');
   }
 
   return {

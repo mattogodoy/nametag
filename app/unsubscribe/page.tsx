@@ -99,11 +99,16 @@ function UnsubscribeContent() {
               t('success.contact')}
           </p>
           <div className="space-y-3">
+            {/* Per-date and per-person reminders are edited on the person, but
+                the digest is an account setting, so /people is a dead end for
+                anyone who just unsubscribed from it. */}
             <Link
-              href="/people"
+              href={reminderType === 'WEEKLY_DIGEST' ? '/settings/notifications' : '/people'}
               className="block w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
             >
-              {t('success.reEnableInSettings')}
+              {reminderType === 'WEEKLY_DIGEST'
+                ? t('success.reEnableDigestInSettings')
+                : t('success.reEnableInSettings')}
             </Link>
             <Link
               href="/dashboard"

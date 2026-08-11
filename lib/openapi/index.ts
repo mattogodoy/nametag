@@ -236,6 +236,12 @@ export function generateOpenAPISpec(): OpenAPISpec {
                 success: { type: 'boolean' },
                 sent: { type: 'integer' },
                 errors: { type: 'integer' },
+                skipped: {
+                  type: 'integer',
+                  description:
+                    'Reminders that were due but not delivered because no email provider is ' +
+                    'configured. These are not marked as sent and will be retried on the next run.',
+                },
                 processedImportantDates: { type: 'integer' },
                 processedContactReminders: { type: 'integer' },
                 digestsSent: { type: 'integer' },

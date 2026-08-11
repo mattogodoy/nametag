@@ -1964,6 +1964,7 @@
       "contact": "この人への連絡リマインダーは今後送信されません。設定からいつでも再有効化できます。",
       "weeklyDigest": "週間まとめメールは今後送信されません。設定からいつでも再有効化できます。",
       "reEnableInSettings": "リマインダー設定を管理",
+      "reEnableDigestInSettings": "通知設定を管理",
       "goToDashboard": "ダッシュボードへ"
     },
     "error": {

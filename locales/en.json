@@ -1964,6 +1964,7 @@
       "contact": "You will no longer receive reminders to contact this person. You can re-enable this reminder anytime from your settings.",
       "weeklyDigest": "You will no longer receive the weekly summary email. You can re-enable it anytime from your settings.",
       "reEnableInSettings": "Manage Reminder Settings",
+      "reEnableDigestInSettings": "Manage Notification Settings",
       "goToDashboard": "Go to Dashboard"
     },
     "error": {

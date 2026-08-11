@@ -374,8 +374,20 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
 
     const existingDates = await prisma.importantDate.findMany({
       where: { personId: id, deletedAt: null },
-      select: { id: true },
+      select: { id: true, lastReminderSent: true, lastLeadReminderSent: true },
     });
+
+    // Kept dates are deleted and recreated below, which would reset the
+    // reminder bookkeeping and re-arm emails that already went out: saving an
+    // unrelated field on a person would resend the advance notice for every
+    // date still inside its lead window, and the day-of reminder for anything
+    // due today. Carry the timestamps across the recreate.
+    const sentStampsById = new Map(
+      existingDates.map((d) => [
+        d.id,
+        { lastReminderSent: d.lastReminderSent, lastLeadReminderSent: d.lastLeadReminderSent },
+      ])
+    );
 
     const removedIds = existingDates
       .map((d) => d.id)
@@ -397,7 +409,10 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
     }
 
     updateData.importantDates = {
-      create: importantDates.map(mapImportantDate),
+      create: importantDates.map((date) => ({
+        ...mapImportantDate(date),
+        ...(date.id ? sentStampsById.get(date.id) : undefined),
+      })),
     };
   }
 
