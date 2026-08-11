@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { formatGraphName } from '@/lib/nameUtils';
-import { parseCalendarDate } from '@/lib/date-format';
+import { parseCalendarDate, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
 import { getTranslationsForLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import { getUserLocale } from '@/lib/locale';
@@ -74,8 +74,10 @@ export function getNextOccurrence(
   return nextOccurrence;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 export function getIntervalMs(interval: number, unit: string): number {
-  const msPerDay = 24 * 60 * 60 * 1000;
+  const msPerDay = MS_PER_DAY;
   switch (unit) {
     case 'DAYS':
       return interval * msPerDay;
@@ -158,15 +160,16 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
 
   // Process important dates
   for (const importantDate of importantDates) {
+    const storedDate = parseCalendarDate(importantDate.date);
     let eventDate: Date;
 
     if (importantDate.reminderType === 'ONCE') {
-      eventDate = parseCalendarDate(importantDate.date);
+      eventDate = storedDate;
     } else {
       const interval = importantDate.reminderInterval || 1;
       const intervalUnit = importantDate.reminderIntervalUnit || 'YEARS';
       eventDate = getNextOccurrence(
-        parseCalendarDate(importantDate.date),
+        storedDate,
         today,
         interval,
         intervalUnit,
@@ -186,7 +189,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         titleKey: null,
         date: eventDate,
         daysUntil,
-        isYearUnknown: parseCalendarDate(importantDate.date).getFullYear() <= 1604,
+        isYearUnknown: storedDate.getFullYear() <= YEAR_UNKNOWN_SENTINEL,
         personPhoto: importantDate.person.photo,
       });
     }
@@ -198,10 +201,15 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
     const unit = person.contactReminderIntervalUnit || 'MONTHS';
     const intervalMs = getIntervalMs(interval, unit);
 
-    const referenceDate = person.lastContact ? new Date(person.lastContact) : null;
+    // lastContact is a stored calendar date (UTC midnight); anchor it to the
+    // local calendar day before doing day arithmetic, and add whole days
+    // rather than milliseconds so DST transitions cannot shift the result.
+    const referenceDate = person.lastContact ? parseCalendarDate(person.lastContact) : null;
 
     if (referenceDate) {
-      const reminderDueDate = new Date(referenceDate.getTime() + intervalMs);
+      const intervalDays = Math.round(intervalMs / MS_PER_DAY);
+      const reminderDueDate = new Date(referenceDate);
+      reminderDueDate.setDate(reminderDueDate.getDate() + intervalDays);
       reminderDueDate.setHours(0, 0, 0, 0);
 
       const daysUntil = getDaysUntil(reminderDueDate, today);

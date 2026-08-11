@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 /**
  * The dashboard renders `event.date` straight from `getUpcomingEvents`, so the
@@ -37,10 +37,13 @@ vi.mock('@/lib/locale', () => ({
 }));
 
 import { getUpcomingEvents } from '@/lib/upcoming-events';
-
-const ORIGINAL_TZ = process.env.TZ;
-
-const TIMEZONES = ['UTC', 'Europe/Madrid', 'Europe/London', 'America/New_York', 'Australia/Sydney'];
+import {
+  TIMEZONES,
+  setProcessTimezone,
+  restoreTimezoneAfterEach,
+  storedCalendarDate,
+  storedYearUnknownDate,
+} from '../helpers/timezone';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,17 +51,15 @@ beforeEach(() => {
   mocks.userFindUnique.mockResolvedValue({ nameOrder: 'WESTERN', language: 'en', nameDisplayFormat: 'FULL' });
 });
 
-afterEach(() => {
-  process.env.TZ = ORIGINAL_TZ;
-});
+restoreTimezoneAfterEach();
 
-/** A year-unknown birthday as stored: UTC midnight under year 1604. */
+/** A year-unknown birthday as stored: UTC midnight under the sentinel year. */
 function yearUnknownBirthdayOn(day: Date) {
   return {
     id: 'date-1',
     title: 'Birthday',
     type: 'BIRTHDAY',
-    date: new Date(Date.UTC(1604, day.getMonth(), day.getDate())),
+    date: storedYearUnknownDate(day),
     reminderEnabled: true,
     reminderType: 'RECURRING',
     reminderInterval: 1,
@@ -77,7 +78,7 @@ function yearUnknownBirthdayOn(day: Date) {
 
 describe('getUpcomingEvents with year-unknown birthdays', () => {
   it.each(TIMEZONES)('keeps a birthday three days out on its own day in %s', async (tz) => {
-    process.env.TZ = tz;
+    setProcessTimezone(tz);
     const target = new Date();
     target.setDate(target.getDate() + 3);
     mocks.importantDateFindMany.mockResolvedValue([yearUnknownBirthdayOn(target)]);
@@ -91,7 +92,7 @@ describe('getUpcomingEvents with year-unknown birthdays', () => {
   });
 
   it.each(TIMEZONES)('reports a birthday today as zero days away in %s', async (tz) => {
-    process.env.TZ = tz;
+    setProcessTimezone(tz);
     const today = new Date();
     mocks.importantDateFindMany.mockResolvedValue([yearUnknownBirthdayOn(today)]);
 
@@ -99,5 +100,50 @@ describe('getUpcomingEvents with year-unknown birthdays', () => {
 
     expect(event.daysUntil).toBe(0);
     expect(event.date.getDate()).toBe(today.getDate());
+  });
+});
+
+/** A person due for a catch-up, with lastContact as stored: UTC midnight. */
+function personLastContactedOn(day: Date) {
+  return {
+    id: 'person-1',
+    name: 'Jane',
+    surname: 'Doe',
+    nickname: null,
+    displayNameOverride: null,
+    photo: null,
+    lastContact: storedCalendarDate(day),
+    contactReminderInterval: 1,
+    contactReminderIntervalUnit: 'MONTHS',
+  };
+}
+
+describe('getUpcomingEvents contact reminders', () => {
+  it.each(TIMEZONES)('puts the catch-up thirty days after the recorded day in %s', async (tz) => {
+    setProcessTimezone(tz);
+    const lastContactDay = new Date();
+    lastContactDay.setDate(lastContactDay.getDate() - 10);
+    mocks.importantDateFindMany.mockResolvedValue([]);
+    mocks.personFindMany.mockResolvedValue([personLastContactedOn(lastContactDay)]);
+
+    const [event] = await getUpcomingEvents('user-1');
+
+    const expected = new Date(lastContactDay);
+    expected.setDate(expected.getDate() + 30);
+    expect(event.daysUntil).toBe(20);
+    expect(event.date.getMonth()).toBe(expected.getMonth());
+    expect(event.date.getDate()).toBe(expected.getDate());
+  });
+
+  it.each(TIMEZONES)('reports a catch-up due today as zero days away in %s', async (tz) => {
+    setProcessTimezone(tz);
+    const lastContactDay = new Date();
+    lastContactDay.setDate(lastContactDay.getDate() - 30);
+    mocks.importantDateFindMany.mockResolvedValue([]);
+    mocks.personFindMany.mockResolvedValue([personLastContactedOn(lastContactDay)]);
+
+    const [event] = await getUpcomingEvents('user-1');
+
+    expect(event.daysUntil).toBe(0);
   });
 });

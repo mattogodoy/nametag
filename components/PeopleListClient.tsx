@@ -10,7 +10,7 @@ import BulkGroupAssignModal from './BulkGroupAssignModal';
 import BulkRelationshipModal from './BulkRelationshipModal';
 import PersonAvatar from './PersonPhoto';
 import { formatCanonicalName, type NameDisplayFormat } from '@/lib/nameUtils';
-import { formatDate, type DateFormat } from '@/lib/date-format';
+import { formatDate, parseCalendarDate, type DateFormat } from '@/lib/date-format';
 import CustomFieldFilter from './customFields/CustomFieldFilter';
 import type { CustomFieldTemplate } from '@prisma/client';
 
@@ -481,7 +481,7 @@ export default function PeopleListClient({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-                      {person.lastContact ? formatDate(person.lastContact, dateFormat) : '\u2014'}
+                      {person.lastContact ? formatDate(parseCalendarDate(person.lastContact), dateFormat) : '\u2014'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-3">

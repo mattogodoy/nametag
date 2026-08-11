@@ -5,6 +5,7 @@
  */
 
 import type { ParsedVCardData } from './types';
+import { yearUnknownDate } from '@/lib/date-format';
 
 /**
  * Unknown property that wasn't explicitly handled
@@ -795,8 +796,8 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
     if (yearMatch) {
       const month = parseInt(yearMatch[2], 10);
       const day = parseInt(yearMatch[3], 10);
-      // Use year 1604 to indicate unknown year (matches Apple convention)
-      return new Date(Date.UTC(1604, month - 1, day));
+      // Sentinel form for an unknown year (matches Apple convention)
+      return yearUnknownDate(month - 1, day);
     }
   }
 
@@ -810,8 +811,8 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
       if (parts.length === 2) {
         const month = parseInt(parts[0], 10);
         const day = parseInt(parts[1], 10);
-        // Use year 1604 to indicate unknown year (matches Apple convention)
-        return new Date(Date.UTC(1604, month - 1, day));
+        // Sentinel form for an unknown year (matches Apple convention)
+        return yearUnknownDate(month - 1, day);
       }
     }
 
@@ -819,8 +820,8 @@ function parseVCardDate(dateStr: string, omitYearParam?: string | string[]): Dat
     if (/^\d{4}$/.test(rest)) {
       const month = parseInt(rest.substring(0, 2), 10);
       const day = parseInt(rest.substring(2, 4), 10);
-      // Use year 1604 to indicate unknown year (matches Apple convention)
-      return new Date(Date.UTC(1604, month - 1, day));
+      // Sentinel form for an unknown year (matches Apple convention)
+      return yearUnknownDate(month - 1, day);
     }
   }
 
