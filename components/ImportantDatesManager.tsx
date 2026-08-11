@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { parseAsLocalDate, formatDate, formatDateWithoutYear } from '@/lib/date-format';
+import { parseAsLocalDate, formatDate, formatDateWithoutYear, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
 import DatePicker from './ui/DatePicker';
 import ComboboxInput from './ui/ComboboxInput';
 import { PREDEFINED_DATE_TYPES, getDateDisplayTitle } from '@/lib/important-date-types';
@@ -202,8 +202,8 @@ export default function ImportantDatesManager({
   const handleYearlessDateChange = (isoDate: string): string => {
     const parts = isoDate.split('-');
     if (parts.length === 3) {
-      // Extract month and day, set year to 1604 (Apple's convention for unknown year)
-      return `1604-${parts[1]}-${parts[2]}`;
+      // Extract month and day, set the sentinel year (Apple's convention for unknown year)
+      return `${YEAR_UNKNOWN_SENTINEL}-${parts[1]}-${parts[2]}`;
     }
     return isoDate;
   };
@@ -219,12 +219,12 @@ export default function ImportantDatesManager({
   const handleAdd = () => {
     if ((!newDate.type && !newDate.title.trim()) || !newDate.date) return;
 
-    // If year unknown, set year to 1604 (Apple's convention for unknown year)
+    // If year unknown, set the sentinel year (Apple's convention for unknown year)
     let finalDate = newDate.date;
     if (newDate.yearUnknown && newDate.date) {
       const dateParts = newDate.date.split('-');
       if (dateParts.length === 3) {
-        finalDate = `1604-${dateParts[1]}-${dateParts[2]}`;
+        finalDate = `${YEAR_UNKNOWN_SENTINEL}-${dateParts[1]}-${dateParts[2]}`;
       }
     }
 
@@ -250,7 +250,7 @@ export default function ImportantDatesManager({
   const handleStartEdit = (index: number) => {
     setEditingIndex(index);
     const dateToEdit = dates[index];
-    const yearUnknown = dateToEdit.date.startsWith('1604-');
+    const yearUnknown = dateToEdit.date.startsWith(`${YEAR_UNKNOWN_SENTINEL}-`);
     setEditingDate({
       ...dateToEdit,
       yearUnknown,
@@ -263,12 +263,12 @@ export default function ImportantDatesManager({
     if (!editingDate || editingIndex === null) return;
     if ((!editingDate.type && !editingDate.title.trim()) || !editingDate.date) return;
 
-    // If year unknown, set year to 1604 (Apple's convention for unknown year)
+    // If year unknown, set the sentinel year (Apple's convention for unknown year)
     let finalDate = editingDate.date;
     if (editingDate.yearUnknown && editingDate.date) {
       const dateParts = editingDate.date.split('-');
       if (dateParts.length === 3) {
-        finalDate = `1604-${dateParts[1]}-${dateParts[2]}`;
+        finalDate = `${YEAR_UNKNOWN_SENTINEL}-${dateParts[1]}-${dateParts[2]}`;
       }
     }
 
@@ -460,7 +460,7 @@ export default function ImportantDatesManager({
                     {getDateDisplayTitle(date, t)}
                   </div>
                   <div className="text-xs text-muted">
-                    {date.date.startsWith('1604-')
+                    {date.date.startsWith(`${YEAR_UNKNOWN_SENTINEL}-`)
                       ? formatDateWithoutYear(parseAsLocalDate(date.date), dateFormat)
                       : formatDate(parseAsLocalDate(date.date), dateFormat)}
                   </div>

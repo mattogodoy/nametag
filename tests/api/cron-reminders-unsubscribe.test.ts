@@ -108,16 +108,17 @@ vi.mock('../../lib/api-utils', () => ({
 
 // Import after mocking
 import { GET } from '../../app/api/cron/send-reminders/route';
-
-/**
- * Nametag stores calendar dates as UTC midnight on the day they encode, never
- * local midnight. Fixtures have to match, otherwise they stand in for a row
- * production never writes and the reminder logic gets exercised against the
- * wrong calendar day.
- */
-function asStoredCalendarDate(day: Date): Date {
-  return new Date(Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()));
-}
+// Nametag stores calendar dates as UTC midnight on the day they encode, never
+// local midnight. Fixtures have to match, otherwise they stand in for a row
+// production never writes and the reminder logic gets exercised against the
+// wrong calendar day.
+import {
+  TIMEZONES,
+  setProcessTimezone,
+  restoreTimezoneAfterEach,
+  storedCalendarDate as asStoredCalendarDate,
+  storedYearUnknownDate,
+} from '../helpers/timezone';
 
 describe('Cron Job - Unsubscribe Token Generation', () => {
   beforeEach(() => {
@@ -700,19 +701,13 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
    * a day, which meant birthday reminders went out the day before.
    */
   describe('year-unknown birthdays across timezones', () => {
-    const ORIGINAL_TZ = process.env.TZ;
-
-    afterEach(() => {
-      process.env.TZ = ORIGINAL_TZ;
-    });
-
-    const TIMEZONES = ['UTC', 'Europe/Madrid', 'Europe/London', 'America/New_York', 'Australia/Sydney'];
+    restoreTimezoneAfterEach();
 
     function yearUnknownDateOn(day: Date) {
       return {
         id: 'date-1',
         title: 'Birthday',
-        date: new Date(Date.UTC(1604, day.getMonth(), day.getDate())),
+        date: storedYearUnknownDate(day),
         reminderType: 'RECURRING',
         reminderInterval: 1,
         reminderIntervalUnit: 'YEARS',
@@ -745,7 +740,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
     }
 
     it.each(TIMEZONES)('sends on the birthday itself in %s', async (tz) => {
-      process.env.TZ = tz;
+      setProcessTimezone(tz);
       mocks.importantDateFindMany.mockResolvedValue([yearUnknownDateOn(new Date())]);
 
       await runCron();
@@ -754,12 +749,86 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
     });
 
     it.each(TIMEZONES)('stays quiet the day before in %s', async (tz) => {
-      process.env.TZ = tz;
+      setProcessTimezone(tz);
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       mocks.importantDateFindMany.mockResolvedValue([yearUnknownDateOn(tomorrow)]);
 
       await runCron();
+
+      expect(mocks.createUnsubscribeToken).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * A February 29 birthday (year 1604 is a leap year, so the sentinel form is
+   * valid) has no matching calendar day in non-leap years. The dashboard rolls
+   * it to March 1, and the cron must agree instead of skipping the year.
+   */
+  describe('February 29 birthdays', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function feb29Birthday() {
+      return {
+        id: 'date-1',
+        title: 'Birthday',
+        date: new Date(Date.UTC(1604, 1, 29)),
+        reminderType: 'RECURRING',
+        reminderInterval: 1,
+        reminderIntervalUnit: 'YEARS',
+        lastReminderSent: null,
+        person: {
+          userId: 'user-1',
+          name: 'John',
+          surname: 'Doe',
+          middleName: null,
+          secondLastName: null,
+          nickname: null,
+          user: { email: 'john@example.com', dateFormat: 'MDY', language: 'en' },
+        },
+      };
+    }
+
+    async function runCronOn(localDate: Date) {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(localDate);
+      mocks.importantDateFindMany.mockResolvedValue([feb29Birthday()]);
+      mocks.personFindMany.mockResolvedValue([]);
+      mocks.createUnsubscribeToken.mockResolvedValue('token-abc123');
+      mocks.importantDateReminderTemplate.mockResolvedValue({
+        subject: 'Reminder',
+        html: '<p>Reminder</p>',
+        text: 'Reminder',
+      });
+      await GET(
+        new Request('http://localhost/api/cron/send-reminders', {
+          headers: { authorization: 'Bearer test-cron-secret' },
+        })
+      );
+    }
+
+    it('fires on March 1 in non-leap years, matching the dashboard', async () => {
+      await runCronOn(new Date(2026, 2, 1, 9, 0, 0));
+
+      expect(mocks.createUnsubscribeToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('stays quiet on February 28 in non-leap years', async () => {
+      await runCronOn(new Date(2026, 1, 28, 9, 0, 0));
+
+      expect(mocks.createUnsubscribeToken).not.toHaveBeenCalled();
+    });
+
+    it('fires on February 29 in leap years', async () => {
+      await runCronOn(new Date(2028, 1, 29, 9, 0, 0));
+
+      expect(mocks.createUnsubscribeToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('stays quiet on March 1 in leap years', async () => {
+      await runCronOn(new Date(2028, 2, 1, 9, 0, 0));
 
       expect(mocks.createUnsubscribeToken).not.toHaveBeenCalled();
     });
@@ -773,13 +842,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
    * year into the text.
    */
   describe('email body dates across timezones', () => {
-    const ORIGINAL_TZ = process.env.TZ;
-
-    afterEach(() => {
-      process.env.TZ = ORIGINAL_TZ;
-    });
-
-    const TIMEZONES = ['UTC', 'Europe/Madrid', 'Europe/London', 'America/New_York', 'Australia/Sydney'];
+    restoreTimezoneAfterEach();
 
     function importantDateFixture(date: Date, overrides: Record<string, unknown> = {}) {
       return {
@@ -822,10 +885,27 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       );
     }
 
+    function contactPersonFixture(lastContactDay: Date) {
+      return {
+        id: 'person-1',
+        userId: 'user-1',
+        name: 'Jane',
+        surname: 'Smith',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        lastContact: asStoredCalendarDate(lastContactDay),
+        contactReminderInterval: 30,
+        contactReminderIntervalUnit: 'DAYS',
+        lastContactReminderSent: null,
+        user: { email: 'jane@example.com', dateFormat: 'MDY', language: 'en' },
+      };
+    }
+
     it.each(TIMEZONES)('prints the stored day without the sentinel year in %s', async (tz) => {
-      process.env.TZ = tz;
+      setProcessTimezone(tz);
       const today = new Date();
-      const stored = new Date(Date.UTC(1604, today.getMonth(), today.getDate()));
+      const stored = storedYearUnknownDate(today);
       mocks.importantDateFindMany.mockResolvedValue([importantDateFixture(stored)]);
       mocks.personFindMany.mockResolvedValue([]);
 
@@ -842,7 +922,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
     });
 
     it.each(TIMEZONES)('prints known-year dates on the stored day with their year in %s', async (tz) => {
-      process.env.TZ = tz;
+      setProcessTimezone(tz);
       const today = new Date();
       const stored = new Date(Date.UTC(1990, today.getMonth(), today.getDate()));
       mocks.importantDateFindMany.mockResolvedValue([importantDateFixture(stored)]);
@@ -861,7 +941,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
     });
 
     it.each(TIMEZONES)('prints the recorded last-contact day in %s', async (tz) => {
-      process.env.TZ = tz;
+      setProcessTimezone(tz);
       const lastContactDay = new Date();
       lastContactDay.setMonth(lastContactDay.getMonth() - 4);
       const person = {
@@ -894,9 +974,9 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
     });
 
     it('lays out year-unknown dates as day-first for DMY users', async () => {
-      process.env.TZ = 'Europe/Madrid';
+      setProcessTimezone('Europe/Madrid');
       const today = new Date();
-      const stored = new Date(Date.UTC(1604, today.getMonth(), today.getDate()));
+      const stored = storedYearUnknownDate(today);
       const fixture = importantDateFixture(stored);
       fixture.person.user.dateFormat = 'DMY';
       mocks.importantDateFindMany.mockResolvedValue([fixture]);
@@ -914,10 +994,34 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       );
     });
 
+    it.each(TIMEZONES)('sends the catch-up reminder on the day the interval elapses in %s', async (tz) => {
+      setProcessTimezone(tz);
+      const lastContactDay = new Date();
+      lastContactDay.setDate(lastContactDay.getDate() - 30);
+      mocks.importantDateFindMany.mockResolvedValue([]);
+      mocks.personFindMany.mockResolvedValue([contactPersonFixture(lastContactDay)]);
+
+      await runCron();
+
+      expect(mocks.createUnsubscribeToken).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(TIMEZONES)('stays quiet the day before the interval elapses in %s', async (tz) => {
+      setProcessTimezone(tz);
+      const lastContactDay = new Date();
+      lastContactDay.setDate(lastContactDay.getDate() - 29);
+      mocks.importantDateFindMany.mockResolvedValue([]);
+      mocks.personFindMany.mockResolvedValue([contactPersonFixture(lastContactDay)]);
+
+      await runCron();
+
+      expect(mocks.createUnsubscribeToken).not.toHaveBeenCalled();
+    });
+
     it('localizes the month name for year-unknown dates', async () => {
-      process.env.TZ = 'Europe/Madrid';
+      setProcessTimezone('Europe/Madrid');
       const today = new Date();
-      const stored = new Date(Date.UTC(1604, today.getMonth(), today.getDate()));
+      const stored = storedYearUnknownDate(today);
       const fixture = importantDateFixture(stored);
       fixture.person.user.dateFormat = 'DMY';
       fixture.person.user.language = 'es-ES';

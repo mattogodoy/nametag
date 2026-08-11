@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   formatDate,
   formatDateWithoutYear,
@@ -6,6 +6,7 @@ import {
   parseCalendarDate,
 } from '@/lib/date-format';
 import { getNextOccurrence } from '@/lib/upcoming-events';
+import { TIMEZONES, withTimezone, storedCalendarDate } from '../helpers/timezone';
 
 /**
  * Regression tests for calendar dates read straight from the database.
@@ -25,33 +26,6 @@ import { getNextOccurrence } from '@/lib/upcoming-events';
  *
  * These tests pin the process timezone because the bug is invisible under UTC.
  */
-
-const ORIGINAL_TZ = process.env.TZ;
-
-afterEach(() => {
-  process.env.TZ = ORIGINAL_TZ;
-});
-
-function withTimezone<T>(tz: string, fn: () => T): T {
-  process.env.TZ = tz;
-  return fn();
-}
-
-// Madrid and London are east of UTC today but west of it in 1604, which is the
-// combination that made only year-unknown dates look broken. New York is west
-// in both eras, Sydney east in both.
-const TIMEZONES = [
-  'UTC',
-  'Europe/Madrid',
-  'Europe/London',
-  'America/New_York',
-  'Australia/Sydney',
-];
-
-/** A calendar date as Prisma hands it back: UTC midnight on the stored day. */
-function storedCalendarDate(iso: string): Date {
-  return new Date(`${iso}T00:00:00.000Z`);
-}
 
 describe('calendar dates read from the database', () => {
   describe('parseCalendarDate', () => {
@@ -138,6 +112,29 @@ describe('calendar dates read from the database', () => {
         expect(next.getMonth()).toBe(7);
         expect(next.getDate()).toBe(10);
       });
+    });
+
+    it('rolls a February 29 birthday to March 1 in non-leap years', () => {
+      // Year 1604 is a leap year, so the sentinel form of Feb 29 is valid.
+      // This rollover is the convention: the reminder cron matches it, so the
+      // dashboard and the emails agree on the day.
+      const stored = storedCalendarDate('1604-02-29');
+      const today = new Date(2026, 1, 20);
+      const next = getNextOccurrence(parseCalendarDate(stored), today, 1, 'YEARS', null);
+
+      expect(next.getFullYear()).toBe(2026);
+      expect(next.getMonth()).toBe(2);
+      expect(next.getDate()).toBe(1);
+    });
+
+    it('keeps a February 29 birthday on its own day in leap years', () => {
+      const stored = storedCalendarDate('1604-02-29');
+      const today = new Date(2028, 1, 20);
+      const next = getNextOccurrence(parseCalendarDate(stored), today, 1, 'YEARS', null);
+
+      expect(next.getFullYear()).toBe(2028);
+      expect(next.getMonth()).toBe(1);
+      expect(next.getDate()).toBe(29);
     });
 
     it.each(TIMEZONES)('treats the birthday itself as due today in %s', (tz) => {

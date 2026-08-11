@@ -7,6 +7,7 @@ import {
   compositeSimilarity,
 } from '@/lib/duplicate-detection';
 import type { PersonForComparison } from '@/lib/duplicate-detection';
+import { TIMEZONES, setProcessTimezone, restoreTimezoneAfterEach } from '../helpers/timezone';
 
 describe('normalizeEmail', () => {
   it('lowercases and trims', () => {
@@ -172,6 +173,34 @@ describe('compositeSimilarity', () => {
     const b = person({ id: '2', name: 'John', surname: 'Smith', birthdays: [bday] });
     const result = compositeSimilarity(a, b);
     expect(result.score).toBeGreaterThan(0.6);
+  });
+
+  describe('birthday signal across timezones', () => {
+    restoreTimezoneAfterEach();
+
+    // Stored birthdays are UTC midnight. A year-unknown one sits under year
+    // 1604, where Local Mean Time applies, so local accessors shift it by a
+    // different amount than a modern year and the month/day match breaks.
+    it.each(TIMEZONES)('partial-matches a year-unknown birthday against the same day with a known year in %s', (tz) => {
+      setProcessTimezone(tz);
+      const a = person({ id: '1', name: 'Roberto', surname: 'Sanchez', birthdays: [new Date('1604-08-10T00:00:00.000Z')] });
+      const sameDay = person({ id: '2', name: 'Robert', surname: 'Sanchez', birthdays: [new Date('1990-08-10T00:00:00.000Z')] });
+      const differentDay = person({ id: '3', name: 'Robert', surname: 'Sanchez', birthdays: [new Date('1990-11-20T00:00:00.000Z')] });
+
+      const sameDayScore = compositeSimilarity(a, sameDay).score;
+      const differentDayScore = compositeSimilarity(a, differentDay).score;
+
+      expect(sameDayScore).toBeGreaterThan(differentDayScore);
+    });
+
+    it.each(TIMEZONES)('exact-matches two identical known-year birthdays in %s', (tz) => {
+      setProcessTimezone(tz);
+      const bday = new Date('1990-05-15T00:00:00.000Z');
+      const a = person({ id: '1', name: 'John', surname: 'Smith', birthdays: [bday] });
+      const b = person({ id: '2', name: 'John', surname: 'Smith', birthdays: [new Date(bday)] });
+
+      expect(compositeSimilarity(a, b).score).toBeGreaterThan(0.6);
+    });
   });
 
   it('scores birthday same month+day different year as 0.5', () => {

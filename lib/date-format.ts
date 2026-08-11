@@ -51,6 +51,24 @@ export function parseCalendarDate(date: Date | string): Date {
 }
 
 /**
+ * Apple's marker year for dates whose year is unknown. It predates standard
+ * time zones, which is why these values must always be read as UTC calendar
+ * days (see `parseCalendarDate`). Legacy rows written through local-time paths
+ * can sit slightly below it, so checks use `<=` rather than equality.
+ */
+export const YEAR_UNKNOWN_SENTINEL = 1604;
+
+/** Build the stored form of a year-unknown calendar date: UTC midnight under the sentinel year. */
+export function yearUnknownDate(monthIndex: number, day: number): Date {
+  return new Date(Date.UTC(YEAR_UNKNOWN_SENTINEL, monthIndex, day));
+}
+
+/** True when a stored calendar date (Date or string) carries the year-unknown sentinel. */
+export function isYearUnknownDate(date: Date | string): boolean {
+  return parseCalendarDate(date).getFullYear() <= YEAR_UNKNOWN_SENTINEL;
+}
+
+/**
  * Today's calendar date in the viewer's local timezone, as `YYYY-MM-DD`.
  * Use instead of `new Date().toISOString().split('T')[0]`, which is UTC and
  * rolls forward after UTC midnight for users west of UTC.

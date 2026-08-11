@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import PeopleListClient from '../../components/PeopleListClient';
 import enMessages from '../../locales/en.json';
+import { TIMEZONES, setProcessTimezone, restoreTimezoneAfterEach } from '../helpers/timezone';
 
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({
@@ -157,6 +158,30 @@ describe('PeopleListClient', () => {
 
       expect(screen.getByText('Alice')).toBeInTheDocument();
       expect(screen.getByText('Bob')).toBeInTheDocument();
+    });
+
+    describe('last contact across timezones', () => {
+      restoreTimezoneAfterEach();
+
+      // The people page hands this component raw Prisma rows, so lastContact
+      // arrives as a real Date at UTC midnight and local accessors would show
+      // the previous day west of UTC, disagreeing with the detail page.
+      it.each(TIMEZONES)('shows the recorded last-contact day in %s', (tz) => {
+        setProcessTimezone(tz);
+        render(
+          <Wrapper>
+            <PeopleListClient
+              {...defaultProps({
+                people: [
+                  makePerson({ id: 'p-1', lastContact: new Date('2026-08-10T00:00:00.000Z') }),
+                ],
+              })}
+            />
+          </Wrapper>
+        );
+
+        expect(screen.getByText('08/10/2026')).toBeInTheDocument();
+      });
     });
 
     it('renders showing count text', () => {

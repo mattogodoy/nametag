@@ -52,3 +52,4 @@ Self-hosted installations are not subject to these limits. Turning off a reminde
 - **Reminder types**: Once (fires a single time), Recurring (fires every interval, for example every year)
 - **Date storage**: calendar dates are stored as UTC midnight on the day you picked, so the day never shifts with your timezone
 - **Unknown years**: dates saved without a year are stored under year 1604, Apple's marker for an unknown year, which keeps them compatible with Contacts and other CardDAV clients
+- **February 29**: in non-leap years, a February 29 date appears (and its yearly reminder fires) on March 1

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, formatDateWithoutYear, getDateFormatLabel, getDateFormatExample, getLocalDateString, parseAsLocalDate } from '@/lib/date-format';
+import { formatDate, formatDateWithoutYear, getDateFormatLabel, getDateFormatExample, getLocalDateString, parseAsLocalDate, yearUnknownDate, isYearUnknownDate } from '@/lib/date-format';
 
 describe('date-format', () => {
   describe('parseAsLocalDate', () => {
@@ -324,6 +324,36 @@ describe('date-format', () => {
         const date = new Date(2024, 11, 25); // December 25, 2024
         expect(formatDateWithoutYear(date, 'MDY')).toBe('December 25');
         expect(formatDateWithoutYear(date, 'DMY')).toBe('25 December');
+      });
+    });
+  });
+
+  describe('year-unknown sentinel helpers', () => {
+    describe('yearUnknownDate', () => {
+      it('builds the stored form: UTC midnight under the sentinel year', () => {
+        const stored = yearUnknownDate(7, 10);
+        expect(stored.toISOString()).toBe('1604-08-10T00:00:00.000Z');
+      });
+    });
+
+    describe('isYearUnknownDate', () => {
+      it('recognizes a stored sentinel Date', () => {
+        expect(isYearUnknownDate(new Date('1604-08-10T00:00:00.000Z'))).toBe(true);
+      });
+
+      it('recognizes a sentinel date string', () => {
+        expect(isYearUnknownDate('1604-08-10')).toBe(true);
+      });
+
+      it('recognizes legacy rows that drifted below the sentinel year', () => {
+        // The old local-time write path could store a January 1 pick as late
+        // December 1603 on some server timezones.
+        expect(isYearUnknownDate(new Date('1603-12-31T23:47:52.000Z'))).toBe(true);
+      });
+
+      it('treats known-year dates as known', () => {
+        expect(isYearUnknownDate(new Date('1990-08-10T00:00:00.000Z'))).toBe(false);
+        expect(isYearUnknownDate('1990-08-10')).toBe(false);
       });
     });
   });

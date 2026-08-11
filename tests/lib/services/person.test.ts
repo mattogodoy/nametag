@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks (must be defined before any imports that use them)
@@ -156,6 +156,7 @@ import {
   restorePerson,
   mergePeople,
 } from '../../../lib/services/person';
+import { TIMEZONES, setProcessTimezone, restoreTimezoneAfterEach } from '../../helpers/timezone';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -276,16 +277,12 @@ describe('createPerson', () => {
    * written it last.
    */
   describe('year-unknown important dates', () => {
-    const ORIGINAL_TZ = process.env.TZ;
+    restoreTimezoneAfterEach();
 
-    afterEach(() => {
-      process.env.TZ = ORIGINAL_TZ;
-    });
-
-    it.each(['UTC', 'Europe/Madrid', 'Europe/London', 'America/New_York', 'Australia/Sydney'])(
+    it.each(TIMEZONES)(
       'stores August 10 at UTC midnight under year 1604 in %s',
       async (tz) => {
-        process.env.TZ = tz;
+        setProcessTimezone(tz);
 
         await createPerson(USER_ID, {
           ...makeMinimalPersonData(),

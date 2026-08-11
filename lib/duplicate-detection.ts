@@ -171,13 +171,17 @@ function birthdaySignal(a: PersonForComparison, b: PersonForComparison): { compa
     return { comparable: false, score: 0 };
   }
   let best = 0;
+  // Stored birthdays are UTC midnight on the calendar day they encode, so read
+  // them with UTC accessors. Local accessors shift year-unknown dates (year
+  // 1604, where Local Mean Time applies) by a different amount than modern
+  // years, which breaks the month/day comparison between the two.
   for (const da of a.birthdays) {
     for (const db of b.birthdays) {
-      if (da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()) {
+      if (da.getUTCFullYear() === db.getUTCFullYear() && da.getUTCMonth() === db.getUTCMonth() && da.getUTCDate() === db.getUTCDate()) {
         best = 1.0;
         break;
       }
-      if (da.getMonth() === db.getMonth() && da.getDate() === db.getDate()) {
+      if (da.getUTCMonth() === db.getUTCMonth() && da.getUTCDate() === db.getUTCDate()) {
         best = Math.max(best, 0.5);
       }
     }
