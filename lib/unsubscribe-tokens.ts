@@ -7,7 +7,7 @@ import { getUserLocale } from './locale';
 
 const TOKEN_EXPIRY_DAYS = 90;
 
-export type ReminderEntityType = 'IMPORTANT_DATE' | 'CONTACT';
+export type ReminderEntityType = 'IMPORTANT_DATE' | 'CONTACT' | 'WEEKLY_DIGEST';
 
 interface CreateTokenParams {
   userId: string;

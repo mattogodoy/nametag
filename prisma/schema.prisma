@@ -23,6 +23,10 @@ model User {
   nameDisplayFormat  NameDisplayFormat @default(FULL)
   graphMode          String?           // 'individuals' | 'bubbles' | null (unset → individuals)
   geocodingEnabled   Boolean   @default(true) // Send contact addresses to the geocoder for the map
+  defaultReminderLeadDays Int       @default(0)     // 0 = day-of reminder only
+  weeklyDigestEnabled     Boolean   @default(false) // Opt-in
+  weeklyDigestWeekday     Int       @default(1)     // 0 = Sunday ... 6 = Saturday
+  lastWeeklyDigestSent    DateTime?
   language           String?   @default("en") // "en" or "es-ES"
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
@@ -241,6 +245,8 @@ model ImportantDate {
   reminderInterval     Int?                  // For recurring reminders
   reminderIntervalUnit ReminderIntervalUnit? // For recurring reminders
   lastReminderSent     DateTime?             // Track when last reminder was sent
+  reminderLeadDays     Int?      // null = inherit User.defaultReminderLeadDays
+  lastLeadReminderSent DateTime? // Tracked separately from lastReminderSent
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   deletedAt            DateTime?
@@ -273,6 +279,7 @@ enum ReminderIntervalUnit {
 enum ReminderEntityType {
   IMPORTANT_DATE
   CONTACT
+  WEEKLY_DIGEST
 }
 
 // RelationshipType Model - User-defined relationship types

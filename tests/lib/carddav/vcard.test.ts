@@ -272,6 +272,8 @@ describe('vCard Transformation', () => {
             reminderInterval: null,
             reminderIntervalUnit: null,
             lastReminderSent: null,
+            reminderLeadDays: null,
+            lastLeadReminderSent: null,
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: null,
