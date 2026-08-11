@@ -114,4 +114,20 @@ describe('selectDigestEvents', () => {
     expect(result.events).toHaveLength(0);
     expect(result.overflowCount).toBe(0);
   });
+
+  it('sorts events by daysUntil in ascending order', () => {
+    const unordered = [event(5, 'e-5'), event(0, 'e-0'), event(7, 'e-7'), event(2, 'e-2')];
+    const result = selectDigestEvents(unordered);
+    expect(result.events).toHaveLength(4);
+    const daysUntilSequence = result.events.map((e) => e.daysUntil);
+    expect(daysUntilSequence).toEqual([0, 2, 5, 7]);
+  });
+
+  it('does not mutate the input array', () => {
+    const original = [event(5, 'e-5'), event(0, 'e-0'), event(7, 'e-7'), event(2, 'e-2')];
+    const originalOrder = original.map((e) => e.daysUntil);
+    selectDigestEvents(original);
+    const finalOrder = original.map((e) => e.daysUntil);
+    expect(finalOrder).toEqual(originalOrder);
+  });
 });

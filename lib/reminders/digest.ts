@@ -6,7 +6,13 @@ export const DIGEST_WINDOW_DAYS = 7;
 /** Rows shown before collapsing the rest into an "and N more" link. */
 export const DIGEST_MAX_ROWS = 25;
 
-/** Blocks a second send if the cron fires twice on the same morning. */
+/**
+ * Blocks a second send if the cron fires twice on the same morning.
+ * The comparison is exclusive (< rather than <=), so at exactly 6 days this
+ * does not block. This is unreachable while the weekday gate is active
+ * (consecutive matches are always exactly 7 days apart), but the name and
+ * comment describe the intended intent if called in other contexts.
+ */
 const RESEND_GUARD_DAYS = 6;
 
 export interface DigestUser {
