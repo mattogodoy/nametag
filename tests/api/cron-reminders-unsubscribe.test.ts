@@ -764,4 +764,176 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       expect(mocks.createUnsubscribeToken).not.toHaveBeenCalled();
     });
   });
+
+  /**
+   * The date printed inside the email body has to match the stored calendar
+   * day too. Reading the stored UTC-midnight value with local accessors put
+   * the previous day into the email in the same timezones where the send-day
+   * check used to misfire, and year-unknown dates leaked the 1604 sentinel
+   * year into the text.
+   */
+  describe('email body dates across timezones', () => {
+    const ORIGINAL_TZ = process.env.TZ;
+
+    afterEach(() => {
+      process.env.TZ = ORIGINAL_TZ;
+    });
+
+    const TIMEZONES = ['UTC', 'Europe/Madrid', 'Europe/London', 'America/New_York', 'Australia/Sydney'];
+
+    function importantDateFixture(date: Date, overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'date-1',
+        title: 'Birthday',
+        date,
+        reminderType: 'RECURRING',
+        reminderInterval: 1,
+        reminderIntervalUnit: 'YEARS',
+        lastReminderSent: null,
+        person: {
+          userId: 'user-1',
+          name: 'John',
+          surname: 'Doe',
+          middleName: null,
+          secondLastName: null,
+          nickname: null,
+          user: { email: 'john@example.com', dateFormat: 'MDY', language: 'en' },
+        },
+        ...overrides,
+      };
+    }
+
+    async function runCron() {
+      mocks.createUnsubscribeToken.mockResolvedValue('token-abc123');
+      mocks.importantDateReminderTemplate.mockResolvedValue({
+        subject: 'Reminder',
+        html: '<p>Reminder</p>',
+        text: 'Reminder',
+      });
+      mocks.contactReminderTemplate.mockResolvedValue({
+        subject: 'Contact Reminder',
+        html: '<p>Contact Reminder</p>',
+        text: 'Contact Reminder',
+      });
+      await GET(
+        new Request('http://localhost/api/cron/send-reminders', {
+          headers: { authorization: 'Bearer test-cron-secret' },
+        })
+      );
+    }
+
+    it.each(TIMEZONES)('prints the stored day without the sentinel year in %s', async (tz) => {
+      process.env.TZ = tz;
+      const today = new Date();
+      const stored = new Date(Date.UTC(1604, today.getMonth(), today.getDate()));
+      mocks.importantDateFindMany.mockResolvedValue([importantDateFixture(stored)]);
+      mocks.personFindMany.mockResolvedValue([]);
+
+      await runCron();
+
+      const expected = `${today.toLocaleDateString('en-US', { month: 'long' })} ${today.getDate()}`;
+      expect(mocks.importantDateReminderTemplate).toHaveBeenCalledWith(
+        'John Doe',
+        'Birthday',
+        expected,
+        expect.any(String),
+        'en'
+      );
+    });
+
+    it.each(TIMEZONES)('prints known-year dates on the stored day with their year in %s', async (tz) => {
+      process.env.TZ = tz;
+      const today = new Date();
+      const stored = new Date(Date.UTC(1990, today.getMonth(), today.getDate()));
+      mocks.importantDateFindMany.mockResolvedValue([importantDateFixture(stored)]);
+      mocks.personFindMany.mockResolvedValue([]);
+
+      await runCron();
+
+      const expected = `${today.toLocaleDateString('en-US', { month: 'long' })} ${today.getDate()}, 1990`;
+      expect(mocks.importantDateReminderTemplate).toHaveBeenCalledWith(
+        'John Doe',
+        'Birthday',
+        expected,
+        expect.any(String),
+        'en'
+      );
+    });
+
+    it.each(TIMEZONES)('prints the recorded last-contact day in %s', async (tz) => {
+      process.env.TZ = tz;
+      const lastContactDay = new Date();
+      lastContactDay.setMonth(lastContactDay.getMonth() - 4);
+      const person = {
+        id: 'person-1',
+        userId: 'user-1',
+        name: 'Jane',
+        surname: 'Smith',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        lastContact: asStoredCalendarDate(lastContactDay),
+        contactReminderInterval: 3,
+        contactReminderIntervalUnit: 'MONTHS',
+        lastContactReminderSent: null,
+        user: { email: 'jane@example.com', dateFormat: 'MDY', language: 'en' },
+      };
+      mocks.importantDateFindMany.mockResolvedValue([]);
+      mocks.personFindMany.mockResolvedValue([person]);
+
+      await runCron();
+
+      const expected = `${lastContactDay.toLocaleDateString('en-US', { month: 'long' })} ${lastContactDay.getDate()}, ${lastContactDay.getFullYear()}`;
+      expect(mocks.contactReminderTemplate).toHaveBeenCalledWith(
+        'John Doe',
+        expected,
+        expect.any(String),
+        expect.any(String),
+        'en'
+      );
+    });
+
+    it('lays out year-unknown dates as day-first for DMY users', async () => {
+      process.env.TZ = 'Europe/Madrid';
+      const today = new Date();
+      const stored = new Date(Date.UTC(1604, today.getMonth(), today.getDate()));
+      const fixture = importantDateFixture(stored);
+      fixture.person.user.dateFormat = 'DMY';
+      mocks.importantDateFindMany.mockResolvedValue([fixture]);
+      mocks.personFindMany.mockResolvedValue([]);
+
+      await runCron();
+
+      const expected = `${today.getDate()} ${today.toLocaleDateString('en-US', { month: 'long' })}`;
+      expect(mocks.importantDateReminderTemplate).toHaveBeenCalledWith(
+        'John Doe',
+        'Birthday',
+        expected,
+        expect.any(String),
+        'en'
+      );
+    });
+
+    it('localizes the month name for year-unknown dates', async () => {
+      process.env.TZ = 'Europe/Madrid';
+      const today = new Date();
+      const stored = new Date(Date.UTC(1604, today.getMonth(), today.getDate()));
+      const fixture = importantDateFixture(stored);
+      fixture.person.user.dateFormat = 'DMY';
+      fixture.person.user.language = 'es-ES';
+      mocks.importantDateFindMany.mockResolvedValue([fixture]);
+      mocks.personFindMany.mockResolvedValue([]);
+
+      await runCron();
+
+      const expected = `${today.getDate()} ${today.toLocaleDateString('es-ES', { month: 'long' })}`;
+      expect(mocks.importantDateReminderTemplate).toHaveBeenCalledWith(
+        'John Doe',
+        expect.any(String),
+        expected,
+        expect.any(String),
+        'es-ES'
+      );
+    });
+  });
 });

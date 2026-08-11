@@ -472,11 +472,25 @@ function formatDateForEmail(
   dateFormat: string | null,
   locale: string = 'en'
 ): string {
-  const d = new Date(date);
+  // Stored values are UTC midnight on the calendar day they encode; reading
+  // them with local accessors would report the previous day west of UTC.
+  const d = parseCalendarDate(date);
   const localeCode = locale === 'en' ? 'en-US' : locale;
   const month = d.toLocaleDateString(localeCode, { month: 'long' });
   const day = d.getDate();
   const year = d.getFullYear();
+
+  // Year-unknown dates carry the 1604 sentinel year; show only month and day.
+  if (year <= 1604) {
+    switch (dateFormat) {
+      case 'DMY':
+        return `${day} ${month}`;
+      case 'MDY':
+      case 'YMD':
+      default:
+        return `${month} ${day}`;
+    }
+  }
 
   switch (dateFormat) {
     case 'DMY':
