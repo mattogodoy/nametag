@@ -66,7 +66,16 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         responses: {
           '200': jsonResponse('Theme updated', {
             type: 'object',
-            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+            properties: {
+              user: {
+                type: 'object',
+                description: 'Only the identifier and the updated preference are returned.',
+                properties: {
+                  id: { type: 'string' },
+                  theme: { type: 'string', enum: ['LIGHT', 'DARK'] },
+                },
+              },
+            },
           }),
           '401': ref401(),
         },
@@ -81,7 +90,16 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         responses: {
           '200': jsonResponse('Date format updated', {
             type: 'object',
-            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+            properties: {
+              user: {
+                type: 'object',
+                description: 'Only the identifier and the updated preference are returned.',
+                properties: {
+                  id: { type: 'string' },
+                  dateFormat: { type: 'string', enum: ['MDY', 'DMY', 'YMD'] },
+                },
+              },
+            },
           }),
           '401': ref401(),
         },
@@ -97,7 +115,16 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         responses: {
           '200': jsonResponse('Graph display settings updated', {
             type: 'object',
-            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+            properties: {
+              user: {
+                type: 'object',
+                description: 'Only the identifier and the updated preference are returned.',
+                properties: {
+                  id: { type: 'string' },
+                  graphMode: { type: 'string', enum: ['individuals', 'bubbles'] },
+                },
+              },
+            },
           }),
           '400': ref400(),
           '401': ref401(),
@@ -139,7 +166,16 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         responses: {
           '200': jsonResponse('Name order updated', {
             type: 'object',
-            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+            properties: {
+              user: {
+                type: 'object',
+                description: 'Only the identifier and the updated preference are returned.',
+                properties: {
+                  id: { type: 'string' },
+                  nameOrder: { type: 'string', enum: ['WESTERN', 'EASTERN'] },
+                },
+              },
+            },
           }),
           '401': ref401(),
         },
@@ -154,7 +190,16 @@ export function userPaths(): Record<string, Record<string, unknown>> {
         responses: {
           '200': jsonResponse('Name display format updated', {
             type: 'object',
-            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+            properties: {
+              user: {
+                type: 'object',
+                description: 'Only the identifier and the updated preference are returned.',
+                properties: {
+                  id: { type: 'string' },
+                  nameDisplayFormat: { type: 'string', enum: ['FULL', 'NICKNAME_PREFERRED', 'SHORT'] },
+                },
+              },
+            },
           }),
           '401': ref401(),
         },
