@@ -1,0 +1,131 @@
+fix(dates): keep year-unknown dates on the day they were saved (#402)
+
+A birthday saved as **August 10** with "unknown year" checked displayed
+as **August 9**, while the edit form kept showing August 10. Re-saving
+changed nothing. Later the same day it started showing August 10 on its
+own.
+
+Nothing was ever wrong with the stored value.
+
+## What was happening
+
+Nametag stores calendar dates as UTC midnight. `parseAsLocalDate`
+anchors the calendar day when given a **string**, but passes **`Date`
+objects through untouched**, and the formatters then read them with
+`getDate()`, which reports the previous day anywhere west of UTC.
+
+Three server-side paths hand it raw Prisma values:
+
+- `app/people/[id]/page.tsx` (person detail)
+- `lib/upcoming-events.ts` (dashboard)
+- `app/api/cron/send-reminders/route.ts` (reminder scheduling)
+
+The edit form is a client component, so the same value arrives as a JSON
+string, takes the string branch, and reads correctly. One value, two
+readings, which is why the list and the form disagreed.
+
+## Why only year-unknown dates broke
+
+Year 1604 predates standard time zones, so JavaScript falls back to
+Local Mean Time:
+
+```
+Europe/Madrid   1604: -0:14:44   today: +2:00
+Europe/London   1604: -0:01:15   today: +1:00
+```
+
+Madrid and London are east of UTC today but west of it in 1604. So
+known-year birthdays render correctly and only the year-unknown ones
+slip back a day. London is caught by 75 seconds.
+
+## The fix
+
+Adds `parseCalendarDate` for values read from the database, and routes
+the three paths through it.
+
+`parseAsLocalDate` keeps its `Date` pass-through deliberately.
+Locally-built dates do flow into it (the settings date-format example,
+and `getNextOccurrence` results on the dashboard) and those are already
+on the right calendar day, so re-anchoring them from UTC would break
+them. Making the distinction explicit at the call site is what actually
+removes the footgun.
+
+### Reminders fired a day early
+
+Same root cause, worse consequence: `send-reminders` read the date the
+same way, so year-unknown birthday emails went out on the wrong day. Now
+covered across five timezones. Reverting just that line fails in Madrid,
+London and New York, and passes in UTC and Sydney, exactly as the Local
+Mean Time offsets predict.
+
+### Two write paths disagreed
+
+`mapImportantDate` rewrote the year with `setFullYear`, which operates
+in local time, so the person form stored a different instant than the
+important-dates API and the CardDAV importer did for the same calendar
+day:
+
+```
+important-dates route   new Date('1604-08-10')  -> 1604-08-10T00:00:00Z
+person form             setFullYear(1604)       -> 1604-08-10T02:14:44Z
+CardDAV import          Date.UTC(1604, 7, 10)   -> 1604-08-10T00:00:00Z
+```
+
+All three now agree on UTC midnight. This is also the likely reason the
+date appeared to correct itself: a save through the person-form path
+rewrote the instant to one that happened to display correctly.
+
+## Verification
+
+- New `tests/lib/calendar-date-timezone.test.ts` and
+`tests/lib/upcoming-events-timezone.test.ts`, both pinning the process
+timezone across UTC, Madrid, London, New York and Sydney. The bug is
+invisible under UTC, which is why the existing suite passed.
+- New timezone coverage for the reminder cron and for the year-unknown
+write path.
+- Every fix was reverted individually to confirm its tests fail without
+it.
+- The reminder cron fixtures were building local-midnight dates, which
+production never writes, so they were pinning the wrong storage
+convention. Corrected rather than worked around.
+- Full suite: 2704 passed, 1 skipped, 0 failed. `tsc --noEmit` clean,
+lint clean on changed files, docs site builds.
+
+## Note
+
+The person detail page itself has no direct test (it is a React server
+component), but the exact composition it uses,
+`formatDateWithoutYear(parseCalendarDate(stored))`, is asserted across
+all five timezones.
+
+## Post-review additions
+
+Two gaps surfaced in review, both now covered here:
+
+### The email body printed the wrong date
+
+The send-day fix made the reminder fire on the right day, but
+`formatDateForEmail` still read the raw stored value with local
+accessors, so the text of the email named the previous day in the same
+timezones, and year-unknown dates printed the 1604 sentinel year. It now
+goes through `parseCalendarDate`, and year-unknown dates render as month
+and day only, matching the UI. Covered across the same five timezones
+for both important dates and the last-contact date in contact reminders.
+
+### Backfill for rows written by the old setFullYear path
+
+The old write path stored instants offset from UTC midnight on servers
+whose 1604 Local Mean Time differs from their modern offset (Sydney
+wrote `1604-08-09T23:55:08Z` for August 10). Those legacy rows would
+regress under the new UTC read, permanently showing a day early until
+re-saved. A data-only migration rounds them to the nearest UTC midnight,
+which recovers the picked day since the write error is always well under
+twelve hours. Rows that round across the year boundary to 1605-01-01 are
+clamped back to 1604-01-01 to keep the sentinel. Correct rows sit
+exactly on UTC midnight and match nothing in the `WHERE` clause. The
+migration logic was validated row-by-row against fixtures reproducing
+Sydney, Paris, New York, Brisbane and Azores writes, plus untouched
+clean and known-year rows.
+
+No action needed from self-hosters: the migration runs automatically via
+`prisma migrate deploy` in the Docker entrypoint.

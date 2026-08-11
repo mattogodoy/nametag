@@ -248,7 +248,9 @@ describe('send-reminders weekly digest', () => {
       personId: 'person-day',
       title: 'Anniversary',
       type: 'anniversary',
-      date: new Date(today),
+      // Stored as UTC midnight on today's calendar day, matching how the
+      // database holds calendar dates and how parseCalendarDate reads them.
+      date: new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())),
       reminderEnabled: true,
       reminderType: 'ONCE',
       reminderInterval: null,

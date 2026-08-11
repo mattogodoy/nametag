@@ -1,7 +1,8 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { personToVCard, formatVCardV3Date } from '@/lib/carddav/vcard-export';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
 import type { PersonWithRelations } from '@/lib/carddav/types';
+import { withTimezone } from '../../helpers/timezone';
 
 /**
  * Regression tests for issue #373 follow-up: calendar dates drifted one day
@@ -19,19 +20,8 @@ import type { PersonWithRelations } from '@/lib/carddav/types';
  * and under any timezone west of UTC, which is why the existing suite passed.
  */
 
-const ORIGINAL_TZ = process.env.TZ;
-
-afterEach(() => {
-  process.env.TZ = ORIGINAL_TZ;
-});
-
 // Two zones ahead of UTC (where the bug appeared), one behind, plus UTC.
 const TIMEZONES = ['UTC', 'Europe/Berlin', 'Australia/Sydney', 'America/New_York'];
-
-function withTimezone<T>(tz: string, fn: () => T): T {
-  process.env.TZ = tz;
-  return fn();
-}
 
 function buildPerson(
   importantDates: PersonWithRelations['importantDates']

@@ -8,6 +8,7 @@ import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
+import { parseCalendarDate, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
 import { getTranslationsForLocale, type SupportedLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import {
@@ -17,7 +18,6 @@ import {
 } from '@/lib/reminders/due-dates';
 import { resolveLeadDays } from '@/lib/reminders/lead-days';
 import { getNextOccurrence, getDaysUntil, getUpcomingEvents } from '@/lib/upcoming-events';
-import { parseAsLocalDate } from '@/lib/date-format';
 import { isDigestDueToday, selectDigestEvents } from '@/lib/reminders/digest';
 import { isSaasMode } from '@/lib/features';
 
@@ -152,9 +152,9 @@ export const GET = withLogging(async function GET(request: Request) {
       if (leadDays > 0) {
         const nextOccurrence =
           importantDate.reminderType === 'ONCE'
-            ? parseAsLocalDate(importantDate.date)
+            ? parseCalendarDate(importantDate.date)
             : getNextOccurrence(
-                parseAsLocalDate(importantDate.date),
+                parseCalendarDate(importantDate.date),
                 today,
                 importantDate.reminderInterval || 1,
                 importantDate.reminderIntervalUnit || 'YEARS',
@@ -519,11 +519,25 @@ function formatDateForEmail(
   dateFormat: string | null,
   locale: string = 'en'
 ): string {
-  const d = new Date(date);
+  // Stored values are UTC midnight on the calendar day they encode; reading
+  // them with local accessors would report the previous day west of UTC.
+  const d = parseCalendarDate(date);
   const localeCode = locale === 'en' ? 'en-US' : locale;
   const month = d.toLocaleDateString(localeCode, { month: 'long' });
   const day = d.getDate();
   const year = d.getFullYear();
+
+  // Year-unknown dates carry the sentinel year; show only month and day.
+  if (year <= YEAR_UNKNOWN_SENTINEL) {
+    switch (dateFormat) {
+      case 'DMY':
+        return `${day} ${month}`;
+      case 'MDY':
+      case 'YMD':
+      default:
+        return `${month} ${day}`;
+    }
+  }
 
   switch (dateFormat) {
     case 'DMY':

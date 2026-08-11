@@ -10,6 +10,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma, prismaIncludingDeleted } from '@/lib/prisma';
 import { createPersonSchema, updatePersonSchema } from '@/lib/validations';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
+import { yearUnknownDate } from '@/lib/date-format';
 import { autoExportPerson, autoUpdatePerson } from '@/lib/carddav/auto-export';
 import { geocodePersonAddresses } from '@/lib/geocoding/geocode-person';
 import { personUpdateInclude, personDetailsInclude } from '@/lib/prisma-queries';
@@ -64,13 +65,14 @@ function resolveDisplayNameOverride(
 
 /** Convert an importantDate input to the Prisma create shape. */
 function mapImportantDate(date: NonNullable<PersonInput['importantDates']>[number]) {
+  // Calendar dates are stored as UTC midnight. `setFullYear` would rewrite the
+  // year in local time and store a different instant than the important-dates
+  // API and the CardDAV importer do for the same day, so read and rebuild the
+  // UTC components instead.
+  const parsed = new Date(date.date);
   const dateValue = date.yearUnknown
-    ? (() => {
-        const d = new Date(date.date);
-        d.setFullYear(1604);
-        return d;
-      })()
-    : new Date(date.date);
+    ? yearUnknownDate(parsed.getUTCMonth(), parsed.getUTCDate())
+    : parsed;
 
   return {
     title: date.title,

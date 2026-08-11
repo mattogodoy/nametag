@@ -61,3 +61,6 @@ Self-hosted installations are not subject to these limits. Turning off a reminde
 - **Reminder interval units**: Days, Weeks, Months, Years
 - **Reminder types**: Once (fires a single time), Recurring (fires every interval, for example every year)
 - **Advance notice per date**: Default (inherits the account setting), On the day only, or 1, 3, 7, 14, 30 days before; stored as 0-365 days, with `null` meaning "inherit the account default"
+- **Date storage**: calendar dates are stored as UTC midnight on the day you picked, so the day never shifts with your timezone
+- **Unknown years**: dates saved without a year are stored under year 1604, Apple's marker for an unknown year, which keeps them compatible with Contacts and other CardDAV clients
+- **February 29**: in non-leap years, a February 29 date appears (and its yearly reminder fires) on March 1. Advance notice follows the same day, so both emails agree

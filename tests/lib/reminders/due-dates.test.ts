@@ -7,7 +7,16 @@ import {
   shouldSendLeadReminder,
 } from '@/lib/reminders/due-dates';
 
+/** A local calendar day, as `today` and sent-timestamps are produced at runtime. */
 const d = (iso: string) => new Date(`${iso}T00:00:00`);
+
+/**
+ * A stored calendar date. The database keeps these as UTC midnight and
+ * `parseCalendarDate` reads their UTC components, so fixtures must be built the
+ * same way. Using local midnight here shifts the day in most time zones.
+ */
+const stored = (y: number, monthIndex: number, day: number) =>
+  new Date(Date.UTC(y, monthIndex, day));
 
 describe('startOfDay', () => {
   it('zeroes the time without mutating the input', () => {
@@ -42,20 +51,20 @@ describe('shouldSendImportantDateReminder, ONCE', () => {
 
   it('sends on the exact date', () => {
     expect(
-      shouldSendImportantDateReminder({ ...base, date: d('2026-05-12') }, d('2026-05-12'))
+      shouldSendImportantDateReminder({ ...base, date: stored(2026, 4, 12) }, d('2026-05-12'))
     ).toBe(true);
   });
 
   it('does not send on any other day', () => {
     expect(
-      shouldSendImportantDateReminder({ ...base, date: d('2026-05-12') }, d('2026-05-11'))
+      shouldSendImportantDateReminder({ ...base, date: stored(2026, 4, 12) }, d('2026-05-11'))
     ).toBe(false);
   });
 
   it('does not send twice on the same day', () => {
     expect(
       shouldSendImportantDateReminder(
-        { ...base, date: d('2026-05-12'), lastReminderSent: d('2026-05-12') },
+        { ...base, date: stored(2026, 4, 12), lastReminderSent: d('2026-05-12') },
         d('2026-05-12')
       )
     ).toBe(false);
@@ -72,20 +81,20 @@ describe('shouldSendImportantDateReminder, RECURRING yearly', () => {
 
   it('sends on the anniversary of the original date', () => {
     expect(
-      shouldSendImportantDateReminder({ ...base, date: d('1990-05-12') }, d('2026-05-12'))
+      shouldSendImportantDateReminder({ ...base, date: stored(1990, 4, 12) }, d('2026-05-12'))
     ).toBe(true);
   });
 
   it('does not send on a non-anniversary day', () => {
     expect(
-      shouldSendImportantDateReminder({ ...base, date: d('1990-05-12') }, d('2026-05-13'))
+      shouldSendImportantDateReminder({ ...base, date: stored(1990, 4, 12) }, d('2026-05-13'))
     ).toBe(false);
   });
 
   it('does not send twice in the same year', () => {
     expect(
       shouldSendImportantDateReminder(
-        { ...base, date: d('1990-05-12'), lastReminderSent: d('2026-05-12') },
+        { ...base, date: stored(1990, 4, 12), lastReminderSent: d('2026-05-12') },
         d('2026-05-12')
       )
     ).toBe(false);
@@ -94,7 +103,7 @@ describe('shouldSendImportantDateReminder, RECURRING yearly', () => {
   it('sends again the following year', () => {
     expect(
       shouldSendImportantDateReminder(
-        { ...base, date: d('1990-05-12'), lastReminderSent: d('2025-05-12') },
+        { ...base, date: stored(1990, 4, 12), lastReminderSent: d('2025-05-12') },
         d('2026-05-12')
       )
     ).toBe(true);
@@ -153,15 +162,15 @@ describe('shouldSendImportantDateReminder, RECURRING yearly, Feb 29 birthday', (
     lastReminderSent: null,
   };
   // A birthday actually recorded on a leap day.
-  const feb29 = new Date(1992, 1, 29);
+  const feb29 = stored(1992, 1, 29);
 
-  it('never fires during a non-leap year, because Feb 29 does not exist on the calendar that year', () => {
-    // Surprising: there is no "closest day" fallback to Feb 28 or Mar 1. The
-    // YEARS branch requires today's month/day to exactly equal the event's
-    // month/day, and that day simply does not occur in a non-leap year, so
-    // the reminder is silently skipped 3 years out of 4.
+  it('fires on March 1 during a non-leap year', () => {
+    // The anniversary is projected into the current year with the Date
+    // constructor, which rolls February 29 to March 1 when the year is not a
+    // leap year. That matches getNextOccurrence, so the dashboard, the day-of
+    // email and the advance-notice email all agree on the same day.
     expect(shouldSendImportantDateReminder({ ...base, date: feb29 }, d('2026-02-28'))).toBe(false);
-    expect(shouldSendImportantDateReminder({ ...base, date: feb29 }, d('2026-03-01'))).toBe(false);
+    expect(shouldSendImportantDateReminder({ ...base, date: feb29 }, d('2026-03-01'))).toBe(true);
   });
 
   it('fires again on Feb 29 of the next leap year', () => {
@@ -180,7 +189,7 @@ describe('shouldSendImportantDateReminder, RECURRING non-YEARS interval, unknown
   // birthday with an unknown year). Constructed with three numeric arguments
   // where the year is outside 0-99, so there is no Date year-1900 remapping
   // to account for; getFullYear() reports exactly 1604.
-  const unknownYearDate = new Date(1604, 4, 15); // May 15, unknown year
+  const unknownYearDate = stored(1604, 4, 15); // May 15, unknown year
 
   it('anchors to this year\'s occurrence once it has arrived', () => {
     expect(

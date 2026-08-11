@@ -44,7 +44,9 @@ function makeDate(overrides: Record<string, unknown> = {}) {
     personId: 'person-1',
     title: 'Birthday',
     type: 'birthday',
-    date: new Date(1990, occurrence.getMonth(), occurrence.getDate()),
+    // Stored calendar dates are UTC midnight; parseCalendarDate reads their
+    // UTC components, so building them locally would shift the day.
+    date: new Date(Date.UTC(1990, occurrence.getMonth(), occurrence.getDate())),
     reminderEnabled: true,
     reminderType: 'RECURRING',
     reminderInterval: 1,
@@ -83,7 +85,9 @@ function makeDayOfDate(overrides: Record<string, unknown> = {}) {
     personId: 'person-A',
     title: 'Anniversary',
     type: 'anniversary',
-    date: new Date(today),
+    // Stored as UTC midnight on today's calendar day, the way the database
+    // holds it, so parseCalendarDate reads back the same day.
+    date: new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())),
     reminderEnabled: true,
     reminderType: 'ONCE',
     reminderInterval: null,
@@ -255,29 +259,34 @@ describe('send-reminders lead reminders', () => {
     expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
   });
 
-  it('queues no lead email for a Feb 29 date evaluated in a non-leap year', async () => {
-    // 2026 is not a leap year, so Feb 29 rolls to Mar 1 in getNextOccurrence.
-    // Pin "today" a few days before that so the lead window would otherwise
-    // be open.
+  it('queues a lead email for a Feb 29 date in a non-leap year, because the day-of email now fires on Mar 1', async () => {
+    // 2026 is not a leap year, so Feb 29 projects to Mar 1 in BOTH
+    // getNextOccurrence and shouldSendImportantDateReminder. The two agree, so
+    // the guard lets the advance email through and the day-of email really does
+    // follow on Mar 1. Before the calendar-date sweep the day-of path compared
+    // month and day for equality and never fired, which is why this test
+    // previously asserted the opposite.
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 1, 25));
+    vi.setSystemTime(new Date(2026, 1, 22));
 
     const feb29Date = makeDate({
-      date: new Date(2020, 1, 29),
+      date: new Date(Date.UTC(2020, 1, 29)),
       reminderInterval: 1,
       reminderIntervalUnit: 'YEARS',
       lastReminderSent: null,
     });
 
     mocks.importantDateFindMany.mockResolvedValue([feb29Date]);
-    mocks.sendEmailBatch.mockResolvedValue({ results: [] });
+    mocks.sendEmailBatch.mockResolvedValue({ results: [{ success: true }] });
 
     try {
       const response = await GET(request());
       const body = await response.json();
 
-      expect(body.sent).toBe(0);
-      expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
+      expect(body.sent).toBe(1);
+      expect(mocks.importantDateUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { lastLeadReminderSent: expect.any(Date) } })
+      );
     } finally {
       vi.useRealTimers();
     }

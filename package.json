@@ -1,6 +1,6 @@
 {
   "name": "nametag",
-  "version": "0.58.4",
+  "version": "0.58.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -57,6 +57,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@conventional-commits/parser": "^0.4.1",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",

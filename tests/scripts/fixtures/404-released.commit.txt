@@ -1,0 +1,76 @@
+fix(dates): finish the calendar-date sweep across every read site (#404)
+
+Follow-up to #402, now rebased onto master after that PR merged.
+
+The UTC-anchoring fix in #402 covered the person page, the dashboard and
+the reminder send day. Review of that PR found the same raw-Date read
+pattern surviving in four more places, plus two adjacent bugs in the
+touched code. This PR closes out all of them.
+
+## Same bug, remaining read sites
+
+All of these read a stored UTC-midnight calendar date with local
+accessors, and all are now covered across the same five timezones as
+#402 (UTC, Madrid, London, New York, Sydney):
+
+- **People list**: `lastContact` crosses the RSC boundary as a real
+`Date`, so the list showed the previous day west of UTC while the detail
+page showed the right one. The same person had two different
+last-contact dates depending on which screen you looked at.
+- **Contact reminders, both consumers**: the dashboard computed the
+catch-up date from the raw stored instant (a day early west of UTC), and
+the cron compared raw milliseconds (a day late east of UTC). Both now
+anchor the calendar day first and do arithmetic in whole days, which
+also removes a latent DST wobble in the old millisecond math.
+- **Duplicate detection**: birthdays were compared with local accessors.
+A year-unknown birthday sits in year 1604 where Local Mean Time applies,
+so in Madrid it read as August 9 while a known-year birthday on the same
+day read as August 10, and the month/day match silently failed. Now
+compared with UTC accessors.
+- **Trash list**: deleted important dates went through `new Date(str)`
+plus local accessors, with the same day-shift and a strict `=== 1604`
+check on top.
+
+## Adjacent bugs found in review
+
+- **February 29 birthdays never reminded in non-leap years.** The cron
+matched month and day by equality, so in 2026 no day ever matches Feb
+29, while the dashboard's `getNextOccurrence` rolls the anniversary to
+March 1. The cron now projects the date into the current year the same
+way, so both agree: March 1 in non-leap years, February 29 in leap
+years. Documented in the important-dates technical details.
+- **The sentinel convention was hand-rolled in nine places with two
+different predicates.** The person page used `=== 1604` while everything
+else used `<= 1604`, so a legacy row stored under 1603 (possible via the
+old write path near a year boundary) rendered "12/31/1603" on the person
+page while the rest of the app treated it as year-unknown.
+`lib/date-format.ts` now exports `YEAR_UNKNOWN_SENTINEL`,
+`yearUnknownDate()` and `isYearUnknownDate()`, and every site uses them
+with the inclusive form.
+
+## Test infrastructure
+
+The timezone-pinning harness was copy-pasted across four test files, and
+every copy restored with `process.env.TZ = ORIGINAL_TZ`. When `TZ` was
+never set (typical CI), that assigns `undefined`, which Node coerces to
+the string `"undefined"` and silently falls back to UTC, the one
+timezone where this entire bug class is invisible. Any
+timezone-sensitive test added later in those files would have passed
+vacuously.
+
+A shared `tests/helpers/timezone.ts` now owns the zone list, the
+stored-date fixture builders and a restore that deletes the variable
+when it was originally unset. All five copies (including the
+pre-existing one in the CardDAV tests) are refactored onto it.
+
+## Verification
+
+- Every behavior fix was implemented test-first: each new test was run
+and observed failing in the exact timezones the review predicted (people
+list and dashboard catch-up in New York, cron catch-up in
+Madrid/London/Sydney, duplicate signal in Madrid/London, Feb 29 in
+non-leap years) before the fix was applied.
+- Full suite: 2775 passed, 1 skipped, 0 failed. `tsc --noEmit` clean,
+lint clean on all changed files, docs site builds.
+
+No schema changes, no API changes, no new configuration.

@@ -19,6 +19,7 @@ import {
   filterFreeFormCustomFieldsAgainstTemplates,
 } from '@/lib/customFields/serialize';
 import { formatGraphName, nameSeparator } from '@/lib/nameUtils';
+import { YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
 
 export interface VCardOptions {
   includePhoto?: boolean; // Default: true (requires base64 encoding)
@@ -481,8 +482,8 @@ export function formatVCardV3Date(date: Date): string {
   const month = String(d.getUTCMonth() + 1).padStart(2, '0');
   const day = String(d.getUTCDate()).padStart(2, '0');
 
-  // If year is 1604 or earlier, omit it (year unknown - Apple uses 1604 as marker)
-  if (year <= 1604) {
+  // If year is the sentinel or earlier, omit it (year unknown - Apple convention)
+  if (year <= YEAR_UNKNOWN_SENTINEL) {
     return `--${month}${day}`;
   }
 

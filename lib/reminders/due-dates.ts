@@ -1,4 +1,6 @@
-import { parseAsLocalDate } from '@/lib/date-format';
+import { parseCalendarDate, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** Midnight local time on the same calendar day, as a new Date. */
 export function startOfDay(date: Date): Date {
@@ -26,7 +28,7 @@ export function shouldSendImportantDateReminder(
   importantDate: ImportantDateReminderInput,
   today: Date
 ): boolean {
-  const eventDate = parseAsLocalDate(importantDate.date);
+  const eventDate = parseCalendarDate(importantDate.date);
 
   if (importantDate.reminderType === 'ONCE') {
     // For one-time reminders, send on the exact date if not already sent
@@ -62,13 +64,20 @@ export function shouldSendImportantDateReminder(
 
     // Special handling for YEARS to avoid leap year drift
     if (intervalUnit === 'YEARS') {
-      const eventDay = eventDateNormalized.getDate();
-      const eventMonth = eventDateNormalized.getMonth();
-      const todayDay = today.getDate();
-      const todayMonth = today.getMonth();
+      // Project the anniversary into the current year the same way the
+      // dashboard's getNextOccurrence does: a February 29 birthday has no
+      // matching day in non-leap years, and the Date constructor rolls it to
+      // March 1. A plain month/day equality check would never fire that year.
+      const thisYearOccurrence = startOfDay(
+        new Date(
+          today.getFullYear(),
+          eventDateNormalized.getMonth(),
+          eventDateNormalized.getDate()
+        )
+      );
 
-      // Check if today is the anniversary (same month and day)
-      if (todayDay !== eventDay || todayMonth !== eventMonth) {
+      // Check if today is the anniversary
+      if (thisYearOccurrence.getTime() !== today.getTime()) {
         return false;
       }
 
@@ -108,9 +117,9 @@ export function shouldSendImportantDateReminder(
     }
 
     // Never sent before - check if we should send based on event date
-    // For unknown-year dates (year <= 1604), normalize to current year to avoid
+    // For unknown-year dates, normalize to current year to avoid
     // DST drift over centuries breaking the interval math
-    if (eventDateNormalized.getFullYear() <= 1604) {
+    if (eventDateNormalized.getFullYear() <= YEAR_UNKNOWN_SENTINEL) {
       const currentYear = today.getFullYear();
       eventDateNormalized.setFullYear(currentYear);
       // If the normalized date is in the future, use previous year
@@ -131,7 +140,7 @@ export function shouldSendImportantDateReminder(
 }
 
 export function getIntervalMs(interval: number, unit: string): number {
-  const msPerDay = 24 * 60 * 60 * 1000;
+  const msPerDay = MS_PER_DAY;
 
   switch (unit) {
     case 'DAYS':
@@ -153,31 +162,42 @@ export function shouldSendContactReminder(
 ): boolean {
   const interval = person.contactReminderInterval || 1;
   const unit = person.contactReminderIntervalUnit || 'MONTHS';
-  const intervalMs = getIntervalMs(interval, unit);
+  const intervalDays = Math.round(getIntervalMs(interval, unit) / MS_PER_DAY);
 
   // Calculate when the reminder should be sent
   // If no lastContact, use lastContactReminderSent or send immediately
-  const referenceDate = person.lastContact || person.lastContactReminderSent;
+  const reference = person.lastContact ?? person.lastContactReminderSent;
 
-  if (!referenceDate) {
+  if (!reference) {
     // No reference date - don't send (need at least one contact first)
     return false;
   }
 
-  const timeSinceReference = today.getTime() - new Date(referenceDate).getTime();
+  // lastContact is a stored calendar date (UTC midnight); anchor it to the
+  // local calendar day before comparing against local-midnight today, and
+  // compare in whole days so DST transitions cannot shift the send day.
+  const referenceDate = startOfDay(
+    person.lastContact ? parseCalendarDate(person.lastContact) : new Date(reference)
+  );
+
+  const daysSinceReference = Math.round(
+    (today.getTime() - referenceDate.getTime()) / MS_PER_DAY
+  );
 
   // Check if enough time has passed since last contact
-  if (timeSinceReference < intervalMs) {
+  if (daysSinceReference < intervalDays) {
     return false;
   }
 
   // Check if we've already sent a reminder recently
   if (person.lastContactReminderSent) {
-    const timeSinceLastReminder =
-      today.getTime() - new Date(person.lastContactReminderSent).getTime();
+    const lastReminder = startOfDay(person.lastContactReminderSent);
+    const daysSinceLastReminder = Math.round(
+      (today.getTime() - lastReminder.getTime()) / MS_PER_DAY
+    );
 
     // Don't send if we sent a reminder within the interval period
-    if (timeSinceLastReminder < intervalMs * 0.9) {
+    if (daysSinceLastReminder < intervalDays * 0.9) {
       return false;
     }
   }

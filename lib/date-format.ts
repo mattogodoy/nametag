@@ -5,7 +5,9 @@ export type DateFormat = 'MDY' | 'DMY' | 'YMD';
  * calendar day. Accepts `YYYY-MM-DD` and ISO datetime strings (where only the
  * date prefix is meaningful — Nametag stores calendar dates as UTC-midnight
  * DateTime values, which would otherwise shift west of UTC under `getDate()`).
- * Date objects pass through unchanged; for real timestamps use `formatDateTime`.
+ * Date objects pass through unchanged, on the assumption that they were built
+ * locally and already sit on the right calendar day; for a Date read from the
+ * database use `parseCalendarDate`. For real timestamps use `formatDateTime`.
  */
 export function parseAsLocalDate(date: Date | string): Date {
   if (typeof date === 'string') {
@@ -25,6 +27,45 @@ export function parseAsLocalDate(date: Date | string): Date {
     return new Date(date);
   }
   return date;
+}
+
+/**
+ * Anchor a calendar-date column to local midnight on the day it encodes.
+ *
+ * Use this for any birthday, anniversary or last-contact value read from the
+ * database. Those are stored as UTC midnight, so a `Date` handed straight to
+ * `parseAsLocalDate` passes through untouched and the formatters then read it
+ * with `getDate()`, reporting the previous day anywhere west of UTC.
+ *
+ * Year-unknown dates make that far wider than it sounds. They use 1604, which
+ * predates standard time zones, so JavaScript falls back to Local Mean Time and
+ * puts almost every zone west of UTC: Madrid is -0:14:44 and London is -0:01:15
+ * in 1604, though both are east of UTC today. Reading the UTC components is the
+ * only way to get the stored calendar day back out.
+ */
+export function parseCalendarDate(date: Date | string): Date {
+  if (typeof date === 'string') {
+    return parseAsLocalDate(date);
+  }
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+/**
+ * Apple's marker year for dates whose year is unknown. It predates standard
+ * time zones, which is why these values must always be read as UTC calendar
+ * days (see `parseCalendarDate`). Legacy rows written through local-time paths
+ * can sit slightly below it, so checks use `<=` rather than equality.
+ */
+export const YEAR_UNKNOWN_SENTINEL = 1604;
+
+/** Build the stored form of a year-unknown calendar date: UTC midnight under the sentinel year. */
+export function yearUnknownDate(monthIndex: number, day: number): Date {
+  return new Date(Date.UTC(YEAR_UNKNOWN_SENTINEL, monthIndex, day));
+}
+
+/** True when a stored calendar date (Date or string) carries the year-unknown sentinel. */
+export function isYearUnknownDate(date: Date | string): boolean {
+  return parseCalendarDate(date).getFullYear() <= YEAR_UNKNOWN_SENTINEL;
 }
 
 /**

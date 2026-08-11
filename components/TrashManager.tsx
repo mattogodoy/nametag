@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
+import { parseCalendarDate, isYearUnknownDate } from '@/lib/date-format';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 type EntityType = 'people' | 'groups' | 'relationships' | 'relationshipTypes' | 'importantDates';
@@ -99,8 +100,10 @@ function formatPersonName(person: { name: string; surname: string | null }): str
 }
 
 function formatDeletedDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (d.getFullYear() === 1604) {
+  // Stored calendar dates are UTC midnight; anchor to the encoded day so the
+  // list does not show the previous day west of UTC.
+  const d = parseCalendarDate(dateStr);
+  if (isYearUnknownDate(dateStr)) {
     return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
   }
   return d.toLocaleDateString();

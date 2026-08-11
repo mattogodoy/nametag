@@ -160,7 +160,7 @@ ESLint and Prettier catch most formatting issues automatically.
 
 - Keep PRs focused on a single feature or fix.
 - Link related issues.
-- Add a clear description of what changed and why.
+- Add a clear description of what changed and why. It becomes the commit body on merge, so it has to parse as part of a conventional commit. Avoid nested parentheses like `foo(bar(baz))`, even inside backticks. See [Versioning & Releases](/contributing/versioning/#the-whole-message-has-to-parse-not-just-the-header).
 - Include screenshots for UI changes.
 - Make sure all checks pass (lint, typecheck, tests, build). These run automatically via GitHub Actions.
 - Run `npm run verify` locally before pushing to catch issues early.
