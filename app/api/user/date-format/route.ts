@@ -16,6 +16,9 @@ export const PUT = withAuth(async (request, session) => {
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: { dateFormat },
+      // Allowlist the response. Without it Prisma returns every column, which
+      // includes the password hash and live account-recovery tokens.
+      select: { id: true, dateFormat: true },
     });
 
     return apiResponse.ok({ user });

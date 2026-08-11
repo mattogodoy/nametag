@@ -7,26 +7,36 @@ import { generateToken, hashToken } from '@/lib/token-hash';
 
 const TOKEN_EXPIRY_HOURS = 24;
 
+/**
+ * The only user columns this endpoint may return.
+ *
+ * An allowlist rather than a denylist on purpose: a column added by a future
+ * migration is excluded until someone deliberately adds it here. The row also
+ * holds the bcrypt password hash and live account-recovery tokens, none of
+ * which should ever reach a client.
+ */
+const PUBLIC_PROFILE_FIELDS = {
+  id: true,
+  email: true,
+  name: true,
+  surname: true,
+  nickname: true,
+  theme: true,
+  dateFormat: true,
+  language: true,
+  nameOrder: true,
+  nameDisplayFormat: true,
+  emailVerified: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 // GET /api/user/profile - Get the current user's profile
 export const GET = withAuth(async (_request, session) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        surname: true,
-        nickname: true,
-        theme: true,
-        dateFormat: true,
-        language: true,
-        nameOrder: true,
-        nameDisplayFormat: true,
-        emailVerified: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: PUBLIC_PROFILE_FIELDS,
     });
 
     if (!user) {
@@ -90,6 +100,10 @@ export const PUT = withAuth(async (request, session) => {
           emailVerifyExpires: verifyExpires,
           emailVerifySentAt: new Date(),
         },
+        // This branch does not return the user, but selecting narrowly keeps the
+        // password hash out of process memory rather than relying on the caller
+        // to keep not returning it.
+        select: { id: true },
       });
 
       // Send verification email to new address with raw token
@@ -116,6 +130,10 @@ export const PUT = withAuth(async (request, session) => {
         nickname: nickname || null,
         email,
       },
+      // Mirrors the allowlist on GET, so both halves of this endpoint return the
+      // same shape. Without it Prisma returns every column, which includes the
+      // password hash and live account-recovery tokens.
+      select: PUBLIC_PROFILE_FIELDS,
     });
 
     return apiResponse.ok({ user, emailChanged: false });
