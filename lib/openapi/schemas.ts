@@ -311,6 +311,15 @@ export function sharedSchemas(): Record<string, unknown> {
           description: 'Null means the user has not picked a mode yet (defaults to individuals at render time)',
         },
         emailVerified: { type: 'boolean' },
+        defaultReminderLeadDays: {
+          type: 'integer',
+          description: 'Days before an important date its reminder fires. 0 means the day of the event only.',
+        },
+        weeklyDigestEnabled: { type: 'boolean', description: 'Opt-in weekly summary of upcoming events' },
+        weeklyDigestWeekday: {
+          type: 'integer',
+          description: 'Weekday the weekly digest is sent on (0 = Sunday through 6 = Saturday)',
+        },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },

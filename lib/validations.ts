@@ -418,6 +418,17 @@ export const updateDateFormatSchema = z.object({
   dateFormat: z.enum(['MDY', 'DMY', 'YMD']),
 });
 
+export const updateReminderLeadDaysSchema = z.object({
+  // Wider than the UI presets on purpose, so API-token clients are not boxed in.
+  days: z.number().int().min(0).max(365),
+});
+
+export const updateWeeklyDigestSchema = z.object({
+  enabled: z.boolean(),
+  // 0 = Sunday ... 6 = Saturday, matching Date.prototype.getDay().
+  weekday: z.number().int().min(0).max(6),
+});
+
 export const updateNameOrderSchema = z.object({
   nameOrder: z.enum(['WESTERN', 'EASTERN']),
 });
