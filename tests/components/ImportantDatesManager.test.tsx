@@ -25,6 +25,7 @@ describe('ImportantDatesManager - reminder toggle', () => {
       <Wrapper>
         <ImportantDatesManager
           mode="edit"
+          defaultReminderLeadDays={0}
           initialDates={[
             {
               id: 'd1',
@@ -62,6 +63,7 @@ describe('ImportantDatesManager - reminder toggle', () => {
       <Wrapper>
         <ImportantDatesManager
           mode="edit"
+          defaultReminderLeadDays={0}
           initialDates={[
             {
               id: 'd1',
@@ -140,5 +142,50 @@ describe('ImportantDatesManager - per-date advance notice override', () => {
     // 0 must reach the server as 0, not null: collapsing it into "no
     // override" would silently fall back to the account default.
     expect(body.reminderLeadDays).toBe(0);
+  });
+
+  it('sends null when a date is left on "Default"', async () => {
+    // The other half of the same three-state guarantee as the test above:
+    // leaving the control untouched must persist as an explicit "inherit",
+    // not silently pick up whatever the account default happened to be at
+    // save time.
+    const user = userEvent.setup();
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+
+    render(
+      <Wrapper>
+        <ImportantDatesManager
+          mode="edit"
+          personId="person-1"
+          defaultReminderLeadDays={7}
+          initialDates={[
+            {
+              id: 'd1',
+              type: 'birthday',
+              title: '',
+              date: '2018-07-05',
+              yearUnknown: false,
+              reminderEnabled: true,
+              reminderType: 'RECURRING',
+              reminderInterval: 1,
+              reminderIntervalUnit: 'YEARS',
+              reminderLeadDays: null,
+            },
+          ]}
+        />
+      </Wrapper>
+    );
+
+    await user.click(screen.getByTitle('Edit'));
+
+    const leadTimeSelect = screen.getByRole('combobox', { name: 'Notify me' }) as HTMLSelectElement;
+    expect(leadTimeSelect).toHaveValue('default');
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const body = JSON.parse((options as RequestInit).body as string);
+    expect(body.reminderLeadDays).toBeNull();
   });
 });
