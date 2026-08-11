@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "Meldingen",
+      "description": "Tijdstip van herinneringen en het wekelijkse overzicht per e-mail",
+      "leadTimeTitle": "Vooraankondiging",
+      "leadTimeDescription": "Hoe ver van tevoren u herinnerd wilt worden aan een belangrijke datum. U krijgt altijd een herinnering op de dag zelf.",
+      "leadTimeDayOf": "Alleen op de dag zelf",
+      "leadTimeOneDay": "1 dag van tevoren",
+      "leadTimeDays": "{days, plural, one {# dag van tevoren} other {# dagen van tevoren}}",
+      "leadTimeSummaryDayOf": "U ontvangt een e-mail op de dag van elke gebeurtenis.",
+      "leadTimeSummary": "{days, plural, one {U ontvangt een e-mail # dag van tevoren, en opnieuw op de dag zelf.} other {U ontvangt een e-mail # dagen van tevoren, en opnieuw op de dag zelf.}}",
+      "leadTimeError": "Uw vooraankondigingsinstelling kon niet worden opgeslagen",
+      "leadTimeSuccess": "Vooraankondiging bijgewerkt",
+      "digestTitle": "Wekelijks overzicht",
+      "digestDescription": "Een overzicht van wat er de komende 7 dagen op u afkomt. Wij versturen het alleen als er iets te melden is.",
+      "digestToggle": "Stuur mij een wekelijks overzicht",
+      "digestDay": "Verstuur het op",
+      "digestError": "Uw instelling voor het wekelijkse overzicht kon niet worden opgeslagen",
+      "digestSuccess": "Wekelijks overzicht bijgewerkt",
+      "emailNotConfigured": "E-mailverzending is niet ingesteld op deze instantie, dus deze meldingen kunnen niet worden verstuurd. Vraag uw beheerder om e-mail in te stellen.",
+      "weekdays": {
+        "0": "Zondag",
+        "1": "Maandag",
+        "2": "Dinsdag",
+        "3": "Woensdag",
+        "4": "Donderdag",
+        "5": "Vrijdag",
+        "6": "Zaterdag"
+      }
+    },
     "security": {
       "title": "Beveiliging",
       "description": "Wachtwoord en authenticatie",

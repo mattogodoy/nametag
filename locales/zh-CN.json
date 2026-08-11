@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "通知",
+      "description": "提前提醒的时间以及每周摘要邮件",
+      "leadTimeTitle": "提前提醒",
+      "leadTimeDescription": "您希望提前多久收到重要日期的提醒。当天的提醒始终会发送。",
+      "leadTimeDayOf": "仅当天",
+      "leadTimeOneDay": "提前 1 天",
+      "leadTimeDays": "{days, plural, other {提前 # 天}}",
+      "leadTimeSummaryDayOf": "您将在每个事件当天收到一封邮件。",
+      "leadTimeSummary": "{days, plural, other {您将提前 # 天收到一封邮件，并在当天再收到一封。}}",
+      "leadTimeError": "无法保存您的提前提醒设置",
+      "leadTimeSuccess": "提前提醒已更新",
+      "digestTitle": "每周摘要",
+      "digestDescription": "未来 7 天内即将发生事件的摘要。只有在有内容可告知时我们才会发送。",
+      "digestToggle": "给我发送每周摘要",
+      "digestDay": "发送日",
+      "digestError": "无法保存您的每周摘要设置",
+      "digestSuccess": "每周摘要已更新",
+      "emailNotConfigured": "此实例未配置邮件发送功能，因此无法发送这些通知。请联系管理员配置邮件服务。",
+      "weekdays": {
+        "0": "星期日",
+        "1": "星期一",
+        "2": "星期二",
+        "3": "星期三",
+        "4": "星期四",
+        "5": "星期五",
+        "6": "星期六"
+      }
+    },
     "security": {
       "title": "安全",
       "description": "密码和身份验证",

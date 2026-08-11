@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Reminder timing and the weekly summary email",
+      "leadTimeTitle": "Advance notice",
+      "leadTimeDescription": "How far ahead of an important date you would like to hear about it. You will always get a reminder on the day itself.",
+      "leadTimeDayOf": "On the day only",
+      "leadTimeOneDay": "1 day before",
+      "leadTimeDays": "{days, plural, one {# day before} other {# days before}}",
+      "leadTimeSummaryDayOf": "You will get an email on the day of each event.",
+      "leadTimeSummary": "{days, plural, one {You will get an email # day before, and again on the day.} other {You will get an email # days before, and again on the day.}}",
+      "leadTimeError": "Could not save your advance notice setting",
+      "leadTimeSuccess": "Advance notice updated",
+      "digestTitle": "Weekly summary",
+      "digestDescription": "A summary of what is coming up in the next 7 days. We only send it when there is something to tell you.",
+      "digestToggle": "Send me a weekly summary",
+      "digestDay": "Send it on",
+      "digestError": "Could not save your weekly summary setting",
+      "digestSuccess": "Weekly summary updated",
+      "emailNotConfigured": "Email delivery is not configured on this instance, so these notifications cannot be sent. Ask your administrator to set up email.",
+      "weekdays": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
+    },
     "security": {
       "title": "Security",
       "description": "Password and authentication",

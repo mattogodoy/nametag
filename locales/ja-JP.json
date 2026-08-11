@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "通知",
+      "description": "事前通知のタイミングと週間まとめメール",
+      "leadTimeTitle": "事前通知",
+      "leadTimeDescription": "重要な日付をどのくらい前に知りたいかを設定します。当日のリマインダーは必ず届きます。",
+      "leadTimeDayOf": "当日のみ",
+      "leadTimeOneDay": "1日前",
+      "leadTimeDays": "{days, plural, other {#日前}}",
+      "leadTimeSummaryDayOf": "各イベントの当日にメールが届きます。",
+      "leadTimeSummary": "{days, plural, other {#日前にメールが届き、当日にもう一度届きます。}}",
+      "leadTimeError": "事前通知の設定を保存できませんでした",
+      "leadTimeSuccess": "事前通知を更新しました",
+      "digestTitle": "週間まとめ",
+      "digestDescription": "今後7日間の予定をまとめてお知らせします。お知らせすることがある週だけ送信します。",
+      "digestToggle": "週間まとめを送信する",
+      "digestDay": "送信する曜日",
+      "digestError": "週間まとめの設定を保存できませんでした",
+      "digestSuccess": "週間まとめを更新しました",
+      "emailNotConfigured": "このインスタンスではメール送信が設定されていないため、これらの通知は送信できません。管理者にメール設定を依頼してください。",
+      "weekdays": {
+        "0": "日曜日",
+        "1": "月曜日",
+        "2": "火曜日",
+        "3": "水曜日",
+        "4": "木曜日",
+        "5": "金曜日",
+        "6": "土曜日"
+      }
+    },
     "security": {
       "title": "セキュリティ",
       "description": "パスワードと認証",
