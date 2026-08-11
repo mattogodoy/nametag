@@ -467,7 +467,7 @@ POST /api/people/{id}/important-dates
 | `reminderType` | `ONCE` \| `RECURRING` \| null | |
 | `reminderInterval` | integer 1-99, or null | |
 | `reminderIntervalUnit` | `DAYS` \| `WEEKS` \| `MONTHS` \| `YEARS`, or null | |
-| `reminderLeadDays` | integer 0-365, or null | How many days before this date to send the advance-notice reminder. Omit the field to leave it unchanged; send `null` to inherit the account-wide default from [`PUT /api/user/reminder-lead-days`](/api/user/#update-reminder-lead-time); send `0` to explicitly override the default with day-of only for this date; send a positive integer to override with a different lead time for this date only. |
+| `reminderLeadDays` | integer 0-365, or null | How many days before this date to send the advance-notice reminder. `null` (or omitting the field) means the date inherits the account-wide default from [`PUT /api/user/reminder-lead-days`](/api/user/#update-reminder-lead-time); `0` explicitly overrides the default with day-of only for this date; a positive integer overrides with a different lead time for this date only. This endpoint replaces the whole important-date body on every call, including update: omitting the field always stores `null`, so if a date has a per-date override and you are updating some other field, you must resend `reminderLeadDays` with its current value or the override will be lost. |
 
 ```bash
 curl -X POST https://your-instance.example.com/api/people/clx1/important-dates \
