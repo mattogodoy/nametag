@@ -11,7 +11,7 @@ import PersonVCardRawView from '@/components/PersonVCardRawView';
 import PersonActionsMenu from '@/components/PersonActionsMenu';
 import LastContactQuickUpdate from '@/components/LastContactQuickUpdate';
 import RetryGeocodeButton from '@/components/RetryGeocodeButton';
-import { formatDate, formatDateWithoutYear, parseAsLocalDate, type DateFormat } from '@/lib/date-format';
+import { formatDate, formatDateWithoutYear, parseCalendarDate, type DateFormat } from '@/lib/date-format';
 import { getCountryName } from '@/lib/countries';
 import { formatCanonicalName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -431,7 +431,7 @@ export default async function PersonDetailsPage({
                   )}
 
                   {person.anniversary && (() => {
-                    const anniversaryDate = parseAsLocalDate(person.anniversary.toISOString());
+                    const anniversaryDate = parseCalendarDate(person.anniversary);
                     const yearsAgo = getYearsAgo(anniversaryDate, t);
                     return (
                       <div>
@@ -712,7 +712,7 @@ export default async function PersonDetailsPage({
                   <div className="space-y-2">
                     {person.importantDates.map((date) => {
                       const reminderDesc = getReminderDescription(date, t);
-                      const dateObj = parseAsLocalDate(date.date);
+                      const dateObj = parseCalendarDate(date.date);
                       const isYearUnknown = dateObj.getFullYear() === 1604;
                       const yearsAgo = !isYearUnknown ? getYearsAgo(dateObj, t) : null;
                       return (

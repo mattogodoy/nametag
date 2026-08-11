@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { formatGraphName } from '@/lib/nameUtils';
-import { parseAsLocalDate } from '@/lib/date-format';
+import { parseCalendarDate } from '@/lib/date-format';
 import { getTranslationsForLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import { getUserLocale } from '@/lib/locale';
@@ -161,12 +161,12 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
     let eventDate: Date;
 
     if (importantDate.reminderType === 'ONCE') {
-      eventDate = parseAsLocalDate(importantDate.date);
+      eventDate = parseCalendarDate(importantDate.date);
     } else {
       const interval = importantDate.reminderInterval || 1;
       const intervalUnit = importantDate.reminderIntervalUnit || 'YEARS';
       eventDate = getNextOccurrence(
-        parseAsLocalDate(importantDate.date),
+        parseCalendarDate(importantDate.date),
         today,
         interval,
         intervalUnit,
@@ -186,7 +186,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
         titleKey: null,
         date: eventDate,
         daysUntil,
-        isYearUnknown: parseAsLocalDate(importantDate.date).getFullYear() <= 1604,
+        isYearUnknown: parseCalendarDate(importantDate.date).getFullYear() <= 1604,
         personPhoto: importantDate.person.photo,
       });
     }

@@ -64,13 +64,14 @@ function resolveDisplayNameOverride(
 
 /** Convert an importantDate input to the Prisma create shape. */
 function mapImportantDate(date: NonNullable<PersonInput['importantDates']>[number]) {
+  // Calendar dates are stored as UTC midnight. `setFullYear` would rewrite the
+  // year in local time and store a different instant than the important-dates
+  // API and the CardDAV importer do for the same day, so read and rebuild the
+  // UTC components instead. 1604 is Apple's marker for an unknown year.
+  const parsed = new Date(date.date);
   const dateValue = date.yearUnknown
-    ? (() => {
-        const d = new Date(date.date);
-        d.setFullYear(1604);
-        return d;
-      })()
-    : new Date(date.date);
+    ? new Date(Date.UTC(1604, parsed.getUTCMonth(), parsed.getUTCDate()))
+    : parsed;
 
   return {
     title: date.title,
