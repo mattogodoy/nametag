@@ -13,7 +13,11 @@ import { getDateDisplayTitle } from '@/lib/important-date-types';
 import {
   shouldSendImportantDateReminder,
   shouldSendContactReminder,
+  shouldSendLeadReminder,
 } from '@/lib/reminders/due-dates';
+import { resolveLeadDays } from '@/lib/reminders/lead-days';
+import { getNextOccurrence, getDaysUntil } from '@/lib/upcoming-events';
+import { parseAsLocalDate } from '@/lib/date-format';
 
 const log = createModuleLogger('cron');
 
@@ -73,6 +77,7 @@ export const GET = withLogging(async function GET(request: Request) {
                 language: true,
                 nameOrder: true,
                 nameDisplayFormat: true,
+                defaultReminderLeadDays: true,
               },
             },
           },
@@ -82,7 +87,7 @@ export const GET = withLogging(async function GET(request: Request) {
 
     interface PendingReminder {
       email: SendBatchEmailItem;
-      type: 'important_date' | 'contact';
+      type: 'important_date' | 'important_date_lead' | 'contact';
       entityId: string;
       logMeta: Record<string, string>;
     }
@@ -135,6 +140,80 @@ export const GET = withLogging(async function GET(request: Request) {
           entityId: importantDate.id,
           logMeta: { personName, dateTitle, userEmail },
         });
+      }
+
+      const leadDays = resolveLeadDays(
+        importantDate.reminderLeadDays,
+        importantDate.person.user.defaultReminderLeadDays
+      );
+
+      if (leadDays > 0) {
+        const nextOccurrence =
+          importantDate.reminderType === 'ONCE'
+            ? parseAsLocalDate(importantDate.date)
+            : getNextOccurrence(
+                parseAsLocalDate(importantDate.date),
+                today,
+                importantDate.reminderInterval || 1,
+                importantDate.reminderIntervalUnit || 'YEARS',
+                importantDate.lastReminderSent
+              );
+
+        const leadDue = shouldSendLeadReminder({
+          nextOccurrence,
+          today,
+          leadDays,
+          lastLeadReminderSent: importantDate.lastLeadReminderSent,
+        });
+
+        if (leadDue) {
+          const { person } = importantDate;
+          const userLanguage = (person.user.language as SupportedLocale) || 'en';
+          const personName = formatGraphName(
+            person,
+            person.user.nameOrder,
+            person.user.nameDisplayFormat
+          );
+          const formattedDate = formatDateForEmail(
+            nextOccurrence,
+            person.user.dateFormat,
+            userLanguage
+          );
+          const daysUntil = getDaysUntil(nextOccurrence, today);
+
+          const unsubscribeToken = await createUnsubscribeToken({
+            userId: person.userId,
+            reminderType: 'IMPORTANT_DATE',
+            entityId: importantDate.id,
+          });
+
+          const tDates = await getTranslationsForLocale(
+            userLanguage,
+            'people.form.importantDates'
+          );
+          const dateTitle = getDateDisplayTitle(importantDate, tDates);
+          const template = await emailTemplates.importantDateLeadReminder(
+            personName,
+            dateTitle,
+            formattedDate,
+            daysUntil,
+            `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
+            userLanguage
+          );
+
+          pendingReminders.push({
+            email: {
+              to: person.user.email,
+              subject: template.subject,
+              html: template.html,
+              text: template.text,
+              from: 'reminders',
+            },
+            type: 'important_date_lead',
+            entityId: importantDate.id,
+            logMeta: { personName, dateTitle, daysUntil: String(daysUntil) },
+          });
+        }
       }
     }
 
@@ -222,6 +301,12 @@ export const GET = withLogging(async function GET(request: Request) {
               data: { lastReminderSent: new Date() },
             });
             log.info({ ...reminder.logMeta }, 'Reminder sent');
+          } else if (reminder.type === 'important_date_lead') {
+            await prisma.importantDate.update({
+              where: { id: reminder.entityId },
+              data: { lastLeadReminderSent: new Date() },
+            });
+            log.info({ ...reminder.logMeta }, 'Lead reminder sent');
           } else {
             await prisma.person.update({
               where: { id: reminder.entityId },
