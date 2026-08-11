@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Use vi.hoisted to create mocks before hoisting
 const mocks = vi.hoisted(() => ({
@@ -109,6 +109,16 @@ vi.mock('../../lib/api-utils', () => ({
 // Import after mocking
 import { GET } from '../../app/api/cron/send-reminders/route';
 
+/**
+ * Nametag stores calendar dates as UTC midnight on the day they encode, never
+ * local midnight. Fixtures have to match, otherwise they stand in for a row
+ * production never writes and the reminder logic gets exercised against the
+ * wrong calendar day.
+ */
+function asStoredCalendarDate(day: Date): Date {
+  return new Date(Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()));
+}
+
 describe('Cron Job - Unsubscribe Token Generation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -133,7 +143,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       const importantDate = {
         id: 'date-1',
         title: 'Birthday',
-        date: new Date(today),
+        date: asStoredCalendarDate(today),
         reminderType: 'ONCE',
         reminderInterval: null,
         reminderIntervalUnit: null,
@@ -182,7 +192,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       const importantDate = {
         id: 'date-1',
         title: 'Birthday',
-        date: new Date(today),
+        date: asStoredCalendarDate(today),
         reminderType: 'ONCE',
         reminderInterval: null,
         reminderIntervalUnit: null,
@@ -233,7 +243,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       const importantDate = {
         id: 'date-1',
         title: 'Anniversary',
-        date: new Date(today),
+        date: asStoredCalendarDate(today),
         reminderType: 'ONCE',
         reminderInterval: null,
         reminderIntervalUnit: null,
@@ -279,7 +289,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       const importantDate = {
         id: 'important-date-123',
         title: 'Birthday',
-        date: new Date(today),
+        date: asStoredCalendarDate(today),
         reminderType: 'ONCE',
         reminderInterval: null,
         reminderIntervalUnit: null,
@@ -325,7 +335,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
       const importantDate = {
         id: 'date-1',
         title: 'Cumpleaños',
-        date: new Date(today),
+        date: asStoredCalendarDate(today),
         reminderType: 'ONCE',
         reminderInterval: null,
         reminderIntervalUnit: null,
@@ -609,7 +619,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         {
           id: 'date-1',
           title: 'Birthday',
-          date: new Date(today),
+          date: asStoredCalendarDate(today),
           reminderType: 'ONCE',
           reminderInterval: null,
           reminderIntervalUnit: null,
@@ -631,7 +641,7 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         {
           id: 'date-2',
           title: 'Anniversary',
-          date: new Date(today),
+          date: asStoredCalendarDate(today),
           reminderType: 'ONCE',
           reminderInterval: null,
           reminderIntervalUnit: null,
@@ -680,6 +690,78 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         reminderType: 'IMPORTANT_DATE',
         entityId: 'date-2',
       });
+    });
+  });
+
+  /**
+   * Year-unknown dates are stored under year 1604, which predates standard time
+   * zones, so JavaScript falls back to Local Mean Time and puts almost every
+   * zone west of UTC. Reading the stored day with local accessors moved it back
+   * a day, which meant birthday reminders went out the day before.
+   */
+  describe('year-unknown birthdays across timezones', () => {
+    const ORIGINAL_TZ = process.env.TZ;
+
+    afterEach(() => {
+      process.env.TZ = ORIGINAL_TZ;
+    });
+
+    const TIMEZONES = ['UTC', 'Europe/Madrid', 'Europe/London', 'America/New_York', 'Australia/Sydney'];
+
+    function yearUnknownDateOn(day: Date) {
+      return {
+        id: 'date-1',
+        title: 'Birthday',
+        date: new Date(Date.UTC(1604, day.getMonth(), day.getDate())),
+        reminderType: 'RECURRING',
+        reminderInterval: 1,
+        reminderIntervalUnit: 'YEARS',
+        lastReminderSent: null,
+        person: {
+          userId: 'user-1',
+          name: 'John',
+          surname: 'Doe',
+          middleName: null,
+          secondLastName: null,
+          nickname: null,
+          user: { email: 'john@example.com', dateFormat: 'MDY', language: 'en' },
+        },
+      };
+    }
+
+    async function runCron() {
+      mocks.personFindMany.mockResolvedValue([]);
+      mocks.createUnsubscribeToken.mockResolvedValue('token-abc123');
+      mocks.importantDateReminderTemplate.mockResolvedValue({
+        subject: 'Reminder',
+        html: '<p>Reminder</p>',
+        text: 'Reminder',
+      });
+      await GET(
+        new Request('http://localhost/api/cron/send-reminders', {
+          headers: { authorization: 'Bearer test-cron-secret' },
+        })
+      );
+    }
+
+    it.each(TIMEZONES)('sends on the birthday itself in %s', async (tz) => {
+      process.env.TZ = tz;
+      mocks.importantDateFindMany.mockResolvedValue([yearUnknownDateOn(new Date())]);
+
+      await runCron();
+
+      expect(mocks.createUnsubscribeToken).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(TIMEZONES)('stays quiet the day before in %s', async (tz) => {
+      process.env.TZ = tz;
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      mocks.importantDateFindMany.mockResolvedValue([yearUnknownDateOn(tomorrow)]);
+
+      await runCron();
+
+      expect(mocks.createUnsubscribeToken).not.toHaveBeenCalled();
     });
   });
 });

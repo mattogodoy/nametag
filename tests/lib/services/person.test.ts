@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks (must be defined before any imports that use them)
@@ -266,6 +266,48 @@ describe('createPerson', () => {
 
     const call = mocks.personCreate.mock.calls[0][0];
     expect(call.data.relationshipToUser).toEqual({ connect: { id: 'rel-type-1' } });
+  });
+
+  /**
+   * Calendar dates are stored as UTC midnight everywhere else in the app (the
+   * important-dates API and the CardDAV importer both do this). Rewriting the
+   * year in local time here stored a different instant for the same day, so
+   * the same birthday rendered differently depending on which endpoint had
+   * written it last.
+   */
+  describe('year-unknown important dates', () => {
+    const ORIGINAL_TZ = process.env.TZ;
+
+    afterEach(() => {
+      process.env.TZ = ORIGINAL_TZ;
+    });
+
+    it.each(['UTC', 'Europe/Madrid', 'Europe/London', 'America/New_York', 'Australia/Sydney'])(
+      'stores August 10 at UTC midnight under year 1604 in %s',
+      async (tz) => {
+        process.env.TZ = tz;
+
+        await createPerson(USER_ID, {
+          ...makeMinimalPersonData(),
+          importantDates: [{ title: 'Birthday', date: '2026-08-10', yearUnknown: true, reminderEnabled: false }],
+        });
+
+        const call = mocks.personCreate.mock.calls[0][0];
+        const stored = call.data.importantDates.create[0].date as Date;
+        expect(stored.toISOString()).toBe('1604-08-10T00:00:00.000Z');
+      },
+    );
+
+    it('leaves a known-year date at UTC midnight on its own day', async () => {
+      await createPerson(USER_ID, {
+        ...makeMinimalPersonData(),
+        importantDates: [{ title: 'Birthday', date: '1990-03-14', reminderEnabled: false }],
+      });
+
+      const call = mocks.personCreate.mock.calls[0][0];
+      const stored = call.data.importantDates.create[0].date as Date;
+      expect(stored.toISOString()).toBe('1990-03-14T00:00:00.000Z');
+    });
   });
 
   it('omits relationshipToUser when not provided', async () => {

@@ -8,7 +8,7 @@ import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
-import { parseAsLocalDate } from '@/lib/date-format';
+import { parseCalendarDate } from '@/lib/date-format';
 import { getTranslationsForLocale, type SupportedLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 
@@ -288,7 +288,7 @@ async function shouldSendImportantDateReminder(
   },
   today: Date
 ): Promise<boolean> {
-  const eventDate = parseAsLocalDate(importantDate.date);
+  const eventDate = parseCalendarDate(importantDate.date);
 
   if (importantDate.reminderType === 'ONCE') {
     // For one-time reminders, send on the exact date if not already sent
