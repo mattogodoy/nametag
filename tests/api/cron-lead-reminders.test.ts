@@ -74,6 +74,45 @@ function makeDate(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function makeDayOfDate(overrides: Record<string, unknown> = {}) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return {
+    id: 'date-A',
+    personId: 'person-A',
+    title: 'Anniversary',
+    type: 'anniversary',
+    date: new Date(today),
+    reminderEnabled: true,
+    reminderType: 'ONCE',
+    reminderInterval: null,
+    reminderIntervalUnit: null,
+    lastReminderSent: null,
+    reminderLeadDays: 0,
+    lastLeadReminderSent: null,
+    person: {
+      id: 'person-A',
+      name: 'Alice',
+      surname: 'Ng',
+      middleName: null,
+      secondLastName: null,
+      nickname: null,
+      displayNameOverride: null,
+      userId: 'user-A',
+      user: {
+        email: 'alice@example.com',
+        dateFormat: 'MDY',
+        language: 'en',
+        nameOrder: 'WESTERN',
+        nameDisplayFormat: 'FULL',
+        defaultReminderLeadDays: 0,
+      },
+    },
+    ...overrides,
+  };
+}
+
 describe('send-reminders lead reminders', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -108,6 +147,7 @@ describe('send-reminders lead reminders', () => {
         data: { lastLeadReminderSent: expect.any(Date) },
       })
     );
+    expect(mocks.importantDateUpdate).toHaveBeenCalledTimes(1);
   });
 
   it('sends nothing when the per-date override is 0', async () => {
@@ -131,5 +171,57 @@ describe('send-reminders lead reminders', () => {
 
     expect(body.errors).toBe(1);
     expect(mocks.importantDateUpdate).not.toHaveBeenCalled();
+  });
+
+  it('stamps the correct column on the correct record when a batch mixes a day-of and a lead reminder', async () => {
+    const dayOf = makeDayOfDate();
+    const lead = makeDate({ id: 'date-B', person: { ...makeDate().person, id: 'person-B' } });
+
+    mocks.importantDateFindMany.mockResolvedValue([dayOf, lead]);
+    mocks.sendEmailBatch.mockResolvedValue({
+      results: [{ success: true }, { success: true }],
+    });
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
+    expect(mocks.sendEmailBatch.mock.calls[0][0]).toHaveLength(2);
+    expect(body.sent).toBe(2);
+
+    expect(mocks.importantDateUpdate).toHaveBeenCalledTimes(2);
+    expect(mocks.importantDateUpdate).toHaveBeenCalledWith({
+      where: { id: 'date-A' },
+      data: { lastReminderSent: expect.any(Date) },
+    });
+    expect(mocks.importantDateUpdate).toHaveBeenCalledWith({
+      where: { id: 'date-B' },
+      data: { lastLeadReminderSent: expect.any(Date) },
+    });
+  });
+
+  it('stamps only the surviving record when the first email in a mixed batch fails', async () => {
+    const dayOf = makeDayOfDate();
+    const lead = makeDate({ id: 'date-B', person: { ...makeDate().person, id: 'person-B' } });
+
+    mocks.importantDateFindMany.mockResolvedValue([dayOf, lead]);
+    mocks.sendEmailBatch.mockResolvedValue({
+      results: [{ success: false, error: 'smtp down' }, { success: true }],
+    });
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(body.sent).toBe(1);
+    expect(body.errors).toBe(1);
+
+    expect(mocks.importantDateUpdate).toHaveBeenCalledTimes(1);
+    expect(mocks.importantDateUpdate).toHaveBeenCalledWith({
+      where: { id: 'date-B' },
+      data: { lastLeadReminderSent: expect.any(Date) },
+    });
+    expect(mocks.importantDateUpdate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'date-A' } })
+    );
   });
 });
