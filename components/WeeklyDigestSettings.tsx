@@ -23,6 +23,17 @@ export default function WeeklyDigestSettings({ currentEnabled, currentWeekday, d
   const [isSuccess, setIsSuccess] = useState(false);
 
   const save = async (nextEnabled: boolean, nextWeekday: number) => {
+    const previousEnabled = enabled;
+    const previousWeekday = weekday;
+
+    // Optimistic, for the same reason as the lead-time select: the toggle
+    // and the weekday select are both controlled inputs, so setting state
+    // only after the fetch resolves would make them visibly snap back to
+    // their previous values for the whole round trip. Both the toggle and
+    // the weekday select route through this one function, so they always
+    // behave the same way.
+    setEnabled(nextEnabled);
+    setWeekday(nextWeekday);
     setIsLoading(true);
     setMessage('');
     setIsSuccess(false);
@@ -39,13 +50,13 @@ export default function WeeklyDigestSettings({ currentEnabled, currentWeekday, d
       const data = await response.json();
 
       if (!response.ok) {
+        setEnabled(previousEnabled);
+        setWeekday(previousWeekday);
         setMessage(data.error || t('digestError'));
         setIsSuccess(false);
         return;
       }
 
-      setEnabled(nextEnabled);
-      setWeekday(nextWeekday);
       setMessage(t('digestSuccess'));
       setIsSuccess(true);
       router.refresh();
@@ -53,6 +64,8 @@ export default function WeeklyDigestSettings({ currentEnabled, currentWeekday, d
       // Clear success message after 2 seconds
       setTimeout(() => setMessage(''), 2000);
     } catch {
+      setEnabled(previousEnabled);
+      setWeekday(previousWeekday);
       setMessage(t('digestError'));
       setIsSuccess(false);
     } finally {

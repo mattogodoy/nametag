@@ -26,7 +26,14 @@ export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: 
   };
 
   const handleChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const previousValue = leadDays;
     const newValue = Number(event.target.value);
+
+    // Optimistic: this select is a controlled input, so the DOM value
+    // follows this state on the very next render. Setting it only after the
+    // fetch resolves would make the select, and the consequence line below
+    // it, visibly snap back to the old value for the whole round trip.
+    setLeadDays(newValue);
     setIsLoading(true);
     setMessage('');
     setIsSuccess(false);
@@ -43,12 +50,12 @@ export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: 
       const data = await response.json();
 
       if (!response.ok) {
+        setLeadDays(previousValue);
         setMessage(data.error || t('leadTimeError'));
         setIsSuccess(false);
         return;
       }
 
-      setLeadDays(newValue);
       setMessage(t('leadTimeSuccess'));
       setIsSuccess(true);
       router.refresh();
@@ -56,6 +63,7 @@ export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: 
       // Clear success message after 2 seconds
       setTimeout(() => setMessage(''), 2000);
     } catch {
+      setLeadDays(previousValue);
       setMessage(t('leadTimeError'));
       setIsSuccess(false);
     } finally {
@@ -65,7 +73,13 @@ export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: 
 
   return (
     <div>
-      <label htmlFor="reminder-lead-days" className="block text-sm font-medium text-muted mb-2">
+      {/*
+        The section heading above this component (leadTimeTitle) already
+        names this control visually, so a second visible label here would
+        just repeat it. The label stays for assistive technology, which
+        does not see the surrounding h2 as part of this control's name.
+      */}
+      <label htmlFor="reminder-lead-days" className="sr-only">
         {t('leadTimeTitle')}
       </label>
       <select
