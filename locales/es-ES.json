@@ -1850,6 +1850,19 @@
       "button": "Abrir Nametag",
       "unsubscribe": "Desactivar este recordatorio"
     },
+    "weeklyDigest": {
+      "subject": "{count} eventos se acercan esta semana",
+      "subjectOne": "Un evento se acerca esta semana",
+      "heading": "Tu semana por delante",
+      "body": "Esto es lo que se acerca en los próximos siete días.",
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "inDays": "En {days} días",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "Y {count} más. Abre Nametag para verlos todos.",
+      "button": "Abrir Nametag",
+      "unsubscribe": "Dejar de enviar el resumen semanal"
+    },
     "contactReminder": {
       "subject": "Es hora de ponerse al día con {personName}",
       "heading": "Mantente en Contacto",

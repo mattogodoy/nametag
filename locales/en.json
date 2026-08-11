@@ -1850,6 +1850,19 @@
       "button": "Open Nametag",
       "unsubscribe": "Disable this reminder"
     },
+    "weeklyDigest": {
+      "subject": "{count} events coming up this week",
+      "subjectOne": "One event coming up this week",
+      "heading": "Your week ahead",
+      "body": "Here is what is coming up over the next seven days.",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "inDays": "In {days} days",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "And {count} more. Open Nametag to see them all.",
+      "button": "Open Nametag",
+      "unsubscribe": "Stop sending the weekly summary"
+    },
     "contactReminder": {
       "subject": "Time to catch up with {personName}",
       "heading": "Stay in Touch",

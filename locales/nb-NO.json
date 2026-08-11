@@ -1850,6 +1850,19 @@
       "button": "Åpne Nametag",
       "unsubscribe": "Deaktiver denne påminnelsen"
     },
+    "weeklyDigest": {
+      "subject": "{count} hendelser kommer denne uken",
+      "subjectOne": "En hendelse kommer denne uken",
+      "heading": "Uken din fremover",
+      "body": "Her er hva som skjer de neste sju dagene.",
+      "today": "I dag",
+      "tomorrow": "I morgen",
+      "inDays": "Om {days} dager",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "Og {count} til. Åpne Nametag for å se dem alle.",
+      "button": "Åpne Nametag",
+      "unsubscribe": "Stopp den ukentlige oppsummeringen"
+    },
     "contactReminder": {
       "subject": "Tid for å ta igjen med {personName}",
       "heading": "Hold kontakten",

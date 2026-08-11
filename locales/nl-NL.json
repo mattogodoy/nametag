@@ -1850,6 +1850,19 @@
       "button": "Nametag openen",
       "unsubscribe": "Deze herinnering uitschakelen"
     },
+    "weeklyDigest": {
+      "subject": "{count} gebeurtenissen komen deze week eraan",
+      "subjectOne": "Er komt deze week één gebeurtenis aan",
+      "heading": "Jouw week vooruit",
+      "body": "Dit is wat er de komende zeven dagen op je afkomt.",
+      "today": "Vandaag",
+      "tomorrow": "Morgen",
+      "inDays": "Over {days} dagen",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "En nog {count} meer. Open Nametag om ze allemaal te zien.",
+      "button": "Nametag openen",
+      "unsubscribe": "Stop het versturen van het wekelijkse overzicht"
+    },
     "contactReminder": {
       "subject": "Tijd om bij te praten met {personName}",
       "heading": "Blijf in contact",

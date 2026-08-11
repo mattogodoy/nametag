@@ -1850,6 +1850,19 @@
       "button": "Nametag öffnen",
       "unsubscribe": "Diese Erinnerung deaktivieren"
     },
+    "weeklyDigest": {
+      "subject": "{count} Termine stehen diese Woche an",
+      "subjectOne": "Ein Termin steht diese Woche an",
+      "heading": "Deine Woche im Überblick",
+      "body": "Hier ist, was in den nächsten sieben Tagen anliegt.",
+      "today": "Heute",
+      "tomorrow": "Morgen",
+      "inDays": "In {days} Tagen",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "Und {count} weitere. Öffne Nametag, um sie alle zu sehen.",
+      "button": "Nametag öffnen",
+      "unsubscribe": "Diese wöchentliche Übersicht nicht mehr senden"
+    },
     "contactReminder": {
       "subject": "Zeit, dich bei {personName} zu melden",
       "heading": "In Kontakt bleiben",

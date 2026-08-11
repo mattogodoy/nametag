@@ -1850,6 +1850,19 @@
       "button": "Nametagを開く",
       "unsubscribe": "このリマインダーを無効にする"
     },
+    "weeklyDigest": {
+      "subject": "今週は{count}件の予定があります",
+      "subjectOne": "今週は1件の予定があります",
+      "heading": "今週の予定",
+      "body": "今後7日間の予定はこちらです。",
+      "today": "今日",
+      "tomorrow": "明日",
+      "inDays": "あと{days}日",
+      "row": "{personName}、{eventTitle}、{formattedDate}",
+      "andMore": "他に{count}件あります。Nametagを開いてすべて確認しましょう。",
+      "button": "Nametagを開く",
+      "unsubscribe": "週間まとめの送信を停止する"
+    },
     "contactReminder": {
       "subject": "{personName}と連絡を取る時期です",
       "heading": "連絡を取り続けましょう",

@@ -1850,6 +1850,19 @@
       "button": "Открыть Nametag",
       "unsubscribe": "Отключить это напоминание"
     },
+    "weeklyDigest": {
+      "subject": "На этой неделе {count} {eventsWord}",
+      "subjectOne": "На этой неделе одно событие",
+      "heading": "Ваша неделя впереди",
+      "body": "Вот что вас ждёт в течение следующих семи дней.",
+      "today": "Сегодня",
+      "tomorrow": "Завтра",
+      "inDays": "Через {days} {daysWord}",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "И ещё {count}. Откройте Nametag, чтобы увидеть всё.",
+      "button": "Открыть Nametag",
+      "unsubscribe": "Отключить еженедельную сводку"
+    },
     "contactReminder": {
       "subject": "Время пообщаться с {personName}",
       "heading": "Оставайтесь на связи",

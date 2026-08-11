@@ -1850,6 +1850,19 @@
       "button": "Apri Nametag",
       "unsubscribe": "Disabilita questo promemoria"
     },
+    "weeklyDigest": {
+      "subject": "{count} eventi in arrivo questa settimana",
+      "subjectOne": "Un evento in arrivo questa settimana",
+      "heading": "La tua settimana in arrivo",
+      "body": "Ecco cosa ti aspetta nei prossimi sette giorni.",
+      "today": "Oggi",
+      "tomorrow": "Domani",
+      "inDays": "Tra {days} giorni",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "E altri {count}. Apri Nametag per vederli tutti.",
+      "button": "Apri Nametag",
+      "unsubscribe": "Interrompi l'invio del riepilogo settimanale"
+    },
     "contactReminder": {
       "subject": "È tempo di ricontattare {personName}",
       "heading": "Resta in contatto",

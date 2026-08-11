@@ -1850,6 +1850,19 @@
       "button": "打开 Nametag",
       "unsubscribe": "禁用此提醒"
     },
+    "weeklyDigest": {
+      "subject": "本周有 {count} 个事件",
+      "subjectOne": "本周有 1 个事件",
+      "heading": "你的这一周",
+      "body": "以下是接下来七天要发生的事情。",
+      "today": "今天",
+      "tomorrow": "明天",
+      "inDays": "还有 {days} 天",
+      "row": "{personName}，{eventTitle}，{formattedDate}",
+      "andMore": "还有 {count} 个。打开 Nametag 查看全部。",
+      "button": "打开 Nametag",
+      "unsubscribe": "停止发送每周摘要"
+    },
     "contactReminder": {
       "subject": "是时候与 {personName} 赶上了",
       "heading": "保持联系",
