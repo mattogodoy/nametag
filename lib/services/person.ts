@@ -82,6 +82,7 @@ function mapImportantDate(date: NonNullable<PersonInput['importantDates']>[numbe
       date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderInterval : null,
     reminderIntervalUnit:
       date.reminderEnabled && date.reminderType === 'RECURRING' ? date.reminderIntervalUnit : null,
+    reminderLeadDays: date.reminderEnabled ? date.reminderLeadDays ?? null : null,
   };
 }
 

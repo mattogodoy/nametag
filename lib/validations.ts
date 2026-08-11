@@ -71,6 +71,7 @@ const importantDateSchema = z.object({
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
+  reminderLeadDays: z.number().int().min(0).max(365).nullable().optional(),
 }).refine(
   (data) =>
     // Existing dates (with id) are allowed through — they may predate the
@@ -589,6 +590,7 @@ export const createImportantDateSchema = z.object({
   reminderType: z.enum(['ONCE', 'RECURRING']).nullable().optional(),
   reminderInterval: z.number().int().min(1).max(99).nullable().optional(),
   reminderIntervalUnit: reminderIntervalUnitSchema.nullable().optional(),
+  reminderLeadDays: z.number().int().min(0).max(365).nullable().optional(),
 }).refine(
   (data) => data.type != null || (data.title && data.title.trim().length > 0),
   { message: 'Title is required when no predefined type is selected', path: ['title'] }

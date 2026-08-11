@@ -244,6 +244,12 @@ export function sharedSchemas(): Record<string, unknown> {
             { type: 'null' },
           ],
         },
+        reminderLeadDays: {
+          type: ['integer', 'null'],
+          minimum: 0,
+          maximum: 365,
+          description: 'Days before this date to send an advance-notice reminder. Null inherits the user default, 0 means day-of only for this date.',
+        },
         deletedAt: { type: ['string', 'null'], format: 'date-time' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },

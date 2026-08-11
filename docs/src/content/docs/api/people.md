@@ -467,6 +467,7 @@ POST /api/people/{id}/important-dates
 | `reminderType` | `ONCE` \| `RECURRING` \| null | |
 | `reminderInterval` | integer 1-99, or null | |
 | `reminderIntervalUnit` | `DAYS` \| `WEEKS` \| `MONTHS` \| `YEARS`, or null | |
+| `reminderLeadDays` | integer 0-365, or null | How many days before this date to send the advance-notice reminder. Omit the field to leave it unchanged; send `null` to inherit the account-wide default from [`PUT /api/user/reminder-lead-days`](/api/user/#update-reminder-lead-time); send `0` to explicitly override the default with day-of only for this date; send a positive integer to override with a different lead time for this date only. |
 
 ```bash
 curl -X POST https://your-instance.example.com/api/people/clx1/important-dates \
