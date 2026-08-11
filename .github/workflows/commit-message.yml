@@ -1,0 +1,37 @@
+name: Commit Message
+
+# Kept out of pr-checks.yml on purpose: this needs to re-run when the pull
+# request description is edited, and adding "edited" to that workflow's triggers
+# would re-run lint, typecheck, tests and build on every wording tweak.
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  conventional-commit:
+    name: Conventional Commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check the squash commit message parses
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: npx tsx scripts/check-pr-commit-message.ts
