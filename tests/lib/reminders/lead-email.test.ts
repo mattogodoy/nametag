@@ -57,4 +57,46 @@ describe('importantDateLeadReminder template', () => {
 
     expect(template.html).not.toContain('<script>');
   });
+
+  it('uses the genitive singular "дня" for a count of 3 in Russian', async () => {
+    const template = await emailTemplates.importantDateLeadReminder(
+      'Sarah Chen',
+      'Birthday',
+      '12 мая 2026',
+      3,
+      'https://example.com/unsubscribe?token=abc',
+      'ru-RU'
+    );
+
+    expect(template.subject).toContain('3 дня');
+    expect(template.subject).not.toContain('3 дней');
+  });
+
+  it('uses the genitive plural "дней" for a count of 7 in Russian', async () => {
+    const template = await emailTemplates.importantDateLeadReminder(
+      'Sarah Chen',
+      'Birthday',
+      '12 мая 2026',
+      7,
+      'https://example.com/unsubscribe?token=abc',
+      'ru-RU'
+    );
+
+    expect(template.subject).toContain('7 дней');
+  });
+
+  it('uses the tomorrow variant for a count of 1 in Russian', async () => {
+    const template = await emailTemplates.importantDateLeadReminder(
+      'Sarah Chen',
+      'Birthday',
+      '12 мая 2026',
+      1,
+      'https://example.com/unsubscribe?token=abc',
+      'ru-RU'
+    );
+
+    expect(template.subject).toContain('завтра');
+    expect(template.subject).not.toContain('1 дней');
+    expect(template.subject).not.toContain('1 дня');
+  });
 });

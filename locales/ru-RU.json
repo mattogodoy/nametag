@@ -1841,10 +1841,10 @@
       "unsubscribe": "Отключить это напоминание"
     },
     "importantDateLeadReminder": {
-      "subject": "{eventType} у {personName} через {daysUntil} дней",
+      "subject": "{eventType} у {personName} через {daysUntil} {daysWord}",
       "subjectOneDay": "{eventType} у {personName} завтра",
       "heading": "Уже скоро",
-      "infoBox": "{eventType} у {personName} состоится {date}, через {daysUntil} дней.",
+      "infoBox": "{eventType} у {personName} состоится {date}, через {daysUntil} {daysWord}.",
       "infoBoxOneDay": "{eventType} у {personName} состоится завтра, {date}.",
       "body": "Небольшое напоминание заранее, чтобы у вас было время подготовиться.",
       "button": "Открыть Nametag",

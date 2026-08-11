@@ -1844,7 +1844,7 @@
       "subject": "{personName}の {eventType}まであと{daysUntil}日です",
       "subjectOneDay": "{personName}の {eventType}は明日です",
       "heading": "もうすぐです",
-      "infoBox": "{personName}の {eventType}は{date}、あと{daysUntil}日です。",
+      "infoBox": "{personName}の {eventType}は {date}、あと{daysUntil}日です。",
       "infoBoxOneDay": "{personName}の {eventType}は明日、{date}です。",
       "body": "余裕を持って準備できるよう、早めにお知らせしています。",
       "button": "Nametagを開く",

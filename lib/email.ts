@@ -672,6 +672,25 @@ async function emailUnsubscribeFooter(unsubscribeUrl: string, locale: SupportedL
 </table>`;
 }
 
+/**
+ * Selects the correctly declined Russian word for "day(s)" for a given count.
+ *
+ * The email translation strings are rendered through `getTranslationsForLocale`,
+ * a lightweight interpolator that only substitutes plain `{token}` placeholders.
+ * It does not evaluate ICU MessageFormat plural rules, so the standard
+ * `{count, plural, one {...} few {...} many {...} other {...}}` syntax used
+ * elsewhere in the locale files (rendered client/server-side via next-intl)
+ * would be left unresolved in an email body. Russian numeral agreement is
+ * computed here instead and passed in as a plain `daysWord` value.
+ */
+function russianDaysWord(daysUntil: number): string {
+  const lastTwoDigits = daysUntil % 100;
+  const lastDigit = lastTwoDigits % 10;
+  if (lastDigit === 1 && lastTwoDigits !== 11) return 'день';
+  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) return 'дня';
+  return 'дней';
+}
+
 // Email template helpers for common use cases
 export const emailTemplates = {
   accountVerification: async (verificationUrl: string, locale: SupportedLocale = 'en') => {
@@ -713,12 +732,13 @@ export const emailTemplates = {
   ) => {
     const t = await getTranslationsForLocale(locale, 'emails.importantDateLeadReminder');
     const isTomorrow = daysUntil === 1;
+    const daysWord = russianDaysWord(daysUntil);
     const subject = isTomorrow
       ? t('subjectOneDay', { personName, eventType })
-      : t('subject', { personName, eventType, daysUntil });
+      : t('subject', { personName, eventType, daysUntil, daysWord });
     const infoPlain = isTomorrow
       ? t('infoBoxOneDay', { personName, eventType, date })
-      : t('infoBox', { personName, eventType, date, daysUntil });
+      : t('infoBox', { personName, eventType, date, daysUntil, daysWord });
     const infoHtml = isTomorrow
       ? t('infoBoxOneDay', {
           personName: `<strong>${escapeHtml(personName)}</strong>`,
@@ -730,6 +750,7 @@ export const emailTemplates = {
           eventType: escapeHtml(eventType),
           date: `<strong>${escapeHtml(date)}</strong>`,
           daysUntil,
+          daysWord,
         });
 
     return {
