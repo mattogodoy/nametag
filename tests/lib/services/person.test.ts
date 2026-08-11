@@ -156,7 +156,10 @@ import {
   restorePerson,
   mergePeople,
 } from '../../../lib/services/person';
+import type { PersonUpdateInput } from '../../../lib/services/person';
 import { TIMEZONES, setProcessTimezone, restoreTimezoneAfterEach } from '../../helpers/timezone';
+
+type IncomingImportantDate = NonNullable<PersonUpdateInput['importantDates']>[number];
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -527,9 +530,20 @@ describe('updatePerson', () => {
   });
 
   it('soft-deletes removed importantDates and recreates kept ones', async () => {
+    // Shaped like the select the update path issues, which reads the schedule
+    // columns as well as the ids.
+    const storedShape = {
+      date: new Date(Date.UTC(1990, 2, 14)),
+      reminderType: null,
+      reminderInterval: null,
+      reminderIntervalUnit: null,
+      reminderLeadDays: null,
+      lastReminderSent: null,
+      lastLeadReminderSent: null,
+    };
     mocks.importantDateFindMany.mockResolvedValue([
-      { id: 'date-1' },
-      { id: 'date-2' },
+      { id: 'date-1', ...storedShape },
+      { id: 'date-2', ...storedShape },
     ]);
 
     await updatePerson(PERSON_ID, USER_ID, {
@@ -543,7 +557,7 @@ describe('updatePerson', () => {
     });
     // date-1 is kept, hard-deleted then recreated
     expect(mocks.importantDateDeleteMany).toHaveBeenCalledWith({
-      where: { id: { in: ['date-1'] } },
+      where: { personId: PERSON_ID, id: { in: ['date-1'] } },
     });
     const call = mocks.personUpdate.mock.calls[0][0];
     expect(call.data.importantDates.create).toHaveLength(1);
@@ -553,24 +567,105 @@ describe('updatePerson', () => {
   // reminder bookkeeping. Losing it re-arms mail that already went out: saving
   // an unrelated field would resend the advance notice for every date still
   // inside its lead window, and the day-of reminder for anything due today.
-  it('carries reminder send timestamps across the recreate of kept importantDates', async () => {
-    const lastReminderSent = new Date('2026-03-14T09:00:00Z');
-    const lastLeadReminderSent = new Date('2026-02-12T09:00:00Z');
+  const STAMPS = {
+    lastReminderSent: new Date('2026-03-14T09:00:00Z'),
+    lastLeadReminderSent: new Date('2026-02-12T09:00:00Z'),
+  };
 
-    mocks.importantDateFindMany.mockResolvedValue([
-      { id: 'date-1', lastReminderSent, lastLeadReminderSent },
-    ]);
+  /** A stored row for 14 March 1990 with a yearly reminder and a 7 day lead. */
+  function storedDate(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'date-1',
+      date: new Date(Date.UTC(1990, 2, 14)),
+      reminderType: 'RECURRING',
+      reminderInterval: 1,
+      reminderIntervalUnit: 'YEARS',
+      reminderLeadDays: 7,
+      ...STAMPS,
+      ...overrides,
+    };
+  }
+
+  /** The matching input, unchanged unless a test says otherwise. */
+  function incomingDate(
+    overrides: Partial<IncomingImportantDate> = {}
+  ): IncomingImportantDate {
+    return {
+      id: 'date-1',
+      title: 'Birthday',
+      date: '1990-03-14',
+      reminderEnabled: true,
+      reminderType: 'RECURRING',
+      reminderInterval: 1,
+      reminderIntervalUnit: 'YEARS',
+      reminderLeadDays: 7,
+      ...overrides,
+    };
+  }
+
+  function createdDate() {
+    return mocks.personUpdate.mock.calls[0][0].data.importantDates.create[0];
+  }
+
+  it('carries reminder send timestamps across the recreate of kept importantDates', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([storedDate()]);
+
+    await updatePerson(PERSON_ID, USER_ID, { importantDates: [incomingDate()] });
+
+    expect(createdDate()).toMatchObject(STAMPS);
+  });
+
+  // A stamp records "the reminder for this schedule already fired". Carrying it
+  // onto a different date silences the corrected one: fixing a birthday from
+  // March to September after the March mail went out would leave
+  // lastReminderSent in the current year, and the yearly branch skips September.
+  it('drops the timestamps when the date itself was corrected', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([storedDate()]);
 
     await updatePerson(PERSON_ID, USER_ID, {
-      importantDates: [
-        { id: 'date-1', title: 'Birthday', date: '1990-03-14', reminderEnabled: false },
-      ],
+      importantDates: [incomingDate({ date: '1990-09-15' })],
     });
 
-    const call = mocks.personUpdate.mock.calls[0][0];
-    expect(call.data.importantDates.create[0]).toMatchObject({
-      lastReminderSent,
-      lastLeadReminderSent,
+    const created = createdDate();
+    expect(created.lastReminderSent).toBeUndefined();
+    expect(created.lastLeadReminderSent).toBeUndefined();
+  });
+
+  it('drops the timestamps when the recurrence interval changed', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([storedDate()]);
+
+    await updatePerson(PERSON_ID, USER_ID, {
+      importantDates: [incomingDate({ reminderInterval: 2 })],
+    });
+
+    const created = createdDate();
+    expect(created.lastReminderSent).toBeUndefined();
+    expect(created.lastLeadReminderSent).toBeUndefined();
+  });
+
+  // The day-of history is still accurate, but the lead window moved, so the old
+  // send would sit inside the new window and suppress it.
+  it('keeps the day-of stamp but clears the lead stamp when only the lead time changed', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([storedDate()]);
+
+    await updatePerson(PERSON_ID, USER_ID, {
+      importantDates: [incomingDate({ reminderLeadDays: 30 })],
+    });
+
+    const created = createdDate();
+    expect(created.lastReminderSent).toEqual(STAMPS.lastReminderSent);
+    expect(created.lastLeadReminderSent).toBeNull();
+  });
+
+  // Ids are client-supplied. Without a personId scope on the delete, naming
+  // someone else's date id would hard-delete their row.
+  it('scopes the hard delete of kept dates to this person', async () => {
+    mocks.importantDateFindMany.mockResolvedValue([storedDate()]);
+
+    await updatePerson(PERSON_ID, USER_ID, { importantDates: [incomingDate()] });
+
+    expect(mocks.importantDateDeleteMany).toHaveBeenCalledWith({
+      where: { personId: PERSON_ID, id: { in: ['date-1'] } },
     });
   });
 

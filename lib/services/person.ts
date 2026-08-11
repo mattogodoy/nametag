@@ -88,6 +88,63 @@ function mapImportantDate(date: NonNullable<PersonInput['importantDates']>[numbe
   };
 }
 
+/** The reminder bookkeeping columns, as they should be written on a recreate. */
+interface ReminderStamps {
+  lastReminderSent: Date | null;
+  lastLeadReminderSent: Date | null;
+}
+
+/** The stored columns a recreate needs in order to decide what to carry over. */
+interface ExistingImportantDate extends ReminderStamps {
+  date: Date;
+  reminderType: string | null;
+  reminderInterval: number | null;
+  reminderIntervalUnit: string | null;
+  reminderLeadDays: number | null;
+}
+
+/**
+ * Decide which reminder timestamps survive the delete-and-recreate of a kept
+ * important date.
+ *
+ * Keeping them matters because the recreate would otherwise re-arm mail that
+ * already went out: saving an unrelated field on a person would resend the
+ * advance notice for every date still inside its lead window, and the day-of
+ * reminder for anything due today.
+ *
+ * Dropping them matters just as much once the schedule itself changes. A stamp
+ * records "the reminder for this schedule already fired", so carrying it onto a
+ * different schedule silences the new one: correcting a birthday from August to
+ * September after the August mail had gone out would leave lastReminderSent in
+ * the current year, and the yearly branch would then skip September entirely.
+ * A changed schedule starts with a clean slate.
+ *
+ * The lead stamp additionally depends on the lead time, since the window it was
+ * recorded against moves when that value changes.
+ */
+function carriedReminderStamps(
+  incoming: ReturnType<typeof mapImportantDate>,
+  previous: ExistingImportantDate | undefined
+): ReminderStamps | undefined {
+  if (!previous) return undefined;
+
+  const sameSchedule =
+    previous.date.getTime() === incoming.date.getTime() &&
+    previous.reminderType === incoming.reminderType &&
+    previous.reminderInterval === incoming.reminderInterval &&
+    previous.reminderIntervalUnit === incoming.reminderIntervalUnit;
+
+  if (!sameSchedule) return undefined;
+
+  return {
+    lastReminderSent: previous.lastReminderSent,
+    lastLeadReminderSent:
+      previous.reminderLeadDays === incoming.reminderLeadDays
+        ? previous.lastLeadReminderSent
+        : null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // createPerson
 // ---------------------------------------------------------------------------
@@ -374,20 +431,19 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
 
     const existingDates = await prisma.importantDate.findMany({
       where: { personId: id, deletedAt: null },
-      select: { id: true, lastReminderSent: true, lastLeadReminderSent: true },
+      select: {
+        id: true,
+        date: true,
+        reminderType: true,
+        reminderInterval: true,
+        reminderIntervalUnit: true,
+        reminderLeadDays: true,
+        lastReminderSent: true,
+        lastLeadReminderSent: true,
+      },
     });
 
-    // Kept dates are deleted and recreated below, which would reset the
-    // reminder bookkeeping and re-arm emails that already went out: saving an
-    // unrelated field on a person would resend the advance notice for every
-    // date still inside its lead window, and the day-of reminder for anything
-    // due today. Carry the timestamps across the recreate.
-    const sentStampsById = new Map(
-      existingDates.map((d) => [
-        d.id,
-        { lastReminderSent: d.lastReminderSent, lastLeadReminderSent: d.lastLeadReminderSent },
-      ])
-    );
+    const existingById = new Map(existingDates.map((d) => [d.id, d]));
 
     const removedIds = existingDates
       .map((d) => d.id)
@@ -401,18 +457,22 @@ export async function updatePerson(id: string, userId: string, data: PersonUpdat
     }
 
     // Hard-delete only the kept dates (they'll be recreated with fresh data).
-    // New dates (no id) are just created.
+    // New dates (no id) are just created. Scoped to this person so a caller
+    // cannot name an id belonging to someone else's record and delete it.
     if (incomingIds.length > 0) {
       await prisma.importantDate.deleteMany({
-        where: { id: { in: incomingIds } },
+        where: { personId: id, id: { in: incomingIds } },
       });
     }
 
     updateData.importantDates = {
-      create: importantDates.map((date) => ({
-        ...mapImportantDate(date),
-        ...(date.id ? sentStampsById.get(date.id) : undefined),
-      })),
+      create: importantDates.map((date) => {
+        const mapped = mapImportantDate(date);
+        return {
+          ...mapped,
+          ...carriedReminderStamps(mapped, date.id ? existingById.get(date.id) : undefined),
+        };
+      }),
     };
   }
 

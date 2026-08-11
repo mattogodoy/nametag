@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { UpcomingEvent } from '../../lib/upcoming-events';
+import {
+  TIMEZONES,
+  setProcessTimezone,
+  restoreTimezoneAfterEach,
+} from '../helpers/timezone';
 
 const mocks = vi.hoisted(() => ({
   importantDateFindMany: vi.fn(),
@@ -293,4 +298,79 @@ describe('send-reminders weekly digest', () => {
     expect(body.sent).toBe(1);
     expect(body.digestsSent).toBe(0);
   });
+});
+
+// getUpcomingEvents builds every event.date with local accessors. Re-reading
+// one through parseCalendarDate treats local midnight as UTC, which reports the
+// previous day east of UTC, and would then contradict the "In N days" prefix
+// sitting beside it in the same row.
+describe('weekly digest, dates shown in the rows', () => {
+  restoreTimezoneAfterEach();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.cronLogCreate.mockResolvedValue({ id: 'log-1' });
+    mocks.cronLogUpdate.mockResolvedValue({});
+    mocks.importantDateFindMany.mockResolvedValue([]);
+    mocks.personFindMany.mockResolvedValue([]);
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.sendEmailBatch.mockResolvedValue({ results: [{ success: true }] });
+  });
+
+  const request = () => new Request('http://localhost/api/cron/send-reminders');
+
+  /**
+   * The digest is gated on today's weekday, which has to be read under the
+   * timezone the test just pinned. The module-level TODAY was built before
+   * that, so reusing its weekday would skip the digest in half the zones.
+   */
+  function arriveOnTodaysWeekday(): void {
+    mocks.userFindMany.mockResolvedValue([
+      digestUser({ weeklyDigestWeekday: new Date().getDay() }),
+    ]);
+  }
+
+  /** A local calendar day N days out, with no time component. */
+  function localDay(daysUntil: number): Date {
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() + daysUntil);
+    return day;
+  }
+
+  function digestBody(): string {
+    const items = mocks.sendEmailBatch.mock.calls[0][0];
+    expect(items).toHaveLength(1);
+    return items[0].html as string;
+  }
+
+  for (const tz of TIMEZONES) {
+    it(`names the day the event actually falls on (${tz})`, async () => {
+      setProcessTimezone(tz);
+      arriveOnTodaysWeekday();
+      const day = localDay(3);
+      mocks.getUpcomingEvents.mockResolvedValue([{ ...upcoming(3), date: day }]);
+
+      await GET(request());
+
+      const month = day.toLocaleDateString('en-US', { month: 'long' });
+      expect(digestBody()).toContain(`${month} ${day.getDate()}`);
+    });
+
+    it(`omits the year for a year-unknown event (${tz})`, async () => {
+      setProcessTimezone(tz);
+      arriveOnTodaysWeekday();
+      const day = localDay(3);
+      mocks.getUpcomingEvents.mockResolvedValue([
+        { ...upcoming(3), date: day, isYearUnknown: true },
+      ]);
+
+      await GET(request());
+
+      const body = digestBody();
+      const month = day.toLocaleDateString('en-US', { month: 'long' });
+      expect(body).toContain(`${month} ${day.getDate()}`);
+      expect(body).not.toContain(`${month} ${day.getDate()}, ${day.getFullYear()}`);
+    });
+  }
 });

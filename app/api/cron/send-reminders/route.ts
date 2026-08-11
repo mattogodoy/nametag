@@ -210,8 +210,12 @@ export const GET = withLogging(async function GET(request: Request) {
             person.user.nameOrder,
             person.user.nameDisplayFormat
           );
-          const formattedDate = formatDateForEmail(
+          // nextOccurrence is local midnight, and for a recurring date it has
+          // been projected into the year it next falls in, so the sentinel that
+          // marks an unknown year is only still visible on the stored value.
+          const formattedDate = formatCalendarDayForEmail(
             nextOccurrence,
+            parseCalendarDate(importantDate.date).getFullYear() <= YEAR_UNKNOWN_SENTINEL,
             person.user.dateFormat,
             userLanguage
           );
@@ -371,7 +375,14 @@ export const GET = withLogging(async function GET(request: Request) {
             const rows = events.map((event) => ({
               personName: event.personName,
               eventTitle: event.title ?? tEvents(event.titleKey ?? 'timeToCatchUp'),
-              formattedDate: formatDateForEmail(event.date, user.dateFormat, userLanguage),
+              // getUpcomingEvents builds every event.date locally, so this is
+              // already a local calendar day rather than a stored UTC one.
+              formattedDate: formatCalendarDayForEmail(
+                event.date,
+                event.isYearUnknown,
+                user.dateFormat,
+                userLanguage
+              ),
               daysUntil: event.daysUntil,
             }));
 
@@ -542,21 +553,31 @@ function formatInterval(interval: number, unit: string): string {
   return `${interval} ${unitLower}`;
 }
 
-function formatDateForEmail(
-  date: Date,
+/**
+ * Render a calendar day that is already anchored to local midnight.
+ *
+ * Kept separate from formatDateForEmail because the two take different kinds of
+ * Date. Occurrences computed at runtime (a projected anniversary, a digest row)
+ * are built with local accessors, so passing them through parseCalendarDate
+ * would apply the UTC-to-local correction a second time and report the previous
+ * day east of UTC.
+ *
+ * `yearUnknown` has to be supplied rather than inferred: projecting an
+ * occurrence into the current year overwrites the sentinel that marks a date
+ * whose year the user never entered.
+ */
+function formatCalendarDayForEmail(
+  d: Date,
+  yearUnknown: boolean,
   dateFormat: string | null,
   locale: string = 'en'
 ): string {
-  // Stored values are UTC midnight on the calendar day they encode; reading
-  // them with local accessors would report the previous day west of UTC.
-  const d = parseCalendarDate(date);
   const localeCode = locale === 'en' ? 'en-US' : locale;
   const month = d.toLocaleDateString(localeCode, { month: 'long' });
   const day = d.getDate();
   const year = d.getFullYear();
 
-  // Year-unknown dates carry the sentinel year; show only month and day.
-  if (year <= YEAR_UNKNOWN_SENTINEL) {
+  if (yearUnknown) {
     switch (dateFormat) {
       case 'DMY':
         return `${day} ${month}`;
@@ -576,4 +597,21 @@ function formatDateForEmail(
     default:
       return `${month} ${day}, ${year}`;
   }
+}
+
+/** Render a value straight out of the database, which is UTC midnight. */
+function formatDateForEmail(
+  date: Date,
+  dateFormat: string | null,
+  locale: string = 'en'
+): string {
+  // Stored values are UTC midnight on the calendar day they encode; reading
+  // them with local accessors would report the previous day west of UTC.
+  const d = parseCalendarDate(date);
+  return formatCalendarDayForEmail(
+    d,
+    d.getFullYear() <= YEAR_UNKNOWN_SENTINEL,
+    dateFormat,
+    locale
+  );
 }
