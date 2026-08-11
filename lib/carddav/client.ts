@@ -232,7 +232,13 @@ export async function createCardDavClient(
         });
       }
 
-      const etag = response.headers?.get('etag') || vCard.etag;
+      // Returning an ETag on PUT is only a recommendation in RFC 6352, so a
+      // server may legally omit it. Never fall back to the etag we sent: it is
+      // already stale, and storing it as though it were fresh makes every later
+      // pull believe the contact changed remotely and re-import the vCard we
+      // just wrote (issue #392). An empty etag records the truth ("unknown"),
+      // which the sync engine resolves with a content hash comparison.
+      const etag = response.headers?.get('etag') || '';
 
       return {
         url: vCard.url,
