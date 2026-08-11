@@ -801,10 +801,14 @@ export const emailTemplates = {
       return t('inDays', { days: daysUntil, daysWord: russianDaysWord(daysUntil) });
     };
 
+    // rows is already capped at DIGEST_MAX_ROWS by selectDigestEvents, so the
+    // subject must add overflowCount back in, or it undercounts against the
+    // body's own "And N more" line.
+    const totalCount = rows.length + overflowCount;
     const subject =
-      rows.length === 1
+      totalCount === 1
         ? t('subjectOne')
-        : t('subject', { count: rows.length, eventsWord: russianEventsWord(rows.length) });
+        : t('subject', { count: totalCount, eventsWord: russianEventsWord(totalCount) });
 
     const htmlRows = rows.map((row) =>
       `<strong>${escapeHtml(whenLabel(row.daysUntil))}</strong>: ` +

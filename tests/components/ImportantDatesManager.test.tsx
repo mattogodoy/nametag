@@ -144,6 +144,43 @@ describe('ImportantDatesManager - per-date advance notice override', () => {
     expect(body.reminderLeadDays).toBe(0);
   });
 
+  it('shows the true value instead of rendering blank when the override is not one of the presets', async () => {
+    // Regression: the API accepts 0-365, but the select only offered the six
+    // presets, so a value like 10 (set via the API) rendered blank while the
+    // summary text right below it correctly read "10 days before".
+    const user = userEvent.setup();
+
+    render(
+      <Wrapper>
+        <ImportantDatesManager
+          mode="edit"
+          personId="person-1"
+          defaultReminderLeadDays={7}
+          initialDates={[
+            {
+              id: 'd1',
+              type: 'birthday',
+              title: '',
+              date: '2018-07-05',
+              yearUnknown: false,
+              reminderEnabled: true,
+              reminderType: 'RECURRING',
+              reminderInterval: 1,
+              reminderIntervalUnit: 'YEARS',
+              reminderLeadDays: 10,
+            },
+          ]}
+        />
+      </Wrapper>
+    );
+
+    await user.click(screen.getByTitle('Edit'));
+
+    const leadTimeSelect = screen.getByRole('combobox', { name: 'Notify me' }) as HTMLSelectElement;
+    expect(leadTimeSelect).toHaveValue('10');
+    expect(screen.getByText('10 days before')).toBeInTheDocument();
+  });
+
   it('sends null when a date is left on "Default"', async () => {
     // The other half of the same three-state guarantee as the test above:
     // leaving the control untouched must persist as an explicit "inherit",

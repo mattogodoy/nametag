@@ -3,13 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { getLeadTimeLabel, getLeadTimeSelectOptions } from '@/lib/reminders/lead-time-options';
 
 interface ReminderLeadTimeSelectorProps {
   currentLeadDays: number;
   disabled: boolean;
 }
-
-const LEAD_DAY_OPTIONS = [0, 1, 3, 7, 14, 30] as const;
 
 export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: ReminderLeadTimeSelectorProps) {
   const t = useTranslations('settings.notifications');
@@ -19,11 +18,10 @@ export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: 
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const getOptionLabel = (days: number) => {
-    if (days === 0) return t('leadTimeDayOf');
-    if (days === 1) return t('leadTimeOneDay');
-    return t('leadTimeDays', { days });
-  };
+  // The API accepts any value from 0 to 365, not just the presets below. If
+  // the current value is a non-preset (set via the API, for example), it is
+  // appended here so the select shows the truth instead of rendering blank.
+  const selectOptions = getLeadTimeSelectOptions(leadDays);
 
   const handleChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const previousValue = leadDays;
@@ -90,9 +88,9 @@ export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: 
         aria-describedby="reminder-lead-days-summary"
         className="w-full max-w-xs px-3 py-2 border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {LEAD_DAY_OPTIONS.map((days) => (
+        {selectOptions.map((days) => (
           <option key={days} value={days}>
-            {getOptionLabel(days)}
+            {getLeadTimeLabel(days, t)}
           </option>
         ))}
       </select>

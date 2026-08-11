@@ -24,4 +24,8 @@ describe('resolveLeadDays', () => {
   it('falls back to 0 when neither the date nor the user has a value', () => {
     expect(resolveLeadDays(null, null)).toBe(0);
   });
+
+  it('falls back to 0 when the user default is undefined', () => {
+    expect(resolveLeadDays(null, undefined)).toBe(0);
+  });
 });

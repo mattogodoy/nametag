@@ -28,6 +28,24 @@ describe('weeklyDigest template', () => {
     expect(template.html).toContain('5');
   });
 
+  it('counts the subject as rows plus overflow, not rows alone', async () => {
+    // rows is already capped at DIGEST_MAX_ROWS by selectDigestEvents. A user
+    // with 30 events gets 25 rows and an overflowCount of 5: the subject must
+    // say 30, matching the body's "And 5 more" line, not undercount at 25.
+    const cappedRows = Array.from({ length: 25 }, (_, i) => ({
+      ...rows[0],
+      personName: `Person ${i}`,
+    }));
+    const template = await emailTemplates.weeklyDigest(
+      cappedRows,
+      5,
+      'https://example.com/u?token=a',
+      'en'
+    );
+    expect(template.subject).toContain('30');
+    expect(template.subject).not.toContain('25');
+  });
+
   it('omits the overflow line when nothing was truncated', async () => {
     const template = await emailTemplates.weeklyDigest(rows, 0, 'https://example.com/u?token=a', 'en');
     expect(template.html).not.toContain('And 0 more');

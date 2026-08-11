@@ -200,6 +200,89 @@ describe('send-reminders lead reminders', () => {
     });
   });
 
+  it('queues no lead email for a recurring every-2-years date in an off year', async () => {
+    const today = new Date();
+    const occurrence = new Date(today);
+    occurrence.setDate(occurrence.getDate() + 7);
+
+    // Only one year has passed since the last actual day-of send, but the
+    // interval is 2 years: the day-of path will not fire on this occurrence.
+    const lastSentYear = occurrence.getFullYear() - 1;
+
+    const offYearDate = makeDate({
+      reminderInterval: 2,
+      reminderIntervalUnit: 'YEARS',
+      lastReminderSent: new Date(lastSentYear, occurrence.getMonth(), occurrence.getDate()),
+    });
+
+    mocks.importantDateFindMany.mockResolvedValue([offYearDate]);
+    // Two results, not zero: if the guard regresses and queues the lead email
+    // anyway, this must fail on the `sent` assertion below, not on an
+    // out-of-bounds read into an empty results array.
+    mocks.sendEmailBatch.mockResolvedValue({
+      results: [{ success: true }, { success: true }],
+    });
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(body.sent).toBe(0);
+    expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
+  });
+
+  it('queues a lead email for the same every-2-years date in an on year', async () => {
+    const today = new Date();
+    const occurrence = new Date(today);
+    occurrence.setDate(occurrence.getDate() + 7);
+
+    // Two years have passed since the last actual day-of send: the day-of
+    // path will fire on this occurrence, so the lead email is allowed.
+    const lastSentYear = occurrence.getFullYear() - 2;
+
+    const onYearDate = makeDate({
+      reminderInterval: 2,
+      reminderIntervalUnit: 'YEARS',
+      lastReminderSent: new Date(lastSentYear, occurrence.getMonth(), occurrence.getDate()),
+    });
+
+    mocks.importantDateFindMany.mockResolvedValue([onYearDate]);
+    mocks.sendEmailBatch.mockResolvedValue({ results: [{ success: true }] });
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(body.sent).toBe(1);
+    expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('queues no lead email for a Feb 29 date evaluated in a non-leap year', async () => {
+    // 2026 is not a leap year, so Feb 29 rolls to Mar 1 in getNextOccurrence.
+    // Pin "today" a few days before that so the lead window would otherwise
+    // be open.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 1, 25));
+
+    const feb29Date = makeDate({
+      date: new Date(2020, 1, 29),
+      reminderInterval: 1,
+      reminderIntervalUnit: 'YEARS',
+      lastReminderSent: null,
+    });
+
+    mocks.importantDateFindMany.mockResolvedValue([feb29Date]);
+    mocks.sendEmailBatch.mockResolvedValue({ results: [] });
+
+    try {
+      const response = await GET(request());
+      const body = await response.json();
+
+      expect(body.sent).toBe(0);
+      expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('stamps only the surviving record when the first email in a mixed batch fails', async () => {
     const dayOf = makeDayOfDate();
     const lead = makeDate({ id: 'date-B', person: { ...makeDate().person, id: 'person-B' } });

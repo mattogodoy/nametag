@@ -6,6 +6,7 @@ import { parseAsLocalDate, formatDate, formatDateWithoutYear } from '@/lib/date-
 import DatePicker from './ui/DatePicker';
 import ComboboxInput from './ui/ComboboxInput';
 import { PREDEFINED_DATE_TYPES, getDateDisplayTitle } from '@/lib/important-date-types';
+import { LEAD_DAY_OPTIONS, getLeadTimeLabel, getLeadTimeSelectOptions } from '@/lib/reminders/lead-time-options';
 
 type ReminderType = 'ONCE' | 'RECURRING';
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -69,20 +70,16 @@ function isDateInFuture(dateStr: string): boolean {
 // render is a new type each render, so React remounts it (and its DOM) on
 // every parent state change, dropping input focus and in-flight clicks.
 //
-// leadTimeLabel is defined here for the same reason: it is passed into JSX
-// built by ReminderFields on every render, so it must stay a stable, pure
-// function rather than being recreated (or worse, defined inside the parent).
+// The lead-time label and preset list live in lib/reminders/lead-time-options
+// rather than being reimplemented here, for the same reason ReminderFields
+// stays at module scope: getLeadTimeLabel is passed into JSX built by
+// ReminderFields on every render, so it must stay a stable, pure function.
 //
 // The day-of/one-day/N-days phrasing already exists as correctly pluralized
 // CLDR messages under settings.notifications (added for the Notifications
 // settings page). Rather than duplicating those plural rules for all nine
 // locales here, this reuses the same keys via a second translator scoped to
 // that namespace, so the two surfaces can never drift out of sync.
-function leadTimeLabel(days: number, tNotifications: ReturnType<typeof useTranslations>): string {
-  if (days === 0) return tNotifications('leadTimeDayOf');
-  if (days === 1) return tNotifications('leadTimeOneDay');
-  return tNotifications('leadTimeDays', { days });
-}
 
 function ReminderFields({
   date,
@@ -213,11 +210,21 @@ function ReminderFields({
               className="px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="default">
-                {t('leadTimeDefault', { label: leadTimeLabel(defaultReminderLeadDays, tNotifications) })}
+                {t('leadTimeDefault', { label: getLeadTimeLabel(defaultReminderLeadDays, tNotifications) })}
               </option>
-              {[0, 1, 3, 7, 14, 30].map((days) => (
+              {/*
+                A null reminderLeadDays renders as the "default" option
+                above, so the presets alone are enough. A concrete override
+                that is not one of the presets (set via the API, for example)
+                needs to be appended, or the select would render blank while
+                still holding that value.
+              */}
+              {(date.reminderLeadDays == null
+                ? LEAD_DAY_OPTIONS
+                : getLeadTimeSelectOptions(date.reminderLeadDays)
+              ).map((days) => (
                 <option key={days} value={days}>
-                  {leadTimeLabel(days, tNotifications)}
+                  {getLeadTimeLabel(days, tNotifications)}
                 </option>
               ))}
             </select>

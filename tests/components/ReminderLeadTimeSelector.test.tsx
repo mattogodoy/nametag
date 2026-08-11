@@ -78,6 +78,18 @@ describe('ReminderLeadTimeSelector', () => {
     expect(screen.getByText('Could not save your advance notice setting')).toBeInTheDocument();
   });
 
+  it('shows the true value instead of rendering blank when it is not one of the presets', () => {
+    render(
+      <Wrapper>
+        <ReminderLeadTimeSelector currentLeadDays={10} disabled={false} />
+      </Wrapper>
+    );
+
+    const select = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(select).toHaveValue('10');
+    expect(screen.getByText('10 days before')).toBeInTheDocument();
+  });
+
   it('exposes an accessible name for the select without repeating the section heading visibly', () => {
     render(
       <Wrapper>
