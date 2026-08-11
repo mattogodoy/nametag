@@ -53,6 +53,27 @@ feat!: redesign authentication system
 BREAKING CHANGE: Users must re-authenticate after upgrade
 ```
 
+### The whole message has to parse, not just the header
+
+release-please runs the entire commit message through a strict grammar. On a squash merge that message is the pull request title with the number appended, followed by the pull request description, so the body counts too.
+
+If the parse fails, release-please skips the commit and still exits green. That commit then contributes nothing at all: no changelog entry, and no version bump either. Nothing turns red, the change simply goes missing from the release.
+
+The usual cause is **nested parentheses**, because the grammar uses them for the commit scope:
+
+```text
+fix(dates): keep year-unknown dates on the day they were saved
+
+Asserts formatDateWithoutYear(parseCalendarDate(stored)) across five zones.
+                                                ^ second "(" before the first closes
+```
+
+Backticks and code fences do not exempt it. Rewrite the nesting as two flat calls, for example `formatDateWithoutYear()` over `parseCalendarDate()`.
+
+Whether a given nesting actually trips the grammar depends on where in the line it sits, so a nested call mid-sentence sometimes slips through. Avoid it everywhere rather than trying to predict which ones are safe.
+
+The **Commit Message** workflow checks this on every pull request, using the same parser version release-please uses, and re-runs when the title or description is edited. `scripts/check-pr-commit-message.ts` prints the offending line and column.
+
 ## How releases work
 
 Nametag uses [release-please](https://github.com/googleapis/release-please) for automated, PR-based releases.
@@ -117,7 +138,7 @@ The current version is shown in:
 ## Best practices
 
 1. Write good commit messages. They become your changelog.
-2. Use conventional commits. This is what enables the automation.
+2. Use conventional commits, and keep the description parseable too. Avoid nested parentheses.
 3. Tag breaking changes explicitly, with `!` or `BREAKING CHANGE:`.
 4. Don't commit directly to `master`. Use PRs.
 5. Squash related commits, one feature per commit.

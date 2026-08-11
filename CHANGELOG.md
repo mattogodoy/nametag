@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **carddav:** stop re-importing contacts when only the ETag moved ([#401](https://github.com/mattogodoy/nametag/issues/401)) ([84b9af9](https://github.com/mattogodoy/nametag/commit/84b9af9bb94d83032f281ee0be81f038686dfad9))
 * **dates:** finish the calendar-date sweep across every read site ([#404](https://github.com/mattogodoy/nametag/issues/404)) ([1dda0cd](https://github.com/mattogodoy/nametag/commit/1dda0cd3530fad5a06f07b3a0e81f5188f06cb70))
+* **dates:** keep year-unknown dates on the day they were saved ([#402](https://github.com/mattogodoy/nametag/issues/402)) ([15f92ee](https://github.com/mattogodoy/nametag/commit/15f92eefd20f799bcae2c8c77c1c0f4ae603fd2f))
 
 ## [0.58.4](https://github.com/mattogodoy/nametag/compare/v0.58.3...v0.58.4) (2026-08-07)
 
