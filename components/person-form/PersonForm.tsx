@@ -73,6 +73,7 @@ export interface PersonFormProps {
       reminderType?: 'ONCE' | 'RECURRING' | null;
       reminderInterval?: number | null;
       reminderIntervalUnit?: ReminderIntervalUnit | null;
+      reminderLeadDays?: number | null;
     }>;
     phoneNumbers?: Array<{
       id?: string;
@@ -140,6 +141,7 @@ export interface PersonFormProps {
     limit: number;
     isUnlimited: boolean;
   };
+  defaultReminderLeadDays?: number;
 }
 
 export default function PersonForm({
@@ -156,6 +158,7 @@ export default function PersonForm({
   initialKnownThrough,
   initialRelationshipType,
   reminderLimit,
+  defaultReminderLeadDays = 0,
 }: PersonFormProps) {
   const t = useTranslations('people.form');
   const tPhoto = useTranslations('people.photo');
@@ -628,6 +631,7 @@ export default function PersonForm({
           mode={mode}
           dateFormat={dateFormat}
           reminderLimit={reminderLimit}
+          defaultReminderLeadDays={defaultReminderLeadDays}
         />
       </Section>
 

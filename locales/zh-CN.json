@@ -1153,6 +1153,8 @@
         "yearUnknown": "年份未知",
         "yearUnknownTooltip": "选中时，您仍然可以使用日期选择器，但仅保存月份和日期。您选择的年份将被忽略。",
         "remindMe": "提醒我",
+        "leadTime": "通知我",
+        "leadTimeDefault": "默认({label})",
         "onlyOnce": "仅在指定日期一次",
         "every": "每",
         "startingFrom": "从指定日期开始",

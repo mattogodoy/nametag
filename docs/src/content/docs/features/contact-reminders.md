@@ -11,6 +11,8 @@ Contact reminders are a nudge to stay in touch, separate from birthdays or anniv
 
 On a person's edit page, toggle "Contact reminder" on. Once enabled, set the interval you want, for example every 2 weeks or every 3 months, using a number and a unit (days, weeks, months, or years).
 
+The advance notice control described in [Important Dates](/features/important-dates/#advance-notice-for-a-single-date) applies to important dates only. A contact reminder is already an interval-based nudge rather than a fixed date, so there is no separate lead time to configure for it.
+
 ## Last contact tracking
 
 A person's detail page shows the last time you were in touch, along with a relative description like "3 weeks ago". A quick-update button lets you set "last contacted" to today with a single click, without opening the edit form. Journal entries can also update this date automatically when you tag someone in an entry; see [Journal](/features/journal/) for that flow.

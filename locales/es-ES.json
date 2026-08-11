@@ -1153,6 +1153,8 @@
         "yearUnknown": "Año desconocido",
         "yearUnknownTooltip": "Cuando está marcado, puedes seguir usando el selector de fecha, pero solo se guardará el mes y el día. El año que selecciones será ignorado.",
         "remindMe": "Recordarme",
+        "leadTime": "Avisarme",
+        "leadTimeDefault": "Predeterminado ({label})",
         "onlyOnce": "Solo una vez en la fecha especificada",
         "every": "Cada",
         "startingFrom": "a partir de la fecha especificada",

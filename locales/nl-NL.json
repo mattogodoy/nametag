@@ -1153,6 +1153,8 @@
         "yearUnknown": "Jaar onbekend",
         "yearUnknownTooltip": "Indien aangevinkt, kunt u nog steeds de datumkiezer gebruiken, maar alleen maand en dag worden opgeslagen. Het jaar dat u selecteert wordt genegeerd.",
         "remindMe": "Herinner me",
+        "leadTime": "Waarschuw me",
+        "leadTimeDefault": "Standaard ({label})",
         "onlyOnce": "Alleen eenmaal op de opgegeven datum",
         "every": "Elke",
         "startingFrom": "beginnend vanaf de opgegeven datum",

@@ -1153,6 +1153,8 @@
         "yearUnknown": "År ukjent",
         "yearUnknownTooltip": "Når dette er valgt, kan du fortsatt bruke datovelgeren, men bare måned og dag vil bli lagret. Året du velger vil bli ignorert.",
         "remindMe": "Minn meg på",
+        "leadTime": "Varsle meg",
+        "leadTimeDefault": "Standard ({label})",
         "onlyOnce": "Bare én gang på den angitte datoen",
         "every": "Hver",
         "startingFrom": "fra og med den angitte datoen",

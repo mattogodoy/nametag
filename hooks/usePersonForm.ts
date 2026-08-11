@@ -14,6 +14,7 @@ export interface ImportantDateItem {
   reminderType?: 'ONCE' | 'RECURRING' | null;
   reminderInterval?: number | null;
   reminderIntervalUnit?: ReminderIntervalUnit | null;
+  reminderLeadDays?: number | null;
 }
 
 export interface PhoneNumberItem {
@@ -187,6 +188,7 @@ interface PersonProp {
     reminderType?: 'ONCE' | 'RECURRING' | null;
     reminderInterval?: number | null;
     reminderIntervalUnit?: ReminderIntervalUnit | null;
+    reminderLeadDays?: number | null;
   }>;
   phoneNumbers?: Array<{ id?: string; type: string; number: string }>;
   emails?: Array<{ id?: string; type: string; email: string }>;
@@ -302,6 +304,7 @@ function buildInitialState(params: {
         reminderType: d.reminderType,
         reminderInterval: d.reminderInterval,
         reminderIntervalUnit: d.reminderIntervalUnit,
+        reminderLeadDays: d.reminderLeadDays ?? null,
       })) || [],
     phoneNumbers:
       person?.phoneNumbers?.map((p) => ({

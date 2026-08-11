@@ -1153,6 +1153,8 @@
         "yearUnknown": "Year unknown",
         "yearUnknownTooltip": "When checked, you can still use the date picker, but only the month and day will be saved. The year you select will be ignored.",
         "remindMe": "Remind me",
+        "leadTime": "Notify me",
+        "leadTimeDefault": "Default ({label})",
         "onlyOnce": "Only once on the specified date",
         "every": "Every",
         "startingFrom": "starting from the specified date",

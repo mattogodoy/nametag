@@ -24,13 +24,20 @@ export default async function NewPersonPage({
   const params = await searchParams;
 
   // Check if user can create more people and reminders
-  const [usageCheck, reminderCheck, preferences, cardDavConnection] = await Promise.all([
+  const [usageCheck, reminderCheck, preferences, cardDavConnection, notificationPreferences] = await Promise.all([
     canCreateResource(session.user.id, 'people'),
     canEnableReminder(session.user.id),
     getUserDisplayPreferences(session.user.id),
     prisma.cardDavConnection.findFirst({
       where: { userId: session.user.id },
       select: { id: true },
+    }),
+    // select is an allowlist: only this column can ever reach this page, so
+    // the password hash and other sensitive columns never enter process
+    // memory for this request in the first place.
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { defaultReminderLeadDays: true },
     }),
   ]);
 
@@ -124,6 +131,7 @@ export default async function NewPersonPage({
                 initialRelationshipType={params.relationshipType}
                 hasCardDavConnection={!!cardDavConnection}
                 nameOrder={nameOrder}
+                defaultReminderLeadDays={notificationPreferences?.defaultReminderLeadDays ?? 0}
                 reminderLimit={{
                   canCreate: reminderCheck.allowed,
                   current: reminderCheck.current,

@@ -1153,6 +1153,8 @@
         "yearUnknown": "Jahr unbekannt",
         "yearUnknownTooltip": "Wenn aktiviert, kannst du weiterhin den Datumsauswähler verwenden, aber nur Monat und Tag werden gespeichert. Das ausgewählte Jahr wird ignoriert.",
         "remindMe": "Erinnere mich",
+        "leadTime": "Benachrichtige mich",
+        "leadTimeDefault": "Standard ({label})",
         "onlyOnce": "Nur einmal am angegebenen Datum",
         "every": "Alle",
         "startingFrom": "ab dem angegebenen Datum",
