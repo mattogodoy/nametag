@@ -90,7 +90,11 @@ curl -X PUT https://your-instance.example.com/api/user/password \
 
 ## Preferences
 
-Each preference has its own small PUT endpoint. All return the updated `user` object (except language, see below).
+Each preference has its own small PUT endpoint. All return a `user` object containing the account id and the preference that changed, and nothing else (except language, see below). They deliberately do not return the full profile: use `GET /api/user/profile` when you need that.
+
+```json
+{ "user": { "id": "clxuser1", "theme": "DARK" } }
+```
 
 ### Update theme
 
