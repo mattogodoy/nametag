@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.59.0](https://github.com/mattogodoy/nametag/compare/v0.58.5...v0.59.0) (2026-08-13)
+
+
+### Features
+
+* **reminders:** advance notice for important dates and an opt-in weekly digest ([#406](https://github.com/mattogodoy/nametag/issues/406)) ([c783234](https://github.com/mattogodoy/nametag/commit/c783234061e5b8b18a8687523aa897d629d16f42))
+
+
+### Bug Fixes
+
+* **api:** stop user preference endpoints returning the password hash ([#412](https://github.com/mattogodoy/nametag/issues/412)) ([f633df4](https://github.com/mattogodoy/nametag/commit/f633df4b3b0aa9f41875ad2de2a59932d9dd7e88))
+
 ## [0.58.5](https://github.com/mattogodoy/nametag/compare/v0.58.4...v0.58.5) (2026-08-11)
 
 
