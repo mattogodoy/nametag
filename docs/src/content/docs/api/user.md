@@ -162,6 +162,49 @@ Body: `{ "geocodingEnabled": true }`. Re-enabling queues previously skipped addr
 { "user": { "id": "clxuser1", "geocodingEnabled": true } }
 ```
 
+### Update reminder lead time
+
+```
+PUT /api/user/reminder-lead-days
+```
+
+Body: `{ "days": 7 }`. Integer from 0 to 365. This sets how many days before an important date its advance-notice reminder email should fire. A value of 0 means day-of only: the day-of reminder still fires, but no separate advance-notice email is sent. The advance-notice reminder is always in addition to the day-of reminder, it never replaces it. Applies to every important date that has not set its own lead time override.
+
+```bash
+curl -X PUT https://your-instance.example.com/api/user/reminder-lead-days \
+  -H "Authorization: Bearer ntag_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "days": 7 }'
+```
+
+```json
+{ "user": { "id": "clxuser1", "defaultReminderLeadDays": 7 } }
+```
+
+### Update weekly digest preferences
+
+```
+PUT /api/user/weekly-digest
+```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `enabled` | boolean | Required. The weekly digest is opt-in and off by default. |
+| `weekday` | integer | Required, 0 to 6, where 0 is Sunday and 6 is Saturday. |
+
+The two fields are saved together because a weekday is meaningless without the toggle. When enabled, a weekly email summarizing upcoming events is sent on the chosen weekday. If there are no upcoming events that week, no email is sent.
+
+```bash
+curl -X PUT https://your-instance.example.com/api/user/weekly-digest \
+  -H "Authorization: Bearer ntag_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "enabled": true, "weekday": 1 }'
+```
+
+```json
+{ "user": { "id": "clxuser1", "weeklyDigestEnabled": true, "weeklyDigestWeekday": 1 } }
+```
+
 ### Update language
 
 ```

@@ -7,7 +7,7 @@ import { getUserLocale } from './locale';
 
 const TOKEN_EXPIRY_DAYS = 90;
 
-export type ReminderEntityType = 'IMPORTANT_DATE' | 'CONTACT';
+export type ReminderEntityType = 'IMPORTANT_DATE' | 'CONTACT' | 'WEEKLY_DIGEST';
 
 interface CreateTokenParams {
   userId: string;
@@ -130,6 +130,12 @@ export async function consumeUnsubscribeToken(
       where: { id: unsubToken.entityId },
       data: { contactReminderEnabled: false },
     });
+  } else if (unsubToken.reminderType === 'WEEKLY_DIGEST') {
+    // For weekly digest tokens, entityId holds the user id rather than an entity id
+    await prisma.user.update({
+      where: { id: unsubToken.entityId },
+      data: { weeklyDigestEnabled: false },
+    });
   }
 
   return {
@@ -209,6 +215,12 @@ export async function getUnsubscribeDetails(
     if (person) {
       entityName = formatFullName(person, nameOrder);
     }
+  } else if (unsubToken.reminderType === 'WEEKLY_DIGEST') {
+    // The digest is an account-level setting rather than a reminder attached to
+    // a person or a date, so there is no entity to name.
+    const userLocale = await getUserLocale(unsubToken.userId);
+    const tDigest = await getTranslationsForLocale(userLocale, 'emails.weeklyDigest');
+    entityName = tDigest('heading');
   }
 
   return {

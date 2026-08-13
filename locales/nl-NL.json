@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "Meldingen",
+      "description": "Tijdstip van herinneringen en het wekelijkse overzicht per e-mail",
+      "leadTimeTitle": "Vooraankondiging",
+      "leadTimeDescription": "Hoe ver van tevoren u herinnerd wilt worden aan een belangrijke datum. U krijgt altijd een herinnering op de dag zelf.",
+      "leadTimeDayOf": "Alleen op de dag zelf",
+      "leadTimeOneDay": "1 dag van tevoren",
+      "leadTimeDays": "{days, plural, one {# dag van tevoren} other {# dagen van tevoren}}",
+      "leadTimeSummaryDayOf": "U ontvangt een e-mail op de dag van elke gebeurtenis.",
+      "leadTimeSummary": "{days, plural, one {U ontvangt een e-mail # dag van tevoren, en opnieuw op de dag zelf.} other {U ontvangt een e-mail # dagen van tevoren, en opnieuw op de dag zelf.}}",
+      "leadTimeError": "Uw vooraankondigingsinstelling kon niet worden opgeslagen",
+      "leadTimeSuccess": "Vooraankondiging bijgewerkt",
+      "digestTitle": "Wekelijks overzicht",
+      "digestDescription": "Een overzicht van wat er de komende 7 dagen op u afkomt. Wij versturen het alleen als er iets te melden is.",
+      "digestToggle": "Stuur mij een wekelijks overzicht",
+      "digestDay": "Verstuur het op",
+      "digestError": "Uw instelling voor het wekelijkse overzicht kon niet worden opgeslagen",
+      "digestSuccess": "Wekelijks overzicht bijgewerkt",
+      "emailNotConfigured": "E-mailverzending is niet ingesteld op deze instantie, dus deze meldingen kunnen niet worden verstuurd. Vraag uw beheerder om e-mail in te stellen.",
+      "weekdays": {
+        "0": "Zondag",
+        "1": "Maandag",
+        "2": "Dinsdag",
+        "3": "Woensdag",
+        "4": "Donderdag",
+        "5": "Vrijdag",
+        "6": "Zaterdag"
+      }
+    },
     "security": {
       "title": "Beveiliging",
       "description": "Wachtwoord en authenticatie",
@@ -1124,6 +1153,8 @@
         "yearUnknown": "Jaar onbekend",
         "yearUnknownTooltip": "Indien aangevinkt, kunt u nog steeds de datumkiezer gebruiken, maar alleen maand en dag worden opgeslagen. Het jaar dat u selecteert wordt genegeerd.",
         "remindMe": "Herinner me",
+        "leadTime": "Waarschuw me",
+        "leadTimeDefault": "Standaard ({label})",
         "onlyOnce": "Alleen eenmaal op de opgegeven datum",
         "every": "Elke",
         "startingFrom": "beginnend vanaf de opgegeven datum",
@@ -1840,6 +1871,29 @@
       "button": "Nametag openen",
       "unsubscribe": "Deze herinnering uitschakelen"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}'s {eventType} is over {daysUntil} dagen",
+      "subjectOneDay": "{personName}'s {eventType} is morgen",
+      "heading": "Bijna zover",
+      "infoBox": "{personName}'s {eventType} is op {date}, over {daysUntil} dagen.",
+      "infoBoxOneDay": "{personName}'s {eventType} is morgen, op {date}.",
+      "body": "Een klein berichtje zodat je tijd hebt om iets te plannen.",
+      "button": "Nametag openen",
+      "unsubscribe": "Deze herinnering uitschakelen"
+    },
+    "weeklyDigest": {
+      "subject": "{count} gebeurtenissen komen deze week eraan",
+      "subjectOne": "Er komt deze week één gebeurtenis aan",
+      "heading": "Jouw week vooruit",
+      "body": "Dit is wat er de komende zeven dagen op je afkomt.",
+      "today": "Vandaag",
+      "tomorrow": "Morgen",
+      "inDays": "Over {days} dagen",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "En nog {count} meer. Open Nametag om ze allemaal te zien.",
+      "button": "Nametag openen",
+      "unsubscribe": "Stop het versturen van het wekelijkse overzicht"
+    },
     "contactReminder": {
       "subject": "Tijd om bij te praten met {personName}",
       "heading": "Blijf in contact",
@@ -1908,7 +1962,9 @@
       "title": "Succesvol uitgeschakeld",
       "importantDate": "U ontvangt geen herinneringen voor dit evenement meer. U kunt deze herinnering op elk moment opnieuw inschakelen via uw instellingen.",
       "contact": "U ontvangt geen herinneringen meer om contact op te nemen met deze persoon. U kunt deze herinnering op elk moment opnieuw inschakelen via uw instellingen.",
+      "weeklyDigest": "U ontvangt het wekelijkse overzicht niet meer per e-mail. U kunt dit op elk moment opnieuw inschakelen via uw instellingen.",
       "reEnableInSettings": "Herinneringsinstellingen beheren",
+      "reEnableDigestInSettings": "Meldingsinstellingen beheren",
       "goToDashboard": "Ga naar dashboard"
     },
     "error": {

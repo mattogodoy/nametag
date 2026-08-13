@@ -30,6 +30,13 @@ export interface EmailAttachment {
   contentType: string;
 }
 
+export interface DigestEmailRow {
+  personName: string;
+  eventTitle: string;
+  formattedDate: string;
+  daysUntil: number;
+}
+
 interface EmailMessage {
   from: string;
   to: string | string[];
@@ -672,6 +679,39 @@ async function emailUnsubscribeFooter(unsubscribeUrl: string, locale: SupportedL
 </table>`;
 }
 
+/**
+ * Selects the correctly declined Russian word for "day(s)" for a given count.
+ *
+ * The email translation strings are rendered through `getTranslationsForLocale`,
+ * a lightweight interpolator that only substitutes plain `{token}` placeholders.
+ * It does not evaluate ICU MessageFormat plural rules, so the standard
+ * `{count, plural, one {...} few {...} many {...} other {...}}` syntax used
+ * elsewhere in the locale files (rendered client/server-side via next-intl)
+ * would be left unresolved in an email body. Russian numeral agreement is
+ * computed here instead and passed in as a plain `daysWord` value.
+ */
+function russianDaysWord(daysUntil: number): string {
+  const lastTwoDigits = daysUntil % 100;
+  const lastDigit = lastTwoDigits % 10;
+  if (lastDigit === 1 && lastTwoDigits !== 11) return 'день';
+  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) return 'дня';
+  return 'дней';
+}
+
+/**
+ * Selects the correctly declined Russian word for "event(s)" for a given count,
+ * following the same CLDR rule as `russianDaysWord` above. Used in the weekly
+ * digest subject line, which is interpolated through the same plain `{token}`
+ * mechanism and therefore cannot rely on ICU plural syntax either.
+ */
+function russianEventsWord(count: number): string {
+  const lastTwoDigits = count % 100;
+  const lastDigit = lastTwoDigits % 10;
+  if (lastDigit === 1 && lastTwoDigits !== 11) return 'событие';
+  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) return 'события';
+  return 'событий';
+}
+
 // Email template helpers for common use cases
 export const emailTemplates = {
   accountVerification: async (verificationUrl: string, locale: SupportedLocale = 'en') => {
@@ -700,6 +740,110 @@ export const emailTemplates = {
         ${await emailUnsubscribeFooter(unsubscribeUrl, locale)}
       `, locale),
       text: `${t('subject', { personName, eventType })} ${t('infoBox', { personName, eventType, date })} ${t('body')}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
+    };
+  },
+
+  importantDateLeadReminder: async (
+    personName: string,
+    eventType: string,
+    date: string,
+    daysUntil: number,
+    unsubscribeUrl: string,
+    locale: SupportedLocale = 'en'
+  ) => {
+    const t = await getTranslationsForLocale(locale, 'emails.importantDateLeadReminder');
+    const isTomorrow = daysUntil === 1;
+    const daysWord = russianDaysWord(daysUntil);
+    const subject = isTomorrow
+      ? t('subjectOneDay', { personName, eventType })
+      : t('subject', { personName, eventType, daysUntil, daysWord });
+    const infoPlain = isTomorrow
+      ? t('infoBoxOneDay', { personName, eventType, date })
+      : t('infoBox', { personName, eventType, date, daysUntil, daysWord });
+    const infoHtml = isTomorrow
+      ? t('infoBoxOneDay', {
+          personName: `<strong>${escapeHtml(personName)}</strong>`,
+          eventType: escapeHtml(eventType),
+          date: `<strong>${escapeHtml(date)}</strong>`,
+        })
+      : t('infoBox', {
+          personName: `<strong>${escapeHtml(personName)}</strong>`,
+          eventType: escapeHtml(eventType),
+          date: `<strong>${escapeHtml(date)}</strong>`,
+          daysUntil,
+          daysWord,
+        });
+
+    return {
+      subject,
+      html: await wrapInTemplate(`
+        ${emailHeading(t('heading'))}
+        ${emailInfoBox(infoHtml, 'info')}
+        ${emailParagraph(t('body'))}
+        ${emailButton(`${APP_URL}/dashboard`, t('button'))}
+        ${await emailUnsubscribeFooter(unsubscribeUrl, locale)}
+      `, locale),
+      text: `${subject} ${infoPlain} ${t('body')}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
+    };
+  },
+
+  weeklyDigest: async (
+    rows: DigestEmailRow[],
+    overflowCount: number,
+    unsubscribeUrl: string,
+    locale: SupportedLocale = 'en'
+  ) => {
+    const t = await getTranslationsForLocale(locale, 'emails.weeklyDigest');
+
+    const whenLabel = (daysUntil: number): string => {
+      if (daysUntil === 0) return t('today');
+      if (daysUntil === 1) return t('tomorrow');
+      return t('inDays', { days: daysUntil, daysWord: russianDaysWord(daysUntil) });
+    };
+
+    // rows is already capped at DIGEST_MAX_ROWS by selectDigestEvents, so the
+    // subject must add overflowCount back in, or it undercounts against the
+    // body's own "And N more" line.
+    const totalCount = rows.length + overflowCount;
+    const subject =
+      totalCount === 1
+        ? t('subjectOne')
+        : t('subject', { count: totalCount, eventsWord: russianEventsWord(totalCount) });
+
+    const htmlRows = rows.map((row) =>
+      `<strong>${escapeHtml(whenLabel(row.daysUntil))}</strong>: ` +
+      t('row', {
+        personName: `<strong>${escapeHtml(row.personName)}</strong>`,
+        eventTitle: escapeHtml(row.eventTitle),
+        formattedDate: escapeHtml(row.formattedDate),
+      })
+    );
+
+    const textRows = rows.map((row) =>
+      `${whenLabel(row.daysUntil)}: ` +
+      t('row', {
+        personName: row.personName,
+        eventTitle: row.eventTitle,
+        formattedDate: row.formattedDate,
+      })
+    );
+
+    const overflowLine =
+      overflowCount > 0 ? emailParagraph(t('andMore', { count: overflowCount })) : '';
+    const overflowText =
+      overflowCount > 0 ? `\n${t('andMore', { count: overflowCount })}` : '';
+
+    return {
+      subject,
+      html: await wrapInTemplate(`
+        ${emailHeading(t('heading'))}
+        ${emailParagraph(t('body'))}
+        ${emailList(htmlRows)}
+        ${overflowLine}
+        ${emailButton(`${APP_URL}/dashboard`, t('button'))}
+        ${await emailUnsubscribeFooter(unsubscribeUrl, locale)}
+      `, locale),
+      text: `${subject}\n\n${t('body')}\n\n${textRows.join('\n')}${overflowText}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
     };
   },
 

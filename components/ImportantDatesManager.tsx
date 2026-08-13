@@ -6,6 +6,7 @@ import { parseAsLocalDate, formatDate, formatDateWithoutYear, YEAR_UNKNOWN_SENTI
 import DatePicker from './ui/DatePicker';
 import ComboboxInput from './ui/ComboboxInput';
 import { PREDEFINED_DATE_TYPES, getDateDisplayTitle } from '@/lib/important-date-types';
+import { LEAD_DAY_OPTIONS, getLeadTimeLabel, getLeadTimeSelectOptions } from '@/lib/reminders/lead-time-options';
 
 type ReminderType = 'ONCE' | 'RECURRING';
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
@@ -20,6 +21,7 @@ interface ImportantDate {
   reminderType?: ReminderType | null;
   reminderInterval?: number | null;
   reminderIntervalUnit?: ReminderIntervalUnit | null;
+  reminderLeadDays?: number | null;
 }
 
 interface ReminderLimitInfo {
@@ -36,6 +38,12 @@ interface ImportantDatesManagerProps {
   mode: 'create' | 'edit';
   dateFormat?: 'MDY' | 'DMY' | 'YMD';
   reminderLimit?: ReminderLimitInfo;
+  // Required, unlike reminderLimit?: 0 is a real, meaningful lead time (day-of
+  // only), not a safe "feature off" fallback. A missing prop here would
+  // silently mislabel the "Default" option for any user whose real account
+  // default isn't 0, with nothing visibly wrong. Making this a compile error
+  // is cheaper than that failure mode.
+  defaultReminderLeadDays: number;
 }
 
 const defaultNewDate: ImportantDate = {
@@ -47,6 +55,7 @@ const defaultNewDate: ImportantDate = {
   reminderType: null,
   reminderInterval: 1,
   reminderIntervalUnit: 'YEARS',
+  reminderLeadDays: null,
 };
 
 function isDateInFuture(dateStr: string): boolean {
@@ -60,22 +69,38 @@ function isDateInFuture(dateStr: string): boolean {
 // Defined at module scope on purpose: a component created inside the parent's
 // render is a new type each render, so React remounts it (and its DOM) on
 // every parent state change, dropping input focus and in-flight clicks.
+//
+// The lead-time label and preset list live in lib/reminders/lead-time-options
+// rather than being reimplemented here, for the same reason ReminderFields
+// stays at module scope: getLeadTimeLabel is passed into JSX built by
+// ReminderFields on every render, so it must stay a stable, pure function.
+//
+// The day-of/one-day/N-days phrasing already exists as correctly pluralized
+// CLDR messages under settings.notifications (added for the Notifications
+// settings page). Rather than duplicating those plural rules for all nine
+// locales here, this reuses the same keys via a second translator scoped to
+// that namespace, so the two surfaces can never drift out of sync.
+
 function ReminderFields({
   date,
   onChange,
   idPrefix,
   canEnable,
   reminderLimit,
+  defaultReminderLeadDays,
   t,
   tForm,
+  tNotifications,
 }: {
   date: ImportantDate;
   onChange: (updates: Partial<ImportantDate>) => void;
   idPrefix: string;
   canEnable: boolean;
   reminderLimit?: ReminderLimitInfo;
+  defaultReminderLeadDays: number;
   t: ReturnType<typeof useTranslations>;
   tForm: ReturnType<typeof useTranslations>;
+  tNotifications: ReturnType<typeof useTranslations>;
 }) {
   const isFuture = isDateInFuture(date.date);
   // Can toggle on if: already enabled (to disable) OR canEnable is true
@@ -169,6 +194,41 @@ function ReminderFields({
               </span>
             </label>
           </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span id={`${idPrefix}-lead-time-label`} className="text-xs text-muted">
+              {t('leadTime')}
+            </span>
+            <select
+              aria-labelledby={`${idPrefix}-lead-time-label`}
+              value={date.reminderLeadDays ?? 'default'}
+              onChange={(e) =>
+                onChange({
+                  reminderLeadDays:
+                    e.target.value === 'default' ? null : parseInt(e.target.value, 10),
+                })
+              }
+              className="px-2 py-1 text-xs border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="default">
+                {t('leadTimeDefault', { label: getLeadTimeLabel(defaultReminderLeadDays, tNotifications) })}
+              </option>
+              {/*
+                A null reminderLeadDays renders as the "default" option
+                above, so the presets alone are enough. A concrete override
+                that is not one of the presets (set via the API, for example)
+                needs to be appended, or the select would render blank while
+                still holding that value.
+              */}
+              {(date.reminderLeadDays == null
+                ? LEAD_DAY_OPTIONS
+                : getLeadTimeSelectOptions(date.reminderLeadDays)
+              ).map((days) => (
+                <option key={days} value={days}>
+                  {getLeadTimeLabel(days, tNotifications)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
     </div>
@@ -182,9 +242,11 @@ export default function ImportantDatesManager({
   mode,
   dateFormat = 'MDY',
   reminderLimit,
+  defaultReminderLeadDays,
 }: ImportantDatesManagerProps) {
   const t = useTranslations('people.form.importantDates');
   const tForm = useTranslations('people.form');
+  const tNotifications = useTranslations('settings.notifications');
 
   const comboboxOptions = PREDEFINED_DATE_TYPES.map((type) => ({
     value: type,
@@ -236,6 +298,9 @@ export default function ImportantDatesManager({
       reminderType: newDate.reminderEnabled ? newDate.reminderType : null,
       reminderInterval: newDate.reminderEnabled && newDate.reminderType === 'RECURRING' ? newDate.reminderInterval : null,
       reminderIntervalUnit: newDate.reminderEnabled && newDate.reminderType === 'RECURRING' ? newDate.reminderIntervalUnit : null,
+      // Lead days apply to ONCE reminders too, so this is gated on
+      // reminderEnabled alone, not on reminderType === 'RECURRING'.
+      reminderLeadDays: newDate.reminderEnabled ? newDate.reminderLeadDays ?? null : null,
     };
 
     const updatedDates = [...dates, dateToAdd];
@@ -278,6 +343,9 @@ export default function ImportantDatesManager({
       reminderType: editingDate.reminderEnabled ? editingDate.reminderType : null,
       reminderInterval: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderInterval : null,
       reminderIntervalUnit: editingDate.reminderEnabled && editingDate.reminderType === 'RECURRING' ? editingDate.reminderIntervalUnit : null,
+      // Lead days apply to ONCE reminders too, so this is gated on
+      // reminderEnabled alone, not on reminderType === 'RECURRING'.
+      reminderLeadDays: editingDate.reminderEnabled ? editingDate.reminderLeadDays ?? null : null,
     };
 
     if (dateToSave.id && mode === 'edit' && personId) {
@@ -296,6 +364,7 @@ export default function ImportantDatesManager({
             reminderType: dateToSave.reminderType,
             reminderInterval: dateToSave.reminderInterval,
             reminderIntervalUnit: dateToSave.reminderIntervalUnit,
+            reminderLeadDays: dateToSave.reminderEnabled ? dateToSave.reminderLeadDays ?? null : null,
           }),
         });
 
@@ -432,8 +501,10 @@ export default function ImportantDatesManager({
                   idPrefix={`edit-${index}`}
                   canEnable={canAddReminder || !!editingDate.reminderEnabled}
                   reminderLimit={reminderLimit}
+                  defaultReminderLeadDays={defaultReminderLeadDays}
                   t={t}
                   tForm={tForm}
+                  tNotifications={tNotifications}
                 />
                 <div className="flex justify-end space-x-2 pt-2">
                   <button
@@ -564,8 +635,10 @@ export default function ImportantDatesManager({
               idPrefix="new"
               canEnable={canAddReminder}
               reminderLimit={reminderLimit}
+              defaultReminderLeadDays={defaultReminderLeadDays}
               t={t}
               tForm={tForm}
+              tNotifications={tNotifications}
             />
             <div className="flex justify-end space-x-2 pt-2">
               <button

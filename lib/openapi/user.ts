@@ -3,6 +3,7 @@ import {
   updateThemeSchema, updateDateFormatSchema, updateNameOrderSchema,
   updateNameDisplayFormatSchema, updateGraphDisplaySchema,
   updateGeocodingSchema,
+  updateReminderLeadDaysSchema, updateWeeklyDigestSchema,
   importDataSchema,
 } from '../validations';
 import { SUPPORTED_LOCALES } from '../locale';
@@ -101,6 +102,42 @@ export function userPaths(): Record<string, Record<string, unknown>> {
               },
             },
           }),
+          '401': ref401(),
+        },
+      },
+    },
+    '/api/user/reminder-lead-days': {
+      put: {
+        tags: ['User Settings'],
+        summary: 'Update the default reminder lead time',
+        description:
+          'Sets how many days before an important date its reminder should fire. 0 means the day of the event only. Applies to every important date that has not set its own reminderLeadDays.',
+        security: sessionOrToken(),
+        requestBody: zodBody(updateReminderLeadDaysSchema),
+        responses: {
+          '200': jsonResponse('Reminder lead time updated', {
+            type: 'object',
+            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+          }),
+          '400': ref400(),
+          '401': ref401(),
+        },
+      },
+    },
+    '/api/user/weekly-digest': {
+      put: {
+        tags: ['User Settings'],
+        summary: 'Update weekly digest preferences',
+        description:
+          'Enables or disables the opt-in weekly summary of upcoming events, and sets the weekday it is sent on (0 = Sunday through 6 = Saturday). The send hour is determined by the instance cron schedule.',
+        security: sessionOrToken(),
+        requestBody: zodBody(updateWeeklyDigestSchema),
+        responses: {
+          '200': jsonResponse('Weekly digest preferences updated', {
+            type: 'object',
+            properties: { user: { $ref: '#/components/schemas/UserProfile' } },
+          }),
+          '400': ref400(),
           '401': ref401(),
         },
       },

@@ -23,7 +23,7 @@ export default async function EditPersonPage({
 
   const { id } = await params;
 
-  const [person, groups, relationshipTypes, reminderCheck, preferences, cardDavConnection, customFieldTemplates] = await Promise.all([
+  const [person, groups, relationshipTypes, reminderCheck, preferences, cardDavConnection, customFieldTemplates, notificationPreferences] = await Promise.all([
     prisma.person.findUnique({
       where: {
         id,
@@ -80,6 +80,13 @@ export default async function EditPersonPage({
       where: { userId: session.user.id, deletedAt: null },
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     }),
+    // select is an allowlist: only this column can ever reach this page, so
+    // the password hash and other sensitive columns never enter process
+    // memory for this request in the first place.
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { defaultReminderLeadDays: true },
+    }),
   ]);
 
   if (!person) {
@@ -133,6 +140,7 @@ export default async function EditPersonPage({
               dateFormat={dateFormat}
               hasCardDavConnection={!!cardDavConnection}
               nameOrder={nameOrder}
+              defaultReminderLeadDays={notificationPreferences?.defaultReminderLeadDays ?? 0}
               reminderLimit={{
                 canCreate: reminderCheck.allowed,
                 current: reminderCheck.current,

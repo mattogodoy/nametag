@@ -23,6 +23,18 @@ Any important date can have a reminder attached, turned on with a toggle right b
 
 Recurring reminders default to once a year, which fits birthdays and anniversaries, but you can change the interval to anything that makes sense for the date.
 
+## Advance notice for a single date
+
+Once a reminder is on for a date, a second control lets you choose how far ahead of it you want to be notified for that date specifically:
+
+- **Default**: follows the advance notice setting on the [Notifications settings page](/features/settings/#notifications). The option shows the resolved value, for example "Default (7 days before)", so you can see what inheriting currently means without leaving the person's form. If you later change the setting on the Notifications page, every date left on "Default" picks up the new value automatically
+- **On the day only**: sends the reminder only on the date itself for this date, even if your account default is a positive number of days. This is a deliberate override, distinct from "Default", not a shortcut for a zero-day default
+- **1, 3, 7, 14, or 30 days before**: overrides the account default with a specific lead time for this date only
+
+Whatever you choose, the day-of reminder always fires. Advance notice adds an earlier heads-up; it never replaces the reminder on the day itself.
+
+If a recurring date comes round more often than the lead time you asked for, for example a 7 day advance notice on something that repeats every 3 days, the notice is shortened to the length of the interval. Each occurrence still gets exactly one heads-up, just a proportionally earlier one, rather than some occurrences being announced and others silently skipped.
+
 ## The dashboard upcoming events widget
 
 Your dashboard shows a list of upcoming birthdays, anniversaries, and other important dates across your whole network, sorted by how soon they're coming up. It's a quick way to see what's approaching without opening each person individually.
@@ -50,6 +62,7 @@ Self-hosted installations are not subject to these limits. Turning off a reminde
 - **Reminder interval range**: 1-99
 - **Reminder interval units**: Days, Weeks, Months, Years
 - **Reminder types**: Once (fires a single time), Recurring (fires every interval, for example every year)
+- **Advance notice per date**: Default (inherits the account setting), On the day only, or 1, 3, 7, 14, 30 days before; stored as 0-365 days, with `null` meaning "inherit the account default"
 - **Date storage**: calendar dates are stored as UTC midnight on the day you picked, so the day never shifts with your timezone
 - **Unknown years**: dates saved without a year are stored under year 1604, Apple's marker for an unknown year, which keeps them compatible with Contacts and other CardDAV clients
-- **February 29**: in non-leap years, a February 29 date appears (and its yearly reminder fires) on March 1
+- **February 29**: in non-leap years, a February 29 date appears (and its yearly reminder fires) on March 1. Advance notice follows the same day, so both emails agree

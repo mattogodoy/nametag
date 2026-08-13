@@ -144,6 +144,10 @@ describe('Locale Utilities', () => {
         nameDisplayFormat: 'FULL',
         graphMode: null,
         geocodingEnabled: true,
+        defaultReminderLeadDays: 0,
+        weeklyDigestEnabled: false,
+        weeklyDigestWeekday: 1,
+        lastWeeklyDigestSent: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -185,6 +189,10 @@ describe('Locale Utilities', () => {
         nameDisplayFormat: 'FULL',
         graphMode: null,
         geocodingEnabled: true,
+        defaultReminderLeadDays: 0,
+        weeklyDigestEnabled: false,
+        weeklyDigestWeekday: 1,
+        lastWeeklyDigestSent: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

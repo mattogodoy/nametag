@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "description": "Vorlaufzeit für Erinnerungen und die wöchentliche Übersicht per E-Mail",
+      "leadTimeTitle": "Vorlaufzeit",
+      "leadTimeDescription": "Wie weit im Voraus du an ein wichtiges Datum erinnert werden möchtest. Am Tag selbst bekommst du in jedem Fall eine Erinnerung.",
+      "leadTimeDayOf": "Nur am Tag selbst",
+      "leadTimeOneDay": "1 Tag vorher",
+      "leadTimeDays": "{days, plural, one {# Tag vorher} other {# Tage vorher}}",
+      "leadTimeSummaryDayOf": "Du bekommst eine E-Mail am Tag jedes Termins.",
+      "leadTimeSummary": "{days, plural, one {Du bekommst eine E-Mail # Tag vorher und noch einmal am Tag selbst.} other {Du bekommst eine E-Mail # Tage vorher und noch einmal am Tag selbst.}}",
+      "leadTimeError": "Deine Vorlaufzeit-Einstellung konnte nicht gespeichert werden",
+      "leadTimeSuccess": "Vorlaufzeit aktualisiert",
+      "digestTitle": "Wöchentliche Übersicht",
+      "digestDescription": "Eine Übersicht dessen, was in den nächsten 7 Tagen anliegt. Wir senden sie nur, wenn es etwas zu berichten gibt.",
+      "digestToggle": "Sende mir eine wöchentliche Übersicht",
+      "digestDay": "Senden am",
+      "digestError": "Deine Einstellung für die wöchentliche Übersicht konnte nicht gespeichert werden",
+      "digestSuccess": "Wöchentliche Übersicht aktualisiert",
+      "emailNotConfigured": "Der E-Mail-Versand ist auf dieser Instanz nicht eingerichtet, daher können diese Benachrichtigungen nicht gesendet werden. Bitte deinen Administrator, den E-Mail-Versand einzurichten.",
+      "weekdays": {
+        "0": "Sonntag",
+        "1": "Montag",
+        "2": "Dienstag",
+        "3": "Mittwoch",
+        "4": "Donnerstag",
+        "5": "Freitag",
+        "6": "Samstag"
+      }
+    },
     "security": {
       "title": "Sicherheit",
       "description": "Passwort und Authentifizierung",
@@ -1124,6 +1153,8 @@
         "yearUnknown": "Jahr unbekannt",
         "yearUnknownTooltip": "Wenn aktiviert, kannst du weiterhin den Datumsauswähler verwenden, aber nur Monat und Tag werden gespeichert. Das ausgewählte Jahr wird ignoriert.",
         "remindMe": "Erinnere mich",
+        "leadTime": "Benachrichtige mich",
+        "leadTimeDefault": "Standard ({label})",
         "onlyOnce": "Nur einmal am angegebenen Datum",
         "every": "Alle",
         "startingFrom": "ab dem angegebenen Datum",
@@ -1840,6 +1871,29 @@
       "button": "Nametag öffnen",
       "unsubscribe": "Diese Erinnerung deaktivieren"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}s {eventType} ist in {daysUntil} Tagen",
+      "subjectOneDay": "{personName}s {eventType} ist morgen",
+      "heading": "Bald ist es soweit",
+      "infoBox": "{personName}s {eventType} ist am {date}, in {daysUntil} Tagen.",
+      "infoBoxOneDay": "{personName}s {eventType} ist morgen, am {date}.",
+      "body": "Ein kleiner Hinweis, damit du Zeit hast, dir etwas zu überlegen.",
+      "button": "Nametag öffnen",
+      "unsubscribe": "Diese Erinnerung deaktivieren"
+    },
+    "weeklyDigest": {
+      "subject": "{count} Termine stehen diese Woche an",
+      "subjectOne": "Ein Termin steht diese Woche an",
+      "heading": "Deine Woche im Überblick",
+      "body": "Hier ist, was in den nächsten sieben Tagen anliegt.",
+      "today": "Heute",
+      "tomorrow": "Morgen",
+      "inDays": "In {days} Tagen",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "Und {count} weitere. Öffne Nametag, um sie alle zu sehen.",
+      "button": "Nametag öffnen",
+      "unsubscribe": "Diese wöchentliche Übersicht nicht mehr senden"
+    },
     "contactReminder": {
       "subject": "Zeit, dich bei {personName} zu melden",
       "heading": "In Kontakt bleiben",
@@ -1908,7 +1962,9 @@
       "title": "Erfolgreich deaktiviert",
       "importantDate": "Du erhältst keine Erinnerungen mehr zu diesem Ereignis. Du kannst diese Erinnerung jederzeit in den Einstellungen wieder aktivieren.",
       "contact": "Du erhältst keine Erinnerungen mehr, diese Person zu kontaktieren. Du kannst diese Erinnerung jederzeit in den Einstellungen wieder aktivieren.",
+      "weeklyDigest": "Du erhältst die wöchentliche Übersicht nicht mehr per E-Mail. Du kannst sie jederzeit in den Einstellungen wieder aktivieren.",
       "reEnableInSettings": "Erinnerungseinstellungen verwalten",
+      "reEnableDigestInSettings": "Benachrichtigungseinstellungen verwalten",
       "goToDashboard": "Zum Dashboard"
     },
     "error": {

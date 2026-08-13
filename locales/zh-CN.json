@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "通知",
+      "description": "提前提醒的时间以及每周摘要邮件",
+      "leadTimeTitle": "提前提醒",
+      "leadTimeDescription": "您希望提前多久收到重要日期的提醒。当天的提醒始终会发送。",
+      "leadTimeDayOf": "仅当天",
+      "leadTimeOneDay": "提前 1 天",
+      "leadTimeDays": "{days, plural, other {提前 # 天}}",
+      "leadTimeSummaryDayOf": "您将在每个事件当天收到一封邮件。",
+      "leadTimeSummary": "{days, plural, other {您将提前 # 天收到一封邮件，并在当天再收到一封。}}",
+      "leadTimeError": "无法保存您的提前提醒设置",
+      "leadTimeSuccess": "提前提醒已更新",
+      "digestTitle": "每周摘要",
+      "digestDescription": "未来 7 天内即将发生事件的摘要。只有在有内容可告知时我们才会发送。",
+      "digestToggle": "给我发送每周摘要",
+      "digestDay": "发送日",
+      "digestError": "无法保存您的每周摘要设置",
+      "digestSuccess": "每周摘要已更新",
+      "emailNotConfigured": "此实例未配置邮件发送功能，因此无法发送这些通知。请联系管理员配置邮件服务。",
+      "weekdays": {
+        "0": "星期日",
+        "1": "星期一",
+        "2": "星期二",
+        "3": "星期三",
+        "4": "星期四",
+        "5": "星期五",
+        "6": "星期六"
+      }
+    },
     "security": {
       "title": "安全",
       "description": "密码和身份验证",
@@ -1124,6 +1153,8 @@
         "yearUnknown": "年份未知",
         "yearUnknownTooltip": "选中时，您仍然可以使用日期选择器，但仅保存月份和日期。您选择的年份将被忽略。",
         "remindMe": "提醒我",
+        "leadTime": "通知我",
+        "leadTimeDefault": "默认({label})",
         "onlyOnce": "仅在指定日期一次",
         "every": "每",
         "startingFrom": "从指定日期开始",
@@ -1840,6 +1871,29 @@
       "button": "打开 Nametag",
       "unsubscribe": "禁用此提醒"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName} 的 {eventType} 还有 {daysUntil} 天",
+      "subjectOneDay": "{personName} 的 {eventType} 是明天",
+      "heading": "快到了",
+      "infoBox": "{personName} 的 {eventType} 在 {date}，还有 {daysUntil} 天。",
+      "infoBoxOneDay": "{personName} 的 {eventType} 是明天，{date}。",
+      "body": "提前通知一下，让你有时间准备。",
+      "button": "打开 Nametag",
+      "unsubscribe": "禁用此提醒"
+    },
+    "weeklyDigest": {
+      "subject": "本周有 {count} 个事件",
+      "subjectOne": "本周有 1 个事件",
+      "heading": "你的这一周",
+      "body": "以下是接下来七天要发生的事情。",
+      "today": "今天",
+      "tomorrow": "明天",
+      "inDays": "还有 {days} 天",
+      "row": "{personName}，{eventTitle}，{formattedDate}",
+      "andMore": "还有 {count} 个。打开 Nametag 查看全部。",
+      "button": "打开 Nametag",
+      "unsubscribe": "停止发送每周摘要"
+    },
     "contactReminder": {
       "subject": "是时候与 {personName} 赶上了",
       "heading": "保持联系",
@@ -1908,7 +1962,9 @@
       "title": "已成功禁用",
       "importantDate": "您将不再收到此事件的提醒。您可以随时从设置中重新启用此提醒。",
       "contact": "您将不再收到联系此人的提醒。您可以随时从设置中重新启用此提醒。",
+      "weeklyDigest": "您将不再收到每周摘要邮件。您可以随时从设置中重新启用它。",
       "reEnableInSettings": "管理提醒设置",
+      "reEnableDigestInSettings": "管理通知设置",
       "goToDashboard": "转到仪表盘"
     },
     "error": {

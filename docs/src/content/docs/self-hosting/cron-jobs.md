@@ -43,9 +43,11 @@ Every job logs its run to a `CronJobLog` database record (status, duration, and 
 
 Endpoint: `GET /api/cron/send-reminders`
 
-Scans for two kinds of reminders that are due: important date reminders (birthdays, anniversaries, and any other date with `reminderEnabled` set) and contact reminders (nudges based on how long it's been since `lastContact`). For each one that's due, it builds a translated email using the recipient's language preference, generates a one-click unsubscribe link, and sends the batch through [Resend or SMTP](/self-hosting/email/).
+Scans for four kinds of reminders that are due: important date reminders (birthdays, anniversaries, and any other date with `reminderEnabled` set), advance-notice lead reminders (sent a configurable number of days before an important date, via `defaultReminderLeadDays` or a per-date override), contact reminders (nudges based on how long it's been since `lastContact`), and the opt-in weekly digest (a single email summarizing everything coming up in the next 7 days, for users who enabled it). For each one that's due, it builds a translated email using the recipient's language preference, generates a one-click unsubscribe link, and sends the batch through [Resend or SMTP](/self-hosting/email/).
 
-If email isn't configured on your instance, this job effectively has nothing to send and completes as a no-op. There's no error, it just skips delivery.
+The weekly digest adds no new schedule of its own. It piggybacks on this same daily run: each user picks a weekday (Sunday through Saturday) in their notification settings, and the digest goes out on that weekday at whatever hour this job already runs. There's no per-user timezone, so "8:00am" in the example schedule below means 8:00am in the container's own timezone for every user, regardless of where they are. A user with no events in the coming week gets nothing that week, on purpose, rather than an empty digest.
+
+If email isn't configured on your instance, this job effectively has nothing to send and completes as a no-op. There's no error, it just skips delivery. Skipped reminders are not recorded as sent, so nothing is lost: the `skipped` count in the response tells you how many were due, and once you configure email they go out on the next run rather than having been silently consumed.
 
 ### `purge-deleted`, daily at 3:00am
 
@@ -89,9 +91,9 @@ If you're not using Docker's `alpine` cron container, any scheduler capable of m
 | `geocode` | 50 addresses per run | 1 request per second to the geocoder |
 | `carddav-sync` | All due users | 200ms delay between users |
 | `purge-deleted` | All eligible items (deleted more than 30 days ago) | None |
-| `send-reminders` | All eligible reminders | None |
+| `send-reminders` | All eligible reminders; digest users in batches of 50 | 200ms delay between digest batches |
 
-`geocode` and `carddav-sync` are throttled because they call external services (your geocoder, and each user's CardDAV server) and shouldn't hammer them. `purge-deleted` and `send-reminders` only touch your own database and don't need batching or a rate limit; they process everything eligible in a single run.
+`geocode` and `carddav-sync` are throttled because they call external services (your geocoder, and each user's CardDAV server) and shouldn't hammer them. `purge-deleted` only touches your own database and doesn't need batching or a rate limit; it processes everything eligible in a single run. `send-reminders` is mostly the same, except its weekly digest pass batches the users it needs to look up 50 at a time with a 200ms delay between batches, to avoid a large digest-enabled user base causing one long unbroken burst of queries.
 
 ## Clearing rate limits
 

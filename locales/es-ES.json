@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "El aviso previo y el resumen semanal por correo",
+      "leadTimeTitle": "Aviso previo",
+      "leadTimeDescription": "Con cuánta antelación quieres que se te avise de una fecha importante. Siempre recibirás un recordatorio el mismo día.",
+      "leadTimeDayOf": "Solo el mismo día",
+      "leadTimeOneDay": "1 día antes",
+      "leadTimeDays": "{days, plural, one {# día antes} other {# días antes}}",
+      "leadTimeSummaryDayOf": "Recibirás un correo el día de cada evento.",
+      "leadTimeSummary": "{days, plural, one {Recibirás un correo # día antes, y otra vez el mismo día.} other {Recibirás un correo # días antes, y otra vez el mismo día.}}",
+      "leadTimeError": "No se ha podido guardar tu aviso previo",
+      "leadTimeSuccess": "Aviso previo actualizado",
+      "digestTitle": "Resumen semanal",
+      "digestDescription": "Un resumen de lo que se acerca en los próximos 7 días. Solo lo enviamos cuando hay algo que contarte.",
+      "digestToggle": "Envíame un resumen semanal",
+      "digestDay": "Enviarlo el",
+      "digestError": "No se ha podido guardar tu configuración del resumen semanal",
+      "digestSuccess": "Resumen semanal actualizado",
+      "emailNotConfigured": "El envío de correo no está configurado en esta instancia, así que estas notificaciones no se pueden enviar. Pide a tu administrador que configure el correo.",
+      "weekdays": {
+        "0": "Domingo",
+        "1": "Lunes",
+        "2": "Martes",
+        "3": "Miércoles",
+        "4": "Jueves",
+        "5": "Viernes",
+        "6": "Sábado"
+      }
+    },
     "security": {
       "title": "Seguridad",
       "description": "Contraseña y autenticación",
@@ -1124,6 +1153,8 @@
         "yearUnknown": "Año desconocido",
         "yearUnknownTooltip": "Cuando está marcado, puedes seguir usando el selector de fecha, pero solo se guardará el mes y el día. El año que selecciones será ignorado.",
         "remindMe": "Recordarme",
+        "leadTime": "Avisarme",
+        "leadTimeDefault": "Predeterminado ({label})",
         "onlyOnce": "Solo una vez en la fecha especificada",
         "every": "Cada",
         "startingFrom": "a partir de la fecha especificada",
@@ -1840,6 +1871,29 @@
       "button": "Abrir Nametag",
       "unsubscribe": "Desactivar este recordatorio"
     },
+    "importantDateLeadReminder": {
+      "subject": "El {eventType} de {personName} es en {daysUntil} días",
+      "subjectOneDay": "El {eventType} de {personName} es mañana",
+      "heading": "Ya se acerca",
+      "infoBox": "El {eventType} de {personName} es el {date}, dentro de {daysUntil} días.",
+      "infoBoxOneDay": "El {eventType} de {personName} es mañana, el {date}.",
+      "body": "Un pequeño aviso para que tengas tiempo de planear algo.",
+      "button": "Abrir Nametag",
+      "unsubscribe": "Desactivar este recordatorio"
+    },
+    "weeklyDigest": {
+      "subject": "{count} eventos se acercan esta semana",
+      "subjectOne": "Un evento se acerca esta semana",
+      "heading": "Tu semana por delante",
+      "body": "Esto es lo que se acerca en los próximos siete días.",
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "inDays": "En {days} días",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "Y {count} más. Abre Nametag para verlos todos.",
+      "button": "Abrir Nametag",
+      "unsubscribe": "Dejar de enviar el resumen semanal"
+    },
     "contactReminder": {
       "subject": "Es hora de ponerse al día con {personName}",
       "heading": "Mantente en Contacto",
@@ -1908,7 +1962,9 @@
       "title": "Suscripción cancelada exitosamente",
       "importantDate": "Ya no recibirás recordatorios para esta fecha importante. Puedes reactivar este recordatorio en cualquier momento desde tu configuración.",
       "contact": "Ya no recibirás recordatorios para contactar a esta persona. Puedes reactivar este recordatorio en cualquier momento desde tu configuración.",
+      "weeklyDigest": "Ya no recibirás el resumen semanal por correo electrónico. Puedes reactivarlo en cualquier momento desde tu configuración.",
       "reEnableInSettings": "Administrar configuración de recordatorios",
+      "reEnableDigestInSettings": "Administrar configuración de notificaciones",
       "goToDashboard": "Ir al panel"
     },
     "error": {

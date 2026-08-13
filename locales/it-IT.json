@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "Notifiche",
+      "description": "Il preavviso e il riepilogo settimanale via email",
+      "leadTimeTitle": "Preavviso",
+      "leadTimeDescription": "Con quanto anticipo vuoi essere avvisato di una data importante. Riceverai sempre un promemoria il giorno stesso.",
+      "leadTimeDayOf": "Solo il giorno stesso",
+      "leadTimeOneDay": "1 giorno prima",
+      "leadTimeDays": "{days, plural, one {# giorno prima} other {# giorni prima}}",
+      "leadTimeSummaryDayOf": "Riceverai un'email il giorno di ogni evento.",
+      "leadTimeSummary": "{days, plural, one {Riceverai un'email # giorno prima, e di nuovo il giorno stesso.} other {Riceverai un'email # giorni prima, e di nuovo il giorno stesso.}}",
+      "leadTimeError": "Non è stato possibile salvare il preavviso",
+      "leadTimeSuccess": "Preavviso aggiornato",
+      "digestTitle": "Riepilogo settimanale",
+      "digestDescription": "Un riepilogo di ciò che ti aspetta nei prossimi 7 giorni. Lo inviamo solo quando c'è qualcosa da segnalarti.",
+      "digestToggle": "Inviami un riepilogo settimanale",
+      "digestDay": "Invialo il",
+      "digestError": "Non è stato possibile salvare l'impostazione del riepilogo settimanale",
+      "digestSuccess": "Riepilogo settimanale aggiornato",
+      "emailNotConfigured": "L'invio di email non è configurato su questa istanza, quindi queste notifiche non possono essere inviate. Chiedi al tuo amministratore di configurare l'email.",
+      "weekdays": {
+        "0": "Domenica",
+        "1": "Lunedì",
+        "2": "Martedì",
+        "3": "Mercoledì",
+        "4": "Giovedì",
+        "5": "Venerdì",
+        "6": "Sabato"
+      }
+    },
     "security": {
       "title": "Sicurezza",
       "description": "Password e autenticazione",
@@ -1124,6 +1153,8 @@
         "yearUnknown": "Anno sconosciuto",
         "yearUnknownTooltip": "Quando selezionato, puoi comunque usare il selettore data, ma verranno salvati solo il mese e il giorno. L'anno selezionato verrà ignorato.",
         "remindMe": "Ricordami",
+        "leadTime": "Avvisami",
+        "leadTimeDefault": "Predefinito ({label})",
         "onlyOnce": "Solo una volta nella data specificata",
         "every": "Ogni",
         "startingFrom": "a partire dalla data specificata",
@@ -1840,6 +1871,29 @@
       "button": "Apri Nametag",
       "unsubscribe": "Disabilita questo promemoria"
     },
+    "importantDateLeadReminder": {
+      "subject": "Il/la {eventType} di {personName} è tra {daysUntil} giorni",
+      "subjectOneDay": "Il/la {eventType} di {personName} è domani",
+      "heading": "Tra poco",
+      "infoBox": "Il/la {eventType} di {personName} è il {date}, tra {daysUntil} giorni.",
+      "infoBoxOneDay": "Il/la {eventType} di {personName} è domani, il {date}.",
+      "body": "Un piccolo preavviso per darti il tempo di organizzare qualcosa.",
+      "button": "Apri Nametag",
+      "unsubscribe": "Disabilita questo promemoria"
+    },
+    "weeklyDigest": {
+      "subject": "{count} eventi in arrivo questa settimana",
+      "subjectOne": "Un evento in arrivo questa settimana",
+      "heading": "La tua settimana in arrivo",
+      "body": "Ecco cosa ti aspetta nei prossimi sette giorni.",
+      "today": "Oggi",
+      "tomorrow": "Domani",
+      "inDays": "Tra {days} giorni",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "E altri {count}. Apri Nametag per vederli tutti.",
+      "button": "Apri Nametag",
+      "unsubscribe": "Interrompi l'invio del riepilogo settimanale"
+    },
     "contactReminder": {
       "subject": "È tempo di ricontattare {personName}",
       "heading": "Resta in contatto",
@@ -1908,7 +1962,9 @@
       "title": "Disabilitato con successo",
       "importantDate": "Non riceverai più promemoria per questo evento. Puoi riabilitare questo promemoria in qualsiasi momento dalle tue impostazioni.",
       "contact": "Non riceverai più promemoria per ricontattare questa persona. Puoi riabilitare questo promemoria in qualsiasi momento dalle tue impostazioni.",
+      "weeklyDigest": "Non riceverai più l'email con il riepilogo settimanale. Puoi riabilitarla in qualsiasi momento dalle tue impostazioni.",
       "reEnableInSettings": "Gestisci impostazioni promemoria",
+      "reEnableDigestInSettings": "Gestisci impostazioni notifiche",
       "goToDashboard": "Vai alla dashboard"
     },
     "error": {

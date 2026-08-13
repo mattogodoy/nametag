@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Reminder timing and the weekly summary email",
+      "leadTimeTitle": "Advance notice",
+      "leadTimeDescription": "How far ahead of an important date you would like to hear about it. You will always get a reminder on the day itself.",
+      "leadTimeDayOf": "On the day only",
+      "leadTimeOneDay": "1 day before",
+      "leadTimeDays": "{days, plural, one {# day before} other {# days before}}",
+      "leadTimeSummaryDayOf": "You will get an email on the day of each event.",
+      "leadTimeSummary": "{days, plural, one {You will get an email # day before, and again on the day.} other {You will get an email # days before, and again on the day.}}",
+      "leadTimeError": "Could not save your advance notice setting",
+      "leadTimeSuccess": "Advance notice updated",
+      "digestTitle": "Weekly summary",
+      "digestDescription": "A summary of what is coming up in the next 7 days. We only send it when there is something to tell you.",
+      "digestToggle": "Send me a weekly summary",
+      "digestDay": "Send it on",
+      "digestError": "Could not save your weekly summary setting",
+      "digestSuccess": "Weekly summary updated",
+      "emailNotConfigured": "Email delivery is not configured on this instance, so these notifications cannot be sent. Ask your administrator to set up email.",
+      "weekdays": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
+    },
     "security": {
       "title": "Security",
       "description": "Password and authentication",
@@ -1124,6 +1153,8 @@
         "yearUnknown": "Year unknown",
         "yearUnknownTooltip": "When checked, you can still use the date picker, but only the month and day will be saved. The year you select will be ignored.",
         "remindMe": "Remind me",
+        "leadTime": "Notify me",
+        "leadTimeDefault": "Default ({label})",
         "onlyOnce": "Only once on the specified date",
         "every": "Every",
         "startingFrom": "starting from the specified date",
@@ -1840,6 +1871,29 @@
       "button": "Open Nametag",
       "unsubscribe": "Disable this reminder"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}'s {eventType} is in {daysUntil} days",
+      "subjectOneDay": "{personName}'s {eventType} is tomorrow",
+      "heading": "Coming up soon",
+      "infoBox": "{personName}'s {eventType} is on {date}, {daysUntil} days from now.",
+      "infoBoxOneDay": "{personName}'s {eventType} is tomorrow, {date}.",
+      "body": "A little notice so you have time to plan something.",
+      "button": "Open Nametag",
+      "unsubscribe": "Disable this reminder"
+    },
+    "weeklyDigest": {
+      "subject": "{count} events coming up this week",
+      "subjectOne": "One event coming up this week",
+      "heading": "Your week ahead",
+      "body": "Here is what is coming up over the next seven days.",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "inDays": "In {days} days",
+      "row": "{personName}, {eventTitle}, {formattedDate}",
+      "andMore": "And {count} more. Open Nametag to see them all.",
+      "button": "Open Nametag",
+      "unsubscribe": "Stop sending the weekly summary"
+    },
     "contactReminder": {
       "subject": "Time to catch up with {personName}",
       "heading": "Stay in Touch",
@@ -1908,7 +1962,9 @@
       "title": "Disabled Successfully",
       "importantDate": "You will no longer receive reminders for this event. You can re-enable this reminder anytime from your settings.",
       "contact": "You will no longer receive reminders to contact this person. You can re-enable this reminder anytime from your settings.",
+      "weeklyDigest": "You will no longer receive the weekly summary email. You can re-enable it anytime from your settings.",
       "reEnableInSettings": "Manage Reminder Settings",
+      "reEnableDigestInSettings": "Manage Notification Settings",
       "goToDashboard": "Go to Dashboard"
     },
     "error": {

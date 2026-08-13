@@ -49,7 +49,7 @@ export const POST = withAuth(async (request, session, context) => {
       return validation.response;
     }
 
-    const { type, title, date, reminderEnabled, reminderType, reminderInterval, reminderIntervalUnit } = validation.data;
+    const { type, title, date, reminderEnabled, reminderType, reminderInterval, reminderIntervalUnit, reminderLeadDays } = validation.data;
 
     // Check reminder limits if enabling a reminder
     if (reminderEnabled) {
@@ -85,6 +85,7 @@ export const POST = withAuth(async (request, session, context) => {
         reminderType: reminderEnabled ? reminderType : null,
         reminderInterval: reminderEnabled && reminderType === 'RECURRING' ? reminderInterval : null,
         reminderIntervalUnit: reminderEnabled && reminderType === 'RECURRING' ? reminderIntervalUnit : null,
+        reminderLeadDays: reminderEnabled ? reminderLeadDays ?? null : null,
       },
     });
 

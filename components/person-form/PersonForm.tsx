@@ -73,6 +73,7 @@ export interface PersonFormProps {
       reminderType?: 'ONCE' | 'RECURRING' | null;
       reminderInterval?: number | null;
       reminderIntervalUnit?: ReminderIntervalUnit | null;
+      reminderLeadDays?: number | null;
     }>;
     phoneNumbers?: Array<{
       id?: string;
@@ -140,6 +141,12 @@ export interface PersonFormProps {
     limit: number;
     isUnlimited: boolean;
   };
+  // Required, unlike reminderLimit?: 0 is a real, meaningful lead time
+  // (day-of only), not a safe "feature off" fallback. A missing prop here
+  // would silently mislabel the "Default" option for any user whose real
+  // account default isn't 0, with nothing visibly wrong. Making this a
+  // compile error is cheaper than that failure mode.
+  defaultReminderLeadDays: number;
 }
 
 export default function PersonForm({
@@ -156,6 +163,7 @@ export default function PersonForm({
   initialKnownThrough,
   initialRelationshipType,
   reminderLimit,
+  defaultReminderLeadDays,
 }: PersonFormProps) {
   const t = useTranslations('people.form');
   const tPhoto = useTranslations('people.photo');
@@ -628,6 +636,7 @@ export default function PersonForm({
           mode={mode}
           dateFormat={dateFormat}
           reminderLimit={reminderLimit}
+          defaultReminderLeadDays={defaultReminderLeadDays}
         />
       </Section>
 

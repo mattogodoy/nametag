@@ -143,6 +143,35 @@
         "nlNL": "Nederlands (Dutch)"
       }
     },
+    "notifications": {
+      "title": "通知",
+      "description": "事前通知のタイミングと週間まとめメール",
+      "leadTimeTitle": "事前通知",
+      "leadTimeDescription": "重要な日付をどのくらい前に知りたいかを設定します。当日のリマインダーは必ず届きます。",
+      "leadTimeDayOf": "当日のみ",
+      "leadTimeOneDay": "1日前",
+      "leadTimeDays": "{days, plural, other {#日前}}",
+      "leadTimeSummaryDayOf": "各イベントの当日にメールが届きます。",
+      "leadTimeSummary": "{days, plural, other {#日前にメールが届き、当日にもう一度届きます。}}",
+      "leadTimeError": "事前通知の設定を保存できませんでした",
+      "leadTimeSuccess": "事前通知を更新しました",
+      "digestTitle": "週間まとめ",
+      "digestDescription": "今後7日間の予定をまとめてお知らせします。お知らせすることがある週だけ送信します。",
+      "digestToggle": "週間まとめを送信する",
+      "digestDay": "送信する曜日",
+      "digestError": "週間まとめの設定を保存できませんでした",
+      "digestSuccess": "週間まとめを更新しました",
+      "emailNotConfigured": "このインスタンスではメール送信が設定されていないため、これらの通知は送信できません。管理者にメール設定を依頼してください。",
+      "weekdays": {
+        "0": "日曜日",
+        "1": "月曜日",
+        "2": "火曜日",
+        "3": "水曜日",
+        "4": "木曜日",
+        "5": "金曜日",
+        "6": "土曜日"
+      }
+    },
     "security": {
       "title": "セキュリティ",
       "description": "パスワードと認証",
@@ -1124,6 +1153,8 @@
         "yearUnknown": "年不明",
         "yearUnknownTooltip": "チェックすると、日付ピッカーを使用できますが、月と日のみが保存されます。選択した年は無視されます。",
         "remindMe": "リマインド",
+        "leadTime": "通知タイミング",
+        "leadTimeDefault": "デフォルト（{label}）",
         "onlyOnce": "指定された日付に1回のみ",
         "every": "毎回",
         "startingFrom": "指定された日付から開始",
@@ -1840,6 +1871,29 @@
       "button": "Nametagを開く",
       "unsubscribe": "このリマインダーを無効にする"
     },
+    "importantDateLeadReminder": {
+      "subject": "{personName}の {eventType}まであと{daysUntil}日です",
+      "subjectOneDay": "{personName}の {eventType}は明日です",
+      "heading": "もうすぐです",
+      "infoBox": "{personName}の {eventType}は {date}、あと{daysUntil}日です。",
+      "infoBoxOneDay": "{personName}の {eventType}は明日、{date}です。",
+      "body": "余裕を持って準備できるよう、早めにお知らせしています。",
+      "button": "Nametagを開く",
+      "unsubscribe": "このリマインダーを無効にする"
+    },
+    "weeklyDigest": {
+      "subject": "今週は{count}件の予定があります",
+      "subjectOne": "今週は1件の予定があります",
+      "heading": "今週の予定",
+      "body": "今後7日間の予定はこちらです。",
+      "today": "今日",
+      "tomorrow": "明日",
+      "inDays": "あと{days}日",
+      "row": "{personName}、{eventTitle}、{formattedDate}",
+      "andMore": "他に{count}件あります。Nametagを開いてすべて確認しましょう。",
+      "button": "Nametagを開く",
+      "unsubscribe": "週間まとめの送信を停止する"
+    },
     "contactReminder": {
       "subject": "{personName}と連絡を取る時期です",
       "heading": "連絡を取り続けましょう",
@@ -1908,7 +1962,9 @@
       "title": "正常に無効化されました",
       "importantDate": "このイベントのリマインダーは今後送信されません。設定からいつでも再有効化できます。",
       "contact": "この人への連絡リマインダーは今後送信されません。設定からいつでも再有効化できます。",
+      "weeklyDigest": "週間まとめメールは今後送信されません。設定からいつでも再有効化できます。",
       "reEnableInSettings": "リマインダー設定を管理",
+      "reEnableDigestInSettings": "通知設定を管理",
       "goToDashboard": "ダッシュボードへ"
     },
     "error": {

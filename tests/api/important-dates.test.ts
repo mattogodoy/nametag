@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   personFindUnique: vi.fn(),
   importantDateFindMany: vi.fn(),
+  importantDateFindFirst: vi.fn(),
   importantDateCreate: vi.fn(),
   canEnableReminder: vi.fn(),
 }));
@@ -14,6 +15,7 @@ vi.mock('../../lib/prisma', () => ({
     },
     importantDate: {
       findMany: mocks.importantDateFindMany,
+      findFirst: mocks.importantDateFindFirst,
       create: mocks.importantDateCreate,
     },
   },
@@ -36,6 +38,7 @@ import { GET, POST } from '../../app/api/people/[id]/important-dates/route';
 describe('Important Dates API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.importantDateFindFirst.mockResolvedValue(null);
   });
 
   describe('GET /api/people/[id]/important-dates', () => {
@@ -213,6 +216,139 @@ describe('Important Dates API', () => {
       const response = await POST(request, context);
 
       expect(response.status).toBe(201);
+    });
+
+    it('persists an explicit reminderLeadDays override', async () => {
+      mocks.personFindUnique.mockResolvedValue({ id: 'person-1', userId: 'user-123', name: 'Alice' });
+      mocks.canEnableReminder.mockResolvedValue({ allowed: true });
+      mocks.importantDateCreate.mockResolvedValue({ id: 'date-1' });
+
+      const request = new Request('http://localhost/api/people/person-1/important-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'birthday',
+          title: '',
+          date: '1990-05-12',
+          reminderEnabled: true,
+          reminderType: 'RECURRING',
+          reminderInterval: 1,
+          reminderIntervalUnit: 'YEARS',
+          reminderLeadDays: 14,
+        }),
+      });
+
+      await POST(request, { params: Promise.resolve({ id: 'person-1' }) });
+
+      expect(mocks.importantDateCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ reminderLeadDays: 14 }),
+        })
+      );
+    });
+
+    it('persists null when the date should inherit the user default', async () => {
+      mocks.personFindUnique.mockResolvedValue({ id: 'person-1', userId: 'user-123', name: 'Alice' });
+      mocks.canEnableReminder.mockResolvedValue({ allowed: true });
+      mocks.importantDateCreate.mockResolvedValue({ id: 'date-1' });
+
+      const request = new Request('http://localhost/api/people/person-1/important-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'birthday',
+          title: '',
+          date: '1990-05-12',
+          reminderEnabled: true,
+          reminderType: 'RECURRING',
+          reminderLeadDays: null,
+        }),
+      });
+
+      await POST(request, { params: Promise.resolve({ id: 'person-1' }) });
+
+      expect(mocks.importantDateCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ reminderLeadDays: null }),
+        })
+      );
+    });
+
+    it('rejects a reminderLeadDays above 365', async () => {
+      mocks.personFindUnique.mockResolvedValue({ id: 'person-1', userId: 'user-123', name: 'Alice' });
+
+      const request = new Request('http://localhost/api/people/person-1/important-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'birthday',
+          title: '',
+          date: '1990-05-12',
+          reminderEnabled: true,
+          reminderLeadDays: 366,
+        }),
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ id: 'person-1' }) });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('persists an explicit reminderLeadDays of 0 as 0, not null', async () => {
+      mocks.personFindUnique.mockResolvedValue({ id: 'person-1', userId: 'user-123', name: 'Alice' });
+      mocks.canEnableReminder.mockResolvedValue({ allowed: true });
+      mocks.importantDateCreate.mockResolvedValue({ id: 'date-1' });
+
+      const request = new Request('http://localhost/api/people/person-1/important-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'birthday',
+          title: '',
+          date: '1990-05-12',
+          reminderEnabled: true,
+          reminderType: 'RECURRING',
+          reminderInterval: 1,
+          reminderIntervalUnit: 'YEARS',
+          reminderLeadDays: 0,
+        }),
+      });
+
+      await POST(request, { params: Promise.resolve({ id: 'person-1' }) });
+
+      expect(mocks.importantDateCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ reminderLeadDays: 0 }),
+        })
+      );
+    });
+
+    it('persists null when reminderLeadDays is absent from the request body', async () => {
+      mocks.personFindUnique.mockResolvedValue({ id: 'person-1', userId: 'user-123', name: 'Alice' });
+      mocks.canEnableReminder.mockResolvedValue({ allowed: true });
+      mocks.importantDateCreate.mockResolvedValue({ id: 'date-1' });
+
+      const request = new Request('http://localhost/api/people/person-1/important-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'birthday',
+          title: '',
+          date: '1990-05-12',
+          reminderEnabled: true,
+          reminderType: 'RECURRING',
+          reminderInterval: 1,
+          reminderIntervalUnit: 'YEARS',
+        }),
+      });
+
+      await POST(request, { params: Promise.resolve({ id: 'person-1' }) });
+
+      expect(mocks.importantDateCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ reminderLeadDays: null }),
+        })
+      );
     });
   });
 });

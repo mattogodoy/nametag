@@ -41,6 +41,7 @@ const defaultProps = {
   ],
   mode: 'create' as const,
   dateFormat: 'MDY' as const,
+  defaultReminderLeadDays: 0,
 };
 
 const editPerson = {

@@ -13,7 +13,7 @@ export const PUT = withAuth(async (request, session, context) => {
       return validation.response;
     }
 
-    const { type, title, date, reminderEnabled, reminderType, reminderInterval, reminderIntervalUnit } = validation.data;
+    const { type, title, date, reminderEnabled, reminderType, reminderInterval, reminderIntervalUnit, reminderLeadDays } = validation.data;
 
     // Check if person exists and belongs to user
     const person = await prisma.person.findUnique({
@@ -52,6 +52,7 @@ export const PUT = withAuth(async (request, session, context) => {
         reminderType: reminderEnabled ? reminderType : null,
         reminderInterval: reminderEnabled && reminderType === 'RECURRING' ? reminderInterval : null,
         reminderIntervalUnit: reminderEnabled && reminderType === 'RECURRING' ? reminderIntervalUnit : null,
+        reminderLeadDays: reminderEnabled ? reminderLeadDays ?? null : null,
       },
     });
 

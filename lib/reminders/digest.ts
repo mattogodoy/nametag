@@ -1,0 +1,64 @@
+import type { UpcomingEvent } from '@/lib/upcoming-events';
+
+/** How far ahead the digest looks. */
+export const DIGEST_WINDOW_DAYS = 7;
+
+/** Rows shown before collapsing the rest into an "and N more" link. */
+export const DIGEST_MAX_ROWS = 25;
+
+/**
+ * Blocks a second send if the cron fires twice on the same morning.
+ * The comparison is exclusive (< rather than <=), so at exactly 6 days this
+ * does not block. This is unreachable while the weekday gate is active
+ * (consecutive matches are always exactly 7 days apart), but the name and
+ * comment describe the intended intent if called in other contexts.
+ */
+const RESEND_GUARD_DAYS = 6;
+
+export interface DigestUser {
+  weeklyDigestEnabled: boolean;
+  /** 0 = Sunday ... 6 = Saturday, matching Date.prototype.getDay(). */
+  weeklyDigestWeekday: number;
+  lastWeeklyDigestSent: Date | null;
+}
+
+export function isDigestDueToday(user: DigestUser, today: Date): boolean {
+  if (!user.weeklyDigestEnabled) return false;
+  if (today.getDay() !== user.weeklyDigestWeekday) return false;
+
+  if (user.lastWeeklyDigestSent) {
+    const msSinceLast = today.getTime() - user.lastWeeklyDigestSent.getTime();
+    if (msSinceLast < RESEND_GUARD_DAYS * 24 * 60 * 60 * 1000) return false;
+  }
+
+  return true;
+}
+
+export interface DigestSelection {
+  events: UpcomingEvent[];
+  /** Events inside the window that did not fit under DIGEST_MAX_ROWS. */
+  overflowCount: number;
+}
+
+/**
+ * Narrow a user's upcoming events down to what belongs in this week's digest.
+ *
+ * The lower bound of 0 matters: getUpcomingEvents() reports overdue contact
+ * reminders with a negative daysUntil, and a user with a long backlog would
+ * otherwise receive all of it in their first digest.
+ *
+ * The upper bound is exclusive so that consecutive digests partition the
+ * calendar instead of overlapping. An event exactly DIGEST_WINDOW_DAYS out
+ * belongs to next week's digest, which will see it at daysUntil 0; including
+ * it here as well would announce the same event twice.
+ */
+export function selectDigestEvents(events: UpcomingEvent[]): DigestSelection {
+  const inWindow = events
+    .filter((e) => e.daysUntil >= 0 && e.daysUntil < DIGEST_WINDOW_DAYS)
+    .sort((a, b) => a.daysUntil - b.daysUntil);
+
+  return {
+    events: inWindow.slice(0, DIGEST_MAX_ROWS),
+    overflowCount: Math.max(0, inWindow.length - DIGEST_MAX_ROWS),
+  };
+}

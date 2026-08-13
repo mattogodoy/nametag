@@ -11,6 +11,16 @@ import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
 import { parseCalendarDate, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
 import { getTranslationsForLocale, type SupportedLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
+import {
+  shouldSendImportantDateReminder,
+  shouldSendContactReminder,
+  shouldSendLeadReminder,
+  getIntervalDays,
+} from '@/lib/reminders/due-dates';
+import { resolveLeadDays } from '@/lib/reminders/lead-days';
+import { getNextOccurrence, getDaysUntil, getUpcomingEvents } from '@/lib/upcoming-events';
+import { isDigestDueToday, selectDigestEvents } from '@/lib/reminders/digest';
+import { isSaasMode } from '@/lib/features';
 
 const log = createModuleLogger('cron');
 
@@ -70,6 +80,7 @@ export const GET = withLogging(async function GET(request: Request) {
                 language: true,
                 nameOrder: true,
                 nameDisplayFormat: true,
+                defaultReminderLeadDays: true,
               },
             },
           },
@@ -79,7 +90,7 @@ export const GET = withLogging(async function GET(request: Request) {
 
     interface PendingReminder {
       email: SendBatchEmailItem;
-      type: 'important_date' | 'contact';
+      type: 'important_date' | 'important_date_lead' | 'contact' | 'weekly_digest';
       entityId: string;
       logMeta: Record<string, string>;
     }
@@ -88,7 +99,7 @@ export const GET = withLogging(async function GET(request: Request) {
 
     // Collect important date reminders
     for (const importantDate of importantDates) {
-      const shouldSend = await shouldSendImportantDateReminder(importantDate, today);
+      const shouldSend = shouldSendImportantDateReminder(importantDate, today);
 
       if (shouldSend) {
         const { person } = importantDate;
@@ -132,6 +143,117 @@ export const GET = withLogging(async function GET(request: Request) {
           entityId: importantDate.id,
           logMeta: { personName, dateTitle, userEmail },
         });
+      }
+
+      const leadDays = resolveLeadDays(
+        importantDate.reminderLeadDays,
+        importantDate.person.user.defaultReminderLeadDays
+      );
+
+      if (leadDays > 0) {
+        const nextOccurrence =
+          importantDate.reminderType === 'ONCE'
+            ? parseCalendarDate(importantDate.date)
+            : getNextOccurrence(
+                parseCalendarDate(importantDate.date),
+                today,
+                importantDate.reminderInterval || 1,
+                importantDate.reminderIntervalUnit || 'YEARS',
+                importantDate.lastReminderSent
+              );
+
+        // Guard against promising an email the day-of path will never send.
+        // getNextOccurrence() and shouldSendImportantDateReminder() answer
+        // "when does this recur" independently and can disagree (multi-year
+        // intervals, a recurring date stored in the future, Feb 29 rolling to
+        // Mar 1 in a non-leap year). Simulating the day-of predicate with
+        // `today` set to the computed occurrence tells us whether the day-of
+        // email would actually fire then. Real `lastReminderSent` is passed
+        // through unchanged: that is the reminder history the day-of path
+        // would see when it eventually reaches that date.
+        const dayOfWouldFireOnOccurrence = shouldSendImportantDateReminder(
+          {
+            date: importantDate.date,
+            reminderType: importantDate.reminderType,
+            reminderInterval: importantDate.reminderInterval,
+            reminderIntervalUnit: importantDate.reminderIntervalUnit,
+            lastReminderSent: importantDate.lastReminderSent,
+          },
+          nextOccurrence
+        );
+
+        // Only RECURRING dates can have overlapping lead windows, so ONCE
+        // passes no interval and keeps the full requested notice.
+        const intervalDays =
+          importantDate.reminderType === 'RECURRING'
+            ? getIntervalDays(
+                importantDate.reminderInterval || 1,
+                importantDate.reminderIntervalUnit || 'YEARS'
+              )
+            : null;
+
+        const leadDue =
+          dayOfWouldFireOnOccurrence &&
+          shouldSendLeadReminder({
+            nextOccurrence,
+            today,
+            leadDays,
+            lastLeadReminderSent: importantDate.lastLeadReminderSent,
+            intervalDays,
+          });
+
+        if (leadDue) {
+          const { person } = importantDate;
+          const userLanguage = (person.user.language as SupportedLocale) || 'en';
+          const personName = formatGraphName(
+            person,
+            person.user.nameOrder,
+            person.user.nameDisplayFormat
+          );
+          // nextOccurrence is local midnight, and for a recurring date it has
+          // been projected into the year it next falls in, so the sentinel that
+          // marks an unknown year is only still visible on the stored value.
+          const formattedDate = formatCalendarDayForEmail(
+            nextOccurrence,
+            parseCalendarDate(importantDate.date).getFullYear() <= YEAR_UNKNOWN_SENTINEL,
+            person.user.dateFormat,
+            userLanguage
+          );
+          const daysUntil = getDaysUntil(nextOccurrence, today);
+
+          const unsubscribeToken = await createUnsubscribeToken({
+            userId: person.userId,
+            reminderType: 'IMPORTANT_DATE',
+            entityId: importantDate.id,
+          });
+
+          const tDates = await getTranslationsForLocale(
+            userLanguage,
+            'people.form.importantDates'
+          );
+          const dateTitle = getDateDisplayTitle(importantDate, tDates);
+          const template = await emailTemplates.importantDateLeadReminder(
+            personName,
+            dateTitle,
+            formattedDate,
+            daysUntil,
+            `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
+            userLanguage
+          );
+
+          pendingReminders.push({
+            email: {
+              to: person.user.email,
+              subject: template.subject,
+              html: template.html,
+              text: template.text,
+              from: 'reminders',
+            },
+            type: 'important_date_lead',
+            entityId: importantDate.id,
+            logMeta: { personName, dateTitle, daysUntil: String(daysUntil) },
+          });
+        }
       }
     }
 
@@ -201,9 +323,123 @@ export const GET = withLogging(async function GET(request: Request) {
       }
     }
 
+    // Weekly digest pass. Runs inside the same daily job so self-hosters do
+    // not need to add a cron line. The weekday is per-user; the hour is
+    // whatever the instance's cron is scheduled for.
+    //
+    // The outer try/catch here only guards genuine setup failure (mainly the
+    // candidate query itself): a problem here must not take down the
+    // day-of, lead, and contact reminders collected above, which still need
+    // to reach sendEmailBatch below. Once we have a list of digest users,
+    // each user is handled in its own inner try/catch, so one bad record
+    // (a malformed row, one failing getUpcomingEvents/token/template call)
+    // costs exactly that one user's digest, not everyone queued after them.
+    try {
+      const digestCandidates = await prisma.user.findMany({
+        where: { weeklyDigestEnabled: true },
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          language: true,
+          dateFormat: true,
+          weeklyDigestEnabled: true,
+          weeklyDigestWeekday: true,
+          lastWeeklyDigestSent: true,
+        },
+      });
+
+      const digestUsers = digestCandidates.filter(
+        (user) =>
+          isDigestDueToday(user, today) &&
+          (!isSaasMode() || user.emailVerified)
+      );
+
+      const DIGEST_BATCH_SIZE = 50;
+
+      for (let i = 0; i < digestUsers.length; i += DIGEST_BATCH_SIZE) {
+        const batch = digestUsers.slice(i, i + DIGEST_BATCH_SIZE);
+
+        for (const user of batch) {
+          try {
+            const upcoming = await getUpcomingEvents(user.id);
+            const { events, overflowCount } = selectDigestEvents(upcoming);
+
+            // A quiet week sends nothing. An email that says "no events" every
+            // week trains people to ignore the ones that matter.
+            if (events.length === 0) continue;
+
+            const userLanguage = (user.language as SupportedLocale) || 'en';
+            const tEvents = await getTranslationsForLocale(userLanguage, 'dashboard');
+
+            const rows = events.map((event) => ({
+              personName: event.personName,
+              eventTitle: event.title ?? tEvents(event.titleKey ?? 'timeToCatchUp'),
+              // getUpcomingEvents builds every event.date locally, so this is
+              // already a local calendar day rather than a stored UTC one.
+              formattedDate: formatCalendarDayForEmail(
+                event.date,
+                event.isYearUnknown,
+                user.dateFormat,
+                userLanguage
+              ),
+              daysUntil: event.daysUntil,
+            }));
+
+            const unsubscribeToken = await createUnsubscribeToken({
+              userId: user.id,
+              reminderType: 'WEEKLY_DIGEST',
+              entityId: user.id,
+            });
+
+            const template = await emailTemplates.weeklyDigest(
+              rows,
+              overflowCount,
+              `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
+              userLanguage
+            );
+
+            pendingReminders.push({
+              email: {
+                to: user.email,
+                subject: template.subject,
+                html: template.html,
+                text: template.text,
+                from: 'reminders',
+              },
+              type: 'weekly_digest',
+              entityId: user.id,
+              logMeta: { userEmail: user.email, eventCount: String(rows.length) },
+            });
+          } catch (userDigestError) {
+            log.error(
+              {
+                userId: user.id,
+                errorMessage:
+                  userDigestError instanceof Error ? userDigestError.message : 'Unknown error',
+              },
+              'Weekly digest failed for user, skipping'
+            );
+            continue;
+          }
+        }
+
+        if (i + DIGEST_BATCH_SIZE < digestUsers.length) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+      }
+    } catch (digestError) {
+      log.error(
+        { errorMessage: digestError instanceof Error ? digestError.message : 'Unknown error' },
+        'Weekly digest pass failed'
+      );
+    }
+
     // Send all reminders as a batch
     let sentCount = 0;
     let errorCount = 0;
+    let skippedCount = 0;
+    let digestsSent = 0;
 
     if (pendingReminders.length > 0) {
       const batchResult = await sendEmailBatch(pendingReminders.map(r => r.email));
@@ -212,6 +448,17 @@ export const GET = withLogging(async function GET(request: Request) {
         const reminder = pendingReminders[i];
         const result = batchResult.results[i];
 
+        // No email provider configured: sendEmailBatch reports success with
+        // `skipped` so the cron still completes cleanly. Nothing was delivered,
+        // so nothing may be stamped. Stamping here would burn the send for good:
+        // the day-of reminder would be marked sent for that occurrence, the
+        // digest for that week, and the advance notice for its whole lead
+        // window, none of which are recoverable once email is configured.
+        if (result.skipped) {
+          skippedCount++;
+          continue;
+        }
+
         if (result.success) {
           if (reminder.type === 'important_date') {
             await prisma.importantDate.update({
@@ -219,6 +466,19 @@ export const GET = withLogging(async function GET(request: Request) {
               data: { lastReminderSent: new Date() },
             });
             log.info({ ...reminder.logMeta }, 'Reminder sent');
+          } else if (reminder.type === 'important_date_lead') {
+            await prisma.importantDate.update({
+              where: { id: reminder.entityId },
+              data: { lastLeadReminderSent: new Date() },
+            });
+            log.info({ ...reminder.logMeta }, 'Lead reminder sent');
+          } else if (reminder.type === 'weekly_digest') {
+            await prisma.user.update({
+              where: { id: reminder.entityId },
+              data: { lastWeeklyDigestSent: new Date() },
+            });
+            log.info({ ...reminder.logMeta }, 'Weekly digest sent');
+            digestsSent++;
           } else {
             await prisma.person.update({
               where: { id: reminder.entityId },
@@ -237,8 +497,10 @@ export const GET = withLogging(async function GET(request: Request) {
     log.info({
       sent: sentCount,
       errors: errorCount,
+      skipped: skippedCount,
       processedImportantDates: importantDates.length,
       processedContactReminders: peopleWithContactReminders.length,
+      digestsSent,
     }, 'Reminders processed');
 
     // Log cron job completion
@@ -249,7 +511,9 @@ export const GET = withLogging(async function GET(request: Request) {
         data: {
           status: 'completed',
           duration,
-          message: `Sent ${sentCount} reminders, ${errorCount} errors`,
+          message:
+            `Sent ${sentCount} reminders (${digestsSent} digests), ${errorCount} errors` +
+            (skippedCount > 0 ? `, ${skippedCount} skipped (email not configured)` : ''),
         },
       });
     }
@@ -258,8 +522,10 @@ export const GET = withLogging(async function GET(request: Request) {
       success: true,
       sent: sentCount,
       errors: errorCount,
+      skipped: skippedCount,
       processedImportantDates: importantDates.length,
       processedContactReminders: peopleWithContactReminders.length,
+      digestsSent,
     });
   } catch (error) {
     // Log cron job failure
@@ -278,207 +544,6 @@ export const GET = withLogging(async function GET(request: Request) {
   }
 });
 
-async function shouldSendImportantDateReminder(
-  importantDate: {
-    date: Date;
-    reminderType: string | null;
-    reminderInterval: number | null;
-    reminderIntervalUnit: string | null;
-    lastReminderSent: Date | null;
-  },
-  today: Date
-): Promise<boolean> {
-  const eventDate = parseCalendarDate(importantDate.date);
-
-  if (importantDate.reminderType === 'ONCE') {
-    // For one-time reminders, send on the exact date if not already sent
-    const eventDay = new Date(eventDate);
-    eventDay.setHours(0, 0, 0, 0);
-
-    if (eventDay.getTime() !== today.getTime()) {
-      return false;
-    }
-
-    // Check if already sent today
-    if (importantDate.lastReminderSent) {
-      const lastSent = new Date(importantDate.lastReminderSent);
-      lastSent.setHours(0, 0, 0, 0);
-      if (lastSent.getTime() === today.getTime()) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  if (importantDate.reminderType === 'RECURRING') {
-    // For recurring reminders, check based on the interval from the event date
-    const interval = importantDate.reminderInterval || 1;
-    const intervalUnit = importantDate.reminderIntervalUnit || 'YEARS';
-
-    // Normalize the event date
-    const eventDateNormalized = new Date(eventDate);
-    eventDateNormalized.setHours(0, 0, 0, 0);
-
-    // Don't send reminders before the event date
-    if (today.getTime() < eventDateNormalized.getTime()) {
-      return false;
-    }
-
-    // Special handling for YEARS to avoid leap year drift
-    if (intervalUnit === 'YEARS') {
-      // Project the anniversary into the current year the same way the
-      // dashboard's getNextOccurrence does: a February 29 birthday has no
-      // matching day in non-leap years, and the Date constructor rolls it to
-      // March 1. A plain month/day equality check would never fire that year.
-      const thisYearOccurrence = new Date(
-        today.getFullYear(),
-        eventDateNormalized.getMonth(),
-        eventDateNormalized.getDate()
-      );
-      thisYearOccurrence.setHours(0, 0, 0, 0);
-
-      // Check if today is the anniversary
-      if (thisYearOccurrence.getTime() !== today.getTime()) {
-        return false;
-      }
-
-      // If we've sent before, check if enough years have passed
-      if (importantDate.lastReminderSent) {
-        const lastSent = new Date(importantDate.lastReminderSent);
-        const lastSentYear = lastSent.getFullYear();
-        const todayYear = today.getFullYear();
-        const yearsSinceLastSent = todayYear - lastSentYear;
-
-        return yearsSinceLastSent >= interval;
-      }
-
-      // Never sent before - it's the anniversary, so send
-      return true;
-    }
-
-    // For other intervals (DAYS, WEEKS, MONTHS), use millisecond calculations
-    const intervalMs = getIntervalMs(interval, intervalUnit);
-
-    // If we've sent before, check if enough time has passed
-    if (importantDate.lastReminderSent) {
-      const lastSent = new Date(importantDate.lastReminderSent);
-      lastSent.setHours(0, 0, 0, 0);
-
-      const timeSinceLastSent = today.getTime() - lastSent.getTime();
-
-      // Not enough time has passed since last reminder
-      if (timeSinceLastSent < intervalMs) {
-        return false;
-      }
-
-      // Calculate the next scheduled reminder date from last sent
-      const intervalsPassed = Math.floor(timeSinceLastSent / intervalMs);
-      const nextReminderDate = new Date(lastSent.getTime() + (intervalsPassed * intervalMs));
-      nextReminderDate.setHours(0, 0, 0, 0);
-
-      return nextReminderDate.getTime() === today.getTime();
-    }
-
-    // Never sent before - check if we should send based on event date
-    // For unknown-year dates, normalize to current year to avoid
-    // DST drift over centuries breaking the interval math
-    if (eventDateNormalized.getFullYear() <= YEAR_UNKNOWN_SENTINEL) {
-      const currentYear = today.getFullYear();
-      eventDateNormalized.setFullYear(currentYear);
-      // If the normalized date is in the future, use previous year
-      if (eventDateNormalized.getTime() > today.getTime()) {
-        eventDateNormalized.setFullYear(currentYear - 1);
-      }
-    }
-    const timeSinceEvent = today.getTime() - eventDateNormalized.getTime();
-
-    // Calculate which occurrence this is
-    const intervalsPassed = Math.floor(timeSinceEvent / intervalMs);
-    const nextReminderDate = new Date(eventDateNormalized.getTime() + (intervalsPassed * intervalMs));
-    nextReminderDate.setHours(0, 0, 0, 0);
-
-    return nextReminderDate.getTime() === today.getTime();
-  }
-
-  return false;
-}
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-function getIntervalMs(interval: number, unit: string): number {
-  const msPerDay = MS_PER_DAY;
-
-  switch (unit) {
-    case 'DAYS':
-      return interval * msPerDay;
-    case 'WEEKS':
-      return interval * 7 * msPerDay;
-    case 'MONTHS':
-      return interval * 30 * msPerDay; // Approximate
-    case 'YEARS':
-      return interval * 365 * msPerDay; // Approximate
-    default:
-      return 365 * msPerDay;
-  }
-}
-
-function shouldSendContactReminder(
-  person: {
-    lastContact: Date | null;
-    contactReminderInterval: number | null;
-    contactReminderIntervalUnit: string | null;
-    lastContactReminderSent: Date | null;
-  },
-  today: Date
-): boolean {
-  const interval = person.contactReminderInterval || 1;
-  const unit = person.contactReminderIntervalUnit || 'MONTHS';
-  const intervalDays = Math.round(getIntervalMs(interval, unit) / MS_PER_DAY);
-
-  // Calculate when the reminder should be sent
-  // If no lastContact, use lastContactReminderSent or send immediately
-  const reference = person.lastContact ?? person.lastContactReminderSent;
-
-  if (!reference) {
-    // No reference date - don't send (need at least one contact first)
-    return false;
-  }
-
-  // lastContact is a stored calendar date (UTC midnight); anchor it to the
-  // local calendar day before comparing against local-midnight today, and
-  // compare in whole days so DST transitions cannot shift the send day.
-  const referenceDate = person.lastContact
-    ? parseCalendarDate(person.lastContact)
-    : new Date(reference);
-  referenceDate.setHours(0, 0, 0, 0);
-
-  const daysSinceReference = Math.round(
-    (today.getTime() - referenceDate.getTime()) / MS_PER_DAY
-  );
-
-  // Check if enough time has passed since last contact
-  if (daysSinceReference < intervalDays) {
-    return false;
-  }
-
-  // Check if we've already sent a reminder recently
-  if (person.lastContactReminderSent) {
-    const lastReminder = new Date(person.lastContactReminderSent);
-    lastReminder.setHours(0, 0, 0, 0);
-    const daysSinceLastReminder = Math.round(
-      (today.getTime() - lastReminder.getTime()) / MS_PER_DAY
-    );
-
-    // Don't send if we sent a reminder within the interval period
-    if (daysSinceLastReminder < intervalDays * 0.9) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 function formatInterval(interval: number, unit: string): string {
   const unitLower = unit.toLowerCase();
   if (interval === 1) {
@@ -488,21 +553,31 @@ function formatInterval(interval: number, unit: string): string {
   return `${interval} ${unitLower}`;
 }
 
-function formatDateForEmail(
-  date: Date,
+/**
+ * Render a calendar day that is already anchored to local midnight.
+ *
+ * Kept separate from formatDateForEmail because the two take different kinds of
+ * Date. Occurrences computed at runtime (a projected anniversary, a digest row)
+ * are built with local accessors, so passing them through parseCalendarDate
+ * would apply the UTC-to-local correction a second time and report the previous
+ * day east of UTC.
+ *
+ * `yearUnknown` has to be supplied rather than inferred: projecting an
+ * occurrence into the current year overwrites the sentinel that marks a date
+ * whose year the user never entered.
+ */
+function formatCalendarDayForEmail(
+  d: Date,
+  yearUnknown: boolean,
   dateFormat: string | null,
   locale: string = 'en'
 ): string {
-  // Stored values are UTC midnight on the calendar day they encode; reading
-  // them with local accessors would report the previous day west of UTC.
-  const d = parseCalendarDate(date);
   const localeCode = locale === 'en' ? 'en-US' : locale;
   const month = d.toLocaleDateString(localeCode, { month: 'long' });
   const day = d.getDate();
   const year = d.getFullYear();
 
-  // Year-unknown dates carry the sentinel year; show only month and day.
-  if (year <= YEAR_UNKNOWN_SENTINEL) {
+  if (yearUnknown) {
     switch (dateFormat) {
       case 'DMY':
         return `${day} ${month}`;
@@ -522,4 +597,21 @@ function formatDateForEmail(
     default:
       return `${month} ${day}, ${year}`;
   }
+}
+
+/** Render a value straight out of the database, which is UTC midnight. */
+function formatDateForEmail(
+  date: Date,
+  dateFormat: string | null,
+  locale: string = 'en'
+): string {
+  // Stored values are UTC midnight on the calendar day they encode; reading
+  // them with local accessors would report the previous day west of UTC.
+  const d = parseCalendarDate(date);
+  return formatCalendarDayForEmail(
+    d,
+    d.getFullYear() <= YEAR_UNKNOWN_SENTINEL,
+    dateFormat,
+    locale
+  );
 }

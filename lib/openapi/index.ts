@@ -224,8 +224,10 @@ export function generateOpenAPISpec(): OpenAPISpec {
           tags: ['Cron'],
           summary: 'Send due reminder emails',
           description:
-            'Sends reminder emails for important dates and contact reminders that are due. ' +
-            'Each email carries a one-time unsubscribe token. Intended to run once a day.',
+            'Sends reminder emails for important dates and contact reminders that are due, ' +
+            'including advance-notice lead reminders sent a configurable number of days before ' +
+            'an important date, and the opt-in weekly digest for users whose chosen weekday is ' +
+            'today. Each email carries a one-time unsubscribe token. Intended to run once a day.',
           security: [{ cronBearer: [] }],
           responses: {
             '200': jsonResponse('Reminder run results', {
@@ -234,8 +236,15 @@ export function generateOpenAPISpec(): OpenAPISpec {
                 success: { type: 'boolean' },
                 sent: { type: 'integer' },
                 errors: { type: 'integer' },
+                skipped: {
+                  type: 'integer',
+                  description:
+                    'Reminders that were due but not delivered because no email provider is ' +
+                    'configured. These are not marked as sent and will be retried on the next run.',
+                },
                 processedImportantDates: { type: 'integer' },
                 processedContactReminders: { type: 'integer' },
+                digestsSent: { type: 'integer' },
               },
             }),
             '401': ref401(),

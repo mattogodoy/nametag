@@ -27,6 +27,17 @@ Also configured from Appearance, graph mode controls how your network graph rend
 
 Shows how to add Nametag to your home screen or desktop. On Android and desktop this is an install button; on iOS it is step-by-step instructions, because Safari has no install API. If you are already running the installed app, this section just confirms that. See [Installing the App](/features/install/).
 
+## Notifications
+
+Two settings, both about email.
+
+- **Advance notice**: how many days before an important date you want to hear about it, chosen from On the day only, 1 day before, 3, 7, 14, or 30 days before. Advance notice never replaces the day-of reminder. Choosing 7 days before means you get an email 7 days before the event and again on the day itself, always both. The page spells this out directly under the control so you never have to guess.
+- **Weekly summary**: an opt-in email summarizing what's coming up in the next 7 days, off by default. Turning it on reveals a day-of-week picker for when it should arrive. If a given week has nothing coming up, no email is sent that week. Silence is the expected behavior for a quiet week, not a sign anything is broken.
+
+The weekly summary's send hour follows the self-hosted instance's own cron schedule, not each user's personal timezone. See [Cron Jobs](/self-hosting/cron-jobs/) for how that's configured.
+
+If the instance has no email delivery configured (no SMTP or Resend, see [Email](/self-hosting/email/)), both controls are shown disabled with an explanation, since there is no point turning on a notification that can never arrive.
+
 ## Security
 
 Change your password. You'll need to enter your current password to confirm the change.
@@ -71,3 +82,5 @@ App version, license information, and links to the GitHub repository, release no
 | Name display | Full, Nickname Preferred, Short |
 | Graph mode | Individuals, Bubbles |
 | Supported languages | English, Spanish, Japanese, Norwegian, German, Chinese, Italian, Russian, Dutch (9 total) |
+| Advance notice | On the day only, 1, 3, 7, 14, or 30 days before |
+| Weekly summary | Off (default) or on, with a day of the week to send it |
