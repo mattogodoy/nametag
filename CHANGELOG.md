@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.59.1](https://github.com/mattogodoy/nametag/compare/v0.59.0...v0.59.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **release:** clarify that Docker users don't need to run migrations manually ([#414](https://github.com/mattogodoy/nametag/issues/414)) ([8af385d](https://github.com/mattogodoy/nametag/commit/8af385d19241de5607e70371e76e20af5c9daf9d))
+
 ## [0.59.0](https://github.com/mattogodoy/nametag/compare/v0.58.5...v0.59.0) (2026-08-13)
 
 
