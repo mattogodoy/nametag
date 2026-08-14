@@ -8,19 +8,23 @@ Here is the context for this release (either pull request descriptions or commit
 ---
 
 STEP 1 - CLASSIFY: Read every item above. Classify each as:
-- BREAKING: a change that requires user action (new/changed env vars, cron jobs, config files, database migrations, Docker changes, removed features, renamed settings)
+- BREAKING: a change that requires user action (new/changed env vars, cron jobs, config files, Docker changes, removed features, renamed settings)
+- MIGRATION: a database migration is included in this release (see special handling below)
 - FEATURE: a new capability or significant enhancement
 - FIX: a bug fix or minor improvement
 - INTERNAL: refactoring, CI, tests, deps, docs-only (skip these entirely)
 
 STEP 2 - WRITE: Produce release notes using the structure below.
 
-If ANY items were classified as BREAKING, the release notes MUST start with an action-required block before anything else. This block uses the following format:
+Database migrations: Nametag's Docker image runs `npx prisma migrate deploy` automatically on container start via docker-entrypoint.sh. Docker and docker-compose users do NOT need to run migrations manually. Only non-Docker users (running Nametag directly with Node.js) need to run the command themselves. When a release includes a database migration, add a MIGRATION note inside the action-required block (see format below) that makes this distinction clear. Do NOT list migrations as a generic "run this command" instruction without context.
+
+If ANY items were classified as BREAKING or MIGRATION, the release notes MUST start with an action-required block before anything else. This block uses the following format:
 
 > [!WARNING]
 > **Action required before upgrading**
 >
-> - <Clear, specific instruction for each breaking change. State what the user must do, not just what changed. Example: "Add `REDIS_URL` to your `.env` file" or "Run `npx prisma migrate deploy` after updating">
+> - <Clear, specific instruction for each BREAKING change. State what the user must do, not just what changed. Example: "Add `REDIS_URL` to your `.env` file">
+> - <For MIGRATION items, use this pattern: "This release includes a database migration. **Docker users:** no action needed, migrations run automatically on container start. **Non-Docker users:** run `npx prisma migrate deploy` after updating.">
 
 After the action-required block (or at the top if no BREAKING items), continue with one of these formats:
 
@@ -54,6 +58,6 @@ Content rules:
 - Omit INTERNAL items entirely.
 - 1-8 bullet points max in the "Other changes" section. Combine related items.
 - If there are no FIX items, omit the "Other changes" section entirely.
-- BREAKING items go in the action-required block at the top, not in "Other changes". Each bullet must tell the user exactly what to do.
-- If there are no BREAKING items, omit the action-required block entirely.
+- BREAKING and MIGRATION items go in the action-required block at the top, not in "Other changes". Each bullet must tell the user exactly what to do.
+- If there are no BREAKING or MIGRATION items, omit the action-required block entirely.
 - Output ONLY the markdown. No preamble, no sign-off.
