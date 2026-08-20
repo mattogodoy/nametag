@@ -15,7 +15,7 @@ All paths in this reference are relative to your Nametag instance:
 https://your-instance.example.com
 ```
 
-If you're using the hosted service, that's `https://nametag.one`. If you're self-hosting, it's whatever domain you've configured.
+If you're using the hosted service, that's `https://app.nametag.one`. Note that `nametag.one` itself is the marketing site and doesn't serve the API. If you're self-hosting, it's whatever domain you've configured.
 
 ## Authentication
 
@@ -40,7 +40,7 @@ API tokens work on nearly every endpoint that accepts a session cookie. A few re
 - `/api/billing/*`, so subscription and payment changes stay tied to an interactive session
 - `/api/carddav/connection`, `/api/carddav/connection/test`, and `/api/carddav/backup`, which read or replace stored CardDAV credentials, and where the last two dial whatever host the caller supplies
 
-Requests to those with a bearer token return `401`. Each endpoint's accepted schemes are listed in the [OpenAPI spec](/api/openapi.json), and see [API Tokens](/api/tokens/) for scopes, expiry, and full examples.
+Requests to those with a bearer token return `401`. Each endpoint's accepted schemes are listed in the [OpenAPI spec](#interactive-docs), and see [API Tokens](/api/tokens/) for scopes, expiry, and full examples.
 
 ## Response format
 
