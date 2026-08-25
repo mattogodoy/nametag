@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import SettingsMessage from '@/components/ui/SettingsMessage';
 
 type Mode = 'individuals' | 'bubbles';
 
@@ -69,11 +70,7 @@ export default function GraphDisplaySelector({ currentMode }: Props) {
         ))}
       </div>
 
-      {message && (
-        <p className={`text-sm ${isSuccess ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-          {message}
-        </p>
-      )}
+      <SettingsMessage message={message} isSuccess={isSuccess} />
     </div>
   );
 }

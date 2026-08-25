@@ -249,9 +249,9 @@
       "interval24hours": "Alle 24 Stunden",
       "importModeLabel": "Importmodus für neue Kontakte",
       "importModeHelp": "Wie sollen neue Kontakte vom CardDAV-Server behandelt werden",
-      "importModeManual": "Manuell – Vor dem Import überprüfen",
-      "importModeNotify": "Benachrichtigen – Benachrichtigung bei neuen Kontakten anzeigen",
-      "importModeAuto": "Automatisch – Neue Kontakte automatisch importieren",
+      "importModeManual": "Manuell - Vor dem Import überprüfen",
+      "importModeNotify": "Benachrichtigen - Benachrichtigung bei neuen Kontakten anzeigen",
+      "importModeAuto": "Automatisch - Neue Kontakte automatisch importieren",
       "cardDavNameFormatLabel": "Kontaktnamensformat",
       "cardDavNameFormatHelp": "Bestimmt, wie Namen auf deinem Telefon angezeigt werden. Die vollstaendigen Namensdaten bleiben immer erhalten.",
       "cardDavNameFormat_FULL": "Vollstaendiger Name",
@@ -758,7 +758,7 @@
   "customFields": {
     "settings": {
       "title": "Benutzerdefinierte Felder",
-      "description": "Definiere eigene typisierte Felder und wende sie auf alle deine Personen an. Nutze sie, um dein Netzwerk zu filtern – z. B. «wer ist Vegetarier» oder «wer hat Haustiere».",
+      "description": "Definiere eigene typisierte Felder und wende sie auf alle deine Personen an. Nutze sie, um dein Netzwerk zu filtern, z. B. «wer ist Vegetarier» oder «wer hat Haustiere».",
       "newButton": "Neues Feld",
       "emptyTitle": "Noch keine benutzerdefinierten Felder",
       "emptyDescription": "Füge Felder wie Ernährungsgewohnheiten, Hobbys oder Haustiere hinzu und nutze sie zum Filtern deiner Personen.",

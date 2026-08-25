@@ -374,3 +374,95 @@ describe('weekly digest, dates shown in the rows', () => {
     });
   }
 });
+
+describe('stamp-failure resilience', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.cronLogCreate.mockResolvedValue({ id: 'log-1' });
+    mocks.cronLogUpdate.mockResolvedValue({});
+    mocks.userFindMany.mockResolvedValue([]);
+    mocks.importantDateUpdate.mockResolvedValue({});
+    mocks.personUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+  });
+
+  const request = () => new Request('http://localhost/api/cron/send-reminders');
+
+  it('stamps remaining reminders when one mid-batch stamp update throws', async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dateA = {
+      id: 'date-A',
+      personId: 'person-A',
+      title: 'Anniversary',
+      type: 'anniversary',
+      date: new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())),
+      reminderEnabled: true,
+      reminderType: 'ONCE',
+      reminderInterval: null,
+      reminderIntervalUnit: null,
+      lastReminderSent: null,
+      reminderLeadDays: 0,
+      lastLeadReminderSent: null,
+      person: {
+        id: 'person-A',
+        name: 'Alice',
+        surname: 'Ng',
+        middleName: null,
+        secondLastName: null,
+        nickname: null,
+        displayNameOverride: null,
+        userId: 'user-A',
+        user: {
+          email: 'alice@example.com',
+          dateFormat: 'MDY',
+          language: 'en',
+          nameOrder: 'WESTERN',
+          nameDisplayFormat: 'FULL',
+          defaultReminderLeadDays: 0,
+        },
+      },
+    };
+
+    const dateB = {
+      ...dateA,
+      id: 'date-B',
+      personId: 'person-B',
+      title: 'Birthday',
+      type: 'birthday',
+      person: {
+        ...dateA.person,
+        id: 'person-B',
+        name: 'Bob',
+        surname: 'Lee',
+        userId: 'user-B',
+        user: { ...dateA.person.user, email: 'bob@example.com' },
+      },
+    };
+
+    mocks.importantDateFindMany.mockResolvedValue([dateA, dateB]);
+    mocks.personFindMany.mockResolvedValue([]);
+    mocks.sendEmailBatch.mockResolvedValue({
+      results: [{ success: true }, { success: true }],
+    });
+
+    // First stamp (date-A) throws a transient DB error; second (date-B)
+    // must still succeed.
+    mocks.importantDateUpdate
+      .mockRejectedValueOnce(new Error('connection reset'))
+      .mockResolvedValueOnce({});
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(body.success).toBe(true);
+    expect(body.sent).toBe(2);
+
+    expect(mocks.importantDateUpdate).toHaveBeenCalledTimes(2);
+    expect(mocks.importantDateUpdate).toHaveBeenCalledWith({
+      where: { id: 'date-B' },
+      data: { lastReminderSent: expect.any(Date) },
+    });
+  });
+});

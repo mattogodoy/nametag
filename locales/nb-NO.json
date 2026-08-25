@@ -37,9 +37,9 @@
     "veryStrong": "Svært sterk",
     "requirements": {
       "minLength": "Minst 8 tegn",
-      "uppercase": "Én stor bokstav (A–Z)",
-      "lowercase": "Én liten bokstav (a–z)",
-      "number": "Ett tall (0–9)",
+      "uppercase": "Én stor bokstav (A-Z)",
+      "lowercase": "Én liten bokstav (a-z)",
+      "number": "Ett tall (0-9)",
       "specialChar": "Ett spesialtegn (!@#$%^&*)"
     }
   },
@@ -249,9 +249,9 @@
       "interval24hours": "Hver 24. time",
       "importModeLabel": "Importmodus for nye kontakter",
       "importModeHelp": "Hvordan nye kontakter fra CardDAV-serveren skal håndteres",
-      "importModeManual": "Manuell – Gjennomgå før import",
-      "importModeNotify": "Varsle – Vis varsel når nye kontakter finnes",
-      "importModeAuto": "Automatisk – Importer nye kontakter automatisk",
+      "importModeManual": "Manuell - Gjennomgå før import",
+      "importModeNotify": "Varsle - Vis varsel når nye kontakter finnes",
+      "importModeAuto": "Automatisk - Importer nye kontakter automatisk",
       "cardDavNameFormatLabel": "Kontaktnavnformat",
       "cardDavNameFormatHelp": "Bestemmer hvordan navn vises pa telefonen din. De fullstendige navnedataene bevares alltid.",
       "cardDavNameFormat_FULL": "Fullt navn",
@@ -920,7 +920,7 @@
     "retryGeocodeFailed": "Adressen kunne fortsatt ikke lokaliseres",
     "createFirst": "Opprett din første person",
     "searchPeople": "Søk etter personer",
-    "showing": "Viser {start}–{end} av {total} personer",
+    "showing": "Viser {start}-{end} av {total} personer",
     "limitReached": "Du har nådd grensen på {limit} personer.",
     "upgradePlan": "Oppgrader abonnementet ditt",
     "noPeopleYet": "Ingen personer ennå",
@@ -1509,7 +1509,7 @@
     "createFirstGroup": "Opprett din første gruppe",
     "limitReached": "Du har nådd grensen på {limit} grupper.",
     "upgradePlan": "Oppgrader abonnementet ditt",
-    "showing": "Viser {start}–{end} av {total} grupper",
+    "showing": "Viser {start}-{end} av {total} grupper",
     "noMembersYet": "Ingen medlemmer ennå",
     "oneMember": "1 medlem",
     "membersCount": "{count} medlemmer"
