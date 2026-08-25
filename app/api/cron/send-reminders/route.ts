@@ -436,31 +436,43 @@ export const GET = withLogging(async function GET(request: Request) {
         }
 
         if (result.success) {
-          if (reminder.type === 'important_date') {
-            await prisma.importantDate.update({
-              where: { id: reminder.entityId },
-              data: { lastReminderSent: new Date() },
-            });
-            log.info({ ...reminder.logMeta }, 'Reminder sent');
-          } else if (reminder.type === 'important_date_lead') {
-            await prisma.importantDate.update({
-              where: { id: reminder.entityId },
-              data: { lastLeadReminderSent: new Date() },
-            });
-            log.info({ ...reminder.logMeta }, 'Lead reminder sent');
-          } else if (reminder.type === 'weekly_digest') {
-            await prisma.user.update({
-              where: { id: reminder.entityId },
-              data: { lastWeeklyDigestSent: new Date() },
-            });
-            log.info({ ...reminder.logMeta }, 'Weekly digest sent');
-            digestsSent++;
-          } else {
-            await prisma.person.update({
-              where: { id: reminder.entityId },
-              data: { lastContactReminderSent: new Date() },
-            });
-            log.info({ ...reminder.logMeta }, 'Contact reminder sent');
+          try {
+            if (reminder.type === 'important_date') {
+              await prisma.importantDate.update({
+                where: { id: reminder.entityId },
+                data: { lastReminderSent: new Date() },
+              });
+              log.info({ ...reminder.logMeta }, 'Reminder sent');
+            } else if (reminder.type === 'important_date_lead') {
+              await prisma.importantDate.update({
+                where: { id: reminder.entityId },
+                data: { lastLeadReminderSent: new Date() },
+              });
+              log.info({ ...reminder.logMeta }, 'Lead reminder sent');
+            } else if (reminder.type === 'weekly_digest') {
+              await prisma.user.update({
+                where: { id: reminder.entityId },
+                data: { lastWeeklyDigestSent: new Date() },
+              });
+              log.info({ ...reminder.logMeta }, 'Weekly digest sent');
+              digestsSent++;
+            } else {
+              await prisma.person.update({
+                where: { id: reminder.entityId },
+                data: { lastContactReminderSent: new Date() },
+              });
+              log.info({ ...reminder.logMeta }, 'Contact reminder sent');
+            }
+          } catch (stampError) {
+            log.error(
+              {
+                ...reminder.logMeta,
+                entityId: reminder.entityId,
+                type: reminder.type,
+                errorMessage: stampError instanceof Error ? stampError.message : 'Unknown error',
+              },
+              'Failed to stamp reminder as sent (email was delivered, may duplicate on next run)'
+            );
           }
           sentCount++;
         } else {
