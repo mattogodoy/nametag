@@ -110,16 +110,8 @@ export async function consumeUnsubscribeToken(
     return { success: false, error: 'EXPIRED' };
   }
 
-  // Mark token as used
-  await prisma.unsubscribeToken.update({
-    where: { id: unsubToken.id },
-    data: {
-      used: true,
-      usedAt: new Date(),
-    },
-  });
-
-  // Disable the specific reminder
+  // Disable the reminder first, then burn the token. If the token
+  // update fails the link stays retryable, which is the safer direction.
   if (unsubToken.reminderType === 'IMPORTANT_DATE') {
     await prisma.importantDate.update({
       where: { id: unsubToken.entityId },
@@ -131,12 +123,19 @@ export async function consumeUnsubscribeToken(
       data: { contactReminderEnabled: false },
     });
   } else if (unsubToken.reminderType === 'WEEKLY_DIGEST') {
-    // For weekly digest tokens, entityId holds the user id rather than an entity id
     await prisma.user.update({
       where: { id: unsubToken.entityId },
       data: { weeklyDigestEnabled: false },
     });
   }
+
+  await prisma.unsubscribeToken.update({
+    where: { id: unsubToken.id },
+    data: {
+      used: true,
+      usedAt: new Date(),
+    },
+  });
 
   return {
     success: true,
