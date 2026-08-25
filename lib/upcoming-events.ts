@@ -31,8 +31,14 @@ export function getNextOccurrence(
   const todayNormalized = new Date(today);
   todayNormalized.setHours(0, 0, 0, 0);
 
-  // Special handling for YEARS to get the next anniversary
   if (intervalUnit === 'YEARS') {
+    const eventYear = eventDate.getFullYear();
+    const isUnknownYear = eventYear <= YEAR_UNKNOWN_SENTINEL;
+
+    const anchorYear = isUnknownYear
+      ? (lastReminderSent ? lastReminderSent.getFullYear() : eventYear)
+      : eventYear;
+
     const thisYearOccurrence = new Date(
       today.getFullYear(),
       eventDate.getMonth(),
@@ -40,34 +46,74 @@ export function getNextOccurrence(
     );
     thisYearOccurrence.setHours(0, 0, 0, 0);
 
-    if (thisYearOccurrence.getTime() >= todayNormalized.getTime()) {
-      return thisYearOccurrence;
+    let candidateYear = thisYearOccurrence.getTime() >= todayNormalized.getTime()
+      ? today.getFullYear()
+      : today.getFullYear() + 1;
+
+    // Don't return before interval years have elapsed since lastReminderSent
+    if (lastReminderSent) {
+      const minYear = lastReminderSent.getFullYear() + interval;
+      if (candidateYear < minYear) {
+        candidateYear = minYear;
+      }
     }
 
-    return new Date(
-      today.getFullYear() + 1,
+    // Advance to the next year on the interval grid
+    const yearsSinceAnchor = candidateYear - anchorYear;
+    const remainder = ((yearsSinceAnchor % interval) + interval) % interval;
+    if (remainder !== 0) {
+      candidateYear += interval - remainder;
+    }
+
+    // Don't return a date before a known future event
+    if (!isUnknownYear && candidateYear < eventYear) {
+      candidateYear = eventYear;
+    }
+
+    const result = new Date(
+      candidateYear,
       eventDate.getMonth(),
       eventDate.getDate()
     );
+    result.setHours(0, 0, 0, 0);
+    return result;
   }
 
-  // For other intervals (DAYS, WEEKS, MONTHS), calculate from event date or last sent
-  const intervalMs = getIntervalMs(interval, intervalUnit);
-  const referenceDate = lastReminderSent
-    ? new Date(lastReminderSent)
-    : eventDateNormalized;
+  // For other intervals (DAYS, WEEKS, MONTHS):
+  // Normalize unknown-year sentinel to the current year to avoid centuries of
+  // 30-day-month approximation compounding into multi-day drift.
+  let referenceDate: Date;
+  if (lastReminderSent) {
+    referenceDate = new Date(lastReminderSent);
+  } else if (eventDateNormalized.getFullYear() <= YEAR_UNKNOWN_SENTINEL) {
+    referenceDate = new Date(eventDateNormalized);
+    referenceDate.setFullYear(today.getFullYear());
+    if (referenceDate.getTime() > todayNormalized.getTime()) {
+      referenceDate.setFullYear(today.getFullYear() - 1);
+    }
+  } else {
+    referenceDate = new Date(eventDateNormalized);
+  }
   referenceDate.setHours(0, 0, 0, 0);
 
-  // If reference date is in the future, return it
   if (referenceDate.getTime() > todayNormalized.getTime()) {
     return referenceDate;
   }
 
-  // Calculate how many intervals have passed since reference date
+  const intervalMs = getIntervalMs(interval, intervalUnit);
   const timeSinceReference = todayNormalized.getTime() - referenceDate.getTime();
   const intervalsPassed = Math.floor(timeSinceReference / intervalMs);
 
-  // Calculate next occurrence (add one more interval to get the next one)
+  // The event date itself is an occurrence; lastReminderSent is not (already sent)
+  if (!lastReminderSent && referenceDate.getTime() === todayNormalized.getTime()) {
+    return todayNormalized;
+  }
+
+  // Return today when it falls exactly on a later interval boundary
+  if (timeSinceReference === intervalsPassed * intervalMs && intervalsPassed > 0) {
+    return todayNormalized;
+  }
+
   const nextOccurrence = new Date(referenceDate.getTime() + ((intervalsPassed + 1) * intervalMs));
   nextOccurrence.setHours(0, 0, 0, 0);
 

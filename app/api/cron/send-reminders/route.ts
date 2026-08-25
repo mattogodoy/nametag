@@ -162,28 +162,6 @@ export const GET = withLogging(async function GET(request: Request) {
                 importantDate.lastReminderSent
               );
 
-        // Guard against promising an email the day-of path will never send.
-        // getNextOccurrence() and shouldSendImportantDateReminder() answer
-        // "when does this recur" independently and can disagree (multi-year
-        // intervals, a recurring date stored in the future, Feb 29 rolling to
-        // Mar 1 in a non-leap year). Simulating the day-of predicate with
-        // `today` set to the computed occurrence tells us whether the day-of
-        // email would actually fire then. Real `lastReminderSent` is passed
-        // through unchanged: that is the reminder history the day-of path
-        // would see when it eventually reaches that date.
-        const dayOfWouldFireOnOccurrence = shouldSendImportantDateReminder(
-          {
-            date: importantDate.date,
-            reminderType: importantDate.reminderType,
-            reminderInterval: importantDate.reminderInterval,
-            reminderIntervalUnit: importantDate.reminderIntervalUnit,
-            lastReminderSent: importantDate.lastReminderSent,
-          },
-          nextOccurrence
-        );
-
-        // Only RECURRING dates can have overlapping lead windows, so ONCE
-        // passes no interval and keeps the full requested notice.
         const intervalDays =
           importantDate.reminderType === 'RECURRING'
             ? getIntervalDays(
@@ -192,15 +170,13 @@ export const GET = withLogging(async function GET(request: Request) {
               )
             : null;
 
-        const leadDue =
-          dayOfWouldFireOnOccurrence &&
-          shouldSendLeadReminder({
-            nextOccurrence,
-            today,
-            leadDays,
-            lastLeadReminderSent: importantDate.lastLeadReminderSent,
-            intervalDays,
-          });
+        const leadDue = shouldSendLeadReminder({
+          nextOccurrence,
+          today,
+          leadDays,
+          lastLeadReminderSent: importantDate.lastLeadReminderSent,
+          intervalDays,
+        });
 
         if (leadDue) {
           const { person } = importantDate;
