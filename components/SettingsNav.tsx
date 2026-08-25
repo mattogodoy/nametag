@@ -167,7 +167,7 @@ export default function SettingsNav({ isSaasMode }: { isSaasMode: boolean }) {
           >
             {settingsNavItems.map((item) => (
               <option key={item.href} value={item.href}>
-                {t(item.labelKey)}{item.badgeKey ? ` (${t(item.badgeKey)})` : ''} - {t(item.descriptionKey)}
+                {t(item.labelKey)}{item.badgeKey ? ` (${t(item.badgeKey)})` : ''}
               </option>
             ))}
           </select>
