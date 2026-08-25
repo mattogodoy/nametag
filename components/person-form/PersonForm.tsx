@@ -469,10 +469,6 @@ export default function PersonForm({
         window.location.href = queryString
           ? `/people/new?${queryString}`
           : '/people/new';
-      } else if (mode === 'create' && knownThroughId !== 'user') {
-        router.push(`/people/${knownThroughId}`);
-        router.refresh();
-        refreshIndex();
       } else if (mode === 'create' && data.person?.id) {
         router.push(`/people/${data.person.id}`);
         router.refresh();
