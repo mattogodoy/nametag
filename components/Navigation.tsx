@@ -6,6 +6,9 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import NavigationSearch from './NavigationSearch';
 import UserMenu from './UserMenu';
+import AccountMenuItems from './AccountMenuItems';
+import UserAvatar from './UserAvatar';
+import { formatUserDisplayName } from '@/lib/nameUtils';
 
 interface NavigationProps {
   userEmail?: string;
@@ -60,8 +63,22 @@ const navItems = [
 
 export default function Navigation({ userEmail, userName, userNickname, userPhoto, currentPath }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
+
+  const displayName = formatUserDisplayName({ nickname: userNickname, name: userName, email: userEmail });
+
+  // The two mobile surfaces are mutually exclusive: opening one puts the other away.
+  const openMobileMenu = () => {
+    setMobileSearchOpen(false);
+    setMobileMenuOpen(true);
+  };
+
+  const openMobileSearch = () => {
+    setMobileMenuOpen(false);
+    setMobileSearchOpen(true);
+  };
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -87,7 +104,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top row: Logo, Search (centered), User menu */}
         <div className="relative z-30 flex items-center justify-between h-16">
-          <Link href="/dashboard" className="flex items-center shrink-0 z-10">
+          <Link href="/dashboard" className={`items-center shrink-0 z-10 ${mobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
             <Image
               src="/logo.svg"
               alt="Nametag Logo"
@@ -97,35 +114,56 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
             />
           </Link>
 
-          {/* Desktop search — absolutely centered in the row */}
+          {/* Desktop search, absolutely centered in the row */}
           <div className="hidden md:block absolute left-1/2 -translate-x-1/2 w-full max-w-md lg:max-w-lg px-20 lg:px-24">
             <NavigationSearch />
           </div>
 
-          {/* Right section: User menu (all screens), Hamburger (mobile) */}
-          <div className="flex items-center space-x-2 z-10">
+          {/* Mobile search, expanded on demand in place of the rest of the row */}
+          {mobileSearchOpen && (
+            <div className="md:hidden flex items-center gap-1 w-full">
+              <div className="flex-1 min-w-0">
+                <NavigationSearch autoFocus onClose={() => setMobileSearchOpen(false)} />
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen(false)}
+                className="shrink-0 px-2 py-3 text-sm font-medium text-secondary hover:text-foreground transition-colors"
+              >
+                {tCommon('cancel')}
+              </button>
+            </div>
+          )}
+
+          {/* Right section: user menu (desktop), search and menu buttons (mobile) */}
+          <div className={`items-center space-x-1 sm:space-x-2 z-10 ${mobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+            <button
+              type="button"
+              onClick={openMobileSearch}
+              className="md:hidden p-3 rounded-md text-foreground hover:bg-surface-elevated transition-colors"
+              aria-label={tCommon('search')}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
             {userEmail && (
-              <UserMenu userEmail={userEmail} userName={userName} userNickname={userNickname} userPhoto={userPhoto} />
+              <div className="hidden md:block">
+                <UserMenu userEmail={userEmail} userName={userName} userNickname={userNickname} userPhoto={userPhoto} />
+              </div>
             )}
 
             {/* Mobile menu button */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              type="button"
+              onClick={openMobileMenu}
+              aria-expanded={mobileMenuOpen}
               className="md:hidden p-3 rounded-md text-foreground hover:bg-surface-elevated transition-colors"
-              aria-label="Toggle menu"
+              aria-label={tNav('openMenu')}
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
@@ -174,27 +212,29 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
+            aria-label={tNav('menuLabel')}
             className="md:hidden fixed top-0 right-0 bottom-0 w-[90%] max-w-md bg-surface shadow-xl z-50 transform transition-transform duration-300 ease-in-out pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)]"
           >
             <div className="h-full flex flex-col">
-              {/* Menu header with close button */}
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-lg font-semibold text-foreground">Menu</h2>
+              {/* Menu header: who is signed in, plus the close button */}
+              <div className="flex items-center justify-between gap-3 p-4 border-b border-border">
+                {userEmail ? (
+                  <div className="flex items-center gap-3 min-w-0">
+                    <UserAvatar displayName={displayName} photo={userPhoto} size="md" />
+                    <span className="truncate text-base font-medium text-foreground">{displayName}</span>
+                  </div>
+                ) : (
+                  <h2 className="text-lg font-semibold text-foreground">{tNav('menuLabel')}</h2>
+                )}
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 rounded-md text-muted hover:bg-surface-elevated transition-colors"
-                  aria-label="Close menu"
+                  className="shrink-0 p-2 rounded-md text-muted hover:bg-surface-elevated transition-colors"
+                  aria-label={tNav('closeMenu')}
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-              </div>
-
-              {/* Mobile search */}
-              <div className="p-4 border-b border-border md:hidden">
-                <NavigationSearch />
               </div>
 
               {/* Mobile nav items */}
@@ -258,6 +298,13 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
                   ))}
                 </div>
               </nav>
+
+              {/* Account actions, mirroring the desktop user menu */}
+              {userEmail && (
+                <div className="border-t border-border py-1">
+                  <AccountMenuItems variant="comfortable" onNavigate={() => setMobileMenuOpen(false)} />
+                </div>
+              )}
             </div>
           </div>
         </>

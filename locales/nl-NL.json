@@ -49,6 +49,9 @@
     "groups": "Groepen",
     "relationshipTypes": "Relaties",
     "settings": "Instellingen",
+    "menuLabel": "Menu",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten",
     "search": {
       "placeholder": "Zoek personen...",
       "searching": "Zoeken...",

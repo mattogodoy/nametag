@@ -180,3 +180,16 @@ export function formatGraphName(person: {
   parts.push(person.surname);
   return parts.join(' ');
 }
+
+/**
+ * The label shown for the signed-in user in navigation chrome.
+ * Falls back through nickname, name, then email so there is always something
+ * to render even for accounts that never filled in a profile.
+ */
+export function formatUserDisplayName(user: {
+  nickname?: string | null;
+  name?: string | null;
+  email?: string | null;
+}): string {
+  return user.nickname || user.name || user.email || '?';
+}

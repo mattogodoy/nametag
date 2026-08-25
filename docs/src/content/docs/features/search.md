@@ -11,6 +11,8 @@ Nametag's global search lets you jump to any contact from anywhere in the app, w
 
 Press `Cmd+K` on Mac or `Ctrl+K` on Windows and Linux to open the search bar. It works from any page: your dashboard, a person's detail page, settings, wherever you happen to be.
 
+On phones and other narrow screens, tap the magnifying glass in the header instead. The search field expands to fill the header and is focused straight away, so you can start typing without a second tap. Press Escape or tap Cancel to put it away.
+
 ## How it works
 
 Search runs entirely in your browser. When you sign in, Nametag builds a search index from all your contacts using MiniSearch, a lightweight full-text search library, and caches it client-side. That means results appear instantly as you type, with no round trip to the server for every keystroke.

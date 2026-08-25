@@ -49,6 +49,9 @@
     "groups": "Группы",
     "relationshipTypes": "Связи",
     "settings": "Настройки",
+    "menuLabel": "Меню",
+    "openMenu": "Открыть меню",
+    "closeMenu": "Закрыть меню",
     "search": {
       "placeholder": "Поиск людей...",
       "searching": "Поиск...",

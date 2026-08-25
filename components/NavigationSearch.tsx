@@ -18,7 +18,14 @@ interface Person {
   photo?: string | null;
 }
 
-export default function NavigationSearch() {
+interface NavigationSearchProps {
+  /** Focus the field as soon as it mounts, for surfaces opened on demand. */
+  autoFocus?: boolean;
+  /** Called when the user dismisses the search, via Escape or by picking a result. */
+  onClose?: () => void;
+}
+
+export default function NavigationSearch({ autoFocus, onClose }: NavigationSearchProps) {
   const router = useRouter();
   const t = useTranslations('nav.search');
   const [results, setResults] = useState<Person[]>([]);
@@ -44,6 +51,12 @@ export default function NavigationSearch() {
   }, []);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   // Cmd+K / Ctrl+K global shortcut to focus search
   useEffect(() => {
@@ -131,10 +144,22 @@ export default function NavigationSearch() {
     setSearchTerm('');
     setIsOpen(false);
     inputRef.current?.blur();
+    onClose?.();
     router.push(`/people/${person.id}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Escape dismisses the whole search surface, even with the results list closed,
+    // so an empty on-demand field can still be backed out of with one key.
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+      setSearchTerm('');
+      inputRef.current?.blur();
+      onClose?.();
+      return;
+    }
+
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
         setIsOpen(true);
@@ -165,12 +190,6 @@ export default function NavigationSearch() {
         if (results[highlightedIndex]) {
           handleSelect(results[highlightedIndex]);
         }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setIsOpen(false);
-        setSearchTerm('');
-        inputRef.current?.blur();
         break;
     }
   };
