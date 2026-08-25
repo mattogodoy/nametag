@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import SettingsMessage from '@/components/ui/SettingsMessage';
 
 interface GeocodingToggleProps {
   currentEnabled: boolean;
@@ -64,11 +65,7 @@ export default function GeocodingToggle({ currentEnabled }: GeocodingToggleProps
           />
         </button>
       </label>
-      {message && (
-        <p className={`text-sm ${isSuccess ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} role="status">
-          {message}
-        </p>
-      )}
+      <SettingsMessage message={message} isSuccess={isSuccess} />
     </div>
   );
 }

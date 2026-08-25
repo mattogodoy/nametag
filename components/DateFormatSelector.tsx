@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { getDateFormatExample } from '@/lib/date-format';
+import SettingsMessage from '@/components/ui/SettingsMessage';
 
 interface DateFormatSelectorProps {
   userId: string;
@@ -100,11 +101,7 @@ export default function DateFormatSelector({ currentFormat }: DateFormatSelector
         ))}
       </div>
 
-      {message && (
-        <p className={`mt-4 text-sm ${isSuccess ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-          {message}
-        </p>
-      )}
+      <SettingsMessage message={message} isSuccess={isSuccess} className="mt-4" />
     </div>
   );
 }
