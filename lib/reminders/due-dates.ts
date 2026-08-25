@@ -64,7 +64,7 @@ export function shouldSendImportantDateReminder(
       importantDate.lastReminderSent
     );
 
-    if (startOfDay(next).getTime() !== today.getTime()) {
+    if (next.getTime() !== today.getTime()) {
       return false;
     }
 

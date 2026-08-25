@@ -101,20 +101,27 @@ export function getNextOccurrence(
   }
 
   const intervalMs = getIntervalMs(interval, intervalUnit);
-  const timeSinceReference = todayNormalized.getTime() - referenceDate.getTime();
-  const intervalsPassed = Math.floor(timeSinceReference / intervalMs);
+
+  // Compare in whole days so DST transitions (which shift local midnight by
+  // up to 1 hour) cannot cause the boundary check to miss.
+  const daysSinceReference = Math.round(
+    (todayNormalized.getTime() - referenceDate.getTime()) / MS_PER_DAY
+  );
+  const intervalDays = Math.round(intervalMs / MS_PER_DAY);
 
   // The event date itself is an occurrence; lastReminderSent is not (already sent)
-  if (!lastReminderSent && referenceDate.getTime() === todayNormalized.getTime()) {
+  if (!lastReminderSent && daysSinceReference === 0) {
     return todayNormalized;
   }
 
   // Return today when it falls exactly on a later interval boundary
-  if (timeSinceReference === intervalsPassed * intervalMs && intervalsPassed > 0) {
+  if (daysSinceReference > 0 && daysSinceReference % intervalDays === 0) {
     return todayNormalized;
   }
 
-  const nextOccurrence = new Date(referenceDate.getTime() + ((intervalsPassed + 1) * intervalMs));
+  const nextBoundaryDays = (Math.floor(daysSinceReference / intervalDays) + 1) * intervalDays;
+  const nextOccurrence = new Date(referenceDate);
+  nextOccurrence.setDate(nextOccurrence.getDate() + nextBoundaryDays);
   nextOccurrence.setHours(0, 0, 0, 0);
 
   return nextOccurrence;
