@@ -107,7 +107,7 @@ Future features and improvements, ordered by priority:
 - [ ] Add notification support [[Issue #6](https://github.com/mattogodoy/nametag/issues/6)]
 - [ ] Support multi-user groups [[Issue #37](https://github.com/mattogodoy/nametag/issues/37)]
 - [ ] Immich integration [[Issue #46](https://github.com/mattogodoy/nametag/issues/46)]
-- [ ] **[HELP NEEDED]** Additional language translations (French, Portuguese, Korean, etc.)
+- [ ] **[HELP NEEDED]** Additional language translations (Portuguese, Korean, etc.)
 
 ### Done
 
