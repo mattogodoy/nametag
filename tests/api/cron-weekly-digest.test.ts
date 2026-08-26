@@ -164,6 +164,18 @@ describe('send-reminders weekly digest', () => {
     expect(mocks.userUpdate).not.toHaveBeenCalled();
   });
 
+  it('counts a digest toward sent but not digestsSent when its stamp write throws', async () => {
+    mocks.userFindMany.mockResolvedValue([digestUser()]);
+    mocks.getUpcomingEvents.mockResolvedValue([upcoming(2)]);
+    mocks.userUpdate.mockRejectedValue(new Error('connection reset'));
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(body.sent).toBe(1);
+    expect(body.digestsSent).toBe(0);
+  });
+
   it('leaves overdue contact reminders out of the email', async () => {
     const overdue: UpcomingEvent = {
       ...upcoming(-40, 'e-overdue'),
