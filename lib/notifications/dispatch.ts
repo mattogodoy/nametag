@@ -12,7 +12,9 @@ const log = createModuleLogger('notifications');
  * Email is handled as one batch rather than per envelope. Resend's batch
  * endpoint is a single HTTP call for up to 100 messages, and dispatching
  * envelope by envelope would turn one request into hundreds. Channels added in
- * later phases are per envelope and run through mapWithConcurrency instead.
+ * later phases (web push, ntfy, webhooks) deliver per envelope instead, and
+ * will need their own concurrency limit so one slow user does not stall the
+ * whole run.
  */
 export async function dispatchAll(
   envelopes: readonly NotificationEnvelope[]
@@ -59,7 +61,7 @@ async function dispatchEmail(
 
     const message = result.reason instanceof Error ? result.reason.message : 'Unknown render error';
     log.error(
-      { errorMessage: message, kind: envelopes[index].notification.kind },
+      { ...envelopes[index].logMeta, errorMessage: message, kind: envelopes[index].notification.kind },
       'Failed to render reminder email'
     );
     outcomes[index] = { status: 'failed', error: message };
@@ -117,9 +119,21 @@ function summarize(outcomes: readonly ChannelOutcome[]): DispatchResult {
   let skipped = 0;
 
   for (const outcome of outcomes) {
-    if (outcome.status === 'delivered') delivered++;
-    else if (outcome.status === 'failed') failed++;
-    else skipped++;
+    switch (outcome.status) {
+      case 'delivered':
+        delivered++;
+        break;
+      case 'failed':
+        failed++;
+        break;
+      case 'skipped':
+        skipped++;
+        break;
+      default: {
+        const unhandled: never = outcome;
+        throw new Error(`Unhandled channel outcome: ${JSON.stringify(unhandled)}`);
+      }
+    }
   }
 
   return { delivered, failed, skipped, shouldStamp: delivered > 0 };
