@@ -292,8 +292,10 @@ export const GET = withLogging(async function GET(request: Request) {
     // day-of, lead, and contact reminders collected above, which still need
     // to reach dispatchAll below. Once we have a list of digest users,
     // each user is handled in its own inner try/catch, so one bad record
-    // (a malformed row, one failing getUpcomingEvents/token/template call)
-    // costs exactly that one user's digest, not everyone queued after them.
+    // (a malformed row, one failing getUpcomingEvents/token call) costs
+    // exactly that one user's digest, not everyone queued after them. A
+    // template rendering failure is not caught here: it surfaces later, per
+    // envelope, inside dispatchEmail's Promise.allSettled.
     try {
       const digestCandidates = await prisma.user.findMany({
         where: { weeklyDigestEnabled: true },

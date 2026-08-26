@@ -88,9 +88,17 @@ async function dispatchEmail(
         return;
       }
 
-      outcomes[envelopeIndex] = result.success
-        ? { status: 'delivered' }
-        : { status: 'failed', error: result.error ?? 'Unknown email error' };
+      if (result.success) {
+        outcomes[envelopeIndex] = { status: 'delivered' };
+        return;
+      }
+
+      const error = result.error ?? 'Unknown email error';
+      log.error(
+        { ...envelopes[envelopeIndex].logMeta, errorMessage: error, kind: envelopes[envelopeIndex].notification.kind },
+        'Email delivery failed for one reminder'
+      );
+      outcomes[envelopeIndex] = { status: 'failed', error };
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
