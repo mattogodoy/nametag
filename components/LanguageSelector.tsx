@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import 'flag-icons/css/flag-icons.min.css';
 
 interface LanguageSelectorProps {
-  currentLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN' | 'it-IT' | 'ru-RU' | 'nl-NL';
+  currentLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN' | 'it-IT' | 'ru-RU' | 'nl-NL' | 'fr-FR';
 }
 
 const LANGUAGES = [
@@ -19,6 +19,7 @@ const LANGUAGES = [
   { code: 'it-IT' as const, name: 'Italiano', flag: 'it' },
   { code: 'ru-RU' as const, name: 'Русский', flag: 'ru' },
   { code: 'nl-NL' as const, name: 'Nederlands (Dutch)', flag: 'nl' },
+  { code: 'fr-FR' as const, name: 'Français (France)', flag: 'fr' },
 ];
 
 const labelMap = {
@@ -31,6 +32,7 @@ const labelMap = {
   'it-IT': 'itIT',
   'ru-RU': 'ruRU',
   'nl-NL': 'nlNL',
+  'fr-FR': 'frFR',
 } as const;
 
 /** How long to wait for an active worker before giving up on the refresh. */
@@ -85,7 +87,7 @@ export default function LanguageSelector({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLanguageChange = async (
-    newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN' | 'it-IT' | 'ru-RU' | 'nl-NL',
+    newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN' | 'it-IT' | 'ru-RU' | 'nl-NL' | 'fr-FR',
   ) => {
     if (isLoading || newLanguage === selectedLanguage) return;
 
