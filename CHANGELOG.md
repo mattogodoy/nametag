@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.60.0](https://github.com/mattogodoy/nametag/compare/v0.59.1...v0.60.0) (2026-08-26)
+
+
+### Features
+
+* **nav:** give mobile search its own button and fold the user menu into the drawer ([#427](https://github.com/mattogodoy/nametag/issues/427)) ([ae68c4a](https://github.com/mattogodoy/nametag/commit/ae68c4aa9ad97d242cf8c7ec552622bcb802f2e4))
+
+
+### Bug Fixes
+
+* **nav:** give the merge and duplicates pages their account menu back ([#429](https://github.com/mattogodoy/nametag/issues/429)) ([7394e60](https://github.com/mattogodoy/nametag/commit/7394e60ff0187433c385fa9193e61ea93fcd7868))
+
 ## [0.59.1](https://github.com/mattogodoy/nametag/compare/v0.59.0...v0.59.1) (2026-08-25)
 
 
