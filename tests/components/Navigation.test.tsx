@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup, within, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, within, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import Navigation from '@/components/Navigation';
@@ -18,7 +18,8 @@ vi.mock('@/app/actions/auth', () => ({
  * fresh one per render spins the component forever.
  */
 const searchIndex = vi.hoisted(() => ({
-  search: () => [],
+  search: (query: string) =>
+    query.toLowerCase().startsWith('ana') ? [{ id: 'person-1', name: 'Ana', surname: 'Ruiz' }] : [],
   isReady: true,
   refreshIndex: () => {},
 }));
@@ -246,6 +247,50 @@ describe('Navigation', () => {
     });
   });
 
+  describe('focus handling on collapse', () => {
+    it('leaves focus alone when the drawer takes over from the search', async () => {
+      const user = userEvent.setup();
+      renderNav();
+
+      const searchButton = screen.getByRole('button', { name: enMessages.common.search });
+      await user.click(searchButton);
+      await user.click(screen.getByRole('button', { name: enMessages.nav.openMenu }));
+
+      // The header sits behind the drawer's backdrop, so focus must not land there.
+      expect(document.activeElement).not.toBe(searchButton);
+    });
+
+    it('leaves focus alone when a result is picked', async () => {
+      const user = userEvent.setup();
+      renderNav();
+
+      const searchButton = screen.getByRole('button', { name: enMessages.common.search });
+      await user.click(searchButton);
+      await user.type(searchInputs()[1], 'ana');
+      await user.click(await screen.findByRole('button', { name: /Ana Ruiz/ }));
+
+      expect(searchInputs()).toHaveLength(1);
+      expect(document.activeElement).not.toBe(searchButton);
+    });
+
+    it('puts the search away when the viewport widens past the breakpoint', async () => {
+      const user = userEvent.setup();
+      renderNav();
+
+      await user.click(screen.getByRole('button', { name: enMessages.common.search }));
+      expect(searchInputs()).toHaveLength(2);
+
+      // jsdom performs no layout, so the desktop field's visibility is forced.
+      const offsetParent = vi
+        .spyOn(HTMLElement.prototype, 'offsetParent', 'get')
+        .mockReturnValue(document.body);
+      fireEvent(window, new Event('resize'));
+      offsetParent.mockRestore();
+
+      await waitFor(() => expect(searchInputs()).toHaveLength(1));
+    });
+  });
+
   describe('name order lookup', () => {
     it('fetches the profile once no matter how often the search is opened', async () => {
       const user = userEvent.setup();
@@ -262,6 +307,26 @@ describe('Navigation', () => {
       }
 
       expect(profileCalls()).toBe(1);
+    });
+
+    it('does not cache the fallback when the profile lookup fails', async () => {
+      const user = userEvent.setup();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'boom' }),
+      });
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      renderNav();
+
+      const profileCalls = () => fetchMock.mock.calls.filter(([url]) => url === '/api/user/profile').length;
+      await waitFor(() => expect(profileCalls()).toBe(1));
+
+      await user.click(screen.getByRole('button', { name: enMessages.common.search }));
+
+      // An error body would otherwise read as "no preference" and stick for the page.
+      await waitFor(() => expect(profileCalls()).toBe(2));
     });
   });
 

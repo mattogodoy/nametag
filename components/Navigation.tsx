@@ -71,10 +71,19 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
 
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const desktopSearchRef = useRef<HTMLDivElement>(null);
-  const searchWasOpen = useRef(false);
+  // Only a deliberate dismissal should pull focus back to the search button.
+  // Handing it back when the drawer took over, or when a result was picked,
+  // would park focus on a control the user has already moved past.
+  const restoreSearchFocus = useRef(false);
+
+  // Is the wide-screen search field actually on screen? offsetParent is null
+  // while it is display:none, which answers the question without restating the
+  // md breakpoint as a pixel value here.
+  const desktopSearchVisible = () => desktopSearchRef.current?.offsetParent != null;
 
   // The two mobile surfaces are mutually exclusive: opening one puts the other away.
   const openMobileMenu = () => {
+    restoreSearchFocus.current = false;
     setMobileSearchOpen(false);
     setMobileMenuOpen(true);
   };
@@ -84,17 +93,20 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
     setMobileSearchOpen(true);
   };
 
-  const closeMobileSearch = () => setMobileSearchOpen(false);
+  const closeMobileSearch = (reason: 'dismiss' | 'navigate' = 'dismiss') => {
+    restoreSearchFocus.current = reason === 'dismiss';
+    setMobileSearchOpen(false);
+  };
 
   // Collapsing the field unmounts the input, which would drop focus to the body
   // and send the next Tab back to the top of the document. Hand it to the button
   // that opened the field instead. Runs after paint, once the button is visible
   // again, because focus() is a no-op on a display:none element.
   useEffect(() => {
-    if (searchWasOpen.current && !mobileSearchOpen) {
+    if (!mobileSearchOpen && restoreSearchFocus.current) {
+      restoreSearchFocus.current = false;
       searchButtonRef.current?.focus();
     }
-    searchWasOpen.current = mobileSearchOpen;
   }, [mobileSearchOpen]);
 
   // The field's own Escape handler only fires while the input has focus, which a
@@ -112,14 +124,28 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
     return () => document.removeEventListener('keydown', handleEscape);
   }, [mobileSearchOpen]);
 
+  // Widening past the breakpoint reveals the desktop field while the mobile one
+  // stays mounted and invisible, holding a query the user can no longer see.
+  // Put it away instead, without stealing focus into the hidden header.
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+
+    const handleResize = () => {
+      if (desktopSearchVisible()) {
+        setMobileSearchOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mobileSearchOpen]);
+
   // Cmd+K focuses the desktop field, which is display:none below the md
   // breakpoint, so the shortcut would otherwise do nothing on narrow screens.
-  // offsetParent asks whether that field is actually on screen without
-  // restating the breakpoint as a pixel value here.
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.key !== 'k') return;
-      if (desktopSearchRef.current?.offsetParent !== null) return;
+      if (desktopSearchVisible()) return;
       e.preventDefault();
       openMobileSearch();
     };
@@ -175,7 +201,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
               </div>
               <button
                 type="button"
-                onClick={closeMobileSearch}
+                onClick={() => closeMobileSearch()}
                 className="shrink-0 px-2 py-3 text-sm font-medium text-secondary hover:text-foreground transition-colors"
               >
                 {tCommon('cancel')}

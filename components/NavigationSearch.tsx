@@ -22,8 +22,12 @@ interface Person {
 interface NavigationSearchProps {
   /** Focus the field as soon as it mounts, for surfaces opened on demand. */
   autoFocus?: boolean;
-  /** Called when the user dismisses the search, via Escape or by picking a result. */
-  onClose?: () => void;
+  /**
+   * Called when the search surface should collapse. `navigate` means a result
+   * was picked and the page is about to change, so the caller should leave focus
+   * alone; `dismiss` means the user backed out and focus should come back.
+   */
+  onClose?: (reason: 'dismiss' | 'navigate') => void;
 }
 
 export default function NavigationSearch({ autoFocus, onClose }: NavigationSearchProps) {
@@ -138,7 +142,7 @@ export default function NavigationSearch({ autoFocus, onClose }: NavigationSearc
     setSearchTerm('');
     setIsOpen(false);
     inputRef.current?.blur();
-    onClose?.();
+    onClose?.('navigate');
     router.push(`/people/${person.id}`);
   };
 
@@ -150,7 +154,7 @@ export default function NavigationSearch({ autoFocus, onClose }: NavigationSearc
       setIsOpen(false);
       setSearchTerm('');
       inputRef.current?.blur();
-      onClose?.();
+      onClose?.('dismiss');
       return;
     }
 
