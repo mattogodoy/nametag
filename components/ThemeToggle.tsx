@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
 import { useTranslations } from 'next-intl';
 import styles from './ThemeToggle.module.css';
+import SettingsMessage from '@/components/ui/SettingsMessage';
 
 interface ThemeToggleProps {
   userId: string;
@@ -100,11 +101,7 @@ export default function ThemeToggle({}: ThemeToggleProps) {
         </label>
       </div>
 
-      {message && (
-        <p className={`mt-4 text-sm ${isSuccess ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-          {message}
-        </p>
-      )}
+      <SettingsMessage message={message} isSuccess={isSuccess} className="mt-4" />
     </div>
   );
 }

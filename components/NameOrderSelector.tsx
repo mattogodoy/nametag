@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import SettingsMessage from '@/components/ui/SettingsMessage';
 import { clearNameOrderCache } from '@/lib/user-name-order';
 
 interface NameOrderSelectorProps {
@@ -94,11 +95,7 @@ export default function NameOrderSelector({ currentOrder }: NameOrderSelectorPro
         ))}
       </div>
 
-      {message && (
-        <p className={`mt-4 text-sm ${isSuccess ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-          {message}
-        </p>
-      )}
+      <SettingsMessage message={message} isSuccess={isSuccess} className="mt-4" />
     </div>
   );
 }
