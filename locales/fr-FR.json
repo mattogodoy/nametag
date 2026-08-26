@@ -152,7 +152,7 @@
       "description": "Rappels et résumé hebdomadaire par e-mail",
       "leadTimeTitle": "Délai de rappel",
       "leadTimeDescription": "Combien de temps avant une date importante souhaitez-vous être prévenu. Vous recevrez toujours un rappel le jour même.",
-      "leadTimeDayOf": "Le jour même uniquement",
+      "leadTimeDayOf": "Le jour de l'événement",
       "leadTimeOneDay": "1 jour avant",
       "leadTimeDays": "{days, plural, one {# jour avant} other {# jours avant}}",
       "leadTimeSummaryDayOf": "Vous recevrez un e-mail le jour de chaque événement.",
@@ -1868,8 +1868,8 @@
       "note": "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail."
     },
     "importantDateReminder": {
-      "subject": "Rappel : le {eventType} de {personName} approche",
-      "heading": "Rappel d'événement à venir",
+      "subject": "Rappel : aujourd'hui c'est le {eventType} de {personName}",
+      "heading": "Rappel d'événement",
       "infoBox": "Le {eventType} de {personName} a lieu le {date}.",
       "body": "N'oubliez pas de prendre contact pour lui faire plaisir.",
       "button": "Ouvrir Nametag",

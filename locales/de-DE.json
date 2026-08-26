@@ -152,7 +152,7 @@
       "description": "Vorlaufzeit für Erinnerungen und die wöchentliche Übersicht per E-Mail",
       "leadTimeTitle": "Vorlaufzeit",
       "leadTimeDescription": "Wie weit im Voraus du an ein wichtiges Datum erinnert werden möchtest. Am Tag selbst bekommst du in jedem Fall eine Erinnerung.",
-      "leadTimeDayOf": "Nur am Tag selbst",
+      "leadTimeDayOf": "Am Tag des Ereignisses",
       "leadTimeOneDay": "1 Tag vorher",
       "leadTimeDays": "{days, plural, one {# Tag vorher} other {# Tage vorher}}",
       "leadTimeSummaryDayOf": "Du bekommst eine E-Mail am Tag jedes Termins.",
@@ -1868,8 +1868,8 @@
       "note": "Wenn du kein Konto erstellt hast, kannst du diese E-Mail ignorieren."
     },
     "importantDateReminder": {
-      "subject": "Erinnerung: {personName}s {eventType} steht bevor",
-      "heading": "Erinnerung an bevorstehenden Termin",
+      "subject": "Erinnerung: Heute ist {personName}s {eventType}",
+      "heading": "Termin-Erinnerung",
       "infoBox": "{personName}s {eventType} ist am {date}.",
       "body": "Vergiss nicht, dich zu melden und den Tag besonders zu machen!",
       "button": "Nametag öffnen",

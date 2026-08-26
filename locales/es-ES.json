@@ -152,7 +152,7 @@
       "description": "El aviso previo y el resumen semanal por correo",
       "leadTimeTitle": "Aviso previo",
       "leadTimeDescription": "Con cuánta antelación quieres que se te avise de una fecha importante. Siempre recibirás un recordatorio el mismo día.",
-      "leadTimeDayOf": "Solo el mismo día",
+      "leadTimeDayOf": "El día del evento",
       "leadTimeOneDay": "1 día antes",
       "leadTimeDays": "{days, plural, one {# día antes} other {# días antes}}",
       "leadTimeSummaryDayOf": "Recibirás un correo el día de cada evento.",
@@ -1868,8 +1868,8 @@
       "note": "Si no creaste una cuenta, puedes ignorar este correo de forma segura."
     },
     "importantDateReminder": {
-      "subject": "Recordatorio: {eventType} de {personName} se acerca",
-      "heading": "Recordatorio de Evento Próximo",
+      "subject": "Recordatorio: Hoy es el {eventType} de {personName}",
+      "heading": "Recordatorio de Evento",
       "infoBox": "El {eventType} de {personName} es el {date}.",
       "body": "¡No olvides comunicarte y hacer que su día sea especial!",
       "button": "Abrir Nametag",

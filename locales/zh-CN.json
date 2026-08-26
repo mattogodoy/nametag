@@ -152,7 +152,7 @@
       "description": "提前提醒的时间以及每周摘要邮件",
       "leadTimeTitle": "提前提醒",
       "leadTimeDescription": "您希望提前多久收到重要日期的提醒。当天的提醒始终会发送。",
-      "leadTimeDayOf": "仅当天",
+      "leadTimeDayOf": "在事件当天",
       "leadTimeOneDay": "提前 1 天",
       "leadTimeDays": "{days, plural, other {提前 # 天}}",
       "leadTimeSummaryDayOf": "您将在每个事件当天收到一封邮件。",
@@ -1868,8 +1868,8 @@
       "note": "如果您没有创建账户，可以安全地忽略此邮箱。"
     },
     "importantDateReminder": {
-      "subject": "提醒：{personName} 的 {eventType} 即将到来",
-      "heading": "即将发生的事件提醒",
+      "subject": "提醒：今天是 {personName} 的 {eventType}",
+      "heading": "事件提醒",
       "infoBox": "{personName} 的 {eventType} 在 {date}。",
       "body": "不要忘记伸出援手，让他们的一天变得特别！",
       "button": "打开 Nametag",

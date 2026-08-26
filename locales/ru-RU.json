@@ -152,7 +152,7 @@
       "description": "Время напоминаний и еженедельная сводка по почте",
       "leadTimeTitle": "Заблаговременное уведомление",
       "leadTimeDescription": "За сколько дней до важной даты вы хотите получить уведомление. Напоминание в день события вы получите в любом случае.",
-      "leadTimeDayOf": "Только в день события",
+      "leadTimeDayOf": "В день события",
       "leadTimeOneDay": "За 1 день",
       "leadTimeDays": "{days, plural, one {За # день} few {За # дня} many {За # дней} other {За # дня}}",
       "leadTimeSummaryDayOf": "Вы будете получать письмо в день каждого события.",
@@ -1868,8 +1868,8 @@
       "note": "Если вы не создавали аккаунт, можете спокойно игнорировать это письмо."
     },
     "importantDateReminder": {
-      "subject": "Напоминание: скоро {eventType} ({personName})",
-      "heading": "Напоминание о предстоящем событии",
+      "subject": "Напоминание: сегодня {eventType} ({personName})",
+      "heading": "Напоминание о событии",
       "infoBox": "{eventType} ({personName}) - {date}.",
       "body": "Не забудьте поздравить и сделать этот день особенным!",
       "button": "Открыть Nametag",

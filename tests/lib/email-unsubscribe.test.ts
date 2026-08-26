@@ -322,7 +322,7 @@ describe('Email Templates - Unsubscribe Functionality', () => {
       );
 
       // Should still have the main heading
-      expect(template.html).toContain('Upcoming Event Reminder');
+      expect(template.html).toContain('Event Reminder');
       // Should still have the main content
       expect(template.html).toContain("John Doe");
       expect(template.html).toContain('Birthday');
@@ -343,7 +343,7 @@ describe('Email Templates - Unsubscribe Functionality', () => {
         'en'
       );
 
-      expect(template.subject).toBe("Reminder: John Doe's Birthday is coming up");
+      expect(template.subject).toBe("Reminder: Today is John Doe's Birthday");
     });
 
     it('should include DOCTYPE and proper HTML structure', async () => {
