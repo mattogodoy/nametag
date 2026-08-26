@@ -49,6 +49,9 @@
     "groups": "分组",
     "relationshipTypes": "关系",
     "settings": "设置",
+    "menuLabel": "菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
     "search": {
       "placeholder": "搜索联系人...",
       "searching": "搜索中...",

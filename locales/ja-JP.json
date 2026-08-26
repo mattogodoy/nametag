@@ -49,6 +49,9 @@
     "groups": "グループ",
     "relationshipTypes": "関係",
     "settings": "設定",
+    "menuLabel": "メニュー",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
     "search": {
       "placeholder": "人物を検索...",
       "searching": "検索中...",

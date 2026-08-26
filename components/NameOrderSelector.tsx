@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import SettingsMessage from '@/components/ui/SettingsMessage';
+import { clearNameOrderCache } from '@/lib/user-name-order';
 
 interface NameOrderSelectorProps {
   currentOrder: 'WESTERN' | 'EASTERN';
@@ -46,6 +47,8 @@ export default function NameOrderSelector({ currentOrder }: NameOrderSelectorPro
       setNameOrder(newOrder);
       setMessage(t('nameOrderSuccess'));
       setIsSuccess(true);
+      // Navigation search caches this for the life of the page, so drop it here.
+      clearNameOrderCache();
       router.refresh();
 
       setTimeout(() => setMessage(''), 2000);

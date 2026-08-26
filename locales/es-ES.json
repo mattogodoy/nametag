@@ -49,6 +49,9 @@
     "groups": "Grupos",
     "relationshipTypes": "Relaciones",
     "settings": "Configuración",
+    "menuLabel": "Menú",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
     "search": {
       "placeholder": "Buscar personas...",
       "searching": "Buscando...",
