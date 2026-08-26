@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { handleSignOut } from '@/app/actions/auth';
-import { getUserPhotoUrl } from '@/lib/photo-url';
+import AccountMenuItems from './AccountMenuItems';
+import UserAvatar from './UserAvatar';
+import { formatUserDisplayName } from '@/lib/nameUtils';
 
 interface UserMenuProps {
   userEmail?: string;
@@ -14,7 +13,6 @@ interface UserMenuProps {
 }
 
 export default function UserMenu({ userEmail, userName, userNickname, userPhoto }: UserMenuProps) {
-  const t = useTranslations('nav.userMenu');
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -35,33 +33,17 @@ export default function UserMenu({ userEmail, userName, userNickname, userPhoto 
     };
   }, [isOpen]);
 
-  const onSignOut = async () => {
-    await handleSignOut();
-  };
-
-  const photoUrl = getUserPhotoUrl(userPhoto);
-  const displayName = userNickname || userName || userEmail || '?';
-  const initials = (displayName || '?').charAt(0).toUpperCase();
+  const displayName = formatUserDisplayName({ nickname: userNickname, name: userName, email: userEmail });
 
   return (
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
         className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
       >
-        {photoUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={photoUrl}
-            alt=""
-            className="w-8 h-8 rounded-full object-cover bg-surface border border-border flex-shrink-0"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-surface-elevated border border-border flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-medium text-secondary">{initials}</span>
-          </div>
-        )}
-        <span>{userNickname || userName || userEmail}</span>
+        <UserAvatar displayName={displayName} photo={userPhoto} />
+        <span>{displayName}</span>
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -75,39 +57,7 @@ export default function UserMenu({ userEmail, userName, userNickname, userPhoto 
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-surface rounded-lg shadow-lg py-1 z-50 border border-border">
-          <Link
-            href="/settings"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors"
-          >
-            <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {t('settings')}
-          </Link>
-          <a
-            href="https://docs.nametag.one"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors"
-          >
-            <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            {t('documentation')}
-          </a>
-          <hr className="my-1 border-border" />
-          <button
-            onClick={onSignOut}
-            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-foreground hover:bg-surface-elevated transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4 text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            {t('signOut')}
-          </button>
+          <AccountMenuItems onNavigate={() => setIsOpen(false)} />
         </div>
       )}
     </div>

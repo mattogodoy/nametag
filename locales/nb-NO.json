@@ -49,6 +49,9 @@
     "groups": "Grupper",
     "relationshipTypes": "Relasjoner",
     "settings": "Innstillinger",
+    "menuLabel": "Meny",
+    "openMenu": "Åpne meny",
+    "closeMenu": "Lukk meny",
     "search": {
       "placeholder": "Søk etter personer...",
       "searching": "Søker...",
