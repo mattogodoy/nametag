@@ -4,6 +4,7 @@ import type { NotificationEnvelope } from '../../../lib/notifications/types';
 const mocks = vi.hoisted(() => ({
   isEmailConfigured: vi.fn(),
   sendEmailBatch: vi.fn(),
+  renderEmail: vi.fn(),
 }));
 
 vi.mock('../../../lib/email', async () => {
@@ -14,6 +15,8 @@ vi.mock('../../../lib/email', async () => {
     sendEmailBatch: mocks.sendEmailBatch,
   };
 });
+
+vi.mock('../../../lib/notifications/channels/email', () => ({ renderEmail: mocks.renderEmail }));
 
 import { dispatchAll } from '../../../lib/notifications/dispatch';
 
@@ -40,7 +43,9 @@ describe('dispatchAll', () => {
   beforeEach(() => {
     mocks.isEmailConfigured.mockReset();
     mocks.sendEmailBatch.mockReset();
+    mocks.renderEmail.mockReset();
     mocks.isEmailConfigured.mockReturnValue(true);
+    mocks.renderEmail.mockResolvedValue({ to: 'user@example.com', subject: 'test', html: '<p>test</p>' });
   });
 
   it('sends every email in a single batch call so Resend batching is preserved', async () => {
@@ -120,5 +125,31 @@ describe('dispatchAll', () => {
     const results = await dispatchAll([envelope('1'), envelope('2')]);
 
     expect(results.every((r) => r.failed === 1 && r.shouldStamp === false)).toBe(true);
+  });
+
+  it('a single failing render does not stop the others', async () => {
+    mocks.renderEmail.mockResolvedValueOnce({ to: 'user-1@example.com', subject: 'test', html: '<p>test</p>' });
+    mocks.renderEmail.mockRejectedValueOnce(new Error('Template not found'));
+    mocks.renderEmail.mockResolvedValueOnce({ to: 'user-3@example.com', subject: 'test', html: '<p>test</p>' });
+
+    mocks.sendEmailBatch.mockResolvedValue({
+      success: true,
+      results: [{ success: true }, { success: true }],
+    });
+
+    const results = await dispatchAll([envelope('1'), envelope('2'), envelope('3')]);
+
+    expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
+    expect(mocks.sendEmailBatch.mock.calls[0][0]).toHaveLength(2);
+    expect(results.map((r) => r.shouldStamp)).toEqual([true, false, true]);
+  });
+
+  it('a failed render is reported failed and never stamped', async () => {
+    mocks.renderEmail.mockRejectedValue(new Error('Locale not supported'));
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result).toEqual({ delivered: 0, failed: 1, skipped: 0, shouldStamp: false });
+    expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
   });
 });

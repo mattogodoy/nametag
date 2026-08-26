@@ -1,4 +1,5 @@
 import { isEmailConfigured, sendEmailBatch } from '@/lib/email';
+import type { SendBatchEmailItem } from '@/lib/email';
 import { createModuleLogger } from '@/lib/logger';
 import { renderEmail } from './channels/email';
 import type { ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
@@ -37,34 +38,69 @@ async function dispatchEmail(
     return envelopes.map(() => ({ status: 'skipped' }));
   }
 
-  const items = await Promise.all(envelopes.map((envelope) => renderEmail(envelope)));
+  const outcomes: ChannelOutcome[] = envelopes.map(() => ({ status: 'skipped' }));
+
+  // Rendered per envelope rather than as one all-or-nothing batch. A locale or
+  // template failure on a single reminder must not stop every other user's
+  // reminder from going out that night.
+  const rendered = await Promise.allSettled(envelopes.map((envelope) => renderEmail(envelope)));
+
+  // Only successfully rendered envelopes go in the batch, so batch positions no
+  // longer line up with envelope positions and have to be mapped back.
+  const indexes: number[] = [];
+  const items: SendBatchEmailItem[] = [];
+
+  rendered.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      indexes.push(index);
+      items.push(result.value);
+      return;
+    }
+
+    const message = result.reason instanceof Error ? result.reason.message : 'Unknown render error';
+    log.error(
+      { errorMessage: message, kind: envelopes[index].notification.kind },
+      'Failed to render reminder email'
+    );
+    outcomes[index] = { status: 'failed', error: message };
+  });
+
+  if (items.length === 0) {
+    return outcomes;
+  }
 
   try {
     const batch = await sendEmailBatch(items);
 
-    return envelopes.map((_envelope, index) => {
-      const result = batch.results[index];
+    indexes.forEach((envelopeIndex, batchIndex) => {
+      const result = batch.results[batchIndex];
 
       if (!result) {
-        return { status: 'failed', error: 'No result returned for this message' };
+        outcomes[envelopeIndex] = { status: 'failed', error: 'No result returned for this message' };
+        return;
       }
 
       // `skipped` means the provider never attempted delivery. Treating it as
-      // success would stamp a reminder that nobody received, and the stamp is
-      // not recoverable once email is configured later.
+      // success would stamp a reminder nobody received, and the stamp is not
+      // recoverable once email is configured later.
       if (result.skipped) {
-        return { status: 'skipped' };
+        outcomes[envelopeIndex] = { status: 'skipped' };
+        return;
       }
 
-      return result.success
+      outcomes[envelopeIndex] = result.success
         ? { status: 'delivered' }
         : { status: 'failed', error: result.error ?? 'Unknown email error' };
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    log.error({ errorMessage: message, count: envelopes.length }, 'Email batch send threw');
-    return envelopes.map(() => ({ status: 'failed', error: message }));
+    log.error({ errorMessage: message, count: items.length }, 'Email batch send threw');
+    indexes.forEach((envelopeIndex) => {
+      outcomes[envelopeIndex] = { status: 'failed', error: message };
+    });
   }
+
+  return outcomes;
 }
 
 function summarize(outcomes: readonly ChannelOutcome[]): DispatchResult {
