@@ -513,15 +513,29 @@ async function stampSent(stamp: StampTarget): Promise<void> {
   const now = new Date();
 
   switch (stamp.model) {
-    case 'importantDate':
-      await prisma.importantDate.update({
-        where: { id: stamp.id },
-        data:
-          stamp.field === 'lastReminderSent'
-            ? { lastReminderSent: now }
-            : { lastLeadReminderSent: now },
-      });
-      return;
+    case 'importantDate': {
+      const importantDateId = stamp.id;
+      const field = stamp.field;
+
+      switch (field) {
+        case 'lastReminderSent':
+          await prisma.importantDate.update({
+            where: { id: importantDateId },
+            data: { lastReminderSent: now },
+          });
+          return;
+        case 'lastLeadReminderSent':
+          await prisma.importantDate.update({
+            where: { id: importantDateId },
+            data: { lastLeadReminderSent: now },
+          });
+          return;
+        default: {
+          const unhandled: never = field;
+          throw new Error(`Unhandled importantDate stamp field: ${JSON.stringify(unhandled)}`);
+        }
+      }
+    }
 
     case 'person':
       await prisma.person.update({
@@ -536,6 +550,11 @@ async function stampSent(stamp: StampTarget): Promise<void> {
         data: { lastWeeklyDigestSent: now },
       });
       return;
+
+    default: {
+      const unhandled: never = stamp;
+      throw new Error(`Unhandled stamp target: ${JSON.stringify(unhandled)}`);
+    }
   }
 }
 
