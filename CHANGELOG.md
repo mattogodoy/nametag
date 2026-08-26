@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.61.0](https://github.com/mattogodoy/nametag/compare/v0.60.0...v0.61.0) (2026-08-26)
+
+
+### Features
+
+* **i18n:** add French (fr-FR) translation ([#428](https://github.com/mattogodoy/nametag/issues/428)) ([5d46e70](https://github.com/mattogodoy/nametag/commit/5d46e7069c3613a84426177aa7755d0d0e255523))
+
+
+### Bug Fixes
+
+* **i18n:** use 'today' wording for same-day reminder emails ([#432](https://github.com/mattogodoy/nametag/issues/432)) ([f996a35](https://github.com/mattogodoy/nametag/commit/f996a355363ac457908d7ecf08fc448f755563e6))
+
 ## [0.60.0](https://github.com/mattogodoy/nametag/compare/v0.59.1...v0.60.0) (2026-08-26)
 
 
