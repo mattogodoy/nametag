@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { getLeadTimeLabel, getLeadTimeSelectOptions } from '@/lib/reminders/lead-time-options';
+import SettingsMessage from '@/components/ui/SettingsMessage';
 
 interface ReminderLeadTimeSelectorProps {
   currentLeadDays: number;
@@ -104,14 +105,7 @@ export default function ReminderLeadTimeSelector({ currentLeadDays, disabled }: 
         {leadDays === 0 ? t('leadTimeSummaryDayOf') : t('leadTimeSummary', { days: leadDays })}
       </p>
 
-      {message && (
-        <p
-          className={`mt-2 text-sm ${isSuccess ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-          role="status"
-        >
-          {message}
-        </p>
-      )}
+      <SettingsMessage message={message} isSuccess={isSuccess} className="mt-2" />
     </div>
   );
 }

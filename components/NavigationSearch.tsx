@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { formatFullName } from '@/lib/nameUtils';
 import PersonAvatar from './PersonPhoto';
 import { useSearchIndex } from './SearchIndexProvider';
+import { fetchNameOrder, type NameOrder } from '@/lib/user-name-order';
 
 interface Person {
   id: string;
@@ -18,7 +19,18 @@ interface Person {
   photo?: string | null;
 }
 
-export default function NavigationSearch() {
+interface NavigationSearchProps {
+  /** Focus the field as soon as it mounts, for surfaces opened on demand. */
+  autoFocus?: boolean;
+  /**
+   * Called when the search surface should collapse. `navigate` means a result
+   * was picked and the page is about to change, so the caller should leave focus
+   * alone; `dismiss` means the user backed out and focus should come back.
+   */
+  onClose?: (reason: 'dismiss' | 'navigate') => void;
+}
+
+export default function NavigationSearch({ autoFocus, onClose }: NavigationSearchProps) {
   const router = useRouter();
   const t = useTranslations('nav.search');
   const [results, setResults] = useState<Person[]>([]);
@@ -26,21 +38,20 @@ export default function NavigationSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [nameOrder, setNameOrder] = useState<'WESTERN' | 'EASTERN'>('WESTERN');
+  const [nameOrder, setNameOrder] = useState<NameOrder>('WESTERN');
   const { search: clientSearch, isReady: searchIndexReady } = useSearchIndex();
 
   // Fetch user's name order preference
   useEffect(() => {
-    fetch('/api/user/profile')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user?.nameOrder) {
-          setNameOrder(data.user.nameOrder);
-        }
-      })
-      .catch(() => {
-        // Silently fall back to WESTERN
-      });
+    let active = true;
+    fetchNameOrder().then((order) => {
+      if (active) {
+        setNameOrder(order);
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, []);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -131,10 +142,22 @@ export default function NavigationSearch() {
     setSearchTerm('');
     setIsOpen(false);
     inputRef.current?.blur();
+    onClose?.('navigate');
     router.push(`/people/${person.id}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Escape dismisses the whole search surface, even with the results list closed,
+    // so an empty on-demand field can still be backed out of with one key.
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+      setSearchTerm('');
+      inputRef.current?.blur();
+      onClose?.('dismiss');
+      return;
+    }
+
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
         setIsOpen(true);
@@ -166,12 +189,6 @@ export default function NavigationSearch() {
           handleSelect(results[highlightedIndex]);
         }
         break;
-      case 'Escape':
-        e.preventDefault();
-        setIsOpen(false);
-        setSearchTerm('');
-        inputRef.current?.blur();
-        break;
     }
   };
 
@@ -192,6 +209,10 @@ export default function NavigationSearch() {
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           placeholder={t('placeholder')}
+          /* Handled by React during commit, so the focus lands in the same task
+             as the tap that opened the field. iOS Safari only raises the software
+             keyboard for a focus tied to the gesture, which a passive effect misses. */
+          autoFocus={autoFocus}
           className="w-full pl-9 pr-12 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
           autoComplete="off"
         />
