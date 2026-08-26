@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendEmailBatch, emailTemplates } from '@/lib/email';
-import type { SendBatchEmailItem } from '@/lib/email';
+import { dispatchAll } from '@/lib/notifications/dispatch';
+import type { NotificationEnvelope, StampTarget } from '@/lib/notifications/types';
 import { formatGraphName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
 import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
@@ -88,14 +88,7 @@ export const GET = withLogging(async function GET(request: Request) {
       },
     });
 
-    interface PendingReminder {
-      email: SendBatchEmailItem;
-      type: 'important_date' | 'important_date_lead' | 'contact' | 'weekly_digest';
-      entityId: string;
-      logMeta: Record<string, string>;
-    }
-
-    const pendingReminders: PendingReminder[] = [];
+    const envelopes: NotificationEnvelope[] = [];
 
     // Collect important date reminders
     for (const importantDate of importantDates) {
@@ -123,24 +116,22 @@ export const GET = withLogging(async function GET(request: Request) {
 
         const tDates = await getTranslationsForLocale(userLanguage, 'people.form.importantDates');
         const dateTitle = getDateDisplayTitle(importantDate, tDates);
-        const template = await emailTemplates.importantDateReminder(
-          personName,
-          dateTitle,
-          formattedDate,
-          unsubscribeUrl,
-          userLanguage
-        );
 
-        pendingReminders.push({
-          email: {
-            to: userEmail,
-            subject: template.subject,
-            html: template.html,
-            text: template.text,
-            from: 'reminders',
+        envelopes.push({
+          userId: person.userId,
+          userEmail,
+          locale: userLanguage,
+          notification: {
+            kind: 'important_date',
+            personId: person.id,
+            personName,
+            dateTitle,
+            formattedDate,
+            dateType: importantDate.type,
           },
-          type: 'important_date',
-          entityId: importantDate.id,
+          unsubscribeUrl,
+          deepLink: `${getAppUrl()}/people/${person.id}`,
+          stamp: { model: 'importantDate', id: importantDate.id, field: 'lastReminderSent' },
           logMeta: { personName, dateTitle, userEmail },
         });
       }
@@ -208,25 +199,22 @@ export const GET = withLogging(async function GET(request: Request) {
             'people.form.importantDates'
           );
           const dateTitle = getDateDisplayTitle(importantDate, tDates);
-          const template = await emailTemplates.importantDateLeadReminder(
-            personName,
-            dateTitle,
-            formattedDate,
-            daysUntil,
-            `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
-            userLanguage
-          );
 
-          pendingReminders.push({
-            email: {
-              to: person.user.email,
-              subject: template.subject,
-              html: template.html,
-              text: template.text,
-              from: 'reminders',
+          envelopes.push({
+            userId: person.userId,
+            userEmail: person.user.email,
+            locale: userLanguage,
+            notification: {
+              kind: 'important_date_lead',
+              personId: person.id,
+              personName,
+              dateTitle,
+              formattedDate,
+              daysUntil,
             },
-            type: 'important_date_lead',
-            entityId: importantDate.id,
+            unsubscribeUrl: `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
+            deepLink: `${getAppUrl()}/people/${person.id}`,
+            stamp: { model: 'importantDate', id: importantDate.id, field: 'lastLeadReminderSent' },
             logMeta: { personName, dateTitle, daysUntil: String(daysUntil) },
           });
         }
@@ -276,24 +264,20 @@ export const GET = withLogging(async function GET(request: Request) {
 
         const unsubscribeUrl = `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`;
 
-        const template = await emailTemplates.contactReminder(
-          personName,
-          lastContactFormatted,
-          intervalText,
-          unsubscribeUrl,
-          userLanguage
-        );
-
-        pendingReminders.push({
-          email: {
-            to: person.user.email,
-            subject: template.subject,
-            html: template.html,
-            text: template.text,
-            from: 'reminders',
+        envelopes.push({
+          userId: person.userId,
+          userEmail: person.user.email,
+          locale: userLanguage,
+          notification: {
+            kind: 'contact',
+            personId: person.id,
+            personName,
+            lastContactFormatted,
+            intervalText,
           },
-          type: 'contact',
-          entityId: person.id,
+          unsubscribeUrl,
+          deepLink: `${getAppUrl()}/people/${person.id}`,
+          stamp: { model: 'person', id: person.id, field: 'lastContactReminderSent' },
           logMeta: { personName, userEmail: person.user.email },
         });
       }
@@ -306,7 +290,7 @@ export const GET = withLogging(async function GET(request: Request) {
     // The outer try/catch here only guards genuine setup failure (mainly the
     // candidate query itself): a problem here must not take down the
     // day-of, lead, and contact reminders collected above, which still need
-    // to reach sendEmailBatch below. Once we have a list of digest users,
+    // to reach dispatchAll below. Once we have a list of digest users,
     // each user is handled in its own inner try/catch, so one bad record
     // (a malformed row, one failing getUpcomingEvents/token/template call)
     // costs exactly that one user's digest, not everyone queued after them.
@@ -368,23 +352,18 @@ export const GET = withLogging(async function GET(request: Request) {
               entityId: user.id,
             });
 
-            const template = await emailTemplates.weeklyDigest(
-              rows,
-              overflowCount,
-              `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
-              userLanguage
-            );
-
-            pendingReminders.push({
-              email: {
-                to: user.email,
-                subject: template.subject,
-                html: template.html,
-                text: template.text,
-                from: 'reminders',
+            envelopes.push({
+              userId: user.id,
+              userEmail: user.email,
+              locale: userLanguage,
+              notification: {
+                kind: 'weekly_digest',
+                rows,
+                overflowCount,
               },
-              type: 'weekly_digest',
-              entityId: user.id,
+              unsubscribeUrl: `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
+              deepLink: `${getAppUrl()}/dashboard`,
+              stamp: { model: 'user', id: user.id, field: 'lastWeeklyDigestSent' },
               logMeta: { userEmail: user.email, eventCount: String(rows.length) },
             });
           } catch (userDigestError) {
@@ -417,67 +396,53 @@ export const GET = withLogging(async function GET(request: Request) {
     let skippedCount = 0;
     let digestsSent = 0;
 
-    if (pendingReminders.length > 0) {
-      const batchResult = await sendEmailBatch(pendingReminders.map(r => r.email));
+    if (envelopes.length > 0) {
+      const results = await dispatchAll(envelopes);
 
-      for (let i = 0; i < pendingReminders.length; i++) {
-        const reminder = pendingReminders[i];
-        const result = batchResult.results[i];
+      for (let i = 0; i < envelopes.length; i++) {
+        const envelope = envelopes[i];
+        const result = results[i];
 
-        // No email provider configured: sendEmailBatch reports success with
-        // `skipped` so the cron still completes cleanly. Nothing was delivered,
-        // so nothing may be stamped. Stamping here would burn the send for good:
-        // the day-of reminder would be marked sent for that occurrence, the
-        // digest for that week, and the advance notice for its whole lead
-        // window, none of which are recoverable once email is configured.
-        if (result.skipped) {
-          skippedCount++;
+        if (!result.shouldStamp) {
+          // Nothing was delivered on any channel. Stamping here would burn the
+          // send for good: the day-of reminder would be marked sent for that
+          // occurrence, the digest for that week, and the advance notice for its
+          // whole lead window, none of which are recoverable.
+          if (result.failed > 0) {
+            errorCount++;
+            log.error({ ...envelope.logMeta, kind: envelope.notification.kind }, 'Failed to send reminder');
+          } else {
+            skippedCount++;
+          }
           continue;
         }
 
-        if (result.success) {
-          try {
-            if (reminder.type === 'important_date') {
-              await prisma.importantDate.update({
-                where: { id: reminder.entityId },
-                data: { lastReminderSent: new Date() },
-              });
-              log.info({ ...reminder.logMeta }, 'Reminder sent');
-            } else if (reminder.type === 'important_date_lead') {
-              await prisma.importantDate.update({
-                where: { id: reminder.entityId },
-                data: { lastLeadReminderSent: new Date() },
-              });
-              log.info({ ...reminder.logMeta }, 'Lead reminder sent');
-            } else if (reminder.type === 'weekly_digest') {
-              await prisma.user.update({
-                where: { id: reminder.entityId },
-                data: { lastWeeklyDigestSent: new Date() },
-              });
-              log.info({ ...reminder.logMeta }, 'Weekly digest sent');
-              digestsSent++;
-            } else {
-              await prisma.person.update({
-                where: { id: reminder.entityId },
-                data: { lastContactReminderSent: new Date() },
-              });
-              log.info({ ...reminder.logMeta }, 'Contact reminder sent');
-            }
-          } catch (stampError) {
-            log.error(
-              {
-                ...reminder.logMeta,
-                entityId: reminder.entityId,
-                type: reminder.type,
-                errorMessage: stampError instanceof Error ? stampError.message : 'Unknown error',
-              },
-              'Failed to stamp reminder as sent (email was delivered, may duplicate on next run)'
-            );
-          }
-          sentCount++;
-        } else {
-          errorCount++;
-          log.error({ ...reminder.logMeta, errorMessage: result.error }, `Failed to send ${reminder.type} reminder`);
+        try {
+          await stampSent(envelope.stamp);
+          log.info({ ...envelope.logMeta, kind: envelope.notification.kind }, 'Reminder sent');
+        } catch (stampError) {
+          log.error(
+            {
+              ...envelope.logMeta,
+              entityId: envelope.stamp.id,
+              kind: envelope.notification.kind,
+              errorMessage: stampError instanceof Error ? stampError.message : 'Unknown error',
+            },
+            'Failed to stamp reminder as sent (it was delivered, may duplicate on next run)'
+          );
+        }
+
+        if (envelope.notification.kind === 'weekly_digest') {
+          digestsSent++;
+        }
+        sentCount++;
+
+        // A partial success still stamps, so surface the channels that failed.
+        if (result.failed > 0) {
+          log.warn(
+            { ...envelope.logMeta, failedChannels: result.failed },
+            'Reminder delivered on some channels but not all'
+          );
         }
       }
     }
@@ -531,6 +496,42 @@ export const GET = withLogging(async function GET(request: Request) {
     return handleApiError(error, 'cron-send-reminders');
   }
 });
+
+/**
+ * Record that a notification was delivered.
+ *
+ * StampTarget is a discriminated union, so each branch narrows to a concrete
+ * Prisma column and no cast is needed to satisfy the generated input types.
+ */
+async function stampSent(stamp: StampTarget): Promise<void> {
+  const now = new Date();
+
+  switch (stamp.model) {
+    case 'importantDate':
+      await prisma.importantDate.update({
+        where: { id: stamp.id },
+        data:
+          stamp.field === 'lastReminderSent'
+            ? { lastReminderSent: now }
+            : { lastLeadReminderSent: now },
+      });
+      return;
+
+    case 'person':
+      await prisma.person.update({
+        where: { id: stamp.id },
+        data: { lastContactReminderSent: now },
+      });
+      return;
+
+    case 'user':
+      await prisma.user.update({
+        where: { id: stamp.id },
+        data: { lastWeeklyDigestSent: now },
+      });
+      return;
+  }
+}
 
 function formatInterval(interval: number, unit: string): string {
   const unitLower = unit.toLowerCase();
