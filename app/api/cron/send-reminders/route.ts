@@ -420,6 +420,13 @@ export const GET = withLogging(async function GET(request: Request) {
         try {
           await stampSent(envelope.stamp);
           log.info({ ...envelope.logMeta, kind: envelope.notification.kind }, 'Reminder sent');
+
+          // Inside the try, matching the pre-refactor behaviour: a digest whose
+          // stamp write failed was never counted as a digest sent, even though it
+          // still counted toward sentCount.
+          if (envelope.notification.kind === 'weekly_digest') {
+            digestsSent++;
+          }
         } catch (stampError) {
           log.error(
             {
@@ -432,9 +439,6 @@ export const GET = withLogging(async function GET(request: Request) {
           );
         }
 
-        if (envelope.notification.kind === 'weekly_digest') {
-          digestsSent++;
-        }
         sentCount++;
 
         // A partial success still stamps, so surface the channels that failed.
