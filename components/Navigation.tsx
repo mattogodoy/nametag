@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
@@ -69,6 +69,10 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
 
   const displayName = formatUserDisplayName({ nickname: userNickname, name: userName, email: userEmail });
 
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
+  const searchWasOpen = useRef(false);
+
   // The two mobile surfaces are mutually exclusive: opening one puts the other away.
   const openMobileMenu = () => {
     setMobileSearchOpen(false);
@@ -79,6 +83,50 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
     setMobileMenuOpen(false);
     setMobileSearchOpen(true);
   };
+
+  const closeMobileSearch = () => setMobileSearchOpen(false);
+
+  // Collapsing the field unmounts the input, which would drop focus to the body
+  // and send the next Tab back to the top of the document. Hand it to the button
+  // that opened the field instead. Runs after paint, once the button is visible
+  // again, because focus() is a no-op on a display:none element.
+  useEffect(() => {
+    if (searchWasOpen.current && !mobileSearchOpen) {
+      searchButtonRef.current?.focus();
+    }
+    searchWasOpen.current = mobileSearchOpen;
+  }, [mobileSearchOpen]);
+
+  // The field's own Escape handler only fires while the input has focus, which a
+  // tap on the header padding or a dismissed software keyboard is enough to lose.
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeMobileSearch();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [mobileSearchOpen]);
+
+  // Cmd+K focuses the desktop field, which is display:none below the md
+  // breakpoint, so the shortcut would otherwise do nothing on narrow screens.
+  // offsetParent asks whether that field is actually on screen without
+  // restating the breakpoint as a pixel value here.
+  useEffect(() => {
+    const handleShortcut = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key !== 'k') return;
+      if (desktopSearchRef.current?.offsetParent !== null) return;
+      e.preventDefault();
+      openMobileSearch();
+    };
+
+    document.addEventListener('keydown', handleShortcut);
+    return () => document.removeEventListener('keydown', handleShortcut);
+  }, []);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -115,7 +163,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
           </Link>
 
           {/* Desktop search, absolutely centered in the row */}
-          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 w-full max-w-md lg:max-w-lg px-20 lg:px-24">
+          <div ref={desktopSearchRef} className="hidden md:block absolute left-1/2 -translate-x-1/2 w-full max-w-md lg:max-w-lg px-20 lg:px-24">
             <NavigationSearch />
           </div>
 
@@ -123,11 +171,11 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
           {mobileSearchOpen && (
             <div className="md:hidden flex items-center gap-1 w-full">
               <div className="flex-1 min-w-0">
-                <NavigationSearch autoFocus onClose={() => setMobileSearchOpen(false)} />
+                <NavigationSearch autoFocus onClose={closeMobileSearch} />
               </div>
               <button
                 type="button"
-                onClick={() => setMobileSearchOpen(false)}
+                onClick={closeMobileSearch}
                 className="shrink-0 px-2 py-3 text-sm font-medium text-secondary hover:text-foreground transition-colors"
               >
                 {tCommon('cancel')}
@@ -138,6 +186,7 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
           {/* Right section: user menu (desktop), search and menu buttons (mobile) */}
           <div className={`items-center space-x-1 sm:space-x-2 z-10 ${mobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
             <button
+              ref={searchButtonRef}
               type="button"
               onClick={openMobileSearch}
               className="md:hidden p-3 rounded-md text-foreground hover:bg-surface-elevated transition-colors"
@@ -157,13 +206,17 @@ export default function Navigation({ userEmail, userName, userNickname, userPhot
             {/* Mobile menu button */}
             <button
               type="button"
-              onClick={openMobileMenu}
+              onClick={() => (mobileMenuOpen ? setMobileMenuOpen(false) : openMobileMenu())}
               aria-expanded={mobileMenuOpen}
               className="md:hidden p-3 rounded-md text-foreground hover:bg-surface-elevated transition-colors"
-              aria-label={tNav('openMenu')}
+              aria-label={mobileMenuOpen ? tNav('closeMenu') : tNav('openMenu')}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
               </svg>
             </button>
           </div>

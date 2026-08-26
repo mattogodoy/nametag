@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { formatFullName } from '@/lib/nameUtils';
 import PersonAvatar from './PersonPhoto';
 import { useSearchIndex } from './SearchIndexProvider';
+import { fetchNameOrder, type NameOrder } from '@/lib/user-name-order';
 
 interface Person {
   id: string;
@@ -33,30 +34,23 @@ export default function NavigationSearch({ autoFocus, onClose }: NavigationSearc
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [nameOrder, setNameOrder] = useState<'WESTERN' | 'EASTERN'>('WESTERN');
+  const [nameOrder, setNameOrder] = useState<NameOrder>('WESTERN');
   const { search: clientSearch, isReady: searchIndexReady } = useSearchIndex();
 
   // Fetch user's name order preference
   useEffect(() => {
-    fetch('/api/user/profile')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user?.nameOrder) {
-          setNameOrder(data.user.nameOrder);
-        }
-      })
-      .catch(() => {
-        // Silently fall back to WESTERN
-      });
+    let active = true;
+    fetchNameOrder().then((order) => {
+      if (active) {
+        setNameOrder(order);
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, []);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (autoFocus) {
-      inputRef.current?.focus();
-    }
-  }, [autoFocus]);
 
   // Cmd+K / Ctrl+K global shortcut to focus search
   useEffect(() => {
@@ -211,6 +205,10 @@ export default function NavigationSearch({ autoFocus, onClose }: NavigationSearc
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           placeholder={t('placeholder')}
+          /* Handled by React during commit, so the focus lands in the same task
+             as the tap that opened the field. iOS Safari only raises the software
+             keyboard for a focus tied to the gesture, which a passive effect misses. */
+          autoFocus={autoFocus}
           className="w-full pl-9 pr-12 py-1.5 text-base sm:text-sm border border-border rounded-lg bg-surface-elevated text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
           autoComplete="off"
         />

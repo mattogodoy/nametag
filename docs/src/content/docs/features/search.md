@@ -11,7 +11,7 @@ Nametag's global search lets you jump to any contact from anywhere in the app, w
 
 Press `Cmd+K` on Mac or `Ctrl+K` on Windows and Linux to open the search bar. It works from any page: your dashboard, a person's detail page, settings, wherever you happen to be.
 
-On phones and other narrow screens, tap the magnifying glass in the header instead. The search field expands to fill the header and is focused straight away, so you can start typing without a second tap. Press Escape or tap Cancel to put it away.
+On phones and other narrow screens, tap the magnifying glass in the header. The search field expands to fill the header and is focused straight away, so you can start typing without a second tap. The keyboard shortcut opens that same field when a keyboard is attached, and Escape or Cancel puts it away.
 
 ## How it works
 
