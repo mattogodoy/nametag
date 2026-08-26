@@ -152,7 +152,7 @@
       "description": "Tijdstip van herinneringen en het wekelijkse overzicht per e-mail",
       "leadTimeTitle": "Vooraankondiging",
       "leadTimeDescription": "Hoe ver van tevoren u herinnerd wilt worden aan een belangrijke datum. U krijgt altijd een herinnering op de dag zelf.",
-      "leadTimeDayOf": "Alleen op de dag zelf",
+      "leadTimeDayOf": "Op de dag van het evenement",
       "leadTimeOneDay": "1 dag van tevoren",
       "leadTimeDays": "{days, plural, one {# dag van tevoren} other {# dagen van tevoren}}",
       "leadTimeSummaryDayOf": "U ontvangt een e-mail op de dag van elke gebeurtenis.",
@@ -1868,8 +1868,8 @@
       "note": "Als u geen account heeft aangemaakt, kunt u deze e-mail veilig negeren."
     },
     "importantDateReminder": {
-      "subject": "Herinnering: {personName}'s {eventType} komt eraan",
-      "heading": "Aankomende gebeurtenis herinnering",
+      "subject": "Herinnering: Vandaag is {personName}'s {eventType}",
+      "heading": "Gebeurtenisherinnering",
       "infoBox": "{personName}'s {eventType} is op {date}.",
       "body": "Vergeet niet contact op te nemen en maak hun dag speciaal!",
       "button": "Nametag openen",

@@ -152,7 +152,7 @@
       "description": "事前通知のタイミングと週間まとめメール",
       "leadTimeTitle": "事前通知",
       "leadTimeDescription": "重要な日付をどのくらい前に知りたいかを設定します。当日のリマインダーは必ず届きます。",
-      "leadTimeDayOf": "当日のみ",
+      "leadTimeDayOf": "イベント当日",
       "leadTimeOneDay": "1日前",
       "leadTimeDays": "{days, plural, other {#日前}}",
       "leadTimeSummaryDayOf": "各イベントの当日にメールが届きます。",
@@ -1868,7 +1868,7 @@
       "note": "もしアカウントを作成していない場合はこのメールは無視して構いません。"
     },
     "importantDateReminder": {
-      "subject": "リマインダー: {personName}の {eventType}が近づいています",
+      "subject": "リマインダー: 今日は{personName}の{eventType}です",
       "heading": "イベントリマインダー",
       "infoBox": "{personName}の {eventType}は {date}です。",
       "body": "忘れずに連絡して、その日を特別なものにしましょう！",

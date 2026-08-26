@@ -152,7 +152,7 @@
       "description": "Il preavviso e il riepilogo settimanale via email",
       "leadTimeTitle": "Preavviso",
       "leadTimeDescription": "Con quanto anticipo vuoi essere avvisato di una data importante. Riceverai sempre un promemoria il giorno stesso.",
-      "leadTimeDayOf": "Solo il giorno stesso",
+      "leadTimeDayOf": "Il giorno dell'evento",
       "leadTimeOneDay": "1 giorno prima",
       "leadTimeDays": "{days, plural, one {# giorno prima} other {# giorni prima}}",
       "leadTimeSummaryDayOf": "Riceverai un'email il giorno di ogni evento.",
@@ -1868,8 +1868,8 @@
       "note": "Se non hai creato un account, puoi ignorare questa email."
     },
     "importantDateReminder": {
-      "subject": "Promemoria: {eventType} di {personName} sta arrivando",
-      "heading": "Promemoria evento in arrivo",
+      "subject": "Promemoria: oggi è il/la {eventType} di {personName}",
+      "heading": "Promemoria evento",
       "infoBox": "Il/la {eventType} di {personName} è il {date}.",
       "body": "Non dimenticare di contattarlo/a per rendergli la giornata speciale!",
       "button": "Apri Nametag",

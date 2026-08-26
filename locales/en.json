@@ -152,7 +152,7 @@
       "description": "Reminder timing and the weekly summary email",
       "leadTimeTitle": "Advance notice",
       "leadTimeDescription": "How far ahead of an important date you would like to hear about it. You will always get a reminder on the day itself.",
-      "leadTimeDayOf": "On the day only",
+      "leadTimeDayOf": "On the event day",
       "leadTimeOneDay": "1 day before",
       "leadTimeDays": "{days, plural, one {# day before} other {# days before}}",
       "leadTimeSummaryDayOf": "You will get an email on the day of each event.",
@@ -1868,8 +1868,8 @@
       "note": "If you didn't create an account, you can safely ignore this email."
     },
     "importantDateReminder": {
-      "subject": "Reminder: {personName}'s {eventType} is coming up",
-      "heading": "Upcoming Event Reminder",
+      "subject": "Reminder: Today is {personName}'s {eventType}",
+      "heading": "Event Reminder",
       "infoBox": "{personName}'s {eventType} is on {date}.",
       "body": "Don't forget to reach out and make their day special!",
       "button": "Open Nametag",
