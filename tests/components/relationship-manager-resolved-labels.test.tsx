@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import RelationshipManager from '../../components/RelationshipManager';
+import UserRelationshipCard from '../../components/UserRelationshipCard';
 import enMessages from '../../locales/en.json';
 
 // Mock sonner toast
@@ -123,5 +124,59 @@ describe('RelationshipManager resolved labels', () => {
 
     const chip = screen.getByText('Frère');
     expect(chip).toHaveAttribute('title', 'Sibling');
+  });
+});
+
+describe('UserRelationshipCard resolved labels', () => {
+  const baseProps = {
+    personId: 'person-alice',
+    personName: 'Alice',
+    relationshipToUser: {
+      id: 'type-parent',
+      label: 'Parent',
+      color: '#FF5733',
+    },
+    relationshipTypes: [
+      {
+        id: 'type-parent',
+        name: 'PARENT',
+        label: 'Parent',
+        color: '#FF5733',
+        inverseId: null,
+      },
+    ],
+  };
+
+  it('renders relationshipToUser.label when resolvedLabel is absent, preserving today\'s behaviour', () => {
+    render(
+      <Wrapper>
+        <UserRelationshipCard {...baseProps} />
+      </Wrapper>
+    );
+
+    expect(screen.getByText('Parent')).toBeInTheDocument();
+    expect(screen.queryByText('Père')).not.toBeInTheDocument();
+  });
+
+  it('renders resolvedLabel when present', () => {
+    render(
+      <Wrapper>
+        <UserRelationshipCard {...baseProps} resolvedLabel="Père" />
+      </Wrapper>
+    );
+
+    expect(screen.getByText('Père')).toBeInTheDocument();
+    expect(screen.queryByText('Parent')).not.toBeInTheDocument();
+  });
+
+  it('exposes the type name as the title attribute on the label chip', () => {
+    render(
+      <Wrapper>
+        <UserRelationshipCard {...baseProps} resolvedLabel="Père" />
+      </Wrapper>
+    );
+
+    const chip = screen.getByText('Père');
+    expect(chip).toHaveAttribute('title', 'Parent');
   });
 });

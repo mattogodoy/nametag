@@ -321,17 +321,14 @@ export default async function PersonDetailsPage({
       : null,
   }));
 
-  const resolvedRelationshipToUser = relationshipToUser
-    ? {
-        ...relationshipToUser,
-        label: labelResolver.resolve({
-          relationshipTypeId: relationshipToUser.id,
-          typeLabel: relationshipToUser.label,
-          describedPersonId: person.id,
-          otherPersonId: 'USER',
-        }).label,
-      }
-    : relationshipToUser;
+  const resolvedRelationshipToUserLabel = relationshipToUser
+    ? labelResolver.resolve({
+        relationshipTypeId: relationshipToUser.id,
+        typeLabel: relationshipToUser.label,
+        describedPersonId: person.id,
+        otherPersonId: 'USER',
+      }).label
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -864,11 +861,12 @@ export default async function PersonDetailsPage({
                 </h3>
 
                 {/* Relationship to user */}
-                {resolvedRelationshipToUser && (
+                {relationshipToUser && (
                   <UserRelationshipCard
                     personId={person.id}
                     personName={formatGraphName(person, nameOrder, nameDisplayFormat)}
-                    relationshipToUser={resolvedRelationshipToUser}
+                    relationshipToUser={relationshipToUser}
+                    resolvedLabel={resolvedRelationshipToUserLabel}
                     relationshipTypes={relationshipTypes}
                     userName={user?.name || ''}
                     userPhoto={user?.photo || null}
