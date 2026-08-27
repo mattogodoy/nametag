@@ -295,7 +295,10 @@ describe('NotificationChannelsCard', () => {
       stubServiceWorker({ toJSON: () => ({}) });
       stubNotification('granted');
 
-      renderCard();
+      // A device row is required here: with none, the card is in the
+      // last-device-removed recovery state exercised below, which hides this
+      // copy on purpose.
+      renderCard({ devices: [{ id: 'sub-1', userAgent: 'Mozilla/5.0 (iPhone) Safari/604.1' }] });
 
       await waitFor(() => {
         expect(screen.getByText('Enabled on this device')).toBeInTheDocument();
@@ -305,6 +308,36 @@ describe('NotificationChannelsCard', () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe('removing the last device', () => {
+    it('offers Enable again when the browser still thinks it is subscribed but the server has no devices', async () => {
+      // The browser's own getSubscription() still returns a subscription
+      // (nothing local changed), but the row was deleted from another
+      // browser, so the server-supplied device list is empty. This must not
+      // be a dead end: an Enable button has to be available to reconcile.
+      stubServiceWorker({ toJSON: () => ({}) });
+      stubNotification('granted');
+
+      renderCard({ devices: [] });
+
+      await screen.findByRole('button', { name: 'Enable on this device' });
+      expect(screen.queryByText('Enabled on this device')).not.toBeInTheDocument();
+      expect(screen.getByText('No devices yet.')).toBeInTheDocument();
+    });
+
+    it('still shows the enabled copy, not the Enable button, once a device row exists', async () => {
+      stubServiceWorker({ toJSON: () => ({}) });
+      stubNotification('granted');
+
+      renderCard({ devices: [{ id: 'sub-1', userAgent: null }] });
+
+      await waitFor(() => {
+        expect(screen.getByText('Enabled on this device')).toBeInTheDocument();
+      });
+      expect(screen.queryByRole('button', { name: 'Enable on this device' })).not.toBeInTheDocument();
+    });
+  });
+
   describe('device label translation', () => {
     it('renders the device label through the locale template rather than a hardcoded string', () => {
       // The old hardcoded implementation always produced "Chrome on macOS".

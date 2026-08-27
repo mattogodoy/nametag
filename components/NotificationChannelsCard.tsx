@@ -20,6 +20,27 @@ interface Props {
 type PushState = 'unsupported' | 'blocked' | 'available' | 'subscribed';
 
 /**
+ * How long to wait for an active service worker before giving up.
+ *
+ * `navigator.serviceWorker.ready` never settles when no worker is
+ * registered, which is the normal state in development (workers are
+ * actively unregistered there). Without a timeout, a developer who sets
+ * VAPID keys locally would see the unsupported copy forever, and clicking
+ * Enable would hang with the button permanently disabled.
+ */
+const SERVICE_WORKER_READY_TIMEOUT_MS = 2000;
+
+/** Races `navigator.serviceWorker.ready` against a timeout, resolving to null if it wins. */
+function waitForServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), SERVICE_WORKER_READY_TIMEOUT_MS);
+    }),
+  ]);
+}
+
+/**
  * Turn a raw User-Agent into something a person recognises.
  *
  * Deliberately crude. The goal is only to let someone tell two of their own
@@ -100,8 +121,8 @@ export default function NotificationChannelsCard({
       return;
     }
 
-    void navigator.serviceWorker.ready
-      .then((registration) => registration.pushManager.getSubscription())
+    void waitForServiceWorker()
+      .then((registration) => registration?.pushManager.getSubscription() ?? null)
       .then((subscription) => setPushState(subscription ? 'subscribed' : 'available'))
       .catch(() => setPushState('available'));
   }, []);
@@ -117,13 +138,13 @@ export default function NotificationChannelsCard({
 
       if (!response.ok) {
         setEmail(!next);
-        toast.error(t('channelEmail'));
+        toast.error(t('channelEmailError'));
       }
     } catch {
       // A rejected fetch (network down) means the server never heard about
       // this change, so the optimistic flip has to come back too.
       setEmail(!next);
-      toast.error(t('channelEmail'));
+      toast.error(t('channelEmailError'));
     }
   }
 
@@ -148,12 +169,16 @@ export default function NotificationChannelsCard({
 
       const keyResponse = await fetch('/api/notifications/push/public-key');
       if (!keyResponse.ok) {
-        toast.error(t('pushNotConfigured'));
+        toast.error(t('pushEnableError'));
         return;
       }
       const { publicKey } = (await keyResponse.json()) as { publicKey: string };
 
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await waitForServiceWorker();
+      if (!registration) {
+        toast.error(t('pushEnableError'));
+        return;
+      }
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -166,7 +191,7 @@ export default function NotificationChannelsCard({
       });
 
       if (!response.ok) {
-        toast.error(t('pushNotConfigured'));
+        toast.error(t('pushEnableError'));
         return;
       }
 
@@ -175,7 +200,7 @@ export default function NotificationChannelsCard({
       // server component's device list rather than guessing at a local row.
       router.refresh();
     } catch {
-      toast.error(t('pushNotConfigured'));
+      toast.error(t('pushEnableError'));
     } finally {
       setBusy(false);
     }
@@ -190,10 +215,10 @@ export default function NotificationChannelsCard({
       if (response.ok) {
         router.refresh();
       } else {
-        toast.error(t('pushRemove'));
+        toast.error(t('pushRemoveError'));
       }
     } catch {
-      toast.error(t('pushRemove'));
+      toast.error(t('pushRemoveError'));
     }
   }
 
@@ -239,18 +264,20 @@ export default function NotificationChannelsCard({
           <p className="text-sm text-muted mt-2">{t('pushBlocked')}</p>
         )}
 
-        {pushAvailable && !iosHint && pushState === 'available' && (
-          <button
-            type="button"
-            onClick={() => void enablePush()}
-            disabled={busy}
-            className="mt-2 px-3 py-1 rounded-md border border-border disabled:opacity-50"
-          >
-            {t('pushEnable')}
-          </button>
-        )}
+        {pushAvailable &&
+          !iosHint &&
+          (pushState === 'available' || (pushState === 'subscribed' && devices.length === 0)) && (
+            <button
+              type="button"
+              onClick={() => void enablePush()}
+              disabled={busy}
+              className="mt-2 px-3 py-1 rounded-md border border-border disabled:opacity-50"
+            >
+              {t('pushEnable')}
+            </button>
+          )}
 
-        {pushAvailable && pushState === 'subscribed' && (
+        {pushAvailable && pushState === 'subscribed' && devices.length > 0 && (
           <p className="text-sm text-muted mt-2">{t('pushEnabled')}</p>
         )}
 
