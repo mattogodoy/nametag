@@ -80,6 +80,12 @@ describe('POST /api/relationship-types/preview-label', () => {
       request({ typeLabel: 'x', describedPersonId: 'p1', otherPersonId: 'stranger', variants })
     );
     expect(response.status).toBe(404);
+    // The ownership check must run before any data is loaded, so a reordering
+    // that still returned 404 after a wasted read would fail here.
+    expect(mocks.personFindMany).not.toHaveBeenCalled();
+    expect(mocks.personGroupFindMany).not.toHaveBeenCalled();
+    expect(mocks.customValueFindMany).not.toHaveBeenCalled();
+    expect(mocks.importantDateFindMany).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid configuration', async () => {
