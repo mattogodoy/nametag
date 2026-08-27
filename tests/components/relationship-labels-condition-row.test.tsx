@@ -109,7 +109,6 @@ function renderRowWithMessages(
 
 /** True when `before` precedes `after` in document order. */
 function precedes(before: Element, after: Element): boolean {
-  // eslint-disable-next-line no-bitwise
   return Boolean(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
 
