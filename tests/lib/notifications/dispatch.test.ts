@@ -240,4 +240,56 @@ describe('dispatchAll with push', () => {
     expect(result.failed).toBe(1);
     expect(result.shouldStamp).toBe(true);
   });
+
+  it('keeps outcomes on the right envelope when eligibility and rendering both thin the batch', async () => {
+    // user-2 has email off. user-3 is eligible but its template throws.
+    pushMocks.userFindMany.mockResolvedValue([
+      { id: 'user-1', emailRemindersEnabled: true },
+      { id: 'user-2', emailRemindersEnabled: false },
+      { id: 'user-3', emailRemindersEnabled: true },
+    ]);
+    // No subscriptions for anyone in this test; push always skips, so the
+    // skipped counts below isolate exactly what the email side is doing.
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'skipped' });
+
+    // Renders run in eligible order: envelope 0, then envelope 2.
+    mocks.renderEmail
+      .mockResolvedValueOnce({ to: 'a@example.com', subject: 's', html: 'h', from: 'reminders' })
+      .mockRejectedValueOnce(new Error('bad locale key'));
+
+    mocks.sendEmailBatch.mockResolvedValue({ success: true, results: [{ success: true }] });
+
+    const results = await dispatchAll([envelope('1'), envelope('2'), envelope('3')]);
+
+    // Only envelope 0 was both eligible and renderable, so exactly one message
+    // reaches the provider. If the eligibility filter were dropped from the
+    // render step, envelope 1's email would be in here too.
+    expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
+    expect(mocks.sendEmailBatch.mock.calls[0][0]).toHaveLength(1);
+
+    // The render failure must land on envelope 2, not envelope 1. With the
+    // bridge collapsed to `position`, the failure would be attributed to
+    // envelope 1 and envelope 2 would look merely skipped.
+    expect(results).toEqual([
+      { delivered: 1, failed: 0, skipped: 1, shouldStamp: true },
+      { delivered: 0, failed: 0, skipped: 2, shouldStamp: false },
+      { delivered: 0, failed: 1, skipped: 1, shouldStamp: false },
+    ]);
+  });
+
+  it('a throwing push driver costs that envelope only, not the ones after it', async () => {
+    mocks.isEmailConfigured.mockReturnValue(false);
+    pushMocks.userFindMany.mockResolvedValue([
+      { id: 'user-1', emailRemindersEnabled: true },
+      { id: 'user-2', emailRemindersEnabled: true },
+    ]);
+    pushMocks.sendWebPush
+      .mockRejectedValueOnce(new Error('driver blew up'))
+      .mockResolvedValueOnce({ status: 'delivered' });
+
+    const results = await dispatchAll([envelope('1'), envelope('2')]);
+
+    expect(results[0]).toEqual({ delivered: 0, failed: 1, skipped: 1, shouldStamp: false });
+    expect(results[1]).toEqual({ delivered: 1, failed: 0, skipped: 1, shouldStamp: true });
+  });
 });

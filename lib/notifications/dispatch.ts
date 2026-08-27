@@ -17,10 +17,9 @@ const CHANNEL_CONCURRENCY = 10;
  *
  * Email is handled as one batch rather than per envelope. Resend's batch
  * endpoint is a single HTTP call for up to 100 messages, and dispatching
- * envelope by envelope would turn one request into hundreds. Channels added in
- * later phases (web push, ntfy, webhooks) deliver per envelope instead, and
- * have their own concurrency limit so one slow user does not stall the whole
- * run.
+ * envelope by envelope would turn one request into hundreds. Web push, and
+ * channels still to come (ntfy, webhooks), deliver per envelope instead, with
+ * their own concurrency limit so one slow user does not stall the whole run.
  */
 export async function dispatchAll(
   envelopes: readonly NotificationEnvelope[]
