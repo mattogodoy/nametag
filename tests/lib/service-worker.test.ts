@@ -17,7 +17,8 @@ interface FakeRequest {
 
 interface FakeEvent {
   request?: FakeRequest;
-  data?: { type?: string };
+  data?: { type?: string; json?: () => unknown };
+  notification?: { close: () => void; data: unknown };
   respondWith: (value: unknown) => void;
   waitUntil: (value: unknown) => void;
 }
@@ -30,11 +31,16 @@ interface FakeEvent {
 interface Recorder {
   adds: string[];
   puts: string[];
+  notifications: Array<{ title: string; options: Record<string, unknown> }>;
+  openedWindows: string[];
+  focusedClients: string[];
+  navigatedTo: string[];
 }
 
 interface Scope {
   handlers: Map<string, Handler>;
   recorder: Recorder;
+  setClients: (clients: Array<{ url: string; focus: () => Promise<unknown>; navigate: (url: string) => Promise<unknown> }>) => void;
 }
 
 function keyOf(target: FakeRequest | string): string {
@@ -46,8 +52,9 @@ function keyOf(target: FakeRequest | string): string {
 /** Executes public/sw.js against a stub scope that records cache writes. */
 function loadWorker(): Scope {
   const handlers = new Map<string, Handler>();
-  const recorder: Recorder = { adds: [], puts: [] };
+  const recorder: Recorder = { adds: [], puts: [], notifications: [], openedWindows: [], focusedClients: [], navigatedTo: [] };
   const store = new Map<string, unknown>();
+  let openClients: Array<{ url: string; focus: () => Promise<unknown>; navigate: (url: string) => Promise<unknown> }> = [];
 
   const cache = {
     add: (url: string) => {
@@ -69,8 +76,21 @@ function loadWorker(): Scope {
   const workerSelf = {
     addEventListener: (type: string, handler: Handler) => handlers.set(type, handler),
     skipWaiting: () => Promise.resolve(),
-    clients: { claim: () => Promise.resolve() },
+    clients: {
+      claim: () => Promise.resolve(),
+      matchAll: () => Promise.resolve(openClients),
+      openWindow: (url: string) => {
+        recorder.openedWindows.push(url);
+        return Promise.resolve(null);
+      },
+    },
     location: { origin: ORIGIN },
+    registration: {
+      showNotification: (title: string, options: Record<string, unknown>) => {
+        recorder.notifications.push({ title, options });
+        return Promise.resolve();
+      },
+    },
   };
 
   const workerCaches = {
@@ -92,7 +112,21 @@ function loadWorker(): Scope {
     Response
   );
 
-  return { handlers, recorder };
+  const setClients = (clients: Array<{ url: string; focus: () => Promise<unknown>; navigate: (url: string) => Promise<unknown> }>) => {
+    openClients = clients.map((client) => ({
+      url: client.url,
+      focus: () => {
+        recorder.focusedClients.push(client.url);
+        return client.focus();
+      },
+      navigate: (url: string) => {
+        recorder.navigatedTo.push(url);
+        return client.navigate(url);
+      },
+    }));
+  };
+
+  return { handlers, recorder, setClients };
 }
 
 /** Dispatches a lifecycle event and collects every promise the worker handed back. */
@@ -141,6 +175,28 @@ function dispatchFetch(
   };
 }
 
+/** Dispatches a push event whose data behaves like a real PushMessageData. */
+function dispatchPush(scope: Scope, json?: () => unknown): Promise<PromiseSettledResult<unknown>[]> {
+  const pending: Promise<unknown>[] = [];
+  scope.handlers.get('push')?.({
+    data: json ? { json } : undefined,
+    respondWith: () => {},
+    waitUntil: (value: unknown) => pending.push(Promise.resolve(value)),
+  } as unknown as FakeEvent);
+  return Promise.allSettled(pending);
+}
+
+function dispatchNotificationClick(scope: Scope, data: unknown): Promise<{ settled: PromiseSettledResult<unknown>[]; closed: boolean }> {
+  const pending: Promise<unknown>[] = [];
+  let closed = false;
+  scope.handlers.get('notificationclick')?.({
+    notification: { close: () => { closed = true; }, data },
+    respondWith: () => {},
+    waitUntil: (value: unknown) => pending.push(Promise.resolve(value)),
+  } as unknown as FakeEvent);
+  return Promise.allSettled(pending).then((r: PromiseSettledResult<unknown>[]) => ({ settled: r, closed }));
+}
+
 describe('public/sw.js', () => {
   let scope: Scope;
 
@@ -148,12 +204,14 @@ describe('public/sw.js', () => {
     scope = loadWorker();
   });
 
-  it('registers the four lifecycle handlers', () => {
+  it('registers the six lifecycle handlers', () => {
     expect([...scope.handlers.keys()].sort()).toEqual([
       'activate',
       'fetch',
       'install',
       'message',
+      'notificationclick',
+      'push',
     ]);
   });
 
@@ -280,6 +338,96 @@ describe('public/sw.js', () => {
       // Stale-while-revalidate: /logo.svg is not content-hashed, so a refresh
       // must reach the cache rather than the cached copy being served forever.
       expect(scope.recorder.puts).toEqual(['/logo.svg']);
+    });
+  });
+
+  describe('push notifications', () => {
+    it('shows a notification with the right title, body, tag, and url from a valid payload', async () => {
+      await dispatchPush(scope, () => ({
+        title: 'Birthday: Alice',
+        body: 'Alice Smith turns 30 today',
+        url: '/people/person-123',
+        tag: 'birthday:person-123',
+      }));
+
+      expect(scope.recorder.notifications).toHaveLength(1);
+      const notif = scope.recorder.notifications[0]!;
+      expect(notif.title).toBe('Birthday: Alice');
+      expect(notif.options.body).toBe('Alice Smith turns 30 today');
+      expect(notif.options.tag).toBe('birthday:person-123');
+      expect(notif.options.data).toEqual({ url: '/people/person-123' });
+    });
+
+    it('shows nothing when event.data is absent', async () => {
+      await dispatchPush(scope, undefined);
+      expect(scope.recorder.notifications).toEqual([]);
+    });
+
+    it('shows nothing when the payload is malformed JSON', async () => {
+      await dispatchPush(scope, () => {
+        throw new Error('Invalid JSON');
+      });
+      expect(scope.recorder.notifications).toEqual([]);
+    });
+
+    it('shows nothing when the payload has no title', async () => {
+      await dispatchPush(scope, () => ({
+        body: 'Some body text',
+        url: '/dashboard',
+        tag: 'some-tag',
+      }));
+      expect(scope.recorder.notifications).toEqual([]);
+    });
+
+    it('writes nothing to the cache', async () => {
+      await dispatchPush(scope, () => ({
+        title: 'Test Notification',
+        body: 'Test body',
+        url: '/people/test',
+        tag: 'test:123',
+      }));
+
+      // The notification body carries a person's name, which must never land on
+      // disk unencrypted. Cache API entries survive logout, so we must assert
+      // that push handlers never write to caches.
+      expect(scope.recorder.puts).toEqual([]);
+      expect(scope.recorder.adds).toEqual([]);
+    });
+  });
+
+  describe('notification clicks', () => {
+    it('focuses an existing tab and navigates it to the payload url', async () => {
+      scope.setClients([
+        {
+          url: `${ORIGIN}/people`,
+          focus: async () => {},
+          navigate: async () => {},
+        },
+      ]);
+
+      await dispatchNotificationClick(scope, { url: '/people/person-123' });
+
+      expect(scope.recorder.navigatedTo).toEqual(['/people/person-123']);
+      expect(scope.recorder.focusedClients).toEqual([`${ORIGIN}/people`]);
+      expect(scope.recorder.openedWindows).toEqual([]);
+    });
+
+    it('opens a new window when no tab is open on this origin', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: '/people/person-456' });
+
+      expect(scope.recorder.openedWindows).toEqual(['/people/person-456']);
+      expect(scope.recorder.navigatedTo).toEqual([]);
+      expect(scope.recorder.focusedClients).toEqual([]);
+    });
+
+    it('falls back to /dashboard when data.url is missing', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, {});
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
     });
   });
 });
