@@ -66,6 +66,14 @@
     "createJournal": "New entry",
     "map": "Map"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} today",
+      "importantDateLeadBody": "{dateTitle} on {formattedDate}",
+      "contactBody": "Time to catch up",
+      "digestTitle": "Your week ahead"
+    }
+  },
   "settings": {
     "title": "Settings",
     "menu": "Settings Menu",

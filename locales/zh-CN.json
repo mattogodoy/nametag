@@ -66,6 +66,14 @@
     "createJournal": "新条目",
     "map": "地图"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "今天是{dateTitle}",
+      "importantDateLeadBody": "{formattedDate}是{dateTitle}",
+      "contactBody": "该联系一下了",
+      "digestTitle": "本周概览"
+    }
+  },
   "settings": {
     "title": "设置",
     "menu": "设置菜单",

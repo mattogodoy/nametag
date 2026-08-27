@@ -66,6 +66,14 @@
     "createJournal": "Ny oppføring",
     "map": "Kart"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} i dag",
+      "importantDateLeadBody": "{dateTitle} den {formattedDate}",
+      "contactBody": "På tide å ta kontakt",
+      "digestTitle": "Uken din"
+    }
+  },
   "settings": {
     "title": "Innstillinger",
     "menu": "Innstillingsmeny",

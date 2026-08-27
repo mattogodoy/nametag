@@ -66,6 +66,14 @@
     "createJournal": "Neuer Eintrag",
     "map": "Karte"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} heute",
+      "importantDateLeadBody": "{dateTitle} am {formattedDate}",
+      "contactBody": "Zeit, sich zu melden",
+      "digestTitle": "Deine kommende Woche"
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "menu": "Einstellungsmenü",

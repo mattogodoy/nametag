@@ -66,6 +66,14 @@
     "createJournal": "Новая запись",
     "map": "Карта"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} сегодня",
+      "importantDateLeadBody": "{dateTitle}: {formattedDate}",
+      "contactBody": "Пора связаться",
+      "digestTitle": "Ваша неделя"
+    }
+  },
   "settings": {
     "title": "Настройки",
     "menu": "Меню настроек",

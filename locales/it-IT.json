@@ -66,6 +66,14 @@
     "createJournal": "Nuova voce",
     "map": "Mappa"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} oggi",
+      "importantDateLeadBody": "{dateTitle} il {formattedDate}",
+      "contactBody": "È ora di risentirsi",
+      "digestTitle": "La tua settimana"
+    }
+  },
   "settings": {
     "title": "Impostazioni",
     "menu": "Menu Impostazioni",

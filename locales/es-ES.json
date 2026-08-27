@@ -66,6 +66,14 @@
     "createJournal": "Nueva entrada",
     "map": "Mapa"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} hoy",
+      "importantDateLeadBody": "{dateTitle} el {formattedDate}",
+      "contactBody": "Es momento de ponerse al día",
+      "digestTitle": "Tu semana"
+    }
+  },
   "settings": {
     "title": "Configuración",
     "menu": "Menú de Configuración",

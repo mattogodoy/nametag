@@ -66,6 +66,14 @@
     "createJournal": "Nieuwe invoer",
     "map": "Kaart"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} vandaag",
+      "importantDateLeadBody": "{dateTitle} op {formattedDate}",
+      "contactBody": "Tijd om weer contact op te nemen",
+      "digestTitle": "Jouw komende week"
+    }
+  },
   "settings": {
     "title": "Instellingen",
     "menu": "Instellingenmenu",

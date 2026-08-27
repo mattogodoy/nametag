@@ -66,6 +66,14 @@
     "createJournal": "新しいエントリー",
     "map": "マップ"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "本日は{dateTitle}です",
+      "importantDateLeadBody": "{formattedDate}は{dateTitle}です",
+      "contactBody": "そろそろ連絡してみませんか",
+      "digestTitle": "今週の予定"
+    }
+  },
   "settings": {
     "title": "設定",
     "menu": "設定メニュー",
