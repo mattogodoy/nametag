@@ -26,6 +26,13 @@ export function parseNtfyUrl(url: string): { base: string; topic: string } | nul
     return null;
   }
 
+  // postJson already rejects a non-http(s) scheme before connecting, but this
+  // function should not hand a URL downstream that it already knows is
+  // unusable.
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return null;
+  }
+
   const segments = parsed.pathname.split('/').filter(Boolean);
 
   // Exactly one segment. Zero means no topic was given, and more than one is
@@ -95,8 +102,23 @@ export async function sendNtfy(
   });
 
   const headers: Record<string, string> = {};
+
   if (endpoint.secret) {
-    headers.Authorization = `Bearer ${decryptSecret(endpoint.secret)}`;
+    let token: string;
+
+    try {
+      token = decryptSecret(endpoint.secret);
+    } catch {
+      // A stored token that will not decrypt, which is what happens to every
+      // stored secret if NEXTAUTH_SECRET is rotated. Report it rather than
+      // throwing: this function's contract is to resolve with an outcome, and
+      // a throw here would abandon the caller's remaining endpoints. Not
+      // 'blocked', because the URL is fine and telling the user to change it
+      // would send them after the wrong thing.
+      return { ok: false, code: 'unknown' };
+    }
+
+    headers.Authorization = `Bearer ${token}`;
   }
 
   return postJson(parsed.base, payload, headers);

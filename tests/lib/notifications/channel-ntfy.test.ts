@@ -69,6 +69,10 @@ describe('parseNtfyUrl', () => {
   it('rejects a malformed URL', () => {
     expect(parseNtfyUrl('not a url')).toBeNull();
   });
+
+  it('rejects a non-http(s) scheme', () => {
+    expect(parseNtfyUrl('ftp://ntfy.sh/my-topic')).toBeNull();
+  });
 });
 
 describe('ntfyTagFor', () => {
@@ -177,5 +181,16 @@ describe('sendNtfy', () => {
       ok: false,
       code: 'http_5xx',
     });
+  });
+
+  it('resolves rather than rejecting when the stored token will not decrypt', async () => {
+    mocks.decryptSecret.mockImplementation(() => {
+      throw new Error('bad decrypt');
+    });
+
+    const result = await sendNtfy({ id: 'ep-1', url: 'https://ntfy.sh/t', secret: 'enc' }, contact);
+
+    expect(result).toEqual({ ok: false, code: 'unknown' });
+    expect(mocks.postJson).not.toHaveBeenCalled();
   });
 });
