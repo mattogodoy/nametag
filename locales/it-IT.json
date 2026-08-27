@@ -213,6 +213,8 @@
       "endpointTestRejected": "La destinazione ha rifiutato la notifica. Controlla il nome del topic e il token di accesso.",
       "endpointDisabled": "Disattivata dopo ripetuti errori. Correggi la destinazione, poi riattivala.",
       "endpointEnable": "Riattiva",
+      "endpointAddInvalid": "Controlla l'URL del topic e riprova.",
+      "endpointAddRateLimited": "Troppi tentativi. Attendi qualche minuto e riprova.",
       "weekdays": {
         "0": "Domenica",
         "1": "Lunedì",

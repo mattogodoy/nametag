@@ -213,6 +213,8 @@
       "endpointTestRejected": "Das Ziel hat die Benachrichtigung abgelehnt. Prüfe den Themennamen und das Zugriffstoken.",
       "endpointDisabled": "Nach wiederholten Fehlern deaktiviert. Behebe das Problem am Ziel und schalte es dann wieder ein.",
       "endpointEnable": "Wieder einschalten",
+      "endpointAddInvalid": "Überprüfe die Themen-URL und versuche es erneut.",
+      "endpointAddRateLimited": "Zu viele Versuche. Warte ein paar Minuten und versuche es erneut.",
       "weekdays": {
         "0": "Sonntag",
         "1": "Montag",

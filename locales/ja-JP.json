@@ -213,6 +213,8 @@
       "endpointTestRejected": "通知先が通知を拒否しました。トピック名とアクセストークンを確認してください。",
       "endpointDisabled": "エラーが繰り返されたため無効になりました。通知先を修正してから、もう一度オンにしてください。",
       "endpointEnable": "オンに戻す",
+      "endpointAddInvalid": "トピックのURLを確認してから、もう一度お試しください。",
+      "endpointAddRateLimited": "試行回数が多すぎます。数分待ってから、もう一度お試しください。",
       "weekdays": {
         "0": "日曜日",
         "1": "月曜日",

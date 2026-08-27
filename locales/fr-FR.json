@@ -213,6 +213,8 @@
       "endpointTestRejected": "La destination a rejeté la notification. Vérifiez le nom du sujet et le jeton d'accès.",
       "endpointDisabled": "Désactivée après des échecs répétés. Corrigez la destination, puis réactivez-la.",
       "endpointEnable": "Réactiver",
+      "endpointAddInvalid": "Vérifiez l'URL du sujet et réessayez.",
+      "endpointAddRateLimited": "Trop de tentatives. Attendez quelques minutes et réessayez.",
       "weekdays": {
         "0": "Dimanche",
         "1": "Lundi",

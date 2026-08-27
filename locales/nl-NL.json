@@ -213,6 +213,8 @@
       "endpointTestRejected": "De bestemming heeft de melding geweigerd. Controleer de onderwerpnaam en het toegangstoken.",
       "endpointDisabled": "Uitgeschakeld na herhaalde fouten. Herstel de bestemming en zet hem daarna weer aan.",
       "endpointEnable": "Weer aanzetten",
+      "endpointAddInvalid": "Controleer de URL van het onderwerp en probeer het opnieuw.",
+      "endpointAddRateLimited": "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.",
       "weekdays": {
         "0": "Zondag",
         "1": "Maandag",

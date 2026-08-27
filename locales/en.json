@@ -213,6 +213,8 @@
       "endpointTestRejected": "The destination rejected the notification. Check the topic name and the access token.",
       "endpointDisabled": "Turned off after repeated failures. Fix the destination, then turn it back on.",
       "endpointEnable": "Turn back on",
+      "endpointAddInvalid": "Check the topic URL and try again.",
+      "endpointAddRateLimited": "Too many attempts. Wait a few minutes and try again.",
       "weekdays": {
         "0": "Sunday",
         "1": "Monday",

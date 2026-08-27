@@ -213,6 +213,8 @@
       "endpointTestRejected": "El destino rechazó la notificación. Revisa el nombre del tema y el token de acceso.",
       "endpointDisabled": "Desactivado tras fallos repetidos. Arregla el destino y vuelve a activarlo.",
       "endpointEnable": "Volver a activar",
+      "endpointAddInvalid": "Revisa la URL del tema e inténtalo de nuevo.",
+      "endpointAddRateLimited": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
       "weekdays": {
         "0": "Domingo",
         "1": "Lunes",

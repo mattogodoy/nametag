@@ -112,6 +112,28 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
     return isApiErrorBody(data) && data.error ? data.error : tErrors('internalError');
   }
 
+  /**
+   * The create endpoint returns brand new, English-only error strings for its
+   * 400/409/429 responses. Those are new user-facing text, so unlike
+   * readErrorMessage (which surfaces an existing house-pattern string for
+   * actions that were already shipped, and rarely fires), this branches on
+   * the HTTP status to show a translated message for the cases a user will
+   * actually hit. Anything else still falls back to the raw body, so a
+   * genuinely unexpected server message is surfaced rather than swallowed.
+   */
+  async function readAddErrorMessage(response: Response): Promise<string> {
+    if (response.status === 409) {
+      return t('endpointLimit');
+    }
+    if (response.status === 400) {
+      return t('endpointAddInvalid');
+    }
+    if (response.status === 429) {
+      return t('endpointAddRateLimited');
+    }
+    return readErrorMessage(response);
+  }
+
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
@@ -130,7 +152,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
       });
 
       if (!response.ok) {
-        setFormError(await readErrorMessage(response));
+        setFormError(await readAddErrorMessage(response));
         return;
       }
 

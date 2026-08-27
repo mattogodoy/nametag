@@ -38,8 +38,14 @@ function renderCard(props: Partial<ComponentProps<typeof NotificationEndpointsCa
   );
 }
 
-function jsonResponse(body: unknown, ok = true): Response {
-  return { ok, json: async () => body } as Response;
+function jsonResponse(body: unknown, ok = true, status = ok ? 200 : 400): Response {
+  return { ok, status, json: async () => body } as Response;
+}
+
+function openAddFormAndFill(label: string, url: string) {
+  fireEvent.click(screen.getByRole('button', { name: 'Add ntfy topic' }));
+  fireEvent.change(screen.getByLabelText('Name'), { target: { value: label } });
+  fireEvent.change(screen.getByLabelText('Topic URL'), { target: { value: url } });
 }
 
 const endpoint: NotificationEndpointSummary = {
@@ -241,5 +247,81 @@ describe('NotificationEndpointsCard', () => {
     });
     // The token was submitted but never rendered as visible text.
     expect(screen.queryByText('tk_secret_value')).not.toBeInTheDocument();
+  });
+
+  describe('create failure mapping', () => {
+    it('shows the translated limit message for a 409, not the raw response body', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ error: 'You can have at most 5 endpoints' }, false, 409))
+      );
+      renderCard({ endpoints: [] });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/my-topic');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('You have reached the maximum number of destinations.')
+        ).toBeInTheDocument();
+      });
+      expect(screen.queryByText('You can have at most 5 endpoints')).not.toBeInTheDocument();
+    });
+
+    it('shows the translated invalid-URL message for a 400, not the raw response body', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          jsonResponse(
+            { error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic' },
+            false,
+            400
+          )
+        )
+      );
+      renderCard({ endpoints: [] });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Check the topic URL and try again.')).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText('Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic')
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows the translated rate-limit message for a 429', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ error: 'Too many attempts.' }, false, 429))
+      );
+      renderCard({ endpoints: [] });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/my-topic');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Too many attempts. Wait a few minutes and try again.')
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('still falls back to the raw response body for an unmapped status', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ error: 'Something exploded' }, false, 500))
+      );
+      renderCard({ endpoints: [] });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/my-topic');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Something exploded')).toBeInTheDocument();
+      });
+    });
   });
 });

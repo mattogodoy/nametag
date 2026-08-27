@@ -213,6 +213,8 @@
       "endpointTestRejected": "该目标拒绝了通知。请检查主题名称和访问令牌。",
       "endpointDisabled": "由于多次失败已被关闭。修复该目标后重新打开。",
       "endpointEnable": "重新打开",
+      "endpointAddInvalid": "请检查主题 URL 后重试。",
+      "endpointAddRateLimited": "尝试次数过多，请等待几分钟后重试。",
       "weekdays": {
         "0": "星期日",
         "1": "星期一",

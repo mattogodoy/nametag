@@ -213,6 +213,8 @@
       "endpointTestRejected": "Målet avviste varselet. Sjekk emnenavnet og tilgangstokenet.",
       "endpointDisabled": "Slått av etter gjentatte feil. Fiks målet, og slå det på igjen.",
       "endpointEnable": "Slå på igjen",
+      "endpointAddInvalid": "Sjekk emne-URL-en og prøv igjen.",
+      "endpointAddRateLimited": "For mange forsøk. Vent noen minutter og prøv igjen.",
       "weekdays": {
         "0": "Søndag",
         "1": "Mandag",
