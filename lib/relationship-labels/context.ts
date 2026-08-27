@@ -162,7 +162,13 @@ export async function loadPersonContexts(
     work.push(
       prisma.importantDate
         .findMany({
-          where: { personId: { in: ids }, deletedAt: null },
+          // Scoped through the person as well as the id list, so the query
+          // defends itself rather than trusting the caller's ids.
+          where: {
+            personId: { in: ids },
+            deletedAt: null,
+            person: { userId, deletedAt: null },
+          },
           select: { personId: true, type: true, title: true, date: true },
         })
         .then((rows) => {

@@ -133,7 +133,11 @@ describe('loadPersonContexts', () => {
       select: { personId: true, templateId: true, value: true, template: { select: { type: true } } },
     });
     expect(mocks.importantDateFindMany).toHaveBeenCalledWith({
-      where: { personId: { in: ['p1'] }, deletedAt: null },
+      where: {
+        personId: { in: ['p1'] },
+        deletedAt: null,
+        person: { userId: 'user-1', deletedAt: null },
+      },
       select: { personId: true, type: true, title: true, date: true },
     });
   });
