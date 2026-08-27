@@ -157,6 +157,18 @@ async function loadEndpoints(
  * shadow, a send that actually succeeded. `sendNtfy` already resolves rather
  * than throwing, so guarding it here is belt and braces today and the
  * guarantee this loop needs once a second endpoint type joins it.
+ *
+ * A throw is also recorded as a failure (coarse code `unknown`), the same as
+ * a driver that resolves with an error. Without this, an endpoint whose
+ * driver throws every night would never accumulate `consecutiveFailures` and
+ * would never auto-disable, unlike one that resolves false. Unreachable today
+ * since `sendNtfy` only resolves, but the next endpoint type this loop grows
+ * to hold has no such contract yet.
+ *
+ * `attempted` is tracked separately from `endpoints.length` so a user whose
+ * endpoints are all a type not yet handled here (WEBHOOK, before Phase 4
+ * exists) reports `skipped` rather than `failed`. Nothing was attempted, so
+ * nothing failed.
  */
 async function dispatchEndpoints(
   envelope: NotificationEnvelope,
@@ -166,6 +178,7 @@ async function dispatchEndpoints(
     return { channel: 'ntfy', status: 'skipped' };
   }
 
+  let attempted = 0;
   let delivered = 0;
   let lastError = 'Unknown endpoint error';
 
@@ -176,16 +189,30 @@ async function dispatchEndpoints(
       continue;
     }
 
+    attempted++;
+
     let result: Awaited<ReturnType<typeof sendNtfy>>;
 
     try {
       result = await sendNtfy(endpoint, envelope);
     } catch (error) {
-      lastError = error instanceof Error ? error.message : 'Unknown endpoint error';
+      const message = error instanceof Error ? error.message : 'Unknown endpoint error';
+      lastError = message;
       log.error(
-        { ...envelope.logMeta, endpointId: endpoint.id, errorMessage: lastError },
+        { ...envelope.logMeta, endpointId: endpoint.id, errorMessage: message },
         "Endpoint delivery threw, continuing with the user's remaining endpoints"
       );
+
+      // Record it too, so a driver that throws every night still accumulates
+      // failures and eventually auto-disables, the same as one that resolves
+      // with an error. web-push.ts does this for the same reason.
+      try {
+        await recordEndpointResult(endpoint.id, { ok: false, code: 'unknown' });
+      } catch {
+        // Bookkeeping only. A failure to record here must not be mistaken
+        // for, or reported as, a second delivery failure.
+      }
+
       continue;
     }
 
@@ -193,6 +220,10 @@ async function dispatchEndpoints(
       delivered++;
     } else {
       lastError = result.code;
+      log.warn(
+        { ...envelope.logMeta, endpointId: endpoint.id, code: result.code },
+        'Endpoint delivery failed'
+      );
     }
 
     try {
@@ -210,6 +241,10 @@ async function dispatchEndpoints(
 
   if (delivered > 0) {
     return { channel: 'ntfy', status: 'delivered' };
+  }
+
+  if (attempted === 0) {
+    return { channel: 'ntfy', status: 'skipped' };
   }
 
   return { channel: 'ntfy', status: 'failed', error: lastError };

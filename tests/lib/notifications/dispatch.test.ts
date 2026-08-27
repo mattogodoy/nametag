@@ -449,6 +449,10 @@ describe('dispatchAll with push', () => {
 describe('dispatchAll with endpoints', () => {
   beforeEach(() => {
     mocks.isEmailConfigured.mockReturnValue(false);
+    // Reset like the sibling describe blocks do, so this block does not
+    // depend on whatever mock state the previous block happened to leave
+    // behind.
+    pushMocks.sendWebPush.mockReset();
     pushMocks.sendWebPush.mockResolvedValue({ channel: 'web_push', status: 'skipped' });
     pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
     endpointMocks.endpointFindMany.mockReset();
@@ -461,6 +465,11 @@ describe('dispatchAll with endpoints', () => {
   it('skips when the user has no endpoints', async () => {
     const [result] = await dispatchAll([envelope('1')]);
 
+    // skipped: 3 is email (off), push (default skip) and ntfy (no endpoints).
+    // Asserting the count, not just shouldStamp, pins the ntfy outcome to
+    // skipped rather than some other non-delivered status that would also
+    // leave shouldStamp false.
+    expect(result.skipped).toBe(3);
     expect(result.shouldStamp).toBe(false);
     expect(endpointMocks.sendNtfy).not.toHaveBeenCalled();
   });
@@ -490,6 +499,11 @@ describe('dispatchAll with endpoints', () => {
       code: 'timeout',
     });
     expect(result.failed).toBe(1);
+    // Pins both the error message and the channel tag: leaving `lastError`
+    // at its initialiser, or mis-tagging the outcome 'email' instead of
+    // 'ntfy', would both otherwise still leave failed === 1 and pass.
+    expect(result.firstError).toBe('timeout');
+    expect(result.failedChannels).toEqual(['ntfy']);
     expect(result.shouldStamp).toBe(false);
   });
 
@@ -526,6 +540,38 @@ describe('dispatchAll with endpoints', () => {
     expect(endpointMocks.recordEndpointResult).toHaveBeenCalledWith('ep-2', { ok: true });
     expect(result.delivered).toBe(1);
     expect(result.failed).toBe(0);
+    expect(result.shouldStamp).toBe(true);
+  });
+
+  it('an endpoint whose driver throws costs that endpoint only', async () => {
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/a', secret: null },
+      { id: 'ep-2', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/b', secret: null },
+    ]);
+    endpointMocks.sendNtfy
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce({ ok: true });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    // The sibling must still be attempted, and its success must still count.
+    expect(endpointMocks.sendNtfy).toHaveBeenCalledTimes(2);
+    expect(result.delivered).toBe(1);
+    expect(result.shouldStamp).toBe(true);
+  });
+
+  it('a health-write failure does not turn a delivered endpoint into a failure', async () => {
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/a', secret: null },
+    ]);
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
+    endpointMocks.recordEndpointResult.mockRejectedValueOnce(new Error('db blip'));
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    // Unguarded, this throw escapes dispatchEndpoints, hits guard(), and
+    // converts a real delivery into a failure. For a user with email off and
+    // no push devices that flips shouldStamp and drops the reminder.
     expect(result.shouldStamp).toBe(true);
   });
 });
