@@ -42,12 +42,27 @@ vi.mock('../../lib/prisma', () => ({
   },
 }));
 
-// Mock email
+// Mock email. dispatch.ts imports isEmailConfigured from this module, and
+// renderEmail may reach for emailTemplates.importantDateLeadReminder or
+// emailTemplates.weeklyDigest depending on the fixture, so both are supplied
+// here even though this file's fixtures only exercise the important-date and
+// contact templates today.
 vi.mock('../../lib/email', () => ({
   sendEmailBatch: mocks.sendEmailBatch,
+  isEmailConfigured: () => true,
   emailTemplates: {
     importantDateReminder: mocks.importantDateReminderTemplate,
     contactReminder: mocks.contactReminderTemplate,
+    importantDateLeadReminder: vi.fn(() => ({
+      subject: 'lead reminder',
+      html: '<p>lead reminder</p>',
+      text: 'lead reminder',
+    })),
+    weeklyDigest: vi.fn(() => ({
+      subject: 'weekly digest',
+      html: '<p>weekly digest</p>',
+      text: 'weekly digest',
+    })),
   },
 }));
 
