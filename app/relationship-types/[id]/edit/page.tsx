@@ -6,6 +6,7 @@ import RelationshipTypeForm from '@/components/RelationshipTypeForm';
 import Navigation from '@/components/Navigation';
 import { getTranslations } from 'next-intl/server';
 import { formatFullName } from '@/lib/nameUtils';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 const PREVIEW_PEOPLE_LIMIT = 200;
 
@@ -22,6 +23,8 @@ export default async function EditRelationshipTypePage({
   }
 
   const { id } = await params;
+
+  const { nameOrder, nameDisplayFormat } = await getUserDisplayPreferences(session.user.id);
 
   const [relationshipType, availableTypes, groups, templates, people, genders] = await Promise.all([
     prisma.relationshipType.findFirst({
@@ -111,7 +114,7 @@ export default async function EditRelationshipTypePage({
 
   const previewPeople = people.map((person) => ({
     id: person.id,
-    name: formatFullName(person),
+    name: formatFullName(person, nameOrder, nameDisplayFormat),
   }));
   const genderSuggestions = genders
     .map((entry) => entry.gender)

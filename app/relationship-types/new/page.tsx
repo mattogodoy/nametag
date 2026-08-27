@@ -6,6 +6,7 @@ import RelationshipTypeForm from '@/components/RelationshipTypeForm';
 import Navigation from '@/components/Navigation';
 import { getTranslations } from 'next-intl/server';
 import { formatFullName } from '@/lib/nameUtils';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
 
 const PREVIEW_PEOPLE_LIMIT = 200;
 
@@ -16,6 +17,8 @@ export default async function NewRelationshipTypePage() {
   if (!session?.user) {
     redirect('/login');
   }
+
+  const { nameOrder, nameDisplayFormat } = await getUserDisplayPreferences(session.user.id);
 
   // Get all available types for inverse relationship selection
   const [availableTypes, groups, templates, people, genders] = await Promise.all([
@@ -66,7 +69,7 @@ export default async function NewRelationshipTypePage() {
 
   const previewPeople = people.map((person) => ({
     id: person.id,
-    name: formatFullName(person),
+    name: formatFullName(person, nameOrder, nameDisplayFormat),
   }));
   const genderSuggestions = genders
     .map((entry) => entry.gender)

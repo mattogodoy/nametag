@@ -36,6 +36,10 @@ export default function LabelPreview({ typeLabel, variants, people }: LabelPrevi
   const [result, setResult] = useState<PreviewResult | null>(null);
   const [failed, setFailed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guards against a superseded response overwriting a newer one: each
+  // scheduled request stamps itself with the current counter, and its
+  // response is applied only if that stamp still matches when it resolves.
+  const requestIdRef = useRef(0);
   const canPreview = describedPersonId.length > 0 && otherPersonId.length > 0;
 
   useEffect(() => {
@@ -49,6 +53,8 @@ export default function LabelPreview({ typeLabel, variants, people }: LabelPrevi
     }
 
     timerRef.current = setTimeout(() => {
+      const requestId = ++requestIdRef.current;
+
       fetch('/api/relationship-types/preview-label', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,10 +65,16 @@ export default function LabelPreview({ typeLabel, variants, people }: LabelPrevi
             throw new Error('Preview request failed');
           }
           const data = (await response.json()) as PreviewResult;
+          if (requestIdRef.current !== requestId) {
+            return;
+          }
           setResult(data);
           setFailed(false);
         })
         .catch(() => {
+          if (requestIdRef.current !== requestId) {
+            return;
+          }
           setResult(null);
           setFailed(true);
         });
