@@ -1,5 +1,29 @@
-import { pushSubscribeSchema, emailRemindersSchema } from '../validations';
+import {
+  pushSubscribeSchema,
+  emailRemindersSchema,
+  createNtfyEndpointSchema,
+  updateEndpointSchema,
+} from '../validations';
 import { zodBody, jsonResponse, resp, ref400, ref401, ref404, refSuccess, pathParam, sessionOrToken } from './helpers';
+
+// Matches the route's PUBLIC_FIELDS select exactly. `secret` is deliberately
+// absent: it is write-only, encrypted at create time, and never read back out.
+const notificationEndpointObject = {
+  type: 'object',
+  properties: {
+    id: { type: 'string' },
+    type: { type: 'string', enum: ['NTFY', 'WEBHOOK'] },
+    label: { type: 'string' },
+    url: { type: 'string', format: 'uri' },
+    enabled: { type: 'boolean' },
+    consecutiveFailures: { type: 'integer' },
+    lastSuccessAt: { type: ['string', 'null'], format: 'date-time' },
+    lastFailureAt: { type: ['string', 'null'], format: 'date-time' },
+    lastFailureCode: { type: ['string', 'null'] },
+    autoDisabledAt: { type: ['string', 'null'], format: 'date-time' },
+    createdAt: { type: 'string', format: 'date-time' },
+  },
+};
 
 export function notificationsPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -68,6 +92,118 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
           '200': refSuccess(),
           '400': ref400(),
           '401': ref401(),
+        },
+      },
+    },
+    '/api/notifications/endpoints': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'List notification endpoints',
+        description:
+          "Lists the current user's configured outbound endpoints (ntfy topics today). Never " +
+          'returns the stored secret: it is write-only, encrypted at create time.',
+        security: sessionOrToken(),
+        responses: {
+          '200': jsonResponse('Notification endpoints', {
+            type: 'object',
+            properties: {
+              endpoints: { type: 'array', items: notificationEndpointObject },
+            },
+          }),
+          '401': ref401(),
+        },
+      },
+      post: {
+        tags: ['Notifications'],
+        summary: 'Create a notification endpoint',
+        description:
+          'Creates a new ntfy endpoint. The URL is validated against the outbound SSRF policy ' +
+          'and must be a full topic URL, for example https://ntfy.sh/my-topic. The optional ' +
+          'access token is encrypted at rest and never returned by any endpoint. Capped at 5 ' +
+          'endpoints per user.',
+        security: sessionOrToken(),
+        requestBody: zodBody(createNtfyEndpointSchema),
+        responses: {
+          '201': jsonResponse('Created endpoint', {
+            type: 'object',
+            properties: { endpoint: notificationEndpointObject },
+          }),
+          '400': ref400(),
+          '401': ref401(),
+          '409': resp('Maximum number of endpoints reached'),
+          '429': resp('Rate limited'),
+        },
+      },
+    },
+    '/api/notifications/endpoints/{id}': {
+      put: {
+        tags: ['Notifications'],
+        summary: 'Update a notification endpoint',
+        description:
+          'Relabels an endpoint, or enables/disables it. Re-enabling clears the auto-disable ' +
+          'state and the consecutive failure counter, so a repaired endpoint gets a clean slate.',
+        security: sessionOrToken(),
+        parameters: [pathParam('id', 'Notification endpoint ID')],
+        requestBody: zodBody(updateEndpointSchema),
+        responses: {
+          '200': refSuccess(),
+          '400': ref400(),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+      delete: {
+        tags: ['Notifications'],
+        summary: 'Delete a notification endpoint',
+        description:
+          'Permanently deletes an outbound endpoint. Scoped to the current user, so it cannot ' +
+          "be used to delete another account's endpoint.",
+        security: sessionOrToken(),
+        parameters: [pathParam('id', 'Notification endpoint ID')],
+        responses: {
+          '200': refSuccess(),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+    },
+    '/api/notifications/endpoints/{id}/test': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Send a test notification to an endpoint',
+        description:
+          'Sends a sample notification to one endpoint and reports the outcome immediately. ' +
+          'The tightest rate limit in the app, since this is a synchronous, user-triggered ' +
+          'outbound request. A failed test is reported back but never counted toward ' +
+          "auto-disable, and never returns a response body or status line, only the coarse " +
+          'failure category.',
+        security: sessionOrToken(),
+        parameters: [pathParam('id', 'Notification endpoint ID')],
+        responses: {
+          '200': jsonResponse('Test result', {
+            type: 'object',
+            properties: {
+              ok: { type: 'boolean' },
+              code: {
+                type: 'string',
+                description: 'Present only when ok is false. Coarse outbound failure category.',
+                enum: [
+                  'blocked',
+                  'dns',
+                  'timeout',
+                  'refused',
+                  'tls',
+                  'redirect',
+                  'http_4xx',
+                  'http_5xx',
+                  'unknown',
+                ],
+              },
+            },
+          }),
+          '401': ref401(),
+          '404': ref404(),
+          '429': resp('Rate limited'),
         },
       },
     },
