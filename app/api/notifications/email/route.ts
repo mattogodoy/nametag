@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { emailRemindersSchema } from '@/lib/validations';
 
 export const PUT = withAuth(async (request, session) => {
   try {
-    const parsed = emailRemindersSchema.safeParse(await request.json());
+    const parsed = emailRemindersSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }

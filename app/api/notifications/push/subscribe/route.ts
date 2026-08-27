@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { pushSubscribeSchema } from '@/lib/validations';
 
 /** Trimmed so a hostile client cannot use the label as unbounded storage. */
@@ -8,7 +8,7 @@ const MAX_USER_AGENT = 255;
 
 export const POST = withAuth(async (request, session) => {
   try {
-    const parsed = pushSubscribeSchema.safeParse(await request.json());
+    const parsed = pushSubscribeSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid subscription' }, { status: 400 });
     }

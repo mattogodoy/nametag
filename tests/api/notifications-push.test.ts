@@ -24,6 +24,8 @@ vi.mock('../../lib/notifications/vapid', () => ({
 
 import { GET as getPublicKey } from '../../app/api/notifications/push/public-key/route';
 import { POST as subscribe } from '../../app/api/notifications/push/subscribe/route';
+import { DELETE as revoke } from '../../app/api/notifications/push/subscriptions/[id]/route';
+import { PUT as toggleEmailReminders } from '../../app/api/notifications/email/route';
 
 function request(body: unknown): Request {
   return new Request('http://localhost/api/notifications/push/subscribe', {
@@ -31,6 +33,27 @@ function request(body: unknown): Request {
     headers: { 'content-type': 'application/json', 'user-agent': 'TestBrowser/1.0' },
     body: JSON.stringify(body),
   });
+}
+
+/** Sends a body that is not valid JSON at all, to exercise the parse-failure path. */
+function rawRequest(url: string, method: string, rawBody: string): Request {
+  return new Request(url, {
+    method,
+    headers: { 'content-type': 'application/json' },
+    body: rawBody,
+  });
+}
+
+function emailToggleRequest(body: unknown): Request {
+  return new Request('http://localhost/api/notifications/email', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+function deleteContext(id: string): { params: Promise<{ id: string }> } {
+  return { params: Promise.resolve({ id }) };
 }
 
 const validBody = {
@@ -120,5 +143,100 @@ describe('push API', () => {
 
     expect(response.status).toBe(400);
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a subscribe body that is not JSON at all, rather than 500ing', async () => {
+    const response = await subscribe(
+      rawRequest('http://localhost/api/notifications/push/subscribe', 'POST', 'not json at all')
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  describe('DELETE /api/notifications/push/subscriptions/[id]', () => {
+    it('rejects an unauthenticated revoke', async () => {
+      mocks.auth.mockResolvedValue(null);
+
+      const response = await revoke(
+        new Request('http://localhost/api/notifications/push/subscriptions/sub-1', {
+          method: 'DELETE',
+        }),
+        deleteContext('sub-1')
+      );
+
+      expect(response.status).toBe(401);
+      expect(mocks.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('revokes an owned subscription, scoped by userId', async () => {
+      mocks.deleteMany.mockResolvedValue({ count: 1 });
+
+      const response = await revoke(
+        new Request('http://localhost/api/notifications/push/subscriptions/sub-1', {
+          method: 'DELETE',
+        }),
+        deleteContext('sub-1')
+      );
+
+      // The userId filter is the whole point: without it, any signed-in user
+      // could revoke another account's device by guessing an id. Asserted
+      // before the status so a regression here fails loudly on the call
+      // itself, not just on a downstream status code.
+      expect(mocks.deleteMany).toHaveBeenCalledWith({
+        where: { id: 'sub-1', userId: 'user-1' },
+      });
+      expect(response.status).toBe(200);
+    });
+
+    it("returns 404 when the subscription is not the caller's or does not exist", async () => {
+      mocks.deleteMany.mockResolvedValue({ count: 0 });
+
+      const response = await revoke(
+        new Request('http://localhost/api/notifications/push/subscriptions/sub-1', {
+          method: 'DELETE',
+        }),
+        deleteContext('sub-1')
+      );
+
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe('PUT /api/notifications/email', () => {
+    it('rejects an unauthenticated toggle', async () => {
+      mocks.auth.mockResolvedValue(null);
+
+      const response = await toggleEmailReminders(emailToggleRequest({ enabled: false }));
+
+      expect(response.status).toBe(401);
+      expect(mocks.userUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a non-boolean enabled value', async () => {
+      const response = await toggleEmailReminders(emailToggleRequest({ enabled: 'yes' }));
+
+      expect(response.status).toBe(400);
+      expect(mocks.userUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a toggle body that is not JSON at all, rather than 500ing', async () => {
+      const response = await toggleEmailReminders(
+        rawRequest('http://localhost/api/notifications/email', 'PUT', 'not json at all')
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.userUpdate).not.toHaveBeenCalled();
+    });
+
+    it("updates the caller's own row", async () => {
+      const response = await toggleEmailReminders(emailToggleRequest({ enabled: false }));
+
+      expect(response.status).toBe(200);
+      expect(mocks.userUpdate).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { emailRemindersEnabled: false },
+      });
+    });
   });
 });
