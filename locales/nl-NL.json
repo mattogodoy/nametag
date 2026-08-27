@@ -1665,6 +1665,14 @@
           "isPast": "ligt in het verleden",
           "isFuture": "komt eraan"
         },
+        "controlLabels": {
+          "subject": "Welke persoon",
+          "data": "Welke gegevens",
+          "operator": "Vergelijking",
+          "operandKind": "Vergelijken met",
+          "value": "Waarde",
+          "dateTitle": "Datumtitel"
+        },
         "preview": {
           "title": "Voorbeeld",
           "hint": "Kies twee contacten om het woord te zien dat dit oplevert.",

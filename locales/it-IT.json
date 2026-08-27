@@ -1665,6 +1665,14 @@
           "isPast": "è passato",
           "isFuture": "è futuro"
         },
+        "controlLabels": {
+          "subject": "Quale persona",
+          "data": "Quale dato",
+          "operator": "Confronto",
+          "operandKind": "Confronta con",
+          "value": "Valore",
+          "dateTitle": "Titolo della data"
+        },
         "preview": {
           "title": "Anteprima",
           "hint": "Scegli due contatti per vedere la parola che produce.",

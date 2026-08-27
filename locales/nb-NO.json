@@ -1665,6 +1665,14 @@
           "isPast": "har passert",
           "isFuture": "kommer snart"
         },
+        "controlLabels": {
+          "subject": "Hvilken person",
+          "data": "Hvilke data",
+          "operator": "Sammenligning",
+          "operandKind": "Sammenlign med",
+          "value": "Verdi",
+          "dateTitle": "Datotittel"
+        },
         "preview": {
           "title": "Forhåndsvisning",
           "hint": "Velg to kontakter for å se ordet dette gir.",

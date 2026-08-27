@@ -8,6 +8,7 @@ import {
   PERSON_FIELD_KEYS,
   OPERATORS_WITHOUT_OPERAND,
   operatorsForSource,
+  operatorsForCustomFieldType,
   type LabelCondition,
   type LabelOperator,
   type LabelSource,
@@ -104,6 +105,20 @@ export default function ConditionRow({
       ? templates.find((template) => template.id === condition.subjectRef) ?? null
       : null;
 
+  /**
+   * The operators offered for one source/ref pair. A custom field is narrowed by
+   * its own template type, per `operatorsForCustomFieldType`'s contract; a broken
+   * reference (template deleted) falls back to the full permissive list so the
+   * row still renders instead of offering nothing.
+   */
+  function operatorsFor(source: LabelSource, ref: string): readonly LabelOperator[] {
+    if (source === 'CUSTOM_FIELD') {
+      const template = templates.find((candidate) => candidate.id === ref);
+      if (template) return operatorsForCustomFieldType(template.type);
+    }
+    return operatorsForSource(source);
+  }
+
   function determineValueKind(): ValueKind {
     if (condition.source === 'CUSTOM_FIELD') {
       switch (activeTemplate?.type) {
@@ -128,7 +143,7 @@ export default function ConditionRow({
 
   function handleDataChange(value: string) {
     const { source, ref } = decodeDataValue(value);
-    const operators = operatorsForSource(source);
+    const operators = operatorsFor(source, ref);
     onChange({
       ...condition,
       source,
@@ -188,7 +203,7 @@ export default function ConditionRow({
         return (
           <select
             key={key}
-            aria-label={t('subject.DESCRIBED')}
+            aria-label={t('controlLabels.subject')}
             value={condition.subject}
             onChange={(e) => handleSubjectChange(e.target.value as LabelCondition['subject'])}
             className={controlClass}
@@ -205,7 +220,7 @@ export default function ConditionRow({
         return (
           <span key={key} className="inline-flex items-center gap-2">
             <select
-              aria-label={t('sourceGroups.PERSON_FIELD')}
+              aria-label={t('controlLabels.data')}
               value={encodeDataValue(
                 condition.source,
                 condition.source === 'DATE_TITLE' ? '' : condition.subjectRef
@@ -254,8 +269,8 @@ export default function ConditionRow({
             {condition.source === 'DATE_TITLE' && (
               <input
                 type="text"
-                aria-label={t('sourceGroups.DATE_TITLE')}
-                placeholder={t('sourceGroups.DATE_TITLE')}
+                aria-label={t('controlLabels.dateTitle')}
+                placeholder={t('controlLabels.dateTitle')}
                 value={condition.subjectRef}
                 onChange={(e) => handleDateTitleRefChange(e.target.value)}
                 className={controlClass}
@@ -265,11 +280,11 @@ export default function ConditionRow({
         );
 
       case 'operator': {
-        const operators = operatorsForSource(condition.source);
+        const operators = operatorsFor(condition.source, condition.subjectRef);
         return (
           <select
             key={key}
-            aria-label={t('conditionPrefix')}
+            aria-label={t('controlLabels.operator')}
             value={condition.operator}
             onChange={(e) => handleOperatorChange(e.target.value)}
             className={controlClass}
@@ -301,7 +316,7 @@ export default function ConditionRow({
         return (
           <span key={key} className="inline-flex items-center gap-2">
             <select
-              aria-label={t('operandKind.literal')}
+              aria-label={t('controlLabels.operandKind')}
               value={operandMode}
               onChange={(e) => handleModeChange(e.target.value as 'literal' | 'now' | 'ref')}
               className={controlClass}
@@ -316,7 +331,7 @@ export default function ConditionRow({
               <>
                 {valueKind === 'select' && (
                   <select
-                    aria-label={t('operandKind.literal')}
+                    aria-label={t('controlLabels.value')}
                     value={operand?.kind === 'literal' ? operand.value : ''}
                     onChange={(e) => handleLiteralChange(e.target.value)}
                     className={controlClass}
@@ -332,7 +347,7 @@ export default function ConditionRow({
                 {valueKind === 'boolean' && (
                   <input
                     type="checkbox"
-                    aria-label={t('operandKind.literal')}
+                    aria-label={t('controlLabels.value')}
                     checked={operand?.kind === 'literal' && operand.value === 'true'}
                     onChange={(e) => handleLiteralChange(e.target.checked ? 'true' : 'false')}
                     className="h-4 w-4 text-primary border-border focus:outline-none focus:ring-2 focus:ring-primary"
@@ -341,7 +356,7 @@ export default function ConditionRow({
                 {valueKind === 'number' && (
                   <input
                     type="number"
-                    aria-label={t('operandKind.literal')}
+                    aria-label={t('controlLabels.value')}
                     value={operand?.kind === 'literal' ? operand.value : ''}
                     onChange={(e) => handleLiteralChange(e.target.value)}
                     className={controlClass}
@@ -350,7 +365,7 @@ export default function ConditionRow({
                 {valueKind === 'date' && (
                   <input
                     type="date"
-                    aria-label={t('operandKind.literal')}
+                    aria-label={t('controlLabels.value')}
                     value={operand?.kind === 'literal' ? operand.value : ''}
                     onChange={(e) => handleLiteralChange(e.target.value)}
                     className={controlClass}
@@ -361,7 +376,7 @@ export default function ConditionRow({
                     <input
                       type="text"
                       list={datalistId}
-                      aria-label={t('operandKind.literal')}
+                      aria-label={t('controlLabels.value')}
                       value={operand?.kind === 'literal' ? operand.value : ''}
                       onChange={(e) => handleLiteralChange(e.target.value)}
                       className={controlClass}
@@ -376,7 +391,7 @@ export default function ConditionRow({
                 {valueKind === 'text' && (
                   <input
                     type="text"
-                    aria-label={t('operandKind.literal')}
+                    aria-label={t('controlLabels.value')}
                     value={operand?.kind === 'literal' ? operand.value : ''}
                     onChange={(e) => handleLiteralChange(e.target.value)}
                     className={controlClass}

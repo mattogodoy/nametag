@@ -1665,6 +1665,14 @@
           "isPast": "liegt in der Vergangenheit",
           "isFuture": "steht bevor"
         },
+        "controlLabels": {
+          "subject": "Welche Person",
+          "data": "Welche Daten",
+          "operator": "Vergleich",
+          "operandKind": "Vergleichen mit",
+          "value": "Wert",
+          "dateTitle": "Datumstitel"
+        },
         "preview": {
           "title": "Vorschau",
           "hint": "Wähle zwei Kontakte, um das erzeugte Wort zu sehen.",

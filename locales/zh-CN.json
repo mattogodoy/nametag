@@ -1665,6 +1665,14 @@
           "isPast": "已经过去",
           "isFuture": "即将到来"
         },
+        "controlLabels": {
+          "subject": "哪位联系人",
+          "data": "哪个数据",
+          "operator": "比较方式",
+          "operandKind": "比较对象",
+          "value": "值",
+          "dateTitle": "日期标题"
+        },
         "preview": {
           "title": "预览",
           "hint": "选择两位联系人，查看生成的词语。",

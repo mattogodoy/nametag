@@ -142,3 +142,25 @@ export function operatorsForSource(source: LabelSource): readonly LabelOperator[
       return TEXT_OPERATORS;
   }
 }
+
+export const SELECT_OPERATORS: readonly LabelOperator[] = [
+  'IS', 'IS_NOT', 'IS_SET', 'IS_NOT_SET',
+];
+
+/**
+ * The operators the editor offers for a custom field, narrowed by the template's
+ * own type. The server stays deliberately permissive for CUSTOM_FIELD, so this
+ * narrowing only ever removes choices the engine would evaluate as false.
+ */
+export function operatorsForCustomFieldType(type: CustomFieldType): readonly LabelOperator[] {
+  switch (type) {
+    case 'TEXT':
+      return TEXT_OPERATORS;
+    case 'NUMBER':
+      return NUMBER_OPERATORS;
+    case 'BOOLEAN':
+      return BOOLEAN_OPERATORS;
+    case 'SELECT':
+      return SELECT_OPERATORS;
+  }
+}

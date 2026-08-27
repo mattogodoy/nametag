@@ -14,6 +14,33 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+type Messages = typeof enMessages;
+
+/**
+ * Clones the real en.json messages with `conditionalLabels.segmentOrder`
+ * overridden, so a test can prove the component actually reads the key
+ * instead of only ever exercising the shipped value.
+ */
+function messagesWithSegmentOrder(order: string): Messages {
+  const clone = JSON.parse(JSON.stringify(enMessages)) as Messages;
+  clone.relationshipTypes.form.conditionalLabels.segmentOrder = order;
+  return clone;
+}
+
+function WrapperWithMessages({
+  messages,
+  children,
+}: {
+  messages: Messages;
+  children: React.ReactNode;
+}) {
+  return (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
+
 const groups = [
   { id: 'group-1', name: 'Family' },
   { id: 'group-2', name: 'Coworkers' },
@@ -58,26 +85,77 @@ function renderRow(
   return { onChange, onRemove };
 }
 
+function renderRowWithMessages(
+  messages: Messages,
+  condition: LabelCondition,
+  handlers: { onChange?: (c: LabelCondition) => void; onRemove?: () => void } = {}
+) {
+  const onChange = handlers.onChange ?? vi.fn();
+  const onRemove = handlers.onRemove ?? vi.fn();
+  render(
+    <WrapperWithMessages messages={messages}>
+      <ConditionRow
+        condition={condition}
+        groups={groups}
+        templates={templates}
+        genderSuggestions={genderSuggestions}
+        onChange={onChange}
+        onRemove={onRemove}
+      />
+    </WrapperWithMessages>
+  );
+  return { onChange, onRemove };
+}
+
+/** True when `before` precedes `after` in document order. */
+function precedes(before: Element, after: Element): boolean {
+  // eslint-disable-next-line no-bitwise
+  return Boolean(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING);
+}
+
 describe('ConditionRow', () => {
-  it('renders the segments in the order supplied by the locale template', () => {
+  it('renders the segments in the order supplied by the locale template, and follows an overridden order', () => {
     renderRow(baseCondition());
 
     // segmentOrder in en.json is "prefix,subject,data,operator,operand"
-    expect(screen.getByText('if')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /the described person|the other person/i })).toBeInTheDocument();
+    const prefix = screen.getByText('if');
+    const subjectSelect = screen.getByRole('combobox', { name: 'Which person' });
+    const dataSelect = screen.getByRole('combobox', { name: 'Which data' });
+    const operatorSelect = screen.getByRole('combobox', { name: 'Comparison' });
+    const operandModeSelect = screen.getByRole('combobox', { name: 'Compare against' });
 
-    const prefixIndex = Array.from(document.body.querySelectorAll('*')).findIndex(
-      (el) => el.textContent === 'if' && el.children.length === 0
-    );
-    expect(prefixIndex).toBeGreaterThanOrEqual(0);
+    expect(precedes(prefix, subjectSelect)).toBe(true);
+    expect(precedes(subjectSelect, dataSelect)).toBe(true);
+    expect(precedes(dataSelect, operatorSelect)).toBe(true);
+    expect(precedes(operatorSelect, operandModeSelect)).toBe(true);
 
-    // subject select renders before the data select in the DOM, per the
-    // default locale order (prefix, subject, data, operator, operand).
-    const subjectSelect = screen.getByDisplayValue('the described person');
-    const dataSelect = screen.getByDisplayValue('gender');
-    const position = subjectSelect.compareDocumentPosition(dataSelect);
-    // eslint-disable-next-line no-bitwise
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // A component that hardcoded this JSX order and ignored the locale key
+    // would pass the assertions above identically, so also render with the
+    // key overridden to the exact reverse and confirm the DOM order flips.
+    cleanup();
+    renderRowWithMessages(messagesWithSegmentOrder('operand,operator,data,subject,prefix'), baseCondition());
+
+    const reversedPrefix = screen.getByText('if');
+    const reversedSubjectSelect = screen.getByRole('combobox', { name: 'Which person' });
+    const reversedDataSelect = screen.getByRole('combobox', { name: 'Which data' });
+    const reversedOperatorSelect = screen.getByRole('combobox', { name: 'Comparison' });
+    const reversedOperandModeSelect = screen.getByRole('combobox', { name: 'Compare against' });
+
+    expect(precedes(reversedOperandModeSelect, reversedOperatorSelect)).toBe(true);
+    expect(precedes(reversedOperatorSelect, reversedDataSelect)).toBe(true);
+    expect(precedes(reversedDataSelect, reversedSubjectSelect)).toBe(true);
+    expect(precedes(reversedSubjectSelect, reversedPrefix)).toBe(true);
+  });
+
+  it("keeps the subject select's accessible name stable regardless of which person is selected", () => {
+    renderRow(baseCondition({ subject: 'DESCRIBED' }));
+    expect(screen.getByRole('combobox', { name: 'Which person' })).toHaveValue('DESCRIBED');
+
+    cleanup();
+    renderRow(baseCondition({ subject: 'OTHER' }));
+    // The accessible name must stay "Which person" in both states: it must
+    // never adopt the text of whichever option happens to be selected.
+    expect(screen.getByRole('combobox', { name: 'Which person' })).toHaveValue('OTHER');
   });
 
   it('resets the operator and clears the operand when the data selector changes', async () => {
@@ -183,6 +261,25 @@ describe('ConditionRow', () => {
     expect(datalist).not.toBeNull();
     const options = Array.from(datalist!.querySelectorAll('option')).map((o) => o.getAttribute('value'));
     expect(options).toEqual(genderSuggestions);
+  });
+
+  it('narrows the operator list to the boolean operators for a BOOLEAN custom field', () => {
+    renderRow(
+      baseCondition({
+        source: 'CUSTOM_FIELD',
+        subjectRef: 'tpl-2', // "Is vegetarian", type BOOLEAN
+        operator: 'IS_TRUE',
+        operand: null,
+      })
+    );
+
+    const operatorSelect = screen.getByRole('combobox', { name: 'Comparison' }) as HTMLSelectElement;
+    const optionValues = Array.from(operatorSelect.options).map((o) => o.value);
+
+    expect(optionValues).toContain('IS_TRUE');
+    expect(optionValues).toContain('IS_FALSE');
+    expect(optionValues).not.toContain('CONTAINS');
+    expect(optionValues).not.toContain('GT');
   });
 
   it('calls onRemove when the remove button is clicked', async () => {

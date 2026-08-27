@@ -1665,6 +1665,14 @@
           "isPast": "が過去である",
           "isFuture": "が今後訪れる"
         },
+        "controlLabels": {
+          "subject": "対象の人物",
+          "data": "対象データ",
+          "operator": "比較",
+          "operandKind": "比較対象",
+          "value": "値",
+          "dateTitle": "日付のタイトル"
+        },
         "preview": {
           "title": "プレビュー",
           "hint": "2人の連絡先を選んで、生成される言葉を確認してください。",
