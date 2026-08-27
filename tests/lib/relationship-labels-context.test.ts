@@ -16,11 +16,24 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+// Spy on the real parseCalendarDate rather than stubbing it out: the test
+// below needs both its real conversion behaviour (to build the expected
+// value) and proof that context.ts actually calls it. A spy that wraps the
+// real implementation gives a zone-independent failure signal: on the
+// unfixed loader the spy is simply never invoked, which fails on any
+// machine regardless of its local timezone, unlike comparing timestamps
+// directly (that only diverges on a machine whose local zone isn't UTC).
+vi.mock('@/lib/date-format', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/date-format')>();
+  return { ...actual, parseCalendarDate: vi.fn(actual.parseCalendarDate) };
+});
+
 import {
   collectDataNeeds,
   loadPersonContexts,
   type LabelDataNeeds,
 } from '@/lib/relationship-labels/context';
+import { parseCalendarDate } from '@/lib/date-format';
 import type { LabelVariant } from '@/lib/relationship-labels/types';
 
 describe('collectDataNeeds', () => {
@@ -169,5 +182,36 @@ describe('loadPersonContexts', () => {
     expect(context?.groupIds.has('g2')).toBe(true);
     expect(context?.customValues.get('tpl-1')).toEqual({ type: 'NUMBER', value: '42' });
     expect(context?.dates).toHaveLength(1);
+  });
+
+  it('anchors an important date to its stored UTC calendar day, not the local one (Finding 1)', async () => {
+    // Important dates are written as UTC-midnight DateTime values. A row
+    // stored for 15 May would read back as 14 May under plain getDate() on
+    // any server west of UTC. The stored value below is deliberately built
+    // with Date.UTC so the test does not depend on the machine's own zone.
+    const raw = new Date(Date.UTC(1990, 4, 15));
+    mocks.importantDateFindMany.mockResolvedValue([
+      { personId: 'p1', type: 'birthday', title: 'Anniversaire', date: raw },
+    ]);
+
+    const contexts = await loadPersonContexts('user-1', ['p1'], {
+      fields: [],
+      groups: false,
+      templateIds: [],
+      dates: true,
+    });
+
+    // The loader must have run the stored date through parseCalendarDate.
+    // This assertion is what makes the test able to fail: the unfixed
+    // loader pushes `row.date` straight through and never calls this
+    // function, so the spy assertion fails on any machine, in any
+    // timezone, including a CI container that happens to run in UTC (where
+    // comparing raw timestamps directly would not have caught the bug).
+    expect(parseCalendarDate).toHaveBeenCalledWith(raw);
+
+    // And the output must actually be the converted value: local midnight
+    // on the stored calendar day, per parseCalendarDate's own contract.
+    const expected = parseCalendarDate(raw);
+    expect(contexts.get('p1')?.dates[0]?.date.getTime()).toBe(expected.getTime());
   });
 });

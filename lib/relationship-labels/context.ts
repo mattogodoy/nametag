@@ -1,5 +1,6 @@
 import type { CustomFieldType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { parseCalendarDate } from '@/lib/date-format';
 import { parseOperand } from './operand';
 import {
   isPersonFieldKey,
@@ -177,10 +178,14 @@ export async function loadPersonContexts(
         })
         .then((rows) => {
           for (const row of rows) {
+            // Important dates are stored as UTC-midnight calendar days.
+            // parseCalendarDate reads them back with the UTC getters so the
+            // engine, which compares with local-time getters, sees the same
+            // calendar day the user entered regardless of server timezone.
             contextFor(row.personId).dates.push({
               type: row.type,
               title: row.title,
-              date: row.date,
+              date: parseCalendarDate(row.date),
             });
           }
         })
