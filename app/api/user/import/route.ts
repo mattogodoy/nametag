@@ -290,28 +290,41 @@ export const POST = withAuth(async (request, session) => {
         const variants = relType.variants;
         if (!newTypeId || !variants || variants.length === 0) continue;
 
-        const remappedVariants: LabelVariant[] = variants.map((variant) => ({
-          label: variant.label,
-          conditions: variant.conditions.reduce<LabelCondition[]>((acc, condition) => {
+        const remappedVariants: LabelVariant[] = variants.reduce<LabelVariant[]>((acc, variant) => {
+          const remappedConditions = variant.conditions.reduce<LabelCondition[]>((condAcc, condition) => {
             if (condition.source === 'GROUP') {
               const newGroupId = groupIdMap.get(condition.subjectRef);
-              if (!newGroupId) return acc;
-              acc.push({ ...condition, subjectRef: newGroupId });
-              return acc;
+              if (!newGroupId) return condAcc;
+              condAcc.push({ ...condition, subjectRef: newGroupId });
+              return condAcc;
             }
             if (condition.source === 'CUSTOM_FIELD') {
               // subjectRef travels as the template's slug (see the export
               // route), the stable cross-account identifier customFieldValues
               // already use, since the raw database id is not portable.
               const template = slugToTemplate.get(condition.subjectRef);
-              if (!template) return acc;
-              acc.push({ ...condition, subjectRef: template.id });
-              return acc;
+              if (!template) return condAcc;
+              condAcc.push({ ...condition, subjectRef: template.id });
+              return condAcc;
             }
-            acc.push(condition);
+            condAcc.push(condition);
+            return condAcc;
+          }, []);
+
+          // A variant that arrived WITH conditions but lost all of them to
+          // unmappable references is not the fallback: it is a broken rule.
+          // Writing it as an empty-condition variant would make it match
+          // unconditionally (resolveLabel treats [].every(...) as true),
+          // winning every relationship of this type and shadowing every
+          // variant after it, including the real fallback. Drop it whole.
+          // A variant that genuinely arrived with no conditions is the real
+          // fallback and is kept as-is.
+          if (variant.conditions.length > 0 && remappedConditions.length === 0) {
             return acc;
-          }, []),
-        }));
+          }
+          acc.push({ label: variant.label, conditions: remappedConditions });
+          return acc;
+        }, []);
 
         await prisma.$transaction(async (tx) => {
           await replaceLabelVariants(tx, newTypeId, remappedVariants);

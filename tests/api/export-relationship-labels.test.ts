@@ -448,6 +448,116 @@ describe('Import: relationship label variants', () => {
     expect(createCall.data.conditions.create[0].subjectRef).toBe('gender');
   });
 
+  it('drops a variant whose only condition becomes unmappable, and keeps the surviving variants in order with the fallback last', async () => {
+    importMocks.relTypeFindFirst.mockResolvedValue(null);
+    importMocks.relTypeCreate.mockResolvedValue({ id: 'imported-type-1' });
+
+    const payload = {
+      ...BASE_PAYLOAD,
+      // The group the first variant's only condition points at is
+      // deliberately absent from this import's groups array.
+      groups: [],
+      relationshipTypes: [
+        {
+          id: 'old-type-1',
+          name: 'PARENT',
+          label: 'Parent',
+          color: '#FF00FF',
+          inverseId: null,
+          variants: [
+            {
+              label: 'Papa du club',
+              conditions: [
+                {
+                  subject: 'DESCRIBED',
+                  source: 'GROUP',
+                  subjectRef: 'old-group-not-included',
+                  operator: 'IN_GROUP',
+                  operand: null,
+                },
+              ],
+            },
+            { label: 'Maman', conditions: [genderCondition] },
+            { label: 'Parent', conditions: [] },
+          ],
+        },
+      ],
+    };
+
+    const response = await importRoute(makeRequest(payload));
+    expect(response.status).toBe(200);
+
+    // A zero-condition variant matches unconditionally, so writing the
+    // fully-emptied 'Papa du club' variant would shadow every variant
+    // after it, including the real fallback. It must be dropped whole,
+    // not written with an empty conditions array.
+    expect(importMocks.variantCreate).toHaveBeenCalledTimes(2);
+    const labels = importMocks.variantCreate.mock.calls.map((call) => call[0].data.label);
+    expect(labels).not.toContain('Papa du club');
+    expect(labels).toEqual(['Maman', 'Parent']);
+    expect(importMocks.variantCreate.mock.calls[0][0].data.order).toBe(0);
+    expect(importMocks.variantCreate.mock.calls[1][0].data.order).toBe(1);
+  });
+
+  it('keeps the real fallback variant when every other variant in the type loses all its conditions', async () => {
+    importMocks.relTypeFindFirst.mockResolvedValue(null);
+    importMocks.relTypeCreate.mockResolvedValue({ id: 'imported-type-1' });
+
+    const payload = {
+      ...BASE_PAYLOAD,
+      // Neither referenced group is part of this import, so both
+      // conditioned variants lose their only condition.
+      groups: [],
+      relationshipTypes: [
+        {
+          id: 'old-type-1',
+          name: 'PARENT',
+          label: 'Parent',
+          color: '#FF00FF',
+          inverseId: null,
+          variants: [
+            {
+              label: 'Papa du club',
+              conditions: [
+                {
+                  subject: 'DESCRIBED',
+                  source: 'GROUP',
+                  subjectRef: 'old-group-not-included',
+                  operator: 'IN_GROUP',
+                  operand: null,
+                },
+              ],
+            },
+            {
+              label: 'Maman du club',
+              conditions: [
+                {
+                  subject: 'DESCRIBED',
+                  source: 'GROUP',
+                  subjectRef: 'another-old-group-not-included',
+                  operator: 'IN_GROUP',
+                  operand: null,
+                },
+              ],
+            },
+            // This is the real fallback: it arrives with no conditions of
+            // its own, and must survive even though it is the last variant
+            // and everything ahead of it just got dropped.
+            { label: 'Parent', conditions: [] },
+          ],
+        },
+      ],
+    };
+
+    const response = await importRoute(makeRequest(payload));
+    expect(response.status).toBe(200);
+
+    expect(importMocks.variantCreate).toHaveBeenCalledTimes(1);
+    const createCall = importMocks.variantCreate.mock.calls[0][0];
+    expect(createCall.data.label).toBe('Parent');
+    expect(createCall.data.conditions.create).toHaveLength(0);
+  });
+
   it('does not touch variants when the relationship type carries none', async () => {
     importMocks.relTypeFindFirst.mockResolvedValue(null);
     importMocks.relTypeCreate.mockResolvedValue({ id: 'imported-type-1' });
