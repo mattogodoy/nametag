@@ -575,4 +575,34 @@ describe('dispatchAll with endpoints', () => {
     // no push devices that flips shouldStamp and drops the reminder.
     expect(result.shouldStamp).toBe(true);
   });
+
+  it('bounds the query by the number of users in the run, not a flat per-user constant', async () => {
+    // user-1 holds exactly the per-user cap (5), user-2 holds one more.
+    // A real Postgres LIMIT truncates the result set, so simulate that here:
+    // the mock slices to whatever `take` dispatch.ts actually sends, the same
+    // way a real query would. A flat `take: MAX_ENDPOINTS_PER_USER` (5) would
+    // truncate this six-row result to user-1's five rows only, dropping
+    // user-2 entirely; the correct `take` (5 * 2 users = 10) keeps all six.
+    const allEndpoints = [
+      ...Array.from({ length: 5 }, (_, i) => ({
+        id: `ep-1-${i}`,
+        userId: 'user-1',
+        type: 'NTFY' as const,
+        url: `https://ntfy.sh/a${i}`,
+        secret: null,
+      })),
+      { id: 'ep-2-0', userId: 'user-2', type: 'NTFY' as const, url: 'https://ntfy.sh/b', secret: null },
+    ];
+    endpointMocks.endpointFindMany.mockImplementation((args: { take?: number }) =>
+      Promise.resolve(allEndpoints.slice(0, args?.take ?? allEndpoints.length))
+    );
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
+
+    await dispatchAll([envelope('1'), envelope('2')]);
+
+    const contactedUserIds = new Set(
+      endpointMocks.sendNtfy.mock.calls.map(([endpoint]) => endpoint.userId)
+    );
+    expect(contactedUserIds).toEqual(new Set(['user-1', 'user-2']));
+  });
 });

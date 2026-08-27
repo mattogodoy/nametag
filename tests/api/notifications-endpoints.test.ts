@@ -69,6 +69,7 @@ vi.mock('../../lib/notifications/endpoint-health', async () => {
 
 vi.mock('../../lib/locale', () => ({ getUserLocale: mocks.getUserLocale }));
 
+import { outboundPolicy } from '../../lib/net/url-validation';
 import { GET, POST } from '../../app/api/notifications/endpoints/route';
 import {
   PUT as updateEndpoint,
@@ -128,6 +129,7 @@ beforeEach(() => {
     type: 'NTFY',
     url: 'https://ntfy.sh/my-topic',
     secret: null,
+    enabled: true,
   });
   mocks.sendNtfy.mockResolvedValue({ ok: true });
   mocks.getUserLocale.mockResolvedValue('en');
@@ -144,6 +146,11 @@ describe('endpoints API', () => {
   it('creates an ntfy endpoint', async () => {
     expect((await POST(post(valid))).status).toBe(201);
     expect(mocks.create).toHaveBeenCalled();
+
+    // Pins which policy is used, not just that resolveTarget was called.
+    // Swapping outboundPolicy() for a hardcoded permissive policy would
+    // otherwise leave every other assertion in this file green.
+    expect(mocks.resolveTarget).toHaveBeenCalledWith(valid.url, outboundPolicy());
   });
 
   it('validates the URL against SSRF policy before storing it', async () => {
@@ -168,6 +175,23 @@ describe('endpoints API', () => {
     expect(mocks.encryptSecret).toHaveBeenCalledWith('tk_secret');
     expect(mocks.create.mock.calls[0][0].data.secret).toBe('encrypted');
     expect(JSON.stringify(mocks.create.mock.calls[0][0])).not.toContain('tk_secret');
+    // Create is the one route that handles the secret. Pinning its select
+    // to PUBLIC_FIELDS means dropping the select (or widening it to include
+    // `secret`) fails here rather than silently returning the encrypted
+    // value and the owning userId in the 201 body.
+    expect(mocks.create.mock.calls[0][0].select).toEqual({
+      id: true,
+      type: true,
+      label: true,
+      url: true,
+      enabled: true,
+      consecutiveFailures: true,
+      lastSuccessAt: true,
+      lastFailureAt: true,
+      lastFailureCode: true,
+      autoDisabledAt: true,
+      createdAt: true,
+    });
   });
 
   it('enforces the per-user endpoint cap', async () => {
@@ -177,6 +201,10 @@ describe('endpoints API', () => {
 
     expect(response.status).toBe(409);
     expect(mocks.create).not.toHaveBeenCalled();
+    // count({ where: {} }) would still satisfy every assertion above while
+    // turning a per-user cap into an instance-wide one, bricking every
+    // signup after the fifth endpoint anywhere on the instance.
+    expect(mocks.count).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
   });
 
   it('applies a rate limit to creation', async () => {
@@ -316,6 +344,10 @@ describe('endpoint test-send API', () => {
 
     expect(response.status).toBe(429);
     expect(mocks.sendNtfy).not.toHaveBeenCalled();
+    // Without this, moving checkRateLimit below the findFirst lookup would
+    // still leave sendNtfy uncalled and pass, even though the endpoint's
+    // existence (and therefore its ownership) had already been queried.
+    expect(mocks.findFirst).not.toHaveBeenCalled();
   });
 
   it('records a successful test', async () => {
@@ -333,5 +365,26 @@ describe('endpoint test-send API', () => {
     // switch the endpoint off underneath them.
     expect(mocks.recordEndpointResult).not.toHaveBeenCalled();
     expect(await response.json()).toEqual({ ok: false, code: 'timeout' });
+  });
+
+  it('does not erase why a disabled endpoint was switched off when a test succeeds', async () => {
+    mocks.findFirst.mockResolvedValue({
+      id: 'ep-1',
+      type: 'NTFY',
+      url: 'https://ntfy.sh/my-topic',
+      secret: null,
+      enabled: false,
+      autoDisabledAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    const response = await testEndpoint(jsonRequest('http://localhost/x'), ctx('ep-1'));
+
+    // recordEndpointResult's success branch clears consecutiveFailures,
+    // lastFailureCode and autoDisabledAt, but never sets enabled back to
+    // true. Calling it here would leave the row enabled: false with the
+    // reason it was disabled erased. Re-enabling is the user's deliberate
+    // act, via PUT, not a side effect of testing.
+    expect(mocks.recordEndpointResult).not.toHaveBeenCalled();
+    expect(await response.json()).toEqual({ ok: true });
   });
 });

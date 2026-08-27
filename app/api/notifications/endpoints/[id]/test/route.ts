@@ -25,11 +25,22 @@ export const POST = withAuth(async (request, session, context) => {
 
     const endpoint = await prisma.notificationEndpoint.findFirst({
       where: { id, userId: session.user.id },
-      select: { id: true, type: true, url: true, secret: true },
+      select: { id: true, type: true, url: true, secret: true, enabled: true },
     });
 
     if (!endpoint) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    // WEBHOOK is handled in Phase 4 and cannot be created today, so this is
+    // unreachable rather than a silent drop. It matters once it is reachable:
+    // sendNtfy decrypts endpoint.secret and sends it as an Authorization
+    // header to endpoint.url. A webhook's secret is an HMAC signing key, not
+    // a bearer token, so handing a WEBHOOK row to sendNtfy would decrypt that
+    // signing key and send it as a bearer credential to the webhook's own
+    // URL, a credential leak, not just a wrong message format.
+    if (endpoint.type !== 'NTFY') {
+      return NextResponse.json({ error: 'Unsupported endpoint type' }, { status: 400 });
     }
 
     const locale = await getUserLocale(session.user.id);
@@ -61,7 +72,12 @@ export const POST = withAuth(async (request, session, context) => {
     // already reported to them synchronously below, so nothing is lost by
     // not storing it. A success still clears the counter, which is how a
     // user confirms a repaired endpoint is healthy again.
-    if (result.ok) {
+    //
+    // Only record health for an endpoint that is actually in the nightly run.
+    // Clearing the counters for a disabled row would wipe autoDisabledAt while
+    // leaving enabled false, erasing the reason it was switched off. The user
+    // clears that state deliberately, by re-enabling.
+    if (result.ok && endpoint.enabled) {
       await recordEndpointResult(endpoint.id, result);
     }
 

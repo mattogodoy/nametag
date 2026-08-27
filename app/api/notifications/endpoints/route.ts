@@ -63,16 +63,9 @@ export const POST = withAuth(async (request, session) => {
       );
     }
 
-    // Validate now as well as at send time. Save-time validation gives the
-    // user an immediate error instead of a silently dead endpoint; send-time
-    // validation is what actually protects us, because a hostname can be
-    // re-pointed after it is saved.
-    try {
-      await resolveTarget(url, outboundPolicy());
-    } catch {
-      return NextResponse.json({ error: 'That URL cannot be used' }, { status: 400 });
-    }
-
+    // Cap before the DNS work below. Checked first so a user already at the
+    // limit gets an immediate 409 rather than paying for a resolution on
+    // every request against a cap that was always going to reject them.
     const existing = await prisma.notificationEndpoint.count({
       where: { userId: session.user.id },
     });
@@ -81,6 +74,16 @@ export const POST = withAuth(async (request, session) => {
         { error: `You can have at most ${MAX_ENDPOINTS_PER_USER} endpoints` },
         { status: 409 }
       );
+    }
+
+    // Validate now as well as at send time. Save-time validation gives the
+    // user an immediate error instead of a silently dead endpoint; send-time
+    // validation is what actually protects us, because a hostname can be
+    // re-pointed after it is saved.
+    try {
+      await resolveTarget(url, outboundPolicy());
+    } catch {
+      return NextResponse.json({ error: 'That URL cannot be used' }, { status: 400 });
     }
 
     const endpoint = await prisma.notificationEndpoint.create({

@@ -121,6 +121,11 @@ async function loadEndpoints(
     const endpoints = await prisma.notificationEndpoint.findMany({
       where: { userId: { in: userIds }, enabled: true },
       select: { id: true, userId: true, type: true, url: true, secret: true },
+      // Grouped by user below so the per-user slice is deterministic. Without
+      // this, an over-cap condition truncates in whatever order Postgres
+      // happens to return rows, which can drop an innocent user's entire
+      // endpoint list for the night instead of the offending user's excess.
+      orderBy: [{ userId: 'asc' }, { createdAt: 'asc' }],
       // Belt, not the primary control: the per-user cap is enforced at
       // creation time (MAX_ENDPOINTS_PER_USER). This bounds the query itself
       // so a row created by some path that bypasses that cap cannot make the
@@ -131,9 +136,18 @@ async function loadEndpoints(
       take: MAX_ENDPOINTS_PER_USER * userIds.length,
     });
 
+    // Sliced again here, per user, on top of the query-level take above. The
+    // query bound only protects against an unbounded *total* row count; it
+    // does not stop one user who is somehow over the cap from consuming
+    // another user's share of that combined budget. Dropping this user's
+    // excess here, rather than letting it spill into the next user's slice,
+    // keeps the truncation scoped to the offending user only.
     const byUser = new Map<string, EndpointRecord[]>();
     for (const endpoint of endpoints) {
       const list = byUser.get(endpoint.userId) ?? [];
+      if (list.length >= MAX_ENDPOINTS_PER_USER) {
+        continue;
+      }
       list.push(endpoint);
       byUser.set(endpoint.userId, list);
     }

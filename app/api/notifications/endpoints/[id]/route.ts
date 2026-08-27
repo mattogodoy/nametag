@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError, withAuth } from '@/lib/api-utils';
+import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { updateEndpointSchema } from '@/lib/validations';
 
 export const PUT = withAuth(async (request, session, context) => {
   try {
-    const parsed = updateEndpointSchema.safeParse(await request.json());
+    const parsed = updateEndpointSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
