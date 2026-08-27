@@ -132,6 +132,25 @@ describe('push API', () => {
     expect(mocks.upsert.mock.calls[0][0].create.userAgent).toBe('TestBrowser/1.0');
   });
 
+  it('re-subscribing clears any auto-disable, since it proves the device is reachable again', async () => {
+    // A browser re-subscribing normally reuses the same endpoint, so this is
+    // the update branch, not the create branch. Without resetting these
+    // fields here, a device that auto-disabled after repeated failures would
+    // stay excluded by the autoDisabledAt filter forever, even after the
+    // user does the obvious thing to fix it.
+    mocks.findUnique.mockResolvedValue({ id: 'sub-1' });
+
+    await subscribe(request(validBody));
+
+    expect(mocks.upsert.mock.calls[0][0].update).toEqual(
+      expect.objectContaining({
+        consecutiveFailures: 0,
+        lastFailureCode: null,
+        autoDisabledAt: null,
+      })
+    );
+  });
+
   it('rejects a malformed subscription body', async () => {
     const response = await subscribe(request({ endpoint: 'not-a-url', keys: {} }));
 

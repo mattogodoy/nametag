@@ -5,7 +5,7 @@ import { getVapidDetails } from '../vapid';
 import { renderShortForm } from '../render';
 import { MAX_PUSH_SUBSCRIPTIONS_PER_USER } from '../push-limits';
 import { recordPushSubscriptionResult } from '../endpoint-health';
-import type { OutboundFailureCode } from '../outbound';
+import type { OutboundFailureCode, OutboundResult } from '../outbound';
 import type { ChannelOutcome, NotificationEnvelope } from '../types';
 
 const log = createModuleLogger('notifications:push');
@@ -45,6 +45,30 @@ function failureCodeOf(statusCode: number | null): OutboundFailureCode {
 }
 
 /**
+ * Record health, without letting a failure to record it look like, or cause,
+ * a delivery failure.
+ *
+ * Health tracking is bookkeeping. If this write throws (a transient DB blip),
+ * the caller must not mistake that for the send itself having failed, and the
+ * exception must not propagate out of the delivery loop: an unguarded throw
+ * here would abandon every subscription after this one in the same envelope,
+ * skipping their sends and the end-of-loop pruning entirely.
+ */
+async function recordQuietly(subscriptionId: string, result: OutboundResult): Promise<void> {
+  try {
+    await recordPushSubscriptionResult(subscriptionId, result);
+  } catch (error) {
+    log.warn(
+      {
+        subscriptionId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Failed to record push subscription health'
+    );
+  }
+}
+
+/**
  * Push one notification to every device the user has subscribed.
  *
  * Delivering to at least one device counts as delivered: a user with a dead
@@ -81,6 +105,11 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
   let lastError = 'Unknown push error';
 
   for (const subscription of subscriptions) {
+    // The send itself lives in its own try/catch, kept separate from health
+    // recording below, so a bookkeeping error can never be mistaken for (or
+    // cause) a delivery failure.
+    let sendError: { statusCode: number | null; message: string } | null = null;
+
     try {
       await webpush.sendNotification(
         {
@@ -89,26 +118,32 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
         },
         payload
       );
-      delivered += 1;
-      await recordPushSubscriptionResult(subscription.id, { ok: true });
     } catch (error) {
-      const statusCode = statusCodeOf(error);
-      lastError = error instanceof Error ? error.message : 'Unknown push error';
+      sendError = {
+        statusCode: statusCodeOf(error),
+        message: error instanceof Error ? error.message : 'Unknown push error',
+      };
+    }
 
-      if (statusCode !== null && DEAD_SUBSCRIPTION_CODES.has(statusCode)) {
-        // Gone outright. The row is about to be deleted, so there is nothing
-        // to record health against.
-        dead.push(subscription.id);
-      } else {
-        log.warn(
-          { userId: envelope.userId, statusCode, errorMessage: lastError },
-          'Push delivery failed, keeping subscription'
-        );
-        await recordPushSubscriptionResult(subscription.id, {
-          ok: false,
-          code: failureCodeOf(statusCode),
-        });
-      }
+    if (sendError === null) {
+      delivered += 1;
+      await recordQuietly(subscription.id, { ok: true });
+      continue;
+    }
+
+    const { statusCode, message } = sendError;
+    lastError = message;
+
+    if (statusCode !== null && DEAD_SUBSCRIPTION_CODES.has(statusCode)) {
+      // Gone outright. The row is about to be deleted, so there is nothing
+      // to record health against.
+      dead.push(subscription.id);
+    } else {
+      log.warn(
+        { userId: envelope.userId, statusCode, errorMessage: message },
+        'Push delivery failed, keeping subscription'
+      );
+      await recordQuietly(subscription.id, { ok: false, code: failureCodeOf(statusCode) });
     }
   }
 

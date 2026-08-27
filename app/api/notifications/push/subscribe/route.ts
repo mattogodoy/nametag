@@ -65,6 +65,13 @@ export const POST = withAuth(async (request, session) => {
         p256dh: keys.p256dh,
         auth: keys.auth,
         userAgent,
+        // Re-subscribing is a deliberate act that proves the device is
+        // reachable, so it clears any auto-disable from earlier failures.
+        // Without this the autoDisabledAt filter in the driver would exclude
+        // the row forever, since a browser re-subscribing reuses its endpoint.
+        consecutiveFailures: 0,
+        lastFailureCode: null,
+        autoDisabledAt: null,
       },
     });
 

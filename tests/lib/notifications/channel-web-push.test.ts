@@ -222,15 +222,32 @@ describe('sendWebPush', () => {
     expect(result.status).toBe('failed');
   });
 
-  it('skips a device that is already auto-disabled rather than sending to it', async () => {
-    // findMany is the enforcement point: an auto-disabled row must never be
-    // returned in the first place. This test pins the query result, not the
-    // implementation, to catch a regression that widened the where clause.
-    mocks.findMany.mockResolvedValue([]);
+  it('treats exactly 500 as a 5xx failure code, not 4xx', async () => {
+    // Pins the boundary itself: a mutation from `>= 500` to `> 500` would
+    // silently mis-file this as http_4xx and go unnoticed otherwise.
+    mocks.sendNotification.mockRejectedValue(
+      Object.assign(new Error('internal error'), { statusCode: 500 })
+    );
+
+    await sendWebPush(envelope);
+
+    expect(mocks.update.mock.calls[0][0].data.lastFailureCode).toBe('http_5xx');
+  });
+
+  it('does not let a health-write failure abandon the rest of the devices in the run', async () => {
+    // sub-1's health write throws (a transient DB blip). That must not be
+    // mistaken for a delivery failure, and it must not stop sub-2 from being
+    // sent to or from being recorded correctly.
+    mocks.findMany.mockResolvedValue([subscription('sub-1'), subscription('sub-2')]);
+    mocks.update.mockRejectedValueOnce(new Error('connection reset')).mockResolvedValueOnce({});
 
     const result = await sendWebPush(envelope);
 
-    expect(result).toEqual({ channel: 'web_push', status: 'skipped' });
-    expect(mocks.sendNotification).not.toHaveBeenCalled();
+    expect(mocks.sendNotification).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ channel: 'web_push', status: 'delivered' });
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 'sub-2' },
+      data: expect.objectContaining({ consecutiveFailures: 0 }),
+    });
   });
 });

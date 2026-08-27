@@ -14,6 +14,20 @@ const log = createModuleLogger('notifications:endpoint-health');
 export const AUTO_DISABLE_THRESHOLD = 10;
 
 /**
+ * The one piece of arithmetic both `recordEndpointResult` and
+ * `recordPushSubscriptionResult` share: how many failures this makes, and
+ * whether that crosses the disable line. Kept as a single function so the
+ * disable formula can't drift between the two call sites if it ever changes.
+ */
+function nextFailureState(currentFailures: number): {
+  failures: number;
+  shouldDisable: boolean;
+} {
+  const failures = currentFailures + 1;
+  return { failures, shouldDisable: failures >= AUTO_DISABLE_THRESHOLD };
+}
+
+/**
  * Record the outcome of one delivery attempt against a `NotificationEndpoint`
  * (webhook or ntfy topic).
  *
@@ -48,8 +62,7 @@ export async function recordEndpointResult(
     return;
   }
 
-  const failures = endpoint.consecutiveFailures + 1;
-  const shouldDisable = failures >= AUTO_DISABLE_THRESHOLD;
+  const { failures, shouldDisable } = nextFailureState(endpoint.consecutiveFailures);
 
   await prisma.notificationEndpoint.update({
     where: { id: endpointId },
@@ -104,8 +117,7 @@ export async function recordPushSubscriptionResult(
     return;
   }
 
-  const failures = subscription.consecutiveFailures + 1;
-  const shouldDisable = failures >= AUTO_DISABLE_THRESHOLD;
+  const { failures, shouldDisable } = nextFailureState(subscription.consecutiveFailures);
 
   await prisma.pushSubscription.update({
     where: { id: subscriptionId },
