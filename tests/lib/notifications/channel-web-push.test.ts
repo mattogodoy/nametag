@@ -103,6 +103,15 @@ describe('sendWebPush', () => {
       .mockResolvedValueOnce({ statusCode: 201 });
 
     expect(await sendWebPush(envelope)).toEqual({ status: 'delivered' });
+
+    // lastSuccessAt must move for the live device and only the live device. If
+    // `alive` ever widened to include a device that failed, this is what
+    // catches it.
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['sub-2'] } },
+      data: { lastSuccessAt: expect.any(Date) },
+    });
+    expect(mocks.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['sub-1'] } } });
   });
 
   it('prunes subscriptions the push service reports as 404 or 410', async () => {
@@ -111,9 +120,15 @@ describe('sendWebPush', () => {
       .mockRejectedValueOnce(Object.assign(new Error('not found'), { statusCode: 404 }))
       .mockRejectedValueOnce(Object.assign(new Error('gone'), { statusCode: 410 }));
 
-    await sendWebPush(envelope);
+    const result = await sendWebPush(envelope);
 
     expect(mocks.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['sub-1', 'sub-2'] } } });
+
+    // Every device was gone, so nothing was delivered. This must be `failed`,
+    // not `skipped`: skipped means "there was nothing to deliver to", and the
+    // dispatcher accounts for the two differently.
+    expect(result).toEqual({ status: 'failed', error: 'gone' });
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it('does NOT prune on a transient server error', async () => {
