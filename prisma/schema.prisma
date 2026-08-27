@@ -300,10 +300,94 @@ model RelationshipType {
   inverseOf           RelationshipType[] @relation("InverseRelationship")
   relationships       Relationship[]
   peopleWithRelation  Person[]           @relation("UserRelationship")
+  labelVariants       RelationshipLabelVariant[]
 
   @@index([userId])
   @@index([userId, deletedAt]) // For soft delete filtering
   @@map("relationship_types")
+}
+
+// RelationshipLabelVariant - One candidate label for a relationship type.
+// Variants are evaluated by ascending `order`; the first one whose conditions
+// all hold wins. A variant with no conditions is the fallback and must be last.
+model RelationshipLabelVariant {
+  id                 String   @id @default(cuid())
+  relationshipTypeId String
+  label              String
+  order              Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  relationshipType RelationshipType             @relation(fields: [relationshipTypeId], references: [id], onDelete: Cascade)
+  conditions       RelationshipLabelCondition[]
+
+  @@index([relationshipTypeId, order])
+  @@map("relationship_label_variants")
+}
+
+// RelationshipLabelCondition - One test inside a variant. All conditions of a
+// variant must hold (AND only). An OR is expressed by two variants sharing a label.
+model RelationshipLabelCondition {
+  id         String                    @id @default(cuid())
+  variantId  String
+  subject    LabelConditionSubject
+  source     LabelConditionSource
+  // Bare value, read according to `source`: a native field name, a
+  // CustomFieldTemplate id, a Group id, a predefined date type key, or a date title.
+  // Group and template ids are plain values, not foreign keys: both entities are
+  // soft-deleted, and a missing reference evaluates to false by design.
+  subjectRef String
+  operator   LabelConditionOperator
+  // Right-hand side. Null when the operator takes no operand. Otherwise one of
+  // "lit:<value>", "now", or "ref:<bare reference>".
+  operand    String?
+  order      Int                       @default(0)
+  createdAt  DateTime                  @default(now())
+
+  // Relations
+  variant RelationshipLabelVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId, order])
+  @@map("relationship_label_conditions")
+}
+
+enum LabelConditionSubject {
+  DESCRIBED
+  OTHER
+}
+
+enum LabelConditionSource {
+  PERSON_FIELD
+  CUSTOM_FIELD
+  GROUP
+  DATE_TYPE
+  DATE_TITLE
+}
+
+enum LabelConditionOperator {
+  IS
+  IS_NOT
+  CONTAINS
+  NOT_CONTAINS
+  EQUALS
+  NOT_EQUALS
+  GT
+  GTE
+  LT
+  LTE
+  IS_TRUE
+  IS_FALSE
+  IN_GROUP
+  NOT_IN_GROUP
+  BEFORE
+  ON_OR_BEFORE
+  AFTER
+  ON_OR_AFTER
+  SAME_DAY
+  NOT_SAME_DAY
+  IS_SET
+  IS_NOT_SET
 }
 
 // Enums
