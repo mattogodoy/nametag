@@ -1589,7 +1589,100 @@
       "errorSomethingWrong": "Qualcosa è andato storto",
       "errorConnection": "Impossibile connettersi al server. Verifica la connessione e riprova.",
       "successCreated": "Tipo di relazione \"{label}\" creato",
-      "successUpdated": "Tipo di relazione \"{label}\" aggiornato"
+      "successUpdated": "Tipo di relazione \"{label}\" aggiornato",
+      "conditionalLabels": {
+        "sectionTitle": "Etichette condizionali",
+        "sectionHint": "La prima variante le cui condizioni sono tutte vere fornisce la parola visualizzata. La persona descritta è quella a cui l'etichetta si riferisce.",
+        "expand": "Mostra etichette condizionali",
+        "collapse": "Nascondi etichette condizionali",
+        "addVariant": "Aggiungi una variante",
+        "removeVariant": "Rimuovi questa variante",
+        "moveUp": "Sposta su",
+        "moveDown": "Sposta giù",
+        "labelShow": "mostra",
+        "labelOtherwise": "altrimenti mostra",
+        "addCondition": "Aggiungi una condizione",
+        "removeCondition": "Rimuovi questa condizione",
+        "conditionPrefix": "se",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "Gli operatori negativi non corrispondono ai dati mancanti. Usa \"non è impostato\" per quello.",
+        "generate": "Genera da un campo",
+        "generateHint": "Crea una variante per ogni valore del campo selezionato.",
+        "generateApply": "Crea le varianti",
+        "subject": {
+          "DESCRIBED": "la persona descritta",
+          "OTHER": "l'altra persona"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "Campi della persona",
+          "CUSTOM_FIELD": "Campi personalizzati",
+          "GROUP": "Gruppi",
+          "DATE_TYPE": "Date importanti",
+          "DATE_TITLE": "Date personalizzate"
+        },
+        "fields": {
+          "gender": "genere",
+          "prefix": "titolo",
+          "suffix": "suffisso",
+          "nickname": "soprannome",
+          "name": "nome",
+          "surname": "cognome",
+          "middleName": "secondo nome",
+          "secondLastName": "secondo cognome",
+          "organization": "organizzazione",
+          "jobTitle": "qualifica"
+        },
+        "operators": {
+          "IS": "è",
+          "IS_NOT": "non è",
+          "CONTAINS": "contiene",
+          "NOT_CONTAINS": "non contiene",
+          "EQUALS": "è uguale a",
+          "NOT_EQUALS": "non è uguale a",
+          "GT": "è maggiore di",
+          "GTE": "è maggiore o uguale a",
+          "LT": "è minore di",
+          "LTE": "è minore o uguale a",
+          "IS_TRUE": "è vero",
+          "IS_FALSE": "è falso",
+          "IN_GROUP": "appartiene a",
+          "NOT_IN_GROUP": "non appartiene a",
+          "BEFORE": "è prima di",
+          "ON_OR_BEFORE": "è uguale o precedente a",
+          "AFTER": "è dopo",
+          "ON_OR_AFTER": "è uguale o successivo a",
+          "SAME_DAY": "è lo stesso giorno di",
+          "NOT_SAME_DAY": "non è lo stesso giorno di",
+          "IS_SET": "è impostato",
+          "IS_NOT_SET": "non è impostato"
+        },
+        "operandKind": {
+          "literal": "un valore",
+          "now": "oggi",
+          "ref": "lo stesso dato dell'altra persona"
+        },
+        "shortcuts": {
+          "isPast": "è passato",
+          "isFuture": "è futuro"
+        },
+        "preview": {
+          "title": "Anteprima",
+          "hint": "Scegli due contatti per vedere la parola che produce.",
+          "described": "Persona descritta",
+          "other": "Altra persona",
+          "result": "{described} è {label} di {other}.",
+          "matched": "Variante {index} applicata.",
+          "fallback": "Nessuna variante corrisponde, è stata applicata l'opzione predefinita.",
+          "failed": "Impossibile calcolare l'anteprima."
+        },
+        "warnings": {
+          "title": "Avvisi",
+          "UNREACHABLE_AFTER_FALLBACK": "Questa variante viene dopo l'opzione predefinita e non sarà mai raggiunta.",
+          "DUPLICATE_VARIANT": "Questa variante ripete le condizioni di una precedente.",
+          "ALWAYS_TRUE": "Questa condizione è sempre vera, quindi non ha alcun effetto utile.",
+          "BROKEN_REFERENCE": "Questa condizione fa riferimento a un gruppo o campo che non esiste più."
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "Cerca o crea relazione inversa...",

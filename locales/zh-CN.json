@@ -1589,7 +1589,100 @@
       "errorSomethingWrong": "出了问题",
       "errorConnection": "无法连接到服务器。请检查您的连接并重试。",
       "successCreated": "关系类型\"{label}\"已被创建",
-      "successUpdated": "关系类型\"{label}\"已被更新"
+      "successUpdated": "关系类型\"{label}\"已被更新",
+      "conditionalLabels": {
+        "sectionTitle": "条件标签",
+        "sectionHint": "所有条件都成立的第一个变体决定显示的词语。被描述的人是标签所指代的那个人。",
+        "expand": "显示条件标签",
+        "collapse": "隐藏条件标签",
+        "addVariant": "添加变体",
+        "removeVariant": "删除此变体",
+        "moveUp": "上移",
+        "moveDown": "下移",
+        "labelShow": "显示",
+        "labelOtherwise": "否则显示",
+        "addCondition": "添加条件",
+        "removeCondition": "删除此条件",
+        "conditionPrefix": "如果",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "否定运算符不匹配缺失的数据。要匹配缺失数据，请使用“未设置”。",
+        "generate": "根据字段生成",
+        "generateHint": "为所选字段的每个值创建一个变体。",
+        "generateApply": "创建变体",
+        "subject": {
+          "DESCRIBED": "被描述的人",
+          "OTHER": "另一方"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "个人信息字段",
+          "CUSTOM_FIELD": "自定义字段",
+          "GROUP": "分组",
+          "DATE_TYPE": "重要日期",
+          "DATE_TITLE": "自定义日期"
+        },
+        "fields": {
+          "gender": "性别",
+          "prefix": "称谓",
+          "suffix": "后缀",
+          "nickname": "昵称",
+          "name": "名",
+          "surname": "姓",
+          "middleName": "中间名",
+          "secondLastName": "第二姓氏",
+          "organization": "所属组织",
+          "jobTitle": "职位"
+        },
+        "operators": {
+          "IS": "是",
+          "IS_NOT": "不是",
+          "CONTAINS": "包含",
+          "NOT_CONTAINS": "不包含",
+          "EQUALS": "等于",
+          "NOT_EQUALS": "不等于",
+          "GT": "大于",
+          "GTE": "大于或等于",
+          "LT": "小于",
+          "LTE": "小于或等于",
+          "IS_TRUE": "为真",
+          "IS_FALSE": "为假",
+          "IN_GROUP": "属于",
+          "NOT_IN_GROUP": "不属于",
+          "BEFORE": "早于",
+          "ON_OR_BEFORE": "早于或等于",
+          "AFTER": "晚于",
+          "ON_OR_AFTER": "晚于或等于",
+          "SAME_DAY": "与此日期相同",
+          "NOT_SAME_DAY": "与此日期不同",
+          "IS_SET": "已设置",
+          "IS_NOT_SET": "未设置"
+        },
+        "operandKind": {
+          "literal": "一个值",
+          "now": "今天",
+          "ref": "另一方的相同数据"
+        },
+        "shortcuts": {
+          "isPast": "已经过去",
+          "isFuture": "即将到来"
+        },
+        "preview": {
+          "title": "预览",
+          "hint": "选择两位联系人，查看生成的词语。",
+          "described": "被描述的人",
+          "other": "另一方",
+          "result": "对{other}来说，{described}是{label}。",
+          "matched": "已应用变体{index}。",
+          "fallback": "没有变体匹配，已应用默认显示。",
+          "failed": "无法计算预览结果。"
+        },
+        "warnings": {
+          "title": "提示",
+          "UNREACHABLE_AFTER_FALLBACK": "此变体位于默认显示之后，永远不会生效。",
+          "DUPLICATE_VARIANT": "此变体与之前的一个变体条件重复。",
+          "ALWAYS_TRUE": "此条件恒为真，因此没有实际作用。",
+          "BROKEN_REFERENCE": "此条件引用的分组或字段已不存在。"
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "搜索或创建反向关系...",

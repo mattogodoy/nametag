@@ -1589,7 +1589,100 @@
       "errorSomethingWrong": "Er is iets misgegaan",
       "errorConnection": "Kan geen verbinding maken met de server. Controleer uw verbinding en probeer het opnieuw.",
       "successCreated": "Relatietype \"{label}\" is aangemaakt",
-      "successUpdated": "Relatietype \"{label}\" is bijgewerkt"
+      "successUpdated": "Relatietype \"{label}\" is bijgewerkt",
+      "conditionalLabels": {
+        "sectionTitle": "Voorwaardelijke labels",
+        "sectionHint": "De eerste variant waarvan alle voorwaarden waar zijn, levert het getoonde woord op. De beschreven persoon is degene die het label benoemt.",
+        "expand": "Voorwaardelijke labels tonen",
+        "collapse": "Voorwaardelijke labels verbergen",
+        "addVariant": "Variant toevoegen",
+        "removeVariant": "Deze variant verwijderen",
+        "moveUp": "Omhoog verplaatsen",
+        "moveDown": "Omlaag verplaatsen",
+        "labelShow": "toon",
+        "labelOtherwise": "toon anders",
+        "addCondition": "Voorwaarde toevoegen",
+        "removeCondition": "Deze voorwaarde verwijderen",
+        "conditionPrefix": "als",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "Negatieve operatoren komen niet overeen met ontbrekende gegevens. Gebruik daarvoor \"is niet ingesteld\".",
+        "generate": "Genereren op basis van een veld",
+        "generateHint": "Maakt één variant per waarde van het gekozen veld.",
+        "generateApply": "Varianten aanmaken",
+        "subject": {
+          "DESCRIBED": "de beschreven persoon",
+          "OTHER": "de andere persoon"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "Persoonsvelden",
+          "CUSTOM_FIELD": "Aangepaste velden",
+          "GROUP": "Groepen",
+          "DATE_TYPE": "Belangrijke data",
+          "DATE_TITLE": "Aangepaste data"
+        },
+        "fields": {
+          "gender": "geslacht",
+          "prefix": "titel",
+          "suffix": "achtervoegsel",
+          "nickname": "bijnaam",
+          "name": "voornaam",
+          "surname": "achternaam",
+          "middleName": "tweede voornaam",
+          "secondLastName": "tweede achternaam",
+          "organization": "organisatie",
+          "jobTitle": "functietitel"
+        },
+        "operators": {
+          "IS": "is",
+          "IS_NOT": "is niet",
+          "CONTAINS": "bevat",
+          "NOT_CONTAINS": "bevat niet",
+          "EQUALS": "is gelijk aan",
+          "NOT_EQUALS": "is niet gelijk aan",
+          "GT": "is groter dan",
+          "GTE": "is groter dan of gelijk aan",
+          "LT": "is kleiner dan",
+          "LTE": "is kleiner dan of gelijk aan",
+          "IS_TRUE": "is waar",
+          "IS_FALSE": "is onwaar",
+          "IN_GROUP": "behoort tot",
+          "NOT_IN_GROUP": "behoort niet tot",
+          "BEFORE": "is vóór",
+          "ON_OR_BEFORE": "is op of vóór",
+          "AFTER": "is na",
+          "ON_OR_AFTER": "is op of na",
+          "SAME_DAY": "is dezelfde dag als",
+          "NOT_SAME_DAY": "is niet dezelfde dag als",
+          "IS_SET": "is ingesteld",
+          "IS_NOT_SET": "is niet ingesteld"
+        },
+        "operandKind": {
+          "literal": "een waarde",
+          "now": "vandaag",
+          "ref": "hetzelfde gegeven bij de andere persoon"
+        },
+        "shortcuts": {
+          "isPast": "ligt in het verleden",
+          "isFuture": "komt eraan"
+        },
+        "preview": {
+          "title": "Voorbeeld",
+          "hint": "Kies twee contacten om het woord te zien dat dit oplevert.",
+          "described": "Beschreven persoon",
+          "other": "Andere persoon",
+          "result": "{described} is {label} van {other}.",
+          "matched": "Variant {index} toegepast.",
+          "fallback": "Geen enkele variant kwam overeen, de standaardweergave is toegepast.",
+          "failed": "Het voorbeeld kon niet worden berekend."
+        },
+        "warnings": {
+          "title": "Meldingen",
+          "UNREACHABLE_AFTER_FALLBACK": "Deze variant komt na de standaardweergave en zal nooit worden bereikt.",
+          "DUPLICATE_VARIANT": "Deze variant herhaalt de voorwaarden van een eerdere variant.",
+          "ALWAYS_TRUE": "Deze voorwaarde is altijd waar en heeft dus geen nuttig effect.",
+          "BROKEN_REFERENCE": "Deze voorwaarde verwijst naar een groep of veld dat niet meer bestaat."
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "Zoek of maak een omgekeerde relatie...",

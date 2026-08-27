@@ -1589,7 +1589,100 @@
       "errorSomethingWrong": "問題が発生しました",
       "errorConnection": "サーバーに接続できません。接続を確認してもう一度お試しください。",
       "successCreated": "関係の種類\"{label}\"が作成されました",
-      "successUpdated": "関係の種類\"{label}\"が更新されました"
+      "successUpdated": "関係の種類\"{label}\"が更新されました",
+      "conditionalLabels": {
+        "sectionTitle": "条件付きラベル",
+        "sectionHint": "条件がすべて真になる最初のバリアントが、表示される言葉になります。説明対象の人物とは、ラベルが指す相手のことです。",
+        "expand": "条件付きラベルを表示",
+        "collapse": "条件付きラベルを非表示",
+        "addVariant": "バリアントを追加",
+        "removeVariant": "このバリアントを削除",
+        "moveUp": "上へ移動",
+        "moveDown": "下へ移動",
+        "labelShow": "表示する",
+        "labelOtherwise": "それ以外は表示する",
+        "addCondition": "条件を追加",
+        "removeCondition": "この条件を削除",
+        "conditionPrefix": "もし",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "否定の演算子はデータが未設定の場合には一致しません。その場合は「未設定」を使用してください。",
+        "generate": "項目から生成",
+        "generateHint": "選択した項目の値ごとに1つのバリアントを作成します。",
+        "generateApply": "バリアントを作成",
+        "subject": {
+          "DESCRIBED": "説明対象の人物",
+          "OTHER": "相手の人物"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "人物の項目",
+          "CUSTOM_FIELD": "カスタム項目",
+          "GROUP": "グループ",
+          "DATE_TYPE": "重要な日付",
+          "DATE_TITLE": "カスタムの日付"
+        },
+        "fields": {
+          "gender": "性別",
+          "prefix": "敬称",
+          "suffix": "接尾辞",
+          "nickname": "ニックネーム",
+          "name": "名",
+          "surname": "姓",
+          "middleName": "ミドルネーム",
+          "secondLastName": "第二姓",
+          "organization": "組織",
+          "jobTitle": "役職"
+        },
+        "operators": {
+          "IS": "が次の値である",
+          "IS_NOT": "が次の値ではない",
+          "CONTAINS": "に次を含む",
+          "NOT_CONTAINS": "に次を含まない",
+          "EQUALS": "が次と等しい",
+          "NOT_EQUALS": "が次と等しくない",
+          "GT": "が次より大きい",
+          "GTE": "が次以上である",
+          "LT": "が次より小さい",
+          "LTE": "が次以下である",
+          "IS_TRUE": "が真である",
+          "IS_FALSE": "が偽である",
+          "IN_GROUP": "が次のグループに属する",
+          "NOT_IN_GROUP": "が次のグループに属さない",
+          "BEFORE": "が次より前である",
+          "ON_OR_BEFORE": "が次以前である",
+          "AFTER": "が次より後である",
+          "ON_OR_AFTER": "が次以降である",
+          "SAME_DAY": "が次と同じ日である",
+          "NOT_SAME_DAY": "が次と同じ日ではない",
+          "IS_SET": "が設定されている",
+          "IS_NOT_SET": "が未設定である"
+        },
+        "operandKind": {
+          "literal": "値",
+          "now": "今日",
+          "ref": "相手の人物の同じ項目"
+        },
+        "shortcuts": {
+          "isPast": "が過去である",
+          "isFuture": "が今後訪れる"
+        },
+        "preview": {
+          "title": "プレビュー",
+          "hint": "2人の連絡先を選んで、生成される言葉を確認してください。",
+          "described": "説明対象の人物",
+          "other": "相手の人物",
+          "result": "{other}にとって{described}は{label}です。",
+          "matched": "バリアント{index}が適用されました。",
+          "fallback": "一致するバリアントがなかったため、既定の表示が適用されました。",
+          "failed": "プレビューを計算できませんでした。"
+        },
+        "warnings": {
+          "title": "注意事項",
+          "UNREACHABLE_AFTER_FALLBACK": "このバリアントは既定の表示より後にあるため、決して適用されません。",
+          "DUPLICATE_VARIANT": "このバリアントは以前のものと同じ条件を繰り返しています。",
+          "ALWAYS_TRUE": "この条件は常に真であるため、実質的な効果がありません。",
+          "BROKEN_REFERENCE": "この条件は、既に存在しないグループまたは項目を参照しています。"
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "逆関係を検索または作成...",

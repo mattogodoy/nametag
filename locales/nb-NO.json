@@ -1589,7 +1589,100 @@
       "errorSomethingWrong": "Noe gikk galt",
       "errorConnection": "Kan ikke koble til serveren. Kontroller tilkoblingen din og prøv igjen.",
       "successCreated": "Relasjonstypen \"{label}\" ble opprettet",
-      "successUpdated": "Relasjonstypen \"{label}\" ble oppdatert"
+      "successUpdated": "Relasjonstypen \"{label}\" ble oppdatert",
+      "conditionalLabels": {
+        "sectionTitle": "Betingede etiketter",
+        "sectionHint": "Den første varianten der alle betingelsene er sanne, gir det viste ordet. Den beskrevne personen er den etiketten navngir.",
+        "expand": "Vis betingede etiketter",
+        "collapse": "Skjul betingede etiketter",
+        "addVariant": "Legg til en variant",
+        "removeVariant": "Fjern denne varianten",
+        "moveUp": "Flytt opp",
+        "moveDown": "Flytt ned",
+        "labelShow": "vis",
+        "labelOtherwise": "vis ellers",
+        "addCondition": "Legg til en betingelse",
+        "removeCondition": "Fjern denne betingelsen",
+        "conditionPrefix": "hvis",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "Negative operatorer treffer ikke manglende data. Bruk \"er ikke satt\" for det.",
+        "generate": "Generer fra et felt",
+        "generateHint": "Oppretter én variant per verdi av det valgte feltet.",
+        "generateApply": "Opprett variantene",
+        "subject": {
+          "DESCRIBED": "den beskrevne personen",
+          "OTHER": "den andre personen"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "Personfelter",
+          "CUSTOM_FIELD": "Egendefinerte felter",
+          "GROUP": "Grupper",
+          "DATE_TYPE": "Viktige datoer",
+          "DATE_TITLE": "Egendefinerte datoer"
+        },
+        "fields": {
+          "gender": "kjønn",
+          "prefix": "tittel",
+          "suffix": "etternavnstillegg",
+          "nickname": "kallenavn",
+          "name": "fornavn",
+          "surname": "etternavn",
+          "middleName": "mellomnavn",
+          "secondLastName": "andre etternavn",
+          "organization": "organisasjon",
+          "jobTitle": "stillingstittel"
+        },
+        "operators": {
+          "IS": "er",
+          "IS_NOT": "er ikke",
+          "CONTAINS": "inneholder",
+          "NOT_CONTAINS": "inneholder ikke",
+          "EQUALS": "er lik",
+          "NOT_EQUALS": "er ikke lik",
+          "GT": "er større enn",
+          "GTE": "er større enn eller lik",
+          "LT": "er mindre enn",
+          "LTE": "er mindre enn eller lik",
+          "IS_TRUE": "er sann",
+          "IS_FALSE": "er usann",
+          "IN_GROUP": "tilhører",
+          "NOT_IN_GROUP": "tilhører ikke",
+          "BEFORE": "er før",
+          "ON_OR_BEFORE": "er på eller før",
+          "AFTER": "er etter",
+          "ON_OR_AFTER": "er på eller etter",
+          "SAME_DAY": "er samme dag som",
+          "NOT_SAME_DAY": "er ikke samme dag som",
+          "IS_SET": "er satt",
+          "IS_NOT_SET": "er ikke satt"
+        },
+        "operandKind": {
+          "literal": "en verdi",
+          "now": "i dag",
+          "ref": "samme data hos den andre personen"
+        },
+        "shortcuts": {
+          "isPast": "har passert",
+          "isFuture": "kommer snart"
+        },
+        "preview": {
+          "title": "Forhåndsvisning",
+          "hint": "Velg to kontakter for å se ordet dette gir.",
+          "described": "Beskrevet person",
+          "other": "Annen person",
+          "result": "{described} er {label} av {other}.",
+          "matched": "Variant {index} ble brukt.",
+          "fallback": "Ingen variant traff, standardvisningen ble brukt.",
+          "failed": "Forhåndsvisningen kunne ikke beregnes."
+        },
+        "warnings": {
+          "title": "Merknader",
+          "UNREACHABLE_AFTER_FALLBACK": "Denne varianten kommer etter standardvisningen og vil aldri bli nådd.",
+          "DUPLICATE_VARIANT": "Denne varianten gjentar betingelsene til en tidligere variant.",
+          "ALWAYS_TRUE": "Denne betingelsen er alltid sann, så den har ingen praktisk effekt.",
+          "BROKEN_REFERENCE": "Denne betingelsen peker på en gruppe eller et felt som ikke lenger finnes."
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "Søk etter eller opprett omvendt relasjon...",
