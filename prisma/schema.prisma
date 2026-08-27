@@ -1000,6 +1000,10 @@ model NotificationEndpoint {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Mirrors PushSubscription.endpoint's @unique: adding the same destination
+  // twice would multiply every reminder into duplicate publishes and consume
+  // the user's whole endpoint cap on repeats of one destination.
+  @@unique([userId, url])
   @@index([userId, enabled])
   @@map("notification_endpoints")
 }
