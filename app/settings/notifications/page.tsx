@@ -7,6 +7,8 @@ import { isPushConfigured } from '@/lib/notifications/vapid';
 import ReminderLeadTimeSelector from '@/components/ReminderLeadTimeSelector';
 import WeeklyDigestSettings from '@/components/WeeklyDigestSettings';
 import NotificationChannelsCard from '@/components/NotificationChannelsCard';
+import NotificationEndpointsCard from '@/components/NotificationEndpointsCard';
+import { MAX_ENDPOINTS_PER_USER } from '@/lib/notifications/endpoint-health';
 
 export default async function NotificationSettingsPage() {
   const session = await auth();
@@ -45,6 +47,19 @@ export default async function NotificationSettingsPage() {
   // will never arrive.
   const emailAvailable = isEmailConfigured();
 
+  const endpoints = await prisma.notificationEndpoint.findMany({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      label: true,
+      url: true,
+      enabled: true,
+      lastFailureCode: true,
+      autoDisabledAt: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
   return (
     <div className="space-y-6">
       <NotificationChannelsCard
@@ -52,6 +67,14 @@ export default async function NotificationSettingsPage() {
         emailAvailable={emailAvailable}
         pushAvailable={isPushConfigured()}
         devices={devices.map((device) => ({ id: device.id, userAgent: device.userAgent }))}
+      />
+
+      <NotificationEndpointsCard
+        endpoints={endpoints.map((endpoint) => ({
+          ...endpoint,
+          autoDisabledAt: endpoint.autoDisabledAt?.toISOString() ?? null,
+        }))}
+        canAdd={endpoints.length < MAX_ENDPOINTS_PER_USER}
       />
 
       {!emailAvailable && (
