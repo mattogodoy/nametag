@@ -4,13 +4,16 @@ const mocks = vi.hoisted(() => ({
   isSaasMode: vi.fn(),
   resolve4: vi.fn(),
   resolve6: vi.fn(),
+  lookup: vi.fn(),
 }));
 
 vi.mock('../../../lib/features', () => ({ isSaasMode: mocks.isSaasMode }));
 
 vi.mock('dns', () => ({
-  default: { promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6 } },
-  promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6 },
+  default: {
+    promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6, lookup: mocks.lookup },
+  },
+  promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6, lookup: mocks.lookup },
 }));
 
 import {
@@ -48,8 +51,13 @@ describe('resolveTarget', () => {
   beforeEach(() => {
     mocks.resolve4.mockReset();
     mocks.resolve6.mockReset();
+    mocks.lookup.mockReset();
     mocks.resolve4.mockResolvedValue(['93.184.216.34']);
     mocks.resolve6.mockRejectedValue(new Error('no AAAA'));
+    // Only reached when both resolve4 and resolve6 come back empty. Rejecting
+    // by default keeps every existing test, which only exercises the plain
+    // DNS path, from silently depending on this fallback succeeding.
+    mocks.lookup.mockRejectedValue(new Error('ENOTFOUND'));
   });
 
   it('rejects a non-HTTP protocol in every mode', async () => {
@@ -140,5 +148,42 @@ describe('resolveTarget', () => {
     await expect(resolveTarget('https://nope.test/hook', strict)).rejects.toBeInstanceOf(
       BlockedUrlError
     );
+  });
+
+  it('falls back to the hosts-file-aware lookup when plain DNS finds nothing, and still pins the result', async () => {
+    // A Docker Compose extra_hosts entry, another /etc/hosts mapping, or an
+    // mDNS .local name: none of these have A/AAAA records, but dns.lookup
+    // (libuv getaddrinfo) resolves them the same way curl or a browser on
+    // the same host would.
+    mocks.resolve4.mockRejectedValue(new Error('ENOTFOUND'));
+    mocks.resolve6.mockRejectedValue(new Error('ENOTFOUND'));
+    mocks.lookup.mockResolvedValue([{ address: '203.0.113.9', family: 4 }]);
+
+    const target = await resolveTarget('https://nas.local/topic', loose);
+
+    expect(target.address).toBe('203.0.113.9');
+    expect(target.family).toBe(4);
+  });
+
+  it('rejects a private address discovered only through the hosts-file fallback', async () => {
+    mocks.resolve4.mockRejectedValue(new Error('ENOTFOUND'));
+    mocks.resolve6.mockRejectedValue(new Error('ENOTFOUND'));
+    mocks.lookup.mockResolvedValue([{ address: '10.0.0.5', family: 4 }]);
+
+    // Asserted on `reason` rather than just BlockedUrlError, so this only
+    // stays green when the fallback's result was actually checked against
+    // the private-address policy. A build that fell through to "could not
+    // resolve" without ever inspecting the looked-up address would raise the
+    // same error class with reason 'dns' instead, and would wrongly pass a
+    // looser assertion.
+    await expect(resolveTarget('https://nas.local/topic', strict)).rejects.toMatchObject({
+      reason: 'policy',
+    });
+  });
+
+  it('does not fall back to dns.lookup when a plain DNS record was already found', async () => {
+    await resolveTarget('https://example.test/hook', strict);
+
+    expect(mocks.lookup).not.toHaveBeenCalled();
   });
 });

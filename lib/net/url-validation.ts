@@ -335,12 +335,37 @@ export async function resolveTarget(
     withTimeout(dns.promises.resolve6(hostname), DNS_TIMEOUT_MS, 'DNS resolution timeout'),
   ]);
 
-  const candidates: Array<{ address: string; family: 4 | 6 }> = [];
+  let candidates: Array<{ address: string; family: 4 | 6 }> = [];
   if (v4.status === 'fulfilled') {
     candidates.push(...v4.value.map((address) => ({ address, family: 4 as const })));
   }
   if (v6.status === 'fulfilled') {
     candidates.push(...v6.value.map((address) => ({ address, family: 6 as const })));
+  }
+
+  // resolve4/resolve6 query DNS directly and bypass /etc/hosts. That breaks a
+  // self-hoster's Docker Compose `extra_hosts:` entry, any other hosts-file
+  // mapping, and mDNS `.local` names, all of which resolve fine for every
+  // other program on the same machine. dns.promises.lookup is the
+  // hosts-file-aware path (it calls into libuv's getaddrinfo, the same
+  // resolution a browser or curl on the same host would use), so it is tried
+  // only as a fallback, after both plain DNS record lookups came back empty.
+  // The results go through exactly the same private-address check below as
+  // the primary path.
+  if (candidates.length === 0) {
+    try {
+      const looked = await withTimeout(
+        dns.promises.lookup(hostname, { all: true }),
+        DNS_TIMEOUT_MS,
+        'DNS resolution timeout'
+      );
+      candidates = looked.map(({ address, family }) => ({
+        address,
+        family: family === 6 ? (6 as const) : (4 as const),
+      }));
+    } catch {
+      // Fall through to the "could not resolve" error below.
+    }
   }
 
   if (candidates.length === 0) {
