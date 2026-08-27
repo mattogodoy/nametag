@@ -1,6 +1,7 @@
 import {
   createRelationshipSchema, updateRelationshipSchema,
   createRelationshipTypeSchema, updateRelationshipTypeSchema,
+  previewLabelSchema,
 } from '../validations';
 import { zodBody, pathParam, jsonResponse, ref400, ref401, ref404, refMessage, refSuccess, resp, sessionOrToken } from './helpers';
 
@@ -224,6 +225,32 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
         parameters: [pathParam('id', 'Relationship type ID')],
         responses: {
           '200': refSuccess(),
+          '400': ref400(),
+          '401': ref401(),
+          '404': ref404(),
+        },
+      },
+    },
+    '/api/relationship-types/preview-label': {
+      post: {
+        tags: ['Relationship Types'],
+        summary: 'Preview a conditional label',
+        description: 'Resolves a label against an unsaved variant configuration and two people, so the editor can show the result before saving. Reads only.',
+        security: sessionOrToken(),
+        requestBody: zodBody(previewLabelSchema),
+        responses: {
+          '200': jsonResponse('Resolved label', {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                properties: {
+                  label: { type: 'string' },
+                  variantIndex: { type: ['integer', 'null'] },
+                },
+              },
+            },
+          }),
           '400': ref400(),
           '401': ref401(),
           '404': ref404(),
