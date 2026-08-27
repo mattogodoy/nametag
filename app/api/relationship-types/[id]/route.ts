@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { updateRelationshipTypeSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { getRandomColor } from '@/lib/colors';
+import { findForeignReference, replaceLabelVariants } from '@/lib/relationship-labels/persistence';
 
 export const GET = withAuth(async (_request, session, context) => {
   const { id } = await context.params;
@@ -54,7 +55,14 @@ export const PUT = withAuth(async (request, session, context) => {
       return validation.response;
     }
 
-    const { name, label, color, inverseId, inverseLabel, symmetric } = validation.data;
+    const { name, label, color, inverseId, inverseLabel, symmetric, variants } = validation.data;
+
+    if (variants !== undefined) {
+      const foreignReference = await findForeignReference(session.user.id, variants);
+      if (foreignReference) {
+        return apiResponse.error('A condition points at data you do not own');
+      }
+    }
 
     const normalizedName = name.toUpperCase().replace(/\s+/g, '_');
 
@@ -133,7 +141,7 @@ export const PUT = withAuth(async (request, session, context) => {
       finalInverseId = inverseType.id;
     }
 
-    const relationshipType = await prisma.relationshipType.update({
+    const updateArgs = {
       where: { id },
       data: {
         name: normalizedName,
@@ -150,7 +158,16 @@ export const PUT = withAuth(async (request, session, context) => {
           },
         },
       },
-    });
+    };
+
+    const relationshipType =
+      variants === undefined
+        ? await prisma.relationshipType.update(updateArgs)
+        : await prisma.$transaction(async (tx) => {
+            const updatedType = await tx.relationshipType.update(updateArgs);
+            await replaceLabelVariants(tx, updatedType.id, variants);
+            return updatedType;
+          });
 
     // Update inverse relationship's color to match
     if (finalInverseId && finalInverseId !== id) {
