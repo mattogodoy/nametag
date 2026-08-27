@@ -14,24 +14,6 @@ const log = createModuleLogger('notifications:endpoint-health');
  */
 export const AUTO_DISABLE_THRESHOLD = 10;
 
-/**
- * The one piece of arithmetic `recordPushSubscriptionResult` needs: how many
- * failures this makes, and whether that crosses the disable line.
- *
- * `recordEndpointResult` does not use this. Its rows are shared across
- * concurrent envelopes for the same user, so it increments atomically in the
- * database instead of reading a count and writing it back (see the comment
- * there). `PushSubscription` health is not exposed to that same race today,
- * so the simpler read-then-write form is kept here.
- */
-function nextFailureState(currentFailures: number): {
-  failures: number;
-  shouldDisable: boolean;
-} {
-  const failures = currentFailures + 1;
-  return { failures, shouldDisable: failures >= AUTO_DISABLE_THRESHOLD };
-}
-
 /** True when a Prisma write targeted a row that no longer exists (P2025). */
 function isRecordNotFoundError(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
@@ -106,15 +88,21 @@ export async function recordEndpointResult(
 
   if (updated.consecutiveFailures >= AUTO_DISABLE_THRESHOLD) {
     // Guarded on autoDisabledAt so concurrent envelopes crossing the
-    // threshold together cannot each overwrite the disable timestamp.
-    await prisma.notificationEndpoint.updateMany({
+    // threshold together cannot each overwrite the disable timestamp, and so
+    // the warning below fires once rather than on every subsequent failure
+    // (a second envelope to the same already-disabled endpoint, later in the
+    // same run, still has consecutiveFailures >= threshold but must not log
+    // a second "auto-disabled" line for something that already happened).
+    const disabled = await prisma.notificationEndpoint.updateMany({
       where: { id: endpointId, autoDisabledAt: null },
       data: { enabled: false, autoDisabledAt: now },
     });
-    log.warn(
-      { endpointId, failures: updated.consecutiveFailures },
-      'Endpoint auto-disabled after repeated failures'
-    );
+    if (disabled.count > 0) {
+      log.warn(
+        { endpointId, failures: updated.consecutiveFailures },
+        'Endpoint auto-disabled after repeated failures'
+      );
+    }
   }
 }
 
@@ -134,41 +122,61 @@ export async function recordPushSubscriptionResult(
   result: OutboundResult
 ): Promise<void> {
   if (result.ok) {
-    await prisma.pushSubscription.update({
+    // Unlike NotificationEndpoint, PushSubscription has no `enabled` column,
+    // so clearing autoDisabledAt here has no counterpart flag to leave
+    // stranded. This is the documented re-subscribe behaviour and is
+    // intentionally different from recordEndpointResult's success path.
+    try {
+      await prisma.pushSubscription.update({
+        where: { id: subscriptionId },
+        data: {
+          consecutiveFailures: 0,
+          lastSuccessAt: new Date(),
+          lastFailureCode: null,
+          autoDisabledAt: null,
+        },
+      });
+    } catch (error) {
+      // Deleted (or already pruned as dead) between the send and this write.
+      if (isRecordNotFoundError(error)) return;
+      throw error;
+    }
+    return;
+  }
+
+  // Atomic increment, the same reasoning as recordEndpointResult: concurrent
+  // envelopes for the same user share the same subscription rows, so a
+  // read-then-write here loses increments under the same race.
+  let updated: { consecutiveFailures: number };
+  try {
+    updated = await prisma.pushSubscription.update({
       where: { id: subscriptionId },
       data: {
-        consecutiveFailures: 0,
-        lastSuccessAt: new Date(),
-        lastFailureCode: null,
-        autoDisabledAt: null,
+        consecutiveFailures: { increment: 1 },
+        lastFailureCode: result.code,
       },
+      select: { consecutiveFailures: true },
     });
-    return;
+  } catch (error) {
+    // Deleted (or already pruned as dead) between the send and this write.
+    if (isRecordNotFoundError(error)) return;
+    throw error;
   }
 
-  const subscription = await prisma.pushSubscription.findUnique({
-    where: { id: subscriptionId },
-    select: { consecutiveFailures: true },
-  });
-
-  // Deleted (or already pruned as dead) between the send and this write.
-  if (!subscription) {
-    return;
-  }
-
-  const { failures, shouldDisable } = nextFailureState(subscription.consecutiveFailures);
-
-  await prisma.pushSubscription.update({
-    where: { id: subscriptionId },
-    data: {
-      consecutiveFailures: failures,
-      lastFailureCode: result.code,
-      ...(shouldDisable ? { autoDisabledAt: new Date() } : {}),
-    },
-  });
-
-  if (shouldDisable) {
-    log.warn({ subscriptionId, failures }, 'Push subscription auto-disabled after repeated failures');
+  if (updated.consecutiveFailures >= AUTO_DISABLE_THRESHOLD) {
+    // Guarded on autoDisabledAt so concurrent envelopes crossing the
+    // threshold together cannot each overwrite the disable timestamp, and so
+    // the warning below fires once rather than on every subsequent failure.
+    const disabled = await prisma.pushSubscription.updateMany({
+      where: { id: subscriptionId, autoDisabledAt: null },
+      data: { autoDisabledAt: new Date() },
+    });
+    if (disabled.count > 0) {
+      log.warn(
+        { subscriptionId, failures: updated.consecutiveFailures },
+        'Push subscription auto-disabled after repeated failures'
+      );
+    }
   }
 }
 

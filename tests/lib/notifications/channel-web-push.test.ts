@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   deleteMany: vi.fn(),
   update: vi.fn(),
-  findUnique: vi.fn(),
+  updateMany: vi.fn(),
   sendNotification: vi.fn(),
   setVapidDetails: vi.fn(),
   getVapidDetails: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('../../../lib/prisma', () => ({
       findMany: mocks.findMany,
       deleteMany: mocks.deleteMany,
       update: mocks.update,
-      findUnique: mocks.findUnique,
+      updateMany: mocks.updateMany,
     },
   },
 }));
@@ -68,8 +68,8 @@ describe('sendWebPush', () => {
     mocks.findMany.mockResolvedValue([subscription('sub-1')]);
     mocks.sendNotification.mockResolvedValue({ statusCode: 201 });
     mocks.deleteMany.mockResolvedValue({ count: 0 });
-    mocks.update.mockResolvedValue({});
-    mocks.findUnique.mockResolvedValue({ consecutiveFailures: 0 });
+    mocks.update.mockResolvedValue({ consecutiveFailures: 0 });
+    mocks.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it('skips when push is not configured on this server', async () => {
@@ -182,7 +182,7 @@ describe('sendWebPush', () => {
   });
 
   it('records a failure against a kept-alive device without disabling it before the threshold', async () => {
-    mocks.findUnique.mockResolvedValue({ consecutiveFailures: 2 });
+    mocks.update.mockResolvedValue({ consecutiveFailures: 3 });
     mocks.sendNotification.mockRejectedValue(
       Object.assign(new Error('unavailable'), { statusCode: 503 })
     );
@@ -191,16 +191,17 @@ describe('sendWebPush', () => {
 
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: 'sub-1' },
-      data: expect.objectContaining({ consecutiveFailures: 3, lastFailureCode: 'http_5xx' }),
+      data: { consecutiveFailures: { increment: 1 }, lastFailureCode: 'http_5xx' },
+      select: { consecutiveFailures: true },
     });
-    expect(mocks.update.mock.calls[0][0].data.autoDisabledAt).toBeUndefined();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it('auto-disables a device that has failed repeatedly for a reason other than 404/410', async () => {
     // A VAPID key rotation is the motivating case: every send to this device
     // now fails the same way (401, in real life), forever, with no 404/410 to
     // trigger the pruning path. Auto-disable is the only exit.
-    mocks.findUnique.mockResolvedValue({ consecutiveFailures: 9 });
+    mocks.update.mockResolvedValue({ consecutiveFailures: 10 });
     mocks.sendNotification.mockRejectedValue(
       Object.assign(new Error('unauthorized'), { statusCode: 401 })
     );
@@ -209,11 +210,15 @@ describe('sendWebPush', () => {
 
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: 'sub-1' },
-      data: expect.objectContaining({
-        consecutiveFailures: 10,
+      data: {
+        consecutiveFailures: { increment: 1 },
         lastFailureCode: 'http_4xx',
-        autoDisabledAt: expect.any(Date),
-      }),
+      },
+      select: { consecutiveFailures: true },
+    });
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: 'sub-1', autoDisabledAt: null },
+      data: { autoDisabledAt: expect.any(Date) },
     });
     // The subscription is disabled, not deleted: it must survive so that a
     // fixed key rotation can bring it back to life without the user
