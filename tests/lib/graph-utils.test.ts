@@ -12,9 +12,11 @@ describe('graph-utils', () => {
       const person = {
         id: 'person-1',
         relationshipToUser: {
+          id: 'type-child',
           label: 'Child',
           color: '#F59E0B',
           inverse: {
+            id: 'type-parent',
             label: 'Parent',
             color: '#F59E0B',
           },
@@ -42,6 +44,7 @@ describe('graph-utils', () => {
       const person = {
         id: 'person-1',
         relationshipToUser: {
+          id: 'type-relative',
           label: 'Relative',
           color: '#6366F1',
           inverse: null,
@@ -124,6 +127,7 @@ describe('graph-utils', () => {
         personId: 'person-1',
         relatedPersonId: 'person-2',
         relationshipType: {
+          id: 'type-parent',
           label: 'Parent',
           color: '#F59E0B',
         },
@@ -158,9 +162,11 @@ describe('graph-utils', () => {
         personId: 'person-1',
         relatedPersonId: 'person-2',
         relationshipType: {
+          id: 'type-parent',
           label: 'Parent',
           color: '#F59E0B',
           inverse: {
+            id: 'type-child',
             label: 'Child',
             color: '#F59E0B',
           },
@@ -182,6 +188,7 @@ describe('graph-utils', () => {
         personId: 'person-1',
         relatedPersonId: 'person-2',
         relationshipType: {
+          id: 'type-relative',
           label: 'Relative',
           color: '#6366F1',
           inverse: null,
