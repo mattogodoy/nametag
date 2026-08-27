@@ -6,7 +6,7 @@ import { renderEmail } from './channels/email';
 import { sendNtfy } from './channels/ntfy';
 import { sendWebPush } from './channels/web-push';
 import { mapWithConcurrency } from './concurrency';
-import { recordEndpointResult } from './endpoint-health';
+import { MAX_ENDPOINTS_PER_USER, recordEndpointResult } from './endpoint-health';
 import type { ChannelId, ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
 
 const log = createModuleLogger('notifications');
@@ -121,6 +121,14 @@ async function loadEndpoints(
     const endpoints = await prisma.notificationEndpoint.findMany({
       where: { userId: { in: userIds }, enabled: true },
       select: { id: true, userId: true, type: true, url: true, secret: true },
+      // Belt, not the primary control: the per-user cap is enforced at
+      // creation time (MAX_ENDPOINTS_PER_USER). This bounds the query itself
+      // so a row created by some path that bypasses that cap cannot make the
+      // cron iterate an unbounded list. Multiplied by the number of users in
+      // this run because, unlike sendWebPush's per-user query, this one is
+      // batched across every user, so a flat take of MAX_ENDPOINTS_PER_USER
+      // would silently starve every user after the first few.
+      take: MAX_ENDPOINTS_PER_USER * userIds.length,
     });
 
     const byUser = new Map<string, EndpointRecord[]>();

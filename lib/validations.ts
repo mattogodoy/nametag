@@ -652,6 +652,19 @@ export const emailRemindersSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const createNtfyEndpointSchema = z.object({
+  type: z.literal('NTFY'),
+  label: z.string().min(1).max(60),
+  url: z.string().url().max(500),
+  // ntfy access token. Optional: public topics need none.
+  token: z.string().min(1).max(255).optional(),
+});
+
+export const updateEndpointSchema = z.object({
+  label: z.string().min(1).max(60).optional(),
+  enabled: z.boolean().optional(),
+});
+
 // ============================================
 // Helper function for API validation
 // ============================================

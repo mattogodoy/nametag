@@ -132,3 +132,12 @@ export async function recordPushSubscriptionResult(
     log.warn({ subscriptionId, failures }, 'Push subscription auto-disabled after repeated failures');
   }
 }
+
+/**
+ * Ceiling on endpoints per user.
+ *
+ * Each endpoint is an outbound request per reminder made on the user's behalf.
+ * Five covers a phone, a tablet and a couple of integrations, and keeps the
+ * fan-out from one account bounded.
+ */
+export const MAX_ENDPOINTS_PER_USER = 5;

@@ -37,6 +37,7 @@ vi.mock('../../../lib/notifications/channels/ntfy', () => ({ sendNtfy: endpointM
 vi.mock('../../../lib/notifications/endpoint-health', () => ({
   recordEndpointResult: endpointMocks.recordEndpointResult,
   AUTO_DISABLE_THRESHOLD: 10,
+  MAX_ENDPOINTS_PER_USER: 5,
 }));
 
 vi.mock('../../../lib/prisma', () => ({
