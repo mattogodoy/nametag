@@ -18,18 +18,24 @@ export interface KnownReferences {
   templateIds: readonly string[];
 }
 
+/**
+ * The operand carries free text a user typed, so the key must not be a plain
+ * join: a literal containing the separator would collide with a genuinely
+ * different condition list. JSON encoding escapes the payload, so distinct
+ * inputs always produce distinct keys.
+ */
 function conditionKey(condition: LabelCondition): string {
-  return [
+  return JSON.stringify([
     condition.subject,
     condition.source,
     condition.subjectRef.trim().toLowerCase(),
     condition.operator,
     condition.operand ?? '',
-  ].join('|');
+  ]);
 }
 
 function variantKey(variant: LabelVariant): string {
-  return variant.conditions.map(conditionKey).join('&&');
+  return JSON.stringify(variant.conditions.map(conditionKey));
 }
 
 /**

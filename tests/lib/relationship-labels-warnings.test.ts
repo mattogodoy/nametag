@@ -91,4 +91,22 @@ describe('findLabelWarnings', () => {
       code: 'BROKEN_REFERENCE',
     });
   });
+
+  it('does not falsely detect collision when operand contains separators', () => {
+    const variants: LabelVariant[] = [
+      {
+        label: 'a',
+        conditions: [cond({ operand: 'lit:foo&&DESCRIBED|PERSON_FIELD|gender|IS|bar' })],
+      },
+      {
+        label: 'b',
+        conditions: [
+          cond({ operand: 'lit:foo' }),
+          cond({ operand: 'lit:bar' }),
+        ],
+      },
+    ];
+    const warnings = findLabelWarnings(variants, known);
+    expect(warnings.filter(w => w.code === 'DUPLICATE_VARIANT')).toEqual([]);
+  });
 });
