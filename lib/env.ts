@@ -213,6 +213,7 @@ export function validateEnv(): Env {
   if (result.data.VAPID_SUBJECT && !result.data.VAPID_SUBJECT.startsWith('mailto:')) {
     console.error('\n❌ Invalid environment variables:\n');
     console.error('  - VAPID_SUBJECT must be a mailto: URL, for example mailto:admin@example.com');
+    console.error('\nPlease check your .env file.\n');
     throw new Error('Invalid environment configuration');
   }
 

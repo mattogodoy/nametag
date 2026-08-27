@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { validateEnv } from '@/lib/env';
 
 const BASE_VALID_ENV: Record<string, string> = {
@@ -194,6 +194,63 @@ describe('env validation', () => {
       process.env = {
         ...BASE_VALID_ENV,
         DISABLE_PASSWORD_LOGIN: 'false',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).not.toThrow();
+    });
+  });
+
+  describe('VAPID configuration', () => {
+    it('should reject a partial VAPID configuration', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        VAPID_PUBLIC_KEY: 'pub',
+        VAPID_PRIVATE_KEY: 'priv',
+      } as unknown as NodeJS.ProcessEnv;
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      expect(() => validateEnv()).toThrow();
+      expect(consoleErrorSpy.mock.calls.flat().join('\n')).toMatch(/must all be set together/);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should reject a VAPID_SUBJECT that is not a mailto: URL', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        VAPID_PUBLIC_KEY: 'pub',
+        VAPID_PRIVATE_KEY: 'priv',
+        VAPID_SUBJECT: 'admin@example.com',
+      } as unknown as NodeJS.ProcessEnv;
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      expect(() => validateEnv()).toThrow();
+      expect(consoleErrorSpy.mock.calls.flat().join('\n')).toMatch(/must be a mailto: URL/);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should print the same .env hint every other validation failure prints', () => {
+      // Every sibling failure block in validateEnv ends with this trailer.
+      // The VAPID_SUBJECT format check is the one block that used to omit it.
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      process.env = {
+        ...BASE_VALID_ENV,
+        VAPID_PUBLIC_KEY: 'pub',
+        VAPID_PRIVATE_KEY: 'priv',
+        VAPID_SUBJECT: 'admin@example.com',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).toThrow();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('\nPlease check your .env file.\n');
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should accept a fully configured VAPID setup', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        VAPID_PUBLIC_KEY: 'pub',
+        VAPID_PRIVATE_KEY: 'priv',
+        VAPID_SUBJECT: 'mailto:admin@example.com',
       } as unknown as NodeJS.ProcessEnv;
 
       expect(() => validateEnv()).not.toThrow();

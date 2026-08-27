@@ -164,8 +164,8 @@ describe('renderShortForm', () => {
         expect(result.title, `${where} title`).toBeTruthy();
         expect(result.body, `${where} body`).toBeTruthy();
 
-        expect(result.title, `${where} title has an unresolved placeholder`).not.toMatch(/\{[a-zA-Z]+\}/);
-        expect(result.body, `${where} body has an unresolved placeholder`).not.toMatch(/\{[a-zA-Z]+\}/);
+        expect(result.title, `${where} title has an unresolved placeholder`).not.toMatch(/\{/);
+        expect(result.body, `${where} body has an unresolved placeholder`).not.toMatch(/\{/);
 
         for (const key of PUSH_KEYS) {
           expect(result.title, `${where} title fell back to the key name`).not.toBe(key);

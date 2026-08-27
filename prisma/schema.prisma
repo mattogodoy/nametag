@@ -27,7 +27,7 @@ model User {
   weeklyDigestEnabled     Boolean   @default(false) // Opt-in
   weeklyDigestWeekday     Int       @default(1)     // 0 = Sunday ... 6 = Saturday
   lastWeeklyDigestSent    DateTime?
-  emailRemindersEnabled Boolean @default(true)
+  emailRemindersEnabled   Boolean   @default(true)
   language           String?   @default("en") // "en" or "es-ES"
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
