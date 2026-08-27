@@ -4,7 +4,8 @@ import type { NotificationEnvelope } from '../../../lib/notifications/types';
 const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   deleteMany: vi.fn(),
-  updateMany: vi.fn(),
+  update: vi.fn(),
+  findUnique: vi.fn(),
   sendNotification: vi.fn(),
   setVapidDetails: vi.fn(),
   getVapidDetails: vi.fn(),
@@ -15,7 +16,8 @@ vi.mock('../../../lib/prisma', () => ({
     pushSubscription: {
       findMany: mocks.findMany,
       deleteMany: mocks.deleteMany,
-      updateMany: mocks.updateMany,
+      update: mocks.update,
+      findUnique: mocks.findUnique,
     },
   },
 }));
@@ -66,7 +68,8 @@ describe('sendWebPush', () => {
     mocks.findMany.mockResolvedValue([subscription('sub-1')]);
     mocks.sendNotification.mockResolvedValue({ statusCode: 201 });
     mocks.deleteMany.mockResolvedValue({ count: 0 });
-    mocks.updateMany.mockResolvedValue({ count: 1 });
+    mocks.update.mockResolvedValue({});
+    mocks.findUnique.mockResolvedValue({ consecutiveFailures: 0 });
   });
 
   it('skips when push is not configured on this server', async () => {
@@ -96,7 +99,7 @@ describe('sendWebPush', () => {
     });
   });
 
-  it('scopes the subscription lookup to the envelope owner', async () => {
+  it('scopes the subscription lookup to the envelope owner and skips auto-disabled devices', async () => {
     // Every other test in this file stubs findMany and ignores the arguments
     // it was called with. Dropping the userId filter would broadcast every
     // user's push, including contact names, to every subscribed device on
@@ -104,7 +107,7 @@ describe('sendWebPush', () => {
     await sendWebPush(envelope);
 
     expect(mocks.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 'user-1' } })
+      expect.objectContaining({ where: { userId: 'user-1', autoDisabledAt: null } })
     );
   });
 
@@ -122,12 +125,18 @@ describe('sendWebPush', () => {
 
     expect(await sendWebPush(envelope)).toEqual({ channel: 'web_push', status: 'delivered' });
 
-    // lastSuccessAt must move for the live device and only the live device. If
-    // `alive` ever widened to include a device that failed, this is what
-    // catches it.
-    expect(mocks.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['sub-2'] } },
-      data: { lastSuccessAt: expect.any(Date) },
+    // Health must be recorded for the live device and only the live device.
+    // If success handling ever widened to include a device that failed, this
+    // is what catches it.
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 'sub-2' },
+      data: expect.objectContaining({
+        consecutiveFailures: 0,
+        lastSuccessAt: expect.any(Date),
+        lastFailureCode: null,
+        autoDisabledAt: null,
+      }),
     });
     expect(mocks.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['sub-1'] } } });
   });
@@ -146,7 +155,9 @@ describe('sendWebPush', () => {
     // not `skipped`: skipped means "there was nothing to deliver to", and the
     // dispatcher accounts for the two differently.
     expect(result).toEqual({ channel: 'web_push', status: 'failed', error: 'gone' });
-    expect(mocks.updateMany).not.toHaveBeenCalled();
+    // Pruned rows are deleted outright, so there is nothing left to record
+    // health against.
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 
   it('does NOT prune on a transient server error', async () => {
@@ -168,5 +179,58 @@ describe('sendWebPush', () => {
     const result = await sendWebPush(envelope);
 
     expect(result.status).toBe('failed');
+  });
+
+  it('records a failure against a kept-alive device without disabling it before the threshold', async () => {
+    mocks.findUnique.mockResolvedValue({ consecutiveFailures: 2 });
+    mocks.sendNotification.mockRejectedValue(
+      Object.assign(new Error('unavailable'), { statusCode: 503 })
+    );
+
+    await sendWebPush(envelope);
+
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: expect.objectContaining({ consecutiveFailures: 3, lastFailureCode: 'http_5xx' }),
+    });
+    expect(mocks.update.mock.calls[0][0].data.autoDisabledAt).toBeUndefined();
+  });
+
+  it('auto-disables a device that has failed repeatedly for a reason other than 404/410', async () => {
+    // A VAPID key rotation is the motivating case: every send to this device
+    // now fails the same way (401, in real life), forever, with no 404/410 to
+    // trigger the pruning path. Auto-disable is the only exit.
+    mocks.findUnique.mockResolvedValue({ consecutiveFailures: 9 });
+    mocks.sendNotification.mockRejectedValue(
+      Object.assign(new Error('unauthorized'), { statusCode: 401 })
+    );
+
+    const result = await sendWebPush(envelope);
+
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: expect.objectContaining({
+        consecutiveFailures: 10,
+        lastFailureCode: 'http_4xx',
+        autoDisabledAt: expect.any(Date),
+      }),
+    });
+    // The subscription is disabled, not deleted: it must survive so that a
+    // fixed key rotation can bring it back to life without the user
+    // re-granting permission.
+    expect(mocks.deleteMany).not.toHaveBeenCalled();
+    expect(result.status).toBe('failed');
+  });
+
+  it('skips a device that is already auto-disabled rather than sending to it', async () => {
+    // findMany is the enforcement point: an auto-disabled row must never be
+    // returned in the first place. This test pins the query result, not the
+    // implementation, to catch a regression that widened the where clause.
+    mocks.findMany.mockResolvedValue([]);
+
+    const result = await sendWebPush(envelope);
+
+    expect(result).toEqual({ channel: 'web_push', status: 'skipped' });
+    expect(mocks.sendNotification).not.toHaveBeenCalled();
   });
 });

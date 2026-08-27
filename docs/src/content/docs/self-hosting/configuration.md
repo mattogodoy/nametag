@@ -102,7 +102,7 @@ Leave all three unset and the push channel stays hidden in Settings. Email remin
 
 Replacing the keys later invalidates every existing browser subscription at once. Each device has to turn push back on from Settings to start receiving notifications again, so only rotate them when you mean to force that.
 
-The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe, and the stale rows simply stop being useful.
+The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe. After 10 consecutive failed deliveries to the same device, roughly a week and a half at the once-a-day reminder schedule, Nametag stops attempting delivery to it automatically instead of retrying forever. The row is not deleted: re-subscribing that device, or removing it from Settings, are still the only ways to clear it out.
 
 ## Value constraints and defaults
 
