@@ -19,7 +19,7 @@ interface FakeEvent {
   request?: FakeRequest;
   data?: { type?: string; json?: () => unknown };
   notification?: { close: () => void; data: unknown };
-  respondWith: (value: unknown) => void;
+  respondWith?: (value: unknown) => void;
   waitUntil: (value: unknown) => void;
 }
 
@@ -182,7 +182,7 @@ function dispatchPush(scope: Scope, json?: () => unknown): Promise<PromiseSettle
     data: json ? { json } : undefined,
     respondWith: () => {},
     waitUntil: (value: unknown) => pending.push(Promise.resolve(value)),
-  } as unknown as FakeEvent);
+  });
   return Promise.allSettled(pending);
 }
 
@@ -193,7 +193,7 @@ function dispatchNotificationClick(scope: Scope, data: unknown): Promise<{ settl
     notification: { close: () => { closed = true; }, data },
     respondWith: () => {},
     waitUntil: (value: unknown) => pending.push(Promise.resolve(value)),
-  } as unknown as FakeEvent);
+  });
   return Promise.allSettled(pending).then((r: PromiseSettledResult<unknown>[]) => ({ settled: r, closed }));
 }
 
@@ -405,8 +405,9 @@ describe('public/sw.js', () => {
         },
       ]);
 
-      await dispatchNotificationClick(scope, { url: '/people/person-123' });
+      const result = await dispatchNotificationClick(scope, { url: '/people/person-123' });
 
+      expect(result.closed).toBe(true);
       expect(scope.recorder.navigatedTo).toEqual(['/people/person-123']);
       expect(scope.recorder.focusedClients).toEqual([`${ORIGIN}/people`]);
       expect(scope.recorder.openedWindows).toEqual([]);
@@ -428,6 +429,39 @@ describe('public/sw.js', () => {
       await dispatchNotificationClick(scope, {});
 
       expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('falls back to /dashboard when data is absent entirely', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, undefined);
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('skips a cross-origin tab and focuses the same-origin one behind it', async () => {
+      scope.setClients([
+        { url: 'https://elsewhere.test/whatever', focus: async () => {}, navigate: async () => {} },
+        { url: `${ORIGIN}/dashboard`, focus: async () => {}, navigate: async () => {} },
+      ]);
+
+      await dispatchNotificationClick(scope, { url: '/people/abc' });
+
+      // Without the origin filter the loop would take the first client it sees,
+      // which is the foreign one.
+      expect(scope.recorder.focusedClients).toEqual([`${ORIGIN}/dashboard`]);
+      expect(scope.recorder.navigatedTo).toEqual(['/people/abc']);
+      expect(scope.recorder.openedWindows).toEqual([]);
+    });
+
+    it('opens a new window when the only open tab is cross-origin', async () => {
+      scope.setClients([{ url: 'https://elsewhere.test/whatever', focus: async () => {}, navigate: async () => {} }]);
+
+      await dispatchNotificationClick(scope, { url: '/people/abc' });
+
+      expect(scope.recorder.focusedClients).toEqual([]);
+      expect(scope.recorder.navigatedTo).toEqual([]);
+      expect(scope.recorder.openedWindows).toEqual(['/people/abc']);
     });
   });
 });
