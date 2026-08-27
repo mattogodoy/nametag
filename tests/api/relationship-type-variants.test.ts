@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   typeFindFirst: vi.fn(),
   typeUpdate: vi.fn(),
+  typeCreate: vi.fn(),
   variantDeleteMany: vi.fn(),
   variantCreate: vi.fn(),
   groupFindMany: vi.fn(),
@@ -12,7 +13,11 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    relationshipType: { findFirst: mocks.typeFindFirst, update: mocks.typeUpdate },
+    relationshipType: {
+      findFirst: mocks.typeFindFirst,
+      update: mocks.typeUpdate,
+      create: mocks.typeCreate,
+    },
     relationshipLabelVariant: {
       deleteMany: mocks.variantDeleteMany,
       create: mocks.variantCreate,
@@ -30,6 +35,7 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 import { PUT } from '@/app/api/relationship-types/[id]/route';
+import { POST } from '@/app/api/relationship-types/route';
 
 function request(body: unknown): Request {
   return new Request('http://localhost/api/relationship-types/type-1', {
@@ -148,5 +154,99 @@ describe('PUT /api/relationship-types/[id] with variants', () => {
     );
     expect(response.status).toBe(400);
     expect(mocks.variantDeleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/relationship-types with variants', () => {
+  function postRequest(body: unknown): Request {
+    return new Request('http://localhost/api/relationship-types', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // POST has no ownership lookup (there is nothing to own yet). Its only
+    // findFirst calls are duplicate-name checks (main type, and the inverse
+    // type when inverseLabel is sent), which should all find nothing.
+    mocks.typeFindFirst.mockReset();
+    mocks.typeFindFirst.mockResolvedValue(null);
+    mocks.typeCreate.mockReset();
+    mocks.typeUpdate.mockReset();
+    mocks.variantDeleteMany.mockResolvedValue({ count: 0 });
+    mocks.variantCreate.mockResolvedValue({ id: 'v1' });
+    mocks.groupFindMany.mockResolvedValue([]);
+    mocks.templateFindMany.mockResolvedValue([]);
+    mocks.transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        relationshipType: { update: mocks.typeUpdate, create: mocks.typeCreate },
+        relationshipLabelVariant: {
+          deleteMany: mocks.variantDeleteMany,
+          create: mocks.variantCreate,
+        },
+      })
+    );
+  });
+
+  it('writes variants for a symmetric type created with them', async () => {
+    // The symmetric branch creates the type, then updates it to point at
+    // itself as its own inverse. Only the create happens outside the
+    // transaction; the self-referencing update is what carries the variants.
+    mocks.typeCreate.mockResolvedValueOnce({ id: 'sym-type-1' });
+    mocks.typeUpdate.mockResolvedValueOnce({ id: 'sym-type-1', inverseId: 'sym-type-1' });
+
+    const response = await POST(
+      postRequest({
+        name: 'AMI',
+        label: 'Ami',
+        color: '#8B5CF6',
+        symmetric: true,
+        variants: [
+          { label: 'ami', conditions: [genderCondition] },
+          { label: 'amie', conditions: [] },
+        ],
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.variantDeleteMany).toHaveBeenCalledWith({
+      where: { relationshipTypeId: 'sym-type-1' },
+    });
+    expect(mocks.variantCreate).toHaveBeenCalledTimes(2);
+    expect(mocks.variantCreate.mock.calls[0][0].data.order).toBe(0);
+    expect(mocks.variantCreate.mock.calls[1][0].data.order).toBe(1);
+  });
+
+  it('does not give an auto-created inverse type any variants', async () => {
+    // inverseLabel makes the route create the inverse type first (no
+    // variants), then create the main type inside the transaction that
+    // carries the variants.
+    mocks.typeCreate
+      .mockResolvedValueOnce({ id: 'inverse-type-1' })
+      .mockResolvedValueOnce({ id: 'main-type-1' });
+    mocks.typeUpdate.mockResolvedValueOnce({ id: 'inverse-type-1', inverseId: 'main-type-1' });
+
+    const response = await POST(
+      postRequest({
+        name: 'PARENT',
+        label: 'Parent',
+        color: '#8B5CF6',
+        inverseLabel: 'Child',
+        variants: [{ label: 'papa', conditions: [genderCondition] }],
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.variantDeleteMany).toHaveBeenCalledTimes(1);
+    expect(mocks.variantDeleteMany).toHaveBeenCalledWith({
+      where: { relationshipTypeId: 'main-type-1' },
+    });
+    expect(mocks.variantDeleteMany).not.toHaveBeenCalledWith({
+      where: { relationshipTypeId: 'inverse-type-1' },
+    });
+    expect(mocks.variantCreate).toHaveBeenCalledTimes(1);
+    expect(mocks.variantCreate.mock.calls[0][0].data.relationshipTypeId).toBe('main-type-1');
   });
 });
