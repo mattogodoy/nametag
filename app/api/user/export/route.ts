@@ -122,6 +122,16 @@ export const GET = withAuth(async (request, session) => {
       }),
       prisma.relationshipType.findMany({
         where: { userId: session.user.id, deletedAt: null },
+        include: {
+          labelVariants: {
+            orderBy: { order: 'asc' },
+            include: {
+              conditions: {
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+        },
       }),
       prisma.journalEntry.findMany({
         where: { userId: session.user.id, deletedAt: null },
@@ -141,6 +151,12 @@ export const GET = withAuth(async (request, session) => {
         orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
       }),
     ]);
+
+    // Custom field conditions on a relationship label variant reference a
+    // template by database id, which is not stable across accounts. Export
+    // that reference as the template's slug instead, the same stable
+    // identifier customFieldValues already use, so import can remap it.
+    const templateIdToSlug = new Map(customFieldTemplates.map((t) => [t.id, t.slug]));
 
     // Get set of exported person IDs for filtering relationships
     const exportedPersonIds = new Set(allPeople.map((p) => p.id));
@@ -269,6 +285,22 @@ export const GET = withAuth(async (request, session) => {
         label: type.label,
         color: type.color,
         inverseId: type.inverseId,
+        // The relationship label itself always stays the type's own label
+        // above: an export is a data dump, not a display, and a resolved
+        // word is time-dependent presentation, not portable data.
+        variants: (type.labelVariants ?? []).map((variant) => ({
+          label: variant.label,
+          conditions: variant.conditions.map((condition) => ({
+            subject: condition.subject,
+            source: condition.source,
+            subjectRef:
+              condition.source === 'CUSTOM_FIELD'
+                ? (templateIdToSlug.get(condition.subjectRef) ?? condition.subjectRef)
+                : condition.subjectRef,
+            operator: condition.operator,
+            operand: condition.operand,
+          })),
+        })),
       })),
       journalEntries: journalEntries.map((e) => ({
         id: e.id,

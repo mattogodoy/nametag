@@ -38,7 +38,21 @@ curl "https://your-instance.example.com/api/user/export?groupIds=clxgroup1" \
   "user": { "name": "Ada" },
   "groups": [ { "id": "clxgroup1", "name": "Family", "color": "#FF5733" } ],
   "people": [ { "id": "clx1", "name": "Ada", "surname": "Lovelace", "groups": ["Family"] } ],
-  "relationshipTypes": [ { "id": "clxtype1", "name": "PARENT", "label": "Parent" } ],
+  "relationshipTypes": [
+    {
+      "id": "clxtype1",
+      "name": "PARENT",
+      "label": "Parent",
+      "variants": [
+        {
+          "label": "Papa",
+          "conditions": [
+            { "subject": "DESCRIBED", "source": "PERSON_FIELD", "subjectRef": "gender", "operator": "IS", "operand": "lit:Homme" }
+          ]
+        }
+      ]
+    }
+  ],
   "journalEntries": [
     {
       "id": "clxj1",
@@ -54,6 +68,12 @@ curl "https://your-instance.example.com/api/user/export?groupIds=clxgroup1" \
 ```
 
 This is the same document format accepted by import, which makes it a straightforward way to move data between Nametag instances or take a full backup.
+
+Each relationship type's conditional label variants travel alongside it as configuration (`variants`). The relationship entries under `people[].relationships` always carry the type's own label, never a resolved word: a resolved label is presentational and can change over time (for example, once a memorial date passes), so it stays out of the portable data.
+
+### Technical details
+
+On import, a variant's condition is remapped to the newly created group or custom field template it references. When that target was not part of the import (for example, a group you chose not to include), only that condition is dropped; the rest of the variant, and the rest of the relationship type, still imports.
 
 ### Validate import data
 

@@ -660,6 +660,7 @@ export const importDataSchema = z.object({
     label: z.string(),
     color: z.string().nullable().optional(),
     inverseId: z.string().nullable().optional(),
+    variants: labelVariantsSchema.optional(),
   })).optional(),
   relationshipTypes: z.array(z.object({
     id: z.string(),
@@ -667,6 +668,7 @@ export const importDataSchema = z.object({
     label: z.string(),
     color: z.string().nullable().optional(),
     inverseId: z.string().nullable().optional(),
+    variants: labelVariantsSchema.optional(),
   })).optional(),
   journalEntries: z.array(z.object({
     id: z.string(),

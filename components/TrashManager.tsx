@@ -34,6 +34,7 @@ interface DeletedRelationship {
   person: { id: string; name: string; surname: string | null };
   relatedPerson: { id: string; name: string; surname: string | null };
   relationshipType: { id: string; label: string } | null;
+  resolvedLabel?: string | null;
 }
 
 interface DeletedRelationshipType {
@@ -242,7 +243,7 @@ export default function TrashManager() {
         return (item as DeletedGroup).name;
       case 'relationships': {
         const rel = item as DeletedRelationship;
-        const typeLabel = rel.relationshipType?.label ?? '?';
+        const typeLabel = rel.resolvedLabel || rel.relationshipType?.label || '?';
         return t('relationshipLabel', {
           personA: formatPersonName(rel.person),
           type: typeLabel,

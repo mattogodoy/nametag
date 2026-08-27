@@ -5,6 +5,8 @@ import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { isSaasMode } from '@/lib/features';
 import { formatCanonicalName } from '@/lib/nameUtils';
 import { validateRawValue } from '@/lib/customFields/values';
+import { replaceLabelVariants } from '@/lib/relationship-labels/persistence';
+import type { LabelCondition, LabelVariant } from '@/lib/relationship-labels';
 import type { CustomFieldType, ReminderIntervalUnit } from '@prisma/client';
 
 import { z } from 'zod';
@@ -273,6 +275,47 @@ export const POST = withAuth(async (request, session) => {
           },
         });
         groupIdMap.set(group.id, newGroup.id);
+      }
+    }
+
+    // 2b. Import relationship label variants. Needs relationship types,
+    // groups, and custom field templates to already exist, since a
+    // condition's subjectRef must be remapped to the newly created entity.
+    // A condition whose target was not part of this import is dropped; the
+    // rest of the variant survives, so one missing reference degrades a
+    // rule instead of failing the whole import.
+    if (importRelationshipTypes && importRelationshipTypes.length > 0) {
+      for (const relType of importRelationshipTypes) {
+        const newTypeId = relationshipTypeIdMap.get(relType.id);
+        const variants = relType.variants;
+        if (!newTypeId || !variants || variants.length === 0) continue;
+
+        const remappedVariants: LabelVariant[] = variants.map((variant) => ({
+          label: variant.label,
+          conditions: variant.conditions.reduce<LabelCondition[]>((acc, condition) => {
+            if (condition.source === 'GROUP') {
+              const newGroupId = groupIdMap.get(condition.subjectRef);
+              if (!newGroupId) return acc;
+              acc.push({ ...condition, subjectRef: newGroupId });
+              return acc;
+            }
+            if (condition.source === 'CUSTOM_FIELD') {
+              // subjectRef travels as the template's slug (see the export
+              // route), the stable cross-account identifier customFieldValues
+              // already use, since the raw database id is not portable.
+              const template = slugToTemplate.get(condition.subjectRef);
+              if (!template) return acc;
+              acc.push({ ...condition, subjectRef: template.id });
+              return acc;
+            }
+            acc.push(condition);
+            return acc;
+          }, []),
+        }));
+
+        await prisma.$transaction(async (tx) => {
+          await replaceLabelVariants(tx, newTypeId, remappedVariants);
+        });
       }
     }
 
