@@ -101,27 +101,77 @@ describe('renderShortForm', () => {
     expect(result.body).toBe('Es momento de ponerse al día');
   });
 
-  it('contains no unresolved interpolation placeholders in any locale', async () => {
-    const locales = ['en', 'es-ES', 'de-DE', 'fr-FR', 'it-IT', 'nl-NL', 'nb-NO', 'ru-RU', 'ja-JP', 'zh-CN'] as const;
+  it('resolves every push string in every locale, with no fallback and no stray placeholder', async () => {
+    const locales = [
+      'en', 'es-ES', 'de-DE', 'fr-FR', 'it-IT', 'nl-NL', 'nb-NO', 'ru-RU', 'ja-JP', 'zh-CN',
+    ] as const;
+
+    // Every key under notifications.push. getTranslationsForLocale returns the
+    // bare key when a lookup misses, so a rendered string that equals one of
+    // these means that locale is missing it.
+    const PUSH_KEYS = ['importantDateBody', 'importantDateLeadBody', 'contactBody', 'digestTitle'];
+
+    const kinds: Array<{ label: string; notification: NotificationEnvelope['notification'] }> = [
+      {
+        label: 'important_date',
+        notification: {
+          kind: 'important_date',
+          personId: 'person-1',
+          personName: 'Ana Torres',
+          dateTitle: 'Birthday',
+          formattedDate: 'August 26, 2026',
+          dateType: 'birthday',
+        },
+      },
+      {
+        label: 'important_date_lead',
+        notification: {
+          kind: 'important_date_lead',
+          personId: 'person-1',
+          personName: 'Ana Torres',
+          dateTitle: 'Birthday',
+          formattedDate: 'September 2, 2026',
+          daysUntil: 7,
+        },
+      },
+      {
+        label: 'contact',
+        notification: {
+          kind: 'contact',
+          personId: 'person-1',
+          personName: 'Ana Torres',
+          lastContactFormatted: null,
+          intervalText: '3 months',
+        },
+      },
+      {
+        label: 'weekly_digest',
+        notification: {
+          kind: 'weekly_digest',
+          rows: [
+            { personName: 'Ana Torres', eventTitle: 'Birthday', formattedDate: 'Aug 28', daysUntil: 2 },
+          ],
+          overflowCount: 0,
+        },
+      },
+    ];
 
     for (const locale of locales) {
-      const result = await renderShortForm(
-        envelope(
-          {
-            kind: 'important_date_lead',
-            personId: 'person-1',
-            personName: 'Ana Torres',
-            dateTitle: 'Birthday',
-            formattedDate: 'September 2, 2026',
-            daysUntil: 7,
-          },
-          locale
-        )
-      );
+      for (const { label, notification } of kinds) {
+        const where = `${locale} / ${label}`;
+        const result = await renderShortForm(envelope(notification, locale));
 
-      expect(result.body, `locale ${locale}`).not.toMatch(/\{[a-zA-Z]+\}/);
-      // A missing key makes getTranslationsForLocale return the key itself.
-      expect(result.body, `locale ${locale}`).not.toBe('importantDateLeadBody');
+        expect(result.title, `${where} title`).toBeTruthy();
+        expect(result.body, `${where} body`).toBeTruthy();
+
+        expect(result.title, `${where} title has an unresolved placeholder`).not.toMatch(/\{[a-zA-Z]+\}/);
+        expect(result.body, `${where} body has an unresolved placeholder`).not.toMatch(/\{[a-zA-Z]+\}/);
+
+        for (const key of PUSH_KEYS) {
+          expect(result.title, `${where} title fell back to the key name`).not.toBe(key);
+          expect(result.body, `${where} body fell back to the key name`).not.toBe(key);
+        }
+      }
     }
   });
 });
