@@ -29,6 +29,18 @@ This is the default mode when `NODE_ENV` is `production` or unset, and `SAAS_MOD
 
 Reserved for the hosted service at nametag.one. Redis becomes mandatory, email verification is required, billing and usage limits are enforced, and Google OAuth is enabled instead of generic OIDC. You should not set `SAAS_MODE=true` on a self-hosted instance.
 
+### Multi-user instances and outbound notification destinations
+
+Any signed-in user can configure a notification destination (ntfy today, webhooks in a later release) pointing at any URL, including one on your local network, and then use the "Send a test" button on it. In self-hosted mode, the outbound request policy deliberately allows private and internal addresses, any port, and plain HTTP, because pointing Nametag at a LAN ntfy server is a normal and expected setup. That same permissiveness means a user can point a destination at `http://10.0.0.5:8080/x` and immediately learn, from the response, whether that host is reachable, whether that port is open, and whether it refused the connection, timed out, or answered with an error. The response body of the target is never read back, so this cannot be used to pull data out of an internal service, but it works as a liveness and port scanner against anything else on the same network as your Nametag instance.
+
+If you run Nametag for yourself alone, this doesn't matter: you're the only one who could point it at anything. If you run it for other people you don't fully trust with your network, treat this as a real exposure and choose one of:
+
+- Run the instance single-user, or only invite people you'd trust with direct access to the network Nametag runs on.
+- Restrict Nametag's outbound network egress at the firewall or container network level, so it cannot reach your LAN or cloud metadata endpoints regardless of what a user configures.
+- Keep the instance off any network segment where something sensitive is reachable.
+
+This is a deliberate trade-off in how self-hosted mode works, not a bug to be patched. SaaS mode does not have this exposure: `nametag.one` requires HTTPS and refuses private and internal addresses outright, because there the destination is not something we trust the way a self-hosting operator trusts their own network.
+
 ## Database configuration
 
 Nametag supports two ways to point at your Postgres database.
