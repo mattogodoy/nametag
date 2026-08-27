@@ -5,7 +5,7 @@ import { getVapidDetails } from '../vapid';
 import { renderShortForm } from '../render';
 import { MAX_PUSH_SUBSCRIPTIONS_PER_USER } from '../push-limits';
 import { recordPushSubscriptionResult } from '../endpoint-health';
-import type { OutboundFailureCode, OutboundResult } from '../outbound';
+import { TIMEOUT_MS, type OutboundFailureCode, type OutboundResult } from '../outbound';
 import type { ChannelOutcome, NotificationEnvelope } from '../types';
 
 const log = createModuleLogger('notifications:push');
@@ -116,7 +116,12 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
           endpoint: subscription.endpoint,
           keys: { p256dh: subscription.p256dh, auth: subscription.auth },
         },
-        payload
+        payload,
+        // Same deadline as the outbound client (lib/notifications/outbound.ts).
+        // Without it this call has no timeout at all, so one hung push
+        // service would stall every subscription after it, and by extension
+        // the whole nightly run.
+        { timeout: TIMEOUT_MS }
       );
     } catch (error) {
       sendError = {

@@ -11,8 +11,13 @@ import {
 
 const log = createModuleLogger('notifications:outbound');
 
-/** Long enough for a slow but working receiver, short enough not to stall the cron. */
-const TIMEOUT_MS = 5000;
+/**
+ * Long enough for a slow but working receiver, short enough not to stall the
+ * cron. Exported so every outbound channel, including web-push (which uses
+ * the `web-push` library's own client rather than this one), shares the same
+ * deadline instead of each channel picking its own number.
+ */
+export const TIMEOUT_MS = 5000;
 
 export type OutboundFailureCode =
   | 'blocked'
