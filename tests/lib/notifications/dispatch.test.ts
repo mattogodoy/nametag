@@ -18,6 +18,19 @@ vi.mock('../../../lib/email', async () => {
 
 vi.mock('../../../lib/notifications/channels/email', () => ({ renderEmail: mocks.renderEmail }));
 
+const pushMocks = vi.hoisted(() => ({
+  sendWebPush: vi.fn(),
+  userFindMany: vi.fn(),
+}));
+
+vi.mock('../../../lib/notifications/channels/web-push', () => ({
+  sendWebPush: pushMocks.sendWebPush,
+}));
+
+vi.mock('../../../lib/prisma', () => ({
+  prisma: { user: { findMany: pushMocks.userFindMany } },
+}));
+
 import { dispatchAll } from '../../../lib/notifications/dispatch';
 
 function envelope(id: string): NotificationEnvelope {
@@ -46,6 +59,14 @@ describe('dispatchAll', () => {
     mocks.renderEmail.mockReset();
     mocks.isEmailConfigured.mockReturnValue(true);
     mocks.renderEmail.mockResolvedValue({ to: 'user@example.com', subject: 'test', html: '<p>test</p>' });
+    pushMocks.sendWebPush.mockReset();
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'skipped' });
+    pushMocks.userFindMany.mockReset();
+    pushMocks.userFindMany.mockResolvedValue([
+      { id: 'user-1', emailRemindersEnabled: true },
+      { id: 'user-2', emailRemindersEnabled: true },
+      { id: 'user-3', emailRemindersEnabled: true },
+    ]);
   });
 
   it('sends every email in a single batch call so Resend batching is preserved', async () => {
@@ -65,7 +86,9 @@ describe('dispatchAll', () => {
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    expect(result).toEqual({ delivered: 1, failed: 0, skipped: 0, shouldStamp: true });
+    // skipped: 1 is the push channel, which has no subscriptions configured
+    // in this test and so reports skipped by default.
+    expect(result).toEqual({ delivered: 1, failed: 0, skipped: 1, shouldStamp: true });
   });
 
   it('does NOT stamp when email is not configured, so the send is not burned', async () => {
@@ -73,7 +96,8 @@ describe('dispatchAll', () => {
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    expect(result).toEqual({ delivered: 0, failed: 0, skipped: 1, shouldStamp: false });
+    // skipped: 2 is email (not configured) plus push (no subscriptions).
+    expect(result).toEqual({ delivered: 0, failed: 0, skipped: 2, shouldStamp: false });
     expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
   });
 
@@ -86,7 +110,9 @@ describe('dispatchAll', () => {
     const [result] = await dispatchAll([envelope('1')]);
 
     expect(result.shouldStamp).toBe(false);
-    expect(result.skipped).toBe(1);
+    // 2, not 1: the email channel skip plus the push channel's default skip
+    // (no subscriptions configured in this test).
+    expect(result.skipped).toBe(2);
     expect(result.delivered).toBe(0);
   });
 
@@ -98,7 +124,9 @@ describe('dispatchAll', () => {
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    expect(result).toEqual({ delivered: 0, failed: 1, skipped: 0, shouldStamp: false });
+    // skipped: 1 is the push channel, which has no subscriptions configured
+    // in this test and so reports skipped by default.
+    expect(result).toEqual({ delivered: 0, failed: 1, skipped: 1, shouldStamp: false });
   });
 
   it('returns one result per envelope in input order', async () => {
@@ -149,7 +177,67 @@ describe('dispatchAll', () => {
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    expect(result).toEqual({ delivered: 0, failed: 1, skipped: 0, shouldStamp: false });
+    // skipped: 1 is the push channel, which has no subscriptions configured
+    // in this test and so reports skipped by default.
+    expect(result).toEqual({ delivered: 0, failed: 1, skipped: 1, shouldStamp: false });
     expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
+  });
+});
+
+describe('dispatchAll with push', () => {
+  beforeEach(() => {
+    mocks.isEmailConfigured.mockReset();
+    mocks.sendEmailBatch.mockReset();
+    mocks.renderEmail.mockReset();
+    pushMocks.sendWebPush.mockReset();
+    pushMocks.userFindMany.mockReset();
+    mocks.isEmailConfigured.mockReturnValue(true);
+    // Sibling describe block, so the outer beforeEach's renderEmail default
+    // does not apply here and must be set explicitly, or a rejection left
+    // over from whichever test last ran in the other block would leak in.
+    mocks.renderEmail.mockResolvedValue({ to: 'user-1@example.com', subject: 'test', html: '<p>test</p>' });
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: true }]);
+  });
+
+  it('stamps when push delivered even though email failed', async () => {
+    mocks.sendEmailBatch.mockResolvedValue({
+      success: false,
+      results: [{ success: false, error: 'smtp refused' }],
+    });
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'delivered' });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result).toEqual({ delivered: 1, failed: 1, skipped: 0, shouldStamp: true });
+  });
+
+  it('does not send email when the user turned email reminders off', async () => {
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'delivered' });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
+    expect(result.shouldStamp).toBe(true);
+  });
+
+  it('does not stamp when email is off and push has no devices', async () => {
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'skipped' });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result).toEqual({ delivered: 0, failed: 0, skipped: 2, shouldStamp: false });
+  });
+
+  it('treats a thrown push driver as a channel failure, not a crash', async () => {
+    mocks.sendEmailBatch.mockResolvedValue({ success: true, results: [{ success: true }] });
+    pushMocks.sendWebPush.mockRejectedValue(new Error('driver blew up'));
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result.delivered).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.shouldStamp).toBe(true);
   });
 });

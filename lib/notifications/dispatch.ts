@@ -1,10 +1,16 @@
 import { isEmailConfigured, sendEmailBatch } from '@/lib/email';
 import type { SendBatchEmailItem } from '@/lib/email';
 import { createModuleLogger } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 import { renderEmail } from './channels/email';
+import { sendWebPush } from './channels/web-push';
+import { mapWithConcurrency } from './concurrency';
 import type { ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
 
 const log = createModuleLogger('notifications');
+
+/** Ceiling on simultaneous per-envelope channel sends. */
+const CHANNEL_CONCURRENCY = 10;
 
 /**
  * Deliver a batch of envelopes across every channel the recipient has enabled.
@@ -13,8 +19,8 @@ const log = createModuleLogger('notifications');
  * endpoint is a single HTTP call for up to 100 messages, and dispatching
  * envelope by envelope would turn one request into hundreds. Channels added in
  * later phases (web push, ntfy, webhooks) deliver per envelope instead, and
- * will need their own concurrency limit so one slow user does not stall the
- * whole run.
+ * have their own concurrency limit so one slow user does not stall the whole
+ * run.
  */
 export async function dispatchAll(
   envelopes: readonly NotificationEnvelope[]
@@ -23,9 +29,54 @@ export async function dispatchAll(
     return [];
   }
 
-  const emailOutcomes = await dispatchEmail(envelopes);
+  const emailEnabled = await loadEmailPreferences(envelopes);
 
-  return envelopes.map((_envelope, index) => summarize([emailOutcomes[index]]));
+  // Email first and as one batch, so Resend still receives a single request.
+  const emailOutcomes = await dispatchEmail(envelopes, emailEnabled);
+
+  // Per-envelope channels, bounded so a large run does not open one socket per
+  // envelope at the same instant.
+  const pushOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
+    guard(() => sendWebPush(envelope), 'web-push', envelope.userId)
+  );
+
+  return envelopes.map((_envelope, index) =>
+    summarize([emailOutcomes[index], pushOutcomes[index]])
+  );
+}
+
+/**
+ * Read emailRemindersEnabled once per distinct user.
+ *
+ * A run holds many envelopes per user, so this is one query rather than one
+ * per envelope. A user missing from the result defaults to enabled, matching
+ * the column default.
+ */
+async function loadEmailPreferences(
+  envelopes: readonly NotificationEnvelope[]
+): Promise<Map<string, boolean>> {
+  const userIds = [...new Set(envelopes.map((envelope) => envelope.userId))];
+
+  // Guarded like every other query in this file: a lookup failure here must
+  // not take down the whole run and silently drop every already-collected
+  // day-of, lead, and contact reminder for the night. An empty map defaults
+  // every user to enabled, the same safe default as a user missing from the
+  // result.
+  try {
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, emailRemindersEnabled: true },
+    });
+
+    return new Map(users.map((user) => [user.id, user.emailRemindersEnabled]));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error(
+      { errorMessage: message, count: userIds.length },
+      'Failed to load email preferences, defaulting every user to enabled'
+    );
+    return new Map();
+  }
 }
 
 /**
@@ -34,37 +85,53 @@ export async function dispatchAll(
  * Returns one outcome per envelope, positionally aligned with the input.
  */
 async function dispatchEmail(
-  envelopes: readonly NotificationEnvelope[]
+  envelopes: readonly NotificationEnvelope[],
+  emailEnabled: Map<string, boolean>
 ): Promise<ChannelOutcome[]> {
-  if (!isEmailConfigured()) {
-    return envelopes.map(() => ({ status: 'skipped' }));
-  }
+  const eligible = envelopes.map((envelope) => emailEnabled.get(envelope.userId) !== false);
 
   const outcomes: ChannelOutcome[] = envelopes.map(() => ({ status: 'skipped' }));
+
+  if (!isEmailConfigured() || !eligible.some(Boolean)) {
+    return outcomes;
+  }
 
   // Rendered per envelope rather than as one all-or-nothing batch. A locale or
   // template failure on a single reminder must not stop every other user's
   // reminder from going out that night.
-  const rendered = await Promise.allSettled(envelopes.map((envelope) => renderEmail(envelope)));
+  const eligibleIndexes = envelopes
+    .map((_envelope, index) => index)
+    .filter((index) => eligible[index]);
+
+  const rendered = await Promise.allSettled(
+    eligibleIndexes.map((index) => renderEmail(envelopes[index]))
+  );
 
   // Only successfully rendered envelopes go in the batch, so batch positions no
   // longer line up with envelope positions and have to be mapped back.
   const indexes: number[] = [];
   const items: SendBatchEmailItem[] = [];
 
-  rendered.forEach((result, index) => {
+  rendered.forEach((result, position) => {
+    const envelopeIndex = eligibleIndexes[position];
+
     if (result.status === 'fulfilled') {
-      indexes.push(index);
+      indexes.push(envelopeIndex);
       items.push(result.value);
       return;
     }
 
-    const message = result.reason instanceof Error ? result.reason.message : 'Unknown render error';
+    const message =
+      result.reason instanceof Error ? result.reason.message : 'Unknown render error';
     log.error(
-      { ...envelopes[index].logMeta, errorMessage: message, kind: envelopes[index].notification.kind },
+      {
+        ...envelopes[envelopeIndex].logMeta,
+        errorMessage: message,
+        kind: envelopes[envelopeIndex].notification.kind,
+      },
       'Failed to render reminder email'
     );
-    outcomes[index] = { status: 'failed', error: message };
+    outcomes[envelopeIndex] = { status: 'failed', error: message };
   });
 
   if (items.length === 0) {
@@ -111,6 +178,26 @@ async function dispatchEmail(
   }
 
   return outcomes;
+}
+
+/**
+ * Run a channel driver so that a thrown error costs that channel, not the run.
+ *
+ * The cron delivers every user's reminders in one pass. One driver throwing on
+ * one envelope must not abort the pass and leave later users unnotified.
+ */
+async function guard(
+  send: () => Promise<ChannelOutcome>,
+  channel: string,
+  userId: string
+): Promise<ChannelOutcome> {
+  try {
+    return await send();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error({ channel, userId, errorMessage: message }, 'Channel driver threw');
+    return { status: 'failed', error: message };
+  }
 }
 
 function summarize(outcomes: readonly ChannelOutcome[]): DispatchResult {

@@ -35,6 +35,10 @@ vi.mock('../../lib/prisma', () => ({
       findMany: mocks.personFindMany,
       update: mocks.personUpdate,
     },
+    // dispatch.ts reads emailRemindersEnabled through this. An empty result
+    // means every user defaults to email-enabled, so behaviour here is
+    // unchanged.
+    user: { findMany: vi.fn().mockResolvedValue([]) },
     cronJobLog: {
       create: mocks.cronJobLogCreate,
       update: mocks.cronJobLogUpdate,
