@@ -35,7 +35,7 @@ function statusCodeOf(error: unknown): number | null {
 export async function sendWebPush(envelope: NotificationEnvelope): Promise<ChannelOutcome> {
   const vapid = getVapidDetails();
   if (!vapid) {
-    return { status: 'skipped' };
+    return { channel: 'web_push', status: 'skipped' };
   }
 
   const subscriptions = await prisma.pushSubscription.findMany({
@@ -44,7 +44,7 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
   });
 
   if (subscriptions.length === 0) {
-    return { status: 'skipped' };
+    return { channel: 'web_push', status: 'skipped' };
   }
 
   webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
@@ -88,7 +88,7 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
   }
 
   if (alive.length === 0) {
-    return { status: 'failed', error: lastError };
+    return { channel: 'web_push', status: 'failed', error: lastError };
   }
 
   await prisma.pushSubscription.updateMany({
@@ -96,5 +96,5 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
     data: { lastSuccessAt: new Date() },
   });
 
-  return { status: 'delivered' };
+  return { channel: 'web_push', status: 'delivered' };
 }

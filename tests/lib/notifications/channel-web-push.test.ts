@@ -72,15 +72,28 @@ describe('sendWebPush', () => {
   it('skips when push is not configured on this server', async () => {
     mocks.getVapidDetails.mockReturnValue(null);
 
-    expect(await sendWebPush(envelope)).toEqual({ status: 'skipped' });
+    expect(await sendWebPush(envelope)).toEqual({ channel: 'web_push', status: 'skipped' });
     expect(mocks.sendNotification).not.toHaveBeenCalled();
   });
 
   it('skips when the user has no subscribed devices', async () => {
     mocks.findMany.mockResolvedValue([]);
 
-    expect(await sendWebPush(envelope)).toEqual({ status: 'skipped' });
+    expect(await sendWebPush(envelope)).toEqual({ channel: 'web_push', status: 'skipped' });
     expect(mocks.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it('sends a rendered payload carrying the deep link', async () => {
+    const result = await sendWebPush(envelope);
+
+    expect(result).toEqual({ channel: 'web_push', status: 'delivered' });
+    const payload = JSON.parse(mocks.sendNotification.mock.calls[0][1] as string);
+    expect(payload).toEqual({
+      title: 'Ana Torres',
+      body: 'Time to catch up',
+      url: 'https://app.test/people/person-1',
+      tag: 'contact:person-1',
+    });
   });
 
   it('scopes the subscription lookup to the envelope owner', async () => {
@@ -95,26 +108,13 @@ describe('sendWebPush', () => {
     );
   });
 
-  it('sends a rendered payload carrying the deep link', async () => {
-    const result = await sendWebPush(envelope);
-
-    expect(result).toEqual({ status: 'delivered' });
-    const payload = JSON.parse(mocks.sendNotification.mock.calls[0][1] as string);
-    expect(payload).toEqual({
-      title: 'Ana Torres',
-      body: 'Time to catch up',
-      url: 'https://app.test/people/person-1',
-      tag: 'contact:person-1',
-    });
-  });
-
   it('reports delivered when at least one of several devices succeeds', async () => {
     mocks.findMany.mockResolvedValue([subscription('sub-1'), subscription('sub-2')]);
     mocks.sendNotification
       .mockRejectedValueOnce(Object.assign(new Error('gone'), { statusCode: 410 }))
       .mockResolvedValueOnce({ statusCode: 201 });
 
-    expect(await sendWebPush(envelope)).toEqual({ status: 'delivered' });
+    expect(await sendWebPush(envelope)).toEqual({ channel: 'web_push', status: 'delivered' });
 
     // lastSuccessAt must move for the live device and only the live device. If
     // `alive` ever widened to include a device that failed, this is what
@@ -139,7 +139,7 @@ describe('sendWebPush', () => {
     // Every device was gone, so nothing was delivered. This must be `failed`,
     // not `skipped`: skipped means "there was nothing to deliver to", and the
     // dispatcher accounts for the two differently.
-    expect(result).toEqual({ status: 'failed', error: 'gone' });
+    expect(result).toEqual({ channel: 'web_push', status: 'failed', error: 'gone' });
     expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 

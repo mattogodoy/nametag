@@ -126,7 +126,14 @@ describe('dispatchAll', () => {
 
     // skipped: 1 is the push channel, which has no subscriptions configured
     // in this test and so reports skipped by default.
-    expect(result).toEqual({ delivered: 0, failed: 1, skipped: 1, shouldStamp: false });
+    expect(result).toEqual({
+      delivered: 0,
+      failed: 1,
+      skipped: 1,
+      shouldStamp: false,
+      firstError: 'smtp refused',
+      failedChannels: ['email'],
+    });
   });
 
   it('returns one result per envelope in input order', async () => {
@@ -179,7 +186,14 @@ describe('dispatchAll', () => {
 
     // skipped: 1 is the push channel, which has no subscriptions configured
     // in this test and so reports skipped by default.
-    expect(result).toEqual({ delivered: 0, failed: 1, skipped: 1, shouldStamp: false });
+    expect(result).toEqual({
+      delivered: 0,
+      failed: 1,
+      skipped: 1,
+      shouldStamp: false,
+      firstError: 'Locale not supported',
+      failedChannels: ['email'],
+    });
     expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
   });
 });
@@ -208,7 +222,14 @@ describe('dispatchAll with push', () => {
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    expect(result).toEqual({ delivered: 1, failed: 1, skipped: 0, shouldStamp: true });
+    expect(result).toEqual({
+      delivered: 1,
+      failed: 1,
+      skipped: 0,
+      shouldStamp: true,
+      firstError: 'smtp refused',
+      failedChannels: ['email'],
+    });
   });
 
   it('does not send email when the user turned email reminders off', async () => {
@@ -273,7 +294,14 @@ describe('dispatchAll with push', () => {
     expect(results).toEqual([
       { delivered: 1, failed: 0, skipped: 1, shouldStamp: true },
       { delivered: 0, failed: 0, skipped: 2, shouldStamp: false },
-      { delivered: 0, failed: 1, skipped: 1, shouldStamp: false },
+      {
+        delivered: 0,
+        failed: 1,
+        skipped: 1,
+        shouldStamp: false,
+        firstError: 'bad locale key',
+        failedChannels: ['email'],
+      },
     ]);
   });
 
@@ -289,7 +317,14 @@ describe('dispatchAll with push', () => {
 
     const results = await dispatchAll([envelope('1'), envelope('2')]);
 
-    expect(results[0]).toEqual({ delivered: 0, failed: 1, skipped: 1, shouldStamp: false });
+    expect(results[0]).toEqual({
+      delivered: 0,
+      failed: 1,
+      skipped: 1,
+      shouldStamp: false,
+      firstError: 'driver blew up',
+      failedChannels: ['web_push'],
+    });
     expect(results[1]).toEqual({ delivered: 1, failed: 0, skipped: 1, shouldStamp: true });
   });
 
@@ -330,8 +365,22 @@ describe('dispatchAll with push', () => {
     expect(results).toEqual([
       { delivered: 0, failed: 0, skipped: 2, shouldStamp: false },
       { delivered: 1, failed: 0, skipped: 1, shouldStamp: true },
-      { delivered: 0, failed: 1, skipped: 1, shouldStamp: false },
-      { delivered: 0, failed: 1, skipped: 1, shouldStamp: false },
+      {
+        delivered: 0,
+        failed: 1,
+        skipped: 1,
+        shouldStamp: false,
+        firstError: 'bad locale key',
+        failedChannels: ['email'],
+      },
+      {
+        delivered: 0,
+        failed: 1,
+        skipped: 1,
+        shouldStamp: false,
+        firstError: 'smtp refused',
+        failedChannels: ['email'],
+      },
     ]);
   });
 

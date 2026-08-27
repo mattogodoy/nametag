@@ -68,16 +68,28 @@ export interface NotificationEnvelope {
 }
 
 /**
+ * Which channel produced a {@link ChannelOutcome}.
+ *
+ * A string union rather than a free-form string, so a new channel (ntfy,
+ * webhooks) is a compile error everywhere this is matched exhaustively,
+ * rather than a silently unlabelled log line.
+ */
+export type ChannelId = 'email' | 'web_push';
+
+/**
  * Outcome of one channel attempting one envelope.
  *
  * `skipped` means there was nothing to deliver to (no email provider
  * configured, no push subscriptions, no endpoints), which is different from
  * a delivery that was attempted and failed. Only the latter is an error.
+ *
+ * Carries which channel produced it, so a partial-success log line can name
+ * the channels that failed instead of only counting them.
  */
 export type ChannelOutcome =
-  | { status: 'delivered' }
-  | { status: 'failed'; error: string }
-  | { status: 'skipped' };
+  | { channel: ChannelId; status: 'delivered' }
+  | { channel: ChannelId; status: 'failed'; error: string }
+  | { channel: ChannelId; status: 'skipped' };
 
 export interface DispatchResult {
   delivered: number;
@@ -93,4 +105,21 @@ export interface DispatchResult {
    * whole lead window.
    */
   shouldStamp: boolean;
+  /**
+   * Message from the first channel outcome that failed, in outcome order
+   * (email before push). Undefined when nothing failed.
+   *
+   * Lets the cron's "Failed to send reminder" log line carry a reason again,
+   * instead of forcing an operator to correlate it with a separate
+   * per-channel log line by timestamp.
+   */
+  firstError?: string;
+  /**
+   * Which channels failed, in outcome order. Undefined when nothing failed.
+   *
+   * Replaces logging `failedChannels` as a bare count, which reads like a
+   * list of names but is not one, and stops answering "which ones" the
+   * moment a third channel exists.
+   */
+  failedChannels?: ChannelId[];
 }

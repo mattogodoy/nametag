@@ -412,7 +412,15 @@ export const GET = withLogging(async function GET(request: Request) {
           // whole lead window, none of which are recoverable.
           if (result.failed > 0) {
             errorCount++;
-            log.error({ ...envelope.logMeta, kind: envelope.notification.kind }, 'Failed to send reminder');
+            log.error(
+              {
+                ...envelope.logMeta,
+                kind: envelope.notification.kind,
+                errorMessage: result.firstError,
+                failedChannels: result.failedChannels,
+              },
+              'Failed to send reminder'
+            );
           } else {
             skippedCount++;
           }
@@ -446,7 +454,7 @@ export const GET = withLogging(async function GET(request: Request) {
         // A partial success still stamps, so surface the channels that failed.
         if (result.failed > 0) {
           log.warn(
-            { ...envelope.logMeta, failedChannels: result.failed },
+            { ...envelope.logMeta, failedChannels: result.failedChannels },
             'Reminder delivered on some channels but not all'
           );
         }

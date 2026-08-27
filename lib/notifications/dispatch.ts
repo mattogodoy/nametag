@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { renderEmail } from './channels/email';
 import { sendWebPush } from './channels/web-push';
 import { mapWithConcurrency } from './concurrency';
-import type { ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
+import type { ChannelId, ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
 
 const log = createModuleLogger('notifications');
 
@@ -36,7 +36,7 @@ export async function dispatchAll(
   // Per-envelope channels, bounded so a large run does not open one socket per
   // envelope at the same instant.
   const pushOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
-    guard(() => sendWebPush(envelope), 'web-push', envelope.userId)
+    guard(() => sendWebPush(envelope), 'web_push', envelope.userId)
   );
 
   return envelopes.map((_envelope, index) =>
@@ -89,7 +89,7 @@ async function dispatchEmail(
 ): Promise<ChannelOutcome[]> {
   const eligible = envelopes.map((envelope) => emailEnabled.get(envelope.userId) !== false);
 
-  const outcomes: ChannelOutcome[] = envelopes.map(() => ({ status: 'skipped' }));
+  const outcomes: ChannelOutcome[] = envelopes.map(() => ({ channel: 'email', status: 'skipped' }));
 
   if (!isEmailConfigured() || !eligible.some(Boolean)) {
     return outcomes;
@@ -130,7 +130,7 @@ async function dispatchEmail(
       },
       'Failed to render reminder email'
     );
-    outcomes[envelopeIndex] = { status: 'failed', error: message };
+    outcomes[envelopeIndex] = { channel: 'email', status: 'failed', error: message };
   });
 
   if (items.length === 0) {
@@ -144,7 +144,11 @@ async function dispatchEmail(
       const result = batch.results[batchIndex];
 
       if (!result) {
-        outcomes[envelopeIndex] = { status: 'failed', error: 'No result returned for this message' };
+        outcomes[envelopeIndex] = {
+          channel: 'email',
+          status: 'failed',
+          error: 'No result returned for this message',
+        };
         return;
       }
 
@@ -152,12 +156,12 @@ async function dispatchEmail(
       // success would stamp a reminder nobody received, and the stamp is not
       // recoverable once email is configured later.
       if (result.skipped) {
-        outcomes[envelopeIndex] = { status: 'skipped' };
+        outcomes[envelopeIndex] = { channel: 'email', status: 'skipped' };
         return;
       }
 
       if (result.success) {
-        outcomes[envelopeIndex] = { status: 'delivered' };
+        outcomes[envelopeIndex] = { channel: 'email', status: 'delivered' };
         return;
       }
 
@@ -166,13 +170,13 @@ async function dispatchEmail(
         { ...envelopes[envelopeIndex].logMeta, errorMessage: error, kind: envelopes[envelopeIndex].notification.kind },
         'Email delivery failed for one reminder'
       );
-      outcomes[envelopeIndex] = { status: 'failed', error };
+      outcomes[envelopeIndex] = { channel: 'email', status: 'failed', error };
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     log.error({ errorMessage: message, count: items.length }, 'Email batch send threw');
     indexes.forEach((envelopeIndex) => {
-      outcomes[envelopeIndex] = { status: 'failed', error: message };
+      outcomes[envelopeIndex] = { channel: 'email', status: 'failed', error: message };
     });
   }
 
@@ -187,7 +191,7 @@ async function dispatchEmail(
  */
 async function guard(
   send: () => Promise<ChannelOutcome>,
-  channel: string,
+  channel: ChannelId,
   userId: string
 ): Promise<ChannelOutcome> {
   try {
@@ -195,7 +199,7 @@ async function guard(
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     log.error({ channel, userId, errorMessage: message }, 'Channel driver threw');
-    return { status: 'failed', error: message };
+    return { channel, status: 'failed', error: message };
   }
 }
 
@@ -203,6 +207,8 @@ function summarize(outcomes: readonly ChannelOutcome[]): DispatchResult {
   let delivered = 0;
   let failed = 0;
   let skipped = 0;
+  let firstError: string | undefined;
+  let failedChannels: ChannelId[] | undefined;
 
   for (const outcome of outcomes) {
     switch (outcome.status) {
@@ -211,6 +217,10 @@ function summarize(outcomes: readonly ChannelOutcome[]): DispatchResult {
         break;
       case 'failed':
         failed++;
+        if (firstError === undefined) {
+          firstError = outcome.error;
+        }
+        (failedChannels ??= []).push(outcome.channel);
         break;
       case 'skipped':
         skipped++;
@@ -222,5 +232,5 @@ function summarize(outcomes: readonly ChannelOutcome[]): DispatchResult {
     }
   }
 
-  return { delivered, failed, skipped, shouldStamp: delivered > 0 };
+  return { delivered, failed, skipped, shouldStamp: delivered > 0, firstError, failedChannels };
 }
