@@ -162,3 +162,68 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/*
+ * Push notifications.
+ *
+ * The payload is encrypted in transit by the Web Push protocol, so the push
+ * service operator cannot read the person's name. Nothing here is written to
+ * the Cache API: this file deliberately caches almost nothing, and a
+ * notification body holding contact details is exactly what must not land on
+ * disk unencrypted.
+ */
+self.addEventListener('push', (event) => {
+  if (!event.data) {
+    return;
+  }
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    // A payload we cannot parse is not worth a blank notification.
+    return;
+  }
+
+  if (!payload || !payload.title) {
+    return;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      /*
+       * Replaces rather than stacks. A reminder re-sent for the same entity
+       * should update the existing notification, not pile a second one on top.
+       */
+      tag: payload.tag || 'nametag',
+      data: { url: payload.url || '/dashboard' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const target = (event.notification.data && event.notification.data.url) || '/dashboard';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      /*
+       * Prefer an open tab on this origin over a new window. Opening a second
+       * copy of the app is disorienting, and on a standalone PWA launch it can
+       * fail outright.
+       */
+      for (const client of clients) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          client.navigate(target);
+          return client.focus();
+        }
+      }
+
+      return self.clients.openWindow(target);
+    })
+  );
+});
