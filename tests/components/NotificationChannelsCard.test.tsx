@@ -25,6 +25,7 @@ vi.mock('sonner', () => ({
 }));
 
 import messages from '../../locales/en.json';
+import jaMessages from '../../locales/ja-JP.json';
 import NotificationChannelsCard from '../../components/NotificationChannelsCard';
 
 function renderCard(props: Partial<React.ComponentProps<typeof NotificationChannelsCard>> = {}) {
@@ -302,6 +303,25 @@ describe('NotificationChannelsCard', () => {
       expect(
         screen.queryByText('On iPhone and iPad, add Nametag to your home screen first.')
       ).not.toBeInTheDocument();
+    });
+  });
+  describe('device label translation', () => {
+    it('renders the device label through the locale template rather than a hardcoded string', () => {
+      // The old hardcoded implementation always produced "Chrome on macOS".
+      // Rendering with Japanese messages, where the template puts the OS
+      // first, is the only way to prove the translation is actually wired up.
+      render(
+        <NextIntlClientProvider locale="ja-JP" messages={jaMessages}>
+          <NotificationChannelsCard
+            emailEnabled={true}
+            emailAvailable={true}
+            pushAvailable={true}
+            devices={[{ id: 'sub-1', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120' }]}
+          />
+        </NextIntlClientProvider>
+      );
+
+      expect(screen.getByText('macOS の Chrome')).toBeTruthy();
     });
   });
 });

@@ -292,4 +292,70 @@ describe('dispatchAll with push', () => {
     expect(results[0]).toEqual({ delivered: 0, failed: 1, skipped: 1, shouldStamp: false });
     expect(results[1]).toEqual({ delivered: 1, failed: 0, skipped: 1, shouldStamp: true });
   });
+
+  it('keeps the batch index bridge pinned when an ineligible envelope and a render failure both thin the batch', async () => {
+    // envelope-1 is ineligible outright (email off). envelope-3's render
+    // rejects. envelope-2 and envelope-4 both render fine and reach the
+    // batch, so eligibleIndexes ([1,2,3]) and the render-success indexes
+    // ([1,3]) diverge from each other, which is exactly the shape needed to
+    // catch a batch result read that indexes through the wrong array.
+    pushMocks.userFindMany.mockResolvedValue([
+      { id: 'user-1', emailRemindersEnabled: false },
+      { id: 'user-2', emailRemindersEnabled: true },
+      { id: 'user-3', emailRemindersEnabled: true },
+      { id: 'user-4', emailRemindersEnabled: true },
+    ]);
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'skipped' });
+
+    // Renders run in eligible order: envelope-2, then envelope-3, then envelope-4.
+    mocks.renderEmail
+      .mockResolvedValueOnce({ to: 'user-2@example.com', subject: 's', html: 'h' })
+      .mockRejectedValueOnce(new Error('bad locale key'))
+      .mockResolvedValueOnce({ to: 'user-4@example.com', subject: 's', html: 'h' });
+
+    // Heterogeneous on purpose: a mis-indexed read into this array must flip
+    // the outcome it lands on, not just move the same value around.
+    mocks.sendEmailBatch.mockResolvedValue({
+      success: false,
+      results: [{ success: true }, { success: false, error: 'smtp refused' }],
+    });
+
+    const results = await dispatchAll([
+      envelope('1'),
+      envelope('2'),
+      envelope('3'),
+      envelope('4'),
+    ]);
+
+    expect(results).toEqual([
+      { delivered: 0, failed: 0, skipped: 2, shouldStamp: false },
+      { delivered: 1, failed: 0, skipped: 1, shouldStamp: true },
+      { delivered: 0, failed: 1, skipped: 1, shouldStamp: false },
+      { delivered: 0, failed: 1, skipped: 1, shouldStamp: false },
+    ]);
+  });
+
+  it('treats a user missing entirely from the preference lookup as email-enabled', async () => {
+    // user-1 is not "off": it is simply absent from the result, which must
+    // fall back to the same enabled default as the column itself.
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-2', emailRemindersEnabled: true }]);
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'skipped' });
+    mocks.sendEmailBatch.mockResolvedValue({ success: true, results: [{ success: true }] });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
+    expect(result.shouldStamp).toBe(true);
+  });
+
+  it('keeps dispatching with everyone treated as email-enabled when the preference lookup itself fails', async () => {
+    pushMocks.userFindMany.mockRejectedValue(new Error('connection refused'));
+    pushMocks.sendWebPush.mockResolvedValue({ status: 'skipped' });
+    mocks.sendEmailBatch.mockResolvedValue({ success: true, results: [{ success: true }] });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
+    expect(result.shouldStamp).toBe(true);
+  });
 });

@@ -83,6 +83,18 @@ describe('sendWebPush', () => {
     expect(mocks.sendNotification).not.toHaveBeenCalled();
   });
 
+  it('scopes the subscription lookup to the envelope owner', async () => {
+    // Every other test in this file stubs findMany and ignores the arguments
+    // it was called with. Dropping the userId filter would broadcast every
+    // user's push, including contact names, to every subscribed device on
+    // the instance, and none of those tests would notice.
+    await sendWebPush(envelope);
+
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'user-1' } })
+    );
+  });
+
   it('sends a rendered payload carrying the deep link', async () => {
     const result = await sendWebPush(envelope);
 
