@@ -1,0 +1,165 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  personFindMany: vi.fn(),
+  personGroupFindMany: vi.fn(),
+  customValueFindMany: vi.fn(),
+  importantDateFindMany: vi.fn(),
+}));
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    person: { findMany: mocks.personFindMany },
+    personGroup: { findMany: mocks.personGroupFindMany },
+    personCustomFieldValue: { findMany: mocks.customValueFindMany },
+    importantDate: { findMany: mocks.importantDateFindMany },
+  },
+}));
+
+import { collectDataNeeds, loadPersonContexts } from '@/lib/relationship-labels/context';
+import type { LabelVariant } from '@/lib/relationship-labels/types';
+
+describe('collectDataNeeds', () => {
+  it('asks for nothing when no variant carries a condition', () => {
+    const variants: LabelVariant[] = [{ label: 'ami', conditions: [] }];
+    expect(collectDataNeeds(variants)).toEqual({
+      fields: [],
+      groups: false,
+      templateIds: [],
+      dates: false,
+    });
+  });
+
+  it('collects only the sources actually referenced, without duplicates', () => {
+    const variants: LabelVariant[] = [
+      {
+        label: 'a',
+        conditions: [
+          { subject: 'DESCRIBED', source: 'PERSON_FIELD', subjectRef: 'gender', operator: 'IS', operand: 'lit:Homme' },
+          { subject: 'OTHER', source: 'PERSON_FIELD', subjectRef: 'gender', operator: 'IS', operand: 'lit:Homme' },
+          { subject: 'DESCRIBED', source: 'CUSTOM_FIELD', subjectRef: 'tpl-1', operator: 'IS_SET', operand: null },
+        ],
+      },
+    ];
+    expect(collectDataNeeds(variants)).toEqual({
+      fields: ['gender'],
+      groups: false,
+      templateIds: ['tpl-1'],
+      dates: false,
+    });
+  });
+
+  it('ignores a native field outside the allowed list', () => {
+    const variants: LabelVariant[] = [
+      {
+        label: 'a',
+        conditions: [
+          { subject: 'DESCRIBED', source: 'PERSON_FIELD', subjectRef: 'notes', operator: 'IS_SET', operand: null },
+        ],
+      },
+    ];
+    expect(collectDataNeeds(variants).fields).toEqual([]);
+  });
+
+  it('follows a cross-person reference into the needs', () => {
+    const variants: LabelVariant[] = [
+      {
+        label: 'a',
+        conditions: [
+          { subject: 'DESCRIBED', source: 'DATE_TYPE', subjectRef: 'birthday', operator: 'BEFORE', operand: 'ref:birthday' },
+        ],
+      },
+    ];
+    expect(collectDataNeeds(variants).dates).toBe(true);
+  });
+});
+
+describe('loadPersonContexts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.personFindMany.mockResolvedValue([]);
+    mocks.personGroupFindMany.mockResolvedValue([]);
+    mocks.customValueFindMany.mockResolvedValue([]);
+    mocks.importantDateFindMany.mockResolvedValue([]);
+  });
+
+  const noNeeds = { fields: [], groups: false, templateIds: [], dates: false } as const;
+
+  it('issues no query when nothing is needed', async () => {
+    const contexts = await loadPersonContexts('user-1', ['p1'], { ...noNeeds });
+    expect(contexts.size).toBe(0);
+    expect(mocks.personFindMany).not.toHaveBeenCalled();
+    expect(mocks.personGroupFindMany).not.toHaveBeenCalled();
+    expect(mocks.customValueFindMany).not.toHaveBeenCalled();
+    expect(mocks.importantDateFindMany).not.toHaveBeenCalled();
+  });
+
+  it('issues no query when there is no person to load', async () => {
+    await loadPersonContexts('user-1', [], { ...noNeeds, groups: true });
+    expect(mocks.personGroupFindMany).not.toHaveBeenCalled();
+  });
+
+  it('loads native fields in a single query scoped to the user', async () => {
+    mocks.personFindMany.mockResolvedValue([{ id: 'p1', gender: 'Homme' }]);
+    const contexts = await loadPersonContexts('user-1', ['p1', 'p2'], {
+      ...noNeeds,
+      fields: ['gender'],
+    });
+    expect(mocks.personFindMany).toHaveBeenCalledTimes(1);
+    expect(mocks.personFindMany).toHaveBeenCalledWith({
+      where: { id: { in: ['p1', 'p2'] }, userId: 'user-1', deletedAt: null },
+      select: { id: true, gender: true },
+    });
+    expect(contexts.get('p1')?.fields.gender).toBe('Homme');
+  });
+
+  it('excludes soft-deleted groups, dates and templates', async () => {
+    await loadPersonContexts('user-1', ['p1'], {
+      fields: [],
+      groups: true,
+      templateIds: ['tpl-1'],
+      dates: true,
+    });
+    expect(mocks.personGroupFindMany).toHaveBeenCalledWith({
+      where: { personId: { in: ['p1'] }, group: { deletedAt: null, userId: 'user-1' } },
+      select: { personId: true, groupId: true },
+    });
+    expect(mocks.customValueFindMany).toHaveBeenCalledWith({
+      where: {
+        personId: { in: ['p1'] },
+        templateId: { in: ['tpl-1'] },
+        template: { deletedAt: null, userId: 'user-1' },
+      },
+      select: { personId: true, templateId: true, value: true, template: { select: { type: true } } },
+    });
+    expect(mocks.importantDateFindMany).toHaveBeenCalledWith({
+      where: { personId: { in: ['p1'] }, deletedAt: null },
+      select: { personId: true, type: true, title: true, date: true },
+    });
+  });
+
+  it('groups every source under one context per person', async () => {
+    mocks.personGroupFindMany.mockResolvedValue([
+      { personId: 'p1', groupId: 'g1' },
+      { personId: 'p1', groupId: 'g2' },
+    ]);
+    mocks.customValueFindMany.mockResolvedValue([
+      { personId: 'p1', templateId: 'tpl-1', value: '42', template: { type: 'NUMBER' } },
+    ]);
+    mocks.importantDateFindMany.mockResolvedValue([
+      { personId: 'p1', type: 'birthday', title: 'Anniversaire', date: new Date(1985, 10, 2) },
+    ]);
+
+    const contexts = await loadPersonContexts('user-1', ['p1'], {
+      fields: [],
+      groups: true,
+      templateIds: ['tpl-1'],
+      dates: true,
+    });
+
+    const context = contexts.get('p1');
+    expect(context?.groupIds.has('g2')).toBe(true);
+    expect(context?.customValues.get('tpl-1')).toEqual({ type: 'NUMBER', value: '42' });
+    expect(context?.dates).toHaveLength(1);
+  });
+});
