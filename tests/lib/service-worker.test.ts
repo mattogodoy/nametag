@@ -463,5 +463,55 @@ describe('public/sw.js', () => {
       expect(scope.recorder.navigatedTo).toEqual([]);
       expect(scope.recorder.openedWindows).toEqual(['/people/abc']);
     });
+
+    it('falls back to /dashboard rather than opening a cross-origin window', async () => {
+      // Unlike client.navigate(), openWindow() is not blocked cross-origin by
+      // the platform, so the worker has to validate the target itself before
+      // handing it to openWindow. No open tab, so this exercises that branch.
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: 'https://evil.test/phish' });
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('opens a same-origin absolute url as given', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: `${ORIGIN}/people/abc` });
+
+      expect(scope.recorder.openedWindows).toEqual([`${ORIGIN}/people/abc`]);
+    });
+
+    it('does not let a rejected navigate become an unhandled rejection', async () => {
+      // client.navigate() is fire-and-forget (never returned or awaited by
+      // the click handler), so a rejection there does not show up as a
+      // rejected waitUntil promise. It only shows up as a process-level
+      // 'unhandledRejection' event, which is what this actually has to check.
+      scope.setClients([
+        {
+          url: `${ORIGIN}/people`,
+          focus: async () => {},
+          navigate: async () => {
+            throw new Error('navigation aborted');
+          },
+        },
+      ]);
+
+      const unhandled: unknown[] = [];
+      const onUnhandledRejection = (reason: unknown) => unhandled.push(reason);
+      process.on('unhandledRejection', onUnhandledRejection);
+
+      try {
+        await dispatchNotificationClick(scope, { url: '/people/person-123' });
+        // Give the navigate() rejection a chance to surface as unhandled
+        // before asserting: Node reports it after the microtask queue drains.
+        await new Promise((resolve) => setImmediate(resolve));
+      } finally {
+        process.off('unhandledRejection', onUnhandledRejection);
+      }
+
+      expect(unhandled).toEqual([]);
+    });
   });
 });

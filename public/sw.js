@@ -218,12 +218,23 @@ self.addEventListener('notificationclick', (event) => {
        */
       for (const client of clients) {
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-          client.navigate(target);
+          // The result is intentionally discarded (not awaited before
+          // focus()), so a rejection here must be caught or it surfaces as an
+          // unhandled rejection in the worker instead of just a missed navigation.
+          client.navigate(target).catch(() => {});
           return client.focus();
         }
       }
 
-      return self.clients.openWindow(target);
+      // `client.navigate()` above is blocked cross-origin by the platform, but
+      // `openWindow()` has no such check, so the target is validated here
+      // instead. `target` comes from the push payload; falling back to
+      // /dashboard keeps a malformed or hostile value from opening a window
+      // to an arbitrary origin.
+      const safeTarget =
+        target.startsWith('/') || target.startsWith(self.location.origin) ? target : '/dashboard';
+
+      return self.clients.openWindow(safeTarget);
     })
   );
 });
