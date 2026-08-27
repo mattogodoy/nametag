@@ -57,7 +57,7 @@ For convenience, the editor offers "is past" and "is future" shortcuts on date f
 
 ## Previewing a rule before saving
 
-While editing a type's variants, pick two people from your network in the preview panel to see the label your rules would produce for them, with the winning variant highlighted. The preview runs against the configuration you're editing, before you save it, so you can check tricky cases like the widowed variant without committing anything.
+While editing a type's variants, pick two people from your network in the preview panel to see the label your rules would produce for them, along with which variant matched or that the fallback applied. The preview runs against the configuration you're editing, before you save it, so you can check tricky cases like the widowed variant without committing anything.
 
 ## Technical details
 
@@ -66,4 +66,5 @@ While editing a type's variants, pick two people from your network in the previe
 - A condition can also compare a value against the same kind of value on the other person, which is what makes age-ordered vocabularies (older sibling versus younger sibling) possible.
 - Where the described person has several important dates with the same title, the earliest one is used.
 - If a condition points at a group or custom field you've since deleted, it evaluates to false and the editor flags it as broken, so you can fix or remove it.
-- Conditional labels only apply where a relationship names a specific other person: the person detail page, the graphs, contact rows, trash, and data exports. Type pickers and autocomplete fields keep showing the type's plain label, since there's no described person to resolve against there.
+- Conditional labels only apply where a relationship names a specific other person: the person detail page, the graphs, contact rows, and trash. Type pickers and autocomplete fields keep showing the type's plain label, since there's no described person to resolve against there.
+- A data export keeps the relationship type's own label, not a resolved word. A resolved word depends on the date it was resolved on, and an export is a portable data dump rather than a display, so freezing "Veuf" into a file would freeze a moment in time into something meant to travel. What the export does carry is your variant rules themselves, as configuration: importing them back resolves labels again wherever they're displayed, nothing is lost.
