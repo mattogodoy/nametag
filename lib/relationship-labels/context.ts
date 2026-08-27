@@ -106,7 +106,11 @@ export async function loadPersonContexts(
           select,
         })
         .then((rows) => {
-          for (const row of rows as Array<Record<string, string | null>>) {
+          // The select is built at runtime, so Prisma types the rows as a wide
+          // union. The select only ever asks for id plus native string columns,
+          // so the runtime shape is known even though the compiler cannot see it.
+          const typedRows = rows as unknown as Array<Record<string, string | null>>;
+          for (const row of typedRows) {
             const personId = row.id;
             if (typeof personId !== 'string') continue;
             const context = contextFor(personId);

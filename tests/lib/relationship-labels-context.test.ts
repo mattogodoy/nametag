@@ -16,7 +16,11 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
-import { collectDataNeeds, loadPersonContexts } from '@/lib/relationship-labels/context';
+import {
+  collectDataNeeds,
+  loadPersonContexts,
+  type LabelDataNeeds,
+} from '@/lib/relationship-labels/context';
 import type { LabelVariant } from '@/lib/relationship-labels/types';
 
 describe('collectDataNeeds', () => {
@@ -83,7 +87,7 @@ describe('loadPersonContexts', () => {
     mocks.importantDateFindMany.mockResolvedValue([]);
   });
 
-  const noNeeds = { fields: [], groups: false, templateIds: [], dates: false } as const;
+  const noNeeds: LabelDataNeeds = { fields: [], groups: false, templateIds: [], dates: false };
 
   it('issues no query when nothing is needed', async () => {
     const contexts = await loadPersonContexts('user-1', ['p1'], { ...noNeeds });
