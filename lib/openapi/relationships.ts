@@ -242,13 +242,8 @@ export function relationshipsPaths(): Record<string, Record<string, unknown>> {
           '200': jsonResponse('Resolved label', {
             type: 'object',
             properties: {
-              data: {
-                type: 'object',
-                properties: {
-                  label: { type: 'string' },
-                  variantIndex: { type: ['integer', 'null'] },
-                },
-              },
+              label: { type: 'string' },
+              variantIndex: { type: ['integer', 'null'] },
             },
           }),
           '400': ref400(),

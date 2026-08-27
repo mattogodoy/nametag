@@ -62,8 +62,8 @@ describe('POST /api/relationship-types/preview-label', () => {
     );
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.data.label).toBe('frere');
-    expect(body.data.variantIndex).toBe(0);
+    expect(body.label).toBe('frere');
+    expect(body.variantIndex).toBe(0);
   });
 
   it('falls back when nothing matches', async () => {
@@ -71,7 +71,7 @@ describe('POST /api/relationship-types/preview-label', () => {
       request({ typeLabel: 'Frere/Soeur', describedPersonId: 'p2', otherPersonId: 'p1', variants })
     );
     const body = await response.json();
-    expect(body.data.label).toBe('fratrie');
+    expect(body.label).toBe('fratrie');
   });
 
   it('refuses people that do not belong to the user', async () => {

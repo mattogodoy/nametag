@@ -42,9 +42,7 @@ export const POST = withAuth(async (request, session) => {
       new Date()
     );
 
-    return apiResponse.ok({
-      data: { label: resolved.label, variantIndex: resolved.variantIndex },
-    });
+    return apiResponse.ok({ label: resolved.label, variantIndex: resolved.variantIndex });
   } catch (error) {
     return handleApiError(error, 'relationship-label-preview');
   }
