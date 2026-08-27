@@ -75,6 +75,8 @@ Each relationship type's conditional label variants travel alongside it as confi
 
 On import, a variant's condition is remapped to the newly created group or custom field template it references. When that target was not part of the import (for example, a group you chose not to include), only that condition is dropped; the rest of the variant, and the rest of the relationship type, still imports.
 
+When an imported relationship type matches one you already have by name, its variants are imported only if your existing type has none of its own: a type you've already configured keeps your variants, and the file's are skipped for it.
+
 ### Validate import data
 
 ```

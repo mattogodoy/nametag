@@ -290,6 +290,17 @@ export const POST = withAuth(async (request, session) => {
         const variants = relType.variants;
         if (!newTypeId || !variants || variants.length === 0) continue;
 
+        // A relationship type that already carries its own variants keeps
+        // them: the file's variants apply only to a type that has none,
+        // whether newly created by this import or pre-existing and
+        // unconfigured. Everything else about merging into an existing type
+        // is non-destructive; this is the one path that could otherwise
+        // delete configuration the user built locally.
+        const existingVariantCount = await prisma.relationshipLabelVariant.count({
+          where: { relationshipTypeId: newTypeId },
+        });
+        if (existingVariantCount > 0) continue;
+
         const remappedVariants: LabelVariant[] = variants.reduce<LabelVariant[]>((acc, variant) => {
           const remappedConditions = variant.conditions.reduce<LabelCondition[]>((condAcc, condition) => {
             if (condition.source === 'GROUP') {

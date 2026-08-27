@@ -35,6 +35,7 @@ const importMocks = vi.hoisted(() => ({
   importantDateCount: vi.fn(),
   variantDeleteMany: vi.fn(),
   variantCreate: vi.fn(),
+  variantCount: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -82,6 +83,7 @@ vi.mock('../../lib/prisma', () => ({
     relationshipLabelVariant: {
       deleteMany: importMocks.variantDeleteMany,
       create: importMocks.variantCreate,
+      count: importMocks.variantCount,
     },
     $transaction: importMocks.transaction,
   },
@@ -329,6 +331,7 @@ describe('Import: relationship label variants', () => {
     importMocks.importantDateCount.mockResolvedValue(0);
     importMocks.variantDeleteMany.mockResolvedValue({ count: 0 });
     importMocks.variantCreate.mockResolvedValue({ id: 'v1' });
+    importMocks.variantCount.mockResolvedValue(0);
     importMocks.transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
       fn({
         relationshipLabelVariant: {
@@ -574,5 +577,71 @@ describe('Import: relationship label variants', () => {
     expect(response.status).toBe(200);
     expect(importMocks.variantCreate).not.toHaveBeenCalled();
     expect(importMocks.variantDeleteMany).not.toHaveBeenCalled();
+  });
+
+  it('keeps an existing type\'s own variants and skips the file\'s, when the matched type already has variants (Finding 4)', async () => {
+    // The imported type matches an existing one by name, so the import
+    // reuses it rather than creating a new row.
+    importMocks.relTypeFindFirst.mockResolvedValue({ id: 'existing-type-1' });
+    // The existing type already carries its own configured variants.
+    importMocks.variantCount.mockResolvedValue(2);
+
+    const payload = {
+      ...BASE_PAYLOAD,
+      groups: [],
+      relationshipTypes: [
+        {
+          id: 'old-type-1',
+          name: 'PARENT',
+          label: 'Parent',
+          color: '#FF00FF',
+          inverseId: null,
+          variants: [{ label: 'Papa', conditions: [genderCondition] }],
+        },
+      ],
+    };
+
+    const response = await importRoute(makeRequest(payload));
+    expect(response.status).toBe(200);
+
+    expect(importMocks.variantCount).toHaveBeenCalledWith({
+      where: { relationshipTypeId: 'existing-type-1' },
+    });
+    // The file's variants must never be written over the user's own.
+    expect(importMocks.variantDeleteMany).not.toHaveBeenCalled();
+    expect(importMocks.variantCreate).not.toHaveBeenCalled();
+  });
+
+  it('applies the file\'s variants to a matched existing type that has none of its own (Finding 4)', async () => {
+    importMocks.relTypeFindFirst.mockResolvedValue({ id: 'existing-type-1' });
+    // The existing type was never configured with variants.
+    importMocks.variantCount.mockResolvedValue(0);
+
+    const payload = {
+      ...BASE_PAYLOAD,
+      groups: [],
+      relationshipTypes: [
+        {
+          id: 'old-type-1',
+          name: 'PARENT',
+          label: 'Parent',
+          color: '#FF00FF',
+          inverseId: null,
+          variants: [{ label: 'Papa', conditions: [genderCondition] }],
+        },
+      ],
+    };
+
+    const response = await importRoute(makeRequest(payload));
+    expect(response.status).toBe(200);
+
+    expect(importMocks.variantCount).toHaveBeenCalledWith({
+      where: { relationshipTypeId: 'existing-type-1' },
+    });
+    expect(importMocks.variantDeleteMany).toHaveBeenCalledWith({
+      where: { relationshipTypeId: 'existing-type-1' },
+    });
+    expect(importMocks.variantCreate).toHaveBeenCalledTimes(1);
+    expect(importMocks.variantCreate.mock.calls[0][0].data.label).toBe('Papa');
   });
 });
