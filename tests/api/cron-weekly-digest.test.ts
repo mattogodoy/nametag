@@ -29,6 +29,9 @@ vi.mock('../../lib/prisma', () => ({
     },
     person: { findMany: mocks.personFindMany, update: mocks.personUpdate },
     user: { findMany: mocks.userFindMany, update: mocks.userUpdate },
+    // dispatch.ts also reads configured ntfy endpoints through this. An empty
+    // result means no endpoints, so behaviour here is unchanged.
+    notificationEndpoint: { findMany: vi.fn().mockResolvedValue([]) },
     cronJobLog: { create: mocks.cronLogCreate, update: mocks.cronLogUpdate },
   },
 }));

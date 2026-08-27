@@ -3,8 +3,10 @@ import type { SendBatchEmailItem } from '@/lib/email';
 import { createModuleLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { renderEmail } from './channels/email';
+import { sendNtfy } from './channels/ntfy';
 import { sendWebPush } from './channels/web-push';
 import { mapWithConcurrency } from './concurrency';
+import { recordEndpointResult } from './endpoint-health';
 import type { ChannelId, ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
 
 const log = createModuleLogger('notifications');
@@ -29,6 +31,7 @@ export async function dispatchAll(
   }
 
   const emailEnabled = await loadEmailPreferences(envelopes);
+  const endpointsByUser = await loadEndpoints(envelopes);
 
   // Email first and as one batch, so Resend still receives a single request.
   const emailOutcomes = await dispatchEmail(envelopes, emailEnabled);
@@ -39,8 +42,16 @@ export async function dispatchAll(
     guard(() => sendWebPush(envelope), 'web_push', envelope.userId)
   );
 
+  const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
+    guard(
+      () => dispatchEndpoints(envelope, endpointsByUser.get(envelope.userId) ?? []),
+      'ntfy',
+      envelope.userId
+    )
+  );
+
   return envelopes.map((_envelope, index) =>
-    summarize([emailOutcomes[index], pushOutcomes[index]])
+    summarize([emailOutcomes[index], pushOutcomes[index], endpointOutcomes[index]])
   );
 }
 
@@ -76,6 +87,132 @@ async function loadEmailPreferences(
     );
     return new Map();
   }
+}
+
+interface EndpointRecord {
+  id: string;
+  userId: string;
+  type: 'NTFY' | 'WEBHOOK';
+  url: string;
+  secret: string | null;
+}
+
+/**
+ * Load every enabled endpoint for the users in this run, grouped by user.
+ *
+ * One query for the whole run rather than one per envelope: a run holds many
+ * envelopes per user and they all share the same endpoint list.
+ *
+ * `enabled: true` is in the query rather than filtered afterwards so that a
+ * disabled or auto-disabled endpoint can never be contacted, even by a future
+ * caller that forgets to filter.
+ */
+async function loadEndpoints(
+  envelopes: readonly NotificationEnvelope[]
+): Promise<Map<string, EndpointRecord[]>> {
+  const userIds = [...new Set(envelopes.map((envelope) => envelope.userId))];
+
+  // Guarded the same way loadEmailPreferences is. An unguarded failure here
+  // throws out of dispatchAll and aborts the whole night, silently dropping
+  // every day-of, lead, and contact reminder already collected. An empty map
+  // means "no endpoints tonight", which costs those users one night of a
+  // secondary channel rather than costing everyone their reminders.
+  try {
+    const endpoints = await prisma.notificationEndpoint.findMany({
+      where: { userId: { in: userIds }, enabled: true },
+      select: { id: true, userId: true, type: true, url: true, secret: true },
+    });
+
+    const byUser = new Map<string, EndpointRecord[]>();
+    for (const endpoint of endpoints) {
+      const list = byUser.get(endpoint.userId) ?? [];
+      list.push(endpoint);
+      byUser.set(endpoint.userId, list);
+    }
+
+    return byUser;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error(
+      { errorMessage: message, count: userIds.length },
+      'Failed to load notification endpoints, skipping endpoint delivery tonight'
+    );
+    return new Map();
+  }
+}
+
+/**
+ * Deliver one envelope to every endpoint its owner has configured.
+ *
+ * Collapsed to a single outcome: delivering to at least one endpoint counts,
+ * the same way one live device counts for push. Per-endpoint results are
+ * recorded separately for health tracking.
+ *
+ * The send and the health-tracking write are guarded separately, the same
+ * split `sendWebPush` uses (send, then `recordQuietly`). An unguarded throw
+ * anywhere in this loop would abandon every endpoint after it for this
+ * envelope, not just the one that failed, so each endpoint gets its own
+ * try/catch. Keeping the record write in its own catch means a bookkeeping
+ * failure (a Prisma blip while writing health) can never be mistaken for, or
+ * shadow, a send that actually succeeded. `sendNtfy` already resolves rather
+ * than throwing, so guarding it here is belt and braces today and the
+ * guarantee this loop needs once a second endpoint type joins it.
+ */
+async function dispatchEndpoints(
+  envelope: NotificationEnvelope,
+  endpoints: readonly EndpointRecord[]
+): Promise<ChannelOutcome> {
+  if (endpoints.length === 0) {
+    return { channel: 'ntfy', status: 'skipped' };
+  }
+
+  let delivered = 0;
+  let lastError = 'Unknown endpoint error';
+
+  for (const endpoint of endpoints) {
+    // WEBHOOK is handled in Phase 4. Until then an endpoint of that type
+    // cannot be created, so this is unreachable rather than a silent drop.
+    if (endpoint.type !== 'NTFY') {
+      continue;
+    }
+
+    let result: Awaited<ReturnType<typeof sendNtfy>>;
+
+    try {
+      result = await sendNtfy(endpoint, envelope);
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Unknown endpoint error';
+      log.error(
+        { ...envelope.logMeta, endpointId: endpoint.id, errorMessage: lastError },
+        "Endpoint delivery threw, continuing with the user's remaining endpoints"
+      );
+      continue;
+    }
+
+    if (result.ok) {
+      delivered++;
+    } else {
+      lastError = result.code;
+    }
+
+    try {
+      await recordEndpointResult(endpoint.id, result);
+    } catch (error) {
+      log.warn(
+        {
+          endpointId: endpoint.id,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'Failed to record endpoint health'
+      );
+    }
+  }
+
+  if (delivered > 0) {
+    return { channel: 'ntfy', status: 'delivered' };
+  }
+
+  return { channel: 'ntfy', status: 'failed', error: lastError };
 }
 
 /**
