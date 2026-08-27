@@ -37,9 +37,9 @@ Stores a serialised browser `PushSubscription` for the current device.
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `endpoint` | string | Yes | The push service URL from `PushSubscription.endpoint`. Must be `https://`. |
-| `keys.p256dh` | string | Yes | From `PushSubscription.toJSON().keys`. |
-| `keys.auth` | string | Yes | From `PushSubscription.toJSON().keys`. |
+| `endpoint` | string | Yes | The push service URL from `PushSubscription.endpoint`. Must be `https://`. Capped at 2000 bytes (UTF-8), not 2000 characters, since the column carries a unique index and Postgres caps index entries near 2704 bytes. A 2000-character string of multi-byte characters will be rejected even though it passes a naive character count. |
+| `keys.p256dh` | string | Yes | From `PushSubscription.toJSON().keys`. 1 to 255 characters. |
+| `keys.auth` | string | Yes | From `PushSubscription.toJSON().keys`. 1 to 255 characters. |
 
 Upserts on `endpoint`: subscribing again with the same endpoint (permission re-granted, key rotated) updates the existing device rather than creating a duplicate.
 

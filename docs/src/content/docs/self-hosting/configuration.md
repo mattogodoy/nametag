@@ -102,6 +102,8 @@ Leave all three unset and the push channel stays hidden in Settings. Email remin
 
 Replacing the keys later invalidates every existing browser subscription at once. Each device has to turn push back on from Settings to start receiving notifications again, so only rotate them when you mean to force that.
 
+The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe, and the stale rows simply stop being useful.
+
 ## Value constraints and defaults
 
 Some variables are validated against a specific range or format at startup. If a value falls outside these bounds, the app falls back to the default rather than starting with an invalid value.

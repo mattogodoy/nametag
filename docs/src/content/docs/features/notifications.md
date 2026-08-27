@@ -28,6 +28,8 @@ That device now appears in your device list, with a name pulled from its browser
 
 Safari does not support web push on its own. On an iPhone or iPad, install Nametag to your home screen before turning on push, see [Installing the App](/features/install/). Until it's installed, the Notifications page shows a hint explaining this instead of a push toggle that would not work.
 
+You'll also need iOS or iPadOS 16.4 or later. Apple only added web push support in that release, so on an older version even an installed copy of Nametag has nowhere to receive it. If push still is not available after installing, that's the first thing to check.
+
 ## Privacy
 
 Push notifications are encrypted end to end by the Web Push protocol itself. The push service that relays the message, whichever company runs it, never sees the plain content: not a contact's name, not what the reminder is about. Only your browser can decrypt it.
