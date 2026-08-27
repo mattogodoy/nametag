@@ -237,6 +237,25 @@ describe('LabelPreview', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('does not fetch when there are no variants to preview (Minor 5: <details> mount)', async () => {
+    // A <details> element hides its children instead of unmounting them, so
+    // this effect still runs when a user opens New/Edit relationship type
+    // with nothing configured yet. There is nothing to preview, so no
+    // request should go out.
+    vi.useFakeTimers();
+    render(
+      <Wrapper>
+        <LabelPreview typeLabel="sibling" variants={[]} people={people} />
+      </Wrapper>
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('coalesces a rapid sequence of selector changes into a single request once the debounce settles', async () => {
     vi.useFakeTimers();
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({

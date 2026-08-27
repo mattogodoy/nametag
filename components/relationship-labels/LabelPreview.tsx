@@ -40,7 +40,8 @@ export default function LabelPreview({ typeLabel, variants, people }: LabelPrevi
   // scheduled request stamps itself with the current counter, and its
   // response is applied only if that stamp still matches when it resolves.
   const requestIdRef = useRef(0);
-  const canPreview = describedPersonId.length > 0 && otherPersonId.length > 0;
+  const hasVariants = variants.length > 0;
+  const canPreview = hasVariants && describedPersonId.length > 0 && otherPersonId.length > 0;
 
   useEffect(() => {
     if (timerRef.current) {
@@ -48,6 +49,12 @@ export default function LabelPreview({ typeLabel, variants, people }: LabelPrevi
       timerRef.current = null;
     }
 
+    // A `<details>` element hides its children rather than unmounting them,
+    // so this effect still runs when the section is opened with no variants
+    // configured. Nothing has been configured yet, so there is nothing
+    // useful to preview: skip the request rather than posting an empty
+    // variant list for every user who opens the section and configures
+    // nothing.
     if (!canPreview) {
       return;
     }
