@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma';
 import RelationshipTypeForm from '@/components/RelationshipTypeForm';
 import Navigation from '@/components/Navigation';
 import { getTranslations } from 'next-intl/server';
+import { formatFullName } from '@/lib/nameUtils';
+
+const PREVIEW_PEOPLE_LIMIT = 200;
 
 export default async function NewRelationshipTypePage() {
   const session = await auth();
@@ -15,20 +18,59 @@ export default async function NewRelationshipTypePage() {
   }
 
   // Get all available types for inverse relationship selection
-  const availableTypes = await prisma.relationshipType.findMany({
-    where: {
-      userId: session.user.id,
-      deletedAt: null,
-    },
-    select: {
-      id: true,
-      name: true,
-      label: true,
-      color: true,
-      inverseId: true,
-    },
-    orderBy: { name: 'asc' },
-  });
+  const [availableTypes, groups, templates, people, genders] = await Promise.all([
+    prisma.relationshipType.findMany({
+      where: {
+        userId: session.user.id,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        label: true,
+        color: true,
+        inverseId: true,
+      },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.group.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.customFieldTemplate.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      select: { id: true, name: true, type: true, options: true },
+      orderBy: { order: 'asc' },
+    }),
+    prisma.person.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        surname: true,
+        middleName: true,
+        secondLastName: true,
+        nickname: true,
+        displayNameOverride: true,
+      },
+      orderBy: { name: 'asc' },
+      take: PREVIEW_PEOPLE_LIMIT,
+    }),
+    prisma.person.findMany({
+      where: { userId: session.user.id, deletedAt: null, gender: { not: null } },
+      select: { gender: true },
+      distinct: ['gender'],
+    }),
+  ]);
+
+  const previewPeople = people.map((person) => ({
+    id: person.id,
+    name: formatFullName(person),
+  }));
+  const genderSuggestions = genders
+    .map((entry) => entry.gender)
+    .filter((gender): gender is string => !!gender && gender.trim().length > 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +97,14 @@ export default async function NewRelationshipTypePage() {
             <h1 className="text-2xl font-bold text-foreground mb-6">
               {t('createRelationshipType')}
             </h1>
-            <RelationshipTypeForm availableTypes={availableTypes} mode="create" />
+            <RelationshipTypeForm
+              availableTypes={availableTypes}
+              mode="create"
+              groups={groups}
+              templates={templates}
+              people={previewPeople}
+              genderSuggestions={genderSuggestions}
+            />
           </div>
         </div>
       </main>
