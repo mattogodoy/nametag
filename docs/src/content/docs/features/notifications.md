@@ -38,5 +38,6 @@ Push notifications are encrypted end to end by the Web Push protocol itself. The
 
 - Removing a device from the list takes effect immediately. The next reminder simply is not sent to it.
 - Clearing your browser data, uninstalling the app, or revoking notification permission invalidates the subscription on your device right away. Nametag notices on its next attempt to deliver to that device and removes it from your list automatically, you don't need to do anything on your end.
+- Removing a device's row from a different browser or session than the one that owns it does not tell that browser anything. It keeps believing push is on until it next tries to deliver, or until you open its own Notifications page, at which point turning it on again re-registers the same device. This is inherent to how web push works, not something Nametag can push a live update around.
 - A reminder that targets the same event twice, such as a corrected send, replaces the earlier push notification on your device rather than stacking a second one next to it.
 - Tapping a push notification opens Nametag to the relevant page, reusing an already-open tab if you have one instead of opening a new window.
