@@ -99,6 +99,17 @@ describe('evaluateCondition: custom fields', () => {
     expect(evaluateCondition(c, withJunk, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
   });
 
+  it('does not treat an empty numeric literal as zero', () => {
+    // A cleared number input serialises to `lit:`. Without the fix, toNumber('')
+    // returns 0 (Number('') is 0, which is finite), so a person with no salary
+    // recorded would silently satisfy "salary equals «blank»".
+    const c = cond({ source: 'CUSTOM_FIELD', subjectRef: 'tpl', operator: 'EQUALS', operand: 'lit:' });
+    const withZero = person({
+      customValues: new Map([['tpl', { type: 'NUMBER' as const, value: '0' }]]),
+    });
+    expect(evaluateCondition(c, withZero, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+  });
+
   it('evaluates booleans', () => {
     const c = cond({ source: 'CUSTOM_FIELD', subjectRef: 'tpl', operator: 'IS_TRUE', operand: null });
     expect(evaluateCondition(c, withBool, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
@@ -166,6 +177,53 @@ describe('evaluateCondition: dates', () => {
       operand: 'ref:birthday',
     });
     expect(evaluateCondition(c, elder, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+  });
+});
+
+describe('evaluateCondition: year-unknown dates', () => {
+  // 1604 is the year-unknown sentinel (YEAR_UNKNOWN_SENTINEL in lib/date-format.ts).
+  // By the time a date reaches the resolver it has already been anchored to
+  // local midnight (context.ts does that on load), so these fixtures build
+  // the sentinel date directly in local time rather than through the UTC
+  // helpers meant for raw stored values.
+  const yearUnknown = person({
+    dates: [{ type: 'birthday', title: 'Anniversaire', date: new Date(1604, 4, 15) }],
+  });
+  const knownYear = person({
+    dates: [{ type: 'birthday', title: 'Anniversaire', date: new Date(1990, 4, 15) }],
+  });
+
+  it('is still SET, since the user did record a birthday', () => {
+    const isSet = cond({ source: 'DATE_TYPE', subjectRef: 'birthday', operator: 'IS_SET', operand: null });
+    const isNotSet = cond({ source: 'DATE_TYPE', subjectRef: 'birthday', operator: 'IS_NOT_SET', operand: null });
+    expect(evaluateCondition(isSet, yearUnknown, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
+    expect(evaluateCondition(isNotSet, yearUnknown, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+  });
+
+  it('is treated as ABSENT for ordering and equality against now, in both directions', () => {
+    const before = cond({ source: 'DATE_TYPE', subjectRef: 'birthday', operator: 'BEFORE', operand: 'now' });
+    const after = cond({ source: 'DATE_TYPE', subjectRef: 'birthday', operator: 'AFTER', operand: 'now' });
+    const sameDay = cond({ source: 'DATE_TYPE', subjectRef: 'birthday', operator: 'SAME_DAY', operand: 'now' });
+    const notSameDay = cond({ source: 'DATE_TYPE', subjectRef: 'birthday', operator: 'NOT_SAME_DAY', operand: 'now' });
+    expect(evaluateCondition(before, yearUnknown, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    expect(evaluateCondition(after, yearUnknown, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    expect(evaluateCondition(sameDay, yearUnknown, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    // "not the same day" does not match absence either: a year-unknown date
+    // answers no ordering or equality question, so it stays false too.
+    expect(evaluateCondition(notSameDay, yearUnknown, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+  });
+
+  it('is treated as ABSENT in a cross-person comparison, even when the other side has a real year', () => {
+    const c = cond({
+      source: 'DATE_TYPE',
+      subjectRef: 'birthday',
+      operator: 'BEFORE',
+      operand: 'ref:birthday',
+    });
+    // The Korean elder/younger example: without this rule, every contact
+    // with an unknown birth year would silently become the eldest.
+    expect(evaluateCondition(c, yearUnknown, knownYear, NOW)).toBe(false);
+    expect(evaluateCondition(c, knownYear, yearUnknown, NOW)).toBe(false);
   });
 });
 

@@ -1,3 +1,4 @@
+import { YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
 import { parseOperand, readReference, type RawValue } from './operand';
 import { OPERATORS_WITHOUT_OPERAND } from './types';
 import type {
@@ -16,8 +17,23 @@ function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
+/**
+ * True when a date carries the year-unknown sentinel. Dates reaching this
+ * module are already anchored to local midnight on their real calendar day
+ * (context.ts converts stored UTC calendar days on load, and the literal and
+ * `now` paths are local by construction), so the year is read directly
+ * rather than through `parseCalendarDate`, which expects a raw UTC-stored
+ * value and would shift an already-local date across the boundary it exists
+ * to correct.
+ */
+function isSentinelYear(date: Date): boolean {
+  return date.getFullYear() <= YEAR_UNKNOWN_SENTINEL;
+}
+
 function toNumber(value: string): number | null {
-  const parsed = Number(value.trim());
+  const trimmed = value.trim();
+  if (trimmed === '') return null;
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -136,7 +152,8 @@ export function evaluateCondition(
 
     if (operand.kind === 'now') {
       const leftDate = comparableDate(left);
-      return leftDate === null ? false : evaluateDate(condition.operator, leftDate, now);
+      if (leftDate === null || isSentinelYear(leftDate)) return false;
+      return evaluateDate(condition.operator, leftDate, now);
     }
 
     const right: RawValue =
@@ -148,13 +165,19 @@ export function evaluateCondition(
 
     const leftDate = comparableDate(left);
     if (leftDate !== null) {
+      // A year-unknown date cannot answer an ordering or equality question,
+      // so it is treated as absent here even though readReference (and thus
+      // IS_SET) correctly reports it as present: the user did record a
+      // birthday, they just do not know which year.
+      if (isSentinelYear(leftDate)) return false;
       const rightDate =
         right.kind === 'date'
           ? right.value
           : right.kind === 'text'
             ? parseLiteralDate(right.value)
             : null;
-      return rightDate === null ? false : evaluateDate(condition.operator, leftDate, rightDate);
+      if (rightDate === null || isSentinelYear(rightDate)) return false;
+      return evaluateDate(condition.operator, leftDate, rightDate);
     }
 
     if (left.kind === 'custom' && left.type === 'NUMBER') {
