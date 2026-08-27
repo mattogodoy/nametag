@@ -112,8 +112,8 @@ export async function validateServerUrl(url: string): Promise<void> {
  * IPv6 private ranges checked:
  * - ::1 (Loopback)
  * - fe80::/10 (Link-local)
- * - fc00::/7 (Unique local — fd00::/8 and fc00::/8)
- * - ::ffff:0:0/96 (IPv4-mapped IPv6 — delegates to IPv4 check)
+ * - fc00::/7 (Unique local: fd00::/8 and fc00::/8)
+ * - ::ffff:0:0/96 (IPv4-mapped IPv6, delegates to IPv4 check)
  */
 export function isPrivateIP(hostname: string): boolean {
   // Normalize: strip surrounding brackets if present
@@ -134,11 +134,11 @@ export function isPrivateIP(hostname: string): boolean {
     const expanded = expandIPv6(ip);
     if (!expanded) return false;
 
-    // fe80::/10 — Link-local
-    // First 10 bits: 1111 1110 10 → first byte 0xfe, second byte 0x80–0xbf
+    // fe80::/10, link-local
+    // First 10 bits: 1111 1110 10 -> first byte 0xfe, second byte 0x80-0xbf
     if (expanded[0] === 0xfe && (expanded[1] & 0xc0) === 0x80) return true;
 
-    // fc00::/7 — Unique local (fc00::/8 and fd00::/8)
+    // fc00::/7, unique local (fc00::/8 and fd00::/8)
     // First 7 bits: 1111 110 → first byte 0xfc or 0xfd
     if (expanded[0] === 0xfc || expanded[0] === 0xfd) return true;
 
