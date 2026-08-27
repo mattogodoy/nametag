@@ -187,6 +187,9 @@
       "pushDevices": "Apparaten die meldingen ontvangen",
       "pushRemove": "Verwijderen",
       "pushNoDevices": "Nog geen apparaten.",
+      "pushDeviceUnknown": "Onbekend apparaat",
+      "pushDeviceBrowser": "Browser",
+      "pushDeviceLabel": "{browser} op {os}",
       "weekdays": {
         "0": "Zondag",
         "1": "Maandag",

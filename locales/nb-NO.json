@@ -187,6 +187,9 @@
       "pushDevices": "Enheter som mottar varsler",
       "pushRemove": "Fjern",
       "pushNoDevices": "Ingen enheter ennå.",
+      "pushDeviceUnknown": "Ukjent enhet",
+      "pushDeviceBrowser": "Nettleser",
+      "pushDeviceLabel": "{browser} på {os}",
       "weekdays": {
         "0": "Søndag",
         "1": "Mandag",

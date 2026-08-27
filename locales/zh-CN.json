@@ -187,6 +187,9 @@
       "pushDevices": "接收通知的设备",
       "pushRemove": "移除",
       "pushNoDevices": "暂无设备。",
+      "pushDeviceUnknown": "未知设备",
+      "pushDeviceBrowser": "浏览器",
+      "pushDeviceLabel": "{os} 上的 {browser}",
       "weekdays": {
         "0": "星期日",
         "1": "星期一",

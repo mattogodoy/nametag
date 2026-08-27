@@ -43,12 +43,22 @@ describe('NotificationChannelsCard', () => {
       ],
     });
 
-    expect(screen.getByText(/Chrome/)).toBeTruthy();
+    expect(screen.getByText('Chrome on macOS')).toBeTruthy();
   });
 
   it('says so when there are no devices yet', () => {
     renderCard({ devices: [] });
 
     expect(screen.getByText('No devices yet.')).toBeTruthy();
+  });
+
+  it('shows the translated fallback for a device with no user agent', () => {
+    renderCard({
+      devices: [
+        { id: 'sub-2', userAgent: null },
+      ],
+    });
+
+    expect(screen.getByText('Unknown device')).toBeTruthy();
   });
 });

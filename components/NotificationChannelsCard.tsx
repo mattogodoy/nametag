@@ -24,15 +24,15 @@ type PushState = 'unsupported' | 'blocked' | 'available' | 'subscribed';
  * Deliberately crude. The goal is only to let someone tell two of their own
  * devices apart in a list, not to build a device database.
  */
-function describeDevice(userAgent: string | null): string {
-  if (!userAgent) return 'Unknown device';
+function describeDevice(userAgent: string | null, t: ReturnType<typeof useTranslations>): string {
+  if (!userAgent) return t('pushDeviceUnknown');
 
   const browser =
     /Edg\//.test(userAgent) ? 'Edge'
     : /Chrome\//.test(userAgent) ? 'Chrome'
     : /Firefox\//.test(userAgent) ? 'Firefox'
     : /Safari\//.test(userAgent) ? 'Safari'
-    : 'Browser';
+    : t('pushDeviceBrowser');
 
   const os =
     /iPhone|iPad/.test(userAgent) ? 'iOS'
@@ -42,7 +42,7 @@ function describeDevice(userAgent: string | null): string {
     : /Linux/.test(userAgent) ? 'Linux'
     : '';
 
-  return os ? `${browser} on ${os}` : browser;
+  return os ? t('pushDeviceLabel', { browser, os }) : browser;
 }
 
 /** The applicationServerKey must be a Uint8Array, not the base64url string. */
@@ -229,7 +229,7 @@ export default function NotificationChannelsCard({
           <ul className="space-y-2">
             {deviceList.map((device) => (
               <li key={device.id} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{describeDevice(device.userAgent)}</span>
+                <span className="text-foreground">{describeDevice(device.userAgent, t)}</span>
                 <button
                   type="button"
                   onClick={() => void removeDevice(device.id)}

@@ -187,6 +187,9 @@
       "pushDevices": "通知を受け取る端末",
       "pushRemove": "削除",
       "pushNoDevices": "端末はまだありません。",
+      "pushDeviceUnknown": "不明な端末",
+      "pushDeviceBrowser": "ブラウザ",
+      "pushDeviceLabel": "{os} の {browser}",
       "weekdays": {
         "0": "日曜日",
         "1": "月曜日",

@@ -187,6 +187,9 @@
       "pushDevices": "Устройства, получающие уведомления",
       "pushRemove": "Удалить",
       "pushNoDevices": "Пока нет устройств.",
+      "pushDeviceUnknown": "Неизвестное устройство",
+      "pushDeviceBrowser": "Браузер",
+      "pushDeviceLabel": "{browser} в {os}",
       "weekdays": {
         "0": "Воскресенье",
         "1": "Понедельник",

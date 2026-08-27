@@ -187,6 +187,9 @@
       "pushDevices": "Devices receiving notifications",
       "pushRemove": "Remove",
       "pushNoDevices": "No devices yet.",
+      "pushDeviceUnknown": "Unknown device",
+      "pushDeviceBrowser": "Browser",
+      "pushDeviceLabel": "{browser} on {os}",
       "weekdays": {
         "0": "Sunday",
         "1": "Monday",
