@@ -168,6 +168,14 @@ curl -X POST https://your-instance.example.com/api/notifications/endpoints \
 { "endpoint": { "id": "clxendpoint1", "type": "NTFY", "label": "Phone", "url": "https://ntfy.sh/my-topic", "enabled": true, "consecutiveFailures": 0, "lastSuccessAt": null, "lastFailureAt": null, "lastFailureCode": null, "autoDisabledAt": null, "createdAt": "2026-08-27T12:00:00.000Z" } }
 ```
 
+A `400` carries a machine-readable `code` alongside `error`, so a client can tell a permanent problem from a transient one instead of parsing the message text:
+
+```json
+{ "error": "That URL cannot be used", "code": "dns" }
+```
+
+`code` is one of `policy` (the URL was refused by the outbound SSRF policy: wrong protocol, disallowed port, or a private address, permanent, the URL must change), `dns` (the hostname did not resolve, possibly transient, worth retrying as-is), or `invalid` (the request body failed validation, or the URL has no topic segment).
+
 Returns `201` on success, `400` if the body fails validation or the URL cannot be used, `401` if unauthenticated, `409` if you already have 5 destinations, `429` if rate limited.
 
 ## Update a notification endpoint

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import type { OutboundFailureCode } from '@/lib/notifications/outbound';
 
 export interface NotificationEndpointSummary {
   id: string;
@@ -45,6 +46,7 @@ function isTestOutcome(value: unknown): value is TestOutcome {
 
 interface ApiErrorBody {
   error?: string;
+  code?: string;
 }
 
 function isApiErrorBody(value: unknown): value is ApiErrorBody {
@@ -61,12 +63,28 @@ function isApiErrorBody(value: unknown): value is ApiErrorBody {
  * correct. Everything else (timeout, refused, tls, redirect, http_5xx,
  * unknown) is transient or not the user's to fix, so it gets the generic
  * retry wording. The raw code is never rendered, only branched on.
+ *
+ * Typed against OutboundFailureCode rather than a bare `Record<string,
+ * string>` so that renaming one of those codes is a compile error here
+ * instead of a silent downgrade to the generic message: exactly the failure
+ * mode this whole feature exists to avoid.
  */
-const MESSAGE_BY_CODE: Record<string, string> = {
+const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
   blocked: 'endpointTestBlocked',
   dns: 'endpointTestDns',
   http_4xx: 'endpointTestRejected',
 };
+
+/**
+ * `data.code` crosses a network boundary as a plain string and could be
+ * anything, so it cannot be typed as OutboundFailureCode at the point it is
+ * read. The cast below only ever feeds a lookup that falls back safely when
+ * the key is absent, so an unrecognised value degrades to the generic
+ * message rather than producing a wrong one.
+ */
+function messageKeyForOutboundCode(code: string): string {
+  return MESSAGE_BY_CODE[code as OutboundFailureCode] ?? 'endpointTestFailed';
+}
 
 interface TestMessage {
   ok: boolean;
@@ -118,14 +136,28 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
    * readErrorMessage (which surfaces an existing house-pattern string for
    * actions that were already shipped, and rarely fires), this branches on
    * the HTTP status to show a translated message for the cases a user will
-   * actually hit. Anything else still falls back to the raw body, so a
-   * genuinely unexpected server message is surfaced rather than swallowed.
+   * actually hit.
+   *
+   * The 400 case carries its own machine-readable `code` from the route
+   * (`policy`, `dns`, or `invalid`), and that distinction matters here for
+   * exactly the same reason it matters on the test-send path: `policy` is a
+   * permanent refusal, the user must change the URL, while `dns` can be a
+   * transient resolver hiccup on an otherwise-correct URL. Reusing
+   * endpointTestBlocked / endpointTestDns keeps that contrast intact without
+   * new locale keys, since the wording already fits either screen.
+   *
+   * Anything else still falls back to the raw body, so a genuinely unexpected
+   * server message is surfaced rather than swallowed.
    */
   async function readAddErrorMessage(response: Response): Promise<string> {
     if (response.status === 409) {
       return t('endpointLimit');
     }
     if (response.status === 400) {
+      const data: unknown = await response.json().catch(() => null);
+      const code = isApiErrorBody(data) ? data.code : undefined;
+      if (code === 'dns') return t('endpointTestDns');
+      if (code === 'policy') return t('endpointTestBlocked');
       return t('endpointAddInvalid');
     }
     if (response.status === 429) {
@@ -186,8 +218,10 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
       if (data.ok) {
         setTestResults((prev) => ({ ...prev, [id]: { ok: true, key: 'endpointTestOk' } }));
       } else {
-        const key = MESSAGE_BY_CODE[data.code] ?? 'endpointTestFailed';
-        setTestResults((prev) => ({ ...prev, [id]: { ok: false, key } }));
+        setTestResults((prev) => ({
+          ...prev,
+          [id]: { ok: false, key: messageKeyForOutboundCode(data.code) },
+        }));
       }
     } catch {
       setTestResults((prev) => ({ ...prev, [id]: { ok: false, key: 'endpointTestFailed' } }));
@@ -234,6 +268,8 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
     }
   }
 
+  const FOCUS_RING = 'focus:outline-none focus:ring-2 focus:ring-primary';
+
   return (
     <div className="bg-surface shadow rounded-lg p-6">
       <h2 className="text-xl font-bold text-foreground mb-4">{t('endpointsTitle')}</h2>
@@ -259,7 +295,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                       type="button"
                       onClick={() => void handleTest(endpoint.id)}
                       disabled={busy}
-                      className="px-3 py-1 rounded-md border border-border disabled:opacity-50"
+                      className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
                     >
                       {t('endpointTest')}
                     </button>
@@ -267,7 +303,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                       type="button"
                       onClick={() => void handleRemove(endpoint.id)}
                       disabled={busy}
-                      className="text-muted hover:text-foreground disabled:opacity-50"
+                      className={`text-muted hover:text-foreground disabled:opacity-50 rounded ${FOCUS_RING}`}
                     >
                       {t('endpointRemove')}
                     </button>
@@ -275,7 +311,10 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                 </div>
 
                 {result && (
-                  <p className={`text-sm mt-2 ${result.ok ? 'text-foreground' : 'text-muted'}`}>
+                  <p
+                    role="alert"
+                    className={`text-sm mt-2 ${result.ok ? 'text-foreground' : 'text-muted'}`}
+                  >
                     {t(result.key)}
                   </p>
                 )}
@@ -287,7 +326,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                       type="button"
                       onClick={() => void handleEnable(endpoint.id)}
                       disabled={busy}
-                      className="text-sm text-foreground underline disabled:opacity-50 flex-shrink-0"
+                      className={`text-sm text-foreground underline disabled:opacity-50 flex-shrink-0 rounded ${FOCUS_RING}`}
                     >
                       {t('endpointEnable')}
                     </button>
@@ -305,7 +344,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="px-3 py-1 rounded-md border border-border"
+          className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
         >
           {t('endpointAdd')}
         </button>
@@ -323,7 +362,8 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
               value={label}
               onChange={(event) => setLabel(event.target.value)}
               required
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              maxLength={60}
+              className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
             />
           </div>
 
@@ -336,11 +376,17 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
               type="url"
               value={url}
               onChange={(event) => setUrl(event.target.value)}
-              placeholder={t('endpointUrlHint')}
               required
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              maxLength={500}
+              aria-describedby="endpoint-url-hint"
+              className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
             />
-            <p className="text-xs text-muted mt-1">{t('endpointUrlHint')}</p>
+            {/* No placeholder here: the same text is already the visible
+                helper paragraph below, linked with aria-describedby. A
+                placeholder duplicating it would be announced twice. */}
+            <p id="endpoint-url-hint" className="text-xs text-muted mt-1">
+              {t('endpointUrlHint')}
+            </p>
           </div>
 
           <div>
@@ -356,17 +402,21 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
               value={token}
               onChange={(event) => setToken(event.target.value)}
               autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+              className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
             />
           </div>
 
-          {formError && <p className="text-sm text-red-500">{formError}</p>}
+          {formError && (
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+              {formError}
+            </p>
+          )}
 
           <div className="flex items-center gap-2">
             <button
               type="submit"
               disabled={submitting}
-              className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50"
+              className={`px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 ${FOCUS_RING}`}
             >
               {t('endpointSave')}
             </button>
@@ -376,7 +426,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                 setShowForm(false);
                 resetForm();
               }}
-              className="px-3 py-1 rounded-md border border-border"
+              className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
             >
               {t('endpointCancel')}
             </button>

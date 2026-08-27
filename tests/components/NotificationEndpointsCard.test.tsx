@@ -92,13 +92,19 @@ describe('NotificationEndpointsCard', () => {
   });
 
   it('surfaces the success message for a successful test send', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: true })));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ ok: true }));
+    vi.stubGlobal('fetch', fetchMock);
     renderCard({ endpoints: [endpoint] });
 
     fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
 
     await waitFor(() => {
       expect(screen.getByText('Test notification sent.')).toBeInTheDocument();
+    });
+    // Pins the URL and method: sending to the wrong endpoint or with the
+    // wrong verb would still show a success message from this fixture alone.
+    expect(fetchMock).toHaveBeenCalledWith('/api/notifications/endpoints/ep-1/test', {
+      method: 'POST',
     });
   });
 
@@ -143,7 +149,13 @@ describe('NotificationEndpointsCard', () => {
     });
 
     it('falls back to the generic retry message when the test request itself fails', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: 'Not found' }, false)));
+      // The body is a well-formed { ok: false, code } that WOULD map to a
+      // specific message if the !response.ok guard were ever removed, so
+      // this only stays green if that guard is actually checked first.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ ok: false, code: 'blocked' }, false, 500))
+      );
       renderCard({ endpoints: [endpoint] });
 
       fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
@@ -155,6 +167,9 @@ describe('NotificationEndpointsCard', () => {
           )
         ).toBeInTheDocument();
       });
+      expect(
+        screen.queryByText('That URL cannot be used. Change it and save again.')
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -224,8 +239,8 @@ describe('NotificationEndpointsCard', () => {
     expect(mockRefresh).not.toHaveBeenCalled();
   });
 
-  it('does not display an access token field value anywhere after creating an endpoint', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' } }, true));
+  it('submits the token in the create request but never renders it, and clears it when the form reopens', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' } }, true, 201));
     vi.stubGlobal('fetch', fetchMock);
     renderCard({ endpoints: [] });
 
@@ -245,8 +260,29 @@ describe('NotificationEndpointsCard', () => {
     await waitFor(() => {
       expect(mockRefresh).toHaveBeenCalled();
     });
-    // The token was submitted but never rendered as visible text.
+
+    // Pins the exact request: URL, method, and a body that actually carries
+    // type: 'NTFY' and the token, so a wrong type, a dropped field, or a
+    // request to the wrong URL fails this test instead of leaving it green.
+    expect(fetchMock).toHaveBeenCalledWith('/api/notifications/endpoints', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'NTFY',
+        label: 'My phone',
+        url: 'https://ntfy.sh/my-topic',
+        token: 'tk_secret_value',
+      }),
+    });
+
+    // The token travelled in the request body above, never as visible text.
     expect(screen.queryByText('tk_secret_value')).not.toBeInTheDocument();
+
+    // The form was hidden after the successful save. Reopening it must not
+    // remember the token that was just submitted.
+    fireEvent.click(screen.getByRole('button', { name: 'Add ntfy topic' }));
+    const reopenedTokenInput = screen.getByLabelText('Access token (optional)') as HTMLInputElement;
+    expect(reopenedTokenInput.value).toBe('');
   });
 
   describe('create failure mapping', () => {
@@ -268,12 +304,15 @@ describe('NotificationEndpointsCard', () => {
       expect(screen.queryByText('You can have at most 5 endpoints')).not.toBeInTheDocument();
     });
 
-    it('shows the translated invalid-URL message for a 400, not the raw response body', async () => {
+    it('shows the translated invalid-URL message for a 400 coded "invalid", not the raw response body', async () => {
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(
           jsonResponse(
-            { error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic' },
+            {
+              error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
+              code: 'invalid',
+            },
             false,
             400
           )
@@ -292,6 +331,50 @@ describe('NotificationEndpointsCard', () => {
       ).not.toBeInTheDocument();
     });
 
+    it('shows the DNS message for a 400 coded "dns", not the URL-blaming message', async () => {
+      // The distinction this pins: a resolver hiccup on an otherwise-correct
+      // URL must not be told to the user as "change your URL".
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          jsonResponse({ error: 'That URL cannot be used', code: 'dns' }, false, 400)
+        )
+      );
+      renderCard({ endpoints: [] });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/my-topic');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            'That hostname did not resolve. Check the spelling, or try again in a moment.'
+          )
+        ).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Check the topic URL and try again.')).not.toBeInTheDocument();
+    });
+
+    it('shows the blocked message for a 400 coded "policy"', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          jsonResponse({ error: 'That URL cannot be used', code: 'policy' }, false, 400)
+        )
+      );
+      renderCard({ endpoints: [] });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/my-topic');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('That URL cannot be used. Change it and save again.')
+        ).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Check the topic URL and try again.')).not.toBeInTheDocument();
+    });
+
     it('shows the translated rate-limit message for a 429', async () => {
       vi.stubGlobal(
         'fetch',
@@ -307,6 +390,7 @@ describe('NotificationEndpointsCard', () => {
           screen.getByText('Too many attempts. Wait a few minutes and try again.')
         ).toBeInTheDocument();
       });
+      expect(screen.queryByText('Too many attempts.')).not.toBeInTheDocument();
     });
 
     it('still falls back to the raw response body for an unmapped status', async () => {

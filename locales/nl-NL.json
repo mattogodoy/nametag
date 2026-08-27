@@ -195,7 +195,7 @@
       "pushDeviceLabel": "{browser} op {os}",
       "endpointsTitle": "Andere bestemmingen",
       "endpointsDescription": "Stuur herinneringen naar een ntfy-onderwerp op je telefoon of je eigen server.",
-      "endpointAdd": "Ntfy-onderwerp toevoegen",
+      "endpointAdd": "ntfy-onderwerp toevoegen",
       "endpointLabel": "Naam",
       "endpointUrl": "URL van het onderwerp",
       "endpointUrlHint": "Bijvoorbeeld https://ntfy.sh/mijn-onderwerp",

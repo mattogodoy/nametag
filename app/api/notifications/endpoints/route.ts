@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { encryptSecret } from '@/lib/crypto/secrets';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { outboundPolicy, resolveTarget } from '@/lib/net/url-validation';
+import { BlockedUrlError, outboundPolicy, resolveTarget } from '@/lib/net/url-validation';
 import { parseNtfyUrl } from '@/lib/notifications/channels/ntfy';
 import { MAX_ENDPOINTS_PER_USER } from '@/lib/notifications/endpoint-health';
 import { createNtfyEndpointSchema } from '@/lib/validations';
@@ -49,7 +49,7 @@ export const POST = withAuth(async (request, session) => {
 
     const parsed = createNtfyEndpointSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid endpoint' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid endpoint', code: 'invalid' }, { status: 400 });
     }
 
     const { label, url, token } = parsed.data;
@@ -58,7 +58,10 @@ export const POST = withAuth(async (request, session) => {
     // reject it here rather than letting it fail on every reminder forever.
     if (!parseNtfyUrl(url)) {
       return NextResponse.json(
-        { error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic' },
+        {
+          error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
+          code: 'invalid',
+        },
         { status: 400 }
       );
     }
@@ -80,10 +83,19 @@ export const POST = withAuth(async (request, session) => {
     // user an immediate error instead of a silently dead endpoint; send-time
     // validation is what actually protects us, because a hostname can be
     // re-pointed after it is saved.
+    //
+    // The `code` here matters as much as the message: `policy` (a disallowed
+    // protocol, port, or private address) is permanent, the user must change
+    // the URL, while `dns` (the hostname did not resolve) can be a transient
+    // resolver hiccup. Losing that distinction here would put the create
+    // screen exactly where the test-send screen was before it was fixed: a
+    // self-hoster with a correct URL and a blipping resolver being told to go
+    // change it.
     try {
       await resolveTarget(url, outboundPolicy());
-    } catch {
-      return NextResponse.json({ error: 'That URL cannot be used' }, { status: 400 });
+    } catch (error) {
+      const code = error instanceof BlockedUrlError ? error.reason : 'invalid';
+      return NextResponse.json({ error: 'That URL cannot be used', code }, { status: 400 });
     }
 
     const endpoint = await prisma.notificationEndpoint.create({

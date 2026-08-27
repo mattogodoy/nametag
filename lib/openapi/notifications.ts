@@ -128,7 +128,24 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: { endpoint: notificationEndpointObject },
           }),
-          '400': ref400(),
+          '400': jsonResponse('Invalid body or URL', {
+            type: 'object',
+            properties: {
+              error: { type: 'string', description: 'Human-readable error message' },
+              code: {
+                type: 'string',
+                description:
+                  'Machine-readable reason, so a client can tell a permanent problem from a ' +
+                  'transient one. `policy` means the URL was refused by the outbound SSRF ' +
+                  'policy (wrong protocol, disallowed port, or a private address): permanent, ' +
+                  'the URL must change. `dns` means the hostname did not resolve: possibly ' +
+                  "transient, worth retrying as-is. `invalid` covers everything else, a body " +
+                  'that failed validation or a topic URL with no topic segment.',
+                enum: ['policy', 'dns', 'invalid'],
+              },
+            },
+            required: ['error', 'code'],
+          }),
           '401': ref401(),
           '409': resp('Maximum number of endpoints reached'),
           '429': resp('Rate limited'),
