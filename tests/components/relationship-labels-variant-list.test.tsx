@@ -206,4 +206,54 @@ describe('LabelVariantList', () => {
       { label: 'sibling', conditions: [] },
     ]);
   });
+
+  it('appends a new variant with one default condition before the fallback when an explicit fallback variant already exists', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderList([
+      { label: 'frère', conditions: [condition()] },
+      { label: 'sibling', conditions: [] },
+    ]);
+
+    await user.click(screen.getByRole('button', { name: 'Add a variant' }));
+
+    expect(onChange).toHaveBeenCalledWith([
+      { label: 'frère', conditions: [condition()] },
+      {
+        label: '',
+        conditions: [
+          {
+            subject: 'DESCRIBED',
+            source: 'PERSON_FIELD',
+            subjectRef: 'gender',
+            operator: 'IS',
+            operand: 'lit:',
+          },
+        ],
+      },
+      { label: 'sibling', conditions: [] },
+    ]);
+  });
+
+  it('appends a new variant with one default condition before the synthetic fallback when no explicit fallback variant exists yet', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderList([{ label: 'frère', conditions: [condition()] }]);
+
+    await user.click(screen.getByRole('button', { name: 'Add a variant' }));
+
+    expect(onChange).toHaveBeenCalledWith([
+      { label: 'frère', conditions: [condition()] },
+      {
+        label: '',
+        conditions: [
+          {
+            subject: 'DESCRIBED',
+            source: 'PERSON_FIELD',
+            subjectRef: 'gender',
+            operator: 'IS',
+            operand: 'lit:',
+          },
+        ],
+      },
+    ]);
+  });
 });

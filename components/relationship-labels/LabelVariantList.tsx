@@ -142,7 +142,10 @@ export default function LabelVariantList({
   }
 
   function handleMoveDown(displayIndex: number) {
-    if (displayIndex < 0 || displayIndex + 1 >= variants.length) return;
+    // Mirrors canMoveDown's own boundary: the last real (non-fallback) variant
+    // must never be swapped down into or past the fallback's position.
+    const lastRealIndex = explicitFallback ? variants.length - 2 : variants.length - 1;
+    if (displayIndex < 0 || displayIndex >= lastRealIndex) return;
     swap(displayIndex, displayIndex + 1);
   }
 
