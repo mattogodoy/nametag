@@ -215,6 +215,7 @@
       "endpointEnable": "Volver a activar",
       "endpointAddInvalid": "Revisa la URL del tema e inténtalo de nuevo.",
       "endpointAddRateLimited": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+      "endpointAddDuplicate": "Ya has añadido ese tema.",
       "weekdays": {
         "0": "Domingo",
         "1": "Lunes",

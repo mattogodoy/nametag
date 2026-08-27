@@ -215,6 +215,7 @@
       "endpointEnable": "オンに戻す",
       "endpointAddInvalid": "トピックのURLを確認してから、もう一度お試しください。",
       "endpointAddRateLimited": "試行回数が多すぎます。数分待ってから、もう一度お試しください。",
+      "endpointAddDuplicate": "そのトピックはすでに追加されています。",
       "weekdays": {
         "0": "日曜日",
         "1": "月曜日",

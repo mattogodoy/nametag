@@ -215,6 +215,7 @@
       "endpointEnable": "Slå på igjen",
       "endpointAddInvalid": "Sjekk emne-URL-en og prøv igjen.",
       "endpointAddRateLimited": "For mange forsøk. Vent noen minutter og prøv igjen.",
+      "endpointAddDuplicate": "Du har allerede lagt til dette emnet.",
       "weekdays": {
         "0": "Søndag",
         "1": "Mandag",

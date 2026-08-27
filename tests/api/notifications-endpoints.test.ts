@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
@@ -205,6 +206,24 @@ describe('endpoints API', () => {
     // turning a per-user cap into an instance-wide one, bricking every
     // signup after the fifth endpoint anywhere on the instance.
     expect(mocks.count).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
+  });
+
+  it('reports a duplicate URL as a 409 distinct from the per-user cap', async () => {
+    // @@unique([userId, url]) is what actually stops the same topic being
+    // added five times; the count check above only guards the cap. A client
+    // needs to tell the two 409s apart to show the right message, so the
+    // `code` here matters as much as the status.
+    mocks.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      })
+    );
+
+    const response = await POST(post(valid));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'duplicate' });
   });
 
   it('applies a rate limit to creation', async () => {

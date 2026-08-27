@@ -190,6 +190,35 @@ describe('NotificationEndpointsCard', () => {
     expect(screen.queryByRole('button', { name: 'Turn back on' })).not.toBeInTheDocument();
   });
 
+  it('shows the banner and re-enable action for a disabled endpoint even without autoDisabledAt set', () => {
+    // Reachable through the documented PUT {enabled:false}, and through a
+    // success recorded against a row a concurrent envelope had already
+    // auto-disabled: enabled:false, autoDisabledAt:null. Gating on
+    // autoDisabledAt alone would render this row as perfectly healthy while
+    // it delivers nothing and offers no way back.
+    renderCard({
+      endpoints: [{ ...endpoint, enabled: false, autoDisabledAt: null }],
+    });
+
+    expect(
+      screen.getByText('Turned off after repeated failures. Fix the destination, then turn it back on.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Turn back on' })).toBeInTheDocument();
+  });
+
+  it('renders the mapped reason for the last failure, never the raw code', () => {
+    renderCard({
+      endpoints: [
+        { ...endpoint, enabled: false, autoDisabledAt: '2026-08-01T00:00:00.000Z', lastFailureCode: 'dns' },
+      ],
+    });
+
+    expect(
+      screen.getByText('That hostname did not resolve. Check the spelling, or try again in a moment.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText('dns')).not.toBeInTheDocument();
+  });
+
   it('re-enables a disabled endpoint via PUT and refreshes', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true }));
     vi.stubGlobal('fetch', fetchMock);
@@ -302,6 +331,33 @@ describe('NotificationEndpointsCard', () => {
         ).toBeInTheDocument();
       });
       expect(screen.queryByText('You can have at most 5 endpoints')).not.toBeInTheDocument();
+    });
+
+    it('shows a distinct message for a 409 coded "duplicate", not the per-user cap message', async () => {
+      // The cap message and the duplicate message are unrelated problems
+      // with unrelated fixes: this only stays green if the two 409s are
+      // told apart by `code` rather than collapsed into one.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          jsonResponse(
+            { error: 'You have already added that destination', code: 'duplicate' },
+            false,
+            409
+          )
+        )
+      );
+      renderCard({ endpoints: [] });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/my-topic');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('You have already added that topic.')).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText('You have reached the maximum number of destinations.')
+      ).not.toBeInTheDocument();
     });
 
     it('shows the translated invalid-URL message for a 400 coded "invalid", not the raw response body', async () => {

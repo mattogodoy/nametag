@@ -215,6 +215,7 @@
       "endpointEnable": "重新打开",
       "endpointAddInvalid": "请检查主题 URL 后重试。",
       "endpointAddRateLimited": "尝试次数过多，请等待几分钟后重试。",
+      "endpointAddDuplicate": "您已添加过该主题。",
       "weekdays": {
         "0": "星期日",
         "1": "星期一",

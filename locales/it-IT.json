@@ -215,6 +215,7 @@
       "endpointEnable": "Riattiva",
       "endpointAddInvalid": "Controlla l'URL del topic e riprova.",
       "endpointAddRateLimited": "Troppi tentativi. Attendi qualche minuto e riprova.",
+      "endpointAddDuplicate": "Hai già aggiunto questo topic.",
       "weekdays": {
         "0": "Domenica",
         "1": "Lunedì",

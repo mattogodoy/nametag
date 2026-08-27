@@ -215,6 +215,7 @@
       "endpointEnable": "Wieder einschalten",
       "endpointAddInvalid": "Überprüfe die Themen-URL und versuche es erneut.",
       "endpointAddRateLimited": "Zu viele Versuche. Warte ein paar Minuten und versuche es erneut.",
+      "endpointAddDuplicate": "Du hast dieses Thema bereits hinzugefügt.",
       "weekdays": {
         "0": "Sonntag",
         "1": "Montag",

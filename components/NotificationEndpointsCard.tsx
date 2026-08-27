@@ -146,11 +146,21 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
    * endpointTestBlocked / endpointTestDns keeps that contrast intact without
    * new locale keys, since the wording already fits either screen.
    *
+   * The 409 case also carries a `code`, distinguishing the per-user cap
+   * (`undefined`, the original 409 before duplicates existed) from the same
+   * URL already being registered (`duplicate`, from the `@@unique([userId,
+   * url])` constraint). The two are unrelated problems with unrelated fixes:
+   * the first needs the user to remove another destination, the second needs
+   * a different URL.
+   *
    * Anything else still falls back to the raw body, so a genuinely unexpected
    * server message is surfaced rather than swallowed.
    */
   async function readAddErrorMessage(response: Response): Promise<string> {
     if (response.status === 409) {
+      const data: unknown = await response.json().catch(() => null);
+      const code = isApiErrorBody(data) ? data.code : undefined;
+      if (code === 'duplicate') return t('endpointAddDuplicate');
       return t('endpointLimit');
     }
     if (response.status === 400) {
@@ -319,9 +329,24 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                   </p>
                 )}
 
-                {endpoint.autoDisabledAt && (
+                {/* Gated on `enabled`, not `autoDisabledAt`: a row can be
+                    disabled without that timestamp (a plain PUT, or a
+                    success recorded against an endpoint that a concurrent
+                    envelope had already auto-disabled), and such a row must
+                    still be visible and recoverable here. */}
+                {!endpoint.enabled && (
                   <div className="mt-2 flex items-center justify-between gap-4 rounded-md bg-muted/20 px-3 py-2">
-                    <p className="text-sm text-muted">{t('endpointDisabled')}</p>
+                    <div>
+                      <p className="text-sm text-muted">{t('endpointDisabled')}</p>
+                      {/* The coarse failure code, run through the same
+                          code-to-message mapping the test-send result uses.
+                          Never the raw code itself: see messageKeyForOutboundCode. */}
+                      {endpoint.lastFailureCode && (
+                        <p className="text-sm text-muted">
+                          {t(messageKeyForOutboundCode(endpoint.lastFailureCode))}
+                        </p>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => void handleEnable(endpoint.id)}

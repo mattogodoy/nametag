@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { encryptSecret } from '@/lib/crypto/secrets';
@@ -98,18 +99,33 @@ export const POST = withAuth(async (request, session) => {
       return NextResponse.json({ error: 'That URL cannot be used', code }, { status: 400 });
     }
 
-    const endpoint = await prisma.notificationEndpoint.create({
-      data: {
-        userId: session.user.id,
-        type: 'NTFY',
-        label,
-        url,
-        secret: token ? encryptSecret(token) : null,
-      },
-      select: PUBLIC_FIELDS,
-    });
+    try {
+      const endpoint = await prisma.notificationEndpoint.create({
+        data: {
+          userId: session.user.id,
+          type: 'NTFY',
+          label,
+          url,
+          secret: token ? encryptSecret(token) : null,
+        },
+        select: PUBLIC_FIELDS,
+      });
 
-    return NextResponse.json({ endpoint }, { status: 201 });
+      return NextResponse.json({ endpoint }, { status: 201 });
+    } catch (error) {
+      // The count check above only guards the per-user cap; it says nothing
+      // about the same URL already being registered. `@@unique([userId,
+      // url])` is what actually prevents a topic being added five times and
+      // multiplying every reminder into five identical publishes, and this
+      // is where that constraint surfaces as a response instead of a 500.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'You have already added that destination', code: 'duplicate' },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
   } catch (error) {
     return handleApiError(error, 'notification-endpoint-create');
   }

@@ -215,6 +215,7 @@
       "endpointEnable": "Réactiver",
       "endpointAddInvalid": "Vérifiez l'URL du sujet et réessayez.",
       "endpointAddRateLimited": "Trop de tentatives. Attendez quelques minutes et réessayez.",
+      "endpointAddDuplicate": "Vous avez déjà ajouté ce sujet.",
       "weekdays": {
         "0": "Dimanche",
         "1": "Lundi",

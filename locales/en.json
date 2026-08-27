@@ -215,6 +215,7 @@
       "endpointEnable": "Turn back on",
       "endpointAddInvalid": "Check the topic URL and try again.",
       "endpointAddRateLimited": "Too many attempts. Wait a few minutes and try again.",
+      "endpointAddDuplicate": "You have already added that topic.",
       "weekdays": {
         "0": "Sunday",
         "1": "Monday",

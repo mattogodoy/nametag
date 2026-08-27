@@ -215,6 +215,7 @@
       "endpointEnable": "Weer aanzetten",
       "endpointAddInvalid": "Controleer de URL van het onderwerp en probeer het opnieuw.",
       "endpointAddRateLimited": "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.",
+      "endpointAddDuplicate": "Je hebt dat onderwerp al toegevoegd.",
       "weekdays": {
         "0": "Zondag",
         "1": "Maandag",

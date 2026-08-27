@@ -147,7 +147,10 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
             required: ['error', 'code'],
           }),
           '401': ref401(),
-          '409': resp('Maximum number of endpoints reached'),
+          '409': resp(
+            'Maximum number of endpoints reached, or that URL is already registered ' +
+              "(code: 'duplicate')"
+          ),
           '429': resp('Rate limited'),
         },
       },
@@ -218,6 +221,10 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
               },
             },
           }),
+          '400': resp(
+            'The destination is not an ntfy endpoint. Webhooks are a future channel and ' +
+              'cannot be created today, so this is currently unreachable.'
+          ),
           '401': ref401(),
           '404': ref404(),
           '429': resp('Rate limited'),

@@ -176,7 +176,9 @@ A `400` carries a machine-readable `code` alongside `error`, so a client can tel
 
 `code` is one of `policy` (the URL was refused by the outbound SSRF policy: wrong protocol, disallowed port, or a private address, permanent, the URL must change), `dns` (the hostname did not resolve, possibly transient, worth retrying as-is), or `invalid` (the request body failed validation, or the URL has no topic segment).
 
-Returns `201` on success, `400` if the body fails validation or the URL cannot be used, `401` if unauthenticated, `409` if you already have 5 destinations, `429` if rate limited.
+A `409` also carries a `code`: `duplicate` means this exact URL is already registered to your account, distinct from the plain cap message you get when you already have 5 destinations.
+
+Returns `201` on success, `400` if the body fails validation or the URL cannot be used, `401` if unauthenticated, `409` if you already have 5 destinations or that URL is already registered, `429` if rate limited.
 
 ## Update a notification endpoint
 
@@ -244,4 +246,4 @@ curl -X POST https://your-instance.example.com/api/notifications/endpoints/clxen
 
 `code` is present only when `ok` is `false`, and is one of `blocked`, `dns`, `timeout`, `refused`, `tls`, `redirect`, `http_4xx`, `http_5xx`, or `unknown`.
 
-Returns `401` if unauthenticated, `404` if the destination does not exist or belongs to another user, `429` if rate limited.
+Returns `400` if the destination is not an ntfy endpoint (webhooks are a future channel and cannot be created today, so this is currently unreachable), `401` if unauthenticated, `404` if the destination does not exist or belongs to another user, `429` if rate limited.
