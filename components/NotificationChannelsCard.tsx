@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
@@ -78,10 +79,12 @@ export default function NotificationChannelsCard({
   devices,
 }: Props) {
   const t = useTranslations('settings.notifications');
+  const router = useRouter();
   const [email, setEmail] = useState(emailEnabled);
-  const [deviceList, setDeviceList] = useState(devices);
   const [pushState, setPushState] = useState<PushState>('unsupported');
   const [iosHint, setIosHint] = useState(false);
+  // Guards against a double-click starting two subscribe flows at once.
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecting a one-time platform capability check into UI state is intentional
@@ -105,63 +108,92 @@ export default function NotificationChannelsCard({
 
   async function toggleEmail(next: boolean) {
     setEmail(next);
-    const response = await fetch('/api/notifications/email', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled: next }),
-    });
+    try {
+      const response = await fetch('/api/notifications/email', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next }),
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setEmail(!next);
+        toast.error(t('channelEmail'));
+      }
+    } catch {
+      // A rejected fetch (network down) means the server never heard about
+      // this change, so the optimistic flip has to come back too.
       setEmail(!next);
       toast.error(t('channelEmail'));
     }
   }
 
   async function enablePush() {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      setPushState('blocked');
-      return;
-    }
+    if (busy) return;
+    setBusy(true);
 
-    const keyResponse = await fetch('/api/notifications/push/public-key');
-    if (!keyResponse.ok) {
+    try {
+      const permission = await Notification.requestPermission();
+
+      if (permission === 'denied') {
+        setPushState('blocked');
+        return;
+      }
+
+      // 'default' means the prompt was dismissed without a choice. Nothing is
+      // blocked and nothing was granted, so leave the button in place and let
+      // them try again.
+      if (permission !== 'granted') {
+        return;
+      }
+
+      const keyResponse = await fetch('/api/notifications/push/public-key');
+      if (!keyResponse.ok) {
+        toast.error(t('pushNotConfigured'));
+        return;
+      }
+      const { publicKey } = (await keyResponse.json()) as { publicKey: string };
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      const response = await fetch('/api/notifications/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription.toJSON()),
+      });
+
+      if (!response.ok) {
+        toast.error(t('pushNotConfigured'));
+        return;
+      }
+
+      setPushState('subscribed');
+      // The new subscription's real id lives only on the server. Re-fetch the
+      // server component's device list rather than guessing at a local row.
+      router.refresh();
+    } catch {
       toast.error(t('pushNotConfigured'));
-      return;
+    } finally {
+      setBusy(false);
     }
-    const { publicKey } = (await keyResponse.json()) as { publicKey: string };
-
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
-
-    const response = await fetch('/api/notifications/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(subscription.toJSON()),
-    });
-
-    if (!response.ok) {
-      toast.error(t('pushNotConfigured'));
-      return;
-    }
-
-    setPushState('subscribed');
-    setDeviceList((current) => [
-      ...current,
-      { id: 'pending', userAgent: navigator.userAgent },
-    ]);
   }
 
   async function removeDevice(id: string) {
-    const response = await fetch(`/api/notifications/push/subscriptions/${id}`, {
-      method: 'DELETE',
-    });
+    try {
+      const response = await fetch(`/api/notifications/push/subscriptions/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (response.ok) {
-      setDeviceList((current) => current.filter((device) => device.id !== id));
+      if (response.ok) {
+        router.refresh();
+      } else {
+        toast.error(t('pushRemove'));
+      }
+    } catch {
+      toast.error(t('pushRemove'));
     }
   }
 
@@ -197,7 +229,7 @@ export default function NotificationChannelsCard({
 
         {!pushAvailable && <p className="text-sm text-muted mt-2">{t('pushNotConfigured')}</p>}
 
-        {pushAvailable && iosHint && <p className="text-sm text-muted mt-2">{t('pushIosHint')}</p>}
+        {pushAvailable && iosHint && pushState !== 'subscribed' && <p className="text-sm text-muted mt-2">{t('pushIosHint')}</p>}
 
         {pushAvailable && !iosHint && pushState === 'unsupported' && (
           <p className="text-sm text-muted mt-2">{t('pushUnsupported')}</p>
@@ -211,7 +243,8 @@ export default function NotificationChannelsCard({
           <button
             type="button"
             onClick={() => void enablePush()}
-            className="mt-2 px-3 py-1 rounded-md border border-border"
+            disabled={busy}
+            className="mt-2 px-3 py-1 rounded-md border border-border disabled:opacity-50"
           >
             {t('pushEnable')}
           </button>
@@ -223,11 +256,11 @@ export default function NotificationChannelsCard({
 
         <h3 className="text-sm font-medium text-foreground mt-4 mb-2">{t('pushDevices')}</h3>
 
-        {deviceList.length === 0 ? (
+        {devices.length === 0 ? (
           <p className="text-sm text-muted">{t('pushNoDevices')}</p>
         ) : (
           <ul className="space-y-2">
-            {deviceList.map((device) => (
+            {devices.map((device) => (
               <li key={device.id} className="flex items-center justify-between text-sm">
                 <span className="text-foreground">{describeDevice(device.userAgent, t)}</span>
                 <button

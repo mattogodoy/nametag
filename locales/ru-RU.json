@@ -189,7 +189,7 @@
       "pushNoDevices": "Пока нет устройств.",
       "pushDeviceUnknown": "Неизвестное устройство",
       "pushDeviceBrowser": "Браузер",
-      "pushDeviceLabel": "{browser} в {os}",
+      "pushDeviceLabel": "{browser} на {os}",
       "weekdays": {
         "0": "Воскресенье",
         "1": "Понедельник",
