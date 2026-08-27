@@ -1,4 +1,5 @@
 import { parseOperand, readReference, type RawValue } from './operand';
+import { OPERATORS_WITHOUT_OPERAND } from './types';
 import type {
   LabelCondition,
   LabelOperator,
@@ -6,16 +7,6 @@ import type {
   PersonLabelContext,
   ResolvedLabel,
 } from './types';
-
-/** Operators that read no right-hand side at all. */
-const OPERATORS_WITHOUT_OPERAND: ReadonlySet<LabelOperator> = new Set<LabelOperator>([
-  'IS_SET',
-  'IS_NOT_SET',
-  'IS_TRUE',
-  'IS_FALSE',
-  'IN_GROUP',
-  'NOT_IN_GROUP',
-]);
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
