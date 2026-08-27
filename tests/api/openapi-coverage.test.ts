@@ -23,22 +23,6 @@ const API_ROOT = join(process.cwd(), 'app', 'api');
 const INTENTIONALLY_UNDOCUMENTED = new Map([
   ['/api/auth/{nextauth}', 'NextAuth.js internal handler; its routes are framework-defined'],
   ['/api/{notfound}', 'Catch-all that returns 404 for unknown API paths'],
-  [
-    '/api/notifications/email',
-    'Web push feature route; OpenAPI spec entry lands in the follow-up commit that documents the whole feature',
-  ],
-  [
-    '/api/notifications/push/public-key',
-    'Web push feature route; OpenAPI spec entry lands in the follow-up commit that documents the whole feature',
-  ],
-  [
-    '/api/notifications/push/subscribe',
-    'Web push feature route; OpenAPI spec entry lands in the follow-up commit that documents the whole feature',
-  ],
-  [
-    '/api/notifications/push/subscriptions/{id}',
-    'Web push feature route; OpenAPI spec entry lands in the follow-up commit that documents the whole feature',
-  ],
 ]);
 
 interface RouteFile {
@@ -123,6 +107,15 @@ describe('OpenAPI coverage', () => {
     const stale = Object.keys(spec.paths).filter((p) => !known.has(p));
 
     expect(stale, 'These spec paths have no route file.').toEqual([]);
+  });
+
+  it('has no suppression for a route the spec already documents', () => {
+    const stale = [...INTENTIONALLY_UNDOCUMENTED.keys()].filter((path) => spec.paths[path]);
+
+    expect(
+      stale,
+      'these paths are documented, so their suppression is dead and hides the method and auth checks'
+    ).toEqual([]);
   });
 
   it('documents every HTTP method each route exports', () => {

@@ -29,7 +29,9 @@ Shows how to add Nametag to your home screen or desktop. On Android and desktop 
 
 ## Notifications
 
-Two settings, both about email.
+At the top of this page, a delivery channels card lets you turn email and browser push on or off, and manage which devices receive push. See [Notifications](/features/notifications/) for how those channels work.
+
+Below that, two settings, both about email.
 
 - **Advance notice**: how many days before an important date you want to hear about it, chosen from On the day only, 1 day before, 3, 7, 14, or 30 days before. Advance notice never replaces the day-of reminder. Choosing 7 days before means you get an email 7 days before the event and again on the day itself, always both. The page spells this out directly under the control so you never have to guess.
 - **Weekly summary**: an opt-in email summarizing what's coming up in the next 7 days, off by default. Turning it on reveals a day-of-week picker for when it should arrive. If a given week has nothing coming up, no email is sent that week. Silence is the expected behavior for a quiet week, not a sign anything is broken.

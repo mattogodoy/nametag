@@ -82,6 +82,25 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `REDIS_PASSWORD` | Redis authentication password | Not set |
 | `NODE_ENV` | Environment mode: `development`, `production`, or `test` | `production` |
 | `LOG_LEVEL` | Logging verbosity: `debug`, `info`, `warn`, or `error` | `info` |
+| `VAPID_PUBLIC_KEY` | Public key for browser push notifications | Not set |
+| `VAPID_PRIVATE_KEY` | Private key for browser push notifications | Not set |
+| `VAPID_SUBJECT` | Contact URI for push services, must be a `mailto:` address | Not set |
+
+## Web push notifications (VAPID)
+
+`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are optional, but they must be set together. A partial set (one or two of the three) is treated as a mistake rather than a valid "push half-enabled" state: the app refuses to start with a clear error instead of silently leaving the channel disabled.
+
+Generate a keypair with:
+
+```bash
+npm run generate-vapid-keys
+```
+
+This prints a `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` pair to add to your `.env` file, plus a reminder to set `VAPID_SUBJECT` to a `mailto:` address a push service can reach you at if there's a problem with your traffic.
+
+Leave all three unset and the push channel stays hidden in Settings. Email reminders are unaffected either way.
+
+Replacing the keys later invalidates every existing browser subscription at once. Each device has to turn push back on from Settings to start receiving notifications again, so only rotate them when you mean to force that.
 
 ## Value constraints and defaults
 
