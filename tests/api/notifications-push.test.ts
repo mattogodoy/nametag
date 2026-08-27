@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NextResponse } from 'next/server';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
@@ -6,13 +7,21 @@ const mocks = vi.hoisted(() => ({
   deleteMany: vi.fn(),
   userUpdate: vi.fn(),
   getVapidDetails: vi.fn(),
+  findUnique: vi.fn(),
+  count: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock('../../lib/auth', () => ({ auth: mocks.auth }));
 
 vi.mock('../../lib/prisma', () => ({
   prisma: {
-    pushSubscription: { upsert: mocks.upsert, deleteMany: mocks.deleteMany },
+    pushSubscription: {
+      upsert: mocks.upsert,
+      deleteMany: mocks.deleteMany,
+      findUnique: mocks.findUnique,
+      count: mocks.count,
+    },
     user: { update: mocks.userUpdate },
   },
 }));
@@ -21,6 +30,15 @@ vi.mock('../../lib/notifications/vapid', () => ({
   getVapidDetails: mocks.getVapidDetails,
   isPushConfigured: () => mocks.getVapidDetails() !== null,
 }));
+
+vi.mock('../../lib/rate-limit', async () => {
+  const actual =
+    await vi.importActual<typeof import('../../lib/rate-limit')>('../../lib/rate-limit');
+  return {
+    ...actual,
+    checkRateLimit: mocks.checkRateLimit,
+  };
+});
 
 import { GET as getPublicKey } from '../../app/api/notifications/push/public-key/route';
 import { POST as subscribe } from '../../app/api/notifications/push/subscribe/route';
@@ -71,6 +89,10 @@ describe('push API', () => {
       subject: 'mailto:a@b.test',
     });
     mocks.upsert.mockResolvedValue({ id: 'sub-1' });
+    mocks.checkRateLimit.mockReturnValue(null);
+    // No existing row and comfortably under the cap unless a test says otherwise.
+    mocks.findUnique.mockResolvedValue(null);
+    mocks.count.mockResolvedValue(0);
   });
 
   it('serves the public key but never the private key', async () => {
@@ -151,6 +173,38 @@ describe('push API', () => {
     );
 
     expect(response.status).toBe(400);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a new subscription once the caller already holds 20 devices', async () => {
+    mocks.count.mockResolvedValue(20);
+
+    const response = await subscribe(request(validBody));
+
+    expect(response.status).toBe(409);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('allows re-subscribing an existing endpoint even at the cap', async () => {
+    // The endpoint already has a row, so this call updates it rather than
+    // creating a new one, and must not be blocked by the per-user cap.
+    mocks.findUnique.mockResolvedValue({ id: 'sub-1' });
+    mocks.count.mockResolvedValue(20);
+
+    const response = await subscribe(request(validBody));
+
+    expect(response.status).toBe(201);
+    expect(mocks.upsert).toHaveBeenCalled();
+  });
+
+  it('is rate limited', async () => {
+    mocks.checkRateLimit.mockReturnValue(
+      NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    );
+
+    const response = await subscribe(request(validBody));
+
+    expect(response.status).toBe(429);
     expect(mocks.upsert).not.toHaveBeenCalled();
   });
 

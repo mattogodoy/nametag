@@ -1,5 +1,5 @@
 import { pushSubscribeSchema, emailRemindersSchema } from '../validations';
-import { zodBody, jsonResponse, ref400, ref401, ref404, refSuccess, pathParam, sessionOrToken } from './helpers';
+import { zodBody, jsonResponse, resp, ref400, ref401, ref404, refSuccess, pathParam, sessionOrToken } from './helpers';
 
 export function notificationsPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -29,13 +29,15 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
         description:
           'Stores a serialised browser PushSubscription for the current device. Upserts on ' +
           'endpoint, so a browser that re-subscribes updates its existing row rather than ' +
-          'creating a duplicate.',
+          'creating a duplicate. Capped at 20 devices per user.',
         security: sessionOrToken(),
         requestBody: zodBody(pushSubscribeSchema),
         responses: {
           '201': refSuccess(),
           '400': ref400(),
           '401': ref401(),
+          '409': resp('Maximum number of devices reached'),
+          '429': resp('Rate limited'),
         },
       },
     },

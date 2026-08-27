@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { createModuleLogger } from '@/lib/logger';
 import { getVapidDetails } from '../vapid';
 import { renderShortForm } from '../render';
+import { MAX_PUSH_SUBSCRIPTIONS_PER_USER } from '../push-limits';
 import type { ChannelOutcome, NotificationEnvelope } from '../types';
 
 const log = createModuleLogger('notifications:push');
@@ -41,6 +42,11 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId: envelope.userId },
     select: { id: true, endpoint: true, p256dh: true, auth: true },
+    // Belt, not the primary control: the cap is enforced at subscribe time.
+    // This only matters if rows already exceeded it (data migrated in, cap
+    // lowered later), and keeps one such account from making this driver
+    // iterate an unbounded list once per envelope.
+    take: MAX_PUSH_SUBSCRIPTIONS_PER_USER,
   });
 
   if (subscriptions.length === 0) {

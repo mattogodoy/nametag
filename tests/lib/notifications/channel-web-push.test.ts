@@ -108,6 +108,12 @@ describe('sendWebPush', () => {
     );
   });
 
+  it('caps the subscription lookup, as a belt behind the per-user write cap', async () => {
+    await sendWebPush(envelope);
+
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 20 }));
+  });
+
   it('reports delivered when at least one of several devices succeeds', async () => {
     mocks.findMany.mockResolvedValue([subscription('sub-1'), subscription('sub-2')]);
     mocks.sendNotification
