@@ -27,6 +27,7 @@ model User {
   weeklyDigestEnabled     Boolean   @default(false) // Opt-in
   weeklyDigestWeekday     Int       @default(1)     // 0 = Sunday ... 6 = Saturday
   lastWeeklyDigestSent    DateTime?
+  emailRemindersEnabled Boolean @default(true)
   language           String?   @default("en") // "en" or "es-ES"
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
@@ -54,6 +55,7 @@ model User {
   relationshipTypes     RelationshipType[]
   subscription          Subscription?
   unsubscribeTokens     UnsubscribeToken[]
+  pushSubscriptions     PushSubscription[]
   apiTokens             ApiToken[]
   cardDavConnection     CardDavConnection?
   cardDavPendingImports CardDavPendingImport[]
@@ -544,6 +546,32 @@ model UnsubscribeToken {
   @@index([entityId, reminderType])
   @@index([expiresAt])
   @@map("unsubscribe_tokens")
+}
+
+// PushSubscription Model - one row per browser that granted notification permission
+//
+// Not soft-deletable on purpose. A revoked device must stop receiving pushes
+// immediately, and a soft-deleted row that some query forgot to filter would
+// keep getting notifications the user believes they turned off.
+model PushSubscription {
+  id        String  @id @default(cuid())
+  userId    String
+  // The push service URL issued by the browser. Unique so that a browser
+  // re-subscribing updates its row instead of accumulating duplicates.
+  endpoint  String  @unique @db.Text
+  p256dh    String
+  auth      String
+  // Raw User-Agent at subscribe time, used only to label the device in settings.
+  userAgent String?
+
+  lastSuccessAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 // Scope of an API token: read-only or full read/write access.
