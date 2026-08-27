@@ -464,6 +464,19 @@ describe('public/sw.js', () => {
       expect(scope.recorder.openedWindows).toEqual(['/people/abc']);
     });
 
+    it('does not focus a tab whose host merely extends the origin', async () => {
+      // Same prefix-check weakness as openWindow's guard: a tab on
+      // "https://<origin>.evil.com" starts with the real origin as a string
+      // but is not actually same-origin, and must not be focused.
+      scope.setClients([{ url: `${ORIGIN}.evil.com/whatever`, focus: async () => {}, navigate: async () => {} }]);
+
+      await dispatchNotificationClick(scope, { url: '/people/abc' });
+
+      expect(scope.recorder.focusedClients).toEqual([]);
+      expect(scope.recorder.navigatedTo).toEqual([]);
+      expect(scope.recorder.openedWindows).toEqual(['/people/abc']);
+    });
+
     it('falls back to /dashboard rather than opening a cross-origin window', async () => {
       // Unlike client.navigate(), openWindow() is not blocked cross-origin by
       // the platform, so the worker has to validate the target itself before
@@ -481,6 +494,28 @@ describe('public/sw.js', () => {
       await dispatchNotificationClick(scope, { url: `${ORIGIN}/people/abc` });
 
       expect(scope.recorder.openedWindows).toEqual([`${ORIGIN}/people/abc`]);
+    });
+
+    it('falls back to /dashboard for a protocol-relative url instead of opening it', async () => {
+      // A string prefix check on target.startsWith('/') is fooled by a
+      // protocol-relative url: openWindow would resolve it off-origin even
+      // though the raw string starts with a slash.
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: '//evil.test/x' });
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('falls back to /dashboard for a hostname that merely extends the origin', async () => {
+      // A string prefix check on target.startsWith(self.location.origin) is
+      // fooled by an origin extension: "https://<origin>.evil.com" starts
+      // with the real origin but is a different host entirely.
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: `${ORIGIN}.evil.com/x` });
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
     });
 
     it('does not let a rejected navigate become an unhandled rejection', async () => {

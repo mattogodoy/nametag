@@ -217,7 +217,19 @@ self.addEventListener('notificationclick', (event) => {
        * fail outright.
        */
       for (const client of clients) {
-        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+        /*
+         * Resolved through URL and compared by origin rather than by string
+         * prefix. A prefix test accepts "https://app.test.evil.com" when the
+         * origin is "https://app.test", since the string does start with it.
+         */
+        let clientOrigin;
+        try {
+          clientOrigin = new URL(client.url).origin;
+        } catch {
+          continue;
+        }
+
+        if (clientOrigin === self.location.origin && 'focus' in client) {
           // The result is intentionally discarded (not awaited before
           // focus()), so a rejection here must be caught or it surfaces as an
           // unhandled rejection in the worker instead of just a missed navigation.
@@ -231,8 +243,20 @@ self.addEventListener('notificationclick', (event) => {
       // instead. `target` comes from the push payload; falling back to
       // /dashboard keeps a malformed or hostile value from opening a window
       // to an arbitrary origin.
-      const safeTarget =
-        target.startsWith('/') || target.startsWith(self.location.origin) ? target : '/dashboard';
+      //
+      // Resolved through URL and compared by origin rather than by string
+      // prefix. A prefix test accepts a protocol-relative "//evil.test/x",
+      // which resolves off-origin, and accepts "https://app.test.evil.com"
+      // when the origin is "https://app.test".
+      let safeTarget = '/dashboard';
+      try {
+        const resolved = new URL(target, self.location.origin);
+        if (resolved.origin === self.location.origin) {
+          safeTarget = target;
+        }
+      } catch {
+        // Unparseable: fall through to the dashboard.
+      }
 
       return self.clients.openWindow(safeTarget);
     })
