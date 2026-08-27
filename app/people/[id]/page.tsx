@@ -21,6 +21,7 @@ import { getDateDisplayTitle } from '@/lib/important-date-types';
 import JournalSection from '@/components/JournalSection';
 import MessagingLinks from '@/components/MessagingLinks';
 import { customFieldValuesInclude } from '@/lib/prisma-queries';
+import { createLabelResolver } from '@/lib/relationship-labels';
 
 function isSafeUrl(url: string): boolean {
   try {
@@ -288,6 +289,49 @@ export default async function PersonDetailsPage({
   // relationshipToUserId stores the relationship FROM the user TO this person
   // (e.g., if Peter is my child, it stores "Child"). Use it directly.
   const relationshipToUser = person.relationshipToUser;
+
+  // One resolver for the whole page: it loads every displayed person's data up
+  // front, so `resolve` below is a synchronous, cheap call per relationship.
+  const labelResolver = await createLabelResolver(
+    session.user.id,
+    [person.id, ...relatedPersonIds],
+    {
+      userContext: {
+        fields: {
+          name: session.user.name ?? null,
+          surname: session.user.surname ?? null,
+          nickname: session.user.nickname ?? null,
+        },
+        groupIds: new Set<string>(),
+        customValues: new Map(),
+        dates: [],
+      },
+    }
+  );
+
+  const relationshipsWithLabels = person.relationshipsTo.map((rel) => ({
+    ...rel,
+    resolvedLabel: rel.relationshipType
+      ? labelResolver.resolve({
+          relationshipTypeId: rel.relationshipType.id,
+          typeLabel: rel.relationshipType.label,
+          describedPersonId: rel.personId,
+          otherPersonId: person.id,
+        }).label
+      : null,
+  }));
+
+  const resolvedRelationshipToUser = relationshipToUser
+    ? {
+        ...relationshipToUser,
+        label: labelResolver.resolve({
+          relationshipTypeId: relationshipToUser.id,
+          typeLabel: relationshipToUser.label,
+          describedPersonId: person.id,
+          otherPersonId: 'USER',
+        }).label,
+      }
+    : relationshipToUser;
 
   return (
     <div className="min-h-screen bg-background">
@@ -820,11 +864,11 @@ export default async function PersonDetailsPage({
                 </h3>
 
                 {/* Relationship to user */}
-                {relationshipToUser && (
+                {resolvedRelationshipToUser && (
                   <UserRelationshipCard
                     personId={person.id}
                     personName={formatGraphName(person, nameOrder, nameDisplayFormat)}
-                    relationshipToUser={relationshipToUser}
+                    relationshipToUser={resolvedRelationshipToUser}
                     relationshipTypes={relationshipTypes}
                     userName={user?.name || ''}
                     userPhoto={user?.photo || null}
@@ -835,7 +879,7 @@ export default async function PersonDetailsPage({
                 <RelationshipManager
                   personId={person.id}
                   personName={formatGraphName(person, nameOrder, nameDisplayFormat)}
-                  relationships={person.relationshipsTo}
+                  relationships={relationshipsWithLabels}
                   availablePeople={availablePeople}
                   relationshipTypes={relationshipTypes}
                   currentUser={{
