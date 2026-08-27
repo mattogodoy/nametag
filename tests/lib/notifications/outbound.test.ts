@@ -1,9 +1,18 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import http from 'node:http';
+import net from 'node:net';
 import type { AddressInfo } from 'node:net';
 
-const mocks = vi.hoisted(() => ({ isSaasMode: vi.fn(() => false) }));
+const mocks = vi.hoisted(() => ({
+  isSaasMode: vi.fn(() => false),
+  resolve4: vi.fn(),
+  resolve6: vi.fn(),
+}));
 vi.mock('../../../lib/features', () => ({ isSaasMode: mocks.isSaasMode }));
+vi.mock('dns', () => ({
+  default: { promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6 } },
+  promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6 },
+}));
 
 import { postJson } from '../../../lib/notifications/outbound';
 
@@ -11,6 +20,15 @@ let server: http.Server;
 let base: string;
 let lastRequest: { headers: http.IncomingHttpHeaders; body: string } | null = null;
 let handler: (req: http.IncomingMessage, res: http.ServerResponse) => void;
+
+// A raw TCP server that never speaks HTTP, used to force real transport-level
+// failures (a stalled/trickling connection, a broken TLS handshake) that a
+// mocked client could not produce.
+let trickleServer: net.Server;
+let trickleBase: string;
+
+let brokenTlsServer: net.Server;
+let brokenTlsBase: string;
 
 beforeAll(async () => {
   server = http.createServer((req, res) => {
@@ -23,13 +41,49 @@ beforeAll(async () => {
       handler(req, res);
     });
   });
-
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+
+  trickleServer = net.createServer((socket) => {
+    // Trickle a *valid* HTTP response, one byte every 2s, forever. Each byte
+    // is a legal continuation of the one before it, so the HTTP parser never
+    // errors, it just keeps waiting for the rest. Each byte also resets the
+    // socket's inactivity timer (the `timeout` option), so that timer alone
+    // never fires either. Only a total deadline independent of socket
+    // activity can end this before the headers would eventually complete.
+    const headerText = 'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n';
+    let index = 0;
+    // The client destroys its end once the deadline fires; a write racing
+    // that teardown throws EPIPE, which is expected here and not a test
+    // failure, so it needs somewhere to land.
+    socket.on('error', () => {
+      /* the client closed first; nothing to do */
+    });
+    const interval = setInterval(() => {
+      if (socket.destroyed || !socket.writable || index >= headerText.length) return;
+      socket.write(headerText[index]);
+      index++;
+    }, 2000);
+    socket.on('close', () => clearInterval(interval));
+  });
+  await new Promise<void>((resolve) => trickleServer.listen(0, '127.0.0.1', resolve));
+  trickleBase = `http://127.0.0.1:${(trickleServer.address() as AddressInfo).port}`;
+
+  brokenTlsServer = net.createServer((socket) => {
+    socket.on('data', () => {
+      socket.write('NOT-TLS-DATA');
+    });
+  });
+  await new Promise<void>((resolve) => brokenTlsServer.listen(0, '127.0.0.1', resolve));
+  brokenTlsBase = `https://127.0.0.1:${(brokenTlsServer.address() as AddressInfo).port}`;
 });
 
 afterAll(async () => {
-  await new Promise<void>((resolve) => server.close(() => resolve()));
+  await Promise.all([
+    new Promise<void>((resolve) => server.close(() => resolve())),
+    new Promise<void>((resolve) => trickleServer.close(() => resolve())),
+    new Promise<void>((resolve) => brokenTlsServer.close(() => resolve())),
+  ]);
 });
 
 describe('postJson', () => {
@@ -121,4 +175,55 @@ describe('postJson', () => {
 
     expect(result).toEqual({ ok: false, code: 'timeout' });
   }, 15000);
+
+  it('reports timeout for a connection that trickles bytes forever, not just one that stays silent', async () => {
+    // A byte every 2s keeps the socket's inactivity timer from ever firing on
+    // its own. Only a total deadline independent of activity ends this.
+    const result = await postJson(`${trickleBase}/trickle`, '{}', {});
+
+    expect(result).toEqual({ ok: false, code: 'timeout' });
+  }, 15000);
+
+  it('resolves rather than rejects when a header value is invalid, e.g. contains a CRLF', async () => {
+    const result = await postJson(`${base}/hook`, '{}', { 'X-Bad': 'value\r\ninjected: true' });
+
+    expect(result).toEqual({ ok: false, code: 'unknown' });
+  });
+
+  it('resolves rather than rejects when a header value has non-latin1 characters', async () => {
+    const result = await postJson(`${base}/hook`, '{}', { 'X-Bad': 'you good 🎂' });
+
+    expect(result).toEqual({ ok: false, code: 'unknown' });
+  });
+
+  it('reports dns for a hostname that fails to resolve, distinct from a policy rejection', async () => {
+    mocks.resolve4.mockRejectedValue(Object.assign(new Error('NXDOMAIN'), { code: 'ENOTFOUND' }));
+    mocks.resolve6.mockRejectedValue(Object.assign(new Error('NXDOMAIN'), { code: 'ENOTFOUND' }));
+
+    const result = await postJson('http://does-not-resolve.test/hook', '{}', {});
+
+    expect(result).toEqual({ ok: false, code: 'dns' });
+  });
+
+  it('pins the socket to the address resolveTarget approved, and keeps the Host header name-based', async () => {
+    const port = (server.address() as AddressInfo).port;
+    // "pinned.test" is not a domain that exists; a real DNS lookup of it
+    // fails with ENOTFOUND. The only way this reaches our loopback listener
+    // at all is through the pinned `lookup` override, which answers with
+    // 127.0.0.1 regardless of what is actually asked for.
+    mocks.resolve4.mockResolvedValue(['127.0.0.1']);
+    mocks.resolve6.mockRejectedValue(Object.assign(new Error('no AAAA'), { code: 'ENODATA' }));
+    handler = (_req, res) => res.writeHead(200).end();
+
+    const result = await postJson(`http://pinned.test:${port}/`, '{}', {});
+
+    expect(result).toEqual({ ok: true });
+    expect(lastRequest?.headers.host).toBe(`pinned.test:${port}`);
+  });
+
+  it('categorizes a broken TLS handshake distinctly from a refused connection', async () => {
+    const result = await postJson(`${brokenTlsBase}/hook`, '{}', {});
+
+    expect(result).toEqual({ ok: false, code: 'tls' });
+  }, 10000);
 });

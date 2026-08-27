@@ -213,15 +213,30 @@ function expandIPv6(ip: string): number[] | null {
 import net from 'net';
 
 /**
+ * Why resolveTarget refused to hand back a target.
+ *
+ * `policy` means the request was refused on its merits (wrong protocol,
+ * disallowed port, private address, and so on): retrying with the same URL
+ * will refuse again. `dns` means resolution itself failed (NXDOMAIN,
+ * SERVFAIL, a resolver timeout): the URL might be fine and a later retry
+ * might succeed. Callers use this to choose an outbound failure code that
+ * does not mislead the user about which one happened.
+ */
+export type BlockedReason = 'policy' | 'dns';
+
+/**
  * A URL that policy refuses to connect to.
  *
  * Distinct from a network failure: nothing was attempted. Callers surface this
  * as `blocked` rather than as a transport error.
  */
 export class BlockedUrlError extends Error {
-  constructor(message: string) {
+  readonly reason: BlockedReason;
+
+  constructor(message: string, reason: BlockedReason = 'policy') {
     super(message);
     this.name = 'BlockedUrlError';
+    this.reason = reason;
   }
 }
 
@@ -329,7 +344,7 @@ export async function resolveTarget(
   }
 
   if (candidates.length === 0) {
-    throw new BlockedUrlError('Could not resolve hostname');
+    throw new BlockedUrlError('Could not resolve hostname', 'dns');
   }
 
   if (policy.blockPrivateAddresses) {
