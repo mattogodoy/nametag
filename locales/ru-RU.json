@@ -66,6 +66,14 @@
     "createJournal": "Новая запись",
     "map": "Карта"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} сегодня",
+      "importantDateLeadBody": "{dateTitle}: {formattedDate}",
+      "contactBody": "Пора связаться",
+      "digestTitle": "Ваша неделя"
+    }
+  },
   "settings": {
     "title": "Настройки",
     "menu": "Меню настроек",
@@ -166,6 +174,25 @@
       "digestError": "Не удалось сохранить настройку еженедельной сводки",
       "digestSuccess": "Настройка еженедельной сводки обновлена",
       "emailNotConfigured": "На этом сервере не настроена отправка почты, поэтому эти уведомления невозможно отправить. Попросите администратора настроить отправку почты.",
+      "channelsTitle": "Куда приходят напоминания",
+      "channelsDescription": "Напоминания отправляются во все каналы, которые вы включите здесь.",
+      "channelEmail": "Электронная почта",
+      "channelPush": "Push-уведомления",
+      "channelEmailError": "Не удалось сохранить настройку доставки напоминаний",
+      "pushNotConfigured": "Push-уведомления не настроены на этом сервере.",
+      "pushUnsupported": "Этот браузер не поддерживает push-уведомления.",
+      "pushBlocked": "Уведомления для этого сайта заблокированы в настройках браузера.",
+      "pushEnable": "Включить на этом устройстве",
+      "pushEnabled": "Включено на этом устройстве",
+      "pushEnableError": "Не удалось включить push-уведомления.",
+      "pushIosHint": "На iPhone и iPad сначала добавьте Nametag на главный экран.",
+      "pushDevices": "Устройства, получающие уведомления",
+      "pushRemove": "Удалить",
+      "pushRemoveError": "Не удалось удалить это устройство",
+      "pushNoDevices": "Пока нет устройств.",
+      "pushDeviceUnknown": "Неизвестное устройство",
+      "pushDeviceBrowser": "Браузер",
+      "pushDeviceLabel": "{browser} на {os}",
       "weekdays": {
         "0": "Воскресенье",
         "1": "Понедельник",

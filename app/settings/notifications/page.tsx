@@ -3,8 +3,10 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { isEmailConfigured } from '@/lib/email';
+import { isPushConfigured } from '@/lib/notifications/vapid';
 import ReminderLeadTimeSelector from '@/components/ReminderLeadTimeSelector';
 import WeeklyDigestSettings from '@/components/WeeklyDigestSettings';
+import NotificationChannelsCard from '@/components/NotificationChannelsCard';
 
 export default async function NotificationSettingsPage() {
   const session = await auth();
@@ -24,7 +26,19 @@ export default async function NotificationSettingsPage() {
       defaultReminderLeadDays: true,
       weeklyDigestEnabled: true,
       weeklyDigestWeekday: true,
+      emailRemindersEnabled: true,
     },
+  });
+
+  const devices = await prisma.pushSubscription.findMany({
+    where: { userId: session.user.id },
+    // NEVER select `endpoint` here. The subscribe route upserts on endpoint and
+    // reassigns userId, so anyone who learns a victim's endpoint string can move
+    // that row to their own account and silently kill the victim's push. Nothing
+    // in the app exposes it today; keep it that way.
+    // createdAt is ordered on but not selected: nothing renders it.
+    select: { id: true, userAgent: true },
+    orderBy: { createdAt: 'asc' },
   });
 
   // A self-hoster without SMTP should not be able to switch on an email that
@@ -33,6 +47,13 @@ export default async function NotificationSettingsPage() {
 
   return (
     <div className="space-y-6">
+      <NotificationChannelsCard
+        emailEnabled={user?.emailRemindersEnabled ?? true}
+        emailAvailable={emailAvailable}
+        pushAvailable={isPushConfigured()}
+        devices={devices.map((device) => ({ id: device.id, userAgent: device.userAgent }))}
+      />
+
       {!emailAvailable && (
         <div className="bg-surface shadow rounded-lg p-6">
           <p className="text-sm text-muted">{t('emailNotConfigured')}</p>

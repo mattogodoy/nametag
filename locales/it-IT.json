@@ -66,6 +66,14 @@
     "createJournal": "Nuova voce",
     "map": "Mappa"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} oggi",
+      "importantDateLeadBody": "{dateTitle} il {formattedDate}",
+      "contactBody": "È ora di risentirsi",
+      "digestTitle": "La tua settimana"
+    }
+  },
   "settings": {
     "title": "Impostazioni",
     "menu": "Menu Impostazioni",
@@ -166,6 +174,25 @@
       "digestError": "Non è stato possibile salvare l'impostazione del riepilogo settimanale",
       "digestSuccess": "Riepilogo settimanale aggiornato",
       "emailNotConfigured": "L'invio di email non è configurato su questa istanza, quindi queste notifiche non possono essere inviate. Chiedi al tuo amministratore di configurare l'email.",
+      "channelsTitle": "Dove ricevi i promemoria",
+      "channelsDescription": "I promemoria vengono inviati a tutti i canali che attivi qui.",
+      "channelEmail": "E-mail",
+      "channelPush": "Notifiche push",
+      "channelEmailError": "Non è stato possibile salvare la tua impostazione di consegna dei promemoria",
+      "pushNotConfigured": "Le notifiche push non sono configurate su questo server.",
+      "pushUnsupported": "Questo browser non supporta le notifiche push.",
+      "pushBlocked": "Le notifiche sono bloccate per questo sito nelle impostazioni del browser.",
+      "pushEnable": "Attiva su questo dispositivo",
+      "pushEnabled": "Attive su questo dispositivo",
+      "pushEnableError": "Non è stato possibile attivare le notifiche push.",
+      "pushIosHint": "Su iPhone e iPad, aggiungi prima Nametag alla schermata Home.",
+      "pushDevices": "Dispositivi che ricevono le notifiche",
+      "pushRemove": "Rimuovi",
+      "pushRemoveError": "Non è stato possibile rimuovere quel dispositivo",
+      "pushNoDevices": "Ancora nessun dispositivo.",
+      "pushDeviceUnknown": "Dispositivo sconosciuto",
+      "pushDeviceBrowser": "Browser",
+      "pushDeviceLabel": "{browser} su {os}",
       "weekdays": {
         "0": "Domenica",
         "1": "Lunedì",

@@ -17,8 +17,9 @@ interface FakeRequest {
 
 interface FakeEvent {
   request?: FakeRequest;
-  data?: { type?: string };
-  respondWith: (value: unknown) => void;
+  data?: { type?: string; json?: () => unknown };
+  notification?: { close: () => void; data: unknown };
+  respondWith?: (value: unknown) => void;
   waitUntil: (value: unknown) => void;
 }
 
@@ -30,11 +31,16 @@ interface FakeEvent {
 interface Recorder {
   adds: string[];
   puts: string[];
+  notifications: Array<{ title: string; options: Record<string, unknown> }>;
+  openedWindows: string[];
+  focusedClients: string[];
+  navigatedTo: string[];
 }
 
 interface Scope {
   handlers: Map<string, Handler>;
   recorder: Recorder;
+  setClients: (clients: Array<{ url: string; focus: () => Promise<unknown>; navigate: (url: string) => Promise<unknown> }>) => void;
 }
 
 function keyOf(target: FakeRequest | string): string {
@@ -46,8 +52,9 @@ function keyOf(target: FakeRequest | string): string {
 /** Executes public/sw.js against a stub scope that records cache writes. */
 function loadWorker(): Scope {
   const handlers = new Map<string, Handler>();
-  const recorder: Recorder = { adds: [], puts: [] };
+  const recorder: Recorder = { adds: [], puts: [], notifications: [], openedWindows: [], focusedClients: [], navigatedTo: [] };
   const store = new Map<string, unknown>();
+  let openClients: Array<{ url: string; focus: () => Promise<unknown>; navigate: (url: string) => Promise<unknown> }> = [];
 
   const cache = {
     add: (url: string) => {
@@ -69,8 +76,21 @@ function loadWorker(): Scope {
   const workerSelf = {
     addEventListener: (type: string, handler: Handler) => handlers.set(type, handler),
     skipWaiting: () => Promise.resolve(),
-    clients: { claim: () => Promise.resolve() },
+    clients: {
+      claim: () => Promise.resolve(),
+      matchAll: () => Promise.resolve(openClients),
+      openWindow: (url: string) => {
+        recorder.openedWindows.push(url);
+        return Promise.resolve(null);
+      },
+    },
     location: { origin: ORIGIN },
+    registration: {
+      showNotification: (title: string, options: Record<string, unknown>) => {
+        recorder.notifications.push({ title, options });
+        return Promise.resolve();
+      },
+    },
   };
 
   const workerCaches = {
@@ -92,7 +112,21 @@ function loadWorker(): Scope {
     Response
   );
 
-  return { handlers, recorder };
+  const setClients = (clients: Array<{ url: string; focus: () => Promise<unknown>; navigate: (url: string) => Promise<unknown> }>) => {
+    openClients = clients.map((client) => ({
+      url: client.url,
+      focus: () => {
+        recorder.focusedClients.push(client.url);
+        return client.focus();
+      },
+      navigate: (url: string) => {
+        recorder.navigatedTo.push(url);
+        return client.navigate(url);
+      },
+    }));
+  };
+
+  return { handlers, recorder, setClients };
 }
 
 /** Dispatches a lifecycle event and collects every promise the worker handed back. */
@@ -141,6 +175,28 @@ function dispatchFetch(
   };
 }
 
+/** Dispatches a push event whose data behaves like a real PushMessageData. */
+function dispatchPush(scope: Scope, json?: () => unknown): Promise<PromiseSettledResult<unknown>[]> {
+  const pending: Promise<unknown>[] = [];
+  scope.handlers.get('push')?.({
+    data: json ? { json } : undefined,
+    respondWith: () => {},
+    waitUntil: (value: unknown) => pending.push(Promise.resolve(value)),
+  });
+  return Promise.allSettled(pending);
+}
+
+function dispatchNotificationClick(scope: Scope, data: unknown): Promise<{ settled: PromiseSettledResult<unknown>[]; closed: boolean }> {
+  const pending: Promise<unknown>[] = [];
+  let closed = false;
+  scope.handlers.get('notificationclick')?.({
+    notification: { close: () => { closed = true; }, data },
+    respondWith: () => {},
+    waitUntil: (value: unknown) => pending.push(Promise.resolve(value)),
+  });
+  return Promise.allSettled(pending).then((r: PromiseSettledResult<unknown>[]) => ({ settled: r, closed }));
+}
+
 describe('public/sw.js', () => {
   let scope: Scope;
 
@@ -148,12 +204,14 @@ describe('public/sw.js', () => {
     scope = loadWorker();
   });
 
-  it('registers the four lifecycle handlers', () => {
+  it('registers the six lifecycle handlers', () => {
     expect([...scope.handlers.keys()].sort()).toEqual([
       'activate',
       'fetch',
       'install',
       'message',
+      'notificationclick',
+      'push',
     ]);
   });
 
@@ -280,6 +338,215 @@ describe('public/sw.js', () => {
       // Stale-while-revalidate: /logo.svg is not content-hashed, so a refresh
       // must reach the cache rather than the cached copy being served forever.
       expect(scope.recorder.puts).toEqual(['/logo.svg']);
+    });
+  });
+
+  describe('push notifications', () => {
+    it('shows a notification with the right title, body, tag, and url from a valid payload', async () => {
+      await dispatchPush(scope, () => ({
+        title: 'Birthday: Alice',
+        body: 'Alice Smith turns 30 today',
+        url: '/people/person-123',
+        tag: 'birthday:person-123',
+      }));
+
+      expect(scope.recorder.notifications).toHaveLength(1);
+      const notif = scope.recorder.notifications[0]!;
+      expect(notif.title).toBe('Birthday: Alice');
+      expect(notif.options.body).toBe('Alice Smith turns 30 today');
+      expect(notif.options.tag).toBe('birthday:person-123');
+      expect(notif.options.data).toEqual({ url: '/people/person-123' });
+    });
+
+    it('shows nothing when event.data is absent', async () => {
+      await dispatchPush(scope, undefined);
+      expect(scope.recorder.notifications).toEqual([]);
+    });
+
+    it('shows nothing when the payload is malformed JSON', async () => {
+      await dispatchPush(scope, () => {
+        throw new Error('Invalid JSON');
+      });
+      expect(scope.recorder.notifications).toEqual([]);
+    });
+
+    it('shows nothing when the payload has no title', async () => {
+      await dispatchPush(scope, () => ({
+        body: 'Some body text',
+        url: '/dashboard',
+        tag: 'some-tag',
+      }));
+      expect(scope.recorder.notifications).toEqual([]);
+    });
+
+    it('writes nothing to the cache', async () => {
+      await dispatchPush(scope, () => ({
+        title: 'Test Notification',
+        body: 'Test body',
+        url: '/people/test',
+        tag: 'test:123',
+      }));
+
+      // The notification body carries a person's name, which must never land on
+      // disk unencrypted. Cache API entries survive logout, so we must assert
+      // that push handlers never write to caches.
+      expect(scope.recorder.puts).toEqual([]);
+      expect(scope.recorder.adds).toEqual([]);
+    });
+  });
+
+  describe('notification clicks', () => {
+    it('focuses an existing tab and navigates it to the payload url', async () => {
+      scope.setClients([
+        {
+          url: `${ORIGIN}/people`,
+          focus: async () => {},
+          navigate: async () => {},
+        },
+      ]);
+
+      const result = await dispatchNotificationClick(scope, { url: '/people/person-123' });
+
+      expect(result.closed).toBe(true);
+      expect(scope.recorder.navigatedTo).toEqual(['/people/person-123']);
+      expect(scope.recorder.focusedClients).toEqual([`${ORIGIN}/people`]);
+      expect(scope.recorder.openedWindows).toEqual([]);
+    });
+
+    it('opens a new window when no tab is open on this origin', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: '/people/person-456' });
+
+      expect(scope.recorder.openedWindows).toEqual(['/people/person-456']);
+      expect(scope.recorder.navigatedTo).toEqual([]);
+      expect(scope.recorder.focusedClients).toEqual([]);
+    });
+
+    it('falls back to /dashboard when data.url is missing', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, {});
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('falls back to /dashboard when data is absent entirely', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, undefined);
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('skips a cross-origin tab and focuses the same-origin one behind it', async () => {
+      scope.setClients([
+        { url: 'https://elsewhere.test/whatever', focus: async () => {}, navigate: async () => {} },
+        { url: `${ORIGIN}/dashboard`, focus: async () => {}, navigate: async () => {} },
+      ]);
+
+      await dispatchNotificationClick(scope, { url: '/people/abc' });
+
+      // Without the origin filter the loop would take the first client it sees,
+      // which is the foreign one.
+      expect(scope.recorder.focusedClients).toEqual([`${ORIGIN}/dashboard`]);
+      expect(scope.recorder.navigatedTo).toEqual(['/people/abc']);
+      expect(scope.recorder.openedWindows).toEqual([]);
+    });
+
+    it('opens a new window when the only open tab is cross-origin', async () => {
+      scope.setClients([{ url: 'https://elsewhere.test/whatever', focus: async () => {}, navigate: async () => {} }]);
+
+      await dispatchNotificationClick(scope, { url: '/people/abc' });
+
+      expect(scope.recorder.focusedClients).toEqual([]);
+      expect(scope.recorder.navigatedTo).toEqual([]);
+      expect(scope.recorder.openedWindows).toEqual(['/people/abc']);
+    });
+
+    it('does not focus a tab whose host merely extends the origin', async () => {
+      // Same prefix-check weakness as openWindow's guard: a tab on
+      // "https://<origin>.evil.com" starts with the real origin as a string
+      // but is not actually same-origin, and must not be focused.
+      scope.setClients([{ url: `${ORIGIN}.evil.com/whatever`, focus: async () => {}, navigate: async () => {} }]);
+
+      await dispatchNotificationClick(scope, { url: '/people/abc' });
+
+      expect(scope.recorder.focusedClients).toEqual([]);
+      expect(scope.recorder.navigatedTo).toEqual([]);
+      expect(scope.recorder.openedWindows).toEqual(['/people/abc']);
+    });
+
+    it('falls back to /dashboard rather than opening a cross-origin window', async () => {
+      // Unlike client.navigate(), openWindow() is not blocked cross-origin by
+      // the platform, so the worker has to validate the target itself before
+      // handing it to openWindow. No open tab, so this exercises that branch.
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: 'https://evil.test/phish' });
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('opens a same-origin absolute url as given', async () => {
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: `${ORIGIN}/people/abc` });
+
+      expect(scope.recorder.openedWindows).toEqual([`${ORIGIN}/people/abc`]);
+    });
+
+    it('falls back to /dashboard for a protocol-relative url instead of opening it', async () => {
+      // A string prefix check on target.startsWith('/') is fooled by a
+      // protocol-relative url: openWindow would resolve it off-origin even
+      // though the raw string starts with a slash.
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: '//evil.test/x' });
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('falls back to /dashboard for a hostname that merely extends the origin', async () => {
+      // A string prefix check on target.startsWith(self.location.origin) is
+      // fooled by an origin extension: "https://<origin>.evil.com" starts
+      // with the real origin but is a different host entirely.
+      scope.setClients([]);
+
+      await dispatchNotificationClick(scope, { url: `${ORIGIN}.evil.com/x` });
+
+      expect(scope.recorder.openedWindows).toEqual(['/dashboard']);
+    });
+
+    it('does not let a rejected navigate become an unhandled rejection', async () => {
+      // client.navigate() is fire-and-forget (never returned or awaited by
+      // the click handler), so a rejection there does not show up as a
+      // rejected waitUntil promise. It only shows up as a process-level
+      // 'unhandledRejection' event, which is what this actually has to check.
+      scope.setClients([
+        {
+          url: `${ORIGIN}/people`,
+          focus: async () => {},
+          navigate: async () => {
+            throw new Error('navigation aborted');
+          },
+        },
+      ]);
+
+      const unhandled: unknown[] = [];
+      const onUnhandledRejection = (reason: unknown) => unhandled.push(reason);
+      process.on('unhandledRejection', onUnhandledRejection);
+
+      try {
+        await dispatchNotificationClick(scope, { url: '/people/person-123' });
+        // Give the navigate() rejection a chance to surface as unhandled
+        // before asserting: Node reports it after the microtask queue drains.
+        await new Promise((resolve) => setImmediate(resolve));
+      } finally {
+        process.off('unhandledRejection', onUnhandledRejection);
+      }
+
+      expect(unhandled).toEqual([]);
     });
   });
 });

@@ -66,6 +66,14 @@
     "createJournal": "Neuer Eintrag",
     "map": "Karte"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} heute",
+      "importantDateLeadBody": "{dateTitle} am {formattedDate}",
+      "contactBody": "Zeit, sich zu melden",
+      "digestTitle": "Deine kommende Woche"
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "menu": "Einstellungsmenü",
@@ -166,6 +174,25 @@
       "digestError": "Deine Einstellung für die wöchentliche Übersicht konnte nicht gespeichert werden",
       "digestSuccess": "Wöchentliche Übersicht aktualisiert",
       "emailNotConfigured": "Der E-Mail-Versand ist auf dieser Instanz nicht eingerichtet, daher können diese Benachrichtigungen nicht gesendet werden. Bitte deinen Administrator, den E-Mail-Versand einzurichten.",
+      "channelsTitle": "Wo dich Erinnerungen erreichen",
+      "channelsDescription": "Erinnerungen gehen an alle Kanäle, die du hier aktivierst.",
+      "channelEmail": "E-Mail",
+      "channelPush": "Push-Benachrichtigungen",
+      "channelEmailError": "Deine Einstellung für die Erinnerungszustellung konnte nicht gespeichert werden",
+      "pushNotConfigured": "Push-Benachrichtigungen sind auf diesem Server nicht eingerichtet.",
+      "pushUnsupported": "Dieser Browser unterstützt keine Push-Benachrichtigungen.",
+      "pushBlocked": "Benachrichtigungen sind für diese Seite in deinen Browsereinstellungen blockiert.",
+      "pushEnable": "Auf diesem Gerät aktivieren",
+      "pushEnabled": "Auf diesem Gerät aktiviert",
+      "pushEnableError": "Push-Benachrichtigungen konnten nicht aktiviert werden.",
+      "pushIosHint": "Füge Nametag auf iPhone und iPad zuerst zum Home-Bildschirm hinzu.",
+      "pushDevices": "Geräte, die Benachrichtigungen erhalten",
+      "pushRemove": "Entfernen",
+      "pushRemoveError": "Das Gerät konnte nicht entfernt werden",
+      "pushNoDevices": "Noch keine Geräte.",
+      "pushDeviceUnknown": "Unbekanntes Gerät",
+      "pushDeviceBrowser": "Browser",
+      "pushDeviceLabel": "{browser} auf {os}",
       "weekdays": {
         "0": "Sonntag",
         "1": "Montag",

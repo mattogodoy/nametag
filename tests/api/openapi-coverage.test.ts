@@ -109,6 +109,15 @@ describe('OpenAPI coverage', () => {
     expect(stale, 'These spec paths have no route file.').toEqual([]);
   });
 
+  it('has no suppression for a route the spec already documents', () => {
+    const stale = [...INTENTIONALLY_UNDOCUMENTED.keys()].filter((path) => spec.paths[path]);
+
+    expect(
+      stale,
+      'these paths are documented, so their suppression is dead and hides the method and auth checks'
+    ).toEqual([]);
+  });
+
   it('documents every HTTP method each route exports', () => {
     const gaps: string[] = [];
 

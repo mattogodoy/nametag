@@ -66,6 +66,14 @@
     "createJournal": "新しいエントリー",
     "map": "マップ"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "本日は{dateTitle}です",
+      "importantDateLeadBody": "{formattedDate}は{dateTitle}です",
+      "contactBody": "そろそろ連絡してみませんか",
+      "digestTitle": "今週の予定"
+    }
+  },
   "settings": {
     "title": "設定",
     "menu": "設定メニュー",
@@ -166,6 +174,25 @@
       "digestError": "週間まとめの設定を保存できませんでした",
       "digestSuccess": "週間まとめを更新しました",
       "emailNotConfigured": "このインスタンスではメール送信が設定されていないため、これらの通知は送信できません。管理者にメール設定を依頼してください。",
+      "channelsTitle": "リマインダーの通知先",
+      "channelsDescription": "ここでオンにしたすべての方法にリマインダーが届きます。",
+      "channelEmail": "メール",
+      "channelPush": "プッシュ通知",
+      "channelEmailError": "リマインダーの配信設定を保存できませんでした",
+      "pushNotConfigured": "このサーバーではプッシュ通知が設定されていません。",
+      "pushUnsupported": "このブラウザはプッシュ通知に対応していません。",
+      "pushBlocked": "ブラウザの設定でこのサイトの通知がブロックされています。",
+      "pushEnable": "この端末で有効にする",
+      "pushEnabled": "この端末で有効です",
+      "pushEnableError": "プッシュ通知を有効にできませんでした。",
+      "pushIosHint": "iPhone と iPad では、先に Nametag をホーム画面に追加してください。",
+      "pushDevices": "通知を受け取る端末",
+      "pushRemove": "削除",
+      "pushRemoveError": "その端末を削除できませんでした",
+      "pushNoDevices": "端末はまだありません。",
+      "pushDeviceUnknown": "不明な端末",
+      "pushDeviceBrowser": "ブラウザ",
+      "pushDeviceLabel": "{os} の {browser}",
       "weekdays": {
         "0": "日曜日",
         "1": "月曜日",

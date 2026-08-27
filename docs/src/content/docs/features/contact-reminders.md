@@ -19,13 +19,13 @@ A person's detail page shows the last time you were in touch, along with a relat
 
 ## How reminders fire
 
-A daily background job checks every person who has a contact reminder enabled and compares their last contact date against the interval you configured. If enough time has passed, an email is queued. The job runs once a day, early in the morning, so you'll typically see a reminder the same day it becomes due rather than the exact minute it does.
+A daily background job checks every person who has a contact reminder enabled and compares their last contact date against the interval you configured. If enough time has passed, a reminder goes out on every channel you have turned on. The job runs once a day, early in the morning, so you'll typically see a reminder the same day it becomes due rather than the exact minute it does.
 
-## Email notifications
+## Notifications
 
-Reminder emails are sent through whichever email provider you've configured, Resend or SMTP. Every reminder email includes an unsubscribe link specific to that person. Clicking it turns off the contact reminder for that person only, it doesn't affect reminders for anyone else in your network.
+Reminders are delivered through whichever channels you have enabled in Settings under Notifications, email and browser push. See [Notifications](/features/notifications/) for how to turn each one on. Every reminder email includes an unsubscribe link specific to that person. Clicking it turns off the contact reminder for that person only, it doesn't affect reminders for anyone else in your network.
 
-Without an email provider configured, contact reminders are still tracked internally: the dashboard continues to show people you're overdue to contact, you just won't get an email about it.
+Without any channel configured on your instance, contact reminders are still tracked internally: the dashboard continues to show people you're overdue to contact, you just won't be notified about it.
 
 ## Tier limits
 

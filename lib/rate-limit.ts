@@ -81,6 +81,13 @@ export const rateLimitConfigs = {
     maxAttempts: 60,
     windowMs: 5 * 60 * 1000,
   },
+  // Push subscribe: 20 per 15 minutes. Each write drives outbound HTTP later
+  // (the nightly reminder run pushes to every stored subscription), so this
+  // is a second guard alongside the per-user row cap enforced in the route.
+  pushSubscribe: {
+    maxAttempts: 20,
+    windowMs: 15 * 60 * 1000,
+  },
 } as const;
 
 export type RateLimitType = keyof typeof rateLimitConfigs;

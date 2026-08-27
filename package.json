@@ -18,7 +18,8 @@
     "verify": "npm run lint && npm run typecheck && npm run test:run && npm run build",
     "verify:all": "npm run lint && npm run typecheck && npm run test:run && npm run test:e2e && npm run build",
     "seed:dev": "node_modules/.bin/tsx prisma/seed.ts",
-    "seed:prod": "node prisma/seed.production.js"
+    "seed:prod": "node prisma/seed.production.js",
+    "generate-vapid-keys": "node_modules/.bin/tsx scripts/generate-vapid-keys.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.1",
@@ -54,6 +55,7 @@
     "stripe": "^20.0.0",
     "tsdav": "^2.1.6",
     "uuid": "^14.0.1",
+    "web-push": "^3.6.7",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -76,6 +78,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^5.1.1",
     "baseline-browser-mapping": "^2.10.0",
     "dotenv": "^17.2.3",

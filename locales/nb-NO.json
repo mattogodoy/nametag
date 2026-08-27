@@ -66,6 +66,14 @@
     "createJournal": "Ny oppføring",
     "map": "Kart"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} i dag",
+      "importantDateLeadBody": "{dateTitle} den {formattedDate}",
+      "contactBody": "På tide å ta kontakt",
+      "digestTitle": "Uken din"
+    }
+  },
   "settings": {
     "title": "Innstillinger",
     "menu": "Innstillingsmeny",
@@ -166,6 +174,25 @@
       "digestError": "Kunne ikke lagre innstillingen for ukentlig oppsummering",
       "digestSuccess": "Ukentlig oppsummering oppdatert",
       "emailNotConfigured": "E-postutsendelse er ikke satt opp på denne instansen, så disse varslene kan ikke sendes. Be administratoren din om å sette opp e-post.",
+      "channelsTitle": "Hvor påminnelser når deg",
+      "channelsDescription": "Påminnelser sendes til alle kanalene du slår på her.",
+      "channelEmail": "E-post",
+      "channelPush": "Push-varsler",
+      "channelEmailError": "Kunne ikke lagre innstillingen for påminnelseslevering",
+      "pushNotConfigured": "Push-varsler er ikke satt opp på denne serveren.",
+      "pushUnsupported": "Denne nettleseren støtter ikke push-varsler.",
+      "pushBlocked": "Varsler er blokkert for dette nettstedet i nettleserinnstillingene.",
+      "pushEnable": "Slå på for denne enheten",
+      "pushEnabled": "På for denne enheten",
+      "pushEnableError": "Kunne ikke aktivere push-varsler.",
+      "pushIosHint": "På iPhone og iPad må du først legge Nametag til på startskjermen.",
+      "pushDevices": "Enheter som mottar varsler",
+      "pushRemove": "Fjern",
+      "pushRemoveError": "Kunne ikke fjerne den enheten",
+      "pushNoDevices": "Ingen enheter ennå.",
+      "pushDeviceUnknown": "Ukjent enhet",
+      "pushDeviceBrowser": "Nettleser",
+      "pushDeviceLabel": "{browser} på {os}",
       "weekdays": {
         "0": "Søndag",
         "1": "Mandag",

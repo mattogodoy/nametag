@@ -66,6 +66,14 @@
     "createJournal": "Nouvelle entrée",
     "map": "Carte"
   },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} aujourd'hui",
+      "importantDateLeadBody": "{dateTitle} le {formattedDate}",
+      "contactBody": "Le moment de reprendre contact",
+      "digestTitle": "Votre semaine à venir"
+    }
+  },
   "settings": {
     "title": "Paramètres",
     "menu": "Menu des paramètres",
@@ -166,6 +174,25 @@
       "digestError": "Impossible d'enregistrer votre paramètre de résumé hebdomadaire",
       "digestSuccess": "Résumé hebdomadaire mis à jour",
       "emailNotConfigured": "L'envoi d'e-mails n'est pas configuré sur cette instance, ces notifications ne peuvent donc pas être envoyées. Demandez à votre administrateur de configurer la messagerie.",
+      "channelsTitle": "Où vous recevez les rappels",
+      "channelsDescription": "Les rappels sont envoyés à tous les canaux que vous activez ici.",
+      "channelEmail": "E-mail",
+      "channelPush": "Notifications push",
+      "channelEmailError": "Impossible d'enregistrer votre réglage de remise des rappels",
+      "pushNotConfigured": "Les notifications push ne sont pas configurées sur ce serveur.",
+      "pushUnsupported": "Ce navigateur ne prend pas en charge les notifications push.",
+      "pushBlocked": "Les notifications sont bloquées pour ce site dans votre navigateur.",
+      "pushEnable": "Activer sur cet appareil",
+      "pushEnabled": "Activées sur cet appareil",
+      "pushEnableError": "Impossible d'activer les notifications push.",
+      "pushIosHint": "Sur iPhone et iPad, ajoutez d'abord Nametag à l'écran d'accueil.",
+      "pushDevices": "Appareils recevant les notifications",
+      "pushRemove": "Retirer",
+      "pushRemoveError": "Impossible de retirer cet appareil",
+      "pushNoDevices": "Aucun appareil pour le moment.",
+      "pushDeviceUnknown": "Appareil inconnu",
+      "pushDeviceBrowser": "Navigateur",
+      "pushDeviceLabel": "{browser} sur {os}",
       "weekdays": {
         "0": "Dimanche",
         "1": "Lundi",

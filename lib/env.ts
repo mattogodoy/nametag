@@ -86,6 +86,13 @@ const envSchema = z.object({
   // Photo processing
   PHOTO_SIZE: z.coerce.number().int().min(64).max(4096).default(256),
   PHOTO_QUALITY: z.coerce.number().int().min(1).max(100).default(80),
+
+  // Web push (optional). All three are required together; the channel is
+  // hidden when any is missing. Generate a pair with:
+  //   npm run generate-vapid-keys
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  VAPID_SUBJECT: z.string().min(1).optional(),
 });
 
 /**
@@ -180,6 +187,32 @@ export function validateEnv(): Env {
   if (hasAnySmtpConfig && (!result.data.SMTP_HOST || !result.data.SMTP_PORT)) {
     console.error('\n❌ Invalid environment variables:\n');
     console.error('  - If any SMTP_* variable is set, both SMTP_HOST and SMTP_PORT are required');
+    console.error('\nPlease check your .env file.\n');
+    throw new Error('Invalid environment configuration');
+  }
+
+  // Partial VAPID config is always a mistake: it means someone intended to
+  // enable push and missed a variable, which would otherwise fail silently by
+  // hiding the feature.
+  const vapidVars = [
+    result.data.VAPID_PUBLIC_KEY,
+    result.data.VAPID_PRIVATE_KEY,
+    result.data.VAPID_SUBJECT,
+  ];
+  const setVapidCount = vapidVars.filter((v) => v !== undefined).length;
+
+  if (setVapidCount > 0 && setVapidCount < 3) {
+    console.error('\n❌ Invalid environment variables:\n');
+    console.error(
+      '  - VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT must all be set together'
+    );
+    console.error('\n  Generate a keypair with: npm run generate-vapid-keys\n');
+    throw new Error('Invalid environment configuration');
+  }
+
+  if (result.data.VAPID_SUBJECT && !result.data.VAPID_SUBJECT.startsWith('mailto:')) {
+    console.error('\n❌ Invalid environment variables:\n');
+    console.error('  - VAPID_SUBJECT must be a mailto: URL, for example mailto:admin@example.com');
     console.error('\nPlease check your .env file.\n');
     throw new Error('Invalid environment configuration');
   }
