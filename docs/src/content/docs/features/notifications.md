@@ -76,22 +76,41 @@ Each reminder is a single `POST` with a JSON body:
 }
 ```
 
-`event` is `reminder.` followed by the kind of reminder: `important_date`, `important_date_lead`, `contact`, or `weekly_digest`. `data` varies with it: an `important_date` carries `personId`, `personName`, `dateTitle`, `dateType`, `formattedDate`, and a raw ISO `date` (`YYYY-MM-DD`, alongside the display-formatted one, so a receiver doesn't have to guess a date format from your locale); `important_date_lead` carries the same fields except `dateType`, replaced with `daysUntil`; `contact` carries `personId`, `personName`, `lastContact`, and `interval`; `weekly_digest` carries `events` (a list, each with `personName`, `eventTitle`, `formattedDate`, and `daysUntil`) and `overflowCount`.
+- `event` is `reminder.` followed by the kind of reminder: `important_date`, `important_date_lead`, `contact`, or `weekly_digest`.
+- `occurredAt` is when Nametag sent the request, an ISO 8601 timestamp, not when the event itself falls.
+- `title` and `body` are a short, human-readable summary, **localised to the sending user's own language and locale settings**. They are meant for display, not for parsing or matching: do not branch your integration on their text, since the same event produces different wording per user and can change with translation updates. Use `data` and `event` for anything your code needs to key on.
+- `url` is a link back into your Nametag instance. For `important_date`, `important_date_lead`, and `contact`, it's the person's page; for `weekly_digest` it points at the dashboard instead, since a digest is not about one person.
+- `data` varies by `event`:
+  - `important_date` carries `personId`, `personName`, `dateTitle`, `dateType` (one of `birthday`, `anniversary`, `nameday`, `memorial`, or `null` for a custom date type), `formattedDate` (locale-formatted, for display only), and `date`.
+  - `important_date_lead` carries the same fields except `dateType`, replaced with `daysUntil` (a number).
+  - `contact` carries `personId`, `personName`, `lastContact` (a locale-formatted string, or `null` if no contact has ever been logged for that person), and `interval`.
+  - `weekly_digest` carries `events` (a list, each with `personName`, `eventTitle`, `formattedDate`, and `daysUntil`) and `overflowCount` (a number, `0` when nothing was left out: the digest caps how many events it lists, and this is how many more there were beyond that cap for the week).
+- `date` (on `important_date` and `important_date_lead`) is a raw ISO calendar date (`YYYY-MM-DD`), alongside the display-formatted `formattedDate`, so a receiver doesn't have to guess a date format from your locale. It is always the day of the **occurrence being reminded about**, today's date for a day-of reminder or the projected date for an advance notice, never the date the record was originally entered. That means a recurring birthday's payload never carries the year it was born in, only the year the occurrence falls in, and a date whose year you never entered into Nametag never leaks a placeholder year either: there is no field carrying the original stored date or the birth year at all.
 
 Contact names and other person details leave your Nametag instance in this payload, sent to whatever server you point the webhook at. Only add an endpoint you control.
 
+### Delivery guarantees
+
+Each reminder is sent as one `POST`, once, during the nightly run that decided it was due. There are no retries and no idempotency key: if your endpoint is down or rejects the request, that delivery is gone, not queued for a later attempt. Design your integration for at-most-once delivery, and treat a missed webhook the same way you'd treat a missed push notification, not as something to reconcile against a resend.
+
 ### Verifying the signature
 
-Every request carries exactly these headers, nothing else:
+Every request carries these headers:
 
 | Header | Value |
 | --- | --- |
 | `User-Agent` | `Nametag/<version> (+https://nametag.one)` |
+| `Content-Type` | `application/json` |
+| `Content-Length` | The byte length of the body |
 | `X-Nametag-Event` | The same value as the body's `event` field |
 | `X-Nametag-Timestamp` | Unix timestamp, in seconds, of when the request was sent |
 | `X-Nametag-Signature` | `sha256=<hex-encoded HMAC-SHA256 digest>` |
 
+Nothing from a person's record or from your own settings ever becomes a header, only values inside the signed JSON body. `X-Nametag-Event` is included for convenience so you can inspect it without parsing the body, but it is **not covered by the signature**: route your handling on the body's `event` field, not the header, if the distinction matters for your integration.
+
 The signature is computed over the string `<timestamp>.<raw body>`, that is, the timestamp, a literal period, and the exact bytes of the request body, keyed with the signing secret you saved when you created the destination. Binding the timestamp into the signed message, rather than signing the body alone, is what makes the timestamp useful for replay protection: a captured request cannot be replayed later with a new timestamp, because the signature would no longer match.
+
+The signing secret is a 64-character hex string, but the key for the HMAC is **the UTF-8 bytes of that string itself**, not the 32 bytes you'd get by hex-decoding it. Hex-decoding the secret before using it as the HMAC key is the single most common mistake when implementing a verifier by hand, and it fails silently: every signature check just comes back wrong, with nothing in the request to tell you why.
 
 Verify the signature before trusting a payload:
 
@@ -131,4 +150,4 @@ Push notifications are encrypted end to end by the Web Push protocol itself. The
 - Nametag never follows a redirect from a destination. If your server responds with one, the request is reported as failed rather than followed somewhere else.
 - A request to a destination times out after five seconds, on top of a separate five-second budget for resolving its hostname, so the worst case before a delivery is reported as failed is roughly ten seconds. A slow receiver is treated the same as one that never responds.
 - The response body of an ntfy or webhook request is never read, only the status code. Nothing your server writes back can change what Nametag does with it, and it cannot be used to pull data out of a server Nametag can otherwise reach.
-- A webhook's headers are a fixed set: `User-Agent`, `X-Nametag-Event`, `X-Nametag-Timestamp`, and `X-Nametag-Signature`. Nothing from a person's record or from your own settings ever becomes a header, only values inside the signed JSON body.
+- A webhook's headers are a fixed set: `User-Agent`, `Content-Type`, `Content-Length`, `X-Nametag-Event`, `X-Nametag-Timestamp`, and `X-Nametag-Signature`. Nothing from a person's record or from your own settings ever becomes a header, only values inside the signed JSON body.
