@@ -10,6 +10,7 @@
  */
 
 import dns from 'dns';
+import net from 'net';
 import { isSaasMode } from '@/lib/features';
 
 const DNS_TIMEOUT_MS = 5000;
@@ -101,68 +102,62 @@ export async function validateServerUrl(url: string): Promise<void> {
 /**
  * Check if an IP address falls within private/internal ranges.
  *
- * IPv4 private ranges checked:
+ * The family is decided with `net.isIP` rather than by sniffing for a colon
+ * or a dot in the string. The reason this function exists at all, and the
+ * bug class it must not reintroduce, is that an address is not one string:
+ * `127.0.0.1`, `::ffff:127.0.0.1`, `::ffff:7f00:1` and
+ * `0:0:0:0:0:ffff:7f00:1` are four spellings of the same loopback address.
+ * Matching against one spelling's textual shape (a prefix regex, a specific
+ * expansion) and not the others lets an attacker pick whichever spelling the
+ * check does not recognise. Every branch below normalises before it decides,
+ * so two spellings of the same address always reach the same verdict.
+ *
+ * IPv4 ranges checked:
+ * - 0.0.0.0/8 (Current network, includes the unspecified address)
  * - 10.0.0.0/8 (Class A private)
- * - 172.16.0.0/12 (Class B private)
- * - 192.168.0.0/16 (Class C private)
+ * - 100.64.0.0/10 (Carrier-grade NAT)
  * - 127.0.0.0/8 (Loopback)
  * - 169.254.0.0/16 (Link-local)
- * - 0.0.0.0/8 (Current network)
+ * - 172.16.0.0/12 (Class B private)
+ * - 192.0.0.0/24 (IETF protocol assignments)
+ * - 192.168.0.0/16 (Class C private)
+ * - 224.0.0.0/4 (Multicast)
+ * - 240.0.0.0/4 (Reserved, includes the 255.255.255.255 broadcast address)
  *
- * IPv6 private ranges checked:
+ * IPv6 ranges checked:
  * - ::1 (Loopback)
  * - fe80::/10 (Link-local)
  * - fc00::/7 (Unique local: fd00::/8 and fc00::/8)
- * - ::ffff:0:0/96 (IPv4-mapped IPv6, delegates to IPv4 check)
+ * - Any address whose top 96 bits are zero (::ffff:0:0/96 IPv4-mapped, and
+ *   the deprecated ::0:0/96 IPv4-compatible form, which includes `::`):
+ *   the embedded IPv4 address is extracted and re-checked against the IPv4
+ *   ranges above, so it cannot be used to smuggle a private IPv4 address
+ *   past this function inside an IPv6 literal.
  */
 export function isPrivateIP(hostname: string): boolean {
-  // Normalize: strip surrounding brackets if present
   const ip = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const family = net.isIP(ip);
 
-  // IPv6 checks
-  if (ip.includes(':')) {
-    // IPv6 loopback
-    if (ip === '::1') return true;
+  if (family === 6) return isPrivateIPv6(ip);
+  if (family === 4) return isPrivateIPv4(ip);
 
-    // IPv4-mapped IPv6 addresses (::ffff:x.x.x.x)
-    const v4MappedMatch = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (v4MappedMatch) {
-      return isPrivateIP(v4MappedMatch[1]);
-    }
+  // Not a literal address (a bare hostname, or malformed input). Callers
+  // either gate on `net.isIP` before calling this, or have already resolved
+  // DNS to a literal by this point, so there is nothing to range-check here.
+  return false;
+}
 
-    // Expand the IPv6 address to check prefix ranges
-    const expanded = expandIPv6(ip);
-    if (!expanded) return false;
+function isPrivateIPv4(ip: string): boolean {
+  const nums = ip.split('.').map(Number);
 
-    // fe80::/10, link-local
-    // First 10 bits: 1111 1110 10 -> first byte 0xfe, second byte 0x80-0xbf
-    if (expanded[0] === 0xfe && (expanded[1] & 0xc0) === 0x80) return true;
-
-    // fc00::/7, unique local (fc00::/8 and fd00::/8)
-    // First 7 bits: 1111 110 → first byte 0xfc or 0xfd
-    if (expanded[0] === 0xfc || expanded[0] === 0xfd) return true;
-
-    return false;
-  }
-
-  // IPv4 checks
-  const parts = ip.split('.');
-  if (parts.length !== 4) return false;
-
-  const nums = parts.map(Number);
-  if (nums.some((n) => isNaN(n) || n < 0 || n > 255)) return false;
-
-  // 0.0.0.0/8 - Current network
+  // 0.0.0.0/8 - Current network (also the unspecified address 0.0.0.0)
   if (nums[0] === 0) return true;
 
   // 10.0.0.0/8
   if (nums[0] === 10) return true;
 
-  // 172.16.0.0/12
-  if (nums[0] === 172 && nums[1] >= 16 && nums[1] <= 31) return true;
-
-  // 192.168.0.0/16
-  if (nums[0] === 192 && nums[1] === 168) return true;
+  // 100.64.0.0/10 - Carrier-grade NAT (RFC 6598)
+  if (nums[0] === 100 && nums[1] >= 64 && nums[1] <= 127) return true;
 
   // 127.0.0.0/8 (Loopback)
   if (nums[0] === 127) return true;
@@ -170,7 +165,81 @@ export function isPrivateIP(hostname: string): boolean {
   // 169.254.0.0/16 (Link-local)
   if (nums[0] === 169 && nums[1] === 254) return true;
 
+  // 172.16.0.0/12
+  if (nums[0] === 172 && nums[1] >= 16 && nums[1] <= 31) return true;
+
+  // 192.0.0.0/24 - IETF protocol assignments (RFC 6890)
+  if (nums[0] === 192 && nums[1] === 0 && nums[2] === 0) return true;
+
+  // 192.168.0.0/16
+  if (nums[0] === 192 && nums[1] === 168) return true;
+
+  // 224.0.0.0/4 (Multicast)
+  if (nums[0] >= 224 && nums[0] <= 239) return true;
+
+  // 240.0.0.0/4 (Reserved, includes 255.255.255.255)
+  if (nums[0] >= 240) return true;
+
   return false;
+}
+
+function isPrivateIPv6(ip: string): boolean {
+  // IPv6 loopback
+  if (ip === '::1') return true;
+
+  const bytes = expandIPv6(normalizeIPv6DottedQuad(ip));
+  if (!bytes) return false;
+
+  // fe80::/10, link-local
+  // First 10 bits: 1111 1110 10 -> first byte 0xfe, second byte 0x80-0xbf
+  if (bytes[0] === 0xfe && (bytes[1] & 0xc0) === 0x80) return true;
+
+  // fc00::/7, unique local (fc00::/8 and fd00::/8)
+  // First 7 bits: 1111 110 -> first byte 0xfc or 0xfd
+  if (bytes[0] === 0xfc || bytes[0] === 0xfd) return true;
+
+  // An address whose top 96 bits are all zero is carrying an IPv4 address
+  // inside an IPv6 literal, either the IPv4-mapped form (RFC 4291
+  // ::ffff:a.b.c.d, what dual-stack sockets and resolvers produce) or the
+  // deprecated IPv4-compatible form (::a.b.c.d, which includes `::` itself,
+  // embedding 0.0.0.0). Delegating to the IPv4 check here, instead of
+  // keeping a second copy of the private-range list for this case, is what
+  // makes the two spellings of a private IPv4 address agree by construction.
+  const top80Zero = bytes.slice(0, 10).every((b) => b === 0);
+  const isV4Mapped = top80Zero && bytes[10] === 0xff && bytes[11] === 0xff;
+  const isV4Compatible = top80Zero && bytes[10] === 0 && bytes[11] === 0;
+  if (isV4Mapped || isV4Compatible) {
+    const embedded = `${bytes[12]}.${bytes[13]}.${bytes[14]}.${bytes[15]}`;
+    return isPrivateIPv4(embedded);
+  }
+
+  return false;
+}
+
+/**
+ * Rewrite a trailing IPv4 dotted-quad, as in `::ffff:127.0.0.1` or the
+ * deprecated `::127.0.0.1`, into two hex groups. This lets `expandIPv6`
+ * treat every address as plain hextets instead of needing a second parser
+ * for the mixed-notation form, which is just another spelling of the same
+ * bytes and must not be handled by a separate, potentially-incomplete code
+ * path. Addresses with no dotted tail, or a malformed one, are returned
+ * unchanged; `expandIPv6` rejects what is still malformed after this.
+ */
+function normalizeIPv6DottedQuad(ip: string): string {
+  const lastColon = ip.lastIndexOf(':');
+  if (lastColon === -1) return ip;
+
+  const tail = ip.slice(lastColon + 1);
+  if (!tail.includes('.')) return ip;
+
+  const octets = tail.split('.');
+  if (octets.length !== 4) return ip;
+  const nums = octets.map(Number);
+  if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return ip;
+
+  const hi = ((nums[0] << 8) | nums[1]).toString(16);
+  const lo = ((nums[2] << 8) | nums[3]).toString(16);
+  return `${ip.slice(0, lastColon + 1)}${hi}:${lo}`;
 }
 
 /**
@@ -209,8 +278,6 @@ function expandIPv6(ip: string): number[] | null {
 
   return bytes;
 }
-
-import net from 'net';
 
 /**
  * Why resolveTarget refused to hand back a target.
