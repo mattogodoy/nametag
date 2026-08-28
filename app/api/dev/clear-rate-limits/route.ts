@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getRedis } from '@/lib/redis';
 import { logger, securityLogger } from '@/lib/logger';
-import { getClientIp, withLogging } from '@/lib/api-utils';
+import { withLogging } from '@/lib/api-utils';
+import { resolveTrustedClientIp } from '@/lib/net/client-ip';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 
 /**
@@ -20,7 +21,7 @@ import { hasValidBearerSecret } from '@/lib/shared-secret';
  */
 export const DELETE = withLogging(async function DELETE(request: Request) {
   if (!hasValidBearerSecret(request, process.env.CRON_SECRET)) {
-    securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', {
+    securityLogger.authFailure(resolveTrustedClientIp(request) ?? 'unknown', 'Invalid cron secret', {
       endpoint: 'clear-rate-limits',
     });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
