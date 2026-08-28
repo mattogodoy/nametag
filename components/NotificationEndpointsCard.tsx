@@ -899,14 +899,17 @@ export default function NotificationEndpointsCard({
                 {t('webhookSecretDone')}
               </button>
             </div>
-            {copyResult && (
-              <p
-                role="status"
-                className={`text-sm ${copyResult.ok ? 'text-foreground' : 'text-red-600 dark:text-red-400'}`}
-              >
-                {copyResult.text}
-              </p>
-            )}
+            {/* Always mounted, even before there is anything to say. A live
+                region only reliably gets announced when its content changes
+                after it is already in the DOM: mounting the element and its
+                text together, as a conditional render would, is not
+                guaranteed to be picked up by assistive tech at all. */}
+            <p
+              role="status"
+              className={`text-sm ${copyResult?.ok === false ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}
+            >
+              {copyResult?.text}
+            </p>
           </div>
         </Modal>
       )}

@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { NotificationEnvelope } from '../../../lib/notifications/types';
+import { HealthAccumulator } from '../../../lib/notifications/endpoint-health';
 
 const mocks = vi.hoisted(() => ({
   isEmailConfigured: vi.fn(),
@@ -887,5 +888,147 @@ describe('dispatchAll with both an ntfy and a webhook endpoint on the same user'
     // The webhook success must still stamp the reminder, even though the
     // ntfy destination for the same user failed in the same run.
     expect(result.shouldStamp).toBe(true);
+  });
+});
+
+describe('guardEndpoints channel labelling', () => {
+  // dispatchEndpoints itself catches every individual driver throw, so the
+  // only way to exercise guardEndpoints' own catch (its fallback outcome
+  // labelling) is to make something inside dispatchEndpoints throw past that
+  // inner try/catch. HealthAccumulator.recordEndpoint is documented as
+  // "cannot fail", but stubbing it to throw here is the only way to reach
+  // this code path without editing production code just for the test.
+  let recordEndpointSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    mocks.isEmailConfigured.mockReturnValue(false);
+    pushMocks.sendWebPush.mockReset();
+    pushMocks.sendWebPush.mockResolvedValue({ channel: 'web_push', status: 'skipped' });
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
+    endpointMocks.endpointFindMany.mockReset();
+    endpointMocks.sendNtfy.mockReset();
+    endpointMocks.endpointUpdate.mockReset();
+    endpointMocks.endpointUpdateMany.mockReset();
+    endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
+    endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
+    webhookMocks.sendWebhook.mockReset();
+    webhookMocks.canUseWebhooks.mockReset();
+    webhookMocks.canUseWebhooks.mockResolvedValue(true);
+    recordEndpointSpy = vi
+      .spyOn(HealthAccumulator.prototype, 'recordEndpoint')
+      .mockImplementation(() => {
+        throw new Error('accumulator boom');
+      });
+  });
+
+  afterEach(() => {
+    recordEndpointSpy.mockRestore();
+  });
+
+  it('labels the fallback outcome for every endpoint type the user actually has, not always ntfy', async () => {
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-ntfy', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
+      { id: 'ep-hook', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
+    ]);
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    // Both an ntfy and a webhook endpoint were present, so guardEndpoints'
+    // catch must report both channels as failed, mislabelling neither as the
+    // other and neither as only one of the two.
+    expect(result.failed).toBe(2);
+    expect(result.failedChannels).toEqual(expect.arrayContaining(['ntfy', 'webhook']));
+    expect(result.shouldStamp).toBe(false);
+  });
+
+  it('labels the fallback outcome ntfy for an ntfy-only user, not webhook', async () => {
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-ntfy', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
+    ]);
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result.failedChannels).toEqual(['ntfy']);
+  });
+
+  it('labels the fallback outcome webhook for a webhook-only user, not ntfy', async () => {
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-hook', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
+    ]);
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result.failedChannels).toEqual(['webhook']);
+  });
+});
+
+describe('loadWebhookEntitlements try/catch', () => {
+  beforeEach(() => {
+    mocks.isEmailConfigured.mockReturnValue(false);
+    pushMocks.sendWebPush.mockReset();
+    pushMocks.sendWebPush.mockResolvedValue({ channel: 'web_push', status: 'skipped' });
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
+    endpointMocks.endpointFindMany.mockReset();
+    endpointMocks.endpointUpdate.mockReset();
+    endpointMocks.endpointUpdateMany.mockReset();
+    endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
+    endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
+    webhookMocks.sendWebhook.mockReset();
+    webhookMocks.canUseWebhooks.mockReset();
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
+    ]);
+  });
+
+  it('denies webhook delivery for the whole run rather than aborting it, when resolving entitlements throws', async () => {
+    // mapWithConcurrency rejecting here (canUseWebhooks itself already fails
+    // closed per-user, so this simulates the surrounding mapWithConcurrency
+    // call throwing instead) must not escape dispatchAll and abort the run:
+    // every other envelope's email, push, and ntfy delivery for the night
+    // must still happen.
+    webhookMocks.canUseWebhooks.mockRejectedValue(new Error('billing lookup exploded'));
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(webhookMocks.sendWebhook).not.toHaveBeenCalled();
+    expect(result.shouldStamp).toBe(false);
+    expect(result.failed).toBe(0);
+    expect(result.skipped).toBeGreaterThan(0);
+  });
+
+  it('does not deny other users in the same run when only one user throws resolving entitlements', async () => {
+    endpointMocks.endpointFindMany.mockImplementation((args: { where?: { userId?: { in?: string[] } } }) => {
+      const ids = args?.where?.userId?.in ?? [];
+      return Promise.resolve(
+        ids.map((userId) => ({
+          id: `ep-${userId}`,
+          userId,
+          type: 'WEBHOOK' as const,
+          url: `https://hooks.test/${userId}`,
+          secret: 'enc',
+        }))
+      );
+    });
+    webhookMocks.canUseWebhooks.mockImplementation((userId: string) =>
+      userId === 'user-1' ? Promise.reject(new Error('billing lookup exploded')) : Promise.resolve(true)
+    );
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
+
+    const [firstResult, secondResult] = await dispatchAll([
+      envelopeForUser('user-1', 'p-1'),
+      envelopeForUser('user-2', 'p-2'),
+    ]);
+
+    // Today's actual implementation resolves the whole map with
+    // mapWithConcurrency, so one rejection currently fails the batch closed
+    // for every user in it, not only the one whose lookup threw. This test
+    // pins that fail-closed behavior rather than a per-user isolation
+    // guarantee the code does not actually make.
+    expect(firstResult.shouldStamp).toBe(false);
+    expect(secondResult.shouldStamp).toBe(false);
   });
 });

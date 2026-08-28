@@ -715,6 +715,29 @@ describe('NotificationEndpointsCard', () => {
       });
     });
 
+    it('mounts the copy-feedback status region before there is anything to announce', async () => {
+      // A live region only reliably gets announced by assistive tech when its
+      // content changes after it is already present in the DOM. Mounting the
+      // role="status" element together with its first text, as a conditional
+      // render would, is not guaranteed to be picked up at all. This pins
+      // that the region exists up front, empty, rather than only appearing
+      // once there is a message to show.
+      const secret = 'd'.repeat(64);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret }, true, 201))
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => screen.getByDisplayValue(secret));
+
+      expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('');
+    });
+
     it('copies the secret to the clipboard from the Copy button', async () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, { clipboard: { writeText } });
