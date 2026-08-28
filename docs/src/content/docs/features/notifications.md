@@ -48,7 +48,7 @@ You can add up to five destinations, ntfy or otherwise. A destination that fails
 
 A webhook is your own HTTPS endpoint. Nametag sends it a signed JSON request for each reminder, so you can route reminders into your own system: a home automation hook, a personal API, a chat integration, anything that can receive a POST and verify a signature.
 
-On nametag.one, outgoing webhooks are part of Pro. Self-hosted, every user can add one, with no subscription involved. If a Pro subscription lapses on nametag.one, existing webhook destinations stop being delivered to immediately, there's no separate cleanup step and no grace period; renewing the subscription resumes delivery, and the destination itself is left in place either way.
+On nametag.one, outgoing webhooks are part of Pro. Self-hosted, every user can add one, with no subscription involved. Access is tied to your subscription tier, not to whether a payment currently succeeds: only a fully cancelled subscription drops you to Free and stops webhook delivery. A payment that fails keeps your Pro access through Stripe's own retry window, known as dunning, so a card that needs updating does not cut off delivery the moment it lapses. Once the subscription is cancelled, existing webhook destinations stop being delivered to, with no separate cleanup step; renewing the subscription resumes delivery, and the destination itself is left in place either way.
 
 1. In Nametag, go to Settings, Notifications, and add a webhook destination with your endpoint's URL.
 2. Nametag generates a signing secret and shows it to you once. Save it now: there is no way to view it again, and if you lose it you'll need to remove the webhook and add it back to get a new one.
@@ -70,7 +70,7 @@ Each reminder is a single `POST` with a JSON body:
     "personName": "Ana Torres",
     "dateTitle": "Birthday",
     "dateType": "birthday",
-    "formattedDate": "August 26, 2026",
+    "formattedDate": "August 26, 1990",
     "date": "2026-08-26"
   }
 }
@@ -85,7 +85,8 @@ Each reminder is a single `POST` with a JSON body:
   - `important_date_lead` carries the same fields except `dateType`, replaced with `daysUntil` (a number).
   - `contact` carries `personId`, `personName`, `lastContact` (a locale-formatted string, or `null` if no contact has ever been logged for that person), and `interval`.
   - `weekly_digest` carries `events` (a list, each with `personName`, `eventTitle`, `formattedDate`, and `daysUntil`) and `overflowCount` (a number, `0` when nothing was left out: the digest caps how many events it lists, and this is how many more there were beyond that cap for the week).
-- `date` (on `important_date` and `important_date_lead`) is a raw ISO calendar date (`YYYY-MM-DD`), alongside the display-formatted `formattedDate`, so a receiver doesn't have to guess a date format from your locale. It is always the day of the **occurrence being reminded about**, today's date for a day-of reminder or the projected date for an advance notice, never the date the record was originally entered. That means a recurring birthday's payload never carries the year it was born in, only the year the occurrence falls in, and a date whose year you never entered into Nametag never leaks a placeholder year either: there is no field carrying the original stored date or the birth year at all.
+- `date` (on `important_date` and `important_date_lead`) is a raw ISO calendar date (`YYYY-MM-DD`) so a receiver doesn't have to guess a date format from your locale. It is always the day of the **occurrence being reminded about**, today's date for a day-of reminder or the projected date for an advance notice, never the date the record was originally entered. That means a recurring birthday's `date` never carries the year it was born in, only the year the occurrence falls in.
+- `formattedDate` is a display string, rendered in the account's date format and language. It is not always derived from the same source as `date`, and the two can legitimately name different years for the same event. On a day-of `important_date`, `formattedDate` is rendered from the stored record itself, so a birthday's `formattedDate` shows the year the person was born, while `date` shows the year the occurrence falls in. On `important_date_lead`, `formattedDate` is rendered from the projected occurrence, so its year matches `date`. Treat `formattedDate` as text for a person to read, never something to parse: if your integration needs to reason about when the occurrence falls, use `date`.
 
 Contact names and other person details leave your Nametag instance in this payload, sent to whatever server you point the webhook at. Only add an endpoint you control.
 
