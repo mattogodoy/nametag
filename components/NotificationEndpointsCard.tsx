@@ -4,10 +4,15 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import Modal from '@/components/ui/Modal';
 import type { OutboundFailureCode } from '@/lib/notifications/outbound';
+
+type EndpointType = 'NTFY' | 'WEBHOOK';
 
 export interface NotificationEndpointSummary {
   id: string;
+  type: EndpointType;
   label: string;
   url: string;
   enabled: boolean;
@@ -18,6 +23,7 @@ export interface NotificationEndpointSummary {
 interface Props {
   endpoints: NotificationEndpointSummary[];
   canAdd: boolean;
+  canUseWebhooks: boolean;
 }
 
 interface TestSuccess {
@@ -51,6 +57,17 @@ interface ApiErrorBody {
 
 function isApiErrorBody(value: unknown): value is ApiErrorBody {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * `POST /api/notifications/endpoints` only ever includes `secret` on a
+ * successful WEBHOOK creation, and only that one time. Narrowed here rather
+ * than trusted as `any` so a malformed or absent field just yields `null`.
+ */
+function extractSecret(value: unknown): string | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const secret = (value as { secret?: unknown }).secret;
+  return typeof secret === 'string' ? secret : null;
 }
 
 /**
@@ -109,8 +126,21 @@ type MessageContext = 'form' | 'saved';
  * read. The cast below only ever feeds a lookup that falls back safely when
  * the key is absent, so an unrecognised value degrades to the generic
  * message rather than producing a wrong one.
+ *
+ * `http_4xx` is the only code whose wording actually mentions ntfy-specific
+ * concepts ("check the topic name and the access token"), which reads as
+ * nonsense for a webhook: a webhook has no topic and no access token, only a
+ * signing secret it never sends anywhere. Every other code in the two maps
+ * above is already channel-neutral, so only this one branches on `type`.
  */
-function messageKeyForOutboundCode(code: string, context: MessageContext): string {
+function messageKeyForOutboundCode(
+  code: string,
+  context: MessageContext,
+  type: EndpointType
+): string {
+  if (code === 'http_4xx' && type === 'WEBHOOK') {
+    return context === 'saved' ? 'webhookTestRejectedSaved' : 'webhookTestRejected';
+  }
   if (context === 'saved') {
     const override = SAVED_MESSAGE_OVERRIDES[code as OutboundFailureCode];
     if (override) return override;
@@ -123,7 +153,7 @@ interface TestMessage {
   text: string;
 }
 
-export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) {
+export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWebhooks }: Props) {
   const t = useTranslations('settings.notifications');
   const tErrors = useTranslations('errors.server');
   const tAuth = useTranslations('errors.auth');
@@ -135,6 +165,20 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
   const [token, setToken] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [showWebhookForm, setShowWebhookForm] = useState(false);
+  const [webhookLabel, setWebhookLabel] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookFormError, setWebhookFormError] = useState<string | null>(null);
+  const [webhookSubmitting, setWebhookSubmitting] = useState(false);
+
+  // The signing secret of a webhook just created. This is the ONLY place it
+  // ever lives client-side: the create response carries it exactly once, the
+  // list of endpoints passed down as props never includes it (the API never
+  // selects it back out, see PUBLIC_FIELDS on the server), and dismissing the
+  // dialog below sets this back to null rather than, say, remembering it for
+  // "show again". There is nowhere to fetch it back from.
+  const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
 
   const [testResults, setTestResults] = useState<Record<string, TestMessage>>({});
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
@@ -158,6 +202,25 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
     setFormError(null);
   }
 
+  function resetWebhookForm() {
+    setWebhookLabel('');
+    setWebhookUrl('');
+    setWebhookFormError(null);
+  }
+
+  // Only one add form is ever open at a time. Besides being the simpler
+  // affordance, it also keeps the two forms' "Name" fields from ever
+  // existing in the DOM together.
+  function openNtfyForm() {
+    setShowWebhookForm(false);
+    setShowForm(true);
+  }
+
+  function openWebhookForm() {
+    setShowForm(false);
+    setShowWebhookForm(true);
+  }
+
   async function readErrorMessage(response: Response): Promise<string> {
     const data: unknown = await response.json().catch(() => null);
     return isApiErrorBody(data) && data.error ? data.error : tErrors('internalError');
@@ -165,11 +228,16 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
 
   /**
    * The create endpoint returns brand new, English-only error strings for its
-   * 400/409/429 responses. Those are new user-facing text, so unlike
+   * 400/403/409/429 responses. Those are new user-facing text, so unlike
    * readErrorMessage (which surfaces an existing house-pattern string for
    * actions that were already shipped, and rarely fires), this branches on
    * the HTTP status to show a translated message for the cases a user will
    * actually hit.
+   *
+   * The 403 case is the Pro entitlement gate: it can only ever fire for a
+   * webhook (an ntfy destination has no entitlement check), but it is
+   * checked first, before the type-specific branches below, since a 403
+   * short-circuits before any of that logic matters.
    *
    * The 400 case carries its own machine-readable `code` from the route
    * (`policy`, `dns`, or `invalid`), and that distinction matters here for
@@ -177,7 +245,9 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
    * permanent refusal, the user must change the URL, while `dns` can be a
    * transient resolver hiccup on an otherwise-correct URL. Reusing
    * endpointTestBlocked / endpointTestDns keeps that contrast intact without
-   * new locale keys, since the wording already fits either screen.
+   * new locale keys, since the wording already fits either screen. The
+   * generic `invalid` fallback is the one case that is channel-specific
+   * wording ("check the topic URL"), so it branches on `type`.
    *
    * The 409 case also carries a `code`, distinguishing the per-user cap
    * (`undefined`, the original 409 before duplicates existed) from the same
@@ -189,7 +259,10 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
    * Anything else still falls back to the raw body, so a genuinely unexpected
    * server message is surfaced rather than swallowed.
    */
-  async function readAddErrorMessage(response: Response): Promise<string> {
+  async function readAddErrorMessage(response: Response, type: EndpointType): Promise<string> {
+    if (response.status === 403) {
+      return t('webhookProOnly');
+    }
     if (response.status === 409) {
       const data: unknown = await response.json().catch(() => null);
       const code = isApiErrorBody(data) ? data.code : undefined;
@@ -201,7 +274,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
       const code = isApiErrorBody(data) ? data.code : undefined;
       if (code === 'dns') return t('endpointTestDns');
       if (code === 'policy') return t('endpointTestBlocked');
-      return t('endpointAddInvalid');
+      return type === 'WEBHOOK' ? t('webhookAddInvalid') : t('endpointAddInvalid');
     }
     if (response.status === 429) {
       return t('endpointAddRateLimited');
@@ -227,7 +300,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
       });
 
       if (!response.ok) {
-        setFormError(await readAddErrorMessage(response));
+        setFormError(await readAddErrorMessage(response, 'NTFY'));
         return;
       }
 
@@ -238,6 +311,61 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
       setFormError(tErrors('internalError'));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleAddWebhook(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setWebhookFormError(null);
+    setWebhookSubmitting(true);
+
+    try {
+      const response = await fetch('/api/notifications/endpoints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'WEBHOOK', label: webhookLabel, url: webhookUrl }),
+      });
+
+      if (!response.ok) {
+        setWebhookFormError(await readAddErrorMessage(response, 'WEBHOOK'));
+        return;
+      }
+
+      // Read the secret out of this one response before anything else
+      // touches state. It is never stored under the endpoint list, never
+      // logged, and the API will not hand it back again after this.
+      const data: unknown = await response.json().catch(() => null);
+      const secret = extractSecret(data);
+
+      resetWebhookForm();
+      setShowWebhookForm(false);
+      router.refresh();
+
+      if (secret) {
+        setNewWebhookSecret(secret);
+      }
+    } catch {
+      setWebhookFormError(tErrors('internalError'));
+    } finally {
+      setWebhookSubmitting(false);
+    }
+  }
+
+  function dismissWebhookSecret() {
+    // The only place this value lives. Once dismissed, whether by the "I
+    // saved it" button, the modal's close button, Escape, or a click
+    // outside, it is gone: there is no way to read it back, so a user who
+    // did not copy it has to remove this destination and create a new one.
+    setNewWebhookSecret(null);
+  }
+
+  async function handleCopySecret() {
+    if (!newWebhookSecret) return;
+    try {
+      await navigator.clipboard.writeText(newWebhookSecret);
+    } catch {
+      // Clipboard may be unavailable (non-secure context); the secret is
+      // still visible on screen to select manually.
     }
   }
 
@@ -253,6 +381,8 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
    * that expired mid-visit is not the destination's fault either.
    */
   async function handleTest(id: string) {
+    const type = endpoints.find((endpoint) => endpoint.id === id)?.type ?? 'NTFY';
+
     setBusy(id, true);
     setTestResults((prev) => {
       const next = { ...prev };
@@ -291,7 +421,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
       } else {
         setTestResults((prev) => ({
           ...prev,
-          [id]: { ok: false, text: t(messageKeyForOutboundCode(data.code, 'saved')) },
+          [id]: { ok: false, text: t(messageKeyForOutboundCode(data.code, 'saved', type)) },
         }));
       }
     } catch {
@@ -358,7 +488,16 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
               <li key={endpoint.id} className="border border-border rounded-md p-3">
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-foreground font-medium truncate">{endpoint.label}</p>
+                    <p className="text-foreground font-medium truncate">
+                      {endpoint.label}
+                      {/* The raw enum value, not a translated word: this is a
+                          technical destination-kind marker (like a MIME type
+                          or a protocol name), not prose, so it does not need
+                          a locale key. */}
+                      <span className="ml-2 align-middle inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-primary/10 text-primary">
+                        {endpoint.type}
+                      </span>
+                    </p>
                     <p className="text-sm text-muted break-all">{endpoint.url}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -414,7 +553,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                           with why it is off right now. */}
                       {endpoint.autoDisabledAt && endpoint.lastFailureCode && (
                         <p className="text-sm text-muted">
-                          {t(messageKeyForOutboundCode(endpoint.lastFailureCode, 'saved'))}
+                          {t(messageKeyForOutboundCode(endpoint.lastFailureCode, 'saved', endpoint.type))}
                         </p>
                       )}
                     </div>
@@ -436,104 +575,230 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
 
       {!canAdd && <p className="text-sm text-muted mb-4">{t('endpointLimit')}</p>}
 
-      {canAdd && !showForm && (
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
-        >
-          {t('endpointAdd')}
-        </button>
-      )}
-
-      {canAdd && showForm && (
-        <form onSubmit={(event) => void handleAdd(event)} className="space-y-3">
-          <div>
-            <label className="block text-sm text-foreground mb-1" htmlFor="endpoint-label">
-              {t('endpointLabel')}
-            </label>
-            <input
-              id="endpoint-label"
-              type="text"
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
-              required
-              maxLength={60}
-              className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-foreground mb-1" htmlFor="endpoint-url">
-              {t('endpointUrl')}
-            </label>
-            <input
-              id="endpoint-url"
-              type="url"
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-              required
-              maxLength={500}
-              aria-describedby="endpoint-url-hint"
-              className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
-            />
-            {/* No placeholder here: the same text is already the visible
-                helper paragraph below, linked with aria-describedby. A
-                placeholder duplicating it would be announced twice. */}
-            <p id="endpoint-url-hint" className="text-xs text-muted mt-1">
-              {t('endpointUrlHint')}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm text-foreground mb-1" htmlFor="endpoint-token">
-              {t('endpointToken')}
-            </label>
-            {/* type="password" so a token is never left visible on screen: the
-                API never returns one back, and the field must not become the
-                one place it could reappear. */}
-            <input
-              id="endpoint-token"
-              type="password"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              autoComplete="off"
-              maxLength={255}
-              className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
-            />
-          </div>
-
-          {formError && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-              {formError}
-            </p>
-          )}
-
-          <div className="flex items-center gap-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              // Not the shared FOCUS_RING: that ring is the same color as this
-              // button's own bg-primary fill, so without ring-offset-2 the
-              // focus indicator is invisible against its own background. The
-              // house pattern for a filled primary button (see EmptyState,
-              // GoogleSignInButton) always adds the offset.
-              className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              {t('endpointSave')}
-            </button>
+      {canAdd && (
+        <div className="space-y-4">
+          {!showForm && (
             <button
               type="button"
-              onClick={() => {
-                setShowForm(false);
-                resetForm();
-              }}
+              onClick={openNtfyForm}
               className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
             >
-              {t('endpointCancel')}
+              {t('endpointAdd')}
             </button>
+          )}
+
+          {showForm && (
+            <form onSubmit={(event) => void handleAdd(event)} className="space-y-3">
+              <div>
+                <label className="block text-sm text-foreground mb-1" htmlFor="endpoint-label">
+                  {t('endpointLabel')}
+                </label>
+                <input
+                  id="endpoint-label"
+                  type="text"
+                  value={label}
+                  onChange={(event) => setLabel(event.target.value)}
+                  required
+                  maxLength={60}
+                  className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-foreground mb-1" htmlFor="endpoint-url">
+                  {t('endpointUrl')}
+                </label>
+                <input
+                  id="endpoint-url"
+                  type="url"
+                  value={url}
+                  onChange={(event) => setUrl(event.target.value)}
+                  required
+                  maxLength={500}
+                  aria-describedby="endpoint-url-hint"
+                  className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
+                />
+                {/* No placeholder here: the same text is already the visible
+                    helper paragraph below, linked with aria-describedby. A
+                    placeholder duplicating it would be announced twice. */}
+                <p id="endpoint-url-hint" className="text-xs text-muted mt-1">
+                  {t('endpointUrlHint')}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-foreground mb-1" htmlFor="endpoint-token">
+                  {t('endpointToken')}
+                </label>
+                {/* type="password" so a token is never left visible on screen: the
+                    API never returns one back, and the field must not become the
+                    one place it could reappear. */}
+                <input
+                  id="endpoint-token"
+                  type="password"
+                  value={token}
+                  onChange={(event) => setToken(event.target.value)}
+                  autoComplete="off"
+                  maxLength={255}
+                  className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
+                />
+              </div>
+
+              {formError && (
+                <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                  {formError}
+                </p>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  // Not the shared FOCUS_RING: that ring is the same color as this
+                  // button's own bg-primary fill, so without ring-offset-2 the
+                  // focus indicator is invisible against its own background. The
+                  // house pattern for a filled primary button (see EmptyState,
+                  // GoogleSignInButton) always adds the offset.
+                  className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  {t('endpointSave')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    resetForm();
+                  }}
+                  className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
+                >
+                  {t('endpointCancel')}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {canUseWebhooks ? (
+            <>
+              {!showWebhookForm && (
+                <button
+                  type="button"
+                  onClick={openWebhookForm}
+                  className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
+                >
+                  {t('webhookAdd')}
+                </button>
+              )}
+
+              {showWebhookForm && (
+                <form onSubmit={(event) => void handleAddWebhook(event)} className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-foreground mb-1" htmlFor="webhook-label">
+                      {t('endpointLabel')}
+                    </label>
+                    <input
+                      id="webhook-label"
+                      type="text"
+                      value={webhookLabel}
+                      onChange={(event) => setWebhookLabel(event.target.value)}
+                      required
+                      maxLength={60}
+                      className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-foreground mb-1" htmlFor="webhook-url">
+                      {t('webhookUrl')}
+                    </label>
+                    <input
+                      id="webhook-url"
+                      type="url"
+                      value={webhookUrl}
+                      onChange={(event) => setWebhookUrl(event.target.value)}
+                      required
+                      maxLength={500}
+                      aria-describedby="webhook-url-hint"
+                      className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
+                    />
+                    <p id="webhook-url-hint" className="text-xs text-muted mt-1">
+                      {t('webhookUrlHint')}
+                    </p>
+                  </div>
+
+                  {/* The app's data-privacy posture applied to a feature that
+                      sends contact names off the instance: shown at the
+                      moment of the decision, before the submit button, not
+                      buried in docs. */}
+                  <p className="text-xs text-muted">{t('webhookPrivacyNote')}</p>
+
+                  {webhookFormError && (
+                    <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                      {webhookFormError}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={webhookSubmitting}
+                      className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    >
+                      {t('endpointSave')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowWebhookForm(false);
+                        resetWebhookForm();
+                      }}
+                      className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
+                    >
+                      {t('endpointCancel')}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-muted">
+              {t('webhookProOnly')}{' '}
+              <Link href="/settings/billing" className="text-primary hover:text-primary-dark underline">
+                {t('upgradePlan')}
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
+
+      {newWebhookSecret && (
+        <Modal isOpen={true} onClose={dismissWebhookSecret} title={t('webhookSecretTitle')}>
+          <div className="space-y-3">
+            {/* Says plainly that this is the only chance to see it: a user
+                who dismisses this without copying has to delete the webhook
+                and create a new one, since there is no endpoint that reads
+                the secret back out. */}
+            <p className="text-sm text-muted">{t('webhookSecretBody')}</p>
+            <code className="block px-3 py-2 rounded bg-background border border-border text-foreground text-sm break-all">
+              {newWebhookSecret}
+            </code>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleCopySecret()}
+                className={`px-3 py-1 rounded-md border border-border ${FOCUS_RING}`}
+              >
+                {t('webhookSecretCopy')}
+              </button>
+              <button
+                type="button"
+                onClick={dismissWebhookSecret}
+                className="px-3 py-1 rounded-md bg-primary text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              >
+                {t('webhookSecretDone')}
+              </button>
+            </div>
           </div>
-        </form>
+        </Modal>
       )}
     </div>
   );

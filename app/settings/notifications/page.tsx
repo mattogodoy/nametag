@@ -9,6 +9,7 @@ import WeeklyDigestSettings from '@/components/WeeklyDigestSettings';
 import NotificationChannelsCard from '@/components/NotificationChannelsCard';
 import NotificationEndpointsCard from '@/components/NotificationEndpointsCard';
 import { MAX_ENDPOINTS_PER_USER } from '@/lib/notifications/endpoint-health';
+import { canUseWebhooks } from '@/lib/notifications/entitlements';
 
 export default async function NotificationSettingsPage() {
   const session = await auth();
@@ -51,6 +52,7 @@ export default async function NotificationSettingsPage() {
     where: { userId: session.user.id },
     select: {
       id: true,
+      type: true,
       label: true,
       url: true,
       enabled: true,
@@ -75,6 +77,7 @@ export default async function NotificationSettingsPage() {
           autoDisabledAt: endpoint.autoDisabledAt?.toISOString() ?? null,
         }))}
         canAdd={endpoints.length < MAX_ENDPOINTS_PER_USER}
+        canUseWebhooks={await canUseWebhooks(session.user.id)}
       />
 
       {!emailAvailable && (

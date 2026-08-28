@@ -33,7 +33,7 @@ import NotificationEndpointsCard, {
 function renderCard(props: Partial<ComponentProps<typeof NotificationEndpointsCard>> = {}) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <NotificationEndpointsCard endpoints={[]} canAdd={true} {...props} />
+      <NotificationEndpointsCard endpoints={[]} canAdd={true} canUseWebhooks={true} {...props} />
     </NextIntlClientProvider>
   );
 }
@@ -48,8 +48,15 @@ function openAddFormAndFill(label: string, url: string) {
   fireEvent.change(screen.getByLabelText('Topic URL'), { target: { value: url } });
 }
 
+function openWebhookFormAndFill(label: string, url: string) {
+  fireEvent.click(screen.getByRole('button', { name: 'Add webhook' }));
+  fireEvent.change(screen.getByLabelText('Name'), { target: { value: label } });
+  fireEvent.change(screen.getByLabelText('Endpoint URL'), { target: { value: url } });
+}
+
 const endpoint: NotificationEndpointSummary = {
   id: 'ep-1',
+  type: 'NTFY',
   label: 'My phone',
   url: 'https://ntfy.sh/my-topic',
   enabled: true,
@@ -546,6 +553,266 @@ describe('NotificationEndpointsCard', () => {
       await waitFor(() => {
         expect(screen.getByText('Something exploded')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('webhook destinations', () => {
+    it('distinguishes an ntfy destination from a webhook one in the list', () => {
+      // Mutation this catches: dropping the type badge, or rendering it for
+      // only one of the two types, leaves one of these two queries empty.
+      renderCard({
+        endpoints: [
+          endpoint,
+          { ...endpoint, id: 'ep-2', type: 'WEBHOOK', label: 'Home Assistant', url: 'https://hooks.test/x' },
+        ],
+      });
+
+      expect(screen.getByText('NTFY')).toBeInTheDocument();
+      expect(screen.getByText('WEBHOOK')).toBeInTheDocument();
+    });
+
+    it('shows the upsell instead of the webhook form when the user is not entitled, leaving no way to submit one', () => {
+      // Bite-check: an implementation that shows the button (or the form)
+      // regardless of entitlement makes both of these assertions fail.
+      renderCard({ endpoints: [], canUseWebhooks: false });
+
+      expect(screen.getByText('Outgoing webhooks are part of Pro.')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Upgrade your plan' })).toHaveAttribute(
+        'href',
+        '/settings/billing'
+      );
+      expect(screen.queryByRole('button', { name: 'Add webhook' })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Endpoint URL')).not.toBeInTheDocument();
+    });
+
+    it('does not show the upsell when the user is entitled', () => {
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      expect(screen.queryByText('Outgoing webhooks are part of Pro.')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Add webhook' })).toBeInTheDocument();
+    });
+
+    it('shows the data-privacy note in the webhook form before the submit button', () => {
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add webhook' }));
+
+      expect(
+        screen.getByText('Contact names are sent to this server. Only add an endpoint you control.')
+      ).toBeInTheDocument();
+    });
+
+    it('posts a webhook creation request with type WEBHOOK, not NTFY', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret: 'a'.repeat(64) }, true, 201));
+      vi.stubGlobal('fetch', fetchMock);
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(mockRefresh).toHaveBeenCalled();
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith('/api/notifications/endpoints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'WEBHOOK',
+          label: 'Home Assistant',
+          url: 'https://hooks.test/nametag',
+        }),
+      });
+    });
+
+    it('shows the secret exactly once after creating a webhook, and removes it from the DOM once dismissed', async () => {
+      // Bite-check 1: an implementation that never surfaces `secret` from the
+      // create response fails the first assertion. An implementation that
+      // keeps the secret in state (or renders it a second time) after
+      // dismissal fails the second.
+      const secret = 'a'.repeat(64);
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret }, true, 201));
+      vi.stubGlobal('fetch', fetchMock);
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText(secret)).toBeInTheDocument();
+      });
+      // The dialog says plainly this is the only chance to see it.
+      expect(
+        screen.getByText(
+          'This is shown once. Use it to verify the X-Nametag-Signature header. If you lose it, remove the webhook and add it again.'
+        )
+      ).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'I saved it' }));
+
+      await waitFor(() => {
+        expect(screen.queryByText(secret)).not.toBeInTheDocument();
+      });
+    });
+
+    it('renders the secret as an accessible dialog and moves focus into it', async () => {
+      const secret = 'c'.repeat(64);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret }, true, 201))
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+
+    it('closing the secret dialog via Escape also clears the secret from state, not only the button dismiss', async () => {
+      const secret = 'd'.repeat(64);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret }, true, 201))
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText(secret)).toBeInTheDocument();
+      });
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      await waitFor(() => {
+        expect(screen.queryByText(secret)).not.toBeInTheDocument();
+      });
+    });
+
+    it('copies the secret to the clipboard from the Copy button', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, { clipboard: { writeText } });
+      const secret = 'e'.repeat(64);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret }, true, 201))
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => screen.getByText(secret));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith(secret);
+      });
+    });
+
+    it('maps a 403 creation response to the Pro upsell message, not the raw response body', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          jsonResponse(
+            { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
+            false,
+            403
+          )
+        )
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Outgoing webhooks are part of Pro.')).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText('Outgoing webhooks require a Pro subscription')
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows webhook-specific wording for a generic 400, not the ntfy topic-URL wording', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          jsonResponse({ error: 'Invalid endpoint', code: 'invalid' }, false, 400)
+        )
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Check the webhook URL and try again.')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Check the topic URL and try again.')).not.toBeInTheDocument();
+    });
+
+    it('shows webhook-specific wording for a rejected test-send, not the ntfy topic/token wording', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: false, code: 'http_4xx' })));
+      renderCard({
+        endpoints: [{ ...endpoint, id: 'ep-2', type: 'WEBHOOK', url: 'https://hooks.test/x' }],
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            'The destination rejected the notification. Remove this destination and add it again with the correct URL.'
+          )
+        ).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText(
+          'The destination rejected the notification. Remove this destination and add it again with the correct topic and access token.'
+        )
+      ).not.toBeInTheDocument();
+    });
+
+    it('still shows the ntfy-specific rejected wording for an ntfy destination, unchanged', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: false, code: 'http_4xx' })));
+      renderCard({ endpoints: [{ ...endpoint, type: 'NTFY' }] });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            'The destination rejected the notification. Remove this destination and add it again with the correct topic and access token.'
+          )
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('opening the webhook form closes an already-open ntfy form, so their Name fields never coexist', () => {
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add ntfy topic' }));
+      expect(screen.getByLabelText('Topic URL')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add webhook' }));
+
+      expect(screen.queryByLabelText('Topic URL')).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Endpoint URL')).toBeInTheDocument();
+      expect(screen.getAllByLabelText('Name')).toHaveLength(1);
     });
   });
 });
