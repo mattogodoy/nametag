@@ -798,6 +798,12 @@ describe('NotificationEndpointsCard', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Add webhook' }));
 
+      // Asserts the http-allowed hint is actually rendered, not just that the
+      // https-required one is absent: rendering neither hint would also pass
+      // the absence check alone.
+      expect(
+        screen.getByText('Must be an address that accepts a POST. HTTP is allowed on self-hosted instances.')
+      ).toBeInTheDocument();
       expect(
         screen.queryByText('Must be an https:// address that accepts a POST.')
       ).not.toBeInTheDocument();
@@ -837,6 +843,25 @@ describe('NotificationEndpointsCard', () => {
       ).not.toBeInTheDocument();
     });
 
+    it('does not show the Pro upsell for an ntfy creation request that gets a 403 for an unrelated reason', async () => {
+      // withAuth returns 403 for an invalid request origin regardless of
+      // destination type; an ntfy add has no entitlement gate at all, so this
+      // must never render the webhook upsell message.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ error: 'Invalid request origin' }, false, 403))
+      );
+      renderCard({ endpoints: [], canAdd: true });
+
+      openAddFormAndFill('My phone', 'https://ntfy.sh/my-topic');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Invalid request origin')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Outgoing webhooks are part of Pro.')).not.toBeInTheDocument();
+    });
+
     it('shows webhook-specific wording for a generic 400, not the ntfy topic-URL wording', async () => {
       vi.stubGlobal(
         'fetch',
@@ -866,7 +891,7 @@ describe('NotificationEndpointsCard', () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            'The destination rejected the notification. Remove this destination and add it again with the correct URL.'
+            "The destination rejected the notification. This is usually an authentication, payload, or signature problem, not the URL. Check your receiver's logs, and if you need a new signing secret, remove this destination and add it again."
           )
         ).toBeInTheDocument();
       });
@@ -892,7 +917,13 @@ describe('NotificationEndpointsCard', () => {
       });
     });
 
-    it('shows webhook-specific wording for a redirect on a saved destination, not the ntfy topic-URL wording', async () => {
+    it('uses the same redirect message for a webhook as for an ntfy destination, since the wording is already channel-neutral', async () => {
+      // There is no webhookTestRedirectSaved key: it used to be byte-identical
+      // to endpointTestRedirectSaved, so the redirect code no longer branches
+      // on destination type at all (see messageKeyForOutboundCode). This test
+      // pins that a webhook and an ntfy destination render the exact same
+      // string for the same code, so a regression that reintroduces separate,
+      // diverging wording for one of them would be caught here.
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: false, code: 'redirect' })));
       renderCard({
         endpoints: [{ ...endpoint, id: 'ep-2', type: 'WEBHOOK', url: 'https://hooks.test/x' }],
@@ -900,12 +931,11 @@ describe('NotificationEndpointsCard', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
 
+      const sharedMessage =
+        'That address redirects to a different location, which is not supported. Remove this destination and add it again with a URL that does not redirect.';
+
       await waitFor(() => {
-        expect(
-          screen.getByText(
-            'That address redirects to a different location, which is not supported. Remove this destination and add it again with a URL that does not redirect.'
-          )
-        ).toBeInTheDocument();
+        expect(screen.getByText(sharedMessage)).toBeInTheDocument();
       });
       expect(screen.queryByText(/topic URL/)).not.toBeInTheDocument();
     });
@@ -919,7 +949,11 @@ describe('NotificationEndpointsCard', () => {
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(
-          jsonResponse({ error: 'Outgoing webhooks require a Pro subscription' }, false, 403)
+          jsonResponse(
+            { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
+            false,
+            403
+          )
         )
       );
       renderCard({
@@ -930,6 +964,45 @@ describe('NotificationEndpointsCard', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Outgoing webhooks are part of Pro.')).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText(
+          'Could not reach that destination. It may be temporary, so it is worth trying again.'
+        )
+      ).not.toBeInTheDocument();
+    });
+
+    it('does not show the Pro upsell for a 403 that is not the entitlement gate, such as an ntfy destination hitting an origin-validation failure', async () => {
+      // withAuth returns 403 for an invalid request origin or a read-only API
+      // token too, neither of which is the Pro entitlement gate and neither of
+      // which has anything to do with destination type. Only the entitlement
+      // failure carries code: 'forbidden'; this body deliberately omits it.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ error: 'Invalid request origin' }, false, 403))
+      );
+      renderCard({ endpoints: [{ ...endpoint, type: 'NTFY' }] });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Something went wrong. Please try again later.')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Outgoing webhooks are part of Pro.')).not.toBeInTheDocument();
+    });
+
+    it('reports a removed destination distinctly from an unreachable one', async () => {
+      // A 404 means the row is gone, most likely deleted in another tab, not
+      // that the destination failed to respond. Retrying can never succeed.
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: 'Not found' }, false, 404)));
+      renderCard({ endpoints: [endpoint] });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('This destination no longer exists. It may have been removed in a different tab.')
+        ).toBeInTheDocument();
       });
       expect(
         screen.queryByText(
