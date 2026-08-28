@@ -172,4 +172,20 @@ describe('sendWebhook', () => {
 
     expect(await sendWebhook(endpoint, envelope, now)).toEqual({ ok: false, code: 'http_429' });
   });
+
+  it('resolves rather than throwing when the stored secret will not decrypt', async () => {
+    // Every stored secret enters this state after NEXTAUTH_SECRET is rotated,
+    // which is a documented operator action, not an edge case. sendWebhook's
+    // contract is to resolve with an outcome so a per-endpoint failure never
+    // aborts the caller's remaining endpoints; a throw here would break that,
+    // the same trap sendNtfy's matching guard exists to avoid.
+    mocks.decryptSecret.mockImplementation(() => {
+      throw new Error('bad decrypt');
+    });
+
+    const result = await sendWebhook(endpoint, envelope, now);
+
+    expect(result).toEqual({ ok: false, code: 'unknown' });
+    expect(mocks.postJson).not.toHaveBeenCalled();
+  });
 });

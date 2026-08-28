@@ -98,7 +98,22 @@ export async function sendWebhook(
   });
 
   const timestamp = Math.floor(now.getTime() / 1000).toString();
-  const signature = signPayload(decryptSecret(endpoint.secret), timestamp, payload);
+
+  let secret: string;
+  try {
+    secret = decryptSecret(endpoint.secret);
+  } catch {
+    // A stored secret that will not decrypt, which is what happens to every
+    // stored secret if NEXTAUTH_SECRET is rotated. Report it rather than
+    // throwing: this function's contract is to resolve with an outcome, and
+    // a throw here would abandon the caller's remaining endpoints (see the
+    // matching guard in sendNtfy). Not 'blocked', because the URL is fine
+    // and telling the user to change it would send them after the wrong
+    // thing.
+    return { ok: false, code: 'unknown' };
+  }
+
+  const signature = signPayload(secret, timestamp, payload);
 
   return postJson(endpoint.url, payload, {
     'User-Agent': `Nametag/${getVersion()} (+https://nametag.one)`,
