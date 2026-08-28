@@ -91,6 +91,17 @@ describe('NotificationEndpointsCard', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('gives the filled Save button a focus ring offset so its ring is visible against its own fill', () => {
+    // The shared FOCUS_RING helper is the same color as bg-primary, so
+    // without ring-offset-2 the ring would be invisible on this button, the
+    // one place in this card that uses a filled primary background.
+    renderCard({ canAdd: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Add ntfy topic' }));
+
+    const saveButton = screen.getByRole('button', { name: 'Save' });
+    expect(saveButton.className).toContain('focus:ring-offset-2');
+  });
+
   it('surfaces the success message for a successful test send', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ ok: true }));
     vi.stubGlobal('fetch', fetchMock);
@@ -110,11 +121,27 @@ describe('NotificationEndpointsCard', () => {
 
   describe('failure code mapping', () => {
     it.each([
-      ['blocked', 'That URL cannot be used. Change it and save again.'],
+      // blocked/http_4xx get the saved-row variant here: the test button only
+      // ever appears against an already-saved destination, whose URL and
+      // token cannot be edited in place, so the message must point at the
+      // action that actually exists (remove and re-add).
+      [
+        'blocked',
+        'That URL cannot be used. Remove this destination and add it again with a working URL.',
+      ],
       ['dns', 'That hostname did not resolve. Check the spelling, or try again in a moment.'],
       [
         'http_4xx',
-        'The destination rejected the notification. Check the topic name and the access token.',
+        'The destination rejected the notification. Remove this destination and add it again with the correct topic and access token.',
+      ],
+      ['http_429', 'The destination is rate limiting us. It should recover on its own.'],
+      [
+        'tls',
+        "The destination's certificate could not be verified. If it is on your own network, this is often a self-signed certificate that needs to be trusted or replaced.",
+      ],
+      [
+        'redirect',
+        'That address redirects to a different location, which is not supported. Point the topic URL at its final destination.',
       ],
     ])('maps the %s code to its own message', async (code, expected) => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: false, code })));
@@ -168,8 +195,44 @@ describe('NotificationEndpointsCard', () => {
         ).toBeInTheDocument();
       });
       expect(
-        screen.queryByText('That URL cannot be used. Change it and save again.')
+        screen.queryByText(
+          'That URL cannot be used. Remove this destination and add it again with a working URL.'
+        )
       ).not.toBeInTheDocument();
+    });
+
+    it('reports our own rate limit as rate limiting, not as the destination being unreachable', async () => {
+      // checkRateLimit on the test-send route returns a bare 429 with no
+      // OutboundFailureCode body: nothing was even attempted, so this must
+      // not read as "could not reach that destination".
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, false, 429)));
+      renderCard({ endpoints: [endpoint] });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Too many attempts. Wait a few minutes and try again.')
+        ).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText(
+          'Could not reach that destination. It may be temporary, so it is worth trying again.'
+        )
+      ).not.toBeInTheDocument();
+    });
+
+    it('reports an expired session distinctly from the destination being unreachable', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, false, 401)));
+      renderCard({ endpoints: [endpoint] });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Your session has expired. Please log in again.')
+        ).toBeInTheDocument();
+      });
     });
   });
 
@@ -190,19 +253,22 @@ describe('NotificationEndpointsCard', () => {
     expect(screen.queryByRole('button', { name: 'Turn back on' })).not.toBeInTheDocument();
   });
 
-  it('shows the banner and re-enable action for a disabled endpoint even without autoDisabledAt set', () => {
-    // Reachable through the documented PUT {enabled:false}, and through a
-    // success recorded against a row a concurrent envelope had already
-    // auto-disabled: enabled:false, autoDisabledAt:null. Gating on
-    // autoDisabledAt alone would render this row as perfectly healthy while
-    // it delivers nothing and offers no way back.
+  it('shows a manual-disable message, not the auto-disable one, for a disabled endpoint without autoDisabledAt set', () => {
+    // The only way to reach enabled:false with autoDisabledAt:null is a plain
+    // PUT {enabled:false}: auto-disable always sets both together (see
+    // recordEndpointResult), and success never touches either. So this state
+    // is manual disable, and must say so rather than blaming failures that
+    // were not why the destination is off.
     renderCard({
       endpoints: [{ ...endpoint, enabled: false, autoDisabledAt: null }],
     });
 
     expect(
-      screen.getByText('Turned off after repeated failures. Fix the destination, then turn it back on.')
+      screen.getByText('Turned off. Turn it back on when you want reminders here again.')
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Turned off after repeated failures. Fix the destination, then turn it back on.')
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Turn back on' })).toBeInTheDocument();
   });
 
@@ -217,6 +283,19 @@ describe('NotificationEndpointsCard', () => {
       screen.getByText('That hostname did not resolve. Check the spelling, or try again in a moment.')
     ).toBeInTheDocument();
     expect(screen.queryByText('dns')).not.toBeInTheDocument();
+  });
+
+  it('does not show a failure reason next to a manually disabled endpoint, even if a stale code is present', () => {
+    // A manually disabled row may carry a lastFailureCode left over from an
+    // unrelated earlier failure. Showing it next to "turned off manually"
+    // would misattribute why the destination is off right now.
+    renderCard({
+      endpoints: [{ ...endpoint, enabled: false, autoDisabledAt: null, lastFailureCode: 'dns' }],
+    });
+
+    expect(
+      screen.queryByText('That hostname did not resolve. Check the spelling, or try again in a moment.')
+    ).not.toBeInTheDocument();
   });
 
   it('re-enables a disabled endpoint via PUT and refreshes', async () => {
@@ -277,6 +356,11 @@ describe('NotificationEndpointsCard', () => {
 
     const tokenInput = screen.getByLabelText('Access token (optional)') as HTMLInputElement;
     expect(tokenInput.type).toBe('password');
+    // Matches createNtfyEndpointSchema's token max length (255). Without
+    // this, an over-length token produces a server error naming a field the
+    // user cannot see, since the label and URL inputs already cap input but
+    // the token one previously did not.
+    expect(tokenInput.maxLength).toBe(255);
 
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'My phone' } });
     fireEvent.change(screen.getByLabelText('Topic URL'), {

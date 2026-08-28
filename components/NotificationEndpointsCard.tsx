@@ -60,9 +60,14 @@ function isApiErrorBody(value: unknown): value is ApiErrorBody {
  * refused by policy and is permanent, the user must change it. `dns` means the
  * hostname just did not resolve, which can be transient. Collapsing them would
  * tell a self-hoster whose resolver hiccupped to go change a URL that was
- * correct. Everything else (timeout, refused, tls, redirect, http_5xx,
- * unknown) is transient or not the user's to fix, so it gets the generic
- * retry wording. The raw code is never rendered, only branched on.
+ * correct. `tls` and `redirect` are also both permanent (a bad certificate or
+ * a topic URL that redirects elsewhere is not going to fix itself), so each
+ * gets its own wording rather than falling into the generic retry message.
+ * `http_429` gets its own wording too: the destination itself asked us to
+ * slow down, which is transient and not something a token or topic name fix
+ * addresses. Everything left (timeout, refused, http_5xx, unknown) is
+ * transient or not the user's to fix, so it gets the generic retry wording.
+ * The raw code is never rendered, only branched on.
  *
  * Typed against OutboundFailureCode rather than a bare `Record<string,
  * string>` so that renaming one of those codes is a compile error here
@@ -73,7 +78,30 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
   blocked: 'endpointTestBlocked',
   dns: 'endpointTestDns',
   http_4xx: 'endpointTestRejected',
+  http_429: 'endpointTestRateLimited',
+  tls: 'endpointTestTls',
+  redirect: 'endpointTestRedirect',
 };
+
+/**
+ * Overrides applied only when the message is shown against an already-saved
+ * destination (the test-send result, or the auto-disabled banner), rather
+ * than against the create form.
+ *
+ * `updateEndpointSchema` accepts only `label` and `enabled`: neither the URL
+ * nor the token of a saved destination can be edited. `endpointTestBlocked`
+ * and `endpointTestRejected` both read as if editing were possible ("change
+ * it and save again", "check the topic name and the access token"), which is
+ * correct on the create form but leaves a saved row's message pointing at an
+ * action the UI cannot perform. The saved variants point at the one action
+ * that actually exists: remove the destination and add it again.
+ */
+const SAVED_MESSAGE_OVERRIDES: Partial<Record<OutboundFailureCode, string>> = {
+  blocked: 'endpointTestBlockedSaved',
+  http_4xx: 'endpointTestRejectedSaved',
+};
+
+type MessageContext = 'form' | 'saved';
 
 /**
  * `data.code` crosses a network boundary as a plain string and could be
@@ -82,18 +110,23 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
  * the key is absent, so an unrecognised value degrades to the generic
  * message rather than producing a wrong one.
  */
-function messageKeyForOutboundCode(code: string): string {
+function messageKeyForOutboundCode(code: string, context: MessageContext): string {
+  if (context === 'saved') {
+    const override = SAVED_MESSAGE_OVERRIDES[code as OutboundFailureCode];
+    if (override) return override;
+  }
   return MESSAGE_BY_CODE[code as OutboundFailureCode] ?? 'endpointTestFailed';
 }
 
 interface TestMessage {
   ok: boolean;
-  key: string;
+  text: string;
 }
 
 export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) {
   const t = useTranslations('settings.notifications');
   const tErrors = useTranslations('errors.server');
+  const tAuth = useTranslations('errors.auth');
   const router = useRouter();
 
   const [showForm, setShowForm] = useState(false);
@@ -208,6 +241,17 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
     }
   }
 
+  /**
+   * `response.status` is checked before the body is parsed, and before the
+   * generic !response.ok fallback, for the same reason readAddErrorMessage
+   * checks status on the create path: `checkRateLimit` on this route returns
+   * a bare 429 with no `OutboundFailureCode`, and folding it into the
+   * generic !response.ok branch below reports our own rate limiter as the
+   * destination being unreachable, which is wrong (nothing was even
+   * attempted) and actively counterproductive (retrying immediately hits the
+   * same limit again). 401 gets the same early, distinct treatment: a session
+   * that expired mid-visit is not the destination's fault either.
+   */
   async function handleTest(id: string) {
     setBusy(id, true);
     setTestResults((prev) => {
@@ -218,23 +262,40 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
 
     try {
       const response = await fetch(`/api/notifications/endpoints/${id}/test`, { method: 'POST' });
+
+      if (response.status === 401) {
+        setTestResults((prev) => ({ ...prev, [id]: { ok: false, text: tAuth('sessionExpired') } }));
+        return;
+      }
+
+      if (response.status === 429) {
+        setTestResults((prev) => ({
+          ...prev,
+          [id]: { ok: false, text: t('endpointAddRateLimited') },
+        }));
+        return;
+      }
+
       const data: unknown = await response.json().catch(() => null);
 
       if (!response.ok || !isTestOutcome(data)) {
-        setTestResults((prev) => ({ ...prev, [id]: { ok: false, key: 'endpointTestFailed' } }));
+        setTestResults((prev) => ({
+          ...prev,
+          [id]: { ok: false, text: t('endpointTestFailed') },
+        }));
         return;
       }
 
       if (data.ok) {
-        setTestResults((prev) => ({ ...prev, [id]: { ok: true, key: 'endpointTestOk' } }));
+        setTestResults((prev) => ({ ...prev, [id]: { ok: true, text: t('endpointTestOk') } }));
       } else {
         setTestResults((prev) => ({
           ...prev,
-          [id]: { ok: false, key: messageKeyForOutboundCode(data.code) },
+          [id]: { ok: false, text: t(messageKeyForOutboundCode(data.code, 'saved')) },
         }));
       }
     } catch {
-      setTestResults((prev) => ({ ...prev, [id]: { ok: false, key: 'endpointTestFailed' } }));
+      setTestResults((prev) => ({ ...prev, [id]: { ok: false, text: t('endpointTestFailed') } }));
     } finally {
       setBusy(id, false);
     }
@@ -325,25 +386,35 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
                     role="alert"
                     className={`text-sm mt-2 ${result.ok ? 'text-foreground' : 'text-muted'}`}
                   >
-                    {t(result.key)}
+                    {result.text}
                   </p>
                 )}
 
-                {/* Gated on `enabled`, not `autoDisabledAt`: a row can be
-                    disabled without that timestamp (a plain PUT, or a
-                    success recorded against an endpoint that a concurrent
-                    envelope had already auto-disabled), and such a row must
-                    still be visible and recoverable here. */}
+                {/* Gated on `enabled`, not `autoDisabledAt`, for whether the
+                    banner shows at all: a row can be disabled without that
+                    timestamp (a plain PUT), and such a row must still be
+                    visible and recoverable here. `autoDisabledAt` itself then
+                    decides which of the two reasons is shown: auto-disable
+                    always sets `enabled: false` and `autoDisabledAt` together
+                    (see recordEndpointResult), and a plain PUT never sets
+                    `autoDisabledAt`, so its presence reliably tells the two
+                    apart. */}
                 {!endpoint.enabled && (
                   <div className="mt-2 flex items-center justify-between gap-4 rounded-md bg-muted/20 px-3 py-2">
                     <div>
-                      <p className="text-sm text-muted">{t('endpointDisabled')}</p>
+                      <p className="text-sm text-muted">
+                        {endpoint.autoDisabledAt ? t('endpointDisabled') : t('endpointDisabledManual')}
+                      </p>
                       {/* The coarse failure code, run through the same
                           code-to-message mapping the test-send result uses.
-                          Never the raw code itself: see messageKeyForOutboundCode. */}
-                      {endpoint.lastFailureCode && (
+                          Never the raw code itself: see messageKeyForOutboundCode.
+                          Only shown for an auto-disabled row: a manually
+                          disabled one may carry a stale code from an
+                          unrelated earlier failure that has nothing to do
+                          with why it is off right now. */}
+                      {endpoint.autoDisabledAt && endpoint.lastFailureCode && (
                         <p className="text-sm text-muted">
-                          {t(messageKeyForOutboundCode(endpoint.lastFailureCode))}
+                          {t(messageKeyForOutboundCode(endpoint.lastFailureCode, 'saved'))}
                         </p>
                       )}
                     </div>
@@ -427,6 +498,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
               value={token}
               onChange={(event) => setToken(event.target.value)}
               autoComplete="off"
+              maxLength={255}
               className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
             />
           </div>
@@ -441,7 +513,12 @@ export default function NotificationEndpointsCard({ endpoints, canAdd }: Props) 
             <button
               type="submit"
               disabled={submitting}
-              className={`px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 ${FOCUS_RING}`}
+              // Not the shared FOCUS_RING: that ring is the same color as this
+              // button's own bg-primary fill, so without ring-offset-2 the
+              // focus indicator is invisible against its own background. The
+              // house pattern for a filled primary button (see EmptyState,
+              // GoogleSignInButton) always adds the offset.
+              className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
               {t('endpointSave')}
             </button>
