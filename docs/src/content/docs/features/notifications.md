@@ -12,6 +12,7 @@ Nametag can remind you about important dates and contact reminders in more than 
 - **Email**: sent through whichever provider your instance has configured. On by default.
 - **Push**: a browser or device notification, delivered even when Nametag is not open in a tab. Off until you turn it on, and only available if your instance has push configured.
 - **ntfy**: a reminder pushed to a topic on [ntfy.sh](https://ntfy.sh) or your own ntfy server. Off until you add a destination.
+- **Webhook**: a signed HTTP request sent to a server you control. Off until you add a destination. On nametag.one this is part of Pro; self-hosted instances have no such restriction.
 
 Email and push live in Settings under Notifications. If your instance has no email provider set up, or push is not configured, the corresponding control is shown disabled with an explanation rather than hidden, so you know why rather than wondering if something is broken.
 
@@ -41,7 +42,79 @@ You'll also need iOS or iPadOS 16.4 or later. Apple only added web push support 
 
 On the public ntfy.sh server, the topic name is the only thing standing between your reminders and anyone who guesses it or finds it some other way: anyone who knows the topic name can subscribe to it too. Pick something long and hard to guess, not a word or your own name. If you run your own ntfy server, or the topic needs an access token to publish to, add that token when you create the destination. It's encrypted at rest and is never shown back to you once saved.
 
-You can add up to five destinations, ntfy or otherwise. A destination that fails delivery on ten consecutive nightly runs is switched off automatically, so a dead topic or a decommissioned server doesn't keep failing quietly forever: this is tracked per run, not per reminder, so a night with a weekly digest and several birthday reminders still only counts as one failure against the threshold if every one of them failed. It stays visible in Settings, showing whether it was switched off automatically (with the reason for the last failure) or turned off manually, and you can turn it back on from either state.
+You can add up to five destinations, ntfy or otherwise. A destination that fails delivery on ten consecutive nightly runs is switched off automatically, so a dead topic or a decommissioned server doesn't keep failing quietly forever. This is tracked per run, not per reminder, so a night with a weekly digest and several birthday reminders still only counts as one failure against the threshold if every one of them failed, and a `429` response (the destination telling us to slow down) never counts toward the threshold at all, so a receiver enforcing its own rate limit cannot get itself switched off for it. The destination stays visible in Settings, showing whether it was switched off automatically (with the reason for the last failure) or turned off manually, and you can turn it back on from either state.
+
+## Sending reminders to a webhook
+
+A webhook is your own HTTPS endpoint. Nametag sends it a signed JSON request for each reminder, so you can route reminders into your own system: a home automation hook, a personal API, a chat integration, anything that can receive a POST and verify a signature.
+
+On nametag.one, outgoing webhooks are part of Pro. Self-hosted, every user can add one, with no subscription involved. If a Pro subscription lapses on nametag.one, existing webhook destinations stop being delivered to immediately, there's no separate cleanup step and no grace period; renewing the subscription resumes delivery, and the destination itself is left in place either way.
+
+1. In Nametag, go to Settings, Notifications, and add a webhook destination with your endpoint's URL.
+2. Nametag generates a signing secret and shows it to you once. Save it now: there is no way to view it again, and if you lose it you'll need to remove the webhook and add it back to get a new one.
+3. Send a test to confirm delivery and signature verification both work before you rely on it.
+
+### Payload
+
+Each reminder is a single `POST` with a JSON body:
+
+```json
+{
+  "event": "reminder.important_date",
+  "occurredAt": "2026-08-26T09:00:00.000Z",
+  "title": "Ana Torres",
+  "body": "Birthday today",
+  "url": "https://your-instance.example.com/people/clxperson1",
+  "data": {
+    "personId": "clxperson1",
+    "personName": "Ana Torres",
+    "dateTitle": "Birthday",
+    "dateType": "birthday",
+    "formattedDate": "August 26, 2026",
+    "date": "2026-08-26"
+  }
+}
+```
+
+`event` is `reminder.` followed by the kind of reminder: `important_date`, `important_date_lead`, `contact`, or `weekly_digest`. `data` varies with it: an `important_date` carries `personId`, `personName`, `dateTitle`, `dateType`, `formattedDate`, and a raw ISO `date` (`YYYY-MM-DD`, alongside the display-formatted one, so a receiver doesn't have to guess a date format from your locale); `important_date_lead` carries the same fields except `dateType`, replaced with `daysUntil`; `contact` carries `personId`, `personName`, `lastContact`, and `interval`; `weekly_digest` carries `events` (a list, each with `personName`, `eventTitle`, `formattedDate`, and `daysUntil`) and `overflowCount`.
+
+Contact names and other person details leave your Nametag instance in this payload, sent to whatever server you point the webhook at. Only add an endpoint you control.
+
+### Verifying the signature
+
+Every request carries exactly these headers, nothing else:
+
+| Header | Value |
+| --- | --- |
+| `User-Agent` | `Nametag/<version> (+https://nametag.one)` |
+| `X-Nametag-Event` | The same value as the body's `event` field |
+| `X-Nametag-Timestamp` | Unix timestamp, in seconds, of when the request was sent |
+| `X-Nametag-Signature` | `sha256=<hex-encoded HMAC-SHA256 digest>` |
+
+The signature is computed over the string `<timestamp>.<raw body>`, that is, the timestamp, a literal period, and the exact bytes of the request body, keyed with the signing secret you saved when you created the destination. Binding the timestamp into the signed message, rather than signing the body alone, is what makes the timestamp useful for replay protection: a captured request cannot be replayed later with a new timestamp, because the signature would no longer match.
+
+Verify the signature before trusting a payload:
+
+```js
+const crypto = require('node:crypto');
+
+function verify(rawBody, headers, secret) {
+  const timestamp = headers['x-nametag-timestamp'];
+  const expected =
+    'sha256=' +
+    crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
+
+  const a = Buffer.from(headers['x-nametag-signature']);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+
+  // Reject anything older than five minutes so a captured payload cannot be
+  // replayed later.
+  return Math.abs(Date.now() / 1000 - Number(timestamp)) < 300;
+}
+```
+
+Use `rawBody` exactly as received, before any JSON parsing: re-serializing the parsed object can reorder keys or change whitespace, and the signature would no longer match a re-encoded body. Compare signatures with `timingSafeEqual` rather than `===`, and reject anything outside a freshness window, five minutes is reasonable, so a captured request cannot be replayed after the fact.
 
 ## Privacy
 
@@ -57,3 +130,5 @@ Push notifications are encrypted end to end by the Web Push protocol itself. The
 - On nametag.one, an ntfy or webhook destination must be HTTPS on port 443, and cannot point at a private or internal address. A URL on a non-standard port, such as `https://ntfy.example.com:8443/topic`, is rejected even though it's HTTPS. A self-hosted instance has no such restriction, since reaching a server on your own network, such as a LAN ntfy box on whatever port it listens on, is exactly the point.
 - Nametag never follows a redirect from a destination. If your server responds with one, the request is reported as failed rather than followed somewhere else.
 - A request to a destination times out after five seconds, on top of a separate five-second budget for resolving its hostname, so the worst case before a delivery is reported as failed is roughly ten seconds. A slow receiver is treated the same as one that never responds.
+- The response body of an ntfy or webhook request is never read, only the status code. Nothing your server writes back can change what Nametag does with it, and it cannot be used to pull data out of a server Nametag can otherwise reach.
+- A webhook's headers are a fixed set: `User-Agent`, `X-Nametag-Event`, `X-Nametag-Timestamp`, and `X-Nametag-Signature`. Nothing from a person's record or from your own settings ever becomes a header, only values inside the signed JSON body.
