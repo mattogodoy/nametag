@@ -51,12 +51,12 @@ const baseBody = {
   color: '#8B5CF6',
 };
 
-const genderCondition = {
+const nicknameCondition = {
   subject: 'DESCRIBED',
   source: 'PERSON_FIELD',
-  subjectRef: 'gender',
+  subjectRef: 'nickname',
   operator: 'IS',
-  operand: 'lit:Homme',
+  operand: 'lit:Coco',
 };
 
 describe('PUT /api/relationship-types/[id] with variants', () => {
@@ -90,7 +90,7 @@ describe('PUT /api/relationship-types/[id] with variants', () => {
       request({
         ...baseBody,
         variants: [
-          { label: 'frere', conditions: [genderCondition] },
+          { label: 'frere', conditions: [nicknameCondition] },
           { label: 'fratrie', conditions: [] },
         ],
       }),
@@ -147,7 +147,7 @@ describe('PUT /api/relationship-types/[id] with variants', () => {
         ...baseBody,
         variants: [
           { label: 'a', conditions: [] },
-          { label: 'b', conditions: [genderCondition] },
+          { label: 'b', conditions: [nicknameCondition] },
         ],
       }),
       { params: Promise.resolve({ id: 'type-1' }) }
@@ -188,7 +188,7 @@ describe('PUT /api/relationship-types/[id] with a symmetric type', () => {
         ...baseBody,
         symmetric: true,
         variants: [
-          { label: 'frere', conditions: [genderCondition] },
+          { label: 'frere', conditions: [nicknameCondition] },
           { label: 'fratrie', conditions: [] },
         ],
       }),
@@ -270,7 +270,7 @@ describe('POST /api/relationship-types with variants', () => {
         color: '#8B5CF6',
         symmetric: true,
         variants: [
-          { label: 'ami', conditions: [genderCondition] },
+          { label: 'ami', conditions: [nicknameCondition] },
           { label: 'amie', conditions: [] },
         ],
       })
@@ -300,7 +300,7 @@ describe('POST /api/relationship-types with variants', () => {
         label: 'Parent',
         color: '#8B5CF6',
         inverseLabel: 'Child',
-        variants: [{ label: 'papa', conditions: [genderCondition] }],
+        variants: [{ label: 'papa', conditions: [nicknameCondition] }],
       })
     );
 

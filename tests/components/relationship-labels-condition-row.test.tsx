@@ -51,15 +51,13 @@ const templates = [
   { id: 'tpl-2', name: 'Is vegetarian', type: 'BOOLEAN' as const, options: [] },
 ];
 
-const genderSuggestions = ['woman', 'man', 'nonbinary'];
-
 function baseCondition(overrides: Partial<LabelCondition> = {}): LabelCondition {
   return {
     subject: 'DESCRIBED',
     source: 'PERSON_FIELD',
-    subjectRef: 'gender',
+    subjectRef: 'nickname',
     operator: 'IS',
-    operand: 'lit:woman',
+    operand: 'lit:Coco',
     ...overrides,
   };
 }
@@ -76,7 +74,6 @@ function renderRow(
         condition={condition}
         groups={groups}
         templates={templates}
-        genderSuggestions={genderSuggestions}
         onChange={onChange}
         onRemove={onRemove}
       />
@@ -98,7 +95,6 @@ function renderRowWithMessages(
         condition={condition}
         groups={groups}
         templates={templates}
-        genderSuggestions={genderSuggestions}
         onChange={onChange}
         onRemove={onRemove}
       />
@@ -161,7 +157,7 @@ describe('ConditionRow', () => {
     const user = userEvent.setup();
     const { onChange } = renderRow(baseCondition());
 
-    const dataSelect = screen.getByDisplayValue('gender');
+    const dataSelect = screen.getByDisplayValue('nickname');
     await user.selectOptions(dataSelect, 'GROUP::group-1');
 
     expect(onChange).toHaveBeenCalledWith(
@@ -189,7 +185,7 @@ describe('ConditionRow', () => {
     // confirm the value input is gone.
     cleanup();
     renderRow(baseCondition({ operator: 'IS_SET', operand: null }));
-    expect(screen.queryAllByDisplayValue('woman')).toHaveLength(0);
+    expect(screen.queryAllByDisplayValue('Coco')).toHaveLength(0);
   });
 
   it('offers only the group operators when the source is GROUP', () => {
@@ -245,21 +241,8 @@ describe('ConditionRow', () => {
     await user.selectOptions(modeSelect, 'ref');
 
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ operand: 'ref:gender' })
+      expect.objectContaining({ operand: 'ref:nickname' })
     );
-  });
-
-  it('renders a text input with a datalist of gender suggestions for a gender field', () => {
-    renderRow(baseCondition());
-
-    const input = screen.getByDisplayValue('woman') as HTMLInputElement;
-    expect(input.tagName).toBe('INPUT');
-    expect(input.getAttribute('list')).toBeTruthy();
-
-    const datalist = document.getElementById(input.getAttribute('list')!);
-    expect(datalist).not.toBeNull();
-    const options = Array.from(datalist!.querySelectorAll('option')).map((o) => o.getAttribute('value'));
-    expect(options).toEqual(genderSuggestions);
   });
 
   it('narrows the operator list to the boolean operators for a BOOLEAN custom field', () => {

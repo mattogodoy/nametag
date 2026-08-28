@@ -52,14 +52,14 @@ describe('collectDataNeeds', () => {
       {
         label: 'a',
         conditions: [
-          { subject: 'DESCRIBED', source: 'PERSON_FIELD', subjectRef: 'gender', operator: 'IS', operand: 'lit:Homme' },
-          { subject: 'OTHER', source: 'PERSON_FIELD', subjectRef: 'gender', operator: 'IS', operand: 'lit:Homme' },
+          { subject: 'DESCRIBED', source: 'PERSON_FIELD', subjectRef: 'nickname', operator: 'IS', operand: 'lit:Coco' },
+          { subject: 'OTHER', source: 'PERSON_FIELD', subjectRef: 'nickname', operator: 'IS', operand: 'lit:Coco' },
           { subject: 'DESCRIBED', source: 'CUSTOM_FIELD', subjectRef: 'tpl-1', operator: 'IS_SET', operand: null },
         ],
       },
     ];
     expect(collectDataNeeds(variants)).toEqual({
-      fields: ['gender'],
+      fields: ['nickname'],
       groups: false,
       templateIds: ['tpl-1'],
       dates: false,
@@ -117,17 +117,17 @@ describe('loadPersonContexts', () => {
   });
 
   it('loads native fields in a single query scoped to the user', async () => {
-    mocks.personFindMany.mockResolvedValue([{ id: 'p1', gender: 'Homme' }]);
+    mocks.personFindMany.mockResolvedValue([{ id: 'p1', nickname: 'Coco' }]);
     const contexts = await loadPersonContexts('user-1', ['p1', 'p2'], {
       ...noNeeds,
-      fields: ['gender'],
+      fields: ['nickname'],
     });
     expect(mocks.personFindMany).toHaveBeenCalledTimes(1);
     expect(mocks.personFindMany).toHaveBeenCalledWith({
       where: { id: { in: ['p1', 'p2'] }, userId: 'user-1', deletedAt: null },
-      select: { id: true, gender: true },
+      select: { id: true, nickname: true },
     });
-    expect(contexts.get('p1')?.fields.gender).toBe('Homme');
+    expect(contexts.get('p1')?.fields.nickname).toBe('Coco');
   });
 
   it('excludes soft-deleted groups, dates and templates', async () => {

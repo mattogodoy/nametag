@@ -19,7 +19,7 @@ export interface LabelDataNeeds {
 
 /**
  * Walks the configuration once to learn which sources are actually referenced,
- * so a user who only conditions on gender never pays for a groups query.
+ * so a user who only conditions on nickname never pays for a groups query.
  */
 export function collectDataNeeds(variants: readonly LabelVariant[]): LabelDataNeeds {
   const fields = new Set<PersonFieldKey>();

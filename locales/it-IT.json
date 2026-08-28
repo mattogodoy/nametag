@@ -1652,7 +1652,6 @@
           "DATE_TITLE": "Date personalizzate"
         },
         "fields": {
-          "gender": "genere",
           "prefix": "titolo",
           "suffix": "suffisso",
           "nickname": "soprannome",

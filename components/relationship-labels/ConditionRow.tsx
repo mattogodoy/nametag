@@ -1,6 +1,5 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 import type { CustomFieldType } from '@prisma/client';
 import {
@@ -32,7 +31,6 @@ interface ConditionRowProps {
   condition: LabelCondition;
   groups: ConditionRowGroup[];
   templates: ConditionRowCustomFieldTemplate[];
-  genderSuggestions: string[];
   onChange: (condition: LabelCondition) => void;
   onRemove: () => void;
 }
@@ -81,19 +79,17 @@ function decodeDataValue(value: string): { source: LabelSource; ref: string } {
   };
 }
 
-type ValueKind = 'select' | 'boolean' | 'number' | 'date' | 'gender' | 'text';
+type ValueKind = 'select' | 'boolean' | 'number' | 'date' | 'text';
 
 export default function ConditionRow({
   condition,
   groups,
   templates,
-  genderSuggestions,
   onChange,
   onRemove,
 }: ConditionRowProps) {
   const t = useTranslations('relationshipTypes.form.conditionalLabels');
   const tDateTypes = useTranslations('people.form.importantDates');
-  const reactId = useId();
 
   const operand = parseOperand(condition.operand);
   const operandMode = operand?.kind ?? 'literal';
@@ -133,7 +129,6 @@ export default function ConditionRow({
       }
     }
     if (isDateSource) return 'date';
-    if (condition.source === 'PERSON_FIELD' && condition.subjectRef === 'gender') return 'gender';
     return 'text';
   }
 
@@ -311,7 +306,6 @@ export default function ConditionRow({
         const modes: Array<'literal' | 'now' | 'ref'> = isDateSource
           ? ['literal', 'now', 'ref']
           : ['literal', 'ref'];
-        const datalistId = `${reactId}-gender-suggestions`;
 
         return (
           <span key={key} className="inline-flex items-center gap-2">
@@ -370,23 +364,6 @@ export default function ConditionRow({
                     onChange={(e) => handleLiteralChange(e.target.value)}
                     className={controlClass}
                   />
-                )}
-                {valueKind === 'gender' && (
-                  <>
-                    <input
-                      type="text"
-                      list={datalistId}
-                      aria-label={t('controlLabels.value')}
-                      value={operand?.kind === 'literal' ? operand.value : ''}
-                      onChange={(e) => handleLiteralChange(e.target.value)}
-                      className={controlClass}
-                    />
-                    <datalist id={datalistId}>
-                      {genderSuggestions.map((suggestion) => (
-                        <option key={suggestion} value={suggestion} />
-                      ))}
-                    </datalist>
-                  </>
                 )}
                 {valueKind === 'text' && (
                   <input

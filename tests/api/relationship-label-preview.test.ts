@@ -37,7 +37,7 @@ const variants = [
   {
     label: 'frere',
     conditions: [
-      { subject: 'DESCRIBED', source: 'PERSON_FIELD', subjectRef: 'gender', operator: 'IS', operand: 'lit:Homme' },
+      { subject: 'DESCRIBED', source: 'PERSON_FIELD', subjectRef: 'nickname', operator: 'IS', operand: 'lit:Coco' },
     ],
   },
   { label: 'fratrie', conditions: [] },
@@ -48,8 +48,8 @@ describe('POST /api/relationship-types/preview-label', () => {
     vi.clearAllMocks();
     mocks.personCount.mockResolvedValue(2);
     mocks.personFindMany.mockResolvedValue([
-      { id: 'p1', gender: 'Homme' },
-      { id: 'p2', gender: 'Femme' },
+      { id: 'p1', nickname: 'Coco' },
+      { id: 'p2', nickname: 'Mimi' },
     ]);
     mocks.personGroupFindMany.mockResolvedValue([]);
     mocks.customValueFindMany.mockResolvedValue([]);

@@ -21,7 +21,7 @@ export default async function NewRelationshipTypePage() {
   const { nameOrder, nameDisplayFormat } = await getUserDisplayPreferences(session.user.id);
 
   // Get all available types for inverse relationship selection
-  const [availableTypes, groups, templates, people, genders] = await Promise.all([
+  const [availableTypes, groups, templates, people] = await Promise.all([
     prisma.relationshipType.findMany({
       where: {
         userId: session.user.id,
@@ -60,20 +60,12 @@ export default async function NewRelationshipTypePage() {
       orderBy: { name: 'asc' },
       take: PREVIEW_PEOPLE_LIMIT,
     }),
-    prisma.person.findMany({
-      where: { userId: session.user.id, deletedAt: null, gender: { not: null } },
-      select: { gender: true },
-      distinct: ['gender'],
-    }),
   ]);
 
   const previewPeople = people.map((person) => ({
     id: person.id,
     name: formatFullName(person, nameOrder, nameDisplayFormat),
   }));
-  const genderSuggestions = genders
-    .map((entry) => entry.gender)
-    .filter((gender): gender is string => !!gender && gender.trim().length > 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,7 +98,6 @@ export default async function NewRelationshipTypePage() {
               groups={groups}
               templates={templates}
               people={previewPeople}
-              genderSuggestions={genderSuggestions}
             />
           </div>
         </div>

@@ -1652,7 +1652,6 @@
           "DATE_TITLE": "Egendefinerte datoer"
         },
         "fields": {
-          "gender": "kjønn",
           "prefix": "tittel",
           "suffix": "etternavnstillegg",
           "nickname": "kallenavn",

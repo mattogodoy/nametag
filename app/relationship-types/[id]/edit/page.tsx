@@ -26,7 +26,7 @@ export default async function EditRelationshipTypePage({
 
   const { nameOrder, nameDisplayFormat } = await getUserDisplayPreferences(session.user.id);
 
-  const [relationshipType, availableTypes, groups, templates, people, genders] = await Promise.all([
+  const [relationshipType, availableTypes, groups, templates, people] = await Promise.all([
     prisma.relationshipType.findFirst({
       where: {
         id,
@@ -90,11 +90,6 @@ export default async function EditRelationshipTypePage({
       orderBy: { name: 'asc' },
       take: PREVIEW_PEOPLE_LIMIT,
     }),
-    prisma.person.findMany({
-      where: { userId: session.user.id, deletedAt: null, gender: { not: null } },
-      select: { gender: true },
-      distinct: ['gender'],
-    }),
   ]);
 
   if (!relationshipType) {
@@ -116,9 +111,6 @@ export default async function EditRelationshipTypePage({
     id: person.id,
     name: formatFullName(person, nameOrder, nameDisplayFormat),
   }));
-  const genderSuggestions = genders
-    .map((entry) => entry.gender)
-    .filter((gender): gender is string => !!gender && gender.trim().length > 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,7 +144,6 @@ export default async function EditRelationshipTypePage({
               groups={groups}
               templates={templates}
               people={previewPeople}
-              genderSuggestions={genderSuggestions}
             />
           </div>
         </div>

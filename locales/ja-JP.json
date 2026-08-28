@@ -1652,7 +1652,6 @@
           "DATE_TITLE": "カスタムの日付"
         },
         "fields": {
-          "gender": "性別",
           "prefix": "敬称",
           "suffix": "接尾辞",
           "nickname": "ニックネーム",

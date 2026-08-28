@@ -17,49 +17,49 @@ function cond(overrides: Partial<LabelCondition>): LabelCondition {
   return {
     subject: 'DESCRIBED',
     source: 'PERSON_FIELD',
-    subjectRef: 'gender',
+    subjectRef: 'nickname',
     operator: 'IS',
-    operand: 'lit:Homme',
+    operand: 'lit:Coco',
     ...overrides,
   };
 }
 
-const male = person({ fields: { gender: 'Homme' } });
-const female = person({ fields: { gender: 'Femme' } });
-const unknownGender = person({ fields: {} });
+const coco = person({ fields: { nickname: 'Coco' } });
+const mimi = person({ fields: { nickname: 'Mimi' } });
+const noNickname = person({ fields: {} });
 
 describe('evaluateCondition: text', () => {
   it('matches ignoring case and surrounding whitespace', () => {
-    const subject = person({ fields: { gender: '  homme ' } });
+    const subject = person({ fields: { nickname: '  coco ' } });
     expect(evaluateCondition(cond({}), subject, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
   });
 
   it('is false when the value is absent', () => {
-    expect(evaluateCondition(cond({}), unknownGender, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    expect(evaluateCondition(cond({}), noNickname, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
   });
 
   it('does not match absence with IS_NOT', () => {
     const c = cond({ operator: 'IS_NOT' });
-    expect(evaluateCondition(c, unknownGender, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
-    expect(evaluateCondition(c, female, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
+    expect(evaluateCondition(c, noNickname, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    expect(evaluateCondition(c, mimi, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
   });
 
   it('does not match absence with NOT_CONTAINS', () => {
-    const c = cond({ operator: 'NOT_CONTAINS', operand: 'lit:om' });
-    expect(evaluateCondition(c, unknownGender, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
-    expect(evaluateCondition(c, female, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
-    expect(evaluateCondition(c, male, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    const c = cond({ operator: 'NOT_CONTAINS', operand: 'lit:Co' });
+    expect(evaluateCondition(c, noNickname, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    expect(evaluateCondition(c, mimi, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
+    expect(evaluateCondition(c, coco, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
   });
 
   it('matches absence only with IS_NOT_SET', () => {
     const c = cond({ operator: 'IS_NOT_SET', operand: null });
-    expect(evaluateCondition(c, unknownGender, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
-    expect(evaluateCondition(c, male, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    expect(evaluateCondition(c, noNickname, EMPTY_PERSON_CONTEXT, NOW)).toBe(true);
+    expect(evaluateCondition(c, coco, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
   });
 
   it('reads the other person when the subject says so', () => {
     const c = cond({ subject: 'OTHER' });
-    expect(evaluateCondition(c, female, male, NOW)).toBe(true);
+    expect(evaluateCondition(c, mimi, coco, NOW)).toBe(true);
   });
 });
 
@@ -229,8 +229,8 @@ describe('evaluateCondition: year-unknown dates', () => {
 
 describe('evaluateCondition: malformed configuration', () => {
   it('is false when the operator needs an operand and none is readable', () => {
-    const c = cond({ operand: 'Homme' });
-    expect(evaluateCondition(c, male, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
+    const c = cond({ operand: 'Coco' });
+    expect(evaluateCondition(c, coco, EMPTY_PERSON_CONTEXT, NOW)).toBe(false);
   });
 
   it('is false when the operator does not fit the data kind', () => {
@@ -242,19 +242,19 @@ describe('evaluateCondition: malformed configuration', () => {
 describe('resolveLabel', () => {
   const variants: LabelVariant[] = [
     { label: 'frere', conditions: [cond({})] },
-    { label: 'soeur', conditions: [cond({ operand: 'lit:Femme' })] },
+    { label: 'soeur', conditions: [cond({ operand: 'lit:Mimi' })] },
     { label: 'fratrie', conditions: [] },
   ];
 
   it('returns the first variant whose conditions all hold', () => {
-    expect(resolveLabel(variants, 'Frere/Soeur', male, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
+    expect(resolveLabel(variants, 'Frere/Soeur', coco, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
       label: 'frere',
       variantIndex: 0,
     });
   });
 
   it('falls through to the explicit fallback', () => {
-    expect(resolveLabel(variants, 'Frere/Soeur', unknownGender, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
+    expect(resolveLabel(variants, 'Frere/Soeur', noNickname, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
       label: 'fratrie',
       variantIndex: 2,
     });
@@ -262,14 +262,14 @@ describe('resolveLabel', () => {
 
   it('synthesises a fallback from the type label when none is explicit', () => {
     const withoutFallback = variants.slice(0, 2);
-    expect(resolveLabel(withoutFallback, 'Frere/Soeur', unknownGender, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
+    expect(resolveLabel(withoutFallback, 'Frere/Soeur', noNickname, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
       label: 'Frere/Soeur',
       variantIndex: null,
     });
   });
 
   it('returns the type label unchanged when there are no variants at all', () => {
-    expect(resolveLabel([], 'Ami', male, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
+    expect(resolveLabel([], 'Ami', coco, EMPTY_PERSON_CONTEXT, NOW)).toEqual({
       label: 'Ami',
       variantIndex: null,
     });
@@ -287,13 +287,13 @@ describe('resolveLabel', () => {
             operator: 'BEFORE',
             operand: 'now',
           }),
-          cond({ operand: 'lit:Femme' }),
+          cond({ operand: 'lit:Mimi' }),
         ],
       },
-      { label: 'epouse', conditions: [cond({ operand: 'lit:Femme' })] },
+      { label: 'epouse', conditions: [cond({ operand: 'lit:Mimi' })] },
     ];
     const dead = person({ dates: [{ type: 'memorial', title: 'D', date: new Date(2021, 0, 1) }] });
-    expect(resolveLabel(widow, 'Conjoint', female, dead, NOW).label).toBe('veuve');
-    expect(resolveLabel(widow, 'Conjoint', female, EMPTY_PERSON_CONTEXT, NOW).label).toBe('epouse');
+    expect(resolveLabel(widow, 'Conjoint', mimi, dead, NOW).label).toBe('veuve');
+    expect(resolveLabel(widow, 'Conjoint', mimi, EMPTY_PERSON_CONTEXT, NOW).label).toBe('epouse');
   });
 });

@@ -21,7 +21,6 @@ export interface LabelVariantRowProps {
   typeLabel: string;
   groups: ConditionRowGroup[];
   templates: ConditionRowCustomFieldTemplate[];
-  genderSuggestions: string[];
   warnings: LabelWarning[];
   onLabelChange: (label: string) => void;
   onConditionChange: (conditionIndex: number, condition: LabelCondition) => void;
@@ -44,7 +43,6 @@ export default function LabelVariantRow({
   typeLabel,
   groups,
   templates,
-  genderSuggestions,
   warnings,
   onLabelChange,
   onConditionChange,
@@ -141,7 +139,6 @@ export default function LabelVariantRow({
                 condition={condition}
                 groups={groups}
                 templates={templates}
-                genderSuggestions={genderSuggestions}
                 onChange={(next) => onConditionChange(conditionIndex, next)}
                 onRemove={() => onConditionRemove(conditionIndex)}
               />

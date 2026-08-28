@@ -8,9 +8,9 @@ function cond(overrides: Partial<LabelCondition>): LabelCondition {
   return {
     subject: 'DESCRIBED',
     source: 'PERSON_FIELD',
-    subjectRef: 'gender',
+    subjectRef: 'nickname',
     operator: 'IS',
-    operand: 'lit:Homme',
+    operand: 'lit:Coco',
     ...overrides,
   };
 }
@@ -96,7 +96,7 @@ describe('findLabelWarnings', () => {
     const variants: LabelVariant[] = [
       {
         label: 'a',
-        conditions: [cond({ operand: 'lit:foo&&DESCRIBED|PERSON_FIELD|gender|IS|bar' })],
+        conditions: [cond({ operand: 'lit:foo&&DESCRIBED|PERSON_FIELD|nickname|IS|bar' })],
       },
       {
         label: 'b',

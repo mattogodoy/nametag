@@ -27,9 +27,9 @@ const variants: LabelVariant[] = [
       {
         subject: 'DESCRIBED',
         source: 'PERSON_FIELD',
-        subjectRef: 'gender',
+        subjectRef: 'nickname',
         operator: 'IS',
-        operand: 'lit:woman',
+        operand: 'lit:Coco',
       },
     ],
   },

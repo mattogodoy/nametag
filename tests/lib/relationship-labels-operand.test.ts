@@ -8,7 +8,7 @@ import type { PersonLabelContext } from '@/lib/relationship-labels/types';
 
 function ctx(overrides: Partial<PersonLabelContext> = {}): PersonLabelContext {
   return {
-    fields: { gender: 'Homme', nickname: null },
+    fields: { nickname: 'Coco', surname: null },
     groupIds: new Set(['group-1']),
     customValues: new Map([['tpl-1', { type: 'SELECT' as const, value: 'Rouge' }]]),
     dates: [
@@ -22,11 +22,11 @@ function ctx(overrides: Partial<PersonLabelContext> = {}): PersonLabelContext {
 
 describe('parseOperand', () => {
   it('reads a literal', () => {
-    expect(parseOperand('lit:Homme')).toEqual({ kind: 'literal', value: 'Homme' });
+    expect(parseOperand('lit:Coco')).toEqual({ kind: 'literal', value: 'Coco' });
   });
 
   it('keeps a literal that itself looks like a prefix', () => {
-    expect(parseOperand('lit:ref:gender')).toEqual({ kind: 'literal', value: 'ref:gender' });
+    expect(parseOperand('lit:ref:nickname')).toEqual({ kind: 'literal', value: 'ref:nickname' });
   });
 
   it('reads the current instant', () => {
@@ -42,7 +42,7 @@ describe('parseOperand', () => {
   });
 
   it('returns null for an unprefixed value rather than throwing', () => {
-    expect(parseOperand('Homme')).toBeNull();
+    expect(parseOperand('Coco')).toBeNull();
   });
 
   it('returns null for an empty reference', () => {
@@ -53,7 +53,7 @@ describe('parseOperand', () => {
 describe('serializeOperand', () => {
   it('round-trips every form', () => {
     const forms = [
-      { kind: 'literal' as const, value: 'ref:gender' },
+      { kind: 'literal' as const, value: 'ref:nickname' },
       { kind: 'now' as const },
       { kind: 'ref' as const, ref: 'birthday' },
     ];
@@ -65,11 +65,11 @@ describe('serializeOperand', () => {
 
 describe('readReference', () => {
   it('reads a native field', () => {
-    expect(readReference(ctx(), 'PERSON_FIELD', 'gender')).toEqual({ kind: 'text', value: 'Homme' });
+    expect(readReference(ctx(), 'PERSON_FIELD', 'nickname')).toEqual({ kind: 'text', value: 'Coco' });
   });
 
   it('returns null for a native field with no value', () => {
-    expect(readReference(ctx(), 'PERSON_FIELD', 'nickname')).toBeNull();
+    expect(readReference(ctx(), 'PERSON_FIELD', 'surname')).toBeNull();
   });
 
   it('returns null for a field outside the allowed list', () => {

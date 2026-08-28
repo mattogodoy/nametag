@@ -1652,7 +1652,6 @@
           "DATE_TITLE": "自定义日期"
         },
         "fields": {
-          "gender": "性别",
           "prefix": "称谓",
           "suffix": "后缀",
           "nickname": "昵称",

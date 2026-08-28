@@ -16,7 +16,6 @@ export interface ConditionalLabelsSectionProps {
   groups: ConditionRowGroup[];
   templates: ConditionRowCustomFieldTemplate[];
   people: LabelPreviewPerson[];
-  genderSuggestions: string[];
   onChange: (variants: LabelVariant[]) => void;
 }
 
@@ -31,7 +30,6 @@ export default function ConditionalLabelsSection({
   groups,
   templates,
   people,
-  genderSuggestions,
   onChange,
 }: ConditionalLabelsSectionProps) {
   const t = useTranslations('relationshipTypes.form.conditionalLabels');
@@ -55,7 +53,6 @@ export default function ConditionalLabelsSection({
           typeLabel={typeLabel}
           groups={groups}
           templates={templates}
-          genderSuggestions={genderSuggestions}
           onChange={onChange}
         />
 

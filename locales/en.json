@@ -1652,7 +1652,6 @@
           "DATE_TITLE": "Custom dates"
         },
         "fields": {
-          "gender": "gender",
           "prefix": "prefix",
           "suffix": "suffix",
           "nickname": "nickname",

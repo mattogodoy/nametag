@@ -14,7 +14,6 @@ export type LabelOperator = LabelConditionOperator;
  * deliberately out of scope (see the design spec).
  */
 export const PERSON_FIELD_KEYS = [
-  'gender',
   'prefix',
   'suffix',
   'nickname',

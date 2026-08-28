@@ -9,31 +9,35 @@ A relationship type normally shows the same label to everyone: "Sibling" for eve
 
 ## The siblings example
 
-Say you want the Sibling type to display "Frère" or "Soeur" instead of a generic word. On the Relationship Types page, open the type and expand the "Conditional labels" section. You build an ordered list of variants, each one a label plus the conditions that must all be true for it to apply:
+Say you want the Sibling type to display "Frère" or "Soeur" instead of a generic word. Conditions can't read the CardDAV gender column directly, since nothing in the person form lets you set it, so first create a custom field named "Genre" with type "Select" and the options "Homme" and "Femme", and set it on the people it applies to.
 
-1. Described person, gender, is, Homme, gives "Frère"
-2. Described person, gender, is, Femme, gives "Soeur"
+On the Relationship Types page, open the type and expand the "Conditional labels" section. You build an ordered list of variants, each one a label plus the conditions that must all be true for it to apply:
+
+1. Described person, Genre, is, Homme, gives "Frère"
+2. Described person, Genre, is, Femme, gives "Soeur"
 3. Fallback gives "Fratrie"
 
 The first person in each condition, the "described person", is the one the label names, not the person whose page you're looking at. On Alice's detail page, a link to Bob is labelled from Bob's point of view, so Bob is the described person there. Variants are checked in order, top to bottom, and the first one whose conditions all match wins. If none of them match, the fallback applies.
 
-Rather than adding these two variants by hand, use the generator. It creates one variant per possible value of a select custom field or of gender, already filled in with the value's name, so you only have to type the labels. It's the fastest way to get to "Frère" and "Soeur".
+Rather than adding these two variants by hand, use the generator. It creates one variant per possible value of a select custom field, already filled in with the value's name, so you only have to type the labels. It's the fastest way to get to "Frère" and "Soeur".
 
 ## The spouse example
 
 Some vocabularies need more than one condition per variant, and the order between variants matters. Take a symmetric Spouse type meant to read "Époux", "Épouse", "Veuf", "Veuve", "Fiancé" or "Conjoint" depending on the two people:
 
-1. Other person's memorial date is before now, and described person's gender is Homme, gives "Veuf"
-2. Same, with gender Femme, gives "Veuve"
+Using the same "Genre" custom field as above:
+
+1. Other person's memorial date is before now, and described person's Genre is Homme, gives "Veuf"
+2. Same, with Genre Femme, gives "Veuve"
 3. Described person's anniversary date is not set, gives "Fiancé"
 4. Described person's anniversary date is after now, gives "Fiancé"
-5. Described person's gender is Homme, gives "Époux"
-6. Described person's gender is Femme, gives "Épouse"
+5. Described person's Genre is Homme, gives "Époux"
+6. Described person's Genre is Femme, gives "Épouse"
 7. Fallback gives "Conjoint"
 
 Variants 3 and 4 show how to express an "or": two variants that produce the same label cover both cases, since a single variant only combines its conditions with "and".
 
-The order is what makes the widowed case reachable at all. "Veuf" has to be tested before "Époux", because a widower would also satisfy "gender is Homme": if the "Époux" variant came first, it would always win and "Veuf" would never be reached. Variants closer to the top of the list take priority, so put your most specific conditions first and your broadest ones last.
+The order is what makes the widowed case reachable at all. "Veuf" has to be tested before "Époux", because a widower would also satisfy "Genre is Homme": if the "Époux" variant came first, it would always win and "Veuf" would never be reached. Variants closer to the top of the list take priority, so put your most specific conditions first and your broadest ones last.
 
 ## Fallback and the type with no variants
 
@@ -43,7 +47,7 @@ The last row in the editor is always the fallback: the label used when nothing e
 
 This is the rule most worth remembering: a condition on data that isn't there is false, and that includes conditions phrased in the negative.
 
-"Gender is not Homme" does not match a person with no gender recorded. It only matches someone whose gender is recorded as something other than Homme. The same goes for "does not contain", "not the same day", and every other negative operator: they need something to compare against, so a person with nothing stored fails them just as they'd fail the positive form.
+"Nickname is not Coco" does not match a person with no nickname recorded. It only matches someone whose nickname is recorded as something other than Coco. The same goes for "does not contain", "not the same day", and every other negative operator: they need something to compare against, so a person with nothing stored fails them just as they'd fail the positive form.
 
 If what you actually want is "no value has been recorded", use "is not set". That's the only operator built to match absence.
 
@@ -62,7 +66,7 @@ While editing a type's variants, pick two people from your network in the previe
 ## Technical details
 
 - A relationship type holds at most 20 variants, and each variant holds at most 5 conditions.
-- Conditions can read: native person fields (gender, prefix, suffix, nickname, name, surname, middle name, second last name, organization, job title), any custom field you've defined, membership in any of your groups, and important dates, either one of the four predefined types or a custom date matched by its exact title.
+- Conditions can read: native person fields (prefix, suffix, nickname, name, surname, middle name, second last name, organization, job title), any custom field you've defined, membership in any of your groups, and important dates, either one of the four predefined types or a custom date matched by its exact title. Gender isn't in that list: it can only be set through CardDAV sync or the API, so there's nothing to condition on from the person form. Define a custom field instead, as in the siblings example above.
 - A condition can also compare a value against the same kind of value on the other person, which is what makes age-ordered vocabularies (older sibling versus younger sibling) possible.
 - Where the described person has several important dates with the same title, the earliest one is used.
 - If a condition points at a group or custom field you've since deleted, it evaluates to false and the editor flags it as broken, so you can fix or remove it.

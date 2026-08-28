@@ -5,9 +5,9 @@ function condition(overrides: Record<string, unknown> = {}) {
   return {
     subject: 'DESCRIBED',
     source: 'PERSON_FIELD',
-    subjectRef: 'gender',
+    subjectRef: 'nickname',
     operator: 'IS',
-    operand: 'lit:Homme',
+    operand: 'lit:Coco',
     ...overrides,
   };
 }
@@ -48,14 +48,14 @@ describe('labelVariantsSchema', () => {
 
   it('rejects an operand present when the operator takes none', () => {
     const result = labelVariantsSchema.safeParse([
-      { label: 'x', conditions: [condition({ operator: 'IS_SET', operand: 'lit:Homme' })] },
+      { label: 'x', conditions: [condition({ operator: 'IS_SET', operand: 'lit:Coco' })] },
     ]);
     expect(result.success).toBe(false);
   });
 
   it('rejects an unprefixed operand', () => {
     const result = labelVariantsSchema.safeParse([
-      { label: 'x', conditions: [condition({ operand: 'Homme' })] },
+      { label: 'x', conditions: [condition({ operand: 'Coco' })] },
     ]);
     expect(result.success).toBe(false);
   });

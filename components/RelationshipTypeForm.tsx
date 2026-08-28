@@ -36,7 +36,6 @@ interface RelationshipTypeFormProps {
   groups: ConditionRowGroup[];
   templates: ConditionRowCustomFieldTemplate[];
   people: LabelPreviewPerson[];
-  genderSuggestions: string[];
 }
 
 export default function RelationshipTypeForm({
@@ -46,7 +45,6 @@ export default function RelationshipTypeForm({
   groups,
   templates,
   people,
-  genderSuggestions,
 }: RelationshipTypeFormProps) {
   const t = useTranslations('relationshipTypes.form');
   const router = useRouter();
@@ -306,7 +304,6 @@ export default function RelationshipTypeForm({
         groups={groups}
         templates={templates}
         people={people}
-        genderSuggestions={genderSuggestions}
         onChange={setVariants}
       />
 

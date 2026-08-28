@@ -25,15 +25,13 @@ const templates = [
   { id: 'tpl-2', name: 'Is vegetarian', type: 'BOOLEAN' as const, options: [] },
 ];
 
-const genderSuggestions = ['woman', 'man'];
-
 function condition(overrides: Partial<LabelVariant['conditions'][number]> = {}) {
   return {
     subject: 'DESCRIBED' as const,
     source: 'PERSON_FIELD' as const,
-    subjectRef: 'gender',
+    subjectRef: 'nickname',
     operator: 'IS' as const,
-    operand: 'lit:woman',
+    operand: 'lit:Coco',
     ...overrides,
   };
 }
@@ -55,7 +53,6 @@ function renderList(initial: LabelVariant[], typeLabel = 'sibling') {
         typeLabel={typeLabel}
         groups={groups}
         templates={templates}
-        genderSuggestions={genderSuggestions}
         onChange={(next) => {
           onChange(next);
           setVariants(next);
@@ -77,7 +74,7 @@ describe('LabelVariantList', () => {
   it('renders one row per variant plus a fallback row', () => {
     renderList([
       { label: 'frère', conditions: [condition()] },
-      { label: 'soeur', conditions: [condition({ operand: 'lit:woman' })] },
+      { label: 'soeur', conditions: [condition({ operand: 'lit:Coco' })] },
     ]);
 
     expect(screen.getByDisplayValue('frère')).toBeInTheDocument();
@@ -224,7 +221,7 @@ describe('LabelVariantList', () => {
           {
             subject: 'DESCRIBED',
             source: 'PERSON_FIELD',
-            subjectRef: 'gender',
+            subjectRef: 'nickname',
             operator: 'IS',
             operand: 'lit:',
           },
@@ -248,7 +245,7 @@ describe('LabelVariantList', () => {
           {
             subject: 'DESCRIBED',
             source: 'PERSON_FIELD',
-            subjectRef: 'gender',
+            subjectRef: 'nickname',
             operator: 'IS',
             operand: 'lit:',
           },

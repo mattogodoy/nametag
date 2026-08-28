@@ -16,17 +16,14 @@ export interface LabelVariantListProps {
   typeLabel: string;
   groups: ConditionRowGroup[];
   templates: ConditionRowCustomFieldTemplate[];
-  genderSuggestions: string[];
   onChange: (variants: LabelVariant[]) => void;
 }
-
-const GENDER_GENERATOR_VALUE = '__gender';
 
 function defaultCondition(): LabelCondition {
   return {
     subject: 'DESCRIBED',
     source: 'PERSON_FIELD',
-    subjectRef: 'gender',
+    subjectRef: 'nickname',
     operator: 'IS',
     operand: serializeOperand({ kind: 'literal', value: '' }),
   };
@@ -47,7 +44,6 @@ export default function LabelVariantList({
   typeLabel,
   groups,
   templates,
-  genderSuggestions,
   onChange,
 }: LabelVariantListProps) {
   const t = useTranslations('relationshipTypes.form.conditionalLabels');
@@ -158,27 +154,6 @@ export default function LabelVariantList({
   function handleGenerate() {
     if (!generatorField) return;
 
-    if (generatorField === GENDER_GENERATOR_VALUE) {
-      onChange(
-        insertBeforeFallback(
-          genderSuggestions.map((value) => ({
-            label: value,
-            conditions: [
-              {
-                subject: 'DESCRIBED',
-                source: 'PERSON_FIELD',
-                subjectRef: 'gender',
-                operator: 'IS',
-                operand: serializeOperand({ kind: 'literal', value }),
-              },
-            ],
-          }))
-        )
-      );
-      setGeneratorField('');
-      return;
-    }
-
     const template = selectTemplates.find((candidate) => candidate.id === generatorField);
     if (!template) return;
 
@@ -214,7 +189,6 @@ export default function LabelVariantList({
           typeLabel={typeLabel}
           groups={groups}
           templates={templates}
-          genderSuggestions={genderSuggestions}
           warnings={warningsFor(displayIndex)}
           onLabelChange={(label) => handleLabelChange(displayIndex, label)}
           onConditionChange={(conditionIndex, condition) =>
@@ -246,9 +220,6 @@ export default function LabelVariantList({
             className="rounded border border-border bg-surface px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="" />
-            {genderSuggestions.length > 0 && (
-              <option value={GENDER_GENERATOR_VALUE}>{t('fields.gender')}</option>
-            )}
             {selectTemplates.map((template) => (
               <option key={template.id} value={template.id}>
                 {template.name}

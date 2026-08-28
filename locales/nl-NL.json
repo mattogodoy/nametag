@@ -1652,7 +1652,6 @@
           "DATE_TITLE": "Aangepaste data"
         },
         "fields": {
-          "gender": "geslacht",
           "prefix": "titel",
           "suffix": "achtervoegsel",
           "nickname": "bijnaam",

@@ -20,7 +20,7 @@ vi.mock('@/lib/prisma', () => ({
 
 import { createLabelResolver, loadLabelConfig } from '@/lib/relationship-labels';
 
-const genderVariants = [
+const nicknameVariants = [
   {
     id: 'v1',
     relationshipTypeId: 'type-1',
@@ -30,9 +30,9 @@ const genderVariants = [
       {
         subject: 'DESCRIBED',
         source: 'PERSON_FIELD',
-        subjectRef: 'gender',
+        subjectRef: 'nickname',
         operator: 'IS',
-        operand: 'lit:Homme',
+        operand: 'lit:Coco',
         order: 0,
       },
     ],
@@ -60,7 +60,7 @@ describe('loadLabelConfig', () => {
   });
 
   it('groups variants by type in order', async () => {
-    mocks.variantFindMany.mockResolvedValue(genderVariants);
+    mocks.variantFindMany.mockResolvedValue(nicknameVariants);
     const config = await loadLabelConfig('user-1');
     expect(config.hasConditions).toBe(true);
     expect(config.variantsByTypeId.get('type-1')?.map((v) => v.label)).toEqual(['frere', 'fratrie']);
@@ -71,8 +71,8 @@ describe('createLabelResolver', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.personFindMany.mockResolvedValue([
-      { id: 'p1', gender: 'Homme' },
-      { id: 'p2', gender: 'Femme' },
+      { id: 'p1', nickname: 'Coco' },
+      { id: 'p2', nickname: 'Mimi' },
     ]);
     mocks.personGroupFindMany.mockResolvedValue([]);
     mocks.customValueFindMany.mockResolvedValue([]);
@@ -94,7 +94,7 @@ describe('createLabelResolver', () => {
   });
 
   it('resolves the matching variant', async () => {
-    mocks.variantFindMany.mockResolvedValue(genderVariants);
+    mocks.variantFindMany.mockResolvedValue(nicknameVariants);
     const resolver = await createLabelResolver('user-1', ['p1', 'p2']);
     expect(
       resolver.resolve({
@@ -115,7 +115,7 @@ describe('createLabelResolver', () => {
   });
 
   it('returns the type label for a type with no variants', async () => {
-    mocks.variantFindMany.mockResolvedValue(genderVariants);
+    mocks.variantFindMany.mockResolvedValue(nicknameVariants);
     const resolver = await createLabelResolver('user-1', ['p1']);
     expect(
       resolver.resolve({
@@ -165,7 +165,7 @@ describe('createLabelResolver', () => {
   });
 
   it('resolves a null relationship type to the given label', async () => {
-    mocks.variantFindMany.mockResolvedValue(genderVariants);
+    mocks.variantFindMany.mockResolvedValue(nicknameVariants);
     const resolver = await createLabelResolver('user-1', ['p1']);
     expect(
       resolver.resolve({
