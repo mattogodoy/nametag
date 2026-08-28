@@ -45,6 +45,11 @@ vi.mock('../../lib/logger', () => ({
 
 vi.mock('../../lib/env', () => ({
   getAppUrl: vi.fn(() => 'http://localhost:3000'),
+  // withLogging (lib/api-utils.ts) resolves the trusted client IP for every
+  // request via lib/net/client-ip.ts, which reads these two directly off
+  // `env`. Without them the mock has no "env" export at all and the real
+  // resolver throws trying to read a property off undefined.
+  env: { TRUSTED_PROXY_COUNT: 1, TRUSTED_PROXY_HEADER: 'x-forwarded-for' },
 }));
 
 import { PUT } from '../../app/api/user/profile/route';
