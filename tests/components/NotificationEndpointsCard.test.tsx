@@ -690,7 +690,14 @@ describe('NotificationEndpointsCard', () => {
 
       const dialog = screen.getByRole('dialog');
       expect(dialog).toHaveAttribute('aria-modal', 'true');
-      expect(dialog.contains(document.activeElement)).toBe(true);
+
+      // Focus moves in an effect, which is a later tick than the one that puts
+      // the dialog in the document. Asserting it synchronously passes on a fast
+      // machine and loses the race on a slow one, so wait for it rather than
+      // assuming the two happen together.
+      await waitFor(() => {
+        expect(dialog.contains(document.activeElement)).toBe(true);
+      });
     });
 
     it('closing the secret dialog via Escape also clears the secret from state, not only the button dismiss', async () => {
