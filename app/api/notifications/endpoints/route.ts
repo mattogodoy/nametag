@@ -45,6 +45,9 @@ export const GET = withAuth(async (_request, session) => {
   }
 });
 
+/** Thrown by normalizeWebhookUrl when the URL carries a username or password. */
+class WebhookCredentialsInUrlError extends Error {}
+
 /**
  * Normalise a webhook URL before it is stored, so the per-user unique
  * constraint on (userId, url) actually catches the same destination typed
@@ -55,9 +58,19 @@ export const GET = withAuth(async (_request, session) => {
  * WHATWG URL parser already lowercases the scheme and host for http(s) URLs;
  * this rebuilds the string explicitly (dropping only the fragment) so the
  * exact shape being stored is visible here rather than implied.
+ *
+ * Userinfo (`https://user:pw@host/...`) is rejected rather than silently
+ * dropped. Rebuilding from `parsed.host` already discards it, which used to
+ * mean a URL containing credentials was stored, shown back to the user, and
+ * sent to without the credentials ever reaching the receiver: a webhook that
+ * needs basic auth in its URL would then fail every single delivery with no
+ * indication that anything was ever removed. Better to refuse it up front.
  */
 function normalizeWebhookUrl(url: string): string {
   const parsed = new URL(url);
+  if (parsed.username || parsed.password) {
+    throw new WebhookCredentialsInUrlError();
+  }
   return `${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
 }
 
@@ -101,7 +114,21 @@ export const POST = withAuth(async (request, session) => {
       // and every future outbound request should see.
       normalizedUrl = `${parsedNtfy.base}${parsedNtfy.topic}`;
     } else {
-      normalizedUrl = normalizeWebhookUrl(url);
+      try {
+        normalizedUrl = normalizeWebhookUrl(url);
+      } catch (error) {
+        if (error instanceof WebhookCredentialsInUrlError) {
+          return NextResponse.json(
+            {
+              error:
+                'Remove the username and password from the URL. Nametag cannot store URL credentials.',
+              code: 'invalid',
+            },
+            { status: 400 }
+          );
+        }
+        throw error;
+      }
     }
 
     // Cap before the DNS work below. Checked first so a user already at the

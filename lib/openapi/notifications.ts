@@ -155,7 +155,9 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
                   'policy (wrong protocol, disallowed port, or a private address): permanent, ' +
                   'the URL must change. `dns` means the hostname did not resolve: possibly ' +
                   "transient, worth retrying as-is. `invalid` covers everything else, a body " +
-                  'that failed validation or a topic URL with no topic segment.',
+                  'that failed validation, a topic URL with no topic segment, or a webhook ' +
+                  'URL carrying a username or password, which is rejected rather than ' +
+                  'silently stripped.',
                 enum: ['policy', 'dns', 'invalid'],
               },
             },

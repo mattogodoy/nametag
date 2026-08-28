@@ -387,6 +387,22 @@ describe('webhook endpoint creation', () => {
       'https://hooks.test/api/v1/nametag?token=abc'
     );
   });
+
+  it('rejects a webhook URL that carries a username or password, instead of silently dropping it', async () => {
+    // normalizeWebhookUrl rebuilds the stored form from parsed.host, which
+    // already discards userinfo. Storing the result without saying anything
+    // would leave the endpoint 401ing on every delivery forever, with no
+    // indication that the credentials the user put in the URL were ever
+    // removed.
+    const response = await POST(
+      post({ ...webhook, url: 'https://user:pw@hooks.test/nametag' })
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.code).toBe('invalid');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
 });
 
 describe('endpoint item API', () => {
