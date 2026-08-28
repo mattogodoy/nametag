@@ -296,12 +296,19 @@ describe('rate-limit', () => {
 
   describe('warnNoTrustedClientIp integration', () => {
     const originalTrustedProxyCount = process.env.TRUSTED_PROXY_COUNT;
+    const originalTrustedProxyHeader = process.env.TRUSTED_PROXY_HEADER;
 
     afterEach(() => {
       if (originalTrustedProxyCount === undefined) {
         delete process.env.TRUSTED_PROXY_COUNT;
       } else {
         process.env.TRUSTED_PROXY_COUNT = originalTrustedProxyCount;
+      }
+
+      if (originalTrustedProxyHeader === undefined) {
+        delete process.env.TRUSTED_PROXY_HEADER;
+      } else {
+        process.env.TRUSTED_PROXY_HEADER = originalTrustedProxyHeader;
       }
     });
 
@@ -319,6 +326,32 @@ describe('rate-limit', () => {
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(warnSpy.mock.calls[0][0]).toContain('TRUSTED_PROXY_COUNT');
+
+      warnSpy.mockRestore();
+    });
+
+    it('fires the same warning, not a silently trusted value, when an x-real-ip-only proxy is left in the default header mode', async () => {
+      // The misconfiguration scenario from the security review: the proxy
+      // in front only manages x-real-ip (a real, common setup), but
+      // TRUSTED_PROXY_HEADER is left at its default of x-forwarded-for. A
+      // genuine client sends no x-forwarded-for of its own (browsers do not
+      // set this header), so the app has nothing to read in the mode it is
+      // configured for, and must fail into the shared bucket with a loud
+      // warning rather than silently trusting x-real-ip (which would only
+      // be correct if the operator had actually declared that mode).
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      delete process.env.TRUSTED_PROXY_HEADER;
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { checkRateLimit } = await import('@/lib/rate-limit');
+
+      const request = new Request('http://localhost/api/test', {
+        headers: { 'x-real-ip': '203.0.113.9' },
+      });
+      const result = checkRateLimit(request, 'login');
+
+      expect(result).toBeNull(); // first request in the shared bucket, still allowed
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('TRUSTED_PROXY_HEADER');
 
       warnSpy.mockRestore();
     });

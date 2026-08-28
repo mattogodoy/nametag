@@ -18,12 +18,19 @@ async function freshClientIp() {
 
 describe('resolveTrustedClientIp', () => {
   const originalTrustedProxyCount = process.env.TRUSTED_PROXY_COUNT;
+  const originalTrustedProxyHeader = process.env.TRUSTED_PROXY_HEADER;
 
   afterEach(() => {
     if (originalTrustedProxyCount === undefined) {
       delete process.env.TRUSTED_PROXY_COUNT;
     } else {
       process.env.TRUSTED_PROXY_COUNT = originalTrustedProxyCount;
+    }
+
+    if (originalTrustedProxyHeader === undefined) {
+      delete process.env.TRUSTED_PROXY_HEADER;
+    } else {
+      process.env.TRUSTED_PROXY_HEADER = originalTrustedProxyHeader;
     }
   });
 
@@ -127,18 +134,22 @@ describe('resolveTrustedClientIp', () => {
 
   });
 
-  describe('x-real-ip is never trusted (a proxy that manages only x-real-ip is a misconfiguration)', () => {
+  describe("TRUSTED_PROXY_HEADER = 'x-forwarded-for' (default): x-real-ip is never trusted", () => {
     it('is not used as a fallback when x-forwarded-for is absent, even with a trusted proxy count', async () => {
       // Catches: reintroducing the "consult x-real-ip when x-forwarded-for is
-      // absent" fallback. That fallback is exploitable against a proxy that
-      // manages x-real-ip (via proxy_set_header, which replaces) but never
-      // touches x-forwarded-for: such a proxy passes an attacker's own
+      // absent" fallback in the x-forwarded-for mode. That fallback is
+      // exploitable against a proxy that manages x-real-ip (via
+      // proxy_set_header, which replaces) but never touches
+      // x-forwarded-for: such a proxy passes an attacker's own
       // x-forwarded-for straight through untouched, and a resolver that
       // falls back to x-real-ip only when x-forwarded-for is *absent* would
       // never even notice, because in the exploit case x-forwarded-for is
       // present (it's the attacker's). This test pins the simpler,
       // observable half of that: with no x-forwarded-for at all, a present
-      // x-real-ip must not be trusted.
+      // x-real-ip must not be trusted while in the default header mode.
+      // (A deployment that is genuinely behind an x-real-ip-only proxy
+      // should instead set TRUSTED_PROXY_HEADER=x-real-ip; see the sibling
+      // describe block below for that mode's own tests.)
       process.env.TRUSTED_PROXY_COUNT = '1';
       const { resolveTrustedClientIp } = await freshClientIp();
 
@@ -148,15 +159,15 @@ describe('resolveTrustedClientIp', () => {
     });
 
     it('does not affect resolution when x-forwarded-for is present, including a spoofed value matching the attacker prefix', async () => {
-      // The regression scenario from the security review: a proxy sets a
-      // genuine x-real-ip, but the x-forwarded-for chain it forwards has an
-      // attacker-supplied entry. Catches: any code path that reads,
-      // prefers, cross-checks against, or is otherwise influenced by
-      // x-real-ip when resolving via x-forwarded-for. The correct,
-      // rightmost x-forwarded-for entry must win regardless of what
-      // x-real-ip says, including when x-real-ip has been set (by the
-      // attacker, or coincidentally) to the same value as the spoofed
-      // prefix.
+      // This is the case a Caddy operator's attacker would try: Caddy sets
+      // x-forwarded-for and no x-real-ip at all, so an attacker who injects
+      // their own x-real-ip header must not be able to influence the
+      // result. Catches: any code path that reads, prefers, cross-checks
+      // against, or is otherwise influenced by x-real-ip when resolving via
+      // x-forwarded-for in the default mode. The correct, rightmost
+      // x-forwarded-for entry must win regardless of what x-real-ip says,
+      // including when x-real-ip has been set (by the attacker, or
+      // coincidentally) to the same value as the spoofed prefix.
       process.env.TRUSTED_PROXY_COUNT = '1';
       const { resolveTrustedClientIp } = await freshClientIp();
 
@@ -175,6 +186,97 @@ describe('resolveTrustedClientIp', () => {
       const { resolveTrustedClientIp } = await freshClientIp();
 
       const request = requestWith({ 'x-real-ip': '198.51.100.7' });
+
+      expect(resolveTrustedClientIp(request)).toBeNull();
+    });
+  });
+
+  describe("TRUSTED_PROXY_HEADER = 'x-real-ip'", () => {
+    it('resolves the genuine x-real-ip even when x-forwarded-for is entirely attacker-supplied', async () => {
+      // The topology this mode exists for: a proxy that replaces x-real-ip
+      // (proxy_set_header, trustworthy) but never manages x-forwarded-for,
+      // so every entry in x-forwarded-for, at every position, is whatever
+      // the client put there. Catches: still reading x-forwarded-for in
+      // this mode (e.g. forgetting to branch on TRUSTED_PROXY_HEADER), which
+      // would hand back an attacker-chosen entry instead of the genuine
+      // x-real-ip value.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({
+        'x-forwarded-for': '6.6.6.6, 7.7.7.7',
+        'x-real-ip': '203.0.113.9',
+      });
+
+      expect(resolveTrustedClientIp(request)).toBe('203.0.113.9');
+    });
+
+    it('does not change when the attacker rotates the spoofed x-forwarded-for entries', async () => {
+      // Catches: any code path in x-real-ip mode that is influenced, even
+      // partially, by x-forwarded-for content. Rotating attacker-controlled
+      // entries must have zero effect on the result in this mode.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const first = resolveTrustedClientIp(
+        requestWith({ 'x-forwarded-for': '6.6.6.6, 7.7.7.7', 'x-real-ip': '203.0.113.9' })
+      );
+      const second = resolveTrustedClientIp(
+        requestWith({ 'x-forwarded-for': '8.8.8.8', 'x-real-ip': '203.0.113.9' })
+      );
+      const third = resolveTrustedClientIp(
+        requestWith({ 'x-real-ip': '203.0.113.9' }) // no x-forwarded-for at all
+      );
+
+      expect(first).toBe('203.0.113.9');
+      expect(second).toBe('203.0.113.9');
+      expect(third).toBe('203.0.113.9');
+    });
+
+    it('resolves an honest client with no x-forwarded-for correctly (the regression this mode exists to fix)', async () => {
+      // Before TRUSTED_PROXY_HEADER existed, dropping x-real-ip from the
+      // trusted path entirely (to close the Caddy-mirror flaw) broke every
+      // honest client behind a genuinely x-real-ip-only proxy: they send no
+      // x-forwarded-for of their own, so the app had nothing left to read
+      // and fell back to the shared bucket. Catches: this mode failing to
+      // actually restore that resolution.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'x-real-ip': '203.0.113.9' });
+
+      expect(resolveTrustedClientIp(request)).toBe('203.0.113.9');
+    });
+
+    it('rejects a non-IP value', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'x-real-ip': 'not-an-ip' });
+
+      expect(resolveTrustedClientIp(request)).toBeNull();
+    });
+
+    it('resolves to null when x-real-ip is absent, rather than falling back to x-forwarded-for', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'x-forwarded-for': '6.6.6.6, 7.7.7.7' });
+
+      expect(resolveTrustedClientIp(request)).toBeNull();
+    });
+
+    it('still ignores everything when the count is 0, regardless of the header setting', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '0';
+      process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'x-real-ip': '203.0.113.9' });
 
       expect(resolveTrustedClientIp(request)).toBeNull();
     });
