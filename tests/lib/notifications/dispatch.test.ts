@@ -30,20 +30,26 @@ vi.mock('../../../lib/notifications/channels/web-push', () => ({
 const endpointMocks = vi.hoisted(() => ({
   endpointFindMany: vi.fn(),
   sendNtfy: vi.fn(),
-  recordEndpointResult: vi.fn(),
+  // HealthAccumulator.flush() calls the real recordEndpointResult, which is a
+  // plain function defined inside endpoint-health.ts: a consumer-side partial
+  // mock of that module cannot intercept its own internal call to itself, so
+  // health has to be exercised end to end here through the prisma calls
+  // recordEndpointResult itself makes, the same way tests/lib/notifications/
+  // endpoint-health.test.ts and channel-web-push.test.ts do.
+  endpointUpdate: vi.fn(),
+  endpointUpdateMany: vi.fn(),
 }));
 
 vi.mock('../../../lib/notifications/channels/ntfy', () => ({ sendNtfy: endpointMocks.sendNtfy }));
-vi.mock('../../../lib/notifications/endpoint-health', () => ({
-  recordEndpointResult: endpointMocks.recordEndpointResult,
-  AUTO_DISABLE_THRESHOLD: 10,
-  MAX_ENDPOINTS_PER_USER: 5,
-}));
 
 vi.mock('../../../lib/prisma', () => ({
   prisma: {
     user: { findMany: pushMocks.userFindMany },
-    notificationEndpoint: { findMany: endpointMocks.endpointFindMany },
+    notificationEndpoint: {
+      findMany: endpointMocks.endpointFindMany,
+      update: endpointMocks.endpointUpdate,
+      updateMany: endpointMocks.endpointUpdateMany,
+    },
   },
 }));
 
@@ -64,6 +70,32 @@ function envelope(id: string): NotificationEnvelope {
     unsubscribeUrl: 'https://app.test/unsubscribe?token=tok',
     deepLink: `https://app.test/people/person-${id}`,
     stamp: { model: 'person', id: `person-${id}`, field: 'lastContactReminderSent' },
+    logMeta: {},
+  };
+}
+
+/**
+ * Like `envelope`, but with an explicit userId, so two envelopes can share
+ * the same owner (and therefore the same destinations) instead of each
+ * getting its own derived `user-<id>`. Used by the run-scoped health
+ * aggregation tests below, which need multiple envelopes to land on the
+ * same endpoint within a single dispatchAll call.
+ */
+function envelopeForUser(userId: string, personId: string): NotificationEnvelope {
+  return {
+    userId,
+    userEmail: `${userId}@example.com`,
+    locale: 'en',
+    notification: {
+      kind: 'contact',
+      personId,
+      personName: 'Ana Torres',
+      lastContactFormatted: null,
+      intervalText: '3 months',
+    },
+    unsubscribeUrl: 'https://app.test/unsubscribe?token=tok',
+    deepLink: `https://app.test/people/${personId}`,
+    stamp: { model: 'person', id: personId, field: 'lastContactReminderSent' },
     logMeta: {},
   };
 }
@@ -458,8 +490,14 @@ describe('dispatchAll with endpoints', () => {
     pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
     endpointMocks.endpointFindMany.mockReset();
     endpointMocks.sendNtfy.mockReset();
-    endpointMocks.recordEndpointResult.mockReset();
-    endpointMocks.recordEndpointResult.mockResolvedValue(undefined);
+    endpointMocks.endpointUpdate.mockReset();
+    endpointMocks.endpointUpdateMany.mockReset();
+    // Health writes flow through the real recordEndpointResult, which selects
+    // consecutiveFailures back out of the update. Kept well under
+    // AUTO_DISABLE_THRESHOLD by default so a test that does not care about
+    // auto-disable does not accidentally trip it.
+    endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
+    endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
     endpointMocks.endpointFindMany.mockResolvedValue([]);
   });
 
@@ -495,9 +533,13 @@ describe('dispatchAll with endpoints', () => {
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    expect(endpointMocks.recordEndpointResult).toHaveBeenCalledWith('ep-1', {
-      ok: false,
-      code: 'timeout',
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: expect.objectContaining({
+        consecutiveFailures: { increment: 1 },
+        lastFailureCode: 'timeout',
+      }),
+      select: { consecutiveFailures: true },
     });
     expect(result.failed).toBe(1);
     // Pins both the error message and the channel tag: leaving `lastError`
@@ -506,6 +548,50 @@ describe('dispatchAll with endpoints', () => {
     expect(result.firstError).toBe('timeout');
     expect(result.failedChannels).toEqual(['ntfy']);
     expect(result.shouldStamp).toBe(false);
+  });
+
+  it('records exactly one health write per destination per run, not one per envelope', async () => {
+    // Two envelopes for the same user, sharing the same single endpoint. A
+    // per-envelope write would call endpointUpdate twice; the run-scoped
+    // accumulator must collapse that to exactly one flush.
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
+    ]);
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: false, code: 'timeout' });
+
+    await dispatchAll([envelopeForUser('user-1', 'p-1'), envelopeForUser('user-1', 'p-2')]);
+
+    expect(endpointMocks.sendNtfy).toHaveBeenCalledTimes(2);
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledTimes(1);
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: expect.objectContaining({
+        consecutiveFailures: { increment: 1 },
+        lastFailureCode: 'timeout',
+      }),
+      select: { consecutiveFailures: true },
+    });
+  });
+
+  it('aggregates a run to success when the destination delivered at least once, even if another envelope in the same run failed', async () => {
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
+    ]);
+    endpointMocks.sendNtfy
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false, code: 'timeout' });
+
+    await dispatchAll([envelopeForUser('user-1', 'p-1'), envelopeForUser('user-1', 'p-2')]);
+
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledTimes(1);
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: {
+        consecutiveFailures: 0,
+        lastSuccessAt: expect.any(Date),
+        lastFailureCode: null,
+      },
+    });
   });
 
   it('queries only enabled endpoints, so a disabled one is never contacted', async () => {
@@ -534,11 +620,15 @@ describe('dispatchAll with endpoints', () => {
     // from being tried, which the two sendNtfy calls and the delivered outcome
     // both confirm.
     expect(endpointMocks.sendNtfy).toHaveBeenCalledTimes(2);
-    expect(endpointMocks.recordEndpointResult).toHaveBeenCalledWith('ep-1', {
-      ok: false,
-      code: 'dns',
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: expect.objectContaining({ lastFailureCode: 'dns' }),
+      select: { consecutiveFailures: true },
     });
-    expect(endpointMocks.recordEndpointResult).toHaveBeenCalledWith('ep-2', { ok: true });
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledWith({
+      where: { id: 'ep-2' },
+      data: { consecutiveFailures: 0, lastSuccessAt: expect.any(Date), lastFailureCode: null },
+    });
     expect(result.delivered).toBe(1);
     expect(result.failed).toBe(0);
     expect(result.shouldStamp).toBe(true);
@@ -566,13 +656,14 @@ describe('dispatchAll with endpoints', () => {
       { id: 'ep-1', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/a', secret: null },
     ]);
     endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
-    endpointMocks.recordEndpointResult.mockRejectedValueOnce(new Error('db blip'));
+    endpointMocks.endpointUpdate.mockRejectedValueOnce(new Error('db blip'));
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    // Unguarded, this throw escapes dispatchEndpoints, hits guard(), and
-    // converts a real delivery into a failure. For a user with email off and
-    // no push devices that flips shouldStamp and drops the reminder.
+    // Unguarded, this throw escapes dispatchAll's flush step (or worse,
+    // dispatchEndpoints itself) and converts a real delivery into a failure.
+    // For a user with email off and no push devices that flips shouldStamp
+    // and drops the reminder.
     expect(result.shouldStamp).toBe(true);
   });
 

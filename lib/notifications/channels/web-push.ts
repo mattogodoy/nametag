@@ -4,8 +4,12 @@ import { createModuleLogger } from '@/lib/logger';
 import { getVapidDetails } from '../vapid';
 import { renderShortForm } from '../render';
 import { MAX_PUSH_SUBSCRIPTIONS_PER_USER } from '../push-limits';
-import { recordPushSubscriptionResult } from '../endpoint-health';
-import { TIMEOUT_MS, type OutboundFailureCode, type OutboundResult } from '../outbound';
+import type { HealthAccumulator } from '../endpoint-health';
+import {
+  TIMEOUT_MS,
+  httpStatusToFailureCode,
+  type OutboundFailureCode,
+} from '../outbound';
 import type { ChannelOutcome, NotificationEnvelope } from '../types';
 
 const log = createModuleLogger('notifications:push');
@@ -36,36 +40,73 @@ function statusCodeOf(error: unknown): number | null {
  * Map a push service status onto the same coarse categories the outbound
  * client uses, so a settings page showing endpoint health and one showing
  * device health can share language.
+ *
+ * Delegates to outbound.ts's httpStatusToFailureCode rather than repeating
+ * the >=400/>=500 split here: two independent copies of that split is how a
+ * push service's own 429 would end up mis-filed as http_4xx again.
  */
 function failureCodeOf(statusCode: number | null): OutboundFailureCode {
   if (statusCode === null) return 'unknown';
-  if (statusCode >= 500) return 'http_5xx';
-  if (statusCode >= 400) return 'http_4xx';
-  return 'unknown';
+  return httpStatusToFailureCode(statusCode);
+}
+
+/** Thrown when the total deadline below fires before web-push settles. */
+class WebPushDeadlineError extends Error {
+  constructor() {
+    super('Total deadline exceeded');
+    this.name = 'WebPushDeadlineError';
+  }
 }
 
 /**
- * Record health, without letting a failure to record it look like, or cause,
- * a delivery failure.
+ * Send one push message with a real total deadline.
  *
- * Health tracking is bookkeeping. If this write throws (a transient DB blip),
- * the caller must not mistake that for the send itself having failed, and the
- * exception must not propagate out of the delivery loop: an unguarded throw
- * here would abandon every subscription after this one in the same envelope,
- * skipping their sends and the end-of-loop pruning entirely.
+ * The `timeout` option passed to `webpush.sendNotification` below is not a
+ * total deadline: the library forwards it straight to `https.request`, which
+ * treats it as a socket-inactivity timer that resets on every inbound byte.
+ * That is exactly the trickling-server case outbound.ts has its own separate
+ * deadline timer to defend against (see the dedicated test for it in
+ * tests/lib/notifications/outbound.test.ts). Without a matching guard here, a
+ * push service that dribbles bytes without ever completing the response would
+ * stall this send, and by extension the whole nightly run, indefinitely.
+ *
+ * This cannot abort the underlying request (the library exposes no handle for
+ * that), so a late resolution or rejection from `sendNotification` after the
+ * deadline has already fired is simply ignored rather than left to become an
+ * unhandled rejection.
  */
-async function recordQuietly(subscriptionId: string, result: OutboundResult): Promise<void> {
-  try {
-    await recordPushSubscriptionResult(subscriptionId, result);
-  } catch (error) {
-    log.warn(
-      {
-        subscriptionId,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      },
-      'Failed to record push subscription health'
-    );
-  }
+function sendWithDeadline(
+  subscription: Parameters<typeof webpush.sendNotification>[0],
+  payload: string
+): Promise<webpush.SendResult> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const deadline = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        reject(new WebPushDeadlineError());
+      }
+    }, TIMEOUT_MS);
+    deadline.unref?.();
+
+    webpush
+      .sendNotification(subscription, payload, { timeout: TIMEOUT_MS })
+      .then((result) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(deadline);
+          resolve(result);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(deadline);
+          reject(error);
+        }
+      });
+  });
 }
 
 /**
@@ -73,8 +114,16 @@ async function recordQuietly(subscriptionId: string, result: OutboundResult): Pr
  *
  * Delivering to at least one device counts as delivered: a user with a dead
  * tablet and a live phone has been notified.
+ *
+ * Per-device outcomes are recorded into `health` rather than written
+ * immediately: the caller (dispatchAll) flushes it once after every envelope
+ * in the run has gone through, so a device with many envelopes tonight gets
+ * one health write, not one per envelope.
  */
-export async function sendWebPush(envelope: NotificationEnvelope): Promise<ChannelOutcome> {
+export async function sendWebPush(
+  envelope: NotificationEnvelope,
+  health: HealthAccumulator
+): Promise<ChannelOutcome> {
   const vapid = getVapidDetails();
   if (!vapid) {
     return { channel: 'web_push', status: 'skipped' };
@@ -108,35 +157,39 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
     // The send itself lives in its own try/catch, kept separate from health
     // recording below, so a bookkeeping error can never be mistaken for (or
     // cause) a delivery failure.
-    let sendError: { statusCode: number | null; message: string } | null = null;
+    let sendError: { statusCode: number | null; message: string; code?: OutboundFailureCode } | null =
+      null;
 
     try {
-      await webpush.sendNotification(
+      await sendWithDeadline(
         {
           endpoint: subscription.endpoint,
           keys: { p256dh: subscription.p256dh, auth: subscription.auth },
         },
-        payload,
-        // Same deadline as the outbound client (lib/notifications/outbound.ts).
-        // Without it this call has no timeout at all, so one hung push
-        // service would stall every subscription after it, and by extension
-        // the whole nightly run.
-        { timeout: TIMEOUT_MS }
+        payload
       );
     } catch (error) {
-      sendError = {
-        statusCode: statusCodeOf(error),
-        message: error instanceof Error ? error.message : 'Unknown push error',
-      };
+      if (error instanceof WebPushDeadlineError) {
+        // No statusCode at all: the send never got a response before this
+        // channel's own total deadline fired. Explicit 'timeout' rather than
+        // falling through statusCodeOf(error) to 'unknown', so this reads the
+        // same way outbound.ts's own timeout does.
+        sendError = { statusCode: null, message: error.message, code: 'timeout' };
+      } else {
+        sendError = {
+          statusCode: statusCodeOf(error),
+          message: error instanceof Error ? error.message : 'Unknown push error',
+        };
+      }
     }
 
     if (sendError === null) {
       delivered += 1;
-      await recordQuietly(subscription.id, { ok: true });
+      health.recordSubscription(subscription.id, { ok: true });
       continue;
     }
 
-    const { statusCode, message } = sendError;
+    const { statusCode, message, code } = sendError;
     lastError = message;
 
     if (statusCode !== null && DEAD_SUBSCRIPTION_CODES.has(statusCode)) {
@@ -148,7 +201,7 @@ export async function sendWebPush(envelope: NotificationEnvelope): Promise<Chann
         { userId: envelope.userId, statusCode, errorMessage: message },
         'Push delivery failed, keeping subscription'
       );
-      await recordQuietly(subscription.id, { ok: false, code: failureCodeOf(statusCode) });
+      health.recordSubscription(subscription.id, { ok: false, code: code ?? failureCodeOf(statusCode) });
     }
   }
 

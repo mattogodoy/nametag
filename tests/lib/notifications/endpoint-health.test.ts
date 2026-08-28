@@ -19,6 +19,7 @@ import {
   recordEndpointResult,
   recordPushSubscriptionResult,
   AUTO_DISABLE_THRESHOLD,
+  HealthAccumulator,
 } from '../../../lib/notifications/endpoint-health';
 
 function notFoundError(): Prisma.PrismaClientKnownRequestError {
@@ -129,6 +130,115 @@ describe('recordEndpointResult', () => {
 
     await expect(recordEndpointResult('ep-1', { ok: true })).rejects.toThrow('connection reset');
   });
+
+  it('records a 429 without bumping the consecutive-failure counter', async () => {
+    // A destination's own rate limit is transient by definition. Bumping the
+    // counter for it would let ten quota-limited nights auto-disable a
+    // destination that never actually failed to deliver.
+    await recordEndpointResult('ep-1', { ok: false, code: 'http_429' });
+
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: {
+        lastFailureAt: expect.any(Date),
+        lastFailureCode: 'http_429',
+      },
+      select: { consecutiveFailures: true },
+    });
+    const data = mocks.update.mock.calls[0][0].data as Record<string, unknown>;
+    expect(data).not.toHaveProperty('consecutiveFailures');
+  });
+
+  it('never auto-disables from a run of 429s alone, however many', async () => {
+    // Simulates AUTO_DISABLE_THRESHOLD consecutive 429s: even though the
+    // stored counter itself never advances, this pins that the disable check
+    // is skipped for this code, not just coincidentally under threshold.
+    mocks.update.mockResolvedValue({ consecutiveFailures: AUTO_DISABLE_THRESHOLD });
+
+    await recordEndpointResult('ep-1', { ok: false, code: 'http_429' });
+
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('HealthAccumulator', () => {
+  beforeEach(() => {
+    mocks.update.mockReset();
+    mocks.updateMany.mockReset();
+    mocks.pushUpdate.mockReset();
+    mocks.pushUpdateMany.mockReset();
+    mocks.update.mockResolvedValue({ consecutiveFailures: 1 });
+    mocks.updateMany.mockResolvedValue({ count: 1 });
+    mocks.pushUpdate.mockResolvedValue({ consecutiveFailures: 1 });
+    mocks.pushUpdateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it('flushes exactly one write for two failures against the same endpoint', async () => {
+    const health = new HealthAccumulator();
+
+    health.recordEndpoint('ep-1', { ok: false, code: 'timeout' });
+    health.recordEndpoint('ep-1', { ok: false, code: 'timeout' });
+    await health.flush();
+
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('records a success, not a failure, when one envelope delivered and another failed', async () => {
+    const health = new HealthAccumulator();
+
+    health.recordEndpoint('ep-1', { ok: true });
+    health.recordEndpoint('ep-1', { ok: false, code: 'timeout' });
+    await health.flush();
+
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: { consecutiveFailures: 0, lastSuccessAt: expect.any(Date), lastFailureCode: null },
+    });
+
+    // Order must not matter: a failure recorded after the success must not
+    // flip the outcome back to failed.
+    mocks.update.mockClear();
+    const healthReversed = new HealthAccumulator();
+    healthReversed.recordEndpoint('ep-1', { ok: false, code: 'timeout' });
+    healthReversed.recordEndpoint('ep-1', { ok: true });
+    await healthReversed.flush();
+
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: { consecutiveFailures: 0, lastSuccessAt: expect.any(Date), lastFailureCode: null },
+    });
+  });
+
+  it('writes distinct destinations independently', async () => {
+    const health = new HealthAccumulator();
+
+    health.recordEndpoint('ep-1', { ok: true });
+    health.recordEndpoint('ep-2', { ok: false, code: 'dns' });
+    health.recordSubscription('sub-1', { ok: false, code: 'http_5xx' });
+    await health.flush();
+
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+    expect(mocks.pushUpdate).toHaveBeenCalledTimes(1);
+    expect(mocks.pushUpdate).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: expect.objectContaining({ lastFailureCode: 'http_5xx' }),
+      select: { consecutiveFailures: true },
+    });
+  });
+
+  it('does not let one destination write failing abandon the rest of the flush', async () => {
+    mocks.update
+      .mockRejectedValueOnce(new Error('connection reset'))
+      .mockResolvedValueOnce({ consecutiveFailures: 1 });
+
+    const health = new HealthAccumulator();
+    health.recordEndpoint('ep-1', { ok: false, code: 'timeout' });
+    health.recordEndpoint('ep-2', { ok: false, code: 'timeout' });
+
+    await expect(health.flush()).resolves.toBeUndefined();
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('recordPushSubscriptionResult', () => {
@@ -218,5 +328,15 @@ describe('recordPushSubscriptionResult', () => {
     await expect(recordPushSubscriptionResult('sub-1', { ok: true })).rejects.toThrow(
       'connection reset'
     );
+  });
+
+  it('records a 429 without bumping the consecutive-failure counter', async () => {
+    await recordPushSubscriptionResult('sub-1', { ok: false, code: 'http_429' });
+
+    expect(mocks.pushUpdate).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: { lastFailureCode: 'http_429' },
+      select: { consecutiveFailures: true },
+    });
   });
 });

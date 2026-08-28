@@ -6,7 +6,7 @@ import { renderEmail } from './channels/email';
 import { sendNtfy } from './channels/ntfy';
 import { sendWebPush } from './channels/web-push';
 import { mapWithConcurrency } from './concurrency';
-import { MAX_ENDPOINTS_PER_USER, recordEndpointResult } from './endpoint-health';
+import { HealthAccumulator, MAX_ENDPOINTS_PER_USER } from './endpoint-health';
 import type { ChannelId, ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
 
 const log = createModuleLogger('notifications');
@@ -33,26 +33,45 @@ export async function dispatchAll(
   const emailEnabled = await loadEmailPreferences(envelopes);
   const endpointsByUser = await loadEndpoints(envelopes);
 
+  // Accumulates every envelope's per-destination outcome in memory across
+  // this whole run, so recordEndpointResult / recordPushSubscriptionResult
+  // are each called at most once per destination below, instead of once per
+  // envelope. See HealthAccumulator's own doc comment for why that matters.
+  const health = new HealthAccumulator();
+
   // Email first and as one batch, so Resend still receives a single request.
   const emailOutcomes = await dispatchEmail(envelopes, emailEnabled);
 
   // Per-envelope channels, bounded so a large run does not open one socket per
   // envelope at the same instant.
   const pushOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
-    guard(() => sendWebPush(envelope), 'web_push', envelope.userId)
+    guard(() => sendWebPush(envelope, health), 'web_push', envelope.userId)
   );
 
   const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
     guard(
-      () => dispatchEndpoints(envelope, endpointsByUser.get(envelope.userId) ?? []),
+      () => dispatchEndpoints(envelope, endpointsByUser.get(envelope.userId) ?? [], health),
       'ntfy',
       envelope.userId
     )
   );
 
-  return envelopes.map((_envelope, index) =>
+  const results = envelopes.map((_envelope, index) =>
     summarize([emailOutcomes[index], pushOutcomes[index], endpointOutcomes[index]])
   );
+
+  // Flushed after every DispatchResult above has already been computed, and
+  // guarded on top of HealthAccumulator's own per-destination guard: nothing
+  // that happens while writing health bookkeeping can reach back and change
+  // a delivery outcome or a stamp decision that was already decided.
+  try {
+    await health.flush();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error({ errorMessage: message }, 'Failed to flush notification destination health for this run');
+  }
+
+  return results;
 }
 
 /**
@@ -168,17 +187,15 @@ async function loadEndpoints(
  *
  * Collapsed to a single outcome: delivering to at least one endpoint counts,
  * the same way one live device counts for push. Per-endpoint results are
- * recorded separately for health tracking.
+ * recorded into `health` instead of written immediately: the caller flushes
+ * it once, after every envelope in the run has gone through, so a destination
+ * with many envelopes tonight gets one health write, not one per envelope.
  *
- * The send and the health-tracking write are guarded separately, the same
- * split `sendWebPush` uses (send, then `recordQuietly`). An unguarded throw
- * anywhere in this loop would abandon every endpoint after it for this
- * envelope, not just the one that failed, so each endpoint gets its own
- * try/catch. Keeping the record write in its own catch means a bookkeeping
- * failure (a Prisma blip while writing health) can never be mistaken for, or
- * shadow, a send that actually succeeded. `sendNtfy` already resolves rather
- * than throwing, so guarding it here is belt and braces today and the
- * guarantee this loop needs once a second endpoint type joins it.
+ * The send is still guarded per endpoint: an unguarded throw anywhere in this
+ * loop would abandon every endpoint after it for this envelope, not just the
+ * one that failed. Recording into `health` itself cannot throw, it is a plain
+ * in-memory accumulation, so unlike the send it needs no try/catch of its own
+ * here.
  *
  * A throw is also recorded as a failure (coarse code `unknown`), the same as
  * a driver that resolves with an error. Without this, an endpoint whose
@@ -194,7 +211,8 @@ async function loadEndpoints(
  */
 async function dispatchEndpoints(
   envelope: NotificationEnvelope,
-  endpoints: readonly EndpointRecord[]
+  endpoints: readonly EndpointRecord[],
+  health: HealthAccumulator
 ): Promise<ChannelOutcome> {
   if (endpoints.length === 0) {
     return { channel: 'ntfy', status: 'skipped' };
@@ -228,12 +246,7 @@ async function dispatchEndpoints(
       // Record it too, so a driver that throws every night still accumulates
       // failures and eventually auto-disables, the same as one that resolves
       // with an error. web-push.ts does this for the same reason.
-      try {
-        await recordEndpointResult(endpoint.id, { ok: false, code: 'unknown' });
-      } catch {
-        // Bookkeeping only. A failure to record here must not be mistaken
-        // for, or reported as, a second delivery failure.
-      }
+      health.recordEndpoint(endpoint.id, { ok: false, code: 'unknown' });
 
       continue;
     }
@@ -248,17 +261,7 @@ async function dispatchEndpoints(
       );
     }
 
-    try {
-      await recordEndpointResult(endpoint.id, result);
-    } catch (error) {
-      log.warn(
-        {
-          endpointId: endpoint.id,
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        },
-        'Failed to record endpoint health'
-      );
-    }
+    health.recordEndpoint(endpoint.id, result);
   }
 
   if (delivered > 0) {

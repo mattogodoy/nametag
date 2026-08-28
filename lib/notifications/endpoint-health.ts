@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createModuleLogger } from '@/lib/logger';
-import type { OutboundResult } from './outbound';
+import type { OutboundFailureCode, OutboundResult } from './outbound';
 
 const log = createModuleLogger('notifications:endpoint-health');
 
@@ -11,12 +11,36 @@ const log = createModuleLogger('notifications:endpoint-health');
  * Ten daily runs is roughly a week and a half of a dead destination, which is
  * long enough to survive a receiver's own outage and short enough that we stop
  * making pointless outbound requests on a user's behalf.
+ *
+ * This is only true because health is written at most once per destination
+ * per cron run (see HealthAccumulator below). A user with a weekly digest and
+ * a couple of birthdays due the same night has 10+ envelopes in a single run;
+ * counting per envelope instead of per run would let one hour of downtime
+ * permanently disable a destination, which is not what this comment, or the
+ * self-hosting docs that repeat it, describe.
  */
 export const AUTO_DISABLE_THRESHOLD = 10;
 
 /** True when a Prisma write targeted a row that no longer exists (P2025). */
 function isRecordNotFoundError(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
+}
+
+/**
+ * Whether a failure code should count toward the consecutive-failure counter
+ * that drives auto-disable.
+ *
+ * `http_429` is excluded: it means the destination itself asked us to slow
+ * down, which is transient by definition. Disabling a destination because its
+ * own server told us to back off is the wrong response, and it is a
+ * particularly bad one for ntfy.sh's free-tier daily quota, where a user who
+ * simply sends a lot of reminders would otherwise see a perfectly working
+ * destination switched off with a message that blames their access token.
+ * `lastFailureCode` and `lastFailureAt` are still recorded for every failure,
+ * including this one, so the reason stays visible.
+ */
+function countsTowardAutoDisable(code: OutboundFailureCode): boolean {
+  return code !== 'http_429';
 }
 
 /**
@@ -69,12 +93,14 @@ export async function recordEndpointResult(
   // same starting count, both write count + 1, and one failure vanishes.
   // Auto-disable then fires late, or never, on an endpoint that is actually
   // failing every time.
+  const bumpCounter = countsTowardAutoDisable(result.code);
+
   let updated: { consecutiveFailures: number };
   try {
     updated = await prisma.notificationEndpoint.update({
       where: { id: endpointId },
       data: {
-        consecutiveFailures: { increment: 1 },
+        ...(bumpCounter ? { consecutiveFailures: { increment: 1 } } : {}),
         lastFailureAt: now,
         lastFailureCode: result.code,
       },
@@ -86,7 +112,7 @@ export async function recordEndpointResult(
     throw error;
   }
 
-  if (updated.consecutiveFailures >= AUTO_DISABLE_THRESHOLD) {
+  if (bumpCounter && updated.consecutiveFailures >= AUTO_DISABLE_THRESHOLD) {
     // Guarded on autoDisabledAt so concurrent envelopes crossing the
     // threshold together cannot each overwrite the disable timestamp, and so
     // the warning below fires once rather than on every subsequent failure
@@ -147,12 +173,14 @@ export async function recordPushSubscriptionResult(
   // Atomic increment, the same reasoning as recordEndpointResult: concurrent
   // envelopes for the same user share the same subscription rows, so a
   // read-then-write here loses increments under the same race.
+  const bumpCounter = countsTowardAutoDisable(result.code);
+
   let updated: { consecutiveFailures: number };
   try {
     updated = await prisma.pushSubscription.update({
       where: { id: subscriptionId },
       data: {
-        consecutiveFailures: { increment: 1 },
+        ...(bumpCounter ? { consecutiveFailures: { increment: 1 } } : {}),
         lastFailureCode: result.code,
       },
       select: { consecutiveFailures: true },
@@ -163,7 +191,7 @@ export async function recordPushSubscriptionResult(
     throw error;
   }
 
-  if (updated.consecutiveFailures >= AUTO_DISABLE_THRESHOLD) {
+  if (bumpCounter && updated.consecutiveFailures >= AUTO_DISABLE_THRESHOLD) {
     // Guarded on autoDisabledAt so concurrent envelopes crossing the
     // threshold together cannot each overwrite the disable timestamp, and so
     // the warning below fires once rather than on every subsequent failure.
@@ -188,3 +216,102 @@ export async function recordPushSubscriptionResult(
  * fan-out from one account bounded.
  */
 export const MAX_ENDPOINTS_PER_USER = 5;
+
+interface AccumulatedOutcome {
+  delivered: boolean;
+  lastFailureCode: OutboundFailureCode;
+}
+
+function outcomeOf(acc: AccumulatedOutcome): OutboundResult {
+  return acc.delivered ? { ok: true } : { ok: false, code: acc.lastFailureCode };
+}
+
+/**
+ * Collects delivery outcomes for every destination touched during one cron
+ * run, so health is written once per destination per run instead of once per
+ * (envelope, destination) pair.
+ *
+ * The per-call writes this replaces are what made AUTO_DISABLE_THRESHOLD's
+ * own "ten daily runs" comment false: a user with a weekly digest plus a few
+ * birthday reminders due the same night has ten or more envelopes in a single
+ * run, so one hour of a destination's downtime could cross the threshold
+ * before morning. Aggregating first means the counter advances at most once
+ * per destination per night, matching what the threshold's name promises.
+ *
+ * Aggregation rule: delivered to at least once during the run counts as a
+ * success, recorded at flush time regardless of how many other envelopes in
+ * the same run failed against that destination. Otherwise the last failure
+ * code seen is recorded. This is deliberately the same "at least one success
+ * counts" rule sendWebPush already uses across a user's own devices, applied
+ * here across a run's envelopes instead of across devices.
+ */
+export class HealthAccumulator {
+  private readonly endpoints = new Map<string, AccumulatedOutcome>();
+  private readonly subscriptions = new Map<string, AccumulatedOutcome>();
+
+  private static accumulate(
+    map: Map<string, AccumulatedOutcome>,
+    id: string,
+    result: OutboundResult
+  ): void {
+    const existing = map.get(id);
+    if (result.ok) {
+      map.set(id, { delivered: true, lastFailureCode: existing?.lastFailureCode ?? 'unknown' });
+      return;
+    }
+    map.set(id, { delivered: existing?.delivered ?? false, lastFailureCode: result.code });
+  }
+
+  /** Record one envelope's outcome against one notification endpoint. Synchronous: purely in-memory, cannot fail. */
+  recordEndpoint(endpointId: string, result: OutboundResult): void {
+    HealthAccumulator.accumulate(this.endpoints, endpointId, result);
+  }
+
+  /** Record one envelope's outcome against one push subscription. Synchronous: purely in-memory, cannot fail. */
+  recordSubscription(subscriptionId: string, result: OutboundResult): void {
+    HealthAccumulator.accumulate(this.subscriptions, subscriptionId, result);
+  }
+
+  /**
+   * Write exactly one health record per destination accumulated this run.
+   *
+   * Called once, after every envelope in the run has already been delivered
+   * (or not) and every DispatchResult has already been computed. Nothing here
+   * can change a delivery outcome or a stamp decision: it only updates
+   * `NotificationEndpoint` / `PushSubscription` bookkeeping columns.
+   *
+   * Each destination's write is guarded on its own, the same way the
+   * per-call writes it replaces were guarded: one destination's write failing
+   * (a transient DB blip) must not stop the rest of the run's destinations
+   * from being flushed, and must never propagate out to the caller.
+   */
+  async flush(): Promise<void> {
+    for (const [endpointId, acc] of this.endpoints) {
+      try {
+        await recordEndpointResult(endpointId, outcomeOf(acc));
+      } catch (error) {
+        log.warn(
+          {
+            endpointId,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          },
+          'Failed to flush endpoint health for this run'
+        );
+      }
+    }
+
+    for (const [subscriptionId, acc] of this.subscriptions) {
+      try {
+        await recordPushSubscriptionResult(subscriptionId, outcomeOf(acc));
+      } catch (error) {
+        log.warn(
+          {
+            subscriptionId,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          },
+          'Failed to flush push subscription health for this run'
+        );
+      }
+    }
+  }
+}
