@@ -53,6 +53,17 @@ Add a second `server` block listening on port 80 that redirects to HTTPS, or han
 certbot certonly --standalone -d yourdomain.com
 ```
 
+## Trusted proxy count
+
+Nametag's rate limiting (login, registration, password reset, and more) identifies a client by IP address, read from the `X-Forwarded-For` header your proxy sets. That header is otherwise attacker-controlled, so the app needs to know how many proxy hops to trust before it can pick out the real client address: set with `TRUSTED_PROXY_COUNT` (see [Configuration](/self-hosting/configuration/#trusted-proxy-count-and-rate-limiting)).
+
+Both configurations above add exactly one trusted hop:
+
+- **Caddy**'s `reverse_proxy` appends to `X-Forwarded-For` automatically.
+- **Nginx**'s `proxy_add_x_forwarded_for` (used above) appends to any existing value rather than replacing it, and `X-Real-IP` is set from `$remote_addr`, the connection Nginx itself accepted.
+
+`TRUSTED_PROXY_COUNT` defaults to `1`, which matches both of these as written. You only need to change it if you add another hop in front of the one shown here, for example a CDN or a separate load balancer terminating TLS before it reaches this Nginx or Caddy instance. In that case, set `TRUSTED_PROXY_COUNT=2`. Getting the count wrong in either direction has a real cost: too low and the app cannot trust any part of the header, and every rate limit with no other identifier degrades to a single instance-wide bucket; too high and it reads an entry that a client, not a proxy, put there, which is the exact spoofing this setting exists to prevent.
+
 ## After adding a proxy
 
 Once Nametag is served over `https://yourdomain.com`, update your `.env`:

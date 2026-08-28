@@ -97,6 +97,7 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `VAPID_PUBLIC_KEY` | Public key for browser push notifications | Not set |
 | `VAPID_PRIVATE_KEY` | Private key for browser push notifications | Not set |
 | `VAPID_SUBJECT` | Contact URI for push services, must be a `mailto:` address | Not set |
+| `TRUSTED_PROXY_COUNT` | Number of trusted reverse proxy hops in front of the app, used to pick the real client IP out of `X-Forwarded-For` for rate limiting | `1` |
 
 ## Web push notifications (VAPID)
 
@@ -115,6 +116,19 @@ Leave all three unset and the push channel stays hidden in Settings. Email remin
 Replacing the keys later invalidates every existing browser subscription at once. Each device has to turn push back on from Settings to start receiving notifications again, so only rotate them when you mean to force that.
 
 The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe. After 10 consecutive failed nightly runs against the same device, Nametag stops attempting delivery to it automatically instead of retrying forever. The row is not deleted: re-subscribing that device, or removing it from Settings, are still the only ways to clear it out.
+
+## Trusted proxy count and rate limiting
+
+Every rate limit in Nametag (login, registration, password reset, and more) keys on the client's IP address. A Web `Request` handler has no direct access to the TCP peer address, so the only source for that IP is the `X-Forwarded-For` or `X-Real-IP` header set by whatever reverse proxy sits in front of the app. Both headers can be set by the client itself, so the app has to know how many proxy hops to trust before it can tell a proxy-set value apart from a client-forged one.
+
+`TRUSTED_PROXY_COUNT` is that number. With `X-Forwarded-For`, the app counts from the right: the client's real address is the Nth entry from the end, where N is `TRUSTED_PROXY_COUNT`, because each proxy hop appends its own view of the connection to the end of the header rather than replacing it. Reading from the left, which looks like the natural choice, is exactly what an attacker-supplied value would occupy.
+
+The default of `1` matches both reverse-proxy configurations in these docs: a single nginx or Caddy instance terminating TLS directly in front of the app. See [Reverse Proxy](/self-hosting/reverse-proxy/) for the concrete number to use with additional layers such as a CDN or load balancer.
+
+Getting this wrong fails in one of two directions:
+
+- **Too low** (for example `0` with a proxy actually in front): the app cannot find a trustworthy header value at all, so every unauthenticated request with no other identifier collapses into one shared rate-limit bucket instance-wide. A single warning is logged the first time this happens; watch for it after changing your proxy setup.
+- **Too high** (for example `2` with only one proxy): the app reads a header entry that is still attacker-controlled, which reintroduces the original problem: an attacker can rotate that value to get a fresh rate-limit bucket on every request.
 
 ## Rotating NEXTAUTH_SECRET
 
