@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getLocalDateString } from '../../lib/date-format';
-import { storedCalendarDate, storedYearUnknownDate } from '../helpers/timezone';
+import {
+  storedCalendarDate,
+  storedYearUnknownDate,
+  setProcessTimezone,
+  restoreTimezoneAfterEach,
+} from '../helpers/timezone';
 
 /**
  * Pins the `date` field carried on every notification envelope, which the
@@ -95,6 +100,18 @@ function today(): Date {
   return day;
 }
 
+/**
+ * Like `birthdayRecord`, but with a non-zero lead window so
+ * shouldSendLeadReminder fires an important_date_lead envelope instead of (or
+ * alongside) the day-of one.
+ */
+function leadBirthdayRecord(storedDate: Date, leadDays: number) {
+  return {
+    ...birthdayRecord(storedDate),
+    reminderLeadDays: leadDays,
+  };
+}
+
 describe('the notification envelope date field for a day-of important-date reminder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -150,5 +167,65 @@ describe('the notification envelope date field for a day-of important-date remin
     // receiver parsing this field as a real calendar date.
     expect(envelope?.notification.date).not.toContain('1604');
     expect(envelope?.notification.date).toBe(getLocalDateString(day));
+  });
+});
+
+/**
+ * The lead path is where the real UTC-to-local conversion happens: a stored
+ * UTC-midnight Date goes through parseCalendarDate, then getNextOccurrence
+ * projects it into this year's (or next year's) occurrence, then
+ * getLocalDateString formats the result. The day-of path above only ever
+ * pins `today` itself, which never round-trips through the stored value at
+ * all, so it cannot catch a helper mistake in that pipeline. Run under a
+ * timezone west of UTC, where `parseAsLocalDate` given a raw Date (the wrong
+ * helper for a UTC-midnight column) would report the previous day.
+ */
+describe('the notification envelope date field for an important-date lead reminder', () => {
+  restoreTimezoneAfterEach();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.cronLogCreate.mockResolvedValue({ id: 'log-1' });
+    mocks.cronLogUpdate.mockResolvedValue({});
+    mocks.personFindMany.mockResolvedValue([]);
+    mocks.importantDateUpdate.mockResolvedValue({});
+    mocks.dispatchAll.mockImplementation(async (envelopes: unknown[]) =>
+      envelopes.map(() => ({ delivered: 1, failed: 0, skipped: 0, shouldStamp: true }))
+    );
+  });
+
+  it('reports the projected occurrence date, not the day it shifts to under a UTC helper mistake', async () => {
+    // withTimezone's finally block restores the timezone as soon as the
+    // (synchronous part of the) callback returns, which is wrong for an
+    // async handler: the restore would run before GET actually finishes.
+    // Set it directly instead, and let restoreTimezoneAfterEach above clean
+    // up once this test, awaited in full, has completed.
+    setProcessTimezone('America/New_York');
+
+    const day = today();
+    // Five days out: inside a 7-day lead window, and far enough from today
+    // that a west-of-UTC off-by-one day would change the calendar date
+    // rather than silently landing on the same day by coincidence.
+    const occurrence = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 5);
+    const birthYear = 1990;
+    const storedDate = storedCalendarDate(
+      new Date(birthYear, occurrence.getMonth(), occurrence.getDate())
+    );
+
+    mocks.importantDateFindMany.mockResolvedValue([leadBirthdayRecord(storedDate, 7)]);
+
+    await GET(request());
+
+    expect(mocks.dispatchAll).toHaveBeenCalledTimes(1);
+    const envelopes = mocks.dispatchAll.mock.calls[0][0] as Array<{
+      notification: { kind: string; date?: string; daysUntil?: number };
+    }>;
+    const envelope = envelopes.find((e) => e.notification.kind === 'important_date_lead');
+    expect(envelope).toBeDefined();
+    expect(envelope?.notification.daysUntil).toBe(5);
+    // The exact projected calendar day, this year, never the birth year and
+    // never shifted a day earlier by a UTC/local mismatch.
+    expect(envelope?.notification.date).toBe(getLocalDateString(occurrence));
+    expect(envelope?.notification.date).not.toContain(String(birthYear));
   });
 });
