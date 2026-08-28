@@ -20,7 +20,7 @@ import {
   validateRequest,
   bulkOrphansSchema,
   bulkActionSchema,
-  createNtfyEndpointSchema,
+  createEndpointSchema,
 } from '@/lib/validations';
 
 describe('validations', () => {
@@ -820,38 +820,67 @@ describe('validations', () => {
     });
   });
 
-  describe('createNtfyEndpointSchema', () => {
-    const valid = { type: 'NTFY' as const, label: 'Phone', url: 'https://ntfy.sh/my-topic' };
+  describe('createEndpointSchema', () => {
+    describe('NTFY endpoints', () => {
+      const valid = { type: 'NTFY' as const, label: 'Phone', url: 'https://ntfy.sh/my-topic' };
 
-    it('accepts a request with no token', () => {
-      expect(createNtfyEndpointSchema.safeParse(valid).success).toBe(true);
-    });
-
-    it('accepts an ordinary printable-ASCII token', () => {
-      const result = createNtfyEndpointSchema.safeParse({ ...valid, token: 'tk_secret-Value.123' });
-      expect(result.success).toBe(true);
-    });
-
-    it('rejects a token containing CRLF', () => {
-      // A CRLF in a header value makes Node's HTTP client throw
-      // synchronously when the request is built. Rejecting it here, rather
-      // than at send time, means the user sees a validation error instead of
-      // a destination that fails every night for a reason with no fix.
-      const result = createNtfyEndpointSchema.safeParse({
-        ...valid,
-        token: 'tk_secret\r\nX-Injected: true',
+      it('accepts a request with no token', () => {
+        expect(createEndpointSchema.safeParse(valid).success).toBe(true);
       });
-      expect(result.success).toBe(false);
+
+      it('accepts an ordinary printable-ASCII token', () => {
+        const result = createEndpointSchema.safeParse({ ...valid, token: 'tk_secret-Value.123' });
+        expect(result.success).toBe(true);
+      });
+
+      it('rejects a token containing CRLF', () => {
+        const result = createEndpointSchema.safeParse({
+          ...valid,
+          token: 'tk_secret\r\nX-Injected: true',
+        });
+        expect(result.success).toBe(false);
+      });
+
+      it('rejects a token containing a non-latin1 character', () => {
+        const result = createEndpointSchema.safeParse({ ...valid, token: 'tk_sécret' });
+        expect(result.success).toBe(false);
+      });
+
+      it('rejects a token containing a plain space', () => {
+        const result = createEndpointSchema.safeParse({ ...valid, token: 'tk secret' });
+        expect(result.success).toBe(false);
+      });
     });
 
-    it('rejects a token containing a non-latin1 character', () => {
-      const result = createNtfyEndpointSchema.safeParse({ ...valid, token: 'tk_sécret' });
-      expect(result.success).toBe(false);
+    describe('WEBHOOK endpoints', () => {
+      it('accepts a valid webhook endpoint', () => {
+        const result = createEndpointSchema.safeParse({
+          type: 'WEBHOOK',
+          label: 'Discord Alert',
+          url: 'https://discord.com/api/webhooks/123/abc',
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it('rejects invalid URL', () => {
+        const result = createEndpointSchema.safeParse({
+          type: 'WEBHOOK',
+          label: 'Broken Hook',
+          url: 'not-a-valid-url',
+        });
+        expect(result.success).toBe(false);
+      });
     });
 
-    it('rejects a token containing a plain space', () => {
-      const result = createNtfyEndpointSchema.safeParse({ ...valid, token: 'tk secret' });
-      expect(result.success).toBe(false);
+    describe('discriminated union validation', () => {
+      it('rejects unknown endpoint types', () => {
+        const result = createEndpointSchema.safeParse({
+          type: 'SLACK',
+          label: 'Slack Bot',
+          url: 'https://hooks.slack.com/services/123',
+        });
+        expect(result.success).toBe(false);
+      });
     });
   });
 });
