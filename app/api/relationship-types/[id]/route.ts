@@ -82,7 +82,7 @@ export const PUT = withAuth(async (request, session, context) => {
 
     // Handle symmetric relationships (e.g., friend <-> friend)
     if (symmetric) {
-      const relationshipType = await prisma.relationshipType.update({
+      const symmetricArgs = {
         where: { id },
         data: {
           name: normalizedName,
@@ -99,7 +99,16 @@ export const PUT = withAuth(async (request, session, context) => {
             },
           },
         },
-      });
+      };
+
+      const relationshipType =
+        variants === undefined
+          ? await prisma.relationshipType.update(symmetricArgs)
+          : await prisma.$transaction(async (tx) => {
+              const updatedType = await tx.relationshipType.update(symmetricArgs);
+              await replaceLabelVariants(tx, updatedType.id, variants);
+              return updatedType;
+            });
 
       return apiResponse.ok({ relationshipType });
     }

@@ -157,6 +157,72 @@ describe('PUT /api/relationship-types/[id] with variants', () => {
   });
 });
 
+describe('PUT /api/relationship-types/[id] with a symmetric type', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Same two-call findFirst shape as the asymmetric PUT tests: ownership
+    // check first, then the duplicate-name check.
+    mocks.typeFindFirst.mockReset();
+    mocks.typeFindFirst
+      .mockResolvedValueOnce({ id: 'type-1', userId: 'user-123', name: 'FRATRIE' })
+      .mockResolvedValue(null);
+    mocks.typeUpdate.mockResolvedValue({ id: 'type-1', label: 'Frere/Soeur' });
+    mocks.variantDeleteMany.mockResolvedValue({ count: 0 });
+    mocks.variantCreate.mockResolvedValue({ id: 'v1' });
+    mocks.groupFindMany.mockResolvedValue([]);
+    mocks.templateFindMany.mockResolvedValue([]);
+    mocks.transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        relationshipType: { update: mocks.typeUpdate },
+        relationshipLabelVariant: {
+          deleteMany: mocks.variantDeleteMany,
+          create: mocks.variantCreate,
+        },
+      })
+    );
+  });
+
+  it('replaces variants wholesale, in array order', async () => {
+    const response = await PUT(
+      request({
+        ...baseBody,
+        symmetric: true,
+        variants: [
+          { label: 'frere', conditions: [genderCondition] },
+          { label: 'fratrie', conditions: [] },
+        ],
+      }),
+      { params: Promise.resolve({ id: 'type-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.variantDeleteMany).toHaveBeenCalledWith({
+      where: { relationshipTypeId: 'type-1' },
+    });
+    expect(mocks.variantCreate).toHaveBeenCalledTimes(2);
+    expect(mocks.variantCreate.mock.calls[0][0].data.order).toBe(0);
+    expect(mocks.variantCreate.mock.calls[1][0].data.order).toBe(1);
+  });
+
+  it('clears the configuration on an empty array', async () => {
+    const response = await PUT(request({ ...baseBody, symmetric: true, variants: [] }), {
+      params: Promise.resolve({ id: 'type-1' }),
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.variantDeleteMany).toHaveBeenCalledTimes(1);
+    expect(mocks.variantCreate).not.toHaveBeenCalled();
+  });
+
+  it('leaves the configuration untouched when variants is omitted', async () => {
+    const response = await PUT(request({ ...baseBody, symmetric: true }), {
+      params: Promise.resolve({ id: 'type-1' }),
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.variantDeleteMany).not.toHaveBeenCalled();
+    expect(mocks.variantCreate).not.toHaveBeenCalled();
+  });
+});
+
 describe('POST /api/relationship-types with variants', () => {
   function postRequest(body: unknown): Request {
     return new Request('http://localhost/api/relationship-types', {
