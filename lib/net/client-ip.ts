@@ -120,18 +120,28 @@ export function resolveTrustedClientIp(request: Request): string | null {
     return net.isIP(candidate) !== 0 ? candidate : null;
   }
 
-  // x-real-ip is only considered when x-forwarded-for is absent. Nginx's
-  // proxy_set_header (unlike proxy_add_x_forwarded_for) REPLACES any
-  // client-supplied value, so behind the documented config it always carries
-  // the proxy's own view of the connecting peer for a single trusted hop.
-  // We already returned above when trustedProxyCount is 0, so by this point
-  // at least one hop is trusted.
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    const trimmed = realIp.trim();
-    return net.isIP(trimmed) !== 0 ? trimmed : null;
-  }
-
+  // x-real-ip is deliberately never consulted here, not even as a fallback
+  // when x-forwarded-for is absent. An earlier version of this function did
+  // exactly that, reasoning that nginx's proxy_set_header (unlike
+  // proxy_add_x_forwarded_for) REPLACES a client-supplied value, so it
+  // should be safe for a single trusted hop. That reasoning only holds for a
+  // proxy that also manages x-forwarded-for. A proxy that sets x-real-ip but
+  // never touches x-forwarded-for (no proxy_add_x_forwarded_for and no
+  // explicit proxy_set_header for it) passes through whatever
+  // x-forwarded-for value the client sent, completely unmodified, and this
+  // function has no way to distinguish that from a proxy that correctly
+  // appends its own view: both look like a syntactically valid header. Once
+  // x-real-ip is trusted as a fallback, a proxy configured exactly that way
+  // hands an attacker's own x-forwarded-for straight through as if it were
+  // trustworthy. The two documented reverse-proxy configs (nginx with
+  // proxy_add_x_forwarded_for, Caddy) both manage x-forwarded-for, so
+  // restricting this function to that one header, and never x-real-ip, keeps
+  // both working. A proxy that manages only x-real-ip does not match the
+  // documented configuration (see docs/self-hosting/reverse-proxy.md); a
+  // request through it resolves to null here, which fails into the shared
+  // bucket and fires warnNoTrustedClientIp rather than silently trusting
+  // whatever the client sent. x-real-ip remains available in getClientIp for
+  // logging, where a best-effort value is fine.
   return null;
 }
 

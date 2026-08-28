@@ -126,7 +126,14 @@ describe('rate-limit', () => {
       expect(checkRateLimit(request, 'login', 'email2@test.com')).toBeNull();
     });
 
-    it('should read IP from x-real-ip header as fallback', async () => {
+    it('does not trust x-real-ip, so a request carrying only it shares the fallback bucket', async () => {
+      // x-real-ip is never part of the trusted resolution path (see
+      // lib/net/client-ip.ts), so a request with no x-forwarded-for
+      // resolves to no trusted IP at all, regardless of x-real-ip, and
+      // shares the "no trusted IP" bucket with every other such request
+      // for this rate-limit type. This still blocks after maxAttempts, but
+      // for a different reason than the old (incorrect) "reads x-real-ip as
+      // a fallback" behavior this test used to pin.
       const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
 
       const request = new Request('http://localhost/api/test', {
@@ -135,7 +142,6 @@ describe('rate-limit', () => {
         },
       });
 
-      // Should work without x-forwarded-for
       for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
         checkRateLimit(request, 'login');
       }
@@ -252,6 +258,69 @@ describe('rate-limit', () => {
       const result = checkRateLimit(requestWithChain('10.0.0.2'), 'login');
       expect(result).not.toBeNull();
       expect(result?.status).toBe(429);
+    });
+  });
+
+  describe('buildRateLimitKey', () => {
+    it('keys on the identifier alone when there is no trusted IP', async () => {
+      // Catches: deleting the `if (identifier)` branch, which is the entire
+      // reason the auth routes (forgot-password, resend-verification,
+      // register) narrow their bucket by email: without it, any request
+      // with no trusted IP collapses into the shared bucket regardless of
+      // the identifier passed in, silently undoing that fix.
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const key = buildRateLimitKey('forgotPassword', null, 'user@example.com');
+
+      expect(key).toBe('forgotPassword:user@example.com');
+      expect(key).not.toContain('shared');
+    });
+
+    it('still distinguishes two different identifiers when there is no trusted IP', async () => {
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const keyA = buildRateLimitKey('forgotPassword', null, 'a@example.com');
+      const keyB = buildRateLimitKey('forgotPassword', null, 'b@example.com');
+
+      expect(keyA).not.toBe(keyB);
+    });
+
+    it('falls back to a shared bucket only when there is neither a trusted IP nor an identifier', async () => {
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const key = buildRateLimitKey('login', null, undefined);
+
+      expect(key).toBe('login:shared');
+    });
+  });
+
+  describe('warnNoTrustedClientIp integration', () => {
+    const originalTrustedProxyCount = process.env.TRUSTED_PROXY_COUNT;
+
+    afterEach(() => {
+      if (originalTrustedProxyCount === undefined) {
+        delete process.env.TRUSTED_PROXY_COUNT;
+      } else {
+        process.env.TRUSTED_PROXY_COUNT = originalTrustedProxyCount;
+      }
+    });
+
+    it('checkRateLimit emits the operator warning when it falls back to the shared bucket', async () => {
+      // Catches: deleting the warnNoTrustedClientIp() call from the rate
+      // limiter (or from buildRateLimitKey). That call is the only signal
+      // an operator gets that TRUSTED_PROXY_COUNT is misconfigured and
+      // every unauthenticated request with no other identifier is sharing
+      // one bucket; losing it makes that condition silent.
+      process.env.TRUSTED_PROXY_COUNT = '0';
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { checkRateLimit } = await import('@/lib/rate-limit');
+
+      checkRateLimit(new Request('http://localhost/api/test'), 'login');
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('TRUSTED_PROXY_COUNT');
+
+      warnSpy.mockRestore();
     });
   });
 

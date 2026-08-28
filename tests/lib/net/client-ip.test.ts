@@ -125,38 +125,49 @@ describe('resolveTrustedClientIp', () => {
       expect(resolveTrustedClientIp(request)).toBeNull();
     });
 
-    it('rejects a non-IP value in x-real-ip', async () => {
-      process.env.TRUSTED_PROXY_COUNT = '1';
-      const { resolveTrustedClientIp } = await freshClientIp();
-
-      const request = requestWith({ 'x-real-ip': 'also-not-an-ip' });
-
-      expect(resolveTrustedClientIp(request)).toBeNull();
-    });
   });
 
-  describe('x-real-ip fallback', () => {
-    it('is used only when x-forwarded-for is absent', async () => {
-      // Catches: preferring x-real-ip over a present x-forwarded-for, or
-      // merging the two.
-      process.env.TRUSTED_PROXY_COUNT = '1';
-      const { resolveTrustedClientIp } = await freshClientIp();
-
-      const request = requestWith({
-        'x-forwarded-for': '203.0.113.9',
-        'x-real-ip': '198.51.100.7',
-      });
-
-      expect(resolveTrustedClientIp(request)).toBe('203.0.113.9');
-    });
-
-    it('is used when x-forwarded-for is absent and the count is at least 1', async () => {
+  describe('x-real-ip is never trusted (a proxy that manages only x-real-ip is a misconfiguration)', () => {
+    it('is not used as a fallback when x-forwarded-for is absent, even with a trusted proxy count', async () => {
+      // Catches: reintroducing the "consult x-real-ip when x-forwarded-for is
+      // absent" fallback. That fallback is exploitable against a proxy that
+      // manages x-real-ip (via proxy_set_header, which replaces) but never
+      // touches x-forwarded-for: such a proxy passes an attacker's own
+      // x-forwarded-for straight through untouched, and a resolver that
+      // falls back to x-real-ip only when x-forwarded-for is *absent* would
+      // never even notice, because in the exploit case x-forwarded-for is
+      // present (it's the attacker's). This test pins the simpler,
+      // observable half of that: with no x-forwarded-for at all, a present
+      // x-real-ip must not be trusted.
       process.env.TRUSTED_PROXY_COUNT = '1';
       const { resolveTrustedClientIp } = await freshClientIp();
 
       const request = requestWith({ 'x-real-ip': '198.51.100.7' });
 
-      expect(resolveTrustedClientIp(request)).toBe('198.51.100.7');
+      expect(resolveTrustedClientIp(request)).toBeNull();
+    });
+
+    it('does not affect resolution when x-forwarded-for is present, including a spoofed value matching the attacker prefix', async () => {
+      // The regression scenario from the security review: a proxy sets a
+      // genuine x-real-ip, but the x-forwarded-for chain it forwards has an
+      // attacker-supplied entry. Catches: any code path that reads,
+      // prefers, cross-checks against, or is otherwise influenced by
+      // x-real-ip when resolving via x-forwarded-for. The correct,
+      // rightmost x-forwarded-for entry must win regardless of what
+      // x-real-ip says, including when x-real-ip has been set (by the
+      // attacker, or coincidentally) to the same value as the spoofed
+      // prefix.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({
+        'x-forwarded-for': '6.6.6.6, 203.0.113.9',
+        'x-real-ip': '6.6.6.6',
+      });
+
+      const result = resolveTrustedClientIp(request);
+      expect(result).toBe('203.0.113.9');
+      expect(result).not.toBe('6.6.6.6');
     });
 
     it('is not consulted at all when the count is 0, even alone', async () => {
@@ -188,6 +199,40 @@ describe('resolveTrustedClientIp', () => {
       const request = requestWith({ 'x-forwarded-for': '1.2.3.4, 203.0.113.9' });
 
       expect(resolveTrustedClientIp(request)).toBe('203.0.113.9');
+    });
+  });
+
+  describe('IPv6 addresses', () => {
+    it('accepts a valid IPv6 candidate', async () => {
+      // Catches: replacing net.isIP with an IPv4-only validator (e.g. a
+      // dotted-quad regex). There is no other IPv6 coverage in this file,
+      // so an IPv4-only check would otherwise pass every test here while
+      // quietly rejecting every real IPv6 client into the shared bucket,
+      // which is exactly this design's failure mode.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'x-forwarded-for': '2001:db8::1' });
+
+      expect(resolveTrustedClientIp(request)).toBe('2001:db8::1');
+    });
+
+    it('resolves the rightmost entry from a chain mixing IPv4 and IPv6 hops', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'x-forwarded-for': '1.2.3.4, 2001:db8::9' });
+
+      expect(resolveTrustedClientIp(request)).toBe('2001:db8::9');
+    });
+
+    it('rejects a malformed IPv6-looking candidate', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'x-forwarded-for': '2001:db8::zzzz' });
+
+      expect(resolveTrustedClientIp(request)).toBeNull();
     });
   });
 });
