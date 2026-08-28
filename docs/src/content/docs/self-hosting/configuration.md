@@ -97,7 +97,7 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `VAPID_PUBLIC_KEY` | Public key for browser push notifications | Not set |
 | `VAPID_PRIVATE_KEY` | Private key for browser push notifications | Not set |
 | `VAPID_SUBJECT` | Contact URI for push services, must be a `mailto:` address | Not set |
-| `TRUSTED_PROXY_HEADER` | Which header your reverse proxy manages for the client IP: `x-forwarded-for` or `x-real-ip` | `x-forwarded-for` |
+| `TRUSTED_PROXY_HEADER` | Which header your reverse proxy manages for the client IP: `x-forwarded-for`, `x-real-ip`, or `cf-connecting-ip` | `x-forwarded-for` |
 | `TRUSTED_PROXY_COUNT` | Number of trusted reverse proxy hops in front of the app, used to pick the real client IP out of `X-Forwarded-For` for rate limiting (ignored when `TRUSTED_PROXY_HEADER` is `x-real-ip`) | `1` |
 
 ## Web push notifications (VAPID)
@@ -128,16 +128,17 @@ Every rate limit in Nametag (login, registration, password reset, and more) keys
 
 This cannot be inferred from a request. A proxy that appends to `X-Forwarded-For` and a proxy that only replaces `X-Real-IP` (and never touches `X-Forwarded-For`) can each produce a request that is indistinguishable, by header content alone, from the other: in the second case, whatever `X-Forwarded-For` a client sends passes straight through untouched, so it looks exactly like a value the first kind of proxy would have produced. Guessing which topology applies is wrong for one of the two no matter which way the guess goes, so `TRUSTED_PROXY_HEADER` makes the operator say which one is true instead.
 
-- **`x-forwarded-for`** (default): matches both documented reverse-proxy configs (nginx with `proxy_add_x_forwarded_for`, Caddy). Use this unless you have specifically confirmed your proxy manages `X-Real-IP` instead. See [Reverse Proxy](/self-hosting/reverse-proxy/#which-header-does-your-proxy-actually-manage) for how to check your own proxy's configuration rather than assume.
-- **`x-real-ip`**: for a proxy that replaces `X-Real-IP` (via something like `proxy_set_header X-Real-IP $remote_addr;`) but does not also manage `X-Forwarded-For`. In this mode `X-Forwarded-For` is ignored entirely, since it would be wholly client-supplied; `TRUSTED_PROXY_COUNT` also does not apply, since `X-Real-IP` carries a single replaced value, not a chain of appended hops.
+- **`x-forwarded-for`** (default): matches both documented reverse-proxy configs (nginx with `proxy_add_x_forwarded_for`, Caddy). Use this unless you have specifically confirmed your proxy manages `X-Real-IP` or is Cloudflare. See [Reverse Proxy](/self-hosting/reverse-proxy/#which-header-does-your-proxy-actually-manage) for how to check your own proxy's configuration rather than assume.
+- **`x-real-ip`**: for a proxy that replaces `X-Real-IP` (via something like `proxy_set_header X-Real-IP $remote_addr;`) but does not also manage `X-Forwarded-For`. In this mode `X-Forwarded-For` is ignored entirely, since it would be wholly client-supplied; `TRUSTED_PROXY_COUNT` also does not apply, since `X-Real-IP` carries a single replaced value, not a chain of appended hops. **Do not use this behind Cloudflare**: an origin proxy's `X-Real-IP` records the Cloudflare edge address, not the visitor, so every visitor through the same edge shares one bucket. See [Cloudflare](/self-hosting/reverse-proxy/#cloudflare) for the correct option.
+- **`cf-connecting-ip`**: for deployments behind Cloudflare, which overwrites `CF-Connecting-IP` with the visitor's address on every request rather than appending to it, so there is no hop count to get wrong (`TRUSTED_PROXY_COUNT` does not apply here either). This mode's entire security model is that the origin refuses connections that did not come from Cloudflare; see [Cloudflare](/self-hosting/reverse-proxy/#cloudflare) for why that precondition is not optional and the three ways to enforce it.
 
-**If your proxy sets neither header**, or `TRUSTED_PROXY_HEADER` points at one your proxy never touches, every request resolves to no trusted IP. Rate limits with no other identifier fall back to a single shared bucket for the whole instance, and a warning naming both settings is logged once. This is a fail-safe degradation, not a silently trusted attacker value.
+**If your proxy sets none of these headers**, or `TRUSTED_PROXY_HEADER` points at one your proxy never touches, every request resolves to no trusted IP. Rate limits with no other identifier fall back to a single shared bucket for the whole instance, and a warning naming both settings is logged once. This is a fail-safe degradation, not a silently trusted attacker value.
 
 ### TRUSTED_PROXY_COUNT: how many hops to trust
 
 Only applies when `TRUSTED_PROXY_HEADER` is `x-forwarded-for` (the default). The app counts from the right: the client's real address is the Nth entry from the end, where N is `TRUSTED_PROXY_COUNT`, because each proxy hop appends its own view of the connection to the end of the header rather than replacing it. Reading from the left, which looks like the natural choice, is exactly what an attacker-supplied value would occupy.
 
-The default of `1` matches both reverse-proxy configurations in these docs: a single nginx or Caddy instance terminating TLS directly in front of the app. See [Reverse Proxy](/self-hosting/reverse-proxy/) for the concrete number to use with additional layers such as a CDN or load balancer.
+The default of `1` matches both reverse-proxy configurations in these docs: a single nginx or Caddy instance terminating TLS directly in front of the app. See [Reverse Proxy](/self-hosting/reverse-proxy/) for the concrete number to use with additional layers such as a load balancer. If that additional layer is specifically Cloudflare, `TRUSTED_PROXY_HEADER=cf-connecting-ip` above is a better fit than counting it as a hop; see [Cloudflare](/self-hosting/reverse-proxy/#cloudflare).
 
 Getting the count wrong produces the same symptom in both directions: a warning in the logs, and requests falling into a single shared rate-limit bucket for the whole instance.
 
