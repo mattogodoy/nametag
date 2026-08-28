@@ -355,6 +355,32 @@ describe('rate-limit', () => {
 
       warnSpy.mockRestore();
     });
+
+    it('fires the warning, not a silently trusted value, when cf-connecting-ip mode is configured but the header is absent', async () => {
+      // cf-connecting-ip mode has no chain to fall back on: if Cloudflare
+      // (or whatever set TRUSTED_PROXY_HEADER=cf-connecting-ip) did not
+      // attach the header, there is nothing else in this mode to read, and
+      // the request must fail into the shared bucket with a warning rather
+      // than silently trying x-forwarded-for or x-real-ip instead.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { checkRateLimit } = await import('@/lib/rate-limit');
+
+      const request = new Request('http://localhost/api/test', {
+        headers: {
+          'x-forwarded-for': '203.0.113.9',
+          'x-real-ip': '203.0.113.9',
+        },
+      });
+      const result = checkRateLimit(request, 'login');
+
+      expect(result).toBeNull(); // first request in the shared bucket, still allowed
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('TRUSTED_PROXY_HEADER');
+
+      warnSpy.mockRestore();
+    });
   });
 
   describe('rateLimitConfigs', () => {

@@ -20,11 +20,12 @@
  *
  * Two settings in lib/env.ts govern this:
  *
- * - `TRUSTED_PROXY_COUNT`: how many proxy hops to trust.
+ * - `TRUSTED_PROXY_COUNT`: how many proxy hops to trust (only meaningful in
+ *   `x-forwarded-for` mode; see below).
  * - `TRUSTED_PROXY_HEADER`: which single header the trusted proxy actually
- *   manages, `x-forwarded-for` (default) or `x-real-ip`.
+ *   manages: `x-forwarded-for` (default), `x-real-ip`, or `cf-connecting-ip`.
  *
- * The header setting exists because the two possible proxy topologies are
+ * The header setting exists because the possible proxy topologies are
  * indistinguishable from the request alone. A proxy that appends to
  * `x-forwarded-for` (nginx with `proxy_add_x_forwarded_for`, or Caddy) and a
  * proxy that only replaces `x-real-ip` (`proxy_set_header X-Real-IP
@@ -40,8 +41,23 @@
  * an `x-real-ip`-only proxy's attacker send a raw `x-forwarded-for` straight
  * through as if trusted, or it broke honest clients behind an
  * `x-real-ip`-only proxy by refusing to read the one header that proxy
- * actually manages. There is no inference that is correct for both, so the
- * operator declares which one applies instead of the app guessing.
+ * actually manages. There is no inference that is correct for all of them,
+ * so the operator declares which one applies instead of the app guessing.
+ *
+ * `cf-connecting-ip` is the third option, for deployments behind Cloudflare.
+ * Cloudflare OVERWRITES `CF-Connecting-IP` with the visitor's address on
+ * every request that reaches it, rather than appending the way it does with
+ * `X-Forwarded-For`, so there is no hop count to get wrong: either the
+ * request came through Cloudflare's edge and the header is trustworthy, or
+ * it did not and the header should not exist at all. That "or" is the whole
+ * of this mode's security model, and it depends entirely on something this
+ * function cannot see: whether the origin can be reached any other way. If
+ * it can, an attacker sets `CF-Connecting-IP` directly and this function has
+ * no chain, no count, and no second opinion to catch that, unlike
+ * `x-forwarded-for` mode, where a wrong hop count still often lands on a
+ * real address among several. See docs/self-hosting/reverse-proxy.md for
+ * the three ways to enforce that precondition (origin firewall restricted to
+ * Cloudflare's ranges, Authenticated Origin Pulls, or a Cloudflare Tunnel).
  */
 
 import net from 'net';
@@ -98,15 +114,19 @@ export function resolveTrustedClientIp(request: Request): string | null {
   const trustedProxyCount = env.TRUSTED_PROXY_COUNT;
 
   if (trustedProxyCount === 0) {
-    // No reverse proxy is trusted to have set either header, regardless of
-    // TRUSTED_PROXY_HEADER. Both x-forwarded-for and x-real-ip come
-    // straight from whoever made the request in that case, so neither is
-    // trustworthy for anything.
+    // No reverse proxy is trusted to have set any of these headers,
+    // regardless of TRUSTED_PROXY_HEADER. x-forwarded-for, x-real-ip, and
+    // cf-connecting-ip all come straight from whoever made the request in
+    // that case, so none of them is trustworthy for anything.
     return null;
   }
 
   if (env.TRUSTED_PROXY_HEADER === 'x-real-ip') {
     return resolveFromRealIp(request);
+  }
+
+  if (env.TRUSTED_PROXY_HEADER === 'cf-connecting-ip') {
+    return resolveFromCfConnectingIp(request);
   }
 
   return resolveFromForwardedFor(request, trustedProxyCount);
@@ -206,6 +226,35 @@ function resolveFromRealIp(request: Request): string | null {
   return net.isIP(trimmed) !== 0 ? trimmed : null;
 }
 
+/**
+ * Resolve via cf-connecting-ip only. Used when TRUSTED_PROXY_HEADER is
+ * 'cf-connecting-ip', i.e. the operator has declared that Cloudflare sits
+ * directly in front of the origin and traffic cannot reach the origin any
+ * other way (see the module doc comment and
+ * docs/self-hosting/reverse-proxy.md for why that precondition is the
+ * entire security model of this mode).
+ *
+ * x-forwarded-for and x-real-ip are not consulted here at all, not even as
+ * a fallback. Behind Cloudflare, a client can put anything it likes in
+ * either of those two headers and Cloudflare will pass them through to the
+ * origin proxy unchanged; only cf-connecting-ip is the one Cloudflare
+ * itself overwrites.
+ *
+ * TRUSTED_PROXY_COUNT does not apply to this path either, for the same
+ * reason it does not apply to resolveFromRealIp: Cloudflare OVERWRITES this
+ * header with the visitor's address on every request rather than appending
+ * to a chain, so there is a single value to trust, not a count of hops.
+ */
+function resolveFromCfConnectingIp(request: Request): string | null {
+  const cfConnectingIp = request.headers.get('cf-connecting-ip');
+  if (!cfConnectingIp) {
+    return null;
+  }
+
+  const trimmed = cfConnectingIp.trim();
+  return net.isIP(trimmed) !== 0 ? trimmed : null;
+}
+
 let warnedMissingTrustedIp = false;
 
 /**
@@ -227,7 +276,7 @@ export function warnNoTrustedClientIp(): void {
       'Falling back to a single shared bucket for every request with no other ' +
       'identifier, which weakens rate limiting fleet-wide. Check TRUSTED_PROXY_COUNT ' +
       '(must equal the number of reverse proxies in front of Nametag) and ' +
-      'TRUSTED_PROXY_HEADER (must match the header your proxy actually manages, ' +
-      'x-forwarded-for or x-real-ip).'
+      'TRUSTED_PROXY_HEADER (must match the header your proxy actually manages: ' +
+      'x-forwarded-for, x-real-ip, or cf-connecting-ip).'
   );
 }

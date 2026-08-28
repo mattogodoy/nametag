@@ -111,7 +111,15 @@ const envSchema = z.object({
   // Defaults to 'x-forwarded-for', matching both documented reverse-proxy
   // configs (nginx with proxy_add_x_forwarded_for, Caddy) and preserving
   // pre-existing behaviour for anyone upgrading without setting this.
-  TRUSTED_PROXY_HEADER: z.enum(['x-forwarded-for', 'x-real-ip']).default('x-forwarded-for'),
+  // 'cf-connecting-ip' is for deployments behind Cloudflare, which
+  // OVERWRITES CF-Connecting-IP with the visitor address on every request
+  // rather than appending to it. This mode is only sound when the origin
+  // refuses connections that did not come from Cloudflare (IP allowlist,
+  // Authenticated Origin Pulls, or a Cloudflare Tunnel); see
+  // docs/self-hosting/reverse-proxy.md.
+  TRUSTED_PROXY_HEADER: z
+    .enum(['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'])
+    .default('x-forwarded-for'),
 });
 
 /**

@@ -282,6 +282,129 @@ describe('resolveTrustedClientIp', () => {
     });
   });
 
+  describe("TRUSTED_PROXY_HEADER = 'cf-connecting-ip'", () => {
+    it('resolves the genuine cf-connecting-ip, ignoring a spoofed x-forwarded-for and x-real-ip entirely', async () => {
+      // Cloudflare overwrites CF-Connecting-IP with the visitor address on
+      // every request, but a client reaching Cloudflare can still put
+      // whatever it wants in x-forwarded-for and x-real-ip; Cloudflare
+      // passes those through to the origin unchanged. Catches: still
+      // reading either of those headers in this mode (e.g. forgetting to
+      // branch on TRUSTED_PROXY_HEADER, or a copy-paste of the
+      // x-forwarded-for or x-real-ip logic), which would hand back an
+      // attacker-chosen value instead of the genuine cf-connecting-ip one.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({
+        'x-forwarded-for': '6.6.6.6, 7.7.7.7',
+        'x-real-ip': '8.8.8.8',
+        'cf-connecting-ip': '203.0.113.9',
+      });
+
+      expect(resolveTrustedClientIp(request)).toBe('203.0.113.9');
+    });
+
+    it('does not change when the attacker rotates either spoofed header', async () => {
+      // Catches: any code path in cf-connecting-ip mode that is influenced,
+      // even partially, by x-forwarded-for or x-real-ip content. Rotating
+      // either attacker-controlled header must have zero effect on the
+      // result in this mode.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const first = resolveTrustedClientIp(
+        requestWith({
+          'x-forwarded-for': '6.6.6.6, 7.7.7.7',
+          'x-real-ip': '8.8.8.8',
+          'cf-connecting-ip': '203.0.113.9',
+        })
+      );
+      const second = resolveTrustedClientIp(
+        requestWith({
+          'x-forwarded-for': '9.9.9.9',
+          'x-real-ip': '10.10.10.10',
+          'cf-connecting-ip': '203.0.113.9',
+        })
+      );
+      const third = resolveTrustedClientIp(
+        requestWith({ 'cf-connecting-ip': '203.0.113.9' }) // neither spoofed header at all
+      );
+
+      expect(first).toBe('203.0.113.9');
+      expect(second).toBe('203.0.113.9');
+      expect(third).toBe('203.0.113.9');
+    });
+
+    it('resolves to null when cf-connecting-ip is absent, rather than falling back to x-forwarded-for or x-real-ip', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({
+        'x-forwarded-for': '6.6.6.6, 7.7.7.7',
+        'x-real-ip': '8.8.8.8',
+      });
+
+      expect(resolveTrustedClientIp(request)).toBeNull();
+    });
+
+    it('rejects a non-IP value', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'cf-connecting-ip': 'not-an-ip' });
+
+      expect(resolveTrustedClientIp(request)).toBeNull();
+    });
+
+    it('still ignores everything when the count is 0, regardless of the header setting', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '0';
+      process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({ 'cf-connecting-ip': '203.0.113.9' });
+
+      expect(resolveTrustedClientIp(request)).toBeNull();
+    });
+  });
+
+  describe('cf-connecting-ip is ignored outside cf-connecting-ip mode', () => {
+    it('cannot influence resolution in the default (x-forwarded-for) mode', async () => {
+      // A Cloudflare-shaped header must not leak into a deployment that
+      // never declared itself to be behind Cloudflare. Catches: any shared
+      // code path that reads cf-connecting-ip unconditionally instead of
+      // only inside resolveFromCfConnectingIp.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      delete process.env.TRUSTED_PROXY_HEADER;
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({
+        'x-forwarded-for': '1.2.3.4, 203.0.113.9',
+        'cf-connecting-ip': '198.51.100.7',
+      });
+
+      expect(resolveTrustedClientIp(request)).toBe('203.0.113.9');
+      expect(resolveTrustedClientIp(request)).not.toBe('198.51.100.7');
+    });
+
+    it('cannot influence resolution in x-real-ip mode', async () => {
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+      const { resolveTrustedClientIp } = await freshClientIp();
+
+      const request = requestWith({
+        'x-real-ip': '203.0.113.9',
+        'cf-connecting-ip': '198.51.100.7',
+      });
+
+      expect(resolveTrustedClientIp(request)).toBe('203.0.113.9');
+      expect(resolveTrustedClientIp(request)).not.toBe('198.51.100.7');
+    });
+  });
+
   describe('no headers at all', () => {
     it('returns null rather than a placeholder string', async () => {
       process.env.TRUSTED_PROXY_COUNT = '1';
