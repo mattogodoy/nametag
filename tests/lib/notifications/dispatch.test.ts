@@ -42,6 +42,15 @@ const endpointMocks = vi.hoisted(() => ({
 
 vi.mock('../../../lib/notifications/channels/ntfy', () => ({ sendNtfy: endpointMocks.sendNtfy }));
 
+const webhookMocks = vi.hoisted(() => ({ sendWebhook: vi.fn(), canUseWebhooks: vi.fn() }));
+
+vi.mock('../../../lib/notifications/channels/webhook', () => ({
+  sendWebhook: webhookMocks.sendWebhook,
+}));
+vi.mock('../../../lib/notifications/entitlements', () => ({
+  canUseWebhooks: webhookMocks.canUseWebhooks,
+}));
+
 vi.mock('../../../lib/prisma', () => ({
   prisma: {
     user: { findMany: pushMocks.userFindMany },
@@ -695,5 +704,117 @@ describe('dispatchAll with endpoints', () => {
       endpointMocks.sendNtfy.mock.calls.map(([endpoint]) => endpoint.userId)
     );
     expect(contactedUserIds).toEqual(new Set(['user-1', 'user-2']));
+  });
+});
+
+describe('dispatchAll with webhooks', () => {
+  beforeEach(() => {
+    mocks.isEmailConfigured.mockReturnValue(false);
+    pushMocks.sendWebPush.mockReset();
+    pushMocks.sendWebPush.mockResolvedValue({ channel: 'web_push', status: 'skipped' });
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
+    endpointMocks.endpointFindMany.mockReset();
+    endpointMocks.sendNtfy.mockReset();
+    endpointMocks.endpointUpdate.mockReset();
+    endpointMocks.endpointUpdateMany.mockReset();
+    // Health writes flow through the real recordEndpointResult, which selects
+    // consecutiveFailures back out of the update. Kept well under
+    // AUTO_DISABLE_THRESHOLD so a test that does not care about auto-disable
+    // does not accidentally trip it.
+    endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
+    endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
+    webhookMocks.sendWebhook.mockReset();
+    webhookMocks.canUseWebhooks.mockReset();
+    webhookMocks.canUseWebhooks.mockResolvedValue(true);
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
+    ]);
+  });
+
+  it('delivers through an entitled webhook endpoint', async () => {
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result.delivered).toBe(1);
+    expect(result.shouldStamp).toBe(true);
+  });
+
+  it('does NOT send when the user is not entitled, so a downgrade stops delivery', async () => {
+    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(webhookMocks.sendWebhook).not.toHaveBeenCalled();
+    expect(result.shouldStamp).toBe(false);
+  });
+
+  it('checks entitlement once per user, not once per envelope', async () => {
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
+
+    await dispatchAll([envelope('1'), envelope('1'), envelope('1')]);
+
+    expect(webhookMocks.canUseWebhooks).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not check entitlement at all when the user has no webhook endpoints', async () => {
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
+    ]);
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
+
+    await dispatchAll([envelope('1')]);
+
+    expect(webhookMocks.canUseWebhooks).not.toHaveBeenCalled();
+  });
+
+  it('records webhook outcomes for health tracking', async () => {
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: false, code: 'tls' });
+
+    await dispatchAll([envelope('1')]);
+
+    // Mirrors the sibling "records the outcome so health tracking and
+    // auto-disable work" test in the ntfy describe block above: there is no
+    // recordEndpointResult mock to assert against, only the prisma call it
+    // makes underneath.
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: expect.objectContaining({
+        consecutiveFailures: { increment: 1 },
+        lastFailureCode: 'tls',
+      }),
+      select: { consecutiveFailures: true },
+    });
+  });
+
+  it('reports a webhook failure under the webhook channel, not ntfy', async () => {
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: false, code: 'tls' });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result.failedChannels).toEqual(['webhook']);
+  });
+
+  it('records exactly one health write per destination per run, not one per envelope', async () => {
+    // Two envelopes for the same user, sharing the same single webhook
+    // endpoint. A per-envelope write would call endpointUpdate twice; the
+    // run-scoped accumulator must collapse that to exactly one flush. This is
+    // the regression an earlier, since-rewritten version of this task's
+    // instructions would have reintroduced by replacing dispatchEndpoints
+    // wholesale instead of editing it in place.
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: false, code: 'tls' });
+
+    await dispatchAll([envelopeForUser('user-1', 'p-1'), envelopeForUser('user-1', 'p-2')]);
+
+    expect(webhookMocks.sendWebhook).toHaveBeenCalledTimes(2);
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledTimes(1);
+    expect(endpointMocks.endpointUpdate).toHaveBeenCalledWith({
+      where: { id: 'ep-1' },
+      data: expect.objectContaining({
+        consecutiveFailures: { increment: 1 },
+        lastFailureCode: 'tls',
+      }),
+      select: { consecutiveFailures: true },
+    });
   });
 });

@@ -78,7 +78,7 @@ export interface NotificationEnvelope {
  * webhooks) is a compile error everywhere this is matched exhaustively,
  * rather than a silently unlabelled log line.
  */
-export type ChannelId = 'email' | 'web_push' | 'ntfy';
+export type ChannelId = 'email' | 'web_push' | 'ntfy' | 'webhook';
 
 /**
  * Outcome of one channel attempting one envelope.
