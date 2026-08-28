@@ -70,6 +70,23 @@ vi.mock('../../lib/notifications/endpoint-health', async () => {
 
 vi.mock('../../lib/locale', () => ({ getUserLocale: mocks.getUserLocale }));
 
+const webhookMocks = vi.hoisted(() => ({
+  canUseWebhooks: vi.fn(),
+  generateWebhookSecret: vi.fn(),
+  sendWebhook: vi.fn(),
+}));
+
+vi.mock('../../lib/notifications/entitlements', () => ({
+  canUseWebhooks: webhookMocks.canUseWebhooks,
+}));
+vi.mock('../../lib/notifications/signature', () => ({
+  generateWebhookSecret: webhookMocks.generateWebhookSecret,
+  signPayload: vi.fn(),
+}));
+vi.mock('../../lib/notifications/channels/webhook', () => ({
+  sendWebhook: webhookMocks.sendWebhook,
+}));
+
 import { outboundPolicy } from '../../lib/net/url-validation';
 import { GET, POST } from '../../app/api/notifications/endpoints/route';
 import {
@@ -270,6 +287,108 @@ describe('endpoints API', () => {
   });
 });
 
+describe('webhook endpoint creation', () => {
+  const webhook = { type: 'WEBHOOK', label: 'Home Assistant', url: 'https://hooks.test/nametag' };
+
+  beforeEach(() => {
+    webhookMocks.canUseWebhooks.mockReset();
+    webhookMocks.generateWebhookSecret.mockReset();
+    webhookMocks.canUseWebhooks.mockResolvedValue(true);
+    webhookMocks.generateWebhookSecret.mockReturnValue('f'.repeat(64));
+    mocks.create.mockResolvedValue({
+      id: 'ep-1',
+      type: 'WEBHOOK',
+      label: 'Home Assistant',
+      url: 'https://hooks.test/nametag',
+      enabled: true,
+    });
+  });
+
+  it('creates a webhook for an entitled user', async () => {
+    expect((await POST(post(webhook))).status).toBe(201);
+  });
+
+  it('refuses a user who is not entitled', async () => {
+    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+
+    expect((await POST(post(webhook))).status).toBe(403);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('generates the secret server-side and ignores any the client sends', async () => {
+    await POST(post({ ...webhook, secret: 'attacker-chosen' }));
+
+    expect(webhookMocks.generateWebhookSecret).toHaveBeenCalled();
+    expect(mocks.encryptSecret).toHaveBeenCalledWith('f'.repeat(64));
+    expect(JSON.stringify(mocks.create.mock.calls[0][0])).not.toContain('attacker-chosen');
+  });
+
+  it('returns the secret exactly once, at creation', async () => {
+    const body = await (await POST(post(webhook))).json();
+
+    expect(body.secret).toBe('f'.repeat(64));
+  });
+
+  it('never returns the secret afterwards', async () => {
+    mocks.findMany.mockResolvedValue([
+      { id: 'ep-1', type: 'WEBHOOK', label: 'HA', url: 'https://hooks.test/x', enabled: true,
+        consecutiveFailures: 0, lastSuccessAt: null, lastFailureAt: null, lastFailureCode: null,
+        autoDisabledAt: null, createdAt: new Date() },
+    ]);
+
+    // The plan this replaced asserted this against a mocked row that never
+    // carried a secret in the first place, so it would have passed no matter
+    // what the route selected. Assert on the select the route actually sends
+    // to Prisma instead, the way "encrypts the access token and never stores
+    // it in the clear" (earlier in this file) already does for PUBLIC_FIELDS
+    // on create: this is the same invariant, pinned on the list route.
+    await (await GET(listRequest())).json();
+
+    expect(mocks.findMany.mock.calls[0][0].select).toEqual({
+      id: true,
+      type: true,
+      label: true,
+      url: true,
+      enabled: true,
+      consecutiveFailures: true,
+      lastSuccessAt: true,
+      lastFailureAt: true,
+      lastFailureCode: true,
+      autoDisabledAt: true,
+      createdAt: true,
+    });
+  });
+
+  it('does not generate a secret for an ntfy endpoint', async () => {
+    await POST(post(valid));
+
+    expect(webhookMocks.generateWebhookSecret).not.toHaveBeenCalled();
+  });
+
+  it('applies SSRF validation to webhook URLs too', async () => {
+    mocks.resolveTarget.mockRejectedValue(new Error('Internal addresses are not allowed'));
+
+    expect((await POST(post({ ...webhook, url: 'https://internal.test/x' }))).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('normalises a webhook URL by scheme and host only, preserving path and query', async () => {
+    // Unlike an ntfy topic URL, a webhook's path and query string are part of
+    // its identity. This fixture is deliberately multi-segment with a query
+    // string: a naive implementation that reused parseNtfyUrl (which only
+    // accepts exactly one path segment) would pass a single-segment fixture
+    // like the `webhook` constant above while mangling or rejecting this one.
+    const response = await POST(
+      post({ ...webhook, url: 'https://Hooks.Test/api/v1/nametag?token=abc' })
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.create.mock.calls[0][0].data.url).toBe(
+      'https://hooks.test/api/v1/nametag?token=abc'
+    );
+  });
+});
+
 describe('endpoint item API', () => {
   beforeEach(() => {
     mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
@@ -348,6 +467,9 @@ describe('endpoint item API', () => {
 describe('endpoint test-send API', () => {
   beforeEach(() => {
     mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
+    webhookMocks.canUseWebhooks.mockReset();
+    webhookMocks.sendWebhook.mockReset();
+    webhookMocks.canUseWebhooks.mockResolvedValue(true);
   });
 
   it('scopes the lookup to the signed-in user', async () => {
@@ -420,14 +542,14 @@ describe('endpoint test-send API', () => {
     expect(await response.json()).toEqual({ ok: true });
   });
 
-  it('rejects a WEBHOOK endpoint rather than sending its signing secret as a bearer token', async () => {
-    // WEBHOOK cannot be created today (Phase 4), so this is currently
-    // unreachable through the UI, but the guard exists specifically because
+  it('routes a WEBHOOK test-send to sendWebhook, never to sendNtfy, so its signing secret is never sent as a bearer token', async () => {
     // sendNtfy decrypts endpoint.secret and sends it as an Authorization
     // header to endpoint.url. A webhook's secret is an HMAC signing key, not
     // a bearer token: handing this endpoint to sendNtfy would leak that
-    // signing key to the webhook's own URL. Nothing else in this file
-    // exercises that guard, so a regression here would go unnoticed.
+    // signing key to the webhook's own URL. This is the successor to a test
+    // that used to pin a 400 rejection for any non-NTFY type; now that
+    // webhooks are a real, creatable endpoint type, the protection is that
+    // this routes to the webhook driver, not that it is refused outright.
     mocks.findFirst.mockResolvedValue({
       id: 'ep-1',
       type: 'WEBHOOK',
@@ -435,11 +557,30 @@ describe('endpoint test-send API', () => {
       secret: 'encrypted-signing-key',
       enabled: true,
     });
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
 
     const response = await testEndpoint(jsonRequest('http://localhost/x'), ctx('ep-1'));
 
-    expect(response.status).toBe(400);
+    expect(webhookMocks.sendWebhook).toHaveBeenCalled();
     expect(mocks.sendNtfy).not.toHaveBeenCalled();
-    expect(mocks.recordEndpointResult).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+  });
+
+  it('refuses a WEBHOOK test-send when the user is not entitled', async () => {
+    mocks.findFirst.mockResolvedValue({
+      id: 'ep-1',
+      type: 'WEBHOOK',
+      url: 'https://example.test/hook',
+      secret: 'encrypted-signing-key',
+      enabled: true,
+    });
+    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+
+    const response = await testEndpoint(jsonRequest('http://localhost/x'), ctx('ep-1'));
+
+    expect(response.status).toBe(403);
+    expect(webhookMocks.sendWebhook).not.toHaveBeenCalled();
+    expect(mocks.sendNtfy).not.toHaveBeenCalled();
   });
 });

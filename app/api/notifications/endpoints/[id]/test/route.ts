@@ -5,6 +5,8 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { getAppUrl } from '@/lib/env';
 import { getUserLocale } from '@/lib/locale';
 import { sendNtfy } from '@/lib/notifications/channels/ntfy';
+import { sendWebhook } from '@/lib/notifications/channels/webhook';
+import { canUseWebhooks } from '@/lib/notifications/entitlements';
 import { recordEndpointResult } from '@/lib/notifications/endpoint-health';
 import type { NotificationEnvelope } from '@/lib/notifications/types';
 
@@ -32,15 +34,13 @@ export const POST = withAuth(async (request, session, context) => {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    // WEBHOOK is handled in Phase 4 and cannot be created today, so this is
-    // unreachable rather than a silent drop. It matters once it is reachable:
-    // sendNtfy decrypts endpoint.secret and sends it as an Authorization
-    // header to endpoint.url. A webhook's secret is an HMAC signing key, not
-    // a bearer token, so handing a WEBHOOK row to sendNtfy would decrypt that
-    // signing key and send it as a bearer credential to the webhook's own
-    // URL, a credential leak, not just a wrong message format.
-    if (endpoint.type !== 'NTFY') {
-      return NextResponse.json({ error: 'Unsupported endpoint type' }, { status: 400 });
+    // Re-checked here, not only at creation time, so a downgrade stops even a
+    // manual test-send immediately, with no cleanup job to run.
+    if (endpoint.type === 'WEBHOOK' && !(await canUseWebhooks(session.user.id))) {
+      return NextResponse.json(
+        { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
+        { status: 403 }
+      );
     }
 
     const locale = await getUserLocale(session.user.id);
@@ -62,7 +62,10 @@ export const POST = withAuth(async (request, session, context) => {
       logMeta: {},
     };
 
-    const result = await sendNtfy(endpoint, envelope);
+    const result =
+      endpoint.type === 'WEBHOOK'
+        ? await sendWebhook(endpoint, envelope)
+        : await sendNtfy(endpoint, envelope);
 
     // Record a success, but never a failure.
     //

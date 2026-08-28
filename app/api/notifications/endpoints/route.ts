@@ -6,8 +6,10 @@ import { encryptSecret } from '@/lib/crypto/secrets';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { BlockedUrlError, outboundPolicy, resolveTarget } from '@/lib/net/url-validation';
 import { parseNtfyUrl } from '@/lib/notifications/channels/ntfy';
+import { canUseWebhooks } from '@/lib/notifications/entitlements';
+import { generateWebhookSecret } from '@/lib/notifications/signature';
 import { MAX_ENDPOINTS_PER_USER } from '@/lib/notifications/endpoint-health';
-import { createNtfyEndpointSchema } from '@/lib/validations';
+import { createEndpointSchema } from '@/lib/validations';
 
 /**
  * Columns safe to return.
@@ -43,40 +45,64 @@ export const GET = withAuth(async (_request, session) => {
   }
 });
 
+/**
+ * Normalise a webhook URL before it is stored, so the per-user unique
+ * constraint on (userId, url) actually catches the same destination typed
+ * two different ways.
+ *
+ * Unlike an ntfy topic URL, a webhook URL's path and query string are part of
+ * its identity and must be preserved, not discarded down to an origin. The
+ * WHATWG URL parser already lowercases the scheme and host for http(s) URLs;
+ * this rebuilds the string explicitly (dropping only the fragment) so the
+ * exact shape being stored is visible here rather than implied.
+ */
+function normalizeWebhookUrl(url: string): string {
+  const parsed = new URL(url);
+  return `${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
+}
+
 export const POST = withAuth(async (request, session) => {
   try {
     const rateLimitResponse = checkRateLimit(request, 'notificationEndpointCreate', session.user.id);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const parsed = createNtfyEndpointSchema.safeParse(await parseRequestBody(request));
+    const parsed = createEndpointSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid endpoint', code: 'invalid' }, { status: 400 });
     }
 
-    const { label, url, token } = parsed.data;
+    const { type, label, url } = parsed.data;
 
-    // A URL with no topic would produce a request ntfy silently ignores, so
-    // reject it here rather than letting it fail on every reminder forever.
-    const parsedNtfy = parseNtfyUrl(url);
-    if (!parsedNtfy) {
+    if (type === 'WEBHOOK' && !(await canUseWebhooks(session.user.id))) {
       return NextResponse.json(
-        {
-          error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
-          code: 'invalid',
-        },
-        { status: 400 }
+        { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
+        { status: 403 }
       );
     }
 
-    // The normalised form, not the URL as typed. `@@unique([userId, url])`
-    // compares raw strings, so storing the input verbatim would let
-    // https://ntfy.sh/topic, https://ntfy.sh/topic/ and https://NTFY.sh/topic
-    // register as three separate rows all publishing to the same topic: three
-    // of the five per-user endpoint slots spent, and every reminder published
-    // three times over. parseNtfyUrl already lowercases the host (via
-    // `URL.origin`) and drops the trailing slash, so its own output is what
-    // both the uniqueness check and every future outbound request should see.
-    const normalizedUrl = `${parsedNtfy.base}${parsedNtfy.topic}`;
+    let normalizedUrl: string;
+
+    if (type === 'NTFY') {
+      // A URL with no topic would produce a request ntfy silently ignores, so
+      // reject it here rather than letting it fail on every reminder forever.
+      const parsedNtfy = parseNtfyUrl(url);
+      if (!parsedNtfy) {
+        return NextResponse.json(
+          {
+            error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
+            code: 'invalid',
+          },
+          { status: 400 }
+        );
+      }
+
+      // parseNtfyUrl already lowercases the host (via URL.origin) and drops the
+      // trailing slash, so its own output is what both the uniqueness check
+      // and every future outbound request should see.
+      normalizedUrl = `${parsedNtfy.base}${parsedNtfy.topic}`;
+    } else {
+      normalizedUrl = normalizeWebhookUrl(url);
+    }
 
     // Cap before the DNS work below. Checked first so a user already at the
     // limit gets an immediate 409 rather than paying for a resolution on
@@ -110,19 +136,38 @@ export const POST = withAuth(async (request, session) => {
       return NextResponse.json({ error: 'That URL cannot be used', code }, { status: 400 });
     }
 
+    // The signing secret is generated here, never accepted from the client. A
+    // user-chosen secret could be weak, shared across services, or replayed.
+    const webhookSecret = type === 'WEBHOOK' ? generateWebhookSecret() : null;
+    // Narrowed on parsed.data.type, not the destructured `type` local: narrowing
+    // a discriminated union only follows from a check on the object's own
+    // discriminant property, not from a copy of it, so `parsed.data.token` would
+    // not type-check under `type === 'NTFY'` alone.
+    const ntfyToken = parsed.data.type === 'NTFY' ? parsed.data.token : undefined;
+
     try {
       const endpoint = await prisma.notificationEndpoint.create({
         data: {
           userId: session.user.id,
-          type: 'NTFY',
+          type,
           label,
           url: normalizedUrl,
-          secret: token ? encryptSecret(token) : null,
+          secret: webhookSecret
+            ? encryptSecret(webhookSecret)
+            : ntfyToken
+              ? encryptSecret(ntfyToken)
+              : null,
         },
         select: PUBLIC_FIELDS,
       });
 
-      return NextResponse.json({ endpoint }, { status: 201 });
+      // The only time the signing secret is ever returned. It is stored
+      // encrypted and there is no endpoint that reads it back, so a user who
+      // loses it must recreate the webhook.
+      return NextResponse.json(
+        webhookSecret ? { endpoint, secret: webhookSecret } : { endpoint },
+        { status: 201 }
+      );
     } catch (error) {
       // The count check above only guards the per-user cap; it says nothing
       // about the same URL already being registered. `@@unique([userId,
