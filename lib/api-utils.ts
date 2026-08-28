@@ -6,6 +6,9 @@ import { logger, createModuleLogger } from './logger';
 import { validateOrigin } from '@/lib/csrf';
 import { runWithContext, updateContext } from '@/lib/logging/context';
 import { resolveApiToken } from '@/lib/api-tokens';
+import { getClientIp } from '@/lib/net/client-ip';
+
+export { getClientIp };
 
 /** HTTP methods that read but never mutate. Allowed for read-only API tokens. */
 const READ_ONLY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -204,23 +207,6 @@ export function handleApiError(
     : errorObj.message;
 
   return apiResponse.serverError(message);
-}
-
-/**
- * Get client IP from request for logging purposes
- */
-export function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp;
-  }
-
-  return 'unknown';
 }
 
 /**

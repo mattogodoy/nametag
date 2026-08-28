@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { securityLogger } from './logger';
+import { resolveTrustedClientIp, warnNoTrustedClientIp } from '@/lib/net/client-ip';
 
 interface RateLimitEntry {
   count: number;
@@ -105,23 +106,31 @@ export const rateLimitConfigs = {
 export type RateLimitType = keyof typeof rateLimitConfigs;
 
 /**
- * Get the client's IP address from the request
+ * Build the storage key for a rate-limit bucket.
+ *
+ * With a trusted IP, the key is IP-scoped, optionally narrowed further by an
+ * identifier such as an email. Without a trusted IP, an identifier alone is
+ * still a real per-account bound, so it is used on its own rather than
+ * discarded. With neither, there is nothing to partition on: every such
+ * request collapses into one shared bucket rather than being exempted from
+ * rate limiting altogether, which is why a shared bucket is logged loudly
+ * instead of happening quietly.
  */
-function getClientIp(request: Request): string {
-  // Check various headers that might contain the real IP
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, take the first one
-    return forwardedFor.split(',')[0].trim();
+export function buildRateLimitKey(
+  type: RateLimitType,
+  ip: string | null,
+  identifier?: string
+): string {
+  if (ip) {
+    return identifier ? `${type}:${ip}:${identifier}` : `${type}:${ip}`;
   }
 
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp;
+  if (identifier) {
+    return `${type}:${identifier}`;
   }
 
-  // Fallback to a default (this shouldn't happen in production)
-  return 'unknown';
+  warnNoTrustedClientIp();
+  return `${type}:shared`;
 }
 
 /**
@@ -136,10 +145,9 @@ export function checkRateLimit(
   cleanupExpiredEntries();
 
   const config = rateLimitConfigs[type];
-  const ip = getClientIp(request);
+  const ip = resolveTrustedClientIp(request);
 
-  // Create a unique key combining IP, type, and optional identifier
-  const key = identifier ? `${type}:${ip}:${identifier}` : `${type}:${ip}`;
+  const key = buildRateLimitKey(type, ip, identifier);
 
   const now = Date.now();
   const entry = rateLimitStore.get(key);
@@ -158,8 +166,10 @@ export function checkRateLimit(
     const retryAfterSeconds = Math.ceil((entry.resetTime - now) / 1000);
     const retryAfterMinutes = Math.ceil(retryAfterSeconds / 60);
 
-    // Log the rate limit violation
-    securityLogger.rateLimitExceeded(ip, type, {
+    // Log the rate limit violation. The IP here is best-effort context for a
+    // human reading logs, not a security decision, so 'unknown' is fine when
+    // there is no trusted value.
+    securityLogger.rateLimitExceeded(ip ?? 'unknown', type, {
       attempts: entry.count,
       maxAttempts: config.maxAttempts,
       retryAfterSeconds,
@@ -193,7 +203,7 @@ export function resetRateLimit(
   type: RateLimitType,
   identifier?: string
 ): void {
-  const ip = getClientIp(request);
-  const key = identifier ? `${type}:${ip}:${identifier}` : `${type}:${ip}`;
+  const ip = resolveTrustedClientIp(request);
+  const key = buildRateLimitKey(type, ip, identifier);
   rateLimitStore.delete(key);
 }

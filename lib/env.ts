@@ -93,6 +93,13 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().min(1).optional(),
   VAPID_PRIVATE_KEY: z.string().min(1).optional(),
   VAPID_SUBJECT: z.string().min(1).optional(),
+
+  // Number of reverse proxy hops in front of this app that are trusted to
+  // append to X-Forwarded-For (or set X-Real-IP). Defaults to 1, matching
+  // both documented reverse-proxy configs (a single nginx or Caddy in
+  // front). See docs/self-hosting/reverse-proxy.md for how to choose a
+  // different value.
+  TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).default(1),
 });
 
 /**

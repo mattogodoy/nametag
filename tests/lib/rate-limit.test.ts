@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('rate-limit', () => {
   beforeEach(() => {
@@ -189,6 +189,69 @@ describe('rate-limit', () => {
 
       // Should be allowed again
       expect(checkRateLimit(request, 'login', email)).toBeNull();
+    });
+  });
+
+  describe('trusted proxy resolution (GHSA-x7jp-pjg9-x996 regression)', () => {
+    const originalTrustedProxyCount = process.env.TRUSTED_PROXY_COUNT;
+
+    afterEach(() => {
+      if (originalTrustedProxyCount === undefined) {
+        delete process.env.TRUSTED_PROXY_COUNT;
+      } else {
+        process.env.TRUSTED_PROXY_COUNT = originalTrustedProxyCount;
+      }
+    });
+
+    function requestWithChain(chain: string): Request {
+      return new Request('http://localhost/api/test', {
+        headers: { 'x-forwarded-for': chain },
+      });
+    }
+
+    it('does not let an attacker get a fresh bucket by rotating the spoofed prefix', async () => {
+      // Catches: reading the leftmost x-forwarded-for entry instead of the
+      // rightmost trusted one. Without the fix, each distinct prefix below
+      // produces a distinct bucket and none of them would ever see a 429.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
+
+      const realClientIp = '203.0.113.42';
+
+      // Exhaust the bucket using one spoofed prefix.
+      for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
+        const result = checkRateLimit(requestWithChain(`1.1.1.1, ${realClientIp}`), 'login');
+        expect(result).toBeNull();
+      }
+
+      // A "new" attacker request with a different spoofed prefix, but the
+      // same real client IP behind it, must already be blocked.
+      const blocked = checkRateLimit(requestWithChain(`2.2.2.2, ${realClientIp}`), 'login');
+      expect(blocked).not.toBeNull();
+      expect(blocked?.status).toBe(429);
+
+      // A genuinely different real client IP is unaffected.
+      const otherClient = checkRateLimit(
+        requestWithChain(`3.3.3.3, 198.51.100.5`),
+        'login'
+      );
+      expect(otherClient).toBeNull();
+    });
+
+    it('falls back to a shared bucket, not the leftmost entry, when TRUSTED_PROXY_COUNT is 0', async () => {
+      // Catches: still parsing x-forwarded-for when the count is 0.
+      process.env.TRUSTED_PROXY_COUNT = '0';
+      const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
+
+      // Two different callers, distinguished only by x-forwarded-for, share
+      // the same bucket because no IP is trusted at all with count 0.
+      for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
+        checkRateLimit(requestWithChain('10.0.0.1'), 'login');
+      }
+
+      const result = checkRateLimit(requestWithChain('10.0.0.2'), 'login');
+      expect(result).not.toBeNull();
+      expect(result?.status).toBe(429);
     });
   });
 
