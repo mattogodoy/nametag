@@ -140,6 +140,8 @@ Use `rawBody` exactly as received, before any JSON parsing: re-serializing the p
 
 Push notifications are encrypted end to end by the Web Push protocol itself. The push service that relays the message, whichever company runs it, never sees the plain content: not a contact's name, not what the reminder is about. Only your browser can decrypt it.
 
+A webhook's signing secret is encrypted at rest and never shown back to you after creation. The webhook URL itself is not: it's stored and displayed in plaintext, the same as an ntfy topic URL. That asymmetry matters because a webhook URL is often itself a credential, not just an address. Slack, Discord, and Home Assistant, among others, embed a secret token directly in the URL path, so anyone who can see that URL can post to it. Treat it with the same care you'd give a password.
+
 ## Technical details
 
 - Removing a device from the list takes effect immediately. The next reminder simply is not sent to it.
