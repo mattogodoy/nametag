@@ -27,6 +27,7 @@ export type OutboundFailureCode =
   | 'tls'
   | 'redirect'
   | 'http_4xx'
+  | 'http_429'
   | 'http_5xx'
   | 'unknown';
 
@@ -88,11 +89,32 @@ function categorizeError(error: NodeJS.ErrnoException): OutboundFailureCode {
   return 'unknown';
 }
 
+/**
+ * Map a 4xx/5xx HTTP status onto a coarse failure code.
+ *
+ * Exported and shared with web-push.ts (see failureCodeOf there) so the two
+ * outbound channels cannot drift apart on the same taxonomy. That drift is
+ * exactly how the 429-blames-the-token bug reappeared: two call sites each
+ * rolling their own status-to-code mapping by hand. Centralising it here
+ * means a third channel reuses this instead of writing a third copy.
+ *
+ * 429 is split out from the rest of 4xx on purpose: a destination's own rate
+ * limit is transient by definition, and the UI shows a different message for
+ * it than for a permanent-looking rejection (see endpointTestRateLimited).
+ * Health tracking also excludes it from the auto-disable counter, see
+ * endpoint-health.ts.
+ */
+export function httpStatusToFailureCode(status: number): OutboundFailureCode {
+  if (status === 429) return 'http_429';
+  if (status >= 500) return 'http_5xx';
+  if (status >= 400) return 'http_4xx';
+  return 'unknown';
+}
+
 function categorizeStatus(status: number): OutboundResult {
   if (status >= 200 && status < 300) return { ok: true };
   if (status >= 300 && status < 400) return { ok: false, code: 'redirect' };
-  if (status >= 400 && status < 500) return { ok: false, code: 'http_4xx' };
-  return { ok: false, code: 'http_5xx' };
+  return { ok: false, code: httpStatusToFailureCode(status) };
 }
 
 /**

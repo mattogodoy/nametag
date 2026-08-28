@@ -138,6 +138,16 @@ describe('postJson', () => {
     expect(await postJson(`${base}/hook`, '{}', {})).toEqual({ ok: false, code: 'http_5xx' });
   });
 
+  it('categorizes a 429 distinctly from the rest of 4xx', async () => {
+    // A destination's own rate limit is not a rejection of the request's
+    // content, and the UI shows a different message for it (and health
+    // tracking excludes it from auto-disable), so it must not collapse into
+    // the generic http_4xx bucket.
+    handler = (_req, res) => res.writeHead(429).end();
+
+    expect(await postJson(`${base}/hook`, '{}', {})).toEqual({ ok: false, code: 'http_429' });
+  });
+
   it('never returns the response body, so it cannot be used as a read oracle', async () => {
     handler = (_req, res) => res.writeHead(200).end('SECRET-INTERNAL-DATA');
 

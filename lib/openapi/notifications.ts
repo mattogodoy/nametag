@@ -215,6 +215,7 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
                   'tls',
                   'redirect',
                   'http_4xx',
+                  'http_429',
                   'http_5xx',
                   'unknown',
                 ],

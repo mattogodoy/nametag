@@ -244,6 +244,6 @@ curl -X POST https://your-instance.example.com/api/notifications/endpoints/clxen
 { "ok": false, "code": "timeout" }
 ```
 
-`code` is present only when `ok` is `false`, and is one of `blocked`, `dns`, `timeout`, `refused`, `tls`, `redirect`, `http_4xx`, `http_5xx`, or `unknown`.
+`code` is present only when `ok` is `false`, and is one of `blocked`, `dns`, `timeout`, `refused`, `tls`, `redirect`, `http_4xx`, `http_429`, `http_5xx`, or `unknown`. `http_429` means the destination is rate limiting requests, which is distinct from `http_4xx` and does not count toward auto-disable.
 
 Returns `400` if the destination is not an ntfy endpoint (webhooks are a future channel and cannot be created today, so this is currently unreachable), `401` if unauthenticated, `404` if the destination does not exist or belongs to another user, `429` if rate limited.
