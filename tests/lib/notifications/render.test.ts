@@ -27,6 +27,7 @@ describe('renderShortForm', () => {
         personName: 'Ana Torres',
         dateTitle: 'Birthday',
         formattedDate: 'August 26, 2026',
+        date: '2026-08-26',
         dateType: 'birthday',
       })
     );
@@ -43,6 +44,7 @@ describe('renderShortForm', () => {
         personName: 'Ana Torres',
         dateTitle: 'Birthday',
         formattedDate: 'September 2, 2026',
+        date: '2026-09-02',
         daysUntil: 7,
       })
     );
@@ -120,6 +122,7 @@ describe('renderShortForm', () => {
           personName: 'Ana Torres',
           dateTitle: 'Birthday',
           formattedDate: 'August 26, 2026',
+          date: '2026-08-26',
           dateType: 'birthday',
         },
       },
@@ -131,6 +134,7 @@ describe('renderShortForm', () => {
           personName: 'Ana Torres',
           dateTitle: 'Birthday',
           formattedDate: 'September 2, 2026',
+          date: '2026-09-02',
           daysUntil: 7,
         },
       },

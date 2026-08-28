@@ -8,7 +8,7 @@ import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
-import { parseCalendarDate, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
+import { parseCalendarDate, getLocalDateString, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
 import { getTranslationsForLocale, type SupportedLocale } from '@/lib/i18n-utils';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import {
@@ -127,6 +127,7 @@ export const GET = withLogging(async function GET(request: Request) {
             personName,
             dateTitle,
             formattedDate,
+            date: getLocalDateString(parseCalendarDate(importantDate.date)),
             dateType: importantDate.type,
           },
           unsubscribeUrl,
@@ -210,6 +211,7 @@ export const GET = withLogging(async function GET(request: Request) {
               personName,
               dateTitle,
               formattedDate,
+              date: getLocalDateString(nextOccurrence),
               daysUntil,
             },
             unsubscribeUrl: `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,

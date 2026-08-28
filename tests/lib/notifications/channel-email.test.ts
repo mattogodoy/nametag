@@ -28,6 +28,7 @@ describe('renderEmail', () => {
           personName: 'Ana Torres',
           dateTitle: 'Birthday',
           formattedDate: 'August 26, 2026',
+          date: '2026-08-26',
           dateType: 'birthday',
         },
         { model: 'importantDate', id: 'date-1', field: 'lastReminderSent' }
@@ -50,6 +51,7 @@ describe('renderEmail', () => {
           personName: 'Ana Torres',
           dateTitle: 'Birthday',
           formattedDate: 'September 2, 2026',
+          date: '2026-09-02',
           daysUntil: 7,
         },
         { model: 'importantDate', id: 'date-1', field: 'lastLeadReminderSent' }

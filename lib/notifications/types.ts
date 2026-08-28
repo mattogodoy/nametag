@@ -16,6 +16,8 @@ export type ReminderNotification =
       personName: string;
       dateTitle: string;
       formattedDate: string;
+      /** Raw ISO calendar date (YYYY-MM-DD), unambiguous regardless of the sending user's locale. */
+      date: string;
       /** Predefined key ("birthday", "anniversary", "nameday", "memorial") or null for custom dates. */
       dateType: string | null;
     }
@@ -25,6 +27,8 @@ export type ReminderNotification =
       personName: string;
       dateTitle: string;
       formattedDate: string;
+      /** Raw ISO calendar date (YYYY-MM-DD), unambiguous regardless of the sending user's locale. */
+      date: string;
       daysUntil: number;
     }
   | {
