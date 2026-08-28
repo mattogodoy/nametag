@@ -8,6 +8,7 @@ import { sendNtfy } from '@/lib/notifications/channels/ntfy';
 import { sendWebhook } from '@/lib/notifications/channels/webhook';
 import { canUseWebhooks } from '@/lib/notifications/entitlements';
 import { recordEndpointResult } from '@/lib/notifications/endpoint-health';
+import type { OutboundResult } from '@/lib/notifications/outbound';
 import type { NotificationEnvelope } from '@/lib/notifications/types';
 
 /**
@@ -62,10 +63,27 @@ export const POST = withAuth(async (request, session, context) => {
       logMeta: {},
     };
 
-    const result =
-      endpoint.type === 'WEBHOOK'
-        ? await sendWebhook(endpoint, envelope)
-        : await sendNtfy(endpoint, envelope);
+    let result: OutboundResult;
+
+    // An exhaustive switch, not a ternary: sendNtfy decrypts the stored
+    // secret straight into an `Authorization: Bearer` header, so a
+    // default-to-ntfy ternary would route a future third endpoint type there
+    // by default and hand its secret to sendNtfy as if it were an ntfy
+    // token, a credential leak rather than a labelling bug. The `never`
+    // check below turns adding a type into a compile error here instead. See
+    // the matching switch in lib/notifications/dispatch.ts.
+    switch (endpoint.type) {
+      case 'WEBHOOK':
+        result = await sendWebhook(endpoint, envelope);
+        break;
+      case 'NTFY':
+        result = await sendNtfy(endpoint, envelope);
+        break;
+      default: {
+        const unhandled: never = endpoint.type;
+        throw new Error(`Unhandled endpoint type: ${JSON.stringify(unhandled)}`);
+      }
+    }
 
     // Record a success, but never a failure.
     //

@@ -52,18 +52,20 @@ export async function dispatchAll(
     guard(() => sendWebPush(envelope, health), 'web_push', envelope.userId)
   );
 
-  const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
-    guardEndpoints(
+  const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) => {
+    const endpoints = endpointsByUser.get(envelope.userId) ?? [];
+    return guardEndpoints(
       () =>
         dispatchEndpoints(
           envelope,
-          endpointsByUser.get(envelope.userId) ?? [],
+          endpoints,
           health,
           webhookEntitlements.get(envelope.userId) ?? false
         ),
-      envelope.userId
-    )
-  );
+      envelope.userId,
+      endpoints
+    );
+  });
 
   const results = envelopes.map((_envelope, index) =>
     summarize([emailOutcomes[index], pushOutcomes[index], ...endpointOutcomes[index]])
@@ -205,12 +207,29 @@ async function loadWebhookEntitlements(
     .filter(([, endpoints]) => endpoints.some((endpoint) => endpoint.type === 'WEBHOOK'))
     .map(([userId]) => userId);
 
-  const entries = await mapWithConcurrency(userIds, CHANNEL_CONCURRENCY, async (userId) => {
-    const allowed = await canUseWebhooks(userId);
-    return [userId, allowed] as const;
-  });
+  // Guarded the same way loadEmailPreferences and loadEndpoints are above.
+  // canUseWebhooks already fails closed on its own error (denying that one
+  // user), but an unguarded failure in mapWithConcurrency itself would still
+  // throw out of dispatchAll and abort the whole night, silently dropping
+  // every day-of, lead, and contact reminder already collected. An empty map
+  // denies webhook delivery to every user with a webhook endpoint tonight,
+  // the same fail-closed default as canUseWebhooks itself, rather than
+  // losing the run entirely.
+  try {
+    const entries = await mapWithConcurrency(userIds, CHANNEL_CONCURRENCY, async (userId) => {
+      const allowed = await canUseWebhooks(userId);
+      return [userId, allowed] as const;
+    });
 
-  return new Map(entries);
+    return new Map(entries);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error(
+      { errorMessage: message, count: userIds.length },
+      'Failed to resolve webhook entitlements, denying webhook delivery tonight'
+    );
+    return new Map();
+  }
 }
 
 /**
@@ -275,10 +294,25 @@ async function dispatchEndpoints(
     let result: OutboundResult;
 
     try {
-      result =
-        endpoint.type === 'WEBHOOK'
-          ? await sendWebhook(endpoint, envelope)
-          : await sendNtfy(endpoint, envelope);
+      // An exhaustive switch, not a ternary: sendNtfy decrypts the stored
+      // secret straight into an `Authorization: Bearer` header, so a
+      // default-to-ntfy ternary would route a future third endpoint type
+      // there by default and hand its secret to sendNtfy as if it were an
+      // ntfy token, a credential leak rather than a labelling bug. The
+      // `never` check below turns adding a type into a compile error here
+      // instead.
+      switch (endpoint.type) {
+        case 'WEBHOOK':
+          result = await sendWebhook(endpoint, envelope);
+          break;
+        case 'NTFY':
+          result = await sendNtfy(endpoint, envelope);
+          break;
+        default: {
+          const unhandled: never = endpoint.type;
+          throw new Error(`Unhandled endpoint type: ${JSON.stringify(unhandled)}`);
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown endpoint error';
       bucket.lastError = message;
@@ -467,17 +501,38 @@ async function guard(
  * Same job as guard, for dispatchEndpoints specifically: it now returns
  * ChannelOutcome[], and a fallback single ChannelOutcome would not satisfy
  * that return type.
+ *
+ * `endpoints` is passed only so the fallback can label itself correctly: it
+ * is not sent to, only inspected to see which endpoint types this user
+ * actually had configured. Labelling every fallback `channel: 'ntfy'`, as
+ * this used to, misreported a webhook-only user's driver throw as an ntfy
+ * failure, the same mislabelling this branch already fixed once inside
+ * dispatchEndpoints' own outcomeFor grouping.
  */
 async function guardEndpoints(
   send: () => Promise<ChannelOutcome[]>,
-  userId: string
+  userId: string,
+  endpoints: readonly EndpointRecord[]
 ): Promise<ChannelOutcome[]> {
   try {
     return await send();
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     log.error({ channel: 'endpoints', userId, errorMessage: message }, 'Channel driver threw');
-    return [{ channel: 'ntfy', status: 'failed', error: message }];
+
+    const presentTypes = new Set(endpoints.map((endpoint) => endpoint.type));
+    const outcomes: ChannelOutcome[] = [];
+    if (presentTypes.has('NTFY')) {
+      outcomes.push({ channel: 'ntfy', status: 'failed', error: message });
+    }
+    if (presentTypes.has('WEBHOOK')) {
+      outcomes.push({ channel: 'webhook', status: 'failed', error: message });
+    }
+    // No endpoints at all is not expected to reach a throw (dispatchEndpoints
+    // returns early in that case), but a fallback outcome is still returned
+    // rather than an empty array, so this envelope's DispatchResult still
+    // reflects that something went wrong.
+    return outcomes.length > 0 ? outcomes : [{ channel: 'ntfy', status: 'failed', error: message }];
   }
 }
 

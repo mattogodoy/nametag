@@ -749,6 +749,22 @@ describe('dispatchAll with webhooks', () => {
     expect(result.shouldStamp).toBe(false);
   });
 
+  it('reports a webhook skipped for entitlement as skipped, not failed', async () => {
+    // outcomeFor's attempted === 0 branch: nothing was attempted here, so
+    // this must not count as a failure. shouldStamp alone stays false either
+    // way, which is why this needs its own assertion: changing that branch
+    // to return 'failed' would leave every other test in this file green.
+    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result.failed).toBe(0);
+    expect(result.failedChannels).toBeUndefined();
+    // email (off), push (default skip), and webhook (skipped for
+    // entitlement).
+    expect(result.skipped).toBe(3);
+  });
+
   it('checks entitlement once per user, not once per envelope', async () => {
     webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
 
@@ -816,5 +832,60 @@ describe('dispatchAll with webhooks', () => {
       }),
       select: { consecutiveFailures: true },
     });
+  });
+});
+
+describe('dispatchAll with both an ntfy and a webhook endpoint on the same user', () => {
+  // The combination dispatchEndpoints was restructured to reach: before
+  // webhooks existed, a user only ever had one endpoint type, so collapsing
+  // to one outcome per type present was untested against a user who actually
+  // has both.
+  beforeEach(() => {
+    mocks.isEmailConfigured.mockReturnValue(false);
+    pushMocks.sendWebPush.mockReset();
+    pushMocks.sendWebPush.mockResolvedValue({ channel: 'web_push', status: 'skipped' });
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
+    endpointMocks.endpointFindMany.mockReset();
+    endpointMocks.sendNtfy.mockReset();
+    endpointMocks.endpointUpdate.mockReset();
+    endpointMocks.endpointUpdateMany.mockReset();
+    endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
+    endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
+    webhookMocks.sendWebhook.mockReset();
+    webhookMocks.canUseWebhooks.mockReset();
+    webhookMocks.canUseWebhooks.mockResolvedValue(true);
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-ntfy', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
+      { id: 'ep-hook', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
+    ]);
+  });
+
+  it('delivers through both, as two distinct outcomes for the same envelope', async () => {
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(endpointMocks.sendNtfy).toHaveBeenCalledTimes(1);
+    expect(webhookMocks.sendWebhook).toHaveBeenCalledTimes(1);
+    // A single collapsed 'endpoints' outcome would only ever attempt one of
+    // the two drivers per envelope; both being called and both counting
+    // toward delivered pins that they are tracked independently.
+    expect(result.delivered).toBe(2);
+    expect(result.shouldStamp).toBe(true);
+  });
+
+  it('reports an ntfy failure separately from a webhook success on the same user', async () => {
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: false, code: 'timeout' });
+    webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(result.delivered).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.failedChannels).toEqual(['ntfy']);
+    // The webhook success must still stamp the reminder, even though the
+    // ntfy destination for the same user failed in the same run.
+    expect(result.shouldStamp).toBe(true);
   });
 });

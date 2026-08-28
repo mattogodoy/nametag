@@ -12,9 +12,11 @@ const log = createModuleLogger('notifications:entitlements');
  *
  * SaaS: PRO only. A webhook makes nametag.one issue attacker-influenced
  * outbound requests, so requiring a paid subscription puts a credit card and a
- * bannable account behind the capability. Tier alone is enough: the Stripe
- * handler downgrades a cancelled subscription to FREE, so a lapsed account is
- * already FREE here.
+ * bannable account behind the capability. Tier alone is enough: only
+ * `customer.subscription.deleted` downgrades the tier to FREE. A `past_due`
+ * subscription (from `customer.subscription.updated`) deliberately keeps its
+ * tier through the dunning window, the same as every other limit gated on
+ * tier, so a lapsed-but-not-yet-cancelled account still passes this check.
  *
  * Fails closed. A billing lookup that errors must not hand out the capability.
  */

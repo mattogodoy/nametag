@@ -1,7 +1,10 @@
 import { decryptSecret } from '@/lib/crypto/secrets';
+import { createModuleLogger } from '@/lib/logger';
 import { postJson, type OutboundResult } from '../outbound';
 import { renderShortForm } from '../render';
 import type { NotificationEnvelope, ReminderNotification } from '../types';
+
+const log = createModuleLogger('notifications:ntfy');
 
 export interface NtfyEndpoint {
   id: string;
@@ -108,13 +111,24 @@ export async function sendNtfy(
 
     try {
       token = decryptSecret(endpoint.secret);
-    } catch {
+    } catch (error) {
       // A stored token that will not decrypt, which is what happens to every
       // stored secret if NEXTAUTH_SECRET is rotated. Report it rather than
       // throwing: this function's contract is to resolve with an outcome, and
       // a throw here would abandon the caller's remaining endpoints. Not
       // 'blocked', because the URL is fine and telling the user to change it
       // would send them after the wrong thing.
+      //
+      // Logged here, though, because the user-facing side of 'unknown' says
+      // only "it may be temporary": after a secret rotation every ntfy
+      // destination with a token fails at once and nothing on the receiving
+      // end changed, so without this line an operator sees a wall of
+      // code=unknown with no way to tell a decrypt failure apart from an
+      // unexplained bug.
+      log.error(
+        { endpointId: endpoint.id, errorMessage: error instanceof Error ? error.message : 'Unknown error' },
+        'ntfy token failed to decrypt'
+      );
       return { ok: false, code: 'unknown' };
     }
 
