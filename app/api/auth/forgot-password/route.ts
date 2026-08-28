@@ -17,6 +17,17 @@ export const POST = withLogging(async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
   }
 
+  // Unkeyed (IP-only) check before the body is parsed. There is no email to
+  // key on yet at this point, but a request that never becomes a
+  // well-formed, schema-valid body would otherwise hit no rate limit at
+  // all, since the email-keyed check below only runs after parsing
+  // succeeds. This restores the bound that existed before email keying was
+  // added.
+  const preParseRateLimitResponse = checkRateLimit(request, 'forgotPassword');
+  if (preParseRateLimitResponse) {
+    return preParseRateLimitResponse;
+  }
+
   try {
     if (!isFeatureEnabled('passwordLogin')) {
       return NextResponse.json(
