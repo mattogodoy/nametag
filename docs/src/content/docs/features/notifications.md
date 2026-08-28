@@ -41,7 +41,7 @@ You'll also need iOS or iPadOS 16.4 or later. Apple only added web push support 
 
 On the public ntfy.sh server, the topic name is the only thing standing between your reminders and anyone who guesses it or finds it some other way: anyone who knows the topic name can subscribe to it too. Pick something long and hard to guess, not a word or your own name. If you run your own ntfy server, or the topic needs an access token to publish to, add that token when you create the destination. It's encrypted at rest and is never shown back to you once saved.
 
-You can add up to five destinations, ntfy or otherwise. A destination that fails ten reminders in a row is switched off automatically, so a dead topic or a decommissioned server doesn't keep failing quietly forever. It stays visible in Settings with the reason for the last failure, and you can turn it back on once it's fixed.
+You can add up to five destinations, ntfy or otherwise. A destination that fails delivery on ten consecutive nightly runs is switched off automatically, so a dead topic or a decommissioned server doesn't keep failing quietly forever: this is tracked per run, not per reminder, so a night with a weekly digest and several birthday reminders still only counts as one failure against the threshold if every one of them failed. It stays visible in Settings, showing whether it was switched off automatically (with the reason for the last failure) or turned off manually, and you can turn it back on from either state.
 
 ## Privacy
 
@@ -56,4 +56,4 @@ Push notifications are encrypted end to end by the Web Push protocol itself. The
 - Tapping a push notification opens Nametag to the relevant page, reusing an already-open tab if you have one instead of opening a new window.
 - On nametag.one, an ntfy or webhook destination must be HTTPS on port 443, and cannot point at a private or internal address. A URL on a non-standard port, such as `https://ntfy.example.com:8443/topic`, is rejected even though it's HTTPS. A self-hosted instance has no such restriction, since reaching a server on your own network, such as a LAN ntfy box on whatever port it listens on, is exactly the point.
 - Nametag never follows a redirect from a destination. If your server responds with one, the request is reported as failed rather than followed somewhere else.
-- A request to a destination times out after five seconds. A slow receiver is treated the same as one that never responds.
+- A request to a destination times out after five seconds, on top of a separate five-second budget for resolving its hostname, so the worst case before a delivery is reported as failed is roughly ten seconds. A slow receiver is treated the same as one that never responds.

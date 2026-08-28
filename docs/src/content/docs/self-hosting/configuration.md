@@ -114,7 +114,15 @@ Leave all three unset and the push channel stays hidden in Settings. Email remin
 
 Replacing the keys later invalidates every existing browser subscription at once. Each device has to turn push back on from Settings to start receiving notifications again, so only rotate them when you mean to force that.
 
-The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe. After 10 consecutive failed deliveries to the same device, roughly a week and a half at the once-a-day reminder schedule, Nametag stops attempting delivery to it automatically instead of retrying forever. The row is not deleted: re-subscribing that device, or removing it from Settings, are still the only ways to clear it out.
+The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe. After 10 consecutive failed nightly runs against the same device, Nametag stops attempting delivery to it automatically instead of retrying forever. The row is not deleted: re-subscribing that device, or removing it from Settings, are still the only ways to clear it out.
+
+## Rotating NEXTAUTH_SECRET
+
+`NEXTAUTH_SECRET` is also the base for the encryption key that protects every stored ntfy access token (see `lib/crypto/secrets.ts`). Rotating it has the same one-way consequence as rotating the VAPID keys above, for tokens instead of subscriptions: every access token encrypted under the old secret can no longer be decrypted under the new one.
+
+A destination with a token that can no longer be decrypted fails every night with the same generic error a self-hoster would see for any other unreachable destination, since the failure carries no information that would point at the real cause. It counts toward auto-disable like any other failure and switches off after 10 consecutive failed runs. Re-enabling it from Settings clears the counter but not the underlying token, so it fails again the same way and disables itself again, on a loop.
+
+There is no in-place way to re-encrypt a stored token with a new key. The only fix is to remove the affected destination in Settings and add it again with its access token, which encrypts it under the current `NEXTAUTH_SECRET`. Destinations with no access token (public ntfy topics) are unaffected, since there is nothing to decrypt.
 
 ## Value constraints and defaults
 
