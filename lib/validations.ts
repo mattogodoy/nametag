@@ -652,6 +652,29 @@ export const emailRemindersSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const createNtfyEndpointSchema = z.object({
+  type: z.literal('NTFY'),
+  label: z.string().min(1).max(60),
+  url: z.string().url().max(500),
+  // ntfy access token. Optional: public topics need none. Sent as a bearer
+  // credential in an HTTP header (see sendNtfy), so it is constrained to
+  // printable ASCII: a CRLF or a character outside latin1 makes Node's HTTP
+  // client throw synchronously when the header is built, which without this
+  // check surfaces at send time as "worth trying again" for a destination
+  // that is actually permanently broken, on every reminder, forever.
+  token: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[\x21-\x7e]+$/, 'Token must contain only printable ASCII characters, no spaces')
+    .optional(),
+});
+
+export const updateEndpointSchema = z.object({
+  label: z.string().min(1).max(60).optional(),
+  enabled: z.boolean().optional(),
+});
+
 // ============================================
 // Helper function for API validation
 // ============================================

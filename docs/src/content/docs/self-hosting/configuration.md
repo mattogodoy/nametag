@@ -29,6 +29,18 @@ This is the default mode when `NODE_ENV` is `production` or unset, and `SAAS_MOD
 
 Reserved for the hosted service at nametag.one. Redis becomes mandatory, email verification is required, billing and usage limits are enforced, and Google OAuth is enabled instead of generic OIDC. You should not set `SAAS_MODE=true` on a self-hosted instance.
 
+### Multi-user instances and outbound notification destinations
+
+Any signed-in user can configure a notification destination (ntfy today, webhooks in a later release) pointing at any URL, including one on your local network, and then use the "Send a test" button on it. In self-hosted mode, the outbound request policy deliberately allows private and internal addresses, any port, and plain HTTP, because pointing Nametag at a LAN ntfy server is a normal and expected setup. That same permissiveness means a user can point a destination at `http://10.0.0.5:8080/x` and immediately learn, from the response, whether that host is reachable, whether that port is open, and whether it refused the connection, timed out, or answered with an error. The response body of the target is never read back, so this cannot be used to pull data out of an internal service, but it works as a liveness and port scanner against anything else on the same network as your Nametag instance.
+
+If you run Nametag for yourself alone, this doesn't matter: you're the only one who could point it at anything. If you run it for other people you don't fully trust with your network, treat this as a real exposure and choose one of:
+
+- Run the instance single-user, or only invite people you'd trust with direct access to the network Nametag runs on.
+- Restrict Nametag's outbound network egress at the firewall or container network level, so it cannot reach your LAN or cloud metadata endpoints regardless of what a user configures.
+- Keep the instance off any network segment where something sensitive is reachable.
+
+This is a deliberate trade-off in how self-hosted mode works, not a bug to be patched. SaaS mode does not have this exposure: `nametag.one` requires HTTPS and refuses private and internal addresses outright, because there the destination is not something we trust the way a self-hosting operator trusts their own network.
+
 ## Database configuration
 
 Nametag supports two ways to point at your Postgres database.
@@ -102,7 +114,15 @@ Leave all three unset and the push channel stays hidden in Settings. Email remin
 
 Replacing the keys later invalidates every existing browser subscription at once. Each device has to turn push back on from Settings to start receiving notifications again, so only rotate them when you mean to force that.
 
-The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe, and the stale rows simply stop being useful.
+The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe. After 10 consecutive failed nightly runs against the same device, Nametag stops attempting delivery to it automatically instead of retrying forever. The row is not deleted: re-subscribing that device, or removing it from Settings, are still the only ways to clear it out.
+
+## Rotating NEXTAUTH_SECRET
+
+`NEXTAUTH_SECRET` is also the base for the encryption key that protects every stored ntfy access token (see `lib/crypto/secrets.ts`). Rotating it has the same one-way consequence as rotating the VAPID keys above, for tokens instead of subscriptions: every access token encrypted under the old secret can no longer be decrypted under the new one.
+
+A destination with a token that can no longer be decrypted fails every night with the same generic error a self-hoster would see for any other unreachable destination, since the failure carries no information that would point at the real cause. It counts toward auto-disable like any other failure and switches off after 10 consecutive failed runs. Re-enabling it from Settings clears the counter but not the underlying token, so it fails again the same way and disables itself again, on a loop.
+
+There is no in-place way to re-encrypt a stored token with a new key. The only fix is to remove the affected destination in Settings and add it again with its access token, which encrypts it under the current `NEXTAUTH_SECRET`. Destinations with no access token (public ntfy topics) are unaffected, since there is nothing to decrypt.
 
 ## Value constraints and defaults
 

@@ -20,6 +20,7 @@ import {
   validateRequest,
   bulkOrphansSchema,
   bulkActionSchema,
+  createNtfyEndpointSchema,
 } from '@/lib/validations';
 
 describe('validations', () => {
@@ -816,6 +817,41 @@ describe('validations', () => {
         });
         expect(result.success).toBe(false);
       });
+    });
+  });
+
+  describe('createNtfyEndpointSchema', () => {
+    const valid = { type: 'NTFY' as const, label: 'Phone', url: 'https://ntfy.sh/my-topic' };
+
+    it('accepts a request with no token', () => {
+      expect(createNtfyEndpointSchema.safeParse(valid).success).toBe(true);
+    });
+
+    it('accepts an ordinary printable-ASCII token', () => {
+      const result = createNtfyEndpointSchema.safeParse({ ...valid, token: 'tk_secret-Value.123' });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects a token containing CRLF', () => {
+      // A CRLF in a header value makes Node's HTTP client throw
+      // synchronously when the request is built. Rejecting it here, rather
+      // than at send time, means the user sees a validation error instead of
+      // a destination that fails every night for a reason with no fix.
+      const result = createNtfyEndpointSchema.safeParse({
+        ...valid,
+        token: 'tk_secret\r\nX-Injected: true',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a token containing a non-latin1 character', () => {
+      const result = createNtfyEndpointSchema.safeParse({ ...valid, token: 'tk_sécret' });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a token containing a plain space', () => {
+      const result = createNtfyEndpointSchema.safeParse({ ...valid, token: 'tk secret' });
+      expect(result.success).toBe(false);
     });
   });
 });

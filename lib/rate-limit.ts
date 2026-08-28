@@ -88,6 +88,18 @@ export const rateLimitConfigs = {
     maxAttempts: 20,
     windowMs: 15 * 60 * 1000,
   },
+  // Creating an outbound endpoint: 10 per hour
+  notificationEndpointCreate: {
+    maxAttempts: 10,
+    windowMs: 60 * 60 * 1000,
+  },
+  // Test send: tightest limit in the app. A synchronous, user-triggered
+  // outbound request with immediate feedback is the most abusable surface in
+  // the notification feature, so it is deliberately slower than everything else.
+  notificationEndpointTest: {
+    maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+  },
 } as const;
 
 export type RateLimitType = keyof typeof rateLimitConfigs;

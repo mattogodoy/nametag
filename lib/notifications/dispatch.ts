@@ -3,8 +3,10 @@ import type { SendBatchEmailItem } from '@/lib/email';
 import { createModuleLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { renderEmail } from './channels/email';
+import { sendNtfy } from './channels/ntfy';
 import { sendWebPush } from './channels/web-push';
 import { mapWithConcurrency } from './concurrency';
+import { HealthAccumulator, MAX_ENDPOINTS_PER_USER } from './endpoint-health';
 import type { ChannelId, ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
 
 const log = createModuleLogger('notifications');
@@ -29,6 +31,13 @@ export async function dispatchAll(
   }
 
   const emailEnabled = await loadEmailPreferences(envelopes);
+  const endpointsByUser = await loadEndpoints(envelopes);
+
+  // Accumulates every envelope's per-destination outcome in memory across
+  // this whole run, so recordEndpointResult / recordPushSubscriptionResult
+  // are each called at most once per destination below, instead of once per
+  // envelope. See HealthAccumulator's own doc comment for why that matters.
+  const health = new HealthAccumulator();
 
   // Email first and as one batch, so Resend still receives a single request.
   const emailOutcomes = await dispatchEmail(envelopes, emailEnabled);
@@ -36,12 +45,33 @@ export async function dispatchAll(
   // Per-envelope channels, bounded so a large run does not open one socket per
   // envelope at the same instant.
   const pushOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
-    guard(() => sendWebPush(envelope), 'web_push', envelope.userId)
+    guard(() => sendWebPush(envelope, health), 'web_push', envelope.userId)
   );
 
-  return envelopes.map((_envelope, index) =>
-    summarize([emailOutcomes[index], pushOutcomes[index]])
+  const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
+    guard(
+      () => dispatchEndpoints(envelope, endpointsByUser.get(envelope.userId) ?? [], health),
+      'ntfy',
+      envelope.userId
+    )
   );
+
+  const results = envelopes.map((_envelope, index) =>
+    summarize([emailOutcomes[index], pushOutcomes[index], endpointOutcomes[index]])
+  );
+
+  // Flushed after every DispatchResult above has already been computed, and
+  // guarded on top of HealthAccumulator's own per-destination guard: nothing
+  // that happens while writing health bookkeeping can reach back and change
+  // a delivery outcome or a stamp decision that was already decided.
+  try {
+    await health.flush();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error({ errorMessage: message }, 'Failed to flush notification destination health for this run');
+  }
+
+  return results;
 }
 
 /**
@@ -76,6 +106,173 @@ async function loadEmailPreferences(
     );
     return new Map();
   }
+}
+
+interface EndpointRecord {
+  id: string;
+  userId: string;
+  type: 'NTFY' | 'WEBHOOK';
+  url: string;
+  secret: string | null;
+}
+
+/**
+ * Load every enabled endpoint for the users in this run, grouped by user.
+ *
+ * One query for the whole run rather than one per envelope: a run holds many
+ * envelopes per user and they all share the same endpoint list.
+ *
+ * `enabled: true` is in the query rather than filtered afterwards so that a
+ * disabled or auto-disabled endpoint can never be contacted, even by a future
+ * caller that forgets to filter.
+ */
+async function loadEndpoints(
+  envelopes: readonly NotificationEnvelope[]
+): Promise<Map<string, EndpointRecord[]>> {
+  const userIds = [...new Set(envelopes.map((envelope) => envelope.userId))];
+
+  // Guarded the same way loadEmailPreferences is. An unguarded failure here
+  // throws out of dispatchAll and aborts the whole night, silently dropping
+  // every day-of, lead, and contact reminder already collected. An empty map
+  // means "no endpoints tonight", which costs those users one night of a
+  // secondary channel rather than costing everyone their reminders.
+  try {
+    const endpoints = await prisma.notificationEndpoint.findMany({
+      where: { userId: { in: userIds }, enabled: true },
+      select: { id: true, userId: true, type: true, url: true, secret: true },
+      // Grouped by user below so the per-user slice is deterministic. Without
+      // this, an over-cap condition truncates in whatever order Postgres
+      // happens to return rows, which can drop an innocent user's entire
+      // endpoint list for the night instead of the offending user's excess.
+      orderBy: [{ userId: 'asc' }, { createdAt: 'asc' }],
+      // Belt, not the primary control: the per-user cap is enforced at
+      // creation time (MAX_ENDPOINTS_PER_USER). This bounds the query itself
+      // so a row created by some path that bypasses that cap cannot make the
+      // cron iterate an unbounded list. Multiplied by the number of users in
+      // this run because, unlike sendWebPush's per-user query, this one is
+      // batched across every user, so a flat take of MAX_ENDPOINTS_PER_USER
+      // would silently starve every user after the first few.
+      take: MAX_ENDPOINTS_PER_USER * userIds.length,
+    });
+
+    // Sliced again here, per user, on top of the query-level take above. The
+    // query bound only protects against an unbounded *total* row count; it
+    // does not stop one user who is somehow over the cap from consuming
+    // another user's share of that combined budget. Dropping this user's
+    // excess here, rather than letting it spill into the next user's slice,
+    // keeps the truncation scoped to the offending user only.
+    const byUser = new Map<string, EndpointRecord[]>();
+    for (const endpoint of endpoints) {
+      const list = byUser.get(endpoint.userId) ?? [];
+      if (list.length >= MAX_ENDPOINTS_PER_USER) {
+        continue;
+      }
+      list.push(endpoint);
+      byUser.set(endpoint.userId, list);
+    }
+
+    return byUser;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error(
+      { errorMessage: message, count: userIds.length },
+      'Failed to load notification endpoints, skipping endpoint delivery tonight'
+    );
+    return new Map();
+  }
+}
+
+/**
+ * Deliver one envelope to every endpoint its owner has configured.
+ *
+ * Collapsed to a single outcome: delivering to at least one endpoint counts,
+ * the same way one live device counts for push. Per-endpoint results are
+ * recorded into `health` instead of written immediately: the caller flushes
+ * it once, after every envelope in the run has gone through, so a destination
+ * with many envelopes tonight gets one health write, not one per envelope.
+ *
+ * The send is still guarded per endpoint: an unguarded throw anywhere in this
+ * loop would abandon every endpoint after it for this envelope, not just the
+ * one that failed. Recording into `health` itself cannot throw, it is a plain
+ * in-memory accumulation, so unlike the send it needs no try/catch of its own
+ * here.
+ *
+ * A throw is also recorded as a failure (coarse code `unknown`), the same as
+ * a driver that resolves with an error. Without this, an endpoint whose
+ * driver throws every night would never accumulate `consecutiveFailures` and
+ * would never auto-disable, unlike one that resolves false. Unreachable today
+ * since `sendNtfy` only resolves, but the next endpoint type this loop grows
+ * to hold has no such contract yet.
+ *
+ * `attempted` is tracked separately from `endpoints.length` so a user whose
+ * endpoints are all a type not yet handled here (WEBHOOK, before Phase 4
+ * exists) reports `skipped` rather than `failed`. Nothing was attempted, so
+ * nothing failed.
+ */
+async function dispatchEndpoints(
+  envelope: NotificationEnvelope,
+  endpoints: readonly EndpointRecord[],
+  health: HealthAccumulator
+): Promise<ChannelOutcome> {
+  if (endpoints.length === 0) {
+    return { channel: 'ntfy', status: 'skipped' };
+  }
+
+  let attempted = 0;
+  let delivered = 0;
+  let lastError = 'Unknown endpoint error';
+
+  for (const endpoint of endpoints) {
+    // WEBHOOK is handled in Phase 4. Until then an endpoint of that type
+    // cannot be created, so this is unreachable rather than a silent drop.
+    if (endpoint.type !== 'NTFY') {
+      continue;
+    }
+
+    attempted++;
+
+    let result: Awaited<ReturnType<typeof sendNtfy>>;
+
+    try {
+      result = await sendNtfy(endpoint, envelope);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown endpoint error';
+      lastError = message;
+      log.error(
+        { ...envelope.logMeta, endpointId: endpoint.id, errorMessage: message },
+        "Endpoint delivery threw, continuing with the user's remaining endpoints"
+      );
+
+      // Record it too, so a driver that throws every night still accumulates
+      // failures and eventually auto-disables, the same as one that resolves
+      // with an error. web-push.ts does this for the same reason.
+      health.recordEndpoint(endpoint.id, { ok: false, code: 'unknown' });
+
+      continue;
+    }
+
+    if (result.ok) {
+      delivered++;
+    } else {
+      lastError = result.code;
+      log.warn(
+        { ...envelope.logMeta, endpointId: endpoint.id, code: result.code },
+        'Endpoint delivery failed'
+      );
+    }
+
+    health.recordEndpoint(endpoint.id, result);
+  }
+
+  if (delivered > 0) {
+    return { channel: 'ntfy', status: 'delivered' };
+  }
+
+  if (attempted === 0) {
+    return { channel: 'ntfy', status: 'skipped' };
+  }
+
+  return { channel: 'ntfy', status: 'failed', error: lastError };
 }
 
 /**

@@ -61,6 +61,7 @@ model User {
   cardDavPendingImports CardDavPendingImport[]
   customFieldTemplates  CustomFieldTemplate[]
   duplicateDismissals   DuplicateDismissal[]
+  notificationEndpoints NotificationEndpoint[]
 
   journalEntries        JournalEntry[]
 
@@ -565,8 +566,15 @@ model PushSubscription {
   userAgent String?
 
   lastSuccessAt DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  consecutiveFailures Int       @default(0)
+  // Coarse category from OutboundFailureCode. Never a response body: storing
+  // one would turn the settings page into a read oracle for internal services.
+  lastFailureCode     String?
+  autoDisabledAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -957,4 +965,45 @@ model PersonCustomFieldValue {
   @@unique([personId, templateId])
   @@index([templateId, value])
   @@map("person_custom_field_values")
+}
+
+enum NotificationEndpointType {
+  NTFY
+  WEBHOOK
+}
+
+// NotificationEndpoint Model - a user-configured outbound delivery destination
+//
+// Not soft-deletable on purpose. A soft-deleted webhook that some query forgot
+// to filter would keep firing at a URL the user believes they removed, which
+// is a worse failure than losing the audit trail of a deleted row.
+model NotificationEndpoint {
+  id      String                   @id @default(cuid())
+  userId  String
+  type    NotificationEndpointType
+  label   String
+  url     String
+  // AES-256-GCM. An ntfy access token, or a webhook HMAC signing secret.
+  secret  String?
+  enabled Boolean                  @default(true)
+
+  consecutiveFailures Int       @default(0)
+  lastSuccessAt       DateTime?
+  lastFailureAt       DateTime?
+  // Coarse category from OutboundFailureCode. Never a response body: storing
+  // one would turn the settings page into a read oracle for internal services.
+  lastFailureCode     String?
+  autoDisabledAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Mirrors PushSubscription.endpoint's @unique: adding the same destination
+  // twice would multiply every reminder into duplicate publishes and consume
+  // the user's whole endpoint cap on repeats of one destination.
+  @@unique([userId, url])
+  @@index([userId, enabled])
+  @@map("notification_endpoints")
 }
