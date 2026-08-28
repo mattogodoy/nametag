@@ -77,7 +77,7 @@ describe('parseNtfyUrl', () => {
 
 describe('ntfyTagFor', () => {
   it('maps each predefined important date type to its own tag', () => {
-    const base = { kind: 'important_date', personId: 'p', personName: 'A', dateTitle: 'T', formattedDate: 'D' } as const;
+    const base = { kind: 'important_date', personId: 'p', personName: 'A', dateTitle: 'T', formattedDate: 'D', date: '2026-08-26' } as const;
 
     expect(ntfyTagFor({ ...base, dateType: 'birthday' })).toBe('birthday');
     expect(ntfyTagFor({ ...base, dateType: 'anniversary' })).toBe('ring');
@@ -86,7 +86,7 @@ describe('ntfyTagFor', () => {
   });
 
   it('falls back to calendar for a custom or missing type', () => {
-    const base = { kind: 'important_date', personId: 'p', personName: 'A', dateTitle: 'T', formattedDate: 'D' } as const;
+    const base = { kind: 'important_date', personId: 'p', personName: 'A', dateTitle: 'T', formattedDate: 'D', date: '2026-08-26' } as const;
 
     expect(ntfyTagFor({ ...base, dateType: null })).toBe('calendar');
     expect(ntfyTagFor({ ...base, dateType: 'first-met' })).toBe('calendar');
@@ -101,6 +101,7 @@ describe('ntfyTagFor', () => {
         personName: 'A',
         dateTitle: 'T',
         formattedDate: 'D',
+        date: '2026-08-26',
         daysUntil: 3,
       })
     ).toBe('alarm_clock');

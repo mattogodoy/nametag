@@ -5,7 +5,7 @@ sidebar:
   order: 13
 ---
 
-These endpoints manage how reminders are delivered: toggling the email channel, registering or revoking browser push subscriptions, and managing ntfy destinations. For the reminders themselves, see [Important dates](/api/people/#important-dates) on a person.
+These endpoints manage how reminders are delivered: toggling the email channel, registering or revoking browser push subscriptions, and managing ntfy and webhook destinations. For the reminders themselves, see [Important dates](/api/people/#important-dates) on a person. For the outgoing webhook payload shape and how to verify its signature, see [Notifications](/features/notifications/#sending-reminders-to-a-webhook).
 
 ## Get the VAPID public key
 
@@ -111,7 +111,7 @@ Returns `400` for an invalid body, `401` if unauthenticated.
 GET /api/notifications/endpoints
 ```
 
-Lists the current user's configured outbound destinations (ntfy topics today). Never returns the stored secret: it is write-only, encrypted at create time.
+Lists the current user's configured outbound destinations (ntfy topics and outgoing webhooks). Never returns the stored secret: it is write-only, encrypted at create time.
 
 ```bash
 curl https://your-instance.example.com/api/notifications/endpoints \
@@ -146,16 +146,18 @@ Returns `401` if unauthenticated.
 POST /api/notifications/endpoints
 ```
 
-Creates a new ntfy destination. The URL is validated against the outbound SSRF policy described in [Notifications](/features/notifications/#technical-details), and must be a full topic URL, for example `https://ntfy.sh/my-topic`. The optional access token is encrypted at rest and never returned by any endpoint. Capped at 5 destinations per user, and rate limited to 10 creations per hour.
+Creates a new ntfy or webhook destination. Both types validate the URL against the outbound SSRF policy described in [Notifications](/features/notifications/#technical-details) before storing it. Capped at 5 destinations per user across both types, and rate limited to 10 creations per hour.
 
 **Request body**
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `type` | string | Yes | Must be `"NTFY"`. Webhooks are a separate, future channel. |
+| `type` | string | Yes | `"NTFY"` or `"WEBHOOK"`. |
 | `label` | string | Yes | 1 to 60 characters. |
-| `url` | string | Yes | A full ntfy topic URL, up to 500 characters. |
-| `token` | string | No | ntfy access token, 1 to 255 characters. Only needed for a topic that requires one to publish. |
+| `url` | string | Yes | For `NTFY`, a full topic URL, for example `https://ntfy.sh/my-topic`. For `WEBHOOK`, any HTTPS URL your server can receive a `POST` on. Up to 500 characters either way. |
+| `token` | string | No | `NTFY` only. Access token, 1 to 255 characters, for a topic that requires one to publish. |
+
+A `WEBHOOK` request has no secret field: the signing secret is always generated on the server, never accepted from the client, and returned exactly once in the `201` response below.
 
 ```bash
 curl -X POST https://your-instance.example.com/api/notifications/endpoints \
@@ -168,17 +170,37 @@ curl -X POST https://your-instance.example.com/api/notifications/endpoints \
 { "endpoint": { "id": "clxendpoint1", "type": "NTFY", "label": "Phone", "url": "https://ntfy.sh/my-topic", "enabled": true, "consecutiveFailures": 0, "lastSuccessAt": null, "lastFailureAt": null, "lastFailureCode": null, "autoDisabledAt": null, "createdAt": "2026-08-27T12:00:00.000Z" } }
 ```
 
+Creating a `WEBHOOK` endpoint returns the same `endpoint` object plus a `secret`, the signing key you use to verify each delivery:
+
+```bash
+curl -X POST https://your-instance.example.com/api/notifications/endpoints \
+  -H "Authorization: Bearer ntag_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "type": "WEBHOOK", "label": "Home server", "url": "https://home.example.com/nametag" }'
+```
+
+```json
+{
+  "endpoint": { "id": "clxendpoint2", "type": "WEBHOOK", "label": "Home server", "url": "https://home.example.com/nametag", "enabled": true, "consecutiveFailures": 0, "lastSuccessAt": null, "lastFailureAt": null, "lastFailureCode": null, "autoDisabledAt": null, "createdAt": "2026-08-27T12:00:00.000Z" },
+  "secret": "a1b2c3d4e5f6..."
+}
+```
+
+`secret` is returned only this once. It is stored encrypted and there is no endpoint that reads it back afterwards; losing it means deleting the webhook and creating a new one. See [Notifications](/features/notifications/#verifying-the-signature) for the payload shape and how to verify it.
+
 A `400` carries a machine-readable `code` alongside `error`, so a client can tell a permanent problem from a transient one instead of parsing the message text:
 
 ```json
 { "error": "That URL cannot be used", "code": "dns" }
 ```
 
-`code` is one of `policy` (the URL was refused by the outbound SSRF policy: wrong protocol, disallowed port, or a private address, permanent, the URL must change), `dns` (the hostname did not resolve, possibly transient, worth retrying as-is), or `invalid` (the request body failed validation, or the URL has no topic segment).
+`code` is one of `policy` (the URL was refused by the outbound SSRF policy: wrong protocol, disallowed port, or a private address, permanent, the URL must change), `dns` (the hostname did not resolve, possibly transient, worth retrying as-is), or `invalid` (the request body failed validation, or an ntfy topic URL has no topic segment).
 
 A `409` also carries a `code`: `duplicate` means this exact URL is already registered to your account, distinct from the plain cap message you get when you already have 5 destinations.
 
-Returns `201` on success, `400` if the body fails validation or the URL cannot be used, `401` if unauthenticated, `409` if you already have 5 destinations or that URL is already registered, `429` if rate limited.
+In SaaS mode, creating a `WEBHOOK` endpoint without a Pro subscription returns `403`. Self-hosted instances never return this, and it is never returned for an `NTFY` endpoint.
+
+Returns `201` on success, `400` if the body fails validation or the URL cannot be used, `401` if unauthenticated, `403` if creating a webhook without a Pro subscription in SaaS mode, `409` if you already have 5 destinations or that URL is already registered, `429` if rate limited.
 
 ## Update a notification endpoint
 
@@ -246,4 +268,6 @@ curl -X POST https://your-instance.example.com/api/notifications/endpoints/clxen
 
 `code` is present only when `ok` is `false`, and is one of `blocked`, `dns`, `timeout`, `refused`, `tls`, `redirect`, `http_4xx`, `http_429`, `http_5xx`, or `unknown`. `http_429` means the destination is rate limiting requests, which is distinct from `http_4xx` and does not count toward auto-disable.
 
-Returns `400` if the destination is not an ntfy endpoint (webhooks are a future channel and cannot be created today, so this is currently unreachable), `401` if unauthenticated, `404` if the destination does not exist or belongs to another user, `429` if rate limited.
+Entitlement is re-checked here too, not only at creation time: testing a `WEBHOOK` destination without a Pro subscription in SaaS mode returns `403`, so a downgrade stops even a manual test-send immediately.
+
+Returns `401` if unauthenticated, `403` if testing a webhook without a Pro subscription in SaaS mode, `404` if the destination does not exist or belongs to another user, `429` if rate limited.

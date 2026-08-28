@@ -5,6 +5,8 @@ sidebar:
   order: 12
 ---
 
+This page is about an incoming webhook: Stripe calling Nametag. If you're looking for Nametag calling out to a server you control, that's the outgoing webhook reminder channel, documented under [Notifications](/features/notifications/#sending-reminders-to-a-webhook).
+
 Nametag's billing is powered by Stripe, and is only active in [SaaS mode](/self-hosting/configuration/) (`SAAS_MODE=true`). Self-hosted instances don't process billing events. This endpoint isn't something you call yourself, Stripe calls it, but it's documented here for completeness and for anyone running their own SaaS-mode fork.
 
 ## Stripe webhook

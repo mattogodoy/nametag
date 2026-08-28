@@ -214,11 +214,25 @@ export async function postJson(
         },
         (response) => {
           const status = response.statusCode ?? 0;
+          const result = categorizeStatus(status);
+
+          // The coarse code above is the right taxonomy for the user-facing
+          // response (a 401, a 404, and a 422 all just need "the destination
+          // rejected it"), but it is the wrong one for our own logs: nobody
+          // operating this can tell those three apart from `code=http_4xx`
+          // alone. Log the real status here, server-side only, and keep the
+          // coarse code for everything returned to a caller.
+          if (!result.ok) {
+            log.warn(
+              { host: target.parsed.hostname, status, code: result.code },
+              'Outbound request received a non-success response'
+            );
+          }
 
           // Settle before destroying: the destroy() below can itself emit an
           // 'error' event, and the settled guard must already be armed with
           // the real outcome before that happens.
-          settle(categorizeStatus(status));
+          settle(result);
 
           // Discard without reading. Consuming the body would make this a
           // content oracle for whatever the server can reach.
@@ -252,8 +266,23 @@ export async function postJson(
     });
 
     request.on('error', (error: NodeJS.ErrnoException) => {
-      // A destroy() from the timeout or deadline handlers also emits here;
-      // the settled guard keeps the first, more specific result.
+      // A destroy() from the timeout or deadline handlers above also emits
+      // an 'error' here (typically ECONNRESET), after the outcome has
+      // already been settled to 'timeout'. Logging the errno unconditionally
+      // in that case would contradict the outcome actually recorded: an
+      // operator would see errno=ECONNRESET, code=refused right next to a
+      // result of 'timeout'. Only log when this error is the thing actually
+      // deciding the outcome.
+      if (!settled) {
+        // The real errno, server-side only, for the same reason as the status
+        // log above: `code=refused` alone does not tell an operator whether
+        // that was ECONNREFUSED, EHOSTUNREACH, or ENETUNREACH.
+        log.warn(
+          { host: target.parsed.hostname, errno: error.code, code: categorizeError(error) },
+          'Outbound request failed'
+        );
+      }
+      // The settled guard keeps the first, more specific result.
       settle({ ok: false, code: categorizeError(error) });
     });
 

@@ -1,7 +1,7 @@
 import {
   pushSubscribeSchema,
   emailRemindersSchema,
-  createNtfyEndpointSchema,
+  createEndpointSchema,
   updateEndpointSchema,
 } from '../validations';
 import { zodBody, jsonResponse, resp, ref400, ref401, ref404, refSuccess, pathParam, sessionOrToken } from './helpers';
@@ -100,8 +100,8 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Notifications'],
         summary: 'List notification endpoints',
         description:
-          "Lists the current user's configured outbound endpoints (ntfy topics today). Never " +
-          'returns the stored secret: it is write-only, encrypted at create time.',
+          "Lists the current user's configured outbound endpoints (ntfy topics and outgoing " +
+          'webhooks). Never returns the stored secret: it is write-only, encrypted at create time.',
         security: sessionOrToken(),
         responses: {
           '200': jsonResponse('Notification endpoints', {
@@ -117,16 +117,31 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Notifications'],
         summary: 'Create a notification endpoint',
         description:
-          'Creates a new ntfy endpoint. The URL is validated against the outbound SSRF policy ' +
-          'and must be a full topic URL, for example https://ntfy.sh/my-topic. The optional ' +
-          'access token is encrypted at rest and never returned by any endpoint. Capped at 5 ' +
-          'endpoints per user.',
+          'Creates a new ntfy or webhook endpoint. An ntfy endpoint needs a full topic URL, ' +
+          'for example https://ntfy.sh/my-topic; its optional access token is encrypted at ' +
+          'rest and never returned by any endpoint. A webhook endpoint is signed with a ' +
+          'server-generated HMAC-SHA256 secret, never one supplied by the client; the secret ' +
+          'is returned exactly once, in this response, and cannot be read back afterwards. ' +
+          'Both URL types are validated against the outbound SSRF policy before being stored. ' +
+          'In SaaS mode, creating a WEBHOOK endpoint requires a Pro subscription; self-hosted ' +
+          'instances have no such restriction. Capped at 5 endpoints per user, of either type.',
         security: sessionOrToken(),
-        requestBody: zodBody(createNtfyEndpointSchema),
+        requestBody: zodBody(createEndpointSchema),
         responses: {
           '201': jsonResponse('Created endpoint', {
             type: 'object',
-            properties: { endpoint: notificationEndpointObject },
+            properties: {
+              endpoint: notificationEndpointObject,
+              secret: {
+                type: 'string',
+                description:
+                  'The webhook signing secret, 64 lowercase hex characters. Present only when ' +
+                  'the request created a WEBHOOK endpoint, and only in this response: it is ' +
+                  'stored encrypted and there is no endpoint that returns it again. Losing it ' +
+                  'means deleting the webhook and creating a new one.',
+              },
+            },
+            required: ['endpoint'],
           }),
           '400': jsonResponse('Invalid body or URL', {
             type: 'object',
@@ -140,13 +155,23 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
                   'policy (wrong protocol, disallowed port, or a private address): permanent, ' +
                   'the URL must change. `dns` means the hostname did not resolve: possibly ' +
                   "transient, worth retrying as-is. `invalid` covers everything else, a body " +
-                  'that failed validation or a topic URL with no topic segment.',
+                  'that failed validation, a topic URL with no topic segment, or a webhook ' +
+                  'URL carrying a username or password, which is rejected rather than ' +
+                  'silently stripped.',
                 enum: ['policy', 'dns', 'invalid'],
               },
             },
             required: ['error', 'code'],
           }),
           '401': ref401(),
+          '403': resp(
+            "Two unrelated causes share this status. The Pro entitlement gate returns it, " +
+              "with `code: 'forbidden'` in the body, only in SaaS mode and only for a WEBHOOK " +
+              "request whose owner is not on Pro. The session-auth checks shared by every " +
+              "authenticated route (invalid request origin, or a read-only API token used on " +
+              "a mutating request) return the same status with no such code, for any endpoint " +
+              "type, in any mode."
+          ),
           '409': resp(
             'Maximum number of endpoints reached, or that URL is already registered ' +
               "(code: 'duplicate')"
@@ -222,11 +247,15 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
               },
             },
           }),
-          '400': resp(
-            'The destination is not an ntfy endpoint. Webhooks are a future channel and ' +
-              'cannot be created today, so this is currently unreachable.'
-          ),
           '401': ref401(),
+          '403': resp(
+            "Two unrelated causes share this status. The Pro entitlement gate returns it, " +
+              "with `code: 'forbidden'` in the body, only in SaaS mode and only for a WEBHOOK " +
+              "destination whose owner has since lost Pro access. The session-auth checks " +
+              "shared by every authenticated route (invalid request origin, or a read-only " +
+              "API token used on a mutating request) return the same status with no such " +
+              "code, for any endpoint type, in any mode."
+          ),
           '404': ref404(),
           '429': resp('Rate limited'),
         },

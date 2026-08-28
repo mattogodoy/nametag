@@ -652,7 +652,7 @@ export const emailRemindersSchema = z.object({
   enabled: z.boolean(),
 });
 
-export const createNtfyEndpointSchema = z.object({
+const ntfyEndpointSchema = z.object({
   type: z.literal('NTFY'),
   label: z.string().min(1).max(60),
   url: z.string().url().max(500),
@@ -669,6 +669,22 @@ export const createNtfyEndpointSchema = z.object({
     .regex(/^[\x21-\x7e]+$/, 'Token must contain only printable ASCII characters, no spaces')
     .optional(),
 });
+
+const webhookEndpointSchema = z.object({
+  type: z.literal('WEBHOOK'),
+  label: z.string().min(1).max(60),
+  url: z.string().url().max(500),
+  // No secret field. The signing secret is generated server-side; accepting a
+  // user-supplied one would let someone choose a weak or shared value.
+});
+
+export const createEndpointSchema = z.discriminatedUnion('type', [
+  ntfyEndpointSchema,
+  webhookEndpointSchema,
+]);
+
+/** @deprecated Use createEndpointSchema. Kept so existing references resolve. */
+export const createNtfyEndpointSchema = ntfyEndpointSchema;
 
 export const updateEndpointSchema = z.object({
   label: z.string().min(1).max(60).optional(),

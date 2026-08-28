@@ -4,9 +4,12 @@ import { createModuleLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { renderEmail } from './channels/email';
 import { sendNtfy } from './channels/ntfy';
+import { sendWebhook } from './channels/webhook';
 import { sendWebPush } from './channels/web-push';
 import { mapWithConcurrency } from './concurrency';
+import { canUseWebhooks } from './entitlements';
 import { HealthAccumulator, MAX_ENDPOINTS_PER_USER } from './endpoint-health';
+import type { OutboundResult } from './outbound';
 import type { ChannelId, ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
 
 const log = createModuleLogger('notifications');
@@ -32,6 +35,7 @@ export async function dispatchAll(
 
   const emailEnabled = await loadEmailPreferences(envelopes);
   const endpointsByUser = await loadEndpoints(envelopes);
+  const webhookEntitlements = await loadWebhookEntitlements(endpointsByUser);
 
   // Accumulates every envelope's per-destination outcome in memory across
   // this whole run, so recordEndpointResult / recordPushSubscriptionResult
@@ -48,16 +52,23 @@ export async function dispatchAll(
     guard(() => sendWebPush(envelope, health), 'web_push', envelope.userId)
   );
 
-  const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
-    guard(
-      () => dispatchEndpoints(envelope, endpointsByUser.get(envelope.userId) ?? [], health),
-      'ntfy',
-      envelope.userId
-    )
-  );
+  const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) => {
+    const endpoints = endpointsByUser.get(envelope.userId) ?? [];
+    return guardEndpoints(
+      () =>
+        dispatchEndpoints(
+          envelope,
+          endpoints,
+          health,
+          webhookEntitlements.get(envelope.userId) ?? false
+        ),
+      envelope.userId,
+      endpoints
+    );
+  });
 
   const results = envelopes.map((_envelope, index) =>
-    summarize([emailOutcomes[index], pushOutcomes[index], endpointOutcomes[index]])
+    summarize([emailOutcomes[index], pushOutcomes[index], ...endpointOutcomes[index]])
   );
 
   // Flushed after every DispatchResult above has already been computed, and
@@ -183,13 +194,55 @@ async function loadEndpoints(
 }
 
 /**
+ * Resolve webhook entitlement once per user that actually has a webhook.
+ *
+ * Checking per envelope would mean a billing lookup for every reminder in the
+ * run. Checking for users with no webhook endpoint would mean a billing
+ * lookup for the entire user base every night.
+ */
+async function loadWebhookEntitlements(
+  endpointsByUser: Map<string, EndpointRecord[]>
+): Promise<Map<string, boolean>> {
+  const userIds = [...endpointsByUser.entries()]
+    .filter(([, endpoints]) => endpoints.some((endpoint) => endpoint.type === 'WEBHOOK'))
+    .map(([userId]) => userId);
+
+  // Guarded the same way loadEmailPreferences and loadEndpoints are above.
+  // canUseWebhooks already fails closed on its own error (denying that one
+  // user), but an unguarded failure in mapWithConcurrency itself would still
+  // throw out of dispatchAll and abort the whole night, silently dropping
+  // every day-of, lead, and contact reminder already collected. An empty map
+  // denies webhook delivery to every user with a webhook endpoint tonight,
+  // the same fail-closed default as canUseWebhooks itself, rather than
+  // losing the run entirely.
+  try {
+    const entries = await mapWithConcurrency(userIds, CHANNEL_CONCURRENCY, async (userId) => {
+      const allowed = await canUseWebhooks(userId);
+      return [userId, allowed] as const;
+    });
+
+    return new Map(entries);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error(
+      { errorMessage: message, count: userIds.length },
+      'Failed to resolve webhook entitlements, denying webhook delivery tonight'
+    );
+    return new Map();
+  }
+}
+
+/**
  * Deliver one envelope to every endpoint its owner has configured.
  *
- * Collapsed to a single outcome: delivering to at least one endpoint counts,
- * the same way one live device counts for push. Per-endpoint results are
- * recorded into `health` instead of written immediately: the caller flushes
- * it once, after every envelope in the run has gone through, so a destination
- * with many envelopes tonight gets one health write, not one per envelope.
+ * Collapsed to one outcome per endpoint *type* present, not one outcome per
+ * call: all of a user's ntfy endpoints become one `{ channel: 'ntfy', ... }`
+ * outcome, all of their webhooks become one `{ channel: 'webhook', ... }`
+ * outcome. Without this, a webhook failure would be misreported under the
+ * 'ntfy' channel. Per-endpoint results are recorded into `health` instead of
+ * written immediately: the caller flushes it once, after every envelope in
+ * the run has gone through, so a destination with many envelopes tonight gets
+ * one health write, not one per envelope.
  *
  * The send is still guarded per endpoint: an unguarded throw anywhere in this
  * loop would abandon every endpoint after it for this envelope, not just the
@@ -200,44 +253,69 @@ async function loadEndpoints(
  * A throw is also recorded as a failure (coarse code `unknown`), the same as
  * a driver that resolves with an error. Without this, an endpoint whose
  * driver throws every night would never accumulate `consecutiveFailures` and
- * would never auto-disable, unlike one that resolves false. Unreachable today
- * since `sendNtfy` only resolves, but the next endpoint type this loop grows
- * to hold has no such contract yet.
+ * would never auto-disable, unlike one that resolves false.
+ *
+ * `webhooksAllowed` is resolved once per user per run by
+ * `loadWebhookEntitlements` and re-checked here, on every send, rather than
+ * only at endpoint creation time. That is what makes a downgrade in SaaS mode
+ * stop delivery immediately, with no cleanup job needed. A webhook skipped
+ * for entitlement is not attempted, so it must not count toward `failed`.
  *
  * `attempted` is tracked separately from `endpoints.length` so a user whose
- * endpoints are all a type not yet handled here (WEBHOOK, before Phase 4
- * exists) reports `skipped` rather than `failed`. Nothing was attempted, so
- * nothing failed.
+ * endpoints are all skipped for entitlement (or of a type not attempted)
+ * reports `skipped` rather than `failed`. Nothing was attempted, so nothing
+ * failed.
  */
 async function dispatchEndpoints(
   envelope: NotificationEnvelope,
   endpoints: readonly EndpointRecord[],
-  health: HealthAccumulator
-): Promise<ChannelOutcome> {
+  health: HealthAccumulator,
+  webhooksAllowed: boolean
+): Promise<ChannelOutcome[]> {
   if (endpoints.length === 0) {
-    return { channel: 'ntfy', status: 'skipped' };
+    return [{ channel: 'ntfy', status: 'skipped' }];
   }
 
-  let attempted = 0;
-  let delivered = 0;
-  let lastError = 'Unknown endpoint error';
+  const ntfy = { attempted: 0, delivered: 0, lastError: 'Unknown endpoint error' };
+  const webhook = { attempted: 0, delivered: 0, lastError: 'Unknown endpoint error' };
 
   for (const endpoint of endpoints) {
-    // WEBHOOK is handled in Phase 4. Until then an endpoint of that type
-    // cannot be created, so this is unreachable rather than a silent drop.
-    if (endpoint.type !== 'NTFY') {
+    const bucket = endpoint.type === 'WEBHOOK' ? webhook : ntfy;
+
+    // Entitlement is re-checked here, not only at creation time, so a
+    // downgrade stops delivery immediately with no cleanup job to run. Not
+    // attempted, so it must not count as a failure below.
+    if (endpoint.type === 'WEBHOOK' && !webhooksAllowed) {
       continue;
     }
 
-    attempted++;
+    bucket.attempted++;
 
-    let result: Awaited<ReturnType<typeof sendNtfy>>;
+    let result: OutboundResult;
 
     try {
-      result = await sendNtfy(endpoint, envelope);
+      // An exhaustive switch, not a ternary: sendNtfy decrypts the stored
+      // secret straight into an `Authorization: Bearer` header, so a
+      // default-to-ntfy ternary would route a future third endpoint type
+      // there by default and hand its secret to sendNtfy as if it were an
+      // ntfy token, a credential leak rather than a labelling bug. The
+      // `never` check below turns adding a type into a compile error here
+      // instead.
+      switch (endpoint.type) {
+        case 'WEBHOOK':
+          result = await sendWebhook(endpoint, envelope);
+          break;
+        case 'NTFY':
+          result = await sendNtfy(endpoint, envelope);
+          break;
+        default: {
+          const unhandled: never = endpoint.type;
+          throw new Error(`Unhandled endpoint type: ${JSON.stringify(unhandled)}`);
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown endpoint error';
-      lastError = message;
+      bucket.lastError = message;
       log.error(
         { ...envelope.logMeta, endpointId: endpoint.id, errorMessage: message },
         "Endpoint delivery threw, continuing with the user's remaining endpoints"
@@ -252,9 +330,9 @@ async function dispatchEndpoints(
     }
 
     if (result.ok) {
-      delivered++;
+      bucket.delivered++;
     } else {
-      lastError = result.code;
+      bucket.lastError = result.code;
       log.warn(
         { ...envelope.logMeta, endpointId: endpoint.id, code: result.code },
         'Endpoint delivery failed'
@@ -264,15 +342,34 @@ async function dispatchEndpoints(
     health.recordEndpoint(endpoint.id, result);
   }
 
-  if (delivered > 0) {
-    return { channel: 'ntfy', status: 'delivered' };
+  const presentTypes = new Set(endpoints.map((endpoint) => endpoint.type));
+  const outcomes: ChannelOutcome[] = [];
+
+  if (presentTypes.has('NTFY')) {
+    outcomes.push(outcomeFor('ntfy', ntfy));
+  }
+  if (presentTypes.has('WEBHOOK')) {
+    outcomes.push(outcomeFor('webhook', webhook));
   }
 
-  if (attempted === 0) {
-    return { channel: 'ntfy', status: 'skipped' };
+  return outcomes;
+}
+
+function outcomeFor(
+  channel: 'ntfy' | 'webhook',
+  state: { attempted: number; delivered: number; lastError: string }
+): ChannelOutcome {
+  if (state.delivered > 0) {
+    return { channel, status: 'delivered' };
   }
 
-  return { channel: 'ntfy', status: 'failed', error: lastError };
+  // Every endpoint of this type was skipped for entitlement (or there were
+  // none), so nothing was tried and this is not a failure.
+  if (state.attempted === 0) {
+    return { channel, status: 'skipped' };
+  }
+
+  return { channel, status: 'failed', error: state.lastError };
 }
 
 /**
@@ -397,6 +494,45 @@ async function guard(
     const message = error instanceof Error ? error.message : 'Unknown error';
     log.error({ channel, userId, errorMessage: message }, 'Channel driver threw');
     return { channel, status: 'failed', error: message };
+  }
+}
+
+/**
+ * Same job as guard, for dispatchEndpoints specifically: it now returns
+ * ChannelOutcome[], and a fallback single ChannelOutcome would not satisfy
+ * that return type.
+ *
+ * `endpoints` is passed only so the fallback can label itself correctly: it
+ * is not sent to, only inspected to see which endpoint types this user
+ * actually had configured. Labelling every fallback `channel: 'ntfy'`, as
+ * this used to, misreported a webhook-only user's driver throw as an ntfy
+ * failure, the same mislabelling this branch already fixed once inside
+ * dispatchEndpoints' own outcomeFor grouping.
+ */
+async function guardEndpoints(
+  send: () => Promise<ChannelOutcome[]>,
+  userId: string,
+  endpoints: readonly EndpointRecord[]
+): Promise<ChannelOutcome[]> {
+  try {
+    return await send();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    log.error({ channel: 'endpoints', userId, errorMessage: message }, 'Channel driver threw');
+
+    const presentTypes = new Set(endpoints.map((endpoint) => endpoint.type));
+    const outcomes: ChannelOutcome[] = [];
+    if (presentTypes.has('NTFY')) {
+      outcomes.push({ channel: 'ntfy', status: 'failed', error: message });
+    }
+    if (presentTypes.has('WEBHOOK')) {
+      outcomes.push({ channel: 'webhook', status: 'failed', error: message });
+    }
+    // No endpoints at all is not expected to reach a throw (dispatchEndpoints
+    // returns early in that case), but a fallback outcome is still returned
+    // rather than an empty array, so this envelope's DispatchResult still
+    // reflects that something went wrong.
+    return outcomes.length > 0 ? outcomes : [{ channel: 'ntfy', status: 'failed', error: message }];
   }
 }
 

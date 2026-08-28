@@ -78,6 +78,12 @@ To allow more users to register later, set `DISABLE_REGISTRATION=false` and rest
 
 If you've enabled OIDC and disabled password login, `DISABLE_REGISTRATION` still applies to OIDC-based account creation the same way: only the first login creates an account when the instance is empty, and later logins from new identities are blocked once registration is closed.
 
+### Open registration and outgoing webhooks
+
+Self-hosted instances deliberately allow a webhook destination to point at a private address, any port, and plain http, since reaching a box on your own network is exactly the point of self-hosting the feature. That is a reasonable default for a single-user or trusted-family instance, but it means every account on the instance can make Nametag send a signed `POST` to any host, port, and path reachable from the server, not just an origin, since a webhook preserves the full path and query string (unlike an ntfy destination, which can only ever reach an origin's root).
+
+On a multi-user instance with `DISABLE_REGISTRATION` left at its default of `false`, that capability is available to anyone who signs up, not only to people you invited. If the instance sits on a network with anything sensitive reachable from it, either set `DISABLE_REGISTRATION=true` once your intended users have accounts, or run Nametag on a network segment isolated from anything a stranger's webhook shouldn't be able to reach.
+
 ## Password and session specs
 
 These aren't configurable, but they're worth knowing:
