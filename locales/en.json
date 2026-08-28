@@ -235,6 +235,8 @@
       "webhookTestRejected": "The destination rejected the notification. Check the endpoint URL and your receiver's logs.",
       "webhookTestRejectedSaved": "The destination rejected the notification. Remove this destination and add it again with the correct URL.",
       "upgradePlan": "Upgrade your plan",
+      "endpointTypeNtfy": "ntfy",
+      "endpointTypeWebhook": "Webhook",
       "weekdays": {
         "0": "Sunday",
         "1": "Monday",

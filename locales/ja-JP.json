@@ -235,6 +235,8 @@
       "webhookTestRejected": "通知先が通知を拒否しました。通知先のURLと受信側のログを確認してください。",
       "webhookTestRejectedSaved": "通知先が通知を拒否しました。この通知先を削除し、正しいURLで追加し直してください。",
       "upgradePlan": "プランをアップグレードする",
+      "endpointTypeNtfy": "ntfy",
+      "endpointTypeWebhook": "Webhook",
       "weekdays": {
         "0": "日曜日",
         "1": "月曜日",

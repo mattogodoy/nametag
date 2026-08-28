@@ -235,6 +235,8 @@
       "webhookTestRejected": "该目标拒绝了通知。请检查目标 URL 和接收方的日志。",
       "webhookTestRejectedSaved": "该目标拒绝了通知。请删除该目标后，使用正确的 URL 重新添加。",
       "upgradePlan": "升级您的计划",
+      "endpointTypeNtfy": "ntfy",
+      "endpointTypeWebhook": "Webhook",
       "weekdays": {
         "0": "星期日",
         "1": "星期一",

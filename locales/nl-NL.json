@@ -235,6 +235,8 @@
       "webhookTestRejected": "De bestemming heeft de melding geweigerd. Controleer de URL van de bestemming en de logs van je ontvanger.",
       "webhookTestRejectedSaved": "De bestemming heeft de melding geweigerd. Verwijder deze bestemming en voeg hem opnieuw toe met de juiste URL.",
       "upgradePlan": "Upgrade uw plan",
+      "endpointTypeNtfy": "ntfy",
+      "endpointTypeWebhook": "Webhook",
       "weekdays": {
         "0": "Zondag",
         "1": "Maandag",

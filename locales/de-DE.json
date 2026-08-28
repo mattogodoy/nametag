@@ -235,6 +235,8 @@
       "webhookTestRejected": "Das Ziel hat die Benachrichtigung abgelehnt. Überprüfe die Ziel-URL und die Protokolle deines Empfängers.",
       "webhookTestRejectedSaved": "Das Ziel hat die Benachrichtigung abgelehnt. Entferne dieses Ziel und füge es mit der richtigen URL erneut hinzu.",
       "upgradePlan": "Upgrade deinen Plan",
+      "endpointTypeNtfy": "ntfy",
+      "endpointTypeWebhook": "Webhook",
       "weekdays": {
         "0": "Sonntag",
         "1": "Montag",

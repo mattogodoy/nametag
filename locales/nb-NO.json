@@ -235,6 +235,8 @@
       "webhookTestRejected": "Målet avviste varselet. Sjekk mål-URL-en og loggene til mottakeren din.",
       "webhookTestRejectedSaved": "Målet avviste varselet. Fjern dette målet og legg det til på nytt med riktig URL.",
       "upgradePlan": "Oppgrader abonnementet ditt",
+      "endpointTypeNtfy": "ntfy",
+      "endpointTypeWebhook": "Webhook",
       "weekdays": {
         "0": "Søndag",
         "1": "Mandag",

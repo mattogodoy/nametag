@@ -235,6 +235,8 @@
       "webhookTestRejected": "La destinazione ha rifiutato la notifica. Controlla l'URL di destinazione e i log del tuo ricevitore.",
       "webhookTestRejectedSaved": "La destinazione ha rifiutato la notifica. Rimuovi questa destinazione e aggiungila di nuovo con l'URL corretto.",
       "upgradePlan": "Aggiorna il tuo piano",
+      "endpointTypeNtfy": "ntfy",
+      "endpointTypeWebhook": "Webhook",
       "weekdays": {
         "0": "Domenica",
         "1": "Lunedì",

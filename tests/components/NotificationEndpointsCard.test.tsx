@@ -557,9 +557,10 @@ describe('NotificationEndpointsCard', () => {
   });
 
   describe('webhook destinations', () => {
-    it('distinguishes an ntfy destination from a webhook one in the list', () => {
-      // Mutation this catches: dropping the type badge, or rendering it for
-      // only one of the two types, leaves one of these two queries empty.
+    it('distinguishes an ntfy destination from a webhook one in the list, using translated labels rather than the raw enum', () => {
+      // Mutation this catches: dropping the type badge, rendering it for
+      // only one of the two types, or falling back to the raw enum value
+      // (NTFY / WEBHOOK) leaves one of these queries empty or wrong-cased.
       renderCard({
         endpoints: [
           endpoint,
@@ -567,8 +568,11 @@ describe('NotificationEndpointsCard', () => {
         ],
       });
 
-      expect(screen.getByText('NTFY')).toBeInTheDocument();
-      expect(screen.getByText('WEBHOOK')).toBeInTheDocument();
+      expect(screen.getByText('ntfy')).toBeInTheDocument();
+      expect(screen.getByText('Webhook')).toBeInTheDocument();
+      // Never the raw enum: "ntfy" must never render as all-caps "NTFY".
+      expect(screen.queryByText('NTFY')).not.toBeInTheDocument();
+      expect(screen.queryByText('WEBHOOK')).not.toBeInTheDocument();
     });
 
     it('shows the upsell instead of the webhook form when the user is not entitled, leaving no way to submit one', () => {

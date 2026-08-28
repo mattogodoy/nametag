@@ -490,12 +490,12 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
                   <div className="min-w-0">
                     <p className="text-foreground font-medium truncate">
                       {endpoint.label}
-                      {/* The raw enum value, not a translated word: this is a
-                          technical destination-kind marker (like a MIME type
-                          or a protocol name), not prose, so it does not need
-                          a locale key. */}
-                      <span className="ml-2 align-middle inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-primary/10 text-primary">
-                        {endpoint.type}
+                      {/* A translated label, not the raw enum: rendering
+                          "NTFY" / "WEBHOOK" in capitals would be an
+                          untranslated string, and would render ntfy's own
+                          name wrong (the product spells itself lowercase). */}
+                      <span className="ml-2 align-middle inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-primary/10 text-primary">
+                        {endpoint.type === 'WEBHOOK' ? t('endpointTypeWebhook') : t('endpointTypeNtfy')}
                       </span>
                     </p>
                     <p className="text-sm text-muted break-all">{endpoint.url}</p>
