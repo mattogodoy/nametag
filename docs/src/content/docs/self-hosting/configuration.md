@@ -97,7 +97,8 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `VAPID_PUBLIC_KEY` | Public key for browser push notifications | Not set |
 | `VAPID_PRIVATE_KEY` | Private key for browser push notifications | Not set |
 | `VAPID_SUBJECT` | Contact URI for push services, must be a `mailto:` address | Not set |
-| `TRUSTED_PROXY_COUNT` | Number of trusted reverse proxy hops in front of the app, used to pick the real client IP out of `X-Forwarded-For` for rate limiting | `1` |
+| `TRUSTED_PROXY_HEADER` | Which header your reverse proxy manages for the client IP: `x-forwarded-for` or `x-real-ip` | `x-forwarded-for` |
+| `TRUSTED_PROXY_COUNT` | Number of trusted reverse proxy hops in front of the app, used to pick the real client IP out of `X-Forwarded-For` for rate limiting (ignored when `TRUSTED_PROXY_HEADER` is `x-real-ip`) | `1` |
 
 ## Web push notifications (VAPID)
 
@@ -117,15 +118,24 @@ Replacing the keys later invalidates every existing browser subscription at once
 
 The old subscription rows are not removed automatically when you do this. A push service reports a genuinely dead subscription differently from one that just has the wrong key, so the cleanup that prunes dead subscriptions does not fire on a key mismatch. Each device still needs to re-subscribe. After 10 consecutive failed nightly runs against the same device, Nametag stops attempting delivery to it automatically instead of retrying forever. The row is not deleted: re-subscribing that device, or removing it from Settings, are still the only ways to clear it out.
 
-## Trusted proxy count and rate limiting
+## Trusted proxy configuration and rate limiting
 
-Every rate limit in Nametag (login, registration, password reset, and more) keys on the client's IP address. A Web `Request` handler has no direct access to the TCP peer address, so the only source for that IP is the `X-Forwarded-For` header set by whatever reverse proxy sits in front of the app. That header can be set by the client itself, so the app has to know how many proxy hops to trust before it can tell a proxy-appended value apart from a client-forged one.
+Every rate limit in Nametag (login, registration, password reset, and more) keys on the client's IP address. A Web `Request` handler has no direct access to the TCP peer address, so the only source for that IP is a header set by whatever reverse proxy sits in front of the app, and that header can be set by the client itself if the proxy does not manage it. Two settings tell the app how to trust it: `TRUSTED_PROXY_HEADER` (which header) and `TRUSTED_PROXY_COUNT` (how many hops, when that header is a chain).
 
-**This is only meaningful if the app is unreachable except through that proxy.** Counting trusted hops in a header assumes every request genuinely passed through it. The default `docker-compose.yml` publishes the app's port on every interface, which lets anyone who can reach the host skip the proxy, and the header it sets, entirely. See [Reverse Proxy](/self-hosting/reverse-proxy/#trusted-proxy-count) for how to bind that port to localhost once you have a proxy in front.
+**This is only meaningful if the app is unreachable except through that proxy.** Trusting a header assumes every request genuinely passed through it. The default `docker-compose.yml` publishes the app's port on every interface, which lets anyone who can reach the host skip the proxy, and the header it sets, entirely. See [Reverse Proxy](/self-hosting/reverse-proxy/#trusted-proxy-configuration) for how to bind that port to localhost once you have a proxy in front.
 
-`TRUSTED_PROXY_COUNT` is that number. With `X-Forwarded-For`, the app counts from the right: the client's real address is the Nth entry from the end, where N is `TRUSTED_PROXY_COUNT`, because each proxy hop appends its own view of the connection to the end of the header rather than replacing it. Reading from the left, which looks like the natural choice, is exactly what an attacker-supplied value would occupy.
+### TRUSTED_PROXY_HEADER: which header your proxy manages
 
-`X-Real-IP` is never used for this, even though it is a common header for a proxy to set and even though the documented Nginx config sets it. A proxy that manages `X-Real-IP` but not `X-Forwarded-For` cannot be distinguished, from header content alone, from a client forging `X-Forwarded-For` directly, so Nametag does not trust `X-Real-IP` as a substitute or a fallback under any configuration. Make sure your reverse proxy explicitly manages `X-Forwarded-For` (both documented configs do); if it only sets `X-Real-IP`, requests resolve to no trusted IP and fall back to the shared bucket described below.
+This cannot be inferred from a request. A proxy that appends to `X-Forwarded-For` and a proxy that only replaces `X-Real-IP` (and never touches `X-Forwarded-For`) can each produce a request that is indistinguishable, by header content alone, from the other: in the second case, whatever `X-Forwarded-For` a client sends passes straight through untouched, so it looks exactly like a value the first kind of proxy would have produced. Guessing which topology applies is wrong for one of the two no matter which way the guess goes, so `TRUSTED_PROXY_HEADER` makes the operator say which one is true instead.
+
+- **`x-forwarded-for`** (default): matches both documented reverse-proxy configs (nginx with `proxy_add_x_forwarded_for`, Caddy). Use this unless you have specifically confirmed your proxy manages `X-Real-IP` instead. See [Reverse Proxy](/self-hosting/reverse-proxy/#which-header-does-your-proxy-actually-manage) for how to check your own proxy's configuration rather than assume.
+- **`x-real-ip`**: for a proxy that replaces `X-Real-IP` (via something like `proxy_set_header X-Real-IP $remote_addr;`) but does not also manage `X-Forwarded-For`. In this mode `X-Forwarded-For` is ignored entirely, since it would be wholly client-supplied; `TRUSTED_PROXY_COUNT` also does not apply, since `X-Real-IP` carries a single replaced value, not a chain of appended hops.
+
+**If your proxy sets neither header**, or `TRUSTED_PROXY_HEADER` points at one your proxy never touches, every request resolves to no trusted IP. Rate limits with no other identifier fall back to a single shared bucket for the whole instance, and a warning naming both settings is logged once. This is a fail-safe degradation, not a silently trusted attacker value.
+
+### TRUSTED_PROXY_COUNT: how many hops to trust
+
+Only applies when `TRUSTED_PROXY_HEADER` is `x-forwarded-for` (the default). The app counts from the right: the client's real address is the Nth entry from the end, where N is `TRUSTED_PROXY_COUNT`, because each proxy hop appends its own view of the connection to the end of the header rather than replacing it. Reading from the left, which looks like the natural choice, is exactly what an attacker-supplied value would occupy.
 
 The default of `1` matches both reverse-proxy configurations in these docs: a single nginx or Caddy instance terminating TLS directly in front of the app. See [Reverse Proxy](/self-hosting/reverse-proxy/) for the concrete number to use with additional layers such as a CDN or load balancer.
 
@@ -134,7 +144,7 @@ Getting the count wrong produces the same symptom in both directions: a warning 
 - **Too low** (for example `0` with a proxy actually in front, or `1` with two proxies in front): the app cannot find enough trustworthy header entries, so every unauthenticated request with no other identifier collapses into the shared bucket. A single warning is logged the first time this happens; watch for it after changing your proxy setup.
 - **Too high** (for example `2` with only one proxy): this causes both problems at once, not just one. An attacker who supplies extra `X-Forwarded-For` entries gets an entry that a client, not a proxy, put there, the exact spoofing this setting exists to prevent. An honest client, who normally sends no `X-Forwarded-For` of their own, has too few entries for the configured count and also falls into the shared bucket, exactly like the "too low" case above.
 
-A proxy that writes something other than a bare IP address, such as an `ip:port` pair (seen on some Azure App Service configurations) or a bracketed IPv6 literal (seen on some HAProxy and IIS setups), also resolves to no trusted IP. Nametag validates that the resolved value is a plain IP address before trusting it, rather than assuming the format.
+A proxy that writes something other than a bare IP address to whichever header is configured, such as an `ip:port` pair (seen on some Azure App Service configurations) or a bracketed IPv6 literal (seen on some HAProxy and IIS setups), also resolves to no trusted IP. Nametag validates that the resolved value is a plain IP address before trusting it, rather than assuming the format.
 
 ## Rotating NEXTAUTH_SECRET
 
