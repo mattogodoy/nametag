@@ -104,7 +104,6 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
   http_4xx: 'endpointTestRejected',
   http_429: 'endpointTestRateLimited',
   tls: 'endpointTestTls',
-  redirect: 'endpointTestRedirect',
 };
 
 /**
@@ -135,25 +134,20 @@ type MessageContext = 'form' | 'saved';
  * the key is absent, so an unrecognised value degrades to the generic
  * message rather than producing a wrong one.
  *
- * Two of the ten codes in the maps above have wording that mentions
- * ntfy-specific concepts and need webhook-specific copy: `http_4xx` ("check
- * the topic name and the access token") and `redirect` ("point the topic URL
- * at its final destination"). A webhook has no topic and no access token,
- * only a signing secret it never sends anywhere, so both branch on `type`
- * here. Every other code in the two maps above is already channel-neutral.
+ * Only `http_4xx` needs webhook-specific copy: the ntfy wording says "check
+ * the topic name and the access token", which makes no sense for a webhook,
+ * which has neither, only a signing secret it never sends anywhere. Every
+ * other code in the two maps above, including `redirect`, is already
+ * channel-neutral wording that fits both destination types, so nothing else
+ * branches on `type` here.
  */
 function messageKeyForOutboundCode(
   code: string,
   context: MessageContext,
   type: EndpointType
 ): string {
-  if (type === 'WEBHOOK') {
-    if (code === 'http_4xx') {
-      return context === 'saved' ? 'webhookTestRejectedSaved' : 'webhookTestRejected';
-    }
-    if (code === 'redirect') {
-      return context === 'saved' ? 'webhookTestRedirectSaved' : 'webhookTestRedirect';
-    }
+  if (type === 'WEBHOOK' && code === 'http_4xx') {
+    return context === 'saved' ? 'webhookTestRejectedSaved' : 'webhookTestRejected';
   }
   if (context === 'saved') {
     const override = SAVED_MESSAGE_OVERRIDES[code as OutboundFailureCode];
@@ -263,10 +257,15 @@ export default function NotificationEndpointsCard({
    * the HTTP status to show a translated message for the cases a user will
    * actually hit.
    *
-   * The 403 case is the Pro entitlement gate: it can only ever fire for a
-   * webhook (an ntfy destination has no entitlement check), but it is
-   * checked first, before the type-specific branches below, since a 403
-   * short-circuits before any of that logic matters.
+   * The 403 case is checked first, before the type-specific branches below,
+   * since a 403 short-circuits before any of that logic matters. But 403 is
+   * not only the Pro entitlement gate: withAuth returns the same status for
+   * an invalid request origin and for a read-only API token used on a
+   * mutating request, neither of which has anything to do with destination
+   * type or billing. Only the entitlement failure carries `code: 'forbidden'`
+   * in its body, so that code, not the bare status, is what selects the
+   * upsell message; anything else falls back to the server's own message
+   * like every other unmapped case.
    *
    * The 400 case carries its own machine-readable `code` from the route
    * (`policy`, `dns`, or `invalid`), and that distinction matters here for
@@ -290,7 +289,10 @@ export default function NotificationEndpointsCard({
    */
   async function readAddErrorMessage(response: Response, type: EndpointType): Promise<string> {
     if (response.status === 403) {
-      return t('webhookProOnly');
+      const data: unknown = await response.json().catch(() => null);
+      const code = isApiErrorBody(data) ? data.code : undefined;
+      if (code === 'forbidden') return t('webhookProOnly');
+      return isApiErrorBody(data) && data.error ? data.error : tErrors('internalError');
     }
     if (response.status === 409) {
       const data: unknown = await response.json().catch(() => null);
@@ -422,10 +424,21 @@ export default function NotificationEndpointsCard({
    * destination being unreachable, which is wrong (nothing was even
    * attempted) and actively counterproductive (retrying immediately hits the
    * same limit again). 401 gets the same early, distinct treatment: a session
-   * that expired mid-visit is not the destination's fault either. So does
-   * 403: it means the entitlement check on the route was re-run and failed
-   * (a Pro subscription lapsed since the endpoint was created), which is
-   * neither the destination's fault nor something a retry can fix.
+   * that expired mid-visit is not the destination's fault either.
+   *
+   * 403 is not so simple: withAuth returns the same status for an invalid
+   * request origin and for a read-only API token, neither of which is the
+   * Pro entitlement gate and neither of which is specific to a webhook. Only
+   * the entitlement failure carries `code: 'forbidden'` in its body (see the
+   * route), so the body is read and that code, not the bare status, decides
+   * whether the upsell message is shown. Anything else at 403 falls back to
+   * the generic failure message rather than telling an ntfy destination it
+   * is gated behind Pro.
+   *
+   * 404 also gets its own branch: it means the row is gone, most likely
+   * deleted from another tab, not that the destination failed to respond.
+   * There is nothing to retry, so the generic "it may be temporary" wording
+   * would be actively misleading here.
    */
   async function handleTest(id: string) {
     const type = endpoints.find((endpoint) => endpoint.id === id)?.type ?? 'NTFY';
@@ -445,12 +458,29 @@ export default function NotificationEndpointsCard({
         return;
       }
 
-      // A downgrade re-checked at send time (see the route), not a
-      // reachability problem: falling through to the generic branch below
-      // would tell a lapsed Pro subscriber their server is unreachable and
-      // worth retrying, when retrying can never succeed until they resubscribe.
+      // A downgrade re-checked at send time (see the route) is reported with
+      // `code: 'forbidden'` in the body. Anything else at 403 (an invalid
+      // request origin, a read-only API token) is neither the destination's
+      // fault nor something a retry can fix, but it also has nothing to do
+      // with Pro, so it must not show the upsell message either.
       if (response.status === 403) {
-        setTestResults((prev) => ({ ...prev, [id]: { ok: false, text: t('webhookProOnly') } }));
+        const data: unknown = await response.json().catch(() => null);
+        const code = isApiErrorBody(data) ? data.code : undefined;
+        setTestResults((prev) => ({
+          ...prev,
+          [id]: {
+            ok: false,
+            text: code === 'forbidden' ? t('webhookProOnly') : tErrors('internalError'),
+          },
+        }));
+        return;
+      }
+
+      if (response.status === 404) {
+        setTestResults((prev) => ({
+          ...prev,
+          [id]: { ok: false, text: t('endpointTestNotFound') },
+        }));
         return;
       }
 

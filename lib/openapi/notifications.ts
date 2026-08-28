@@ -163,8 +163,12 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
           }),
           '401': ref401(),
           '403': resp(
-            "Outgoing webhooks require a Pro subscription. Only returned in SaaS mode, and " +
-              "only for a WEBHOOK request; an NTFY endpoint is never gated this way."
+            "Two unrelated causes share this status. The Pro entitlement gate returns it, " +
+              "with `code: 'forbidden'` in the body, only in SaaS mode and only for a WEBHOOK " +
+              "request whose owner is not on Pro. The session-auth checks shared by every " +
+              "authenticated route (invalid request origin, or a read-only API token used on " +
+              "a mutating request) return the same status with no such code, for any endpoint " +
+              "type, in any mode."
           ),
           '409': resp(
             'Maximum number of endpoints reached, or that URL is already registered ' +
@@ -243,8 +247,12 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
           }),
           '401': ref401(),
           '403': resp(
-            "Outgoing webhooks require a Pro subscription. Only returned in SaaS mode, and " +
-              "only for a WEBHOOK destination whose owner has since lost Pro access."
+            "Two unrelated causes share this status. The Pro entitlement gate returns it, " +
+              "with `code: 'forbidden'` in the body, only in SaaS mode and only for a WEBHOOK " +
+              "destination whose owner has since lost Pro access. The session-auth checks " +
+              "shared by every authenticated route (invalid request origin, or a read-only " +
+              "API token used on a mutating request) return the same status with no such " +
+              "code, for any endpoint type, in any mode."
           ),
           '404': ref404(),
           '429': resp('Rate limited'),
