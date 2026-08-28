@@ -1653,13 +1653,13 @@
         },
         "fields": {
           "gender": "genre",
-          "prefix": "titre",
+          "prefix": "préfixe",
           "suffix": "suffixe",
           "nickname": "surnom",
           "name": "prénom",
           "surname": "nom de famille",
           "middleName": "deuxième prénom",
-          "secondLastName": "second nom de famille",
+          "secondLastName": "deuxième nom de famille",
           "organization": "organisation",
           "jobTitle": "fonction"
         },
