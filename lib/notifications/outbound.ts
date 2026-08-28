@@ -266,15 +266,23 @@ export async function postJson(
     });
 
     request.on('error', (error: NodeJS.ErrnoException) => {
-      // The real errno, server-side only, for the same reason as the status
-      // log above: `code=refused` alone does not tell an operator whether
-      // that was ECONNREFUSED, EHOSTUNREACH, or ENETUNREACH.
-      log.warn(
-        { host: target.parsed.hostname, errno: error.code, code: categorizeError(error) },
-        'Outbound request failed'
-      );
-      // A destroy() from the timeout or deadline handlers also emits here;
-      // the settled guard keeps the first, more specific result.
+      // A destroy() from the timeout or deadline handlers above also emits
+      // an 'error' here (typically ECONNRESET), after the outcome has
+      // already been settled to 'timeout'. Logging the errno unconditionally
+      // in that case would contradict the outcome actually recorded: an
+      // operator would see errno=ECONNRESET, code=refused right next to a
+      // result of 'timeout'. Only log when this error is the thing actually
+      // deciding the outcome.
+      if (!settled) {
+        // The real errno, server-side only, for the same reason as the status
+        // log above: `code=refused` alone does not tell an operator whether
+        // that was ECONNREFUSED, EHOSTUNREACH, or ENETUNREACH.
+        log.warn(
+          { host: target.parsed.hostname, errno: error.code, code: categorizeError(error) },
+          'Outbound request failed'
+        );
+      }
+      // The settled guard keeps the first, more specific result.
       settle({ ok: false, code: categorizeError(error) });
     });
 
