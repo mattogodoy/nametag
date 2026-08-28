@@ -10,6 +10,7 @@ import NotificationChannelsCard from '@/components/NotificationChannelsCard';
 import NotificationEndpointsCard from '@/components/NotificationEndpointsCard';
 import { MAX_ENDPOINTS_PER_USER } from '@/lib/notifications/endpoint-health';
 import { canUseWebhooks } from '@/lib/notifications/entitlements';
+import { outboundPolicy } from '@/lib/net/url-validation';
 
 export default async function NotificationSettingsPage() {
   const session = await auth();
@@ -78,6 +79,7 @@ export default async function NotificationSettingsPage() {
         }))}
         canAdd={endpoints.length < MAX_ENDPOINTS_PER_USER}
         canUseWebhooks={await canUseWebhooks(session.user.id)}
+        requireHttps={outboundPolicy().requireHttps}
       />
 
       {!emailAvailable && (

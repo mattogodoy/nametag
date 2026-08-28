@@ -33,7 +33,13 @@ import NotificationEndpointsCard, {
 function renderCard(props: Partial<ComponentProps<typeof NotificationEndpointsCard>> = {}) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <NotificationEndpointsCard endpoints={[]} canAdd={true} canUseWebhooks={true} {...props} />
+      <NotificationEndpointsCard
+        endpoints={[]}
+        canAdd={true}
+        canUseWebhooks={true}
+        requireHttps={true}
+        {...props}
+      />
     </NextIntlClientProvider>
   );
 }
@@ -146,9 +152,13 @@ describe('NotificationEndpointsCard', () => {
         'tls',
         "The destination's certificate could not be verified. If it is on your own network, this is often a self-signed certificate that needs to be trusted or replaced.",
       ],
+      // redirect gets the saved-row variant too, for the same reason as
+      // blocked/http_4xx above: the test button only appears against an
+      // already-saved destination, so the message must not tell the user to
+      // edit a URL that cannot be edited in place.
       [
         'redirect',
-        'That address redirects to a different location, which is not supported. Point the topic URL at its final destination.',
+        'That address redirects to a different location, which is not supported. Remove this destination and add it again with a URL that does not redirect.',
       ],
     ])('maps the %s code to its own message', async (code, expected) => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: false, code })));
@@ -647,7 +657,7 @@ describe('NotificationEndpointsCard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
       await waitFor(() => {
-        expect(screen.getByText(secret)).toBeInTheDocument();
+        expect(screen.getByDisplayValue(secret)).toBeInTheDocument();
       });
       // The dialog says plainly this is the only chance to see it.
       expect(
@@ -659,7 +669,7 @@ describe('NotificationEndpointsCard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'I saved it' }));
 
       await waitFor(() => {
-        expect(screen.queryByText(secret)).not.toBeInTheDocument();
+        expect(screen.queryByDisplayValue(secret)).not.toBeInTheDocument();
       });
     });
 
@@ -695,13 +705,13 @@ describe('NotificationEndpointsCard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
       await waitFor(() => {
-        expect(screen.getByText(secret)).toBeInTheDocument();
+        expect(screen.getByDisplayValue(secret)).toBeInTheDocument();
       });
 
       fireEvent.keyDown(document, { key: 'Escape' });
 
       await waitFor(() => {
-        expect(screen.queryByText(secret)).not.toBeInTheDocument();
+        expect(screen.queryByDisplayValue(secret)).not.toBeInTheDocument();
       });
     });
 
@@ -718,13 +728,89 @@ describe('NotificationEndpointsCard', () => {
       openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-      await waitFor(() => screen.getByText(secret));
+      await waitFor(() => screen.getByDisplayValue(secret));
 
       fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
 
       await waitFor(() => {
         expect(writeText).toHaveBeenCalledWith(secret);
       });
+      // A silent success is indistinguishable from the click doing nothing
+      // at all, and this secret can never be fetched again once the dialog
+      // closes: the confirmation has to be visible, not just the clipboard
+      // write happening.
+      await waitFor(() => {
+        expect(screen.getByText('Copied to clipboard.')).toBeInTheDocument();
+      });
+    });
+
+    it('shows a visible failure message when the clipboard write fails, instead of doing nothing', async () => {
+      // Bite-check: an empty catch here makes the click a no-op on a
+      // plain-http self-hosted instance (navigator.clipboard is undefined),
+      // and the user believes the secret is copied when nothing happened.
+      Object.assign(navigator, {
+        clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+      });
+      const secret = 'f'.repeat(64);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret }, true, 201))
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => screen.getByDisplayValue(secret));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Could not copy. Select the text above and copy it manually.')
+        ).toBeInTheDocument();
+      });
+      // The secret must still be on screen: a failed copy is not a reason to
+      // hide the only surface that still has it.
+      expect(screen.getByDisplayValue(secret)).toBeInTheDocument();
+    });
+
+    it('lets a keyboard user select the secret text, not only a mouse user', async () => {
+      const secret = 'g'.repeat(64);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ endpoint: { id: 'ep-2' }, secret }, true, 201))
+      );
+      renderCard({ endpoints: [], canUseWebhooks: true });
+
+      openWebhookFormAndFill('Home Assistant', 'https://hooks.test/nametag');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      const field = await screen.findByDisplayValue(secret);
+      // A <code> block is not in the tab order and cannot be selected by
+      // keyboard alone; a text input is both.
+      expect(field.tagName).toBe('INPUT');
+      expect((field as HTMLInputElement).readOnly).toBe(true);
+    });
+
+    it('shows the webhook-specific URL hint on self-hosted instances, where http is allowed', () => {
+      renderCard({ endpoints: [], canUseWebhooks: true, requireHttps: false });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add webhook' }));
+
+      expect(
+        screen.queryByText('Must be an https:// address that accepts a POST.')
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows the https-required hint in SaaS mode', () => {
+      renderCard({ endpoints: [], canUseWebhooks: true, requireHttps: true });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add webhook' }));
+
+      expect(
+        screen.getByText('Must be an https:// address that accepts a POST.')
+      ).toBeInTheDocument();
     });
 
     it('maps a 403 creation response to the Pro upsell message, not the raw response body', async () => {
@@ -804,6 +890,52 @@ describe('NotificationEndpointsCard', () => {
           )
         ).toBeInTheDocument();
       });
+    });
+
+    it('shows webhook-specific wording for a redirect on a saved destination, not the ntfy topic-URL wording', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: false, code: 'redirect' })));
+      renderCard({
+        endpoints: [{ ...endpoint, id: 'ep-2', type: 'WEBHOOK', url: 'https://hooks.test/x' }],
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            'That address redirects to a different location, which is not supported. Remove this destination and add it again with a URL that does not redirect.'
+          )
+        ).toBeInTheDocument();
+      });
+      expect(screen.queryByText(/topic URL/)).not.toBeInTheDocument();
+    });
+
+    it('tells a lapsed Pro subscriber their subscription lapsed, not that the destination is unreachable', async () => {
+      // Bite-check: falling 403 through to the generic !response.ok branch
+      // would show "Could not reach that destination. It may be temporary,
+      // so it is worth trying again," which is false on every count: it is
+      // not a reachability problem, it is not temporary, and retrying can
+      // never succeed until the subscription is restored.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          jsonResponse({ error: 'Outgoing webhooks require a Pro subscription' }, false, 403)
+        )
+      );
+      renderCard({
+        endpoints: [{ ...endpoint, id: 'ep-2', type: 'WEBHOOK', url: 'https://hooks.test/x' }],
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Outgoing webhooks are part of Pro.')).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText(
+          'Could not reach that destination. It may be temporary, so it is worth trying again.'
+        )
+      ).not.toBeInTheDocument();
     });
 
     it('opening the webhook form closes an already-open ntfy form, so their Name fields never coexist', () => {

@@ -24,6 +24,13 @@ interface Props {
   endpoints: NotificationEndpointSummary[];
   canAdd: boolean;
   canUseWebhooks: boolean;
+  /**
+   * Whether this instance requires webhook endpoints to be https://. Mirrors
+   * `outboundPolicy().requireHttps`, which is true only in SaaS mode: a
+   * self-hosted instance accepts plain http, and the hint text below must not
+   * tell a self-hoster their working configuration is invalid.
+   */
+  requireHttps: boolean;
 }
 
 interface TestSuccess {
@@ -116,6 +123,7 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
 const SAVED_MESSAGE_OVERRIDES: Partial<Record<OutboundFailureCode, string>> = {
   blocked: 'endpointTestBlockedSaved',
   http_4xx: 'endpointTestRejectedSaved',
+  redirect: 'endpointTestRedirectSaved',
 };
 
 type MessageContext = 'form' | 'saved';
@@ -127,19 +135,25 @@ type MessageContext = 'form' | 'saved';
  * the key is absent, so an unrecognised value degrades to the generic
  * message rather than producing a wrong one.
  *
- * `http_4xx` is the only code whose wording actually mentions ntfy-specific
- * concepts ("check the topic name and the access token"), which reads as
- * nonsense for a webhook: a webhook has no topic and no access token, only a
- * signing secret it never sends anywhere. Every other code in the two maps
- * above is already channel-neutral, so only this one branches on `type`.
+ * Two of the ten codes in the maps above have wording that mentions
+ * ntfy-specific concepts and need webhook-specific copy: `http_4xx` ("check
+ * the topic name and the access token") and `redirect` ("point the topic URL
+ * at its final destination"). A webhook has no topic and no access token,
+ * only a signing secret it never sends anywhere, so both branch on `type`
+ * here. Every other code in the two maps above is already channel-neutral.
  */
 function messageKeyForOutboundCode(
   code: string,
   context: MessageContext,
   type: EndpointType
 ): string {
-  if (code === 'http_4xx' && type === 'WEBHOOK') {
-    return context === 'saved' ? 'webhookTestRejectedSaved' : 'webhookTestRejected';
+  if (type === 'WEBHOOK') {
+    if (code === 'http_4xx') {
+      return context === 'saved' ? 'webhookTestRejectedSaved' : 'webhookTestRejected';
+    }
+    if (code === 'redirect') {
+      return context === 'saved' ? 'webhookTestRedirectSaved' : 'webhookTestRedirect';
+    }
   }
   if (context === 'saved') {
     const override = SAVED_MESSAGE_OVERRIDES[code as OutboundFailureCode];
@@ -153,10 +167,16 @@ interface TestMessage {
   text: string;
 }
 
-export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWebhooks }: Props) {
+export default function NotificationEndpointsCard({
+  endpoints,
+  canAdd,
+  canUseWebhooks,
+  requireHttps,
+}: Props) {
   const t = useTranslations('settings.notifications');
   const tErrors = useTranslations('errors.server');
   const tAuth = useTranslations('errors.auth');
+  const tCommon = useTranslations('common');
   const router = useRouter();
 
   const [showForm, setShowForm] = useState(false);
@@ -179,6 +199,15 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
   // dialog below sets this back to null rather than, say, remembering it for
   // "show again". There is nowhere to fetch it back from.
   const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
+
+  // Feedback for the Copy button inside the secret dialog. Distinct from
+  // testResults below: this is about whether the copy itself worked, not
+  // about a destination's reachability, and it needs to say so visibly, not
+  // just silently succeed or silently do nothing. `role="status"` (rather
+  // than the `role="alert"` used elsewhere in this file) because this is a
+  // polite confirmation, not an interruption, even in its failure form: the
+  // secret stays on screen either way.
+  const [copyResult, setCopyResult] = useState<TestMessage | null>(null);
 
   const [testResults, setTestResults] = useState<Record<string, TestMessage>>({});
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
@@ -339,11 +368,18 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
 
       resetWebhookForm();
       setShowWebhookForm(false);
-      router.refresh();
 
+      // Put the secret in state before refreshing the route. router.refresh()
+      // re-renders this component with the new endpoint list from the
+      // server, and nothing in that re-render may run before the one and
+      // only copy of this secret is already committed to state: a refresh
+      // that somehow unmounted or reset this component ahead of the state
+      // update would lose it for good.
       if (secret) {
         setNewWebhookSecret(secret);
       }
+
+      router.refresh();
     } catch {
       setWebhookFormError(tErrors('internalError'));
     } finally {
@@ -357,15 +393,23 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
     // outside, it is gone: there is no way to read it back, so a user who
     // did not copy it has to remove this destination and create a new one.
     setNewWebhookSecret(null);
+    setCopyResult(null);
   }
 
   async function handleCopySecret() {
     if (!newWebhookSecret) return;
     try {
       await navigator.clipboard.writeText(newWebhookSecret);
+      setCopyResult({ ok: true, text: t('webhookSecretCopySuccess') });
     } catch {
-      // Clipboard may be unavailable (non-secure context); the secret is
-      // still visible on screen to select manually.
+      // Clipboard can fail for reasons the user cannot see: a plain-http
+      // self-hosted instance leaves `navigator.clipboard` undefined
+      // entirely, and some browsers deny the permission outright. A silent
+      // catch here reads as success, and this dialog is the only chance to
+      // ever see this secret again: staying quiet risks the user believing
+      // it is safely copied, dismissing the dialog, and losing it for good.
+      // The text is still visible and selectable above for a manual copy.
+      setCopyResult({ ok: false, text: t('webhookSecretCopyFailed') });
     }
   }
 
@@ -378,7 +422,10 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
    * destination being unreachable, which is wrong (nothing was even
    * attempted) and actively counterproductive (retrying immediately hits the
    * same limit again). 401 gets the same early, distinct treatment: a session
-   * that expired mid-visit is not the destination's fault either.
+   * that expired mid-visit is not the destination's fault either. So does
+   * 403: it means the entitlement check on the route was re-run and failed
+   * (a Pro subscription lapsed since the endpoint was created), which is
+   * neither the destination's fault nor something a retry can fix.
    */
   async function handleTest(id: string) {
     const type = endpoints.find((endpoint) => endpoint.id === id)?.type ?? 'NTFY';
@@ -395,6 +442,15 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
 
       if (response.status === 401) {
         setTestResults((prev) => ({ ...prev, [id]: { ok: false, text: tAuth('sessionExpired') } }));
+        return;
+      }
+
+      // A downgrade re-checked at send time (see the route), not a
+      // reachability problem: falling through to the generic branch below
+      // would tell a lapsed Pro subscriber their server is unreachable and
+      // worth retrying, when retrying can never succeed until they resubscribe.
+      if (response.status === 403) {
+        setTestResults((prev) => ({ ...prev, [id]: { ok: false, text: t('webhookProOnly') } }));
         return;
       }
 
@@ -721,7 +777,7 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
                       className={`w-full rounded-md border border-border bg-background px-3 py-2 text-foreground ${FOCUS_RING}`}
                     />
                     <p id="webhook-url-hint" className="text-xs text-muted mt-1">
-                      {t('webhookUrlHint')}
+                      {requireHttps ? t('webhookUrlHint') : t('webhookUrlHintHttpAllowed')}
                     </p>
                   </div>
 
@@ -771,16 +827,32 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
       )}
 
       {newWebhookSecret && (
-        <Modal isOpen={true} onClose={dismissWebhookSecret} title={t('webhookSecretTitle')}>
+        <Modal
+          isOpen={true}
+          onClose={dismissWebhookSecret}
+          title={t('webhookSecretTitle')}
+          closeAriaLabel={tCommon('close')}
+        >
           <div className="space-y-3">
             {/* Says plainly that this is the only chance to see it: a user
                 who dismisses this without copying has to delete the webhook
                 and create a new one, since there is no endpoint that reads
                 the secret back out. */}
             <p className="text-sm text-muted">{t('webhookSecretBody')}</p>
-            <code className="block px-3 py-2 rounded bg-background border border-border text-foreground text-sm break-all">
-              {newWebhookSecret}
-            </code>
+            {/* A readonly input, not a <code> block: an input is reachable by
+                Tab and supports the platform's native select-all shortcut
+                once focused, so a keyboard user can select and copy this the
+                same way a mouse user can triple-click it. The onFocus
+                handler selects the value immediately so tabbing to it is
+                enough, with no extra shortcut to discover. */}
+            <input
+              type="text"
+              readOnly
+              value={newWebhookSecret}
+              onFocus={(event) => event.currentTarget.select()}
+              aria-label={t('webhookSecretTitle')}
+              className={`block w-full px-3 py-2 rounded bg-background border border-border text-foreground text-sm font-mono ${FOCUS_RING}`}
+            />
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -797,6 +869,14 @@ export default function NotificationEndpointsCard({ endpoints, canAdd, canUseWeb
                 {t('webhookSecretDone')}
               </button>
             </div>
+            {copyResult && (
+              <p
+                role="status"
+                className={`text-sm ${copyResult.ok ? 'text-foreground' : 'text-red-600 dark:text-red-400'}`}
+              >
+                {copyResult.text}
+              </p>
+            )}
           </div>
         </Modal>
       )}
