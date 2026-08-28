@@ -238,6 +238,47 @@ describe('Auth API', () => {
       expect(response.status).toBe(400);
     });
 
+    it('should return the same status as today for a malformed body, not a 500', async () => {
+      // Catches: moving body parsing outside the try/catch when reordering
+      // it ahead of the rate limit check, which would turn a client mistake
+      // into an unhandled exception.
+      const request = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: '{not valid json',
+        headers: { 'content-type': 'application/json' },
+      });
+
+      const response = await register(request);
+
+      expect(response.status).toBe(400);
+      expect(mocks.checkRateLimitAsync).not.toHaveBeenCalled();
+    });
+
+    it('should rate limit by the normalized email, so two casings share a bucket', async () => {
+      // Catches: passing the raw (un-normalized) email as the rate-limit
+      // identifier, which would let "Foo@x.com" and "foo@x.com" bypass a
+      // shared limit by alternating case.
+      mocks.userFindUnique.mockResolvedValue(null);
+      mocks.userCreate.mockResolvedValue({ id: 'user-123', email: 'case@example.com', name: 'Test' });
+
+      const upper = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'Case@Example.COM', password: 'ValidPassword123!', name: 'Test' }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const lower = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'case@example.com', password: 'ValidPassword123!', name: 'Test' }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await register(upper);
+      await register(lower);
+
+      const identifiers = mocks.checkRateLimitAsync.mock.calls.map((call) => call[2]);
+      expect(identifiers).toEqual(['case@example.com', 'case@example.com']);
+    });
+
     it('should hash the password before storing', async () => {
       mocks.userFindUnique.mockResolvedValue(null);
       mocks.userCreate.mockResolvedValue({ id: 'user-123', email: 'test@example.com', name: 'Test' });
@@ -900,6 +941,46 @@ describe('Auth API', () => {
       const response = await forgotPassword(request);
 
       expect(response.status).toBe(400);
+    });
+
+    it('should return the same status as today for a malformed body, not a 500', async () => {
+      // Catches: moving body parsing outside the try/catch when reordering
+      // it ahead of the rate limit check, which would turn a client mistake
+      // into an unhandled exception.
+      const request = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: '{not valid json',
+        headers: { 'content-type': 'application/json' },
+      });
+
+      const response = await forgotPassword(request);
+
+      expect(response.status).toBe(400);
+      expect(mocks.checkRateLimitSync).not.toHaveBeenCalled();
+    });
+
+    it('should rate limit by the normalized email, so two casings share a bucket', async () => {
+      // Catches: passing the raw (un-normalized) email as the rate-limit
+      // identifier, which would let "Foo@x.com" and "foo@x.com" bypass a
+      // shared limit by alternating case.
+      mocks.userFindUnique.mockResolvedValue(null);
+
+      const upper = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'Case@Example.COM' }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const lower = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'case@example.com' }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await forgotPassword(upper);
+      await forgotPassword(lower);
+
+      const identifiers = mocks.checkRateLimitSync.mock.calls.map((call) => call[2]);
+      expect(identifiers).toEqual(['case@example.com', 'case@example.com']);
     });
 
     describe('Email Case Sensitivity', () => {
