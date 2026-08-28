@@ -255,6 +255,43 @@ function resolveFromCfConnectingIp(request: Request): string | null {
   return net.isIP(trimmed) !== 0 ? trimmed : null;
 }
 
+/**
+ * A client can send an arbitrarily long header value; without a bound, that
+ * is a free way to inflate every log line that includes it. This is
+ * generous enough to hold a realistic x-forwarded-for chain (several dozen
+ * IPv6 addresses) while still capping the worst case.
+ */
+const MAX_LOGGED_RAW_HEADER_LENGTH = 500;
+
+/**
+ * Get the raw value of whichever header TRUSTED_PROXY_HEADER is configured
+ * to read, truncated to a bounded length, for DIAGNOSTIC LOGGING ONLY.
+ *
+ * Callers should only include this in a log entry when
+ * `resolveTrustedClientIp` returned `null` for the same request, never on
+ * every request: this is exactly the raw, untrusted value that resolution
+ * failed to validate, so its only purpose is letting an operator see what
+ * actually arrived and work out the right TRUSTED_PROXY_COUNT or
+ * TRUSTED_PROXY_HEADER value. Logging it unconditionally would both add
+ * noise to every request and let a client inflate every log line by sending
+ * a long header, which the truncation here bounds but does not eliminate on
+ * its own.
+ *
+ * Returns `undefined` (not `null`) when the configured header is absent,
+ * so callers can spread it into a log object and have the key disappear
+ * entirely rather than appearing with an empty value.
+ */
+export function getRawTrustedProxyHeaderForLogging(request: Request): string | undefined {
+  const value = request.headers.get(env.TRUSTED_PROXY_HEADER);
+  if (!value) {
+    return undefined;
+  }
+
+  return value.length > MAX_LOGGED_RAW_HEADER_LENGTH
+    ? `${value.slice(0, MAX_LOGGED_RAW_HEADER_LENGTH)}...(truncated)`
+    : value;
+}
+
 let warnedMissingTrustedIp = false;
 
 /**
