@@ -127,7 +127,16 @@ export const GET = withLogging(async function GET(request: Request) {
             personName,
             dateTitle,
             formattedDate,
-            date: getLocalDateString(parseCalendarDate(importantDate.date)),
+            // The occurrence being reminded about, not the stored value: a
+            // day-of reminder fires precisely when that occurrence is today
+            // (see shouldSendImportantDateReminder), so `today` already IS
+            // it. Using the stored date here would report a birthday's
+            // *birth* year forever, disagree with the lead event below (which
+            // reports the projected occurrence), and, for a year-unknown
+            // date, assert YEAR_UNKNOWN_SENTINEL as a real year. `date` is a
+            // published contract: it always means "the day this reminder is
+            // about", never "the day this record was originally entered".
+            date: getLocalDateString(today),
             dateType: importantDate.type,
           },
           unsubscribeUrl,

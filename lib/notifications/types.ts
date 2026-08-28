@@ -16,7 +16,15 @@ export type ReminderNotification =
       personName: string;
       dateTitle: string;
       formattedDate: string;
-      /** Raw ISO calendar date (YYYY-MM-DD), unambiguous regardless of the sending user's locale. */
+      /**
+       * Raw ISO calendar date (YYYY-MM-DD) of the occurrence this reminder is
+       * about, unambiguous regardless of the sending user's locale. Always
+       * today's date, not the stored value: a day-of reminder fires
+       * precisely when the occurrence is today. Never the sentinel year used
+       * for a year-unknown date, since an occurrence is always projected
+       * into the real year it falls in. Deliberately not the stored date:
+       * see important_date_lead below for why the two events must agree.
+       */
       date: string;
       /** Predefined key ("birthday", "anniversary", "nameday", "memorial") or null for custom dates. */
       dateType: string | null;
@@ -27,7 +35,13 @@ export type ReminderNotification =
       personName: string;
       dateTitle: string;
       formattedDate: string;
-      /** Raw ISO calendar date (YYYY-MM-DD), unambiguous regardless of the sending user's locale. */
+      /**
+       * Raw ISO calendar date (YYYY-MM-DD) of the projected occurrence this
+       * reminder is about (`nextOccurrence`), matching important_date above:
+       * both events use the occurrence, never the stored date, so a receiver
+       * gets one consistent meaning for `date` regardless of which event
+       * kind it sees.
+       */
       date: string;
       daysUntil: number;
     }

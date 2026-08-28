@@ -1,9 +1,12 @@
 import { decryptSecret } from '@/lib/crypto/secrets';
+import { createModuleLogger } from '@/lib/logger';
 import { getVersion } from '@/lib/version';
 import { postJson, type OutboundResult } from '../outbound';
 import { renderShortForm } from '../render';
 import { signPayload } from '../signature';
 import type { NotificationEnvelope, ReminderNotification } from '../types';
+
+const log = createModuleLogger('notifications:webhook');
 
 export interface WebhookEndpoint {
   id: string;
@@ -27,11 +30,15 @@ function payloadData(notification: ReminderNotification): Record<string, unknown
         dateTitle: notification.dateTitle,
         dateType: notification.dateType,
         formattedDate: notification.formattedDate,
-        // Raw ISO calendar date (YYYY-MM-DD), alongside the display-formatted
-        // one. A receiver parsing formattedDate would have to guess whether
-        // "26 de agosto de 2026" is day-month-year or month-day-year; this
-        // field removes the guess. Comes straight from the envelope, which
-        // Task 3's change to app/api/cron/send-reminders/route.ts populates.
+        // Raw ISO calendar date (YYYY-MM-DD) of the occurrence, alongside the
+        // display-formatted one. A receiver parsing formattedDate would have
+        // to guess whether "26 de agosto de 2026" is day-month-year or
+        // month-day-year; this field removes the guess. Always the
+        // occurrence (today's date here, the projected date for the lead
+        // event below), never the originally-stored value: see the
+        // ReminderNotification doc comment in ../types.ts for why the two
+        // events must agree, and why a year-unknown date never reaches this
+        // as the sentinel year.
         date: notification.date,
       };
     case 'important_date_lead':
@@ -102,7 +109,7 @@ export async function sendWebhook(
   let secret: string;
   try {
     secret = decryptSecret(endpoint.secret);
-  } catch {
+  } catch (error) {
     // A stored secret that will not decrypt, which is what happens to every
     // stored secret if NEXTAUTH_SECRET is rotated. Report it rather than
     // throwing: this function's contract is to resolve with an outcome, and
@@ -110,6 +117,16 @@ export async function sendWebhook(
     // matching guard in sendNtfy). Not 'blocked', because the URL is fine
     // and telling the user to change it would send them after the wrong
     // thing.
+    //
+    // Logged here, though, because the user-facing side of 'unknown' says
+    // only "it may be temporary": after a secret rotation every webhook
+    // fails at once and nothing on the receiving end changed, so without
+    // this line an operator sees a wall of code=unknown with no way to tell
+    // a decrypt failure apart from an unexplained bug.
+    log.error(
+      { endpointId: endpoint.id, errorMessage: error instanceof Error ? error.message : 'Unknown error' },
+      'Webhook secret failed to decrypt'
+    );
     return { ok: false, code: 'unknown' };
   }
 
