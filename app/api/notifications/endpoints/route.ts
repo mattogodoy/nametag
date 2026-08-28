@@ -57,7 +57,8 @@ export const POST = withAuth(async (request, session) => {
 
     // A URL with no topic would produce a request ntfy silently ignores, so
     // reject it here rather than letting it fail on every reminder forever.
-    if (!parseNtfyUrl(url)) {
+    const parsedNtfy = parseNtfyUrl(url);
+    if (!parsedNtfy) {
       return NextResponse.json(
         {
           error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
@@ -66,6 +67,16 @@ export const POST = withAuth(async (request, session) => {
         { status: 400 }
       );
     }
+
+    // The normalised form, not the URL as typed. `@@unique([userId, url])`
+    // compares raw strings, so storing the input verbatim would let
+    // https://ntfy.sh/topic, https://ntfy.sh/topic/ and https://NTFY.sh/topic
+    // register as three separate rows all publishing to the same topic: three
+    // of the five per-user endpoint slots spent, and every reminder published
+    // three times over. parseNtfyUrl already lowercases the host (via
+    // `URL.origin`) and drops the trailing slash, so its own output is what
+    // both the uniqueness check and every future outbound request should see.
+    const normalizedUrl = `${parsedNtfy.base}${parsedNtfy.topic}`;
 
     // Cap before the DNS work below. Checked first so a user already at the
     // limit gets an immediate 409 rather than paying for a resolution on
@@ -93,7 +104,7 @@ export const POST = withAuth(async (request, session) => {
     // self-hoster with a correct URL and a blipping resolver being told to go
     // change it.
     try {
-      await resolveTarget(url, outboundPolicy());
+      await resolveTarget(normalizedUrl, outboundPolicy());
     } catch (error) {
       const code = error instanceof BlockedUrlError ? error.reason : 'invalid';
       return NextResponse.json({ error: 'That URL cannot be used', code }, { status: 400 });
@@ -105,7 +116,7 @@ export const POST = withAuth(async (request, session) => {
           userId: session.user.id,
           type: 'NTFY',
           label,
-          url,
+          url: normalizedUrl,
           secret: token ? encryptSecret(token) : null,
         },
         select: PUBLIC_FIELDS,

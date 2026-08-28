@@ -154,6 +154,19 @@ describe('endpoints API', () => {
     expect(mocks.resolveTarget).toHaveBeenCalledWith(valid.url, outboundPolicy());
   });
 
+  it('stores the normalised form of the URL, not the URL as typed', async () => {
+    // https://NTFY.sh/my-topic/ and https://ntfy.sh/my-topic point at the
+    // same topic. @@unique([userId, url]) compares raw strings, so storing
+    // the input verbatim would let a user register the same topic three
+    // times over (case, trailing slash), tripling every reminder and
+    // consuming three of five endpoint slots for one destination.
+    const response = await POST(post({ ...valid, url: 'https://NTFY.sh/my-topic/' }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.create.mock.calls[0][0].data.url).toBe('https://ntfy.sh/my-topic');
+    expect(mocks.resolveTarget).toHaveBeenCalledWith('https://ntfy.sh/my-topic', outboundPolicy());
+  });
+
   it('validates the URL against SSRF policy before storing it', async () => {
     mocks.resolveTarget.mockRejectedValue(new Error('Internal addresses are not allowed'));
 
@@ -405,5 +418,28 @@ describe('endpoint test-send API', () => {
     // act, via PUT, not a side effect of testing.
     expect(mocks.recordEndpointResult).not.toHaveBeenCalled();
     expect(await response.json()).toEqual({ ok: true });
+  });
+
+  it('rejects a WEBHOOK endpoint rather than sending its signing secret as a bearer token', async () => {
+    // WEBHOOK cannot be created today (Phase 4), so this is currently
+    // unreachable through the UI, but the guard exists specifically because
+    // sendNtfy decrypts endpoint.secret and sends it as an Authorization
+    // header to endpoint.url. A webhook's secret is an HMAC signing key, not
+    // a bearer token: handing this endpoint to sendNtfy would leak that
+    // signing key to the webhook's own URL. Nothing else in this file
+    // exercises that guard, so a regression here would go unnoticed.
+    mocks.findFirst.mockResolvedValue({
+      id: 'ep-1',
+      type: 'WEBHOOK',
+      url: 'https://example.test/hook',
+      secret: 'encrypted-signing-key',
+      enabled: true,
+    });
+
+    const response = await testEndpoint(jsonRequest('http://localhost/x'), ctx('ep-1'));
+
+    expect(response.status).toBe(400);
+    expect(mocks.sendNtfy).not.toHaveBeenCalled();
+    expect(mocks.recordEndpointResult).not.toHaveBeenCalled();
   });
 });
