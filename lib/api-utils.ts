@@ -7,12 +7,9 @@ import { validateOrigin } from '@/lib/csrf';
 import { runWithContext, updateContext } from '@/lib/logging/context';
 import { resolveApiToken } from '@/lib/api-tokens';
 import {
-  getClientIp,
   resolveTrustedClientIp,
   getRawTrustedProxyHeaderForLogging,
 } from '@/lib/net/client-ip';
-
-export { getClientIp };
 
 /** HTTP methods that read but never mutate. Allowed for read-only API tokens. */
 const READ_ONLY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

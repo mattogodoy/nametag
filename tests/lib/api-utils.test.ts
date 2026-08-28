@@ -5,7 +5,6 @@ import {
   InvalidJsonError,
   apiResponse,
   handleApiError,
-  getClientIp,
   MAX_REQUEST_SIZE,
 } from '@/lib/api-utils';
 
@@ -292,44 +291,6 @@ describe('api-utils', () => {
     });
   });
 
-  describe('getClientIp', () => {
-    it('should get IP from x-forwarded-for header', () => {
-      const request = new Request('http://localhost/api/test', {
-        headers: {
-          'x-forwarded-for': '192.168.1.1, 10.0.0.1',
-        },
-      });
-
-      expect(getClientIp(request)).toBe('192.168.1.1');
-    });
-
-    it('should get IP from x-real-ip header', () => {
-      const request = new Request('http://localhost/api/test', {
-        headers: {
-          'x-real-ip': '192.168.1.2',
-        },
-      });
-
-      expect(getClientIp(request)).toBe('192.168.1.2');
-    });
-
-    it('should prefer x-forwarded-for over x-real-ip', () => {
-      const request = new Request('http://localhost/api/test', {
-        headers: {
-          'x-forwarded-for': '192.168.1.1',
-          'x-real-ip': '192.168.1.2',
-        },
-      });
-
-      expect(getClientIp(request)).toBe('192.168.1.1');
-    });
-
-    it('should return unknown when no IP headers', () => {
-      const request = new Request('http://localhost/api/test');
-      expect(getClientIp(request)).toBe('unknown');
-    });
-  });
-
   describe('withAuth', () => {
     beforeEach(() => {
       vi.resetModules();
@@ -609,10 +570,11 @@ describe('api-utils', () => {
 
       it('logs the real address behind a spoofed prefix, not the spoofed one, with a correct proxy count', async () => {
         // This is the test that proves the log is now trustworthy. Before
-        // this change, withLogging used getClientIp (the leftmost
-        // x-forwarded-for entry), which is exactly the attacker-controlled
-        // value a spoofed prefix supplies. Catches: reverting withLogging to
-        // getClientIp, or anything else that logs the untrusted value.
+        // this change, withLogging used a best-effort, untrusted helper (the
+        // leftmost x-forwarded-for entry), which is exactly the
+        // attacker-controlled value a spoofed prefix supplies. Catches:
+        // reverting withLogging to an untrusted helper, or anything else
+        // that logs an unvalidated header value.
         process.env.TRUSTED_PROXY_COUNT = '1';
         const { withLogging } = await import('@/lib/api-utils');
         const { createModuleLogger } = await import('@/lib/logger');

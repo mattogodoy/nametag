@@ -124,7 +124,6 @@ vi.mock('../../lib/api-utils', () => ({
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }),
-  getClientIp: vi.fn(() => '127.0.0.1'),
   withLogging: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
 }));
 

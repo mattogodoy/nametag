@@ -462,15 +462,6 @@ describe('resolveTrustedClientIp', () => {
   });
 });
 
-describe('getClientIp (logging only)', () => {
-  it('never throws and always returns a string, even for garbage input', async () => {
-    const { getClientIp } = await import('@/lib/net/client-ip');
-    const request = requestWith({ 'x-forwarded-for': 'garbage, more-garbage' });
-
-    expect(getClientIp(request)).toBe('garbage');
-  });
-});
-
 describe('warnNoTrustedClientIp', () => {
   it('logs at most once per process, not once per call', async () => {
     // Catches: dropping the `warnedMissingTrustedIp` guard and logging on

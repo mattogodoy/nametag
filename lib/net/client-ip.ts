@@ -1,16 +1,20 @@
 /**
  * Client IP resolution.
  *
- * There are exactly two ways to read a client IP from a request in this app,
- * and they must never be confused for one another:
- *
- * - `resolveTrustedClientIp` is for security decisions (rate limiting, bans,
- *   anything that gates behaviour on "who is this"). It returns `null` when
- *   it cannot vouch for the result, and callers MUST treat `null` as "no
- *   trustworthy IP", never coerce it to a placeholder string.
- * - `getClientIp` is for logging only. It always returns a string, including
- *   a client-supplied one, because a human reading logs benefits from a
- *   best-effort value even when it cannot be trusted.
+ * `resolveTrustedClientIp` is for security decisions (rate limiting, bans,
+ * anything that gates behaviour on "who is this"). It returns `null` when
+ * it cannot vouch for the result, and callers MUST treat `null` as "no
+ * trustworthy IP", never coerce it to a placeholder string. There is no
+ * best-effort, untrusted alternative in this module: an earlier version
+ * exported one for logging, but nothing enforced that its callers only ever
+ * logged it, and it was deleted once logging switched to the trusted
+ * resolver (falling back to `getRawTrustedProxyHeaderForLogging` below when
+ * resolution fails). Do not reintroduce a function that returns a
+ * client-supplied IP string as if it were trustworthy; if a caller needs a
+ * best-effort value for a human to read, it should call
+ * `resolveTrustedClientIp` and handle `null` explicitly, or use
+ * `getRawTrustedProxyHeaderForLogging` for the specific diagnostic case that
+ * function exists for.
  *
  * Background: Next.js 16 removed `NextRequest.ip`, and this app runs as a
  * standalone Node server, so a route handler only ever sees a Web `Request`
@@ -68,36 +72,6 @@ import { env } from '@/lib/env';
 // mock '@/lib/logger' around without providing every export (much like
 // lib/env.ts itself falls back to plain console output for the same
 // layering reason). console.warn keeps this warning dependency-free.
-
-/**
- * Get a best-effort client IP for LOGGING ONLY.
- *
- * NEVER use this for a security decision (rate limiting, allow/deny lists,
- * lockouts, anything that partitions behaviour by "who sent this"). It reads
- * `x-forwarded-for` (the leftmost entry) and falls back to `x-real-ip`, then
- * `'unknown'`. Both headers are attacker-supplied on any request that reaches
- * this process, and the leftmost `x-forwarded-for` entry in particular is
- * exactly the value a client can set to whatever it wants: a reverse proxy
- * that appends to the header (the documented nginx and Caddy configs both do)
- * only ever adds entries to the right, so the leftmost one is never
- * validated by anything we control. That is fine for a log line a human will
- * read, and disqualifying for anything that gates behaviour.
- *
- * Use `resolveTrustedClientIp` for security decisions instead.
- */
-export function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp;
-  }
-
-  return 'unknown';
-}
 
 /**
  * Resolve a client IP that is safe to use for a security decision, or
