@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getRedis, isRedisConnected } from './redis';
 import { securityLogger } from './logger';
-import { rateLimitConfigs, type RateLimitType } from './rate-limit';
+import { rateLimitConfigs, buildRateLimitKey, type RateLimitType } from './rate-limit';
+import { resolveTrustedClientIp } from '@/lib/net/client-ip';
 
 /**
  * Redis-based distributed rate limiting
@@ -39,24 +40,12 @@ function cleanupMemoryStore() {
 }
 
 /**
- * Get client IP from request
- */
-function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp;
-  }
-
-  return 'unknown';
-}
-
-/**
  * Check rate limit using Redis
+ *
+ * `ip` here is a logging annotation only (passed through to
+ * securityLogger). The bucket `key` is built by the caller from a trusted
+ * IP resolution, so this function never uses `ip` for anything that gates
+ * behaviour.
  */
 async function checkRateLimitRedis(
   key: string,
@@ -226,14 +215,14 @@ export async function checkRateLimit(
   identifier?: string
 ): Promise<NextResponse | null> {
   const config = rateLimitConfigs[type];
-  const ip = getClientIp(request);
-  const key = identifier ? `ratelimit:${type}:${ip}:${identifier}` : `ratelimit:${type}:${ip}`;
+  const ip = resolveTrustedClientIp(request);
+  const key = `ratelimit:${buildRateLimitKey(type, ip, identifier)}`;
 
   return checkRateLimitRedis(
     key,
     config.maxAttempts,
     config.windowMs,
-    ip,
+    ip ?? 'unknown',
     type,
     identifier
   );
@@ -248,15 +237,15 @@ export async function resetRateLimit(
   identifier?: string
 ): Promise<void> {
   const redis = getRedis();
-  const ip = getClientIp(request);
-  const key = identifier ? `ratelimit:${type}:${ip}:${identifier}` : `ratelimit:${type}:${ip}`;
+  const ip = resolveTrustedClientIp(request);
+  const key = `ratelimit:${buildRateLimitKey(type, ip, identifier)}`;
 
   if (redis && isRedisConnected()) {
     try {
       await redis.del(key);
     } catch (error) {
       // Log but don't throw
-      securityLogger.suspiciousActivity(ip, 'Failed to reset rate limit', {
+      securityLogger.suspiciousActivity(ip ?? 'unknown', 'Failed to reset rate limit', {
         type,
         identifier,
         error: error instanceof Error ? error.message : 'Unknown error',

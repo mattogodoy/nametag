@@ -47,6 +47,15 @@ services:
       com.datadoghq.ad.logs: '[{"source": "nodejs", "service": "nametag"}]'
     ports:
       - 3000:3000
+      # TRUSTED_PROXY_HEADER / TRUSTED_PROXY_COUNT (see .env.example /
+      # docs/self-hosting/reverse-proxy.md) only protect rate limiting if
+      # this port cannot be reached except through your reverse proxy.
+      # Publishing it on all interfaces, as above, lets anyone who can reach
+      # the host bypass the proxy (and the header it sets) entirely. If you
+      # run a reverse proxy in front of Nametag (recommended for any
+      # instance reachable from outside your own network), bind this to
+      # localhost instead so only the proxy on the same host can reach it:
+      #   - "127.0.0.1:3000:3000"
     env_file:
       - .env
     volumes:

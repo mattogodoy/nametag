@@ -17,10 +17,15 @@ export const POST = withLogging(async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
   }
 
-  // Check rate limit
-  const rateLimitResponse = checkRateLimit(request, 'forgotPassword');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
+  // Unkeyed (IP-only) check before the body is parsed. There is no email to
+  // key on yet at this point, but a request that never becomes a
+  // well-formed, schema-valid body would otherwise hit no rate limit at
+  // all, since the email-keyed check below only runs after parsing
+  // succeeds. This restores the bound that existed before email keying was
+  // added.
+  const preParseRateLimitResponse = checkRateLimit(request, 'forgotPassword');
+  if (preParseRateLimitResponse) {
+    return preParseRateLimitResponse;
   }
 
   try {
@@ -40,6 +45,14 @@ export const POST = withLogging(async function POST(request: Request) {
 
     // Normalize email to lowercase for case-insensitive lookup
     const email = normalizeEmail(validation.data.email);
+
+    // Rate limit by email (and, when a trusted IP is available, by IP too).
+    // This is a mail-bombing vector: an attacker who rotates the client IP
+    // still shares a bucket with every other request for the same address.
+    const rateLimitResponse = checkRateLimit(request, 'forgotPassword', email);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     // Find user
     const user = await prisma.user.findUnique({

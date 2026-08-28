@@ -93,6 +93,33 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().min(1).optional(),
   VAPID_PRIVATE_KEY: z.string().min(1).optional(),
   VAPID_SUBJECT: z.string().min(1).optional(),
+
+  // Number of reverse proxy hops in front of this app that are trusted to
+  // append to X-Forwarded-For (or set X-Real-IP). Defaults to 1, matching
+  // both documented reverse-proxy configs (a single nginx or Caddy in
+  // front). See docs/self-hosting/reverse-proxy.md for how to choose a
+  // different value.
+  TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).default(1),
+
+  // Which header the trusted proxy actually manages. This cannot be
+  // inferred from the request: a proxy that replaces X-Real-IP but never
+  // touches X-Forwarded-For, and a proxy that correctly appends to
+  // X-Forwarded-For, can produce headers that are indistinguishable at
+  // runtime from a single request. Guessing wrong in either direction
+  // trusts an attacker-controlled value, so the operator must say which
+  // header their proxy sets rather than have the app infer it.
+  // Defaults to 'x-forwarded-for', matching both documented reverse-proxy
+  // configs (nginx with proxy_add_x_forwarded_for, Caddy) and preserving
+  // pre-existing behaviour for anyone upgrading without setting this.
+  // 'cf-connecting-ip' is for deployments behind Cloudflare, which
+  // OVERWRITES CF-Connecting-IP with the visitor address on every request
+  // rather than appending to it. This mode is only sound when the origin
+  // refuses connections that did not come from Cloudflare (IP allowlist,
+  // Authenticated Origin Pulls, or a Cloudflare Tunnel); see
+  // docs/self-hosting/reverse-proxy.md.
+  TRUSTED_PROXY_HEADER: z
+    .enum(['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'])
+    .default('x-forwarded-for'),
 });
 
 /**

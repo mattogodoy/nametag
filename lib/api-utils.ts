@@ -6,6 +6,10 @@ import { logger, createModuleLogger } from './logger';
 import { validateOrigin } from '@/lib/csrf';
 import { runWithContext, updateContext } from '@/lib/logging/context';
 import { resolveApiToken } from '@/lib/api-tokens';
+import {
+  resolveTrustedClientIp,
+  getRawTrustedProxyHeaderForLogging,
+} from '@/lib/net/client-ip';
 
 /** HTTP methods that read but never mutate. Allowed for read-only API tokens. */
 const READ_ONLY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -207,23 +211,6 @@ export function handleApiError(
 }
 
 /**
- * Get client IP from request for logging purposes
- */
-export function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp;
-  }
-
-  return 'unknown';
-}
-
-/**
  * Normalize email address to lowercase for consistent storage and lookup
  * Prevents case-sensitivity issues where Bob@test.com and bob@test.com
  * would be treated as different users
@@ -289,7 +276,27 @@ export function withLogging<
       const start = Date.now();
       const method = request.method;
       const path = new URL(request.url).pathname;
-      const ip = getClientIp(request);
+
+      // The logged `ip` field must be the value the app actually trusted
+      // for rate limiting, not a client-supplied best-effort guess: a log
+      // line claiming to record "the client" while actually recording
+      // whatever the client typed is worse than no field at all, since it
+      // looks trustworthy without being trustworthy. When resolution fails,
+      // 'unknown' matches the fallback already used for the same case in
+      // lib/rate-limit-redis.ts's securityLogger argument, so there is one
+      // convention for "no trusted IP" across logs rather than two. The raw
+      // header is attached only in that failure case (see
+      // getRawTrustedProxyHeaderForLogging): it is exactly the untrusted
+      // value resolution rejected, useful for diagnosing a wrong
+      // TRUSTED_PROXY_COUNT or TRUSTED_PROXY_HEADER, and would be pure noise
+      // (and a log-flooding vector, since a client controls its length) on
+      // every request that resolves normally.
+      const trustedIp = resolveTrustedClientIp(request);
+      const ip = trustedIp ?? 'unknown';
+      const rawProxyHeader =
+        trustedIp === null ? getRawTrustedProxyHeaderForLogging(request) : undefined;
+      const diagnosticFields =
+        rawProxyHeader !== undefined ? { rawProxyHeader } : {};
 
       try {
         const response = await handler(...args);
@@ -301,6 +308,7 @@ export function withLogging<
             status: response.status,
             durationMs: Date.now() - start,
             ip,
+            ...diagnosticFields,
           },
           `${method} ${path} ${response.status}`
         );
@@ -314,6 +322,7 @@ export function withLogging<
             status: 500,
             durationMs: Date.now() - start,
             ip,
+            ...diagnosticFields,
             err: error instanceof Error ? error : new Error(String(error)),
           },
           `${method} ${path} 500`

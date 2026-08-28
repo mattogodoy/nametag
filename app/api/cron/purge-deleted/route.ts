@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prismaIncludingDeleted, prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
-import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
+import { handleApiError, withLogging } from '@/lib/api-utils';
+import { resolveTrustedClientIp } from '@/lib/net/client-ip';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { logger, securityLogger } from '@/lib/logger';
 import { deletePersonPhotos } from '@/lib/photo-storage';
@@ -17,7 +18,7 @@ export const GET = withLogging(async function GET(request: Request) {
   try {
     // Verify the cron secret
     if (!hasValidBearerSecret(request, env.CRON_SECRET)) {
-      securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', {
+      securityLogger.authFailure(resolveTrustedClientIp(request) ?? 'unknown', 'Invalid cron secret', {
         endpoint: 'purge-deleted',
       });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

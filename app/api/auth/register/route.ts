@@ -20,10 +20,15 @@ export const POST = withLogging(async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
   }
 
-  // Check rate limit (async with Redis)
-  const rateLimitResponse = await checkRateLimit(request, 'register');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
+  // Unkeyed (IP-only) check before the body is parsed. There is no email to
+  // key on yet at this point, but a request that never becomes a
+  // well-formed, schema-valid body would otherwise hit no rate limit at
+  // all, since the email-keyed check below only runs after parsing
+  // succeeds. This restores the bound that existed before email keying was
+  // added.
+  const preParseRateLimitResponse = await checkRateLimit(request, 'register');
+  if (preParseRateLimitResponse) {
+    return preParseRateLimitResponse;
   }
 
   try {
@@ -33,17 +38,6 @@ export const POST = withLogging(async function POST(request: Request) {
         { error: 'Password registration is disabled. Use the configured SSO provider.' },
         { status: 403 }
       );
-    }
-
-    // Check if registration is disabled
-    if (process.env.DISABLE_REGISTRATION === 'true') {
-      const userCount = await prisma.user.count();
-      if (userCount > 0) {
-        return NextResponse.json(
-          { error: 'Registration is currently disabled' },
-          { status: 403 }
-        );
-      }
     }
 
     const body = await parseRequestBody(request);
@@ -57,6 +51,25 @@ export const POST = withLogging(async function POST(request: Request) {
 
     // Normalize email to lowercase to prevent case-sensitivity issues
     const email = normalizeEmail(validation.data.email);
+
+    // Rate limit by email (and, when a trusted IP is available, by IP too).
+    // This is a mail-bombing vector: an attacker who rotates the client IP
+    // still shares a bucket with every other request for the same address.
+    const rateLimitResponse = await checkRateLimit(request, 'register', email);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    // Check if registration is disabled
+    if (process.env.DISABLE_REGISTRATION === 'true') {
+      const userCount = await prisma.user.count();
+      if (userCount > 0) {
+        return NextResponse.json(
+          { error: 'Registration is currently disabled' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({

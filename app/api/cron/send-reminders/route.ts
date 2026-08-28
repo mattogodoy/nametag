@@ -4,7 +4,8 @@ import { dispatchAll } from '@/lib/notifications/dispatch';
 import type { NotificationEnvelope, StampTarget } from '@/lib/notifications/types';
 import { formatGraphName } from '@/lib/nameUtils';
 import { env, getAppUrl } from '@/lib/env';
-import { handleApiError, getClientIp, withLogging } from '@/lib/api-utils';
+import { handleApiError, withLogging } from '@/lib/api-utils';
+import { resolveTrustedClientIp } from '@/lib/net/client-ip';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { createUnsubscribeToken } from '@/lib/unsubscribe-tokens';
@@ -32,7 +33,7 @@ export const GET = withLogging(async function GET(request: Request) {
   try {
     // Verify the cron secret
     if (!hasValidBearerSecret(request, env.CRON_SECRET)) {
-      securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', {
+      securityLogger.authFailure(resolveTrustedClientIp(request) ?? 'unknown', 'Invalid cron secret', {
         endpoint: 'send-reminders',
       });
       return NextResponse.json(

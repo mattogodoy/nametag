@@ -238,6 +238,56 @@ describe('Auth API', () => {
       expect(response.status).toBe(400);
     });
 
+    it('should return the same status as today for a malformed body, not a 500, and still consume the unkeyed rate limit', async () => {
+      // Catches: moving body parsing outside the try/catch when reordering
+      // it ahead of the email-keyed rate limit check, which would turn a
+      // client mistake into an unhandled exception. Also catches: dropping
+      // the unkeyed pre-parse check entirely, which would let a flood of
+      // malformed bodies (never reaching the email-keyed check) bypass rate
+      // limiting altogether.
+      const request = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: '{not valid json',
+        headers: { 'content-type': 'application/json' },
+      });
+
+      const response = await register(request);
+
+      expect(response.status).toBe(400);
+      expect(mocks.checkRateLimitAsync).toHaveBeenCalledTimes(1);
+      expect(mocks.checkRateLimitAsync).toHaveBeenCalledWith(request, 'register');
+    });
+
+    it('should rate limit by the normalized email, so two casings share a bucket', async () => {
+      // Catches: passing the raw (un-normalized) email as the rate-limit
+      // identifier, which would let "Foo@x.com" and "foo@x.com" bypass a
+      // shared limit by alternating case.
+      mocks.userFindUnique.mockResolvedValue(null);
+      mocks.userCreate.mockResolvedValue({ id: 'user-123', email: 'case@example.com', name: 'Test' });
+
+      const upper = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'Case@Example.COM', password: 'ValidPassword123!', name: 'Test' }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const lower = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'case@example.com', password: 'ValidPassword123!', name: 'Test' }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await register(upper);
+      await register(lower);
+
+      // Each request makes two calls: an unkeyed pre-parse check (no third
+      // argument) and an email-keyed check after parsing. Only the keyed
+      // calls are relevant to bucket sharing.
+      const identifiers = mocks.checkRateLimitAsync.mock.calls
+        .map((call) => call[2])
+        .filter((identifier): identifier is string => identifier !== undefined);
+      expect(identifiers).toEqual(['case@example.com', 'case@example.com']);
+    });
+
     it('should hash the password before storing', async () => {
       mocks.userFindUnique.mockResolvedValue(null);
       mocks.userCreate.mockResolvedValue({ id: 'user-123', email: 'test@example.com', name: 'Test' });
@@ -632,9 +682,24 @@ describe('Auth API', () => {
         expect(mocks.userCreate).not.toHaveBeenCalled();
       });
 
-      it('should check user count before rate limiting when DISABLE_REGISTRATION is true', async () => {
+      it('rate limits by IP before parsing, then by email, before the DISABLE_REGISTRATION user-count check', async () => {
+        // Pins the deliberate order: an unkeyed IP check runs first (before
+        // the body is parsed), then an email-keyed check once the body is
+        // parsed and validated, and only then is the user count queried.
+        // Getting this backwards either lets a flood of requests reach the
+        // database count query before any rate limit applies, or (the
+        // original bug this route was fixed for) never rate limits a
+        // request that DISABLE_REGISTRATION would go on to block anyway.
         process.env.DISABLE_REGISTRATION = 'true';
-        mocks.userCount.mockResolvedValue(1);
+        const callOrder: string[] = [];
+        mocks.checkRateLimitAsync.mockImplementation(async () => {
+          callOrder.push('rateLimit');
+          return null;
+        });
+        mocks.userCount.mockImplementation(async () => {
+          callOrder.push('userCount');
+          return 1;
+        });
 
         const request = new Request('http://localhost/api/auth/register', {
           method: 'POST',
@@ -649,8 +714,9 @@ describe('Auth API', () => {
         const response = await register(request);
 
         expect(response.status).toBe(403);
-        // Should block before validation, so rate limit should still be called
-        expect(mocks.checkRateLimitAsync).toHaveBeenCalled();
+        expect(callOrder).toEqual(['rateLimit', 'rateLimit', 'userCount']);
+        expect(mocks.checkRateLimitAsync).toHaveBeenNthCalledWith(1, request, 'register');
+        expect(mocks.checkRateLimitAsync).toHaveBeenNthCalledWith(2, request, 'register', 'test@example.com');
       });
     });
 
@@ -900,6 +966,55 @@ describe('Auth API', () => {
       const response = await forgotPassword(request);
 
       expect(response.status).toBe(400);
+    });
+
+    it('should return the same status as today for a malformed body, not a 500, and still consume the unkeyed rate limit', async () => {
+      // Catches: moving body parsing outside the try/catch when reordering
+      // it ahead of the email-keyed rate limit check, which would turn a
+      // client mistake into an unhandled exception. Also catches: dropping
+      // the unkeyed pre-parse check entirely, which would let a flood of
+      // malformed bodies (never reaching the email-keyed check) bypass rate
+      // limiting altogether.
+      const request = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: '{not valid json',
+        headers: { 'content-type': 'application/json' },
+      });
+
+      const response = await forgotPassword(request);
+
+      expect(response.status).toBe(400);
+      expect(mocks.checkRateLimitSync).toHaveBeenCalledTimes(1);
+      expect(mocks.checkRateLimitSync).toHaveBeenCalledWith(request, 'forgotPassword');
+    });
+
+    it('should rate limit by the normalized email, so two casings share a bucket', async () => {
+      // Catches: passing the raw (un-normalized) email as the rate-limit
+      // identifier, which would let "Foo@x.com" and "foo@x.com" bypass a
+      // shared limit by alternating case.
+      mocks.userFindUnique.mockResolvedValue(null);
+
+      const upper = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'Case@Example.COM' }),
+        headers: { 'content-type': 'application/json' },
+      });
+      const lower = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'case@example.com' }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await forgotPassword(upper);
+      await forgotPassword(lower);
+
+      // Each request makes two calls: an unkeyed pre-parse check (no third
+      // argument) and an email-keyed check after parsing. Only the keyed
+      // calls are relevant to bucket sharing.
+      const identifiers = mocks.checkRateLimitSync.mock.calls
+        .map((call) => call[2])
+        .filter((identifier): identifier is string => identifier !== undefined);
+      expect(identifiers).toEqual(['case@example.com', 'case@example.com']);
     });
 
     describe('Email Case Sensitivity', () => {

@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
-import { handleApiError, withLogging, getClientIp } from '@/lib/api-utils';
+import { handleApiError, withLogging } from '@/lib/api-utils';
+import { resolveTrustedClientIp } from '@/lib/net/client-ip';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { createModuleLogger, securityLogger } from '@/lib/logger';
 import { updateContext } from '@/lib/logging/context';
@@ -29,7 +30,7 @@ export const GET = withLogging(async function GET(request: Request) {
 
   try {
     if (!hasValidBearerSecret(request, env.CRON_SECRET)) {
-      securityLogger.authFailure(getClientIp(request), 'Invalid cron secret', { endpoint: 'geocode' });
+      securityLogger.authFailure(resolveTrustedClientIp(request) ?? 'unknown', 'Invalid cron secret', { endpoint: 'geocode' });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

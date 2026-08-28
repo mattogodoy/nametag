@@ -110,4 +110,53 @@ describe('POST /api/auth/resend-verification - token hashing', () => {
     // The text body should contain a token parameter in the URL
     expect(emailCall.text).toBeDefined();
   });
+
+  it('should return the same status as today for a malformed body, not a 500, and still consume the unkeyed rate limit', async () => {
+    // Catches: moving body parsing outside the try/catch when reordering it
+    // ahead of the email-keyed rate limit check, which would turn a client
+    // mistake into an unhandled exception. Also catches: dropping the
+    // unkeyed pre-parse check entirely, which would let a flood of
+    // malformed bodies (never reaching the email-keyed check) bypass rate
+    // limiting altogether.
+    const request = new Request('http://localhost/api/auth/resend-verification', {
+      method: 'POST',
+      body: '{not valid json',
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(mocks.checkRateLimit).toHaveBeenCalledTimes(1);
+    expect(mocks.checkRateLimit).toHaveBeenCalledWith(request, 'resendVerification');
+  });
+
+  it('should rate limit by the normalized email, so two casings share a bucket', async () => {
+    // Catches: passing the raw (un-normalized) email as the rate-limit
+    // identifier, which would let "Foo@x.com" and "foo@x.com" bypass a
+    // shared limit by alternating case.
+    mocks.userFindUnique.mockResolvedValue(null);
+
+    const upper = new Request('http://localhost/api/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'Case@Example.COM' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const lower = new Request('http://localhost/api/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'case@example.com' }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+    await POST(upper);
+    await POST(lower);
+
+    // Each request makes two calls: an unkeyed pre-parse check (no third
+    // argument) and an email-keyed check after parsing. Only the keyed
+    // calls are relevant to bucket sharing.
+    const identifiers = mocks.checkRateLimit.mock.calls
+      .map((call) => call[2])
+      .filter((identifier): identifier is string => identifier !== undefined);
+    expect(identifiers).toEqual(['case@example.com', 'case@example.com']);
+  });
 });

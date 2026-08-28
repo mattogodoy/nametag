@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('rate-limit', () => {
   beforeEach(() => {
@@ -126,7 +126,14 @@ describe('rate-limit', () => {
       expect(checkRateLimit(request, 'login', 'email2@test.com')).toBeNull();
     });
 
-    it('should read IP from x-real-ip header as fallback', async () => {
+    it('does not trust x-real-ip, so a request carrying only it shares the fallback bucket', async () => {
+      // x-real-ip is never part of the trusted resolution path (see
+      // lib/net/client-ip.ts), so a request with no x-forwarded-for
+      // resolves to no trusted IP at all, regardless of x-real-ip, and
+      // shares the "no trusted IP" bucket with every other such request
+      // for this rate-limit type. This still blocks after maxAttempts, but
+      // for a different reason than the old (incorrect) "reads x-real-ip as
+      // a fallback" behavior this test used to pin.
       const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
 
       const request = new Request('http://localhost/api/test', {
@@ -135,7 +142,6 @@ describe('rate-limit', () => {
         },
       });
 
-      // Should work without x-forwarded-for
       for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
         checkRateLimit(request, 'login');
       }
@@ -189,6 +195,191 @@ describe('rate-limit', () => {
 
       // Should be allowed again
       expect(checkRateLimit(request, 'login', email)).toBeNull();
+    });
+  });
+
+  describe('trusted proxy resolution (GHSA-x7jp-pjg9-x996 regression)', () => {
+    const originalTrustedProxyCount = process.env.TRUSTED_PROXY_COUNT;
+
+    afterEach(() => {
+      if (originalTrustedProxyCount === undefined) {
+        delete process.env.TRUSTED_PROXY_COUNT;
+      } else {
+        process.env.TRUSTED_PROXY_COUNT = originalTrustedProxyCount;
+      }
+    });
+
+    function requestWithChain(chain: string): Request {
+      return new Request('http://localhost/api/test', {
+        headers: { 'x-forwarded-for': chain },
+      });
+    }
+
+    it('does not let an attacker get a fresh bucket by rotating the spoofed prefix', async () => {
+      // Catches: reading the leftmost x-forwarded-for entry instead of the
+      // rightmost trusted one. Without the fix, each distinct prefix below
+      // produces a distinct bucket and none of them would ever see a 429.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
+
+      const realClientIp = '203.0.113.42';
+
+      // Exhaust the bucket using one spoofed prefix.
+      for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
+        const result = checkRateLimit(requestWithChain(`1.1.1.1, ${realClientIp}`), 'login');
+        expect(result).toBeNull();
+      }
+
+      // A "new" attacker request with a different spoofed prefix, but the
+      // same real client IP behind it, must already be blocked.
+      const blocked = checkRateLimit(requestWithChain(`2.2.2.2, ${realClientIp}`), 'login');
+      expect(blocked).not.toBeNull();
+      expect(blocked?.status).toBe(429);
+
+      // A genuinely different real client IP is unaffected.
+      const otherClient = checkRateLimit(
+        requestWithChain(`3.3.3.3, 198.51.100.5`),
+        'login'
+      );
+      expect(otherClient).toBeNull();
+    });
+
+    it('falls back to a shared bucket, not the leftmost entry, when TRUSTED_PROXY_COUNT is 0', async () => {
+      // Catches: still parsing x-forwarded-for when the count is 0.
+      process.env.TRUSTED_PROXY_COUNT = '0';
+      const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
+
+      // Two different callers, distinguished only by x-forwarded-for, share
+      // the same bucket because no IP is trusted at all with count 0.
+      for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
+        checkRateLimit(requestWithChain('10.0.0.1'), 'login');
+      }
+
+      const result = checkRateLimit(requestWithChain('10.0.0.2'), 'login');
+      expect(result).not.toBeNull();
+      expect(result?.status).toBe(429);
+    });
+  });
+
+  describe('buildRateLimitKey', () => {
+    it('keys on the identifier alone when there is no trusted IP', async () => {
+      // Catches: deleting the `if (identifier)` branch, which is the entire
+      // reason the auth routes (forgot-password, resend-verification,
+      // register) narrow their bucket by email: without it, any request
+      // with no trusted IP collapses into the shared bucket regardless of
+      // the identifier passed in, silently undoing that fix.
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const key = buildRateLimitKey('forgotPassword', null, 'user@example.com');
+
+      expect(key).toBe('forgotPassword:user@example.com');
+      expect(key).not.toContain('shared');
+    });
+
+    it('still distinguishes two different identifiers when there is no trusted IP', async () => {
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const keyA = buildRateLimitKey('forgotPassword', null, 'a@example.com');
+      const keyB = buildRateLimitKey('forgotPassword', null, 'b@example.com');
+
+      expect(keyA).not.toBe(keyB);
+    });
+
+    it('falls back to a shared bucket only when there is neither a trusted IP nor an identifier', async () => {
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const key = buildRateLimitKey('login', null, undefined);
+
+      expect(key).toBe('login:shared');
+    });
+  });
+
+  describe('warnNoTrustedClientIp integration', () => {
+    const originalTrustedProxyCount = process.env.TRUSTED_PROXY_COUNT;
+    const originalTrustedProxyHeader = process.env.TRUSTED_PROXY_HEADER;
+
+    afterEach(() => {
+      if (originalTrustedProxyCount === undefined) {
+        delete process.env.TRUSTED_PROXY_COUNT;
+      } else {
+        process.env.TRUSTED_PROXY_COUNT = originalTrustedProxyCount;
+      }
+
+      if (originalTrustedProxyHeader === undefined) {
+        delete process.env.TRUSTED_PROXY_HEADER;
+      } else {
+        process.env.TRUSTED_PROXY_HEADER = originalTrustedProxyHeader;
+      }
+    });
+
+    it('checkRateLimit emits the operator warning when it falls back to the shared bucket', async () => {
+      // Catches: deleting the warnNoTrustedClientIp() call from the rate
+      // limiter (or from buildRateLimitKey). That call is the only signal
+      // an operator gets that TRUSTED_PROXY_COUNT is misconfigured and
+      // every unauthenticated request with no other identifier is sharing
+      // one bucket; losing it makes that condition silent.
+      process.env.TRUSTED_PROXY_COUNT = '0';
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { checkRateLimit } = await import('@/lib/rate-limit');
+
+      checkRateLimit(new Request('http://localhost/api/test'), 'login');
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('TRUSTED_PROXY_COUNT');
+
+      warnSpy.mockRestore();
+    });
+
+    it('fires the same warning, not a silently trusted value, when an x-real-ip-only proxy is left in the default header mode', async () => {
+      // The misconfiguration scenario from the security review: the proxy
+      // in front only manages x-real-ip (a real, common setup), but
+      // TRUSTED_PROXY_HEADER is left at its default of x-forwarded-for. A
+      // genuine client sends no x-forwarded-for of its own (browsers do not
+      // set this header), so the app has nothing to read in the mode it is
+      // configured for, and must fail into the shared bucket with a loud
+      // warning rather than silently trusting x-real-ip (which would only
+      // be correct if the operator had actually declared that mode).
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      delete process.env.TRUSTED_PROXY_HEADER;
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { checkRateLimit } = await import('@/lib/rate-limit');
+
+      const request = new Request('http://localhost/api/test', {
+        headers: { 'x-real-ip': '203.0.113.9' },
+      });
+      const result = checkRateLimit(request, 'login');
+
+      expect(result).toBeNull(); // first request in the shared bucket, still allowed
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('TRUSTED_PROXY_HEADER');
+
+      warnSpy.mockRestore();
+    });
+
+    it('fires the warning, not a silently trusted value, when cf-connecting-ip mode is configured but the header is absent', async () => {
+      // cf-connecting-ip mode has no chain to fall back on: if Cloudflare
+      // (or whatever set TRUSTED_PROXY_HEADER=cf-connecting-ip) did not
+      // attach the header, there is nothing else in this mode to read, and
+      // the request must fail into the shared bucket with a warning rather
+      // than silently trying x-forwarded-for or x-real-ip instead.
+      process.env.TRUSTED_PROXY_COUNT = '1';
+      process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { checkRateLimit } = await import('@/lib/rate-limit');
+
+      const request = new Request('http://localhost/api/test', {
+        headers: {
+          'x-forwarded-for': '203.0.113.9',
+          'x-real-ip': '203.0.113.9',
+        },
+      });
+      const result = checkRateLimit(request, 'login');
+
+      expect(result).toBeNull(); // first request in the shared bucket, still allowed
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('TRUSTED_PROXY_HEADER');
+
+      warnSpy.mockRestore();
     });
   });
 

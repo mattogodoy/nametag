@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   parseRequestBody,
   RequestTooLargeError,
   InvalidJsonError,
   apiResponse,
   handleApiError,
-  getClientIp,
   MAX_REQUEST_SIZE,
 } from '@/lib/api-utils';
 
@@ -292,44 +291,6 @@ describe('api-utils', () => {
     });
   });
 
-  describe('getClientIp', () => {
-    it('should get IP from x-forwarded-for header', () => {
-      const request = new Request('http://localhost/api/test', {
-        headers: {
-          'x-forwarded-for': '192.168.1.1, 10.0.0.1',
-        },
-      });
-
-      expect(getClientIp(request)).toBe('192.168.1.1');
-    });
-
-    it('should get IP from x-real-ip header', () => {
-      const request = new Request('http://localhost/api/test', {
-        headers: {
-          'x-real-ip': '192.168.1.2',
-        },
-      });
-
-      expect(getClientIp(request)).toBe('192.168.1.2');
-    });
-
-    it('should prefer x-forwarded-for over x-real-ip', () => {
-      const request = new Request('http://localhost/api/test', {
-        headers: {
-          'x-forwarded-for': '192.168.1.1',
-          'x-real-ip': '192.168.1.2',
-        },
-      });
-
-      expect(getClientIp(request)).toBe('192.168.1.1');
-    });
-
-    it('should return unknown when no IP headers', () => {
-      const request = new Request('http://localhost/api/test');
-      expect(getClientIp(request)).toBe('unknown');
-    });
-  });
-
   describe('withAuth', () => {
     beforeEach(() => {
       vi.resetModules();
@@ -588,6 +549,124 @@ describe('api-utils', () => {
         expect.objectContaining({ ip: '1.2.3.4' }),
         expect.any(String)
       );
+    });
+
+    describe('logged ip is the trusted value, not the untrusted best-effort one', () => {
+      const originalTrustedProxyCount = process.env.TRUSTED_PROXY_COUNT;
+      const originalTrustedProxyHeader = process.env.TRUSTED_PROXY_HEADER;
+
+      afterEach(() => {
+        if (originalTrustedProxyCount === undefined) {
+          delete process.env.TRUSTED_PROXY_COUNT;
+        } else {
+          process.env.TRUSTED_PROXY_COUNT = originalTrustedProxyCount;
+        }
+        if (originalTrustedProxyHeader === undefined) {
+          delete process.env.TRUSTED_PROXY_HEADER;
+        } else {
+          process.env.TRUSTED_PROXY_HEADER = originalTrustedProxyHeader;
+        }
+      });
+
+      it('logs the real address behind a spoofed prefix, not the spoofed one, with a correct proxy count', async () => {
+        // This is the test that proves the log is now trustworthy. Before
+        // this change, withLogging used a best-effort, untrusted helper (the
+        // leftmost x-forwarded-for entry), which is exactly the
+        // attacker-controlled value a spoofed prefix supplies. Catches:
+        // reverting withLogging to an untrusted helper, or anything else
+        // that logs an unvalidated header value.
+        process.env.TRUSTED_PROXY_COUNT = '1';
+        const { withLogging } = await import('@/lib/api-utils');
+        const { createModuleLogger } = await import('@/lib/logger');
+        const httpLog = createModuleLogger('http');
+
+        const handler = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+        const wrapped = withLogging(handler);
+
+        const request = new Request('http://localhost/api/test', {
+          method: 'GET',
+          headers: { 'x-forwarded-for': '6.6.6.6, 203.0.113.9' },
+        });
+        await wrapped(request);
+
+        expect(httpLog.info).toHaveBeenCalledWith(
+          expect.objectContaining({ ip: '203.0.113.9' }),
+          expect.any(String)
+        );
+        expect(httpLog.info).not.toHaveBeenCalledWith(
+          expect.objectContaining({ ip: '6.6.6.6' }),
+          expect.any(String)
+        );
+      });
+
+      it('logs "unknown" and includes the raw header when no trusted IP can be resolved', async () => {
+        // Fewer x-forwarded-for entries than the configured trusted proxy
+        // count resolves to no trusted IP (see lib/net/client-ip.ts). The
+        // raw header is attached here specifically so an operator can see
+        // what arrived and work out the right count.
+        process.env.TRUSTED_PROXY_COUNT = '2';
+        const { withLogging } = await import('@/lib/api-utils');
+        const { createModuleLogger } = await import('@/lib/logger');
+        const httpLog = createModuleLogger('http');
+
+        const handler = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+        const wrapped = withLogging(handler);
+
+        const request = new Request('http://localhost/api/test', {
+          method: 'GET',
+          headers: { 'x-forwarded-for': '203.0.113.9' },
+        });
+        await wrapped(request);
+
+        expect(httpLog.info).toHaveBeenCalledWith(
+          expect.objectContaining({ ip: 'unknown', rawProxyHeader: '203.0.113.9' }),
+          expect.any(String)
+        );
+      });
+
+      it('truncates the raw header when it is very long', async () => {
+        // A client controls the length of this header. Without a bound,
+        // failing resolution would be a way to inflate every log line
+        // arbitrarily, which is itself a log-flooding vector.
+        process.env.TRUSTED_PROXY_COUNT = '1';
+        const { withLogging } = await import('@/lib/api-utils');
+
+        const handler = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+        const wrapped = withLogging(handler);
+
+        const veryLongGarbage = 'a'.repeat(5000);
+        const request = new Request('http://localhost/api/test', {
+          method: 'GET',
+          headers: { 'x-forwarded-for': veryLongGarbage },
+        });
+        await wrapped(request);
+
+        const call = mockHttpLog.info.mock.calls.find(
+          (c) => (c[0] as { event?: string }).event === 'http.request.completed'
+        );
+        const loggedField = (call?.[0] as { rawProxyHeader?: string } | undefined)?.rawProxyHeader;
+        expect(loggedField).toBeDefined();
+        expect(loggedField!.length).toBeLessThan(veryLongGarbage.length);
+      });
+
+      it('does not include the raw header on the normal success path', async () => {
+        process.env.TRUSTED_PROXY_COUNT = '1';
+        const { withLogging } = await import('@/lib/api-utils');
+
+        const handler = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+        const wrapped = withLogging(handler);
+
+        const request = new Request('http://localhost/api/test', {
+          method: 'GET',
+          headers: { 'x-forwarded-for': '203.0.113.9' },
+        });
+        await wrapped(request);
+
+        const call = mockHttpLog.info.mock.calls.find(
+          (c) => (c[0] as { event?: string }).event === 'http.request.completed'
+        );
+        expect(call?.[0]).not.toHaveProperty('rawProxyHeader');
+      });
     });
   });
 
