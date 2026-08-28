@@ -211,7 +211,7 @@ curl -X PUT https://your-instance.example.com/api/user/weekly-digest \
 PUT /api/user/language
 ```
 
-Body: `{ "language": "en" | "es-ES" | "ja-JP" | "nb-NO" | "de-DE" }`
+Body: `{ "language": "en" | "es-ES" | "ja-JP" | "nb-NO" | "de-DE" | "fr-FR" }`
 
 ```bash
 curl -X PUT https://your-instance.example.com/api/user/language \

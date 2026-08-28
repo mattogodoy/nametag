@@ -49,6 +49,9 @@
     "groups": "分组",
     "relationshipTypes": "关系",
     "settings": "设置",
+    "menuLabel": "菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
     "search": {
       "placeholder": "搜索联系人...",
       "searching": "搜索中...",
@@ -62,6 +65,14 @@
     "journal": "日记",
     "createJournal": "新条目",
     "map": "地图"
+  },
+  "notifications": {
+    "push": {
+      "importantDateBody": "今天是{dateTitle}",
+      "importantDateLeadBody": "{formattedDate}是{dateTitle}",
+      "contactBody": "该联系一下了",
+      "digestTitle": "本周概览"
+    }
   },
   "settings": {
     "title": "设置",
@@ -140,7 +151,8 @@
         "zhCN": "简体中文",
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
-        "nlNL": "Nederlands (Dutch)"
+        "nlNL": "Nederlands (Dutch)",
+        "frFR": "Français (French)"
       }
     },
     "notifications": {
@@ -148,7 +160,7 @@
       "description": "提前提醒的时间以及每周摘要邮件",
       "leadTimeTitle": "提前提醒",
       "leadTimeDescription": "您希望提前多久收到重要日期的提醒。当天的提醒始终会发送。",
-      "leadTimeDayOf": "仅当天",
+      "leadTimeDayOf": "在事件当天",
       "leadTimeOneDay": "提前 1 天",
       "leadTimeDays": "{days, plural, other {提前 # 天}}",
       "leadTimeSummaryDayOf": "您将在每个事件当天收到一封邮件。",
@@ -162,6 +174,25 @@
       "digestError": "无法保存您的每周摘要设置",
       "digestSuccess": "每周摘要已更新",
       "emailNotConfigured": "此实例未配置邮件发送功能，因此无法发送这些通知。请联系管理员配置邮件服务。",
+      "channelsTitle": "提醒发送到哪里",
+      "channelsDescription": "提醒会发送到你在这里开启的所有渠道。",
+      "channelEmail": "电子邮件",
+      "channelPush": "推送通知",
+      "channelEmailError": "无法保存你的提醒送达设置",
+      "pushNotConfigured": "此服务器尚未配置推送通知。",
+      "pushUnsupported": "此浏览器不支持推送通知。",
+      "pushBlocked": "浏览器设置中已阻止本站的通知。",
+      "pushEnable": "在此设备上启用",
+      "pushEnabled": "已在此设备上启用",
+      "pushEnableError": "无法开启推送通知。",
+      "pushIosHint": "在 iPhone 和 iPad 上，请先将 Nametag 添加到主屏幕。",
+      "pushDevices": "接收通知的设备",
+      "pushRemove": "移除",
+      "pushRemoveError": "无法移除该设备",
+      "pushNoDevices": "暂无设备。",
+      "pushDeviceUnknown": "未知设备",
+      "pushDeviceBrowser": "浏览器",
+      "pushDeviceLabel": "{os} 上的 {browser}",
       "weekdays": {
         "0": "星期日",
         "1": "星期一",
@@ -1965,8 +1996,8 @@
       "note": "如果您没有创建账户，可以安全地忽略此邮箱。"
     },
     "importantDateReminder": {
-      "subject": "提醒：{personName} 的 {eventType} 即将到来",
-      "heading": "即将发生的事件提醒",
+      "subject": "提醒：今天是 {personName} 的 {eventType}",
+      "heading": "事件提醒",
       "infoBox": "{personName} 的 {eventType} 在 {date}。",
       "body": "不要忘记伸出援手，让他们的一天变得特别！",
       "button": "打开 Nametag",

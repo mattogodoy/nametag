@@ -203,27 +203,89 @@ describe('shouldSendImportantDateReminder, RECURRING non-YEARS interval, unknown
     ).toBe(false);
   });
 
-  it('fires 5 days early because 1 MONTH is approximated as 30 days, drifting off the true May 15 anniversary', () => {
-    // Surprising and worth flagging: when today is still before this year's
-    // May 15, the code anchors to last year's May 15 (2025) and counts
-    // forward in fixed 30-day steps. 12 steps of 30 days is 360 days, five
-    // days short of the real 365-day gap to this year's May 15, so the count
-    // lands on May 10, 2026, not May 15. shouldSendImportantDateReminder
-    // returns true on May 10 for this never-sent reminder, meaning the
-    // sentinel path fires a genuinely different day than the actual
-    // anniversary. Because both May 10 (via the drifted, reduced-year
-    // anchor) and May 15 (via the fresh, non-reduced anchor evaluated on
-    // that exact day, see the test above) return true, the interval math has
-    // two distinct "hit" days within the same yearly cycle for this
-    // never-sent reminder. In production, whichever day the cron job first
-    // observes as true wins and populates lastReminderSent, after which
-    // subsequent checks compare against that lastReminderSent date instead
-    // of re-deriving the anchor, so the reminder does not fire twice in the
-    // same cycle. But every future occurrence keeps counting in 30-day steps
-    // from whatever day it first fired, so the drift compounds year over
-    // year rather than resyncing to the calendar day of the actual event.
+  it('fires 5 days early because 1 MONTH is approximated as 30 days', () => {
+    // When today is before this year's May 15, getNextOccurrence normalizes
+    // the sentinel to last year's May 15 (2025) and counts forward in fixed
+    // 30-day steps. 12 * 30 = 360 days, five days short of the real 365-day
+    // gap, so the occurrence lands on May 10, not May 15. In production the
+    // cron fires on the first hit (May 10), sets lastReminderSent, and
+    // subsequent checks use that as the reference, preventing a second fire
+    // on May 15. The 30-day approximation is inherent to MONTHS arithmetic.
     expect(
       shouldSendImportantDateReminder({ ...base, date: unknownYearDate }, d('2026-05-10'))
+    ).toBe(true);
+  });
+});
+
+describe('shouldSendImportantDateReminder, RECURRING yearly with interval > 1', () => {
+  const base = {
+    reminderType: 'RECURRING' as const,
+    reminderInterval: 2,
+    reminderIntervalUnit: 'YEARS' as const,
+    lastReminderSent: null,
+  };
+
+  it('sends on the anniversary when the year is on-grid', () => {
+    // Event 1990, interval 2 => grid: 1990, 1992, ..., 2024, 2026, 2028
+    expect(
+      shouldSendImportantDateReminder({ ...base, date: stored(1990, 4, 12) }, d('2026-05-12'))
+    ).toBe(true);
+  });
+
+  it('does not send when the year is off-grid', () => {
+    // 2027 - 1990 = 37, 37 % 2 = 1 => off-grid
+    expect(
+      shouldSendImportantDateReminder({ ...base, date: stored(1990, 4, 12) }, d('2027-05-12'))
+    ).toBe(false);
+  });
+
+  it('sends again after the correct interval from lastReminderSent', () => {
+    expect(
+      shouldSendImportantDateReminder(
+        { ...base, date: stored(1990, 4, 12), lastReminderSent: d('2024-05-12') },
+        d('2026-05-12')
+      )
+    ).toBe(true);
+  });
+
+  it('does not send one year after lastReminderSent when interval is 2', () => {
+    expect(
+      shouldSendImportantDateReminder(
+        { ...base, date: stored(1990, 4, 12), lastReminderSent: d('2026-05-12') },
+        d('2027-05-12')
+      )
+    ).toBe(false);
+  });
+});
+
+describe('shouldSendImportantDateReminder, RECURRING with future event date', () => {
+  it('does not send before a future-dated recurring event', () => {
+    expect(
+      shouldSendImportantDateReminder(
+        {
+          date: stored(2030, 5, 15),
+          reminderType: 'RECURRING',
+          reminderInterval: 1,
+          reminderIntervalUnit: 'YEARS',
+          lastReminderSent: null,
+        },
+        d('2026-06-15')
+      )
+    ).toBe(false);
+  });
+
+  it('sends on the event date itself once it arrives', () => {
+    expect(
+      shouldSendImportantDateReminder(
+        {
+          date: stored(2030, 5, 15),
+          reminderType: 'RECURRING',
+          reminderInterval: 1,
+          reminderIntervalUnit: 'YEARS',
+          lastReminderSent: null,
+        },
+        d('2030-06-15')
+      )
     ).toBe(true);
   });
 });

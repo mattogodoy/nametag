@@ -55,8 +55,12 @@ describe('Locale Utilities', () => {
       expect(isSupportedLocale('nl-NL')).toBe(true);
     });
 
+    it('should return true for "fr-FR"', () => {
+      expect(isSupportedLocale('fr-FR')).toBe(true);
+    });
+
     it('should return false for unsupported locales', () => {
-      expect(isSupportedLocale('fr-FR')).toBe(false);
+      expect(isSupportedLocale('pt-BR')).toBe(false);
       expect(isSupportedLocale('pt')).toBe(false);
     });
   });
@@ -71,6 +75,7 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('it-IT')).toBe('it-IT');
       expect(normalizeLocale('ru-RU')).toBe('ru-RU');
       expect(normalizeLocale('nl-NL')).toBe('nl-NL');
+      expect(normalizeLocale('fr-FR')).toBe('fr-FR');
     });
 
     it('should map "es" to "es-ES"', () => {
@@ -109,8 +114,12 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('nl')).toBe('nl-NL');
     });
 
+    it('should map "fr" to "fr-FR"', () => {
+      expect(normalizeLocale('fr')).toBe('fr-FR');
+    });
+
     it('should default to "en" for unsupported locales', () => {
-      expect(normalizeLocale('fr-FR')).toBe('en');
+      expect(normalizeLocale('pt-BR')).toBe('en');
       expect(normalizeLocale('pt')).toBe('en');
     });
   });
@@ -146,6 +155,7 @@ describe('Locale Utilities', () => {
         geocodingEnabled: true,
         defaultReminderLeadDays: 0,
         weeklyDigestEnabled: false,
+        emailRemindersEnabled: true,
         weeklyDigestWeekday: 1,
         lastWeeklyDigestSent: null,
         createdAt: new Date(),
@@ -191,6 +201,7 @@ describe('Locale Utilities', () => {
         geocodingEnabled: true,
         defaultReminderLeadDays: 0,
         weeklyDigestEnabled: false,
+        emailRemindersEnabled: true,
         weeklyDigestWeekday: 1,
         lastWeeklyDigestSent: null,
         createdAt: new Date(),
@@ -419,11 +430,33 @@ describe('Locale Utilities', () => {
       expect(locale).toBe('nl-NL');
     });
 
+    it('should detect French from Accept-Language header', async () => {
+      const { headers } = await import('next/headers');
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('fr-FR,fr;q=0.9,en;q=0.8'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('fr-FR');
+    });
+
+    it('should map "fr" to "fr-FR"', async () => {
+      const { headers } = await import('next/headers');
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('fr,en;q=0.9'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('fr-FR');
+    });
+
 
     it('should default to "en" for unsupported languages', async () => {
       const { headers } = await import('next/headers');
       vi.mocked(headers).mockResolvedValue({
-        get: vi.fn().mockReturnValue('fr-FR,fr;q=0.9'),
+        get: vi.fn().mockReturnValue('pt-BR,pt;q=0.9'),
       } as any);
 
       const locale = await detectBrowserLocale();
@@ -456,7 +489,7 @@ describe('Locale Utilities', () => {
     it('should handle complex Accept-Language headers', async () => {
       const { headers } = await import('next/headers');
       vi.mocked(headers).mockResolvedValue({
-        get: vi.fn().mockReturnValue('fr-FR,fr;q=0.9,es-ES;q=0.8,es;q=0.7,en;q=0.6'),
+        get: vi.fn().mockReturnValue('pt-BR,pt;q=0.9,es-ES;q=0.8,es;q=0.7,en;q=0.6'),
       } as any);
 
       const locale = await detectBrowserLocale();

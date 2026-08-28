@@ -49,6 +49,9 @@
     "groups": "Grupos",
     "relationshipTypes": "Relaciones",
     "settings": "Configuración",
+    "menuLabel": "Menú",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
     "search": {
       "placeholder": "Buscar personas...",
       "searching": "Buscando...",
@@ -62,6 +65,14 @@
     "journal": "Diario",
     "createJournal": "Nueva entrada",
     "map": "Mapa"
+  },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} hoy",
+      "importantDateLeadBody": "{dateTitle} el {formattedDate}",
+      "contactBody": "Es momento de ponerse al día",
+      "digestTitle": "Tu semana"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -140,7 +151,8 @@
         "zhCN": "简体中文",
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
-        "nlNL": "Nederlands (Dutch)"
+        "nlNL": "Nederlands (Dutch)",
+        "frFR": "Français (French)"
       }
     },
     "notifications": {
@@ -148,7 +160,7 @@
       "description": "El aviso previo y el resumen semanal por correo",
       "leadTimeTitle": "Aviso previo",
       "leadTimeDescription": "Con cuánta antelación quieres que se te avise de una fecha importante. Siempre recibirás un recordatorio el mismo día.",
-      "leadTimeDayOf": "Solo el mismo día",
+      "leadTimeDayOf": "El día del evento",
       "leadTimeOneDay": "1 día antes",
       "leadTimeDays": "{days, plural, one {# día antes} other {# días antes}}",
       "leadTimeSummaryDayOf": "Recibirás un correo el día de cada evento.",
@@ -162,6 +174,25 @@
       "digestError": "No se ha podido guardar tu configuración del resumen semanal",
       "digestSuccess": "Resumen semanal actualizado",
       "emailNotConfigured": "El envío de correo no está configurado en esta instancia, así que estas notificaciones no se pueden enviar. Pide a tu administrador que configure el correo.",
+      "channelsTitle": "Dónde te llegan los recordatorios",
+      "channelsDescription": "Los recordatorios se envían a todos los canales que actives aquí.",
+      "channelEmail": "Correo electrónico",
+      "channelPush": "Notificaciones push",
+      "channelEmailError": "No se pudo guardar tu ajuste de entrega de recordatorios",
+      "pushNotConfigured": "Las notificaciones push no están configuradas en este servidor.",
+      "pushUnsupported": "Este navegador no admite notificaciones push.",
+      "pushBlocked": "Las notificaciones están bloqueadas para este sitio en tu navegador.",
+      "pushEnable": "Activar en este dispositivo",
+      "pushEnabled": "Activadas en este dispositivo",
+      "pushEnableError": "No se pudieron activar las notificaciones push.",
+      "pushIosHint": "En iPhone y iPad, añade Nametag a la pantalla de inicio primero.",
+      "pushDevices": "Dispositivos que reciben notificaciones",
+      "pushRemove": "Quitar",
+      "pushRemoveError": "No se pudo eliminar ese dispositivo",
+      "pushNoDevices": "Aún no hay dispositivos.",
+      "pushDeviceUnknown": "Dispositivo desconocido",
+      "pushDeviceBrowser": "Navegador",
+      "pushDeviceLabel": "{browser} en {os}",
       "weekdays": {
         "0": "Domingo",
         "1": "Lunes",
@@ -1965,8 +1996,8 @@
       "note": "Si no creaste una cuenta, puedes ignorar este correo de forma segura."
     },
     "importantDateReminder": {
-      "subject": "Recordatorio: {eventType} de {personName} se acerca",
-      "heading": "Recordatorio de Evento Próximo",
+      "subject": "Recordatorio: Hoy es el {eventType} de {personName}",
+      "heading": "Recordatorio de Evento",
       "infoBox": "El {eventType} de {personName} es el {date}.",
       "body": "¡No olvides comunicarte y hacer que su día sea especial!",
       "button": "Abrir Nametag",

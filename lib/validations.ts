@@ -726,6 +726,45 @@ export const createApiTokenSchema = z.object({
 });
 
 // ============================================
+// Notification schemas
+// ============================================
+
+/**
+ * A browser PushSubscription serialised with toJSON().
+ *
+ * Endpoints are long and vary per push service, so the ceiling is generous but
+ * present: an unbounded string here is a free write primitive.
+ */
+export const pushSubscribeSchema = z.object({
+  endpoint: z
+    .string()
+    .url()
+    .max(2000)
+    // Push services always issue https endpoints. Pinning the scheme keeps a
+    // hostile client from storing an http or data URL we would later hand to
+    // the web-push library.
+    .refine((value) => value.startsWith('https://'), {
+      message: 'Endpoint must be an https URL',
+    })
+    // Byte length, not character length. `endpoint` carries a UNIQUE btree
+    // index, and Postgres caps index entries near 2704 bytes, while Zod's
+    // .max() counts UTF-16 code units. Without this, 2000 multi-byte
+    // characters would pass validation and then fail at the index with a raw
+    // 500 instead of a clean 400.
+    .refine((value) => Buffer.byteLength(value, 'utf8') <= 2000, {
+      message: 'Endpoint is too long',
+    }),
+  keys: z.object({
+    p256dh: z.string().min(1).max(255),
+    auth: z.string().min(1).max(255),
+  }),
+});
+
+export const emailRemindersSchema = z.object({
+  enabled: z.boolean(),
+});
+
+// ============================================
 // Helper function for API validation
 // ============================================
 

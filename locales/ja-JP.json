@@ -49,6 +49,9 @@
     "groups": "グループ",
     "relationshipTypes": "関係",
     "settings": "設定",
+    "menuLabel": "メニュー",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
     "search": {
       "placeholder": "人物を検索...",
       "searching": "検索中...",
@@ -62,6 +65,14 @@
     "journal": "ジャーナル",
     "createJournal": "新しいエントリー",
     "map": "マップ"
+  },
+  "notifications": {
+    "push": {
+      "importantDateBody": "本日は{dateTitle}です",
+      "importantDateLeadBody": "{formattedDate}は{dateTitle}です",
+      "contactBody": "そろそろ連絡してみませんか",
+      "digestTitle": "今週の予定"
+    }
   },
   "settings": {
     "title": "設定",
@@ -140,7 +151,8 @@
         "zhCN": "简体中文",
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
-        "nlNL": "Nederlands (Dutch)"
+        "nlNL": "Nederlands (Dutch)",
+        "frFR": "Français (French)"
       }
     },
     "notifications": {
@@ -148,7 +160,7 @@
       "description": "事前通知のタイミングと週間まとめメール",
       "leadTimeTitle": "事前通知",
       "leadTimeDescription": "重要な日付をどのくらい前に知りたいかを設定します。当日のリマインダーは必ず届きます。",
-      "leadTimeDayOf": "当日のみ",
+      "leadTimeDayOf": "イベント当日",
       "leadTimeOneDay": "1日前",
       "leadTimeDays": "{days, plural, other {#日前}}",
       "leadTimeSummaryDayOf": "各イベントの当日にメールが届きます。",
@@ -162,6 +174,25 @@
       "digestError": "週間まとめの設定を保存できませんでした",
       "digestSuccess": "週間まとめを更新しました",
       "emailNotConfigured": "このインスタンスではメール送信が設定されていないため、これらの通知は送信できません。管理者にメール設定を依頼してください。",
+      "channelsTitle": "リマインダーの通知先",
+      "channelsDescription": "ここでオンにしたすべての方法にリマインダーが届きます。",
+      "channelEmail": "メール",
+      "channelPush": "プッシュ通知",
+      "channelEmailError": "リマインダーの配信設定を保存できませんでした",
+      "pushNotConfigured": "このサーバーではプッシュ通知が設定されていません。",
+      "pushUnsupported": "このブラウザはプッシュ通知に対応していません。",
+      "pushBlocked": "ブラウザの設定でこのサイトの通知がブロックされています。",
+      "pushEnable": "この端末で有効にする",
+      "pushEnabled": "この端末で有効です",
+      "pushEnableError": "プッシュ通知を有効にできませんでした。",
+      "pushIosHint": "iPhone と iPad では、先に Nametag をホーム画面に追加してください。",
+      "pushDevices": "通知を受け取る端末",
+      "pushRemove": "削除",
+      "pushRemoveError": "その端末を削除できませんでした",
+      "pushNoDevices": "端末はまだありません。",
+      "pushDeviceUnknown": "不明な端末",
+      "pushDeviceBrowser": "ブラウザ",
+      "pushDeviceLabel": "{os} の {browser}",
       "weekdays": {
         "0": "日曜日",
         "1": "月曜日",
@@ -1965,7 +1996,7 @@
       "note": "もしアカウントを作成していない場合はこのメールは無視して構いません。"
     },
     "importantDateReminder": {
-      "subject": "リマインダー: {personName}の {eventType}が近づいています",
+      "subject": "リマインダー: 今日は{personName}の{eventType}です",
       "heading": "イベントリマインダー",
       "infoBox": "{personName}の {eventType}は {date}です。",
       "body": "忘れずに連絡して、その日を特別なものにしましょう！",

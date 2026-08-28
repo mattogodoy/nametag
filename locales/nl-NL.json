@@ -49,6 +49,9 @@
     "groups": "Groepen",
     "relationshipTypes": "Relaties",
     "settings": "Instellingen",
+    "menuLabel": "Menu",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten",
     "search": {
       "placeholder": "Zoek personen...",
       "searching": "Zoeken...",
@@ -62,6 +65,14 @@
     "journal": "Dagboek",
     "createJournal": "Nieuwe invoer",
     "map": "Kaart"
+  },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} vandaag",
+      "importantDateLeadBody": "{dateTitle} op {formattedDate}",
+      "contactBody": "Tijd om weer contact op te nemen",
+      "digestTitle": "Jouw komende week"
+    }
   },
   "settings": {
     "title": "Instellingen",
@@ -140,7 +151,8 @@
         "zhCN": "简体中文",
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
-        "nlNL": "Nederlands (Dutch)"
+        "nlNL": "Nederlands (Dutch)",
+        "frFR": "Français (French)"
       }
     },
     "notifications": {
@@ -148,7 +160,7 @@
       "description": "Tijdstip van herinneringen en het wekelijkse overzicht per e-mail",
       "leadTimeTitle": "Vooraankondiging",
       "leadTimeDescription": "Hoe ver van tevoren u herinnerd wilt worden aan een belangrijke datum. U krijgt altijd een herinnering op de dag zelf.",
-      "leadTimeDayOf": "Alleen op de dag zelf",
+      "leadTimeDayOf": "Op de dag van het evenement",
       "leadTimeOneDay": "1 dag van tevoren",
       "leadTimeDays": "{days, plural, one {# dag van tevoren} other {# dagen van tevoren}}",
       "leadTimeSummaryDayOf": "U ontvangt een e-mail op de dag van elke gebeurtenis.",
@@ -162,6 +174,25 @@
       "digestError": "Uw instelling voor het wekelijkse overzicht kon niet worden opgeslagen",
       "digestSuccess": "Wekelijks overzicht bijgewerkt",
       "emailNotConfigured": "E-mailverzending is niet ingesteld op deze instantie, dus deze meldingen kunnen niet worden verstuurd. Vraag uw beheerder om e-mail in te stellen.",
+      "channelsTitle": "Waar herinneringen je bereiken",
+      "channelsDescription": "Herinneringen gaan naar elk kanaal dat je hier inschakelt.",
+      "channelEmail": "E-mail",
+      "channelPush": "Pushmeldingen",
+      "channelEmailError": "Je instelling voor het bezorgen van herinneringen kon niet worden opgeslagen",
+      "pushNotConfigured": "Pushmeldingen zijn niet ingesteld op deze server.",
+      "pushUnsupported": "Deze browser ondersteunt geen pushmeldingen.",
+      "pushBlocked": "Meldingen zijn voor deze site geblokkeerd in je browserinstellingen.",
+      "pushEnable": "Inschakelen op dit apparaat",
+      "pushEnabled": "Ingeschakeld op dit apparaat",
+      "pushEnableError": "Pushmeldingen konden niet worden ingeschakeld.",
+      "pushIosHint": "Voeg Nametag op iPhone en iPad eerst toe aan je beginscherm.",
+      "pushDevices": "Apparaten die meldingen ontvangen",
+      "pushRemove": "Verwijderen",
+      "pushRemoveError": "Dat apparaat kon niet worden verwijderd",
+      "pushNoDevices": "Nog geen apparaten.",
+      "pushDeviceUnknown": "Onbekend apparaat",
+      "pushDeviceBrowser": "Browser",
+      "pushDeviceLabel": "{browser} op {os}",
       "weekdays": {
         "0": "Zondag",
         "1": "Maandag",
@@ -1965,8 +1996,8 @@
       "note": "Als u geen account heeft aangemaakt, kunt u deze e-mail veilig negeren."
     },
     "importantDateReminder": {
-      "subject": "Herinnering: {personName}'s {eventType} komt eraan",
-      "heading": "Aankomende gebeurtenis herinnering",
+      "subject": "Herinnering: Vandaag is {personName}'s {eventType}",
+      "heading": "Gebeurtenisherinnering",
       "infoBox": "{personName}'s {eventType} is op {date}.",
       "body": "Vergeet niet contact op te nemen en maak hun dag speciaal!",
       "button": "Nametag openen",

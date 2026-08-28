@@ -12,6 +12,7 @@ import { journalPaths } from './journal';
 import { customFieldsPaths } from './customFields';
 import { apiTokenPaths } from './apiTokens';
 import { mapPaths } from './map';
+import { notificationsPaths } from './notifications';
 import { jsonResponse, ref400, ref401, ref404, refSuccess, pathParam, jsonBody, resp, sessionOrToken } from './helpers';
 
 // OpenAPI 3.1.0 specification generator for the Nametag API.
@@ -66,6 +67,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       { name: 'vCard', description: 'Direct vCard file import and upload for preview' },
       { name: 'Photos', description: 'Person and user photo management' },
       { name: 'Map', description: 'Map markers and address geocoding' },
+      { name: 'Notifications', description: 'Reminder delivery channels: email and browser push' },
       { name: 'Cron', description: 'Background jobs authenticated via CRON_SECRET bearer token' },
       { name: 'System', description: 'Health checks and system endpoints' },
     ],
@@ -109,6 +111,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       ...customFieldsPaths(),
       ...apiTokenPaths(),
       ...mapPaths(),
+      ...notificationsPaths(),
 
       // Photos (non-person-specific)
       '/api/photos/{personId}': {

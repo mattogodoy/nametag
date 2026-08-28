@@ -308,7 +308,7 @@ export function sharedSchemas(): Record<string, unknown> {
         nickname: { type: ['string', 'null'] },
         theme: { type: 'string', enum: ['LIGHT', 'DARK'] },
         dateFormat: { type: 'string', enum: ['MDY', 'DMY', 'YMD'] },
-        language: { type: 'string', description: 'Locale code (e.g. en, es-ES, ja-JP, nb-NO, de-DE)' },
+        language: { type: 'string', description: 'Locale code (e.g. en, es-ES, ja-JP, nb-NO, de-DE, fr-FR)' },
         graphMode: {
           oneOf: [
             { type: 'string', enum: ['individuals', 'bubbles'] },

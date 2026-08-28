@@ -14,7 +14,7 @@ Your name, surname, nickname, email address, and profile photo. Photo uploads su
 ## Appearance
 
 - **Theme**: Light or Dark. Dark is the default.
-- **Language**: choose from all of Nametag's supported languages, including English, Spanish, Japanese, Norwegian, German, Chinese, Italian, Russian, and Dutch.
+- **Language**: choose from all of Nametag's supported languages, including English, Spanish, Japanese, Norwegian, German, Chinese, Italian, Russian, Dutch, and French.
 - **Date format**: MDY, DMY, or YMD.
 - **Name order**: Western (first name, then last name) or Eastern (last name, then first name).
 - **Name display format**: Full name, Nickname Preferred, or Short.
@@ -29,7 +29,9 @@ Shows how to add Nametag to your home screen or desktop. On Android and desktop 
 
 ## Notifications
 
-Two settings, both about email.
+At the top of this page, a delivery channels card lets you turn email and browser push on or off, and manage which devices receive push. See [Notifications](/features/notifications/) for how those channels work.
+
+Below that, two settings, both about email.
 
 - **Advance notice**: how many days before an important date you want to hear about it, chosen from On the day only, 1 day before, 3, 7, 14, or 30 days before. Advance notice never replaces the day-of reminder. Choosing 7 days before means you get an email 7 days before the event and again on the day itself, always both. The page spells this out directly under the control so you never have to guess.
 - **Weekly summary**: an opt-in email summarizing what's coming up in the next 7 days, off by default. Turning it on reveals a day-of-week picker for when it should arrive. If a given week has nothing coming up, no email is sent that week. Silence is the expected behavior for a quiet week, not a sign anything is broken.
@@ -81,6 +83,6 @@ App version, license information, and links to the GitHub repository, release no
 | Name order | Western (first, then last), Eastern (last, then first) |
 | Name display | Full, Nickname Preferred, Short |
 | Graph mode | Individuals, Bubbles |
-| Supported languages | English, Spanish, Japanese, Norwegian, German, Chinese, Italian, Russian, Dutch (9 total) |
+| Supported languages | English, Spanish, Japanese, Norwegian, German, Chinese, Italian, Russian, Dutch, French (10 total) |
 | Advance notice | On the day only, 1, 3, 7, 14, or 30 days before |
 | Weekly summary | Off (default) or on, with a day of the week to send it |

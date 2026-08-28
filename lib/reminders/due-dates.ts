@@ -1,4 +1,7 @@
-import { parseCalendarDate, YEAR_UNKNOWN_SENTINEL } from '@/lib/date-format';
+import { parseCalendarDate } from '@/lib/date-format';
+import { getNextOccurrence, getIntervalMs } from '@/lib/upcoming-events';
+
+export { getIntervalMs };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -50,110 +53,32 @@ export function shouldSendImportantDateReminder(
   }
 
   if (importantDate.reminderType === 'RECURRING') {
-    // For recurring reminders, check based on the interval from the event date
     const interval = importantDate.reminderInterval || 1;
     const intervalUnit = importantDate.reminderIntervalUnit || 'YEARS';
 
-    // Normalize the event date
-    const eventDateNormalized = startOfDay(eventDate);
+    const next = getNextOccurrence(
+      eventDate,
+      today,
+      interval,
+      intervalUnit,
+      importantDate.lastReminderSent
+    );
 
-    // Don't send reminders before the event date
-    if (today.getTime() < eventDateNormalized.getTime()) {
+    if (next.getTime() !== today.getTime()) {
       return false;
     }
 
-    // Special handling for YEARS to avoid leap year drift
-    if (intervalUnit === 'YEARS') {
-      // Project the anniversary into the current year the same way the
-      // dashboard's getNextOccurrence does: a February 29 birthday has no
-      // matching day in non-leap years, and the Date constructor rolls it to
-      // March 1. A plain month/day equality check would never fire that year.
-      const thisYearOccurrence = startOfDay(
-        new Date(
-          today.getFullYear(),
-          eventDateNormalized.getMonth(),
-          eventDateNormalized.getDate()
-        )
-      );
-
-      // Check if today is the anniversary
-      if (thisYearOccurrence.getTime() !== today.getTime()) {
-        return false;
-      }
-
-      // If we've sent before, check if enough years have passed
-      if (importantDate.lastReminderSent) {
-        const lastSent = new Date(importantDate.lastReminderSent);
-        const lastSentYear = lastSent.getFullYear();
-        const todayYear = today.getFullYear();
-        const yearsSinceLastSent = todayYear - lastSentYear;
-
-        return yearsSinceLastSent >= interval;
-      }
-
-      // Never sent before - it's the anniversary, so send
-      return true;
-    }
-
-    // For other intervals (DAYS, WEEKS, MONTHS), use millisecond calculations
-    const intervalMs = getIntervalMs(interval, intervalUnit);
-
-    // If we've sent before, check if enough time has passed
     if (importantDate.lastReminderSent) {
       const lastSent = startOfDay(importantDate.lastReminderSent);
-
-      const timeSinceLastSent = today.getTime() - lastSent.getTime();
-
-      // Not enough time has passed since last reminder
-      if (timeSinceLastSent < intervalMs) {
+      if (lastSent.getTime() === today.getTime()) {
         return false;
       }
-
-      // Calculate the next scheduled reminder date from last sent
-      const intervalsPassed = Math.floor(timeSinceLastSent / intervalMs);
-      const nextReminderDate = startOfDay(new Date(lastSent.getTime() + (intervalsPassed * intervalMs)));
-
-      return nextReminderDate.getTime() === today.getTime();
     }
 
-    // Never sent before - check if we should send based on event date
-    // For unknown-year dates, normalize to current year to avoid
-    // DST drift over centuries breaking the interval math
-    if (eventDateNormalized.getFullYear() <= YEAR_UNKNOWN_SENTINEL) {
-      const currentYear = today.getFullYear();
-      eventDateNormalized.setFullYear(currentYear);
-      // If the normalized date is in the future, use previous year
-      if (eventDateNormalized.getTime() > today.getTime()) {
-        eventDateNormalized.setFullYear(currentYear - 1);
-      }
-    }
-    const timeSinceEvent = today.getTime() - eventDateNormalized.getTime();
-
-    // Calculate which occurrence this is
-    const intervalsPassed = Math.floor(timeSinceEvent / intervalMs);
-    const nextReminderDate = startOfDay(new Date(eventDateNormalized.getTime() + (intervalsPassed * intervalMs)));
-
-    return nextReminderDate.getTime() === today.getTime();
+    return true;
   }
 
   return false;
-}
-
-export function getIntervalMs(interval: number, unit: string): number {
-  const msPerDay = MS_PER_DAY;
-
-  switch (unit) {
-    case 'DAYS':
-      return interval * msPerDay;
-    case 'WEEKS':
-      return interval * 7 * msPerDay;
-    case 'MONTHS':
-      return interval * 30 * msPerDay; // Approximate
-    case 'YEARS':
-      return interval * 365 * msPerDay; // Approximate
-    default:
-      return 365 * msPerDay;
-  }
 }
 
 /** The same interval as whole days. MONTHS and YEARS stay approximate. */

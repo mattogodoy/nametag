@@ -162,3 +162,103 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/*
+ * Push notifications.
+ *
+ * The payload is encrypted in transit by the Web Push protocol, so the push
+ * service operator cannot read the person's name. Nothing here is written to
+ * the Cache API: this file deliberately caches almost nothing, and a
+ * notification body holding contact details is exactly what must not land on
+ * disk unencrypted.
+ */
+self.addEventListener('push', (event) => {
+  if (!event.data) {
+    return;
+  }
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    // A payload we cannot parse is not worth a blank notification.
+    return;
+  }
+
+  if (!payload || !payload.title) {
+    return;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      /*
+       * Replaces rather than stacks. A reminder re-sent for the same entity
+       * should update the existing notification, not pile a second one on top.
+       */
+      tag: payload.tag || 'nametag',
+      data: { url: payload.url || '/dashboard' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const target = (event.notification.data && event.notification.data.url) || '/dashboard';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      /*
+       * Prefer an open tab on this origin over a new window. Opening a second
+       * copy of the app is disorienting, and on a standalone PWA launch it can
+       * fail outright.
+       */
+      for (const client of clients) {
+        /*
+         * Resolved through URL and compared by origin rather than by string
+         * prefix. A prefix test accepts "https://app.test.evil.com" when the
+         * origin is "https://app.test", since the string does start with it.
+         */
+        let clientOrigin;
+        try {
+          clientOrigin = new URL(client.url).origin;
+        } catch {
+          continue;
+        }
+
+        if (clientOrigin === self.location.origin && 'focus' in client) {
+          // The result is intentionally discarded (not awaited before
+          // focus()), so a rejection here must be caught or it surfaces as an
+          // unhandled rejection in the worker instead of just a missed navigation.
+          client.navigate(target).catch(() => {});
+          return client.focus();
+        }
+      }
+
+      // `client.navigate()` above is blocked cross-origin by the platform, but
+      // `openWindow()` has no such check, so the target is validated here
+      // instead. `target` comes from the push payload; falling back to
+      // /dashboard keeps a malformed or hostile value from opening a window
+      // to an arbitrary origin.
+      //
+      // Resolved through URL and compared by origin rather than by string
+      // prefix. A prefix test accepts a protocol-relative "//evil.test/x",
+      // which resolves off-origin, and accepts "https://app.test.evil.com"
+      // when the origin is "https://app.test".
+      let safeTarget = '/dashboard';
+      try {
+        const resolved = new URL(target, self.location.origin);
+        if (resolved.origin === self.location.origin) {
+          safeTarget = target;
+        }
+      } catch {
+        // Unparseable: fall through to the dashboard.
+      }
+
+      return self.clients.openWindow(safeTarget);
+    })
+  );
+});

@@ -49,6 +49,9 @@
     "groups": "Группы",
     "relationshipTypes": "Связи",
     "settings": "Настройки",
+    "menuLabel": "Меню",
+    "openMenu": "Открыть меню",
+    "closeMenu": "Закрыть меню",
     "search": {
       "placeholder": "Поиск людей...",
       "searching": "Поиск...",
@@ -62,6 +65,14 @@
     "journal": "Журнал",
     "createJournal": "Новая запись",
     "map": "Карта"
+  },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} сегодня",
+      "importantDateLeadBody": "{dateTitle}: {formattedDate}",
+      "contactBody": "Пора связаться",
+      "digestTitle": "Ваша неделя"
+    }
   },
   "settings": {
     "title": "Настройки",
@@ -140,7 +151,8 @@
         "zhCN": "简体中文",
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
-        "nlNL": "Nederlands (Dutch)"
+        "nlNL": "Nederlands (Dutch)",
+        "frFR": "Français (French)"
       }
     },
     "notifications": {
@@ -148,7 +160,7 @@
       "description": "Время напоминаний и еженедельная сводка по почте",
       "leadTimeTitle": "Заблаговременное уведомление",
       "leadTimeDescription": "За сколько дней до важной даты вы хотите получить уведомление. Напоминание в день события вы получите в любом случае.",
-      "leadTimeDayOf": "Только в день события",
+      "leadTimeDayOf": "В день события",
       "leadTimeOneDay": "За 1 день",
       "leadTimeDays": "{days, plural, one {За # день} few {За # дня} many {За # дней} other {За # дня}}",
       "leadTimeSummaryDayOf": "Вы будете получать письмо в день каждого события.",
@@ -162,6 +174,25 @@
       "digestError": "Не удалось сохранить настройку еженедельной сводки",
       "digestSuccess": "Настройка еженедельной сводки обновлена",
       "emailNotConfigured": "На этом сервере не настроена отправка почты, поэтому эти уведомления невозможно отправить. Попросите администратора настроить отправку почты.",
+      "channelsTitle": "Куда приходят напоминания",
+      "channelsDescription": "Напоминания отправляются во все каналы, которые вы включите здесь.",
+      "channelEmail": "Электронная почта",
+      "channelPush": "Push-уведомления",
+      "channelEmailError": "Не удалось сохранить настройку доставки напоминаний",
+      "pushNotConfigured": "Push-уведомления не настроены на этом сервере.",
+      "pushUnsupported": "Этот браузер не поддерживает push-уведомления.",
+      "pushBlocked": "Уведомления для этого сайта заблокированы в настройках браузера.",
+      "pushEnable": "Включить на этом устройстве",
+      "pushEnabled": "Включено на этом устройстве",
+      "pushEnableError": "Не удалось включить push-уведомления.",
+      "pushIosHint": "На iPhone и iPad сначала добавьте Nametag на главный экран.",
+      "pushDevices": "Устройства, получающие уведомления",
+      "pushRemove": "Удалить",
+      "pushRemoveError": "Не удалось удалить это устройство",
+      "pushNoDevices": "Пока нет устройств.",
+      "pushDeviceUnknown": "Неизвестное устройство",
+      "pushDeviceBrowser": "Браузер",
+      "pushDeviceLabel": "{browser} на {os}",
       "weekdays": {
         "0": "Воскресенье",
         "1": "Понедельник",
@@ -1965,8 +1996,8 @@
       "note": "Если вы не создавали аккаунт, можете спокойно игнорировать это письмо."
     },
     "importantDateReminder": {
-      "subject": "Напоминание: скоро {eventType} ({personName})",
-      "heading": "Напоминание о предстоящем событии",
+      "subject": "Напоминание: сегодня {eventType} ({personName})",
+      "heading": "Напоминание о событии",
       "infoBox": "{eventType} ({personName}) - {date}.",
       "body": "Не забудьте поздравить и сделать этот день особенным!",
       "button": "Открыть Nametag",

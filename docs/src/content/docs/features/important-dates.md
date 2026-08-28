@@ -39,9 +39,9 @@ If a recurring date comes round more often than the lead time you asked for, for
 
 Your dashboard shows a list of upcoming birthdays, anniversaries, and other important dates across your whole network, sorted by how soon they're coming up. It's a quick way to see what's approaching without opening each person individually.
 
-## Email notifications
+## Notifications
 
-If you'd like an actual email when a reminder is due, Nametag needs an email provider configured, either Resend or SMTP. Without one configured, reminders still work: they show up on the dashboard, they're just not delivered to your inbox.
+If you'd like to actually be notified when a reminder is due, rather than only seeing it on the dashboard, turn on a delivery channel in Settings under Notifications: email (needs Resend or SMTP configured on your instance) or browser push (needs VAPID keys configured). See [Notifications](/features/notifications/) for how to set either one up. Without any channel configured, reminders still work: they show up on the dashboard, they're just not delivered anywhere else.
 
 Reminders are sent daily by a background job. See [Contact Reminders](/features/contact-reminders/) for details on how that job runs, since important date reminders and contact reminders share the same delivery mechanism.
 

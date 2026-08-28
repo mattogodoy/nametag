@@ -20,6 +20,9 @@ const eslintConfig = defineConfig([
     "**/playwright-report/**",
     "**/test-results/**",
     "**/coverage/**",
+    // Generated docs site output (Astro/Starlight build).
+    "docs/dist/**",
+    "docs/.astro/**",
   ]),
   // Global rules
   {

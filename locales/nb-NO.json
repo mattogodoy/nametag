@@ -37,9 +37,9 @@
     "veryStrong": "Svært sterk",
     "requirements": {
       "minLength": "Minst 8 tegn",
-      "uppercase": "Én stor bokstav (A–Z)",
-      "lowercase": "Én liten bokstav (a–z)",
-      "number": "Ett tall (0–9)",
+      "uppercase": "Én stor bokstav (A-Z)",
+      "lowercase": "Én liten bokstav (a-z)",
+      "number": "Ett tall (0-9)",
       "specialChar": "Ett spesialtegn (!@#$%^&*)"
     }
   },
@@ -49,6 +49,9 @@
     "groups": "Grupper",
     "relationshipTypes": "Relasjoner",
     "settings": "Innstillinger",
+    "menuLabel": "Meny",
+    "openMenu": "Åpne meny",
+    "closeMenu": "Lukk meny",
     "search": {
       "placeholder": "Søk etter personer...",
       "searching": "Søker...",
@@ -62,6 +65,14 @@
     "journal": "Journal",
     "createJournal": "Ny oppføring",
     "map": "Kart"
+  },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} i dag",
+      "importantDateLeadBody": "{dateTitle} den {formattedDate}",
+      "contactBody": "På tide å ta kontakt",
+      "digestTitle": "Uken din"
+    }
   },
   "settings": {
     "title": "Innstillinger",
@@ -140,7 +151,8 @@
         "zhCN": "简体中文",
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
-        "nlNL": "Nederlands (Dutch)"
+        "nlNL": "Nederlands (Dutch)",
+        "frFR": "Français (French)"
       }
     },
     "notifications": {
@@ -148,7 +160,7 @@
       "description": "Forhåndsvarsel og den ukentlige oppsummeringen på e-post",
       "leadTimeTitle": "Forhåndsvarsel",
       "leadTimeDescription": "Hvor langt i forveien du vil bli varslet om en viktig dato. Du får alltid en påminnelse selve dagen.",
-      "leadTimeDayOf": "Bare på selve dagen",
+      "leadTimeDayOf": "På dagen for hendelsen",
       "leadTimeOneDay": "1 dag før",
       "leadTimeDays": "{days, plural, one {# dag før} other {# dager før}}",
       "leadTimeSummaryDayOf": "Du får en e-post på selve dagen for hver hendelse.",
@@ -162,6 +174,25 @@
       "digestError": "Kunne ikke lagre innstillingen for ukentlig oppsummering",
       "digestSuccess": "Ukentlig oppsummering oppdatert",
       "emailNotConfigured": "E-postutsendelse er ikke satt opp på denne instansen, så disse varslene kan ikke sendes. Be administratoren din om å sette opp e-post.",
+      "channelsTitle": "Hvor påminnelser når deg",
+      "channelsDescription": "Påminnelser sendes til alle kanalene du slår på her.",
+      "channelEmail": "E-post",
+      "channelPush": "Push-varsler",
+      "channelEmailError": "Kunne ikke lagre innstillingen for påminnelseslevering",
+      "pushNotConfigured": "Push-varsler er ikke satt opp på denne serveren.",
+      "pushUnsupported": "Denne nettleseren støtter ikke push-varsler.",
+      "pushBlocked": "Varsler er blokkert for dette nettstedet i nettleserinnstillingene.",
+      "pushEnable": "Slå på for denne enheten",
+      "pushEnabled": "På for denne enheten",
+      "pushEnableError": "Kunne ikke aktivere push-varsler.",
+      "pushIosHint": "På iPhone og iPad må du først legge Nametag til på startskjermen.",
+      "pushDevices": "Enheter som mottar varsler",
+      "pushRemove": "Fjern",
+      "pushRemoveError": "Kunne ikke fjerne den enheten",
+      "pushNoDevices": "Ingen enheter ennå.",
+      "pushDeviceUnknown": "Ukjent enhet",
+      "pushDeviceBrowser": "Nettleser",
+      "pushDeviceLabel": "{browser} på {os}",
       "weekdays": {
         "0": "Søndag",
         "1": "Mandag",
@@ -248,9 +279,9 @@
       "interval24hours": "Hver 24. time",
       "importModeLabel": "Importmodus for nye kontakter",
       "importModeHelp": "Hvordan nye kontakter fra CardDAV-serveren skal håndteres",
-      "importModeManual": "Manuell – Gjennomgå før import",
-      "importModeNotify": "Varsle – Vis varsel når nye kontakter finnes",
-      "importModeAuto": "Automatisk – Importer nye kontakter automatisk",
+      "importModeManual": "Manuell - Gjennomgå før import",
+      "importModeNotify": "Varsle - Vis varsel når nye kontakter finnes",
+      "importModeAuto": "Automatisk - Importer nye kontakter automatisk",
       "cardDavNameFormatLabel": "Kontaktnavnformat",
       "cardDavNameFormatHelp": "Bestemmer hvordan navn vises pa telefonen din. De fullstendige navnedataene bevares alltid.",
       "cardDavNameFormat_FULL": "Fullt navn",
@@ -919,7 +950,7 @@
     "retryGeocodeFailed": "Adressen kunne fortsatt ikke lokaliseres",
     "createFirst": "Opprett din første person",
     "searchPeople": "Søk etter personer",
-    "showing": "Viser {start}–{end} av {total} personer",
+    "showing": "Viser {start}-{end} av {total} personer",
     "limitReached": "Du har nådd grensen på {limit} personer.",
     "upgradePlan": "Oppgrader abonnementet ditt",
     "noPeopleYet": "Ingen personer ennå",
@@ -1508,7 +1539,7 @@
     "createFirstGroup": "Opprett din første gruppe",
     "limitReached": "Du har nådd grensen på {limit} grupper.",
     "upgradePlan": "Oppgrader abonnementet ditt",
-    "showing": "Viser {start}–{end} av {total} grupper",
+    "showing": "Viser {start}-{end} av {total} grupper",
     "noMembersYet": "Ingen medlemmer ennå",
     "oneMember": "1 medlem",
     "membersCount": "{count} medlemmer"
@@ -1965,8 +1996,8 @@
       "note": "Hvis du ikke opprettet en konto, kan du trygt ignorere denne e-posten."
     },
     "importantDateReminder": {
-      "subject": "Påminnelse: {personName}s {eventType} nærmer seg",
-      "heading": "Påminnelse om kommende hendelse",
+      "subject": "Påminnelse: I dag er {personName}s {eventType}",
+      "heading": "Hendelsespåminnelse",
       "infoBox": "{personName}s {eventType} er {date}.",
       "body": "Ikke glem å ta kontakt og gjøre dagen deres spesiell!",
       "button": "Åpne Nametag",

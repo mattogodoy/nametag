@@ -49,6 +49,9 @@
     "groups": "Gruppen",
     "relationshipTypes": "Beziehungen",
     "settings": "Einstellungen",
+    "menuLabel": "Menü",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
     "search": {
       "placeholder": "Personen suchen...",
       "searching": "Suche läuft...",
@@ -62,6 +65,14 @@
     "journal": "Tagebuch",
     "createJournal": "Neuer Eintrag",
     "map": "Karte"
+  },
+  "notifications": {
+    "push": {
+      "importantDateBody": "{dateTitle} heute",
+      "importantDateLeadBody": "{dateTitle} am {formattedDate}",
+      "contactBody": "Zeit, sich zu melden",
+      "digestTitle": "Deine kommende Woche"
+    }
   },
   "settings": {
     "title": "Einstellungen",
@@ -140,7 +151,8 @@
         "zhCN": "简体中文",
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
-        "nlNL": "Nederlands (Dutch)"
+        "nlNL": "Nederlands (Dutch)",
+        "frFR": "Français (French)"
       }
     },
     "notifications": {
@@ -148,7 +160,7 @@
       "description": "Vorlaufzeit für Erinnerungen und die wöchentliche Übersicht per E-Mail",
       "leadTimeTitle": "Vorlaufzeit",
       "leadTimeDescription": "Wie weit im Voraus du an ein wichtiges Datum erinnert werden möchtest. Am Tag selbst bekommst du in jedem Fall eine Erinnerung.",
-      "leadTimeDayOf": "Nur am Tag selbst",
+      "leadTimeDayOf": "Am Tag des Ereignisses",
       "leadTimeOneDay": "1 Tag vorher",
       "leadTimeDays": "{days, plural, one {# Tag vorher} other {# Tage vorher}}",
       "leadTimeSummaryDayOf": "Du bekommst eine E-Mail am Tag jedes Termins.",
@@ -162,6 +174,25 @@
       "digestError": "Deine Einstellung für die wöchentliche Übersicht konnte nicht gespeichert werden",
       "digestSuccess": "Wöchentliche Übersicht aktualisiert",
       "emailNotConfigured": "Der E-Mail-Versand ist auf dieser Instanz nicht eingerichtet, daher können diese Benachrichtigungen nicht gesendet werden. Bitte deinen Administrator, den E-Mail-Versand einzurichten.",
+      "channelsTitle": "Wo dich Erinnerungen erreichen",
+      "channelsDescription": "Erinnerungen gehen an alle Kanäle, die du hier aktivierst.",
+      "channelEmail": "E-Mail",
+      "channelPush": "Push-Benachrichtigungen",
+      "channelEmailError": "Deine Einstellung für die Erinnerungszustellung konnte nicht gespeichert werden",
+      "pushNotConfigured": "Push-Benachrichtigungen sind auf diesem Server nicht eingerichtet.",
+      "pushUnsupported": "Dieser Browser unterstützt keine Push-Benachrichtigungen.",
+      "pushBlocked": "Benachrichtigungen sind für diese Seite in deinen Browsereinstellungen blockiert.",
+      "pushEnable": "Auf diesem Gerät aktivieren",
+      "pushEnabled": "Auf diesem Gerät aktiviert",
+      "pushEnableError": "Push-Benachrichtigungen konnten nicht aktiviert werden.",
+      "pushIosHint": "Füge Nametag auf iPhone und iPad zuerst zum Home-Bildschirm hinzu.",
+      "pushDevices": "Geräte, die Benachrichtigungen erhalten",
+      "pushRemove": "Entfernen",
+      "pushRemoveError": "Das Gerät konnte nicht entfernt werden",
+      "pushNoDevices": "Noch keine Geräte.",
+      "pushDeviceUnknown": "Unbekanntes Gerät",
+      "pushDeviceBrowser": "Browser",
+      "pushDeviceLabel": "{browser} auf {os}",
       "weekdays": {
         "0": "Sonntag",
         "1": "Montag",
@@ -248,9 +279,9 @@
       "interval24hours": "Alle 24 Stunden",
       "importModeLabel": "Importmodus für neue Kontakte",
       "importModeHelp": "Wie sollen neue Kontakte vom CardDAV-Server behandelt werden",
-      "importModeManual": "Manuell – Vor dem Import überprüfen",
-      "importModeNotify": "Benachrichtigen – Benachrichtigung bei neuen Kontakten anzeigen",
-      "importModeAuto": "Automatisch – Neue Kontakte automatisch importieren",
+      "importModeManual": "Manuell - Vor dem Import überprüfen",
+      "importModeNotify": "Benachrichtigen - Benachrichtigung bei neuen Kontakten anzeigen",
+      "importModeAuto": "Automatisch - Neue Kontakte automatisch importieren",
       "cardDavNameFormatLabel": "Kontaktnamensformat",
       "cardDavNameFormatHelp": "Bestimmt, wie Namen auf deinem Telefon angezeigt werden. Die vollstaendigen Namensdaten bleiben immer erhalten.",
       "cardDavNameFormat_FULL": "Vollstaendiger Name",
@@ -757,7 +788,7 @@
   "customFields": {
     "settings": {
       "title": "Benutzerdefinierte Felder",
-      "description": "Definiere eigene typisierte Felder und wende sie auf alle deine Personen an. Nutze sie, um dein Netzwerk zu filtern – z. B. «wer ist Vegetarier» oder «wer hat Haustiere».",
+      "description": "Definiere eigene typisierte Felder und wende sie auf alle deine Personen an. Nutze sie, um dein Netzwerk zu filtern, z. B. «wer ist Vegetarier» oder «wer hat Haustiere».",
       "newButton": "Neues Feld",
       "emptyTitle": "Noch keine benutzerdefinierten Felder",
       "emptyDescription": "Füge Felder wie Ernährungsgewohnheiten, Hobbys oder Haustiere hinzu und nutze sie zum Filtern deiner Personen.",
@@ -1965,8 +1996,8 @@
       "note": "Wenn du kein Konto erstellt hast, kannst du diese E-Mail ignorieren."
     },
     "importantDateReminder": {
-      "subject": "Erinnerung: {personName}s {eventType} steht bevor",
-      "heading": "Erinnerung an bevorstehenden Termin",
+      "subject": "Erinnerung: Heute ist {personName}s {eventType}",
+      "heading": "Termin-Erinnerung",
       "infoBox": "{personName}s {eventType} ist am {date}.",
       "body": "Vergiss nicht, dich zu melden und den Tag besonders zu machen!",
       "button": "Nametag öffnen",
