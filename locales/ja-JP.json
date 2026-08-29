@@ -241,6 +241,11 @@
       "upgradePlan": "プランをアップグレードする",
       "endpointTypeNtfy": "ntfy",
       "endpointTypeWebhook": "Webhook",
+      "ntfyTooltip": "ntfyはシンプルなプッシュ通知サービスです。スマートフォンにntfyアプリをインストールしてトピックを登録すると、Nametagがそこにリマインダーを送信します。",
+      "ntfyNone": "トピックはまだありません。",
+      "webhookSectionTitle": "Webhook",
+      "webhookTooltip": "Webhookは、通知のタイミングが来るたびにリマインダーの詳細をHTTP POSTであなたが管理するURLに送信します。",
+      "webhookNone": "Webhookはまだありません。",
       "weekdays": {
         "0": "日曜日",
         "1": "月曜日",

@@ -241,6 +241,11 @@
       "upgradePlan": "Oppgrader abonnementet ditt",
       "endpointTypeNtfy": "ntfy",
       "endpointTypeWebhook": "Webhook",
+      "ntfyTooltip": "ntfy er en enkel push-varslingstjeneste. Installer ntfy-appen på telefonen, abonner på et emne, og Nametag sender påminnelser dit.",
+      "ntfyNone": "Ingen emner ennå.",
+      "webhookSectionTitle": "Webhooker",
+      "webhookTooltip": "En webhook sender en HTTP POST-forespørsel med påminnelsesdetaljer til en URL du kontrollerer hver gang et varsel skal sendes.",
+      "webhookNone": "Ingen webhooker ennå.",
       "weekdays": {
         "0": "Søndag",
         "1": "Mandag",

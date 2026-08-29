@@ -241,6 +241,11 @@
       "upgradePlan": "升级您的计划",
       "endpointTypeNtfy": "ntfy",
       "endpointTypeWebhook": "Webhook",
+      "ntfyTooltip": "ntfy 是一个简单的推送通知服务。在手机上安装 ntfy 应用，订阅一个主题，Nametag 就会将提醒发送到那里。",
+      "ntfyNone": "暂无主题。",
+      "webhookSectionTitle": "Webhook",
+      "webhookTooltip": "Webhook 在每次通知到期时，向你控制的 URL 发送包含提醒详情的 HTTP POST 请求。",
+      "webhookNone": "暂无 Webhook。",
       "weekdays": {
         "0": "星期日",
         "1": "星期一",

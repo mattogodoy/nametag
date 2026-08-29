@@ -83,7 +83,8 @@ describe('NotificationEndpointsCard', () => {
   it('says so when there are no destinations yet', () => {
     renderCard({ endpoints: [] });
 
-    expect(screen.getByText('No destinations yet.')).toBeTruthy();
+    expect(screen.getByText('No topics yet.')).toBeTruthy();
+    expect(screen.getByText('No webhooks yet.')).toBeTruthy();
   });
 
   it('hides the add form and shows the limit message when canAdd is false', () => {
@@ -567,10 +568,7 @@ describe('NotificationEndpointsCard', () => {
   });
 
   describe('webhook destinations', () => {
-    it('distinguishes an ntfy destination from a webhook one in the list, using translated labels rather than the raw enum', () => {
-      // Mutation this catches: dropping the type badge, rendering it for
-      // only one of the two types, or falling back to the raw enum value
-      // (NTFY / WEBHOOK) leaves one of these queries empty or wrong-cased.
+    it('groups ntfy and webhook destinations under separate section headings', () => {
       renderCard({
         endpoints: [
           endpoint,
@@ -578,9 +576,11 @@ describe('NotificationEndpointsCard', () => {
         ],
       });
 
-      expect(screen.getByText('ntfy')).toBeInTheDocument();
-      expect(screen.getByText('Webhook')).toBeInTheDocument();
-      // Never the raw enum: "ntfy" must never render as all-caps "NTFY".
+      const headings = screen.getAllByRole('heading', { level: 3 });
+      const headingTexts = headings.map((h) => h.textContent);
+      expect(headingTexts.some((text) => text?.includes('ntfy'))).toBe(true);
+      expect(headingTexts.some((text) => text?.includes('Webhooks'))).toBe(true);
+      // Never the raw enum as all-caps.
       expect(screen.queryByText('NTFY')).not.toBeInTheDocument();
       expect(screen.queryByText('WEBHOOK')).not.toBeInTheDocument();
     });

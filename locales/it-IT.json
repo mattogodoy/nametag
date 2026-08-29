@@ -241,6 +241,11 @@
       "upgradePlan": "Aggiorna il tuo piano",
       "endpointTypeNtfy": "ntfy",
       "endpointTypeWebhook": "Webhook",
+      "ntfyTooltip": "ntfy è un semplice servizio di notifiche push. Installa l'app ntfy sul telefono, iscriviti a un topic e Nametag invierà i promemoria lì.",
+      "ntfyNone": "Ancora nessun topic.",
+      "webhookSectionTitle": "Webhook",
+      "webhookTooltip": "Un webhook invia una richiesta HTTP POST con i dettagli del promemoria a un URL che controlli ogni volta che è prevista una notifica.",
+      "webhookNone": "Ancora nessun webhook.",
       "weekdays": {
         "0": "Domenica",
         "1": "Lunedì",
