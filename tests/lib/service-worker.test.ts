@@ -35,6 +35,7 @@ interface Recorder {
   openedWindows: string[];
   focusedClients: string[];
   navigatedTo: string[];
+  deletes: string[];
 }
 
 interface Scope {
@@ -52,7 +53,7 @@ function keyOf(target: FakeRequest | string): string {
 /** Executes public/sw.js against a stub scope that records cache writes. */
 function loadWorker(): Scope {
   const handlers = new Map<string, Handler>();
-  const recorder: Recorder = { adds: [], puts: [], notifications: [], openedWindows: [], focusedClients: [], navigatedTo: [] };
+  const recorder: Recorder = { adds: [], puts: [], notifications: [], openedWindows: [], focusedClients: [], navigatedTo: [], deletes: [] };
   const store = new Map<string, unknown>();
   let openClients: Array<{ url: string; focus: () => Promise<unknown>; navigate: (url: string) => Promise<unknown> }> = [];
 
@@ -70,6 +71,19 @@ function loadWorker(): Scope {
       recorder.puts.push(keyOf(target));
       store.set(keyOf(target), response);
       return Promise.resolve();
+    },
+    // The real Cache API returns entries in insertion order, which is what
+    // the oldest-first trim relies on. A Map preserves that.
+    //
+    // Absolute URLs, because that is what a real Request carries. Returning
+    // the bare pathname this store is keyed by made `new URL(request.url)`
+    // throw inside the trim, which swallowed it and left this suite passing
+    // against a trim that never ran.
+    keys: () => Promise.resolve([...store.keys()].map((path) => ({ url: `${ORIGIN}${path}` }))),
+    delete: (target: FakeRequest | string) => {
+      const key = keyOf(target);
+      recorder.deletes.push(key);
+      return Promise.resolve(store.delete(key));
     },
   };
 
@@ -548,5 +562,71 @@ describe('public/sw.js', () => {
 
       expect(unhandled).toEqual([]);
     });
+  });
+});
+
+describe('build asset cache is bounded', () => {
+  /*
+   * The trim is registered through event.waitUntil from INSIDE the
+   * respondWith promise chain, so it is queued after dispatchFetch has
+   * already snapshotted its pending list. Awaiting a macrotask lets it run,
+   * which is also what the real worker does: waitUntil keeps the worker alive
+   * past respondWith settling.
+   */
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('evicts the oldest chunks once past the ceiling instead of growing forever', async () => {
+    // VERSION is a constant, so the activate purge never fires again after
+    // the first install: sw.js's bytes do not change between deploys. Every
+    // deploy produces a fresh set of content-hashed /_next/static/ URLs, so
+    // without a bound the cache grew without limit, held back only by the
+    // browser's origin-wide storage eviction, which is just as likely to drop
+    // the offline page as an old chunk.
+    const scope = loadWorker();
+
+    for (let i = 0; i < 130; i++) {
+      const { settled } = dispatchFetch(scope, `${ORIGIN}/_next/static/chunk-${i}.js`);
+      await settled;
+    }
+
+    await flush();
+
+    const cachedChunks = scope.recorder.puts.filter((url) => url.includes('/_next/static/'));
+    expect(cachedChunks).toHaveLength(130);
+
+    // Everything over the ceiling was evicted, oldest first.
+    expect(scope.recorder.deletes).toContain('/_next/static/chunk-0.js');
+    expect(scope.recorder.deletes).not.toContain('/_next/static/chunk-129.js');
+  });
+
+  it('never evicts the offline page or the icons that render it', async () => {
+    // The offline page is the entire reason this cache exists. Trading it for
+    // a build chunk would give up the one thing that works without a network.
+    const scope = loadWorker();
+    await dispatchLifecycle(scope, 'install');
+
+    for (let i = 0; i < 130; i++) {
+      const { settled } = dispatchFetch(scope, `${ORIGIN}/_next/static/chunk-${i}.js`);
+      await settled;
+    }
+
+    await flush();
+
+    for (const protectedPath of ['/offline', '/icons/icon-192.png', '/icons/icon-512.png', '/logo.svg']) {
+      expect(scope.recorder.deletes).not.toContain(protectedPath);
+    }
+  });
+
+  it('does not evict anything while under the ceiling', async () => {
+    const scope = loadWorker();
+
+    for (let i = 0; i < 10; i++) {
+      const { settled } = dispatchFetch(scope, `${ORIGIN}/_next/static/chunk-${i}.js`);
+      await settled;
+    }
+
+    await flush();
+
+    expect(scope.recorder.deletes).toHaveLength(0);
   });
 });

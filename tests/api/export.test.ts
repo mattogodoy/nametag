@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   relationshipTypeFindMany: vi.fn(),
   journalEntryFindMany: vi.fn(),
   customFieldTemplateFindMany: vi.fn(),
+  notificationEndpointFindMany: vi.fn(),
+  pushSubscriptionFindMany: vi.fn(),
 }));
 
 // Mock Prisma
@@ -30,6 +32,12 @@ vi.mock('../../lib/prisma', () => ({
     },
     customFieldTemplate: {
       findMany: mocks.customFieldTemplateFindMany,
+    },
+    notificationEndpoint: {
+      findMany: mocks.notificationEndpointFindMany,
+    },
+    pushSubscription: {
+      findMany: mocks.pushSubscriptionFindMany,
     },
   },
 }));
@@ -187,6 +195,8 @@ describe('Export API', () => {
     mocks.relationshipTypeFindMany.mockResolvedValue(mockRelationshipTypes);
     mocks.journalEntryFindMany.mockResolvedValue([]);
     mocks.customFieldTemplateFindMany.mockResolvedValue([]);
+    mocks.notificationEndpointFindMany.mockResolvedValue([]);
+    mocks.pushSubscriptionFindMany.mockResolvedValue([]);
   });
 
   describe('GET /api/user/export', () => {
@@ -201,7 +211,7 @@ describe('Export API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(body.version).toBe('1.1');
+      expect(body.version).toBe('1.2');
       expect(body.people).toHaveLength(3);
       expect(body.groups).toHaveLength(3);
       expect(body.relationshipTypes).toHaveLength(1);
@@ -493,5 +503,87 @@ describe('Export API', () => {
       expect(response.status).toBe(200);
       expect(body.customFieldTemplates).toEqual([]);
     });
+  });
+});
+
+describe('GET /api/user/export - notification destinations', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.userFindUnique.mockResolvedValue({
+      email: 'user@example.com',
+      name: 'Test',
+      theme: 'LIGHT',
+      dateFormat: 'DMY',
+      createdAt: new Date('2026-01-01'),
+    });
+    mocks.personFindMany.mockResolvedValue([]);
+    mocks.groupFindMany.mockResolvedValue([]);
+    mocks.relationshipTypeFindMany.mockResolvedValue([]);
+    mocks.journalEntryFindMany.mockResolvedValue([]);
+    mocks.customFieldTemplateFindMany.mockResolvedValue([]);
+    mocks.notificationEndpointFindMany.mockResolvedValue([]);
+    mocks.pushSubscriptionFindMany.mockResolvedValue([]);
+  });
+
+  it('includes notification destinations, which are user-authored data', async () => {
+    mocks.notificationEndpointFindMany.mockResolvedValue([
+      {
+        type: 'NTFY',
+        label: 'Phone',
+        url: 'https://ntfy.sh/my-topic',
+        enabled: true,
+        createdAt: new Date('2026-02-01'),
+      },
+    ]);
+
+    const response = await exportData(new Request('http://localhost/api/user/export'));
+    const body = await response.json();
+
+    expect(body.notificationEndpoints).toHaveLength(1);
+    expect(body.notificationEndpoints[0].label).toBe('Phone');
+    expect(body.notificationEndpoints[0].url).toBe('https://ntfy.sh/my-topic');
+  });
+
+  it('never selects the encrypted endpoint secret', async () => {
+    // The secret is write-only from the client's point of view everywhere
+    // else in the app, so an export would be the single place it leaked back
+    // out. Asserted on the SELECT rather than only on the response body: a
+    // version that selects it and forgets to strip it later would still pass
+    // a body-only check today and leak the moment the shape changes.
+    await exportData(new Request('http://localhost/api/user/export'));
+
+    const select = mocks.notificationEndpointFindMany.mock.calls[0][0].select;
+    expect(select).not.toHaveProperty('secret');
+    expect(select.secret).toBeUndefined();
+  });
+
+  it('includes push devices without their push-service credentials', async () => {
+    // endpoint, p256dh and auth are credentials, not user data. endpoint in
+    // particular is the key the subscribe route upserts on, so anyone who
+    // learns a victim's endpoint can move that row to their own account and
+    // silently kill the victim's push.
+    mocks.pushSubscriptionFindMany.mockResolvedValue([
+      { userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120', createdAt: new Date('2026-02-01') },
+    ]);
+
+    const response = await exportData(new Request('http://localhost/api/user/export'));
+    const body = await response.json();
+
+    expect(body.pushSubscriptions).toHaveLength(1);
+    expect(body.pushSubscriptions[0].userAgent).toContain('Chrome');
+
+    const select = mocks.pushSubscriptionFindMany.mock.calls[0][0].select;
+    for (const credential of ['endpoint', 'p256dh', 'auth']) {
+      expect(select[credential]).toBeUndefined();
+    }
+  });
+
+  it('scopes both queries to the signed-in user', async () => {
+    await exportData(new Request('http://localhost/api/user/export'));
+
+    expect(mocks.notificationEndpointFindMany.mock.calls[0][0].where).toEqual({
+      userId: 'user-123',
+    });
+    expect(mocks.pushSubscriptionFindMany.mock.calls[0][0].where).toEqual({ userId: 'user-123' });
   });
 });

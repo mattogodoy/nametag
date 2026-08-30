@@ -10,7 +10,16 @@ export const GET = withAuth(async (request, session) => {
     const filterByGroups = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : null;
 
     // Fetch all user data
-    const [user, allPeople, allGroups, relationshipTypes, journalEntries, customFieldTemplates] = await Promise.all([
+    const [
+      user,
+      allPeople,
+      allGroups,
+      relationshipTypes,
+      journalEntries,
+      customFieldTemplates,
+      notificationEndpoints,
+      pushSubscriptions,
+    ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -140,6 +149,38 @@ export const GET = withAuth(async (request, session) => {
         where: { userId: session.user.id, deletedAt: null },
         orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
       }),
+      // Notification destinations are user-authored data (the label and the
+      // URL are both things the user typed), so a complete copy of what they
+      // put into the instance has to include them.
+      //
+      // `secret` is deliberately absent, and must stay that way. It is
+      // write-only from the client's point of view everywhere else in the
+      // app: it goes in encrypted and no endpoint reads it back. An export
+      // would be the single place it leaked out.
+      prisma.notificationEndpoint.findMany({
+        where: { userId: session.user.id },
+        select: {
+          type: true,
+          label: true,
+          url: true,
+          enabled: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      // Push subscriptions are more marginal, but they are still user-created
+      // state someone might reasonably expect to see listed.
+      //
+      // `endpoint`, `p256dh` and `auth` are all deliberately absent. They are
+      // credentials for a push service rather than user data, and `endpoint`
+      // in particular is the key the subscribe route upserts on: anyone who
+      // learns a victim's endpoint string can move that row to their own
+      // account and silently kill the victim's push.
+      prisma.pushSubscription.findMany({
+        where: { userId: session.user.id },
+        select: { userAgent: true, createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
     ]);
 
     // Get set of exported person IDs for filtering relationships
@@ -165,7 +206,7 @@ export const GET = withAuth(async (request, session) => {
 
     // Build export data structure
     const exportData = {
-      version: '1.1',
+      version: '1.2',
       exportDate: new Date().toISOString(),
       user: {
         email: user?.email,
@@ -288,6 +329,8 @@ export const GET = withAuth(async (request, session) => {
         options: t.options,
         order: t.order,
       })),
+      notificationEndpoints,
+      pushSubscriptions,
     };
 
     return apiResponse.ok(exportData);

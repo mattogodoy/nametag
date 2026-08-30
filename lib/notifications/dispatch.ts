@@ -6,8 +6,9 @@ import { renderEmail } from './channels/email';
 import { sendNtfy } from './channels/ntfy';
 import { sendWebhook } from './channels/webhook';
 import { sendWebPush } from './channels/web-push';
+import { RunCircuitBreaker } from './circuit';
 import { mapWithConcurrency } from './concurrency';
-import { canUseWebhooks } from './entitlements';
+import { canUseWebhooksForUsers } from './entitlements';
 import { HealthAccumulator, MAX_ENDPOINTS_PER_USER } from './endpoint-health';
 import type { OutboundResult } from './outbound';
 import type { ChannelId, ChannelOutcome, DispatchResult, NotificationEnvelope } from './types';
@@ -43,29 +44,51 @@ export async function dispatchAll(
   // envelope. See HealthAccumulator's own doc comment for why that matters.
   const health = new HealthAccumulator();
 
+  // Gives up on a destination for the rest of this run once it has proved
+  // unreachable, so the run stops paying its timeout once per envelope. See
+  // RunCircuitBreaker for why this is the difference between one account
+  // costing 5 x TIMEOUT_MS and costing 5 x TIMEOUT_MS x their reminder count.
+  const circuit = new RunCircuitBreaker();
+
   // Email first and as one batch, so Resend still receives a single request.
   const emailOutcomes = await dispatchEmail(envelopes, emailEnabled);
 
   // Per-envelope channels, bounded so a large run does not open one socket per
   // envelope at the same instant.
-  const pushOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
-    guard(() => sendWebPush(envelope, health), 'web_push', envelope.userId)
-  );
+  //
+  // The push and endpoint passes run CONCURRENTLY rather than one after the
+  // other. They talk to entirely unrelated hosts, so running them in series
+  // made their durations add when they could overlap: a run with slow push
+  // and slow endpoints took the sum of both passes rather than the longer of
+  // the two. Each pass keeps its own concurrency ceiling, so the peak socket
+  // count is bounded at 2 x CHANNEL_CONCURRENCY rather than being unbounded.
+  const [pushOutcomes, endpointOutcomes] = await Promise.all([
+    mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) =>
+      guard(() => sendWebPush(envelope, health, circuit), 'web_push', envelope.userId)
+    ),
+    mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) => {
+      const endpoints = endpointsByUser.get(envelope.userId) ?? [];
+      return guardEndpoints(
+        () =>
+          dispatchEndpoints(
+            envelope,
+            endpoints,
+            health,
+            webhookEntitlements.get(envelope.userId) ?? false,
+            circuit
+          ),
+        envelope.userId,
+        endpoints
+      );
+    }),
+  ]);
 
-  const endpointOutcomes = await mapWithConcurrency(envelopes, CHANNEL_CONCURRENCY, (envelope) => {
-    const endpoints = endpointsByUser.get(envelope.userId) ?? [];
-    return guardEndpoints(
-      () =>
-        dispatchEndpoints(
-          envelope,
-          endpoints,
-          health,
-          webhookEntitlements.get(envelope.userId) ?? false
-        ),
-      envelope.userId,
-      endpoints
+  if (circuit.size > 0) {
+    log.warn(
+      { destinations: circuit.size, envelopes: envelopes.length },
+      'Gave up on unreachable destinations for the rest of this run'
     );
-  });
+  }
 
   const results = envelopes.map((_envelope, index) =>
     summarize([emailOutcomes[index], pushOutcomes[index], ...endpointOutcomes[index]])
@@ -207,21 +230,24 @@ async function loadWebhookEntitlements(
     .filter(([, endpoints]) => endpoints.some((endpoint) => endpoint.type === 'WEBHOOK'))
     .map(([userId]) => userId);
 
-  // Guarded the same way loadEmailPreferences and loadEndpoints are above.
-  // canUseWebhooks already fails closed on its own error (denying that one
-  // user), but an unguarded failure in mapWithConcurrency itself would still
-  // throw out of dispatchAll and abort the whole night, silently dropping
-  // every day-of, lead, and contact reminder already collected. An empty map
-  // denies webhook delivery to every user with a webhook endpoint tonight,
-  // the same fail-closed default as canUseWebhooks itself, rather than
-  // losing the run entirely.
-  try {
-    const entries = await mapWithConcurrency(userIds, CHANNEL_CONCURRENCY, async (userId) => {
-      const allowed = await canUseWebhooks(userId);
-      return [userId, allowed] as const;
-    });
+  // Nobody in this run owns a webhook, so there is nothing to resolve. An
+  // early return rather than letting the batched call handle an empty list,
+  // so a run with no webhook users issues no billing query at all.
+  if (userIds.length === 0) {
+    return new Map();
+  }
 
-    return new Map(entries);
+  // One query for the whole run rather than one per user, matching how
+  // loadEmailPreferences and loadEndpoints above already batch.
+  //
+  // Guarded the same way they are. canUseWebhooksForUsers already fails
+  // closed on its own error, but an unguarded failure here would still throw
+  // out of dispatchAll and abort the whole night, silently dropping every
+  // day-of, lead, and contact reminder already collected. An empty map denies
+  // webhook delivery to every user with a webhook endpoint tonight, the same
+  // fail-closed default, rather than losing the run entirely.
+  try {
+    return await canUseWebhooksForUsers(userIds);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     log.error(
@@ -270,7 +296,8 @@ async function dispatchEndpoints(
   envelope: NotificationEnvelope,
   endpoints: readonly EndpointRecord[],
   health: HealthAccumulator,
-  webhooksAllowed: boolean
+  webhooksAllowed: boolean,
+  circuit: RunCircuitBreaker
 ): Promise<ChannelOutcome[]> {
   if (endpoints.length === 0) {
     return [{ channel: 'ntfy', status: 'skipped' }];
@@ -290,6 +317,17 @@ async function dispatchEndpoints(
     }
 
     bucket.attempted++;
+
+    // Already proved unreachable earlier in this run. Counted as attempted
+    // and recorded as a failure, exactly as if it had been tried and timed
+    // out again, so this cannot make a dead destination look healthy or stop
+    // it auto-disabling. The only thing skipped is the waiting.
+    const trippedCode = circuit.trippedCode(endpoint.id);
+    if (trippedCode !== null) {
+      bucket.lastError = trippedCode;
+      health.recordEndpoint(endpoint.id, { ok: false, code: trippedCode });
+      continue;
+    }
 
     let result: OutboundResult;
 
@@ -327,6 +365,10 @@ async function dispatchEndpoints(
       health.recordEndpoint(endpoint.id, { ok: false, code: 'unknown' });
 
       continue;
+    }
+
+    if (!result.ok) {
+      circuit.record(endpoint.id, result.code);
     }
 
     if (result.ok) {

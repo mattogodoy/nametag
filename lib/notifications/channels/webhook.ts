@@ -63,6 +63,11 @@ function payloadData(notification: ReminderNotification): Record<string, unknown
           personName: row.personName,
           eventTitle: row.eventTitle,
           formattedDate: row.formattedDate,
+          // Same contract as the standalone important_date events above: the
+          // raw ISO occurrence date alongside the display-formatted one, so a
+          // receiver never has to parse a locale-formatted string to act on a
+          // date. Digest rows carried only formattedDate and daysUntil.
+          date: row.date,
           daysUntil: row.daysUntil,
         })),
         overflowCount: notification.overflowCount,

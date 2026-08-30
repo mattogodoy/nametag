@@ -34,6 +34,20 @@ export interface DigestEmailRow {
   personName: string;
   eventTitle: string;
   formattedDate: string;
+  /**
+   * Raw ISO calendar date (YYYY-MM-DD) of the occurrence this row is about.
+   *
+   * Carried alongside the display-formatted one for the same reason
+   * `important_date` and `important_date_lead` webhook payloads carry it: a
+   * receiver parsing `formattedDate` would have to guess whether
+   * "26 de agosto de 2026" is day-month-year or month-day-year. Digest rows
+   * had `daysUntil` and nothing else to fall back on, so a receiver could act
+   * on a date programmatically for a standalone reminder and not for a digest
+   * row, which is an asymmetry in a published contract.
+   *
+   * Not rendered in the email, which uses `formattedDate`.
+   */
+  date: string;
   daysUntil: number;
 }
 

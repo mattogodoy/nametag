@@ -72,10 +72,10 @@ describe('renderShortForm', () => {
       envelope({
         kind: 'weekly_digest',
         rows: [
-          { personName: 'Ana Torres', eventTitle: 'Birthday', formattedDate: 'Aug 28', daysUntil: 2 },
-          { personName: 'Bo Lin', eventTitle: 'Anniversary', formattedDate: 'Aug 30', daysUntil: 4 },
-          { personName: 'Cai Wu', eventTitle: 'Name day', formattedDate: 'Aug 31', daysUntil: 5 },
-          { personName: 'Dara Okoro', eventTitle: 'Birthday', formattedDate: 'Sep 1', daysUntil: 6 },
+          { personName: 'Ana Torres', eventTitle: 'Birthday', formattedDate: 'Aug 28', date: '2026-09-01', daysUntil: 2 },
+          { personName: 'Bo Lin', eventTitle: 'Anniversary', formattedDate: 'Aug 30', date: '2026-09-01', daysUntil: 4 },
+          { personName: 'Cai Wu', eventTitle: 'Name day', formattedDate: 'Aug 31', date: '2026-09-01', daysUntil: 5 },
+          { personName: 'Dara Okoro', eventTitle: 'Birthday', formattedDate: 'Sep 1', date: '2026-09-01', daysUntil: 6 },
         ],
         overflowCount: 0,
       })
@@ -153,7 +153,7 @@ describe('renderShortForm', () => {
         notification: {
           kind: 'weekly_digest',
           rows: [
-            { personName: 'Ana Torres', eventTitle: 'Birthday', formattedDate: 'Aug 28', daysUntil: 2 },
+            { personName: 'Ana Torres', eventTitle: 'Birthday', formattedDate: 'Aug 28', date: '2026-09-01', daysUntil: 2 },
           ],
           overflowCount: 0,
         },

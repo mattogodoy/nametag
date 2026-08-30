@@ -12,6 +12,56 @@
 const VERSION = 'nametag-static-v1';
 const OFFLINE_URL = '/offline';
 
+/*
+ * Ceiling on cached build assets.
+ *
+ * VERSION is a constant, so the activate purge below never evicts anything:
+ * this file's bytes do not change between deploys, so the worker never sees a
+ * byte-diff and activate never fires again after the first install. Every
+ * deploy produces a fresh set of content-hashed /_next/static/ URLs, and
+ * without a bound each one accumulated in the same cache forever, held only by
+ * the browser's own storage-quota eviction. That eviction is origin-wide and
+ * indiscriminate, so it could just as easily drop the offline page as an old
+ * chunk.
+ *
+ * Trimmed oldest-first on insert instead. Cache API keys() returns entries in
+ * insertion order, so the oldest chunks (the ones from the deploys furthest
+ * back) go first, which is also the least likely to be wanted again.
+ */
+const MAX_CACHED_ASSETS = 120;
+
+/*
+ * Drop the oldest cached build assets once the cache is over its ceiling.
+ *
+ * Only /_next/static/ entries are considered: those are the ones that
+ * accumulate per deploy. Failures are swallowed because this is opportunistic
+ * housekeeping, and a cache that is briefly over its ceiling is a far smaller
+ * problem than a rejected fetch handler.
+ */
+async function trimAssetCache(cache) {
+  try {
+    const keys = await cache.keys();
+    const trimmable = keys.filter((request) => {
+      // Base supplied so a relative URL cannot throw here. A throw would be
+      // swallowed by the catch below and silently disable trimming entirely.
+      const url = new URL(request.url, self.location.origin);
+      // Only build output. The offline page, the icons and the logo are the
+      // entire reason this cache exists and none of them live under
+      // /_next/static/, so this filter already protects them: evicting them
+      // to make room for a build chunk would trade the one thing that works
+      // without a network for one that does not matter without one.
+      return url.pathname.startsWith('/_next/static/');
+    });
+
+    const excess = trimmable.length - MAX_CACHED_ASSETS;
+    for (let i = 0; i < excess; i++) {
+      await cache.delete(trimmable[i]);
+    }
+  } catch {
+    /* housekeeping only */
+  }
+}
+
 const PRECACHE = [OFFLINE_URL, '/icons/icon-192.png', '/icons/icon-512.png', '/logo.svg'];
 
 self.addEventListener('install', (event) => {
@@ -133,7 +183,12 @@ self.addEventListener('fetch', (event) => {
           }
           return fetch(request).then((response) => {
             if (response.ok) {
-              cache.put(request, response.clone());
+              // waitUntil, not a floating promise: the worker can be killed
+              // as soon as respondWith settles, which would leave the write
+              // and the trim half-done.
+              event.waitUntil(
+                cache.put(request, response.clone()).then(() => trimAssetCache(cache))
+              );
             }
             return response;
           });

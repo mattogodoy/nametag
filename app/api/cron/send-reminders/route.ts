@@ -357,6 +357,12 @@ export const GET = withLogging(async function GET(request: Request) {
                 user.dateFormat,
                 userLanguage
               ),
+              // The occurrence's own calendar day, so a webhook receiver can
+              // act on a digest row without parsing a locale-formatted
+              // string. getLocalDateString rather than toISOString: event.date
+              // is a local-midnight Date, and converting through UTC would
+              // shift the day for anyone east or west of it.
+              date: getLocalDateString(event.date),
               daysUntil: event.daysUntil,
             }));
 
