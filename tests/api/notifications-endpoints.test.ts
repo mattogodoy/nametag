@@ -562,6 +562,184 @@ describe('endpoint item API', () => {
     expect(mocks.updateMany.mock.calls[0][0].data).toEqual({ enabled: false });
   });
 
+  it('replaces an ntfy access token in place', async () => {
+    // Without this there is no way back from a NEXTAUTH_SECRET rotation:
+    // every stored token becomes undecryptable, the destination fails
+    // nightly, auto-disables, and re-enabling puts it straight back on the
+    // same dead token.
+    mocks.encryptSecret.mockReturnValue('encrypted-new-token');
+
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { token: 'tk_new' }),
+      ctx('ep-1')
+    );
+
+    expect(mocks.encryptSecret).toHaveBeenCalledWith('tk_new');
+    expect(mocks.updateMany.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({ secret: 'encrypted-new-token' })
+    );
+  });
+
+  it('clears an ntfy token when null is sent, distinct from omitting the field', async () => {
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { token: null }),
+      ctx('ep-1')
+    );
+
+    expect(mocks.updateMany.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({ secret: null })
+    );
+  });
+
+  it('leaves the secret untouched when no token field is sent', async () => {
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { label: 'New' }),
+      ctx('ep-1')
+    );
+
+    expect(mocks.updateMany.mock.calls[0][0].data).not.toHaveProperty('secret');
+  });
+
+  it('resets the health counters when the credential changes', async () => {
+    // A repaired destination should not stay tarred with the failure that
+    // switched it off, or the user fixes the token and the row is still
+    // disabled showing the old reason.
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { token: 'tk_new' }),
+      ctx('ep-1')
+    );
+
+    expect(mocks.updateMany.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({
+        consecutiveFailures: 0,
+        lastFailureCode: null,
+        autoDisabledAt: null,
+      })
+    );
+  });
+
+  it('refuses a token on a webhook, which has no bearer credential', async () => {
+    // sendNtfy puts the stored secret into an Authorization: Bearer header
+    // while sendWebhook uses it as an HMAC key. Writing one where the other
+    // is expected is a credential confusion, not a labelling mistake.
+    mocks.findFirst.mockResolvedValue({ id: 'ep-1', type: 'WEBHOOK' });
+
+    const response = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { token: 'tk_new' }),
+      ctx('ep-1')
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rotates a webhook signing secret and returns it exactly once', async () => {
+    mocks.findFirst.mockResolvedValue({ id: 'ep-1', type: 'WEBHOOK' });
+    mocks.encryptSecret.mockReturnValue('encrypted-rotated');
+
+    const response = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { rotateSecret: true }),
+      ctx('ep-1')
+    );
+
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(typeof body.secret).toBe('string');
+    expect(body.secret.length).toBeGreaterThan(0);
+    // Generated server-side, never echoed from the request.
+    expect(body.secret).not.toBe('encrypted-rotated');
+    expect(mocks.updateMany.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({ secret: 'encrypted-rotated' })
+    );
+  });
+
+  it('refuses to rotate a secret on an ntfy destination', async () => {
+    const response = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { rotateSecret: true }),
+      ctx('ep-1')
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('re-validates a replacement URL exactly as creation does', async () => {
+    // An edit that skipped any check creation runs would be a way to reach a
+    // state creation refuses to produce. The ntfy health probe is the one
+    // most easily forgotten, so it is asserted specifically.
+    mocks.probeNtfyHealth.mockResolvedValue(false);
+
+    const response = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', {
+        url: 'https://not-ntfy.test/topic',
+      }),
+      ctx('ep-1')
+    );
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).code).toBe('not_ntfy');
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('stores the normalised form of a replacement URL', async () => {
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', {
+        url: 'https://NTFY.sh/my-topic#frag',
+      }),
+      ctx('ep-1')
+    );
+
+    expect(mocks.updateMany.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({ url: 'https://ntfy.sh/my-topic' })
+    );
+  });
+
+  it('rejects credentials in a replacement URL', async () => {
+    const response = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', {
+        url: 'https://user:pw@ntfy.test/my-topic',
+      }),
+      ctx('ep-1')
+    );
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).code).toBe('credentials_in_url');
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('reports a replacement URL that collides with another destination as a duplicate', async () => {
+    mocks.updateMany.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('unique', {
+        code: 'P2002',
+        clientVersion: 'test',
+      })
+    );
+
+    const response = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', {
+        url: 'https://ntfy.sh/other-topic',
+      }),
+      ctx('ep-1')
+    );
+
+    expect(response.status).toBe(409);
+    expect((await response.json()).code).toBe('duplicate');
+  });
+
+  it('never takes the endpoint type from the request body', async () => {
+    // Turning an ntfy destination into a webhook would reinterpret its stored
+    // secret as a signing key rather than a bearer token.
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', {
+        label: 'New',
+        type: 'WEBHOOK',
+      }),
+      ctx('ep-1')
+    );
+
+    expect(mocks.updateMany.mock.calls[0][0].data).not.toHaveProperty('type');
+  });
+
   it('returns 404 when the update matches nothing', async () => {
     mocks.updateMany.mockResolvedValue({ count: 0 });
 
@@ -639,10 +817,47 @@ describe('endpoint test-send API', () => {
 
     expect(response.status).toBe(429);
     expect(mocks.sendNtfy).not.toHaveBeenCalled();
-    // Without this, moving checkRateLimit below the findFirst lookup would
-    // still leave sendNtfy uncalled and pass, even though the endpoint's
-    // existence (and therefore its ownership) had already been queried.
+    // The per-user ceiling is checked before the endpoint is looked up, so
+    // the query that validates the id is itself metered. Without this
+    // assertion, moving every limit below the findFirst lookup would still
+    // leave sendNtfy uncalled and pass, even though the lookup had run
+    // unmetered.
     expect(mocks.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('applies the per-user ceiling first and the per-destination limit second', async () => {
+    // Two limits with different keys, in a specific order. The per-user one
+    // has to come first because the per-destination key is built from a
+    // validated endpoint id, and validating one costs the query the per-user
+    // limit exists to meter. Keying the per-destination limit on the raw path
+    // parameter instead would let a caller mint unbounded buckets by
+    // inventing ids.
+    const calls: Array<{ type: string; identifier: string | undefined; afterLookup: boolean }> = [];
+    let lookedUp = false;
+
+    mocks.findFirst.mockImplementation(() => {
+      lookedUp = true;
+      return Promise.resolve({
+        id: 'ep-1',
+        type: 'NTFY',
+        url: 'https://ntfy.sh/my-topic',
+        secret: null,
+        enabled: true,
+      });
+    });
+    mocks.checkRateLimit.mockImplementation(
+      (_request: unknown, type: string, identifier?: string) => {
+        calls.push({ type, identifier, afterLookup: lookedUp });
+        return null;
+      }
+    );
+
+    await testEndpoint(jsonRequest('http://localhost/x'), ctx('ep-1'));
+
+    expect(calls).toEqual([
+      { type: 'notificationEndpointTestPerUser', identifier: 'user-1', afterLookup: false },
+      { type: 'notificationEndpointTest', identifier: 'endpoint:ep-1', afterLookup: true },
+    ]);
   });
 
   it('records a successful test', async () => {

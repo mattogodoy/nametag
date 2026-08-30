@@ -260,7 +260,12 @@
       "webhookAddCredentialsInUrl": "Fjern brukernavn og passord fra URL-en. Nametag signerer hver webhook den sender, så mottakeren kan verifisere den uten legitimasjon i URL-en.",
       "endpointAddNotNtfy": "Ingen ntfy-server svarte på den adressen. Sjekk server-URL-en og at serveren er tilgjengelig.",
       "endpointTestNotNtfy": "Den adressen svarte, men det er ikke en ntfy-server. Sjekk server-URL-en.",
-      "endpointTestNotNtfySaved": "Den adressen svarer, men det er ikke lenger en ntfy-server. Fjern dette målet og legg det til på nytt med en URL som fungerer."
+      "endpointTestNotNtfySaved": "Den adressen svarer, men det er ikke lenger en ntfy-server. Fjern dette målet og legg det til på nytt med en URL som fungerer.",
+      "endpointEdit": "Rediger",
+      "endpointTokenReplacePlaceholder": "La stå tomt for å beholde nåværende token",
+      "endpointTokenReplaceHelp": "Skriv inn et nytt token for å erstatte det lagrede, eller tøm dette feltet og lagre for å fjerne det. Det lagrede tokenet vises aldri tilbake til deg.",
+      "webhookRotateSecret": "Lag en ny signeringsnøkkel",
+      "webhookRotateSecretHelp": "Den nye nøkkelen vises bare én gang. Du må oppdatere mottakeren din med den, ellers avviser den hver webhook."
     },
     "security": {
       "title": "Sikkerhet",

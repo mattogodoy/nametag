@@ -175,6 +175,16 @@ export default function NotificationEndpointsCard({
   const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
   const [copyResult, setCopyResult] = useState<TestMessage | null>(null);
 
+  // Inline edit state. Only one destination is ever open for editing, so a
+  // single set of fields is enough and there is no per-row state to keep in
+  // sync with the server-rendered list.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editUrl, setEditUrl] = useState('');
+  const [editToken, setEditToken] = useState('');
+  const [editTokenTouched, setEditTokenTouched] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
   const [testResults, setTestResults] = useState<Record<string, TestMessage>>({});
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
@@ -450,6 +460,100 @@ export default function NotificationEndpointsCard({
     }
   }
 
+  function openEdit(endpoint: NotificationEndpointSummary) {
+    setEditingId(endpoint.id);
+    setEditUrl(endpoint.url);
+    setEditToken('');
+    // A token is never readable back, so the field starts blank and is only
+    // sent if the user actually types in it. Without this flag an untouched
+    // blank field would be indistinguishable from a deliberate clear.
+    setEditTokenTouched(false);
+    setEditError(null);
+  }
+
+  function closeEdit() {
+    setEditingId(null);
+    setEditUrl('');
+    setEditToken('');
+    setEditTokenTouched(false);
+    setEditError(null);
+  }
+
+  async function handleEditSubmit(
+    event: FormEvent<HTMLFormElement>,
+    endpoint: NotificationEndpointSummary
+  ) {
+    event.preventDefault();
+    setEditError(null);
+    setEditSubmitting(true);
+
+    try {
+      const body: Record<string, unknown> = {};
+
+      if (editUrl.trim() && editUrl.trim() !== endpoint.url) {
+        body.url = editUrl.trim();
+      }
+      if (endpoint.type === 'NTFY' && editTokenTouched) {
+        // An empty field after the user has touched it means "clear it",
+        // which the API distinguishes from "leave it alone" by null vs
+        // omitted.
+        body.token = editToken.trim() ? editToken.trim() : null;
+      }
+
+      if (Object.keys(body).length === 0) {
+        closeEdit();
+        return;
+      }
+
+      const response = await fetch(`/api/notifications/endpoints/${endpoint.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        setEditError(await readAddErrorMessage(response, endpoint.type));
+        return;
+      }
+
+      closeEdit();
+      router.refresh();
+    } catch {
+      setEditError(tErrors('internalError'));
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  async function handleRotateSecret(id: string) {
+    setBusy(id, true);
+    try {
+      const response = await fetch(`/api/notifications/endpoints/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rotateSecret: true }),
+      });
+
+      if (!response.ok) {
+        toast.error(await readErrorMessage(response));
+        return;
+      }
+
+      const data: unknown = await response.json();
+      // Shown once, in the same dialog creation uses. There is no endpoint
+      // that reads a secret back, so a user who dismisses this has to rotate
+      // again.
+      if (data && typeof data === 'object' && typeof (data as { secret?: unknown }).secret === 'string') {
+        setNewWebhookSecret((data as { secret: string }).secret);
+      }
+      router.refresh();
+    } catch {
+      toast.error(tErrors('internalError'));
+    } finally {
+      setBusy(id, false);
+    }
+  }
+
   const FOCUS_RING = 'focus:outline-none focus:ring-2 focus:ring-primary';
   const ntfyEndpoints = endpoints.filter((e) => e.type === 'NTFY');
   const webhookEndpoints = endpoints.filter((e) => e.type === 'WEBHOOK');
@@ -476,6 +580,15 @@ export default function NotificationEndpointsCard({
             </button>
             <button
               type="button"
+              onClick={() => (editingId === endpoint.id ? closeEdit() : openEdit(endpoint))}
+              disabled={busy}
+              className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
+              aria-expanded={editingId === endpoint.id}
+            >
+              {t('endpointEdit')}
+            </button>
+            <button
+              type="button"
               onClick={() => void handleRemove(endpoint.id)}
               disabled={busy}
               className={`text-muted hover:text-foreground disabled:opacity-50 rounded ${FOCUS_RING}`}
@@ -484,6 +597,88 @@ export default function NotificationEndpointsCard({
             </button>
           </div>
         </div>
+
+        {editingId === endpoint.id && (
+          <form onSubmit={(event) => void handleEditSubmit(event, endpoint)} className="mt-3 space-y-3">
+            <div>
+              <label
+                htmlFor={`edit-url-${endpoint.id}`}
+                className="block text-sm font-medium text-foreground mb-1"
+              >
+                {endpoint.type === 'WEBHOOK' ? t('webhookUrl') : t('endpointUrl')}
+              </label>
+              <input
+                id={`edit-url-${endpoint.id}`}
+                type="url"
+                value={editUrl}
+                onChange={(event) => setEditUrl(event.target.value)}
+                className={`w-full px-3 py-2 rounded-md border border-border bg-background text-foreground ${FOCUS_RING}`}
+              />
+            </div>
+
+            {endpoint.type === 'NTFY' && (
+              <div>
+                <label
+                  htmlFor={`edit-token-${endpoint.id}`}
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
+                  {t('endpointToken')}
+                </label>
+                <input
+                  id={`edit-token-${endpoint.id}`}
+                  type="password"
+                  value={editToken}
+                  autoComplete="off"
+                  placeholder={t('endpointTokenReplacePlaceholder')}
+                  onChange={(event) => {
+                    setEditToken(event.target.value);
+                    setEditTokenTouched(true);
+                  }}
+                  className={`w-full px-3 py-2 rounded-md border border-border bg-background text-foreground ${FOCUS_RING}`}
+                />
+                <p className="text-sm text-muted mt-1">{t('endpointTokenReplaceHelp')}</p>
+              </div>
+            )}
+
+            {endpoint.type === 'WEBHOOK' && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => void handleRotateSecret(endpoint.id)}
+                  disabled={busy || editSubmitting}
+                  className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
+                >
+                  {t('webhookRotateSecret')}
+                </button>
+                <p className="text-sm text-muted mt-1">{t('webhookRotateSecretHelp')}</p>
+              </div>
+            )}
+
+            {editError && (
+              <p role="alert" className="text-sm text-muted">
+                {editError}
+              </p>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={editSubmitting}
+                className={`px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 ${FOCUS_RING}`}
+              >
+                {tCommon('save')}
+              </button>
+              <button
+                type="button"
+                onClick={closeEdit}
+                disabled={editSubmitting}
+                className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
+              >
+                {tCommon('cancel')}
+              </button>
+            </div>
+          </form>
+        )}
 
         {result && (
           <p

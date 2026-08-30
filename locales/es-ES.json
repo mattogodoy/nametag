@@ -260,7 +260,12 @@
       "webhookAddCredentialsInUrl": "Quita el usuario y la contraseña de la URL. Nametag firma todos los webhooks que envía, así que el receptor puede verificarlos sin credenciales en la URL.",
       "endpointAddNotNtfy": "Ningún servidor ntfy respondió en esa dirección. Comprueba la URL del servidor y que sea accesible.",
       "endpointTestNotNtfy": "Esa dirección respondió, pero no es un servidor ntfy. Comprueba la URL del servidor.",
-      "endpointTestNotNtfySaved": "Esa dirección responde, pero ya no es un servidor ntfy. Elimina este destino y vuelve a añadirlo con una URL que funcione."
+      "endpointTestNotNtfySaved": "Esa dirección responde, pero ya no es un servidor ntfy. Elimina este destino y vuelve a añadirlo con una URL que funcione.",
+      "endpointEdit": "Editar",
+      "endpointTokenReplacePlaceholder": "Déjalo en blanco para mantener el token actual",
+      "endpointTokenReplaceHelp": "Escribe un token nuevo para sustituir el guardado, o vacía este campo y guarda para eliminarlo. El token guardado nunca se te vuelve a mostrar.",
+      "webhookRotateSecret": "Generar un nuevo secreto de firma",
+      "webhookRotateSecretHelp": "El nuevo secreto se muestra una sola vez. Tienes que actualizar tu receptor con él, o rechazará todos los webhooks."
     },
     "security": {
       "title": "Seguridad",

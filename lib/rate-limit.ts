@@ -97,8 +97,24 @@ export const rateLimitConfigs = {
   // Test send: tightest limit in the app. A synchronous, user-triggered
   // outbound request with immediate feedback is the most abusable surface in
   // the notification feature, so it is deliberately slower than everything else.
+  //
+  // Keyed per DESTINATION, so each one a user owns gets its own allowance.
+  // Keyed per user it gave someone at the five-destination cap exactly one
+  // test per destination per window, which they hit through ordinary setup.
   notificationEndpointTest: {
     maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+  },
+  // The per-user ceiling on test sends, checked BEFORE the destination is
+  // looked up. Two limits rather than one because the per-destination key
+  // above can only be built from a validated endpoint id, and validating it
+  // means a database query: without a cheaper bound in front, that query
+  // itself would be unmetered. Set to the per-destination allowance times the
+  // per-user destination cap, so it never binds before the per-destination
+  // limit does in ordinary use, and only catches someone cycling through
+  // every destination they own at once.
+  notificationEndpointTestPerUser: {
+    maxAttempts: 5 * 5,
     windowMs: 15 * 60 * 1000,
   },
 } as const;

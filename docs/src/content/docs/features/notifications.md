@@ -142,7 +142,11 @@ Use `rawBody` exactly as received, before any JSON parsing: re-serializing the p
 
 Push notifications are encrypted end to end by the Web Push protocol itself. The push service that relays the message, whichever company runs it, never sees the plain content: not a contact's name, not what the reminder is about. Only your browser can decrypt it.
 
-A webhook's signing secret is encrypted at rest and never shown back to you after creation. The webhook URL itself is not: it's stored and displayed in plaintext, the same as an ntfy topic URL. That asymmetry matters because a webhook URL is often itself a credential, not just an address. Slack, Discord, and Home Assistant, among others, embed a secret token directly in the URL path, so anyone who can see that URL can post to it. Treat it with the same care you'd give a password.
+You can edit a saved destination: change its URL, replace or clear an ntfy access token, or generate a new webhook signing secret. A replacement URL is re-checked exactly as it was when you first added it, including the ntfy server check, so an edit can't get a destination into a state that adding one wouldn't allow. Changing the URL or the credential also clears the failure counter, so a destination you've just repaired isn't still marked with the reason it was switched off. The destination type itself can't be changed.
+
+Being able to replace a credential in place matters most after you rotate `NEXTAUTH_SECRET`: that makes every stored token and signing secret undecryptable, and without a way to replace them the only option would be deleting each destination and adding it again.
+
+A webhook's signing secret is encrypted at rest and never shown back to you after creation. Generating a new one shows it once, in the same way, and your receiver has to be updated with it or it will reject every webhook. The webhook URL itself is not: it's stored and displayed in plaintext, the same as an ntfy topic URL. That asymmetry matters because a webhook URL is often itself a credential, not just an address. Slack, Discord, and Home Assistant, among others, embed a secret token directly in the URL path, so anyone who can see that URL can post to it. Treat it with the same care you'd give a password.
 
 ## Technical details
 

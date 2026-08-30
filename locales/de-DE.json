@@ -260,7 +260,12 @@
       "webhookAddCredentialsInUrl": "Entferne Benutzername und Passwort aus der URL. Nametag signiert jeden gesendeten Webhook, der Empfänger kann ihn also ohne Zugangsdaten in der URL prüfen.",
       "endpointAddNotNtfy": "Unter dieser Adresse hat kein ntfy-Server geantwortet. Prüfe die Server-URL und ob der Server erreichbar ist.",
       "endpointTestNotNtfy": "Diese Adresse hat geantwortet, ist aber kein ntfy-Server. Prüfe die Server-URL.",
-      "endpointTestNotNtfySaved": "Diese Adresse antwortet, ist aber kein ntfy-Server mehr. Entferne dieses Ziel und füge es mit einer funktionierenden URL erneut hinzu."
+      "endpointTestNotNtfySaved": "Diese Adresse antwortet, ist aber kein ntfy-Server mehr. Entferne dieses Ziel und füge es mit einer funktionierenden URL erneut hinzu.",
+      "endpointEdit": "Bearbeiten",
+      "endpointTokenReplacePlaceholder": "Leer lassen, um den aktuellen Token zu behalten",
+      "endpointTokenReplaceHelp": "Gib einen neuen Token ein, um den gespeicherten zu ersetzen, oder leere dieses Feld und speichere, um ihn zu entfernen. Der gespeicherte Token wird dir nie wieder angezeigt.",
+      "webhookRotateSecret": "Neues Signaturgeheimnis erzeugen",
+      "webhookRotateSecretHelp": "Das neue Geheimnis wird nur einmal angezeigt. Du musst deinen Empfänger damit aktualisieren, sonst weist er jeden Webhook ab."
     },
     "security": {
       "title": "Sicherheit",

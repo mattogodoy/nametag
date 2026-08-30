@@ -185,16 +185,46 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
         tags: ['Notifications'],
         summary: 'Update a notification endpoint',
         description:
-          'Relabels an endpoint, or enables/disables it. Re-enabling clears the auto-disable ' +
-          'state and the consecutive failure counter, so a repaired endpoint gets a clean slate.',
+          'Relabels an endpoint, enables or disables it, replaces its URL, replaces an ntfy ' +
+          'access token, or rotates a webhook signing secret. Re-enabling clears the ' +
+          'auto-disable state and the consecutive failure counter, so a repaired endpoint gets ' +
+          'a clean slate, as does changing the URL or the credential. A replacement URL is ' +
+          're-validated exactly as at creation, including the ntfy health probe, so an edit ' +
+          'cannot reach a state creation refuses to produce. The endpoint type is immutable. ' +
+          'Sending `token: null` clears an ntfy token, which is distinct from omitting the ' +
+          'field (leave unchanged).',
         security: sessionOrToken(),
         parameters: [pathParam('id', 'Notification endpoint ID')],
         requestBody: zodBody(updateEndpointSchema),
         responses: {
-          '200': refSuccess(),
+          '200': jsonResponse('Updated', {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              secret: {
+                type: 'string',
+                description:
+                  'Present only when rotateSecret was requested. The new webhook signing ' +
+                  'secret, returned exactly once and never readable again.',
+              },
+            },
+            required: ['success'],
+          }),
           '400': ref400(),
           '401': ref401(),
+          '403': jsonResponse('Outgoing webhooks require a Pro subscription', {
+            type: 'object',
+            properties: { error: { type: 'string' }, code: { type: 'string' } },
+          }),
           '404': ref404(),
+          '409': jsonResponse('A destination with that URL already exists', {
+            type: 'object',
+            properties: { error: { type: 'string' }, code: { type: 'string' } },
+          }),
+          '429': jsonResponse('Rate limited', {
+            type: 'object',
+            properties: { error: { type: 'string' } },
+          }),
         },
       },
       delete: {
@@ -242,6 +272,7 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
                   'http_4xx',
                   'http_429',
                   'http_5xx',
+                  'unexpected_response',
                   'unknown',
                 ],
               },

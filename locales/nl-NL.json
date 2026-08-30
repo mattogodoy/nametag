@@ -260,7 +260,12 @@
       "webhookAddCredentialsInUrl": "Haal de gebruikersnaam en het wachtwoord uit de URL. Nametag ondertekent elke webhook die het verstuurt, dus de ontvanger kan die verifiëren zonder inloggegevens in de URL.",
       "endpointAddNotNtfy": "Geen ntfy-server antwoordde op dat adres. Controleer de server-URL en of de server bereikbaar is.",
       "endpointTestNotNtfy": "Dat adres antwoordde, maar het is geen ntfy-server. Controleer de server-URL.",
-      "endpointTestNotNtfySaved": "Dat adres antwoordt, maar het is geen ntfy-server meer. Verwijder deze bestemming en voeg hem opnieuw toe met een werkende URL."
+      "endpointTestNotNtfySaved": "Dat adres antwoordt, maar het is geen ntfy-server meer. Verwijder deze bestemming en voeg hem opnieuw toe met een werkende URL.",
+      "endpointEdit": "Bewerken",
+      "endpointTokenReplacePlaceholder": "Laat leeg om het huidige token te behouden",
+      "endpointTokenReplaceHelp": "Typ een nieuw token om het opgeslagen token te vervangen, of maak dit veld leeg en sla op om het te verwijderen. Het opgeslagen token wordt je nooit opnieuw getoond.",
+      "webhookRotateSecret": "Nieuw ondertekeningsgeheim genereren",
+      "webhookRotateSecretHelp": "Het nieuwe geheim wordt één keer getoond. Je moet je ontvanger ermee bijwerken, anders weigert die elke webhook."
     },
     "security": {
       "title": "Beveiliging",
