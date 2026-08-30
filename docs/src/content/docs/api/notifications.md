@@ -146,7 +146,7 @@ Returns `401` if unauthenticated.
 POST /api/notifications/endpoints
 ```
 
-Creates a new ntfy or webhook destination. Both types validate the URL against the outbound SSRF policy described in [Notifications](/features/notifications/#technical-details) before storing it. Capped at 5 destinations per user across both types, and rate limited to 10 creations per hour.
+Creates a new ntfy or webhook destination. Both types validate the URL against the outbound SSRF policy described in [Notifications](/features/notifications/#technical-details) before storing it. Capped at 5 destinations per user across both types, and rate limited to 10 creations per hour. The cap is enforced under a row lock, so concurrent requests cannot both slip past it. For ntfy, the server is also checked to be a real ntfy server before the destination is stored. Credentials in the URL itself (`https://user:password@host/topic`) are rejected for both types rather than silently dropped.
 
 **Request body**
 
@@ -200,7 +200,7 @@ A `409` also carries a `code`: `duplicate` means this exact URL is already regis
 
 In SaaS mode, creating a `WEBHOOK` endpoint without a Pro subscription returns `403`. Self-hosted instances never return this, and it is never returned for an `NTFY` endpoint.
 
-Returns `201` on success, `400` if the body fails validation or the URL cannot be used, `401` if unauthenticated, `403` if creating a webhook without a Pro subscription in SaaS mode, `409` if you already have 5 destinations or that URL is already registered, `429` if rate limited.
+Returns `201` on success, `400` if the body fails validation or the URL cannot be used (`code` is `dns`, `policy`, `too_long`, `not_ntfy`, `credentials_in_url`, or `invalid`), `401` if unauthenticated, `403` if creating a webhook without a Pro subscription in SaaS mode, `409` if you already have 5 destinations or that URL is already registered, `429` if rate limited.
 
 ## Update a notification endpoint
 
@@ -208,7 +208,9 @@ Returns `201` on success, `400` if the body fails validation or the URL cannot b
 PUT /api/notifications/endpoints/{id}
 ```
 
-Relabels a destination, or enables or disables it. Re-enabling clears the auto-disable state and the consecutive failure counter, so a repaired destination gets a clean slate rather than being switched off again on its next single failure.
+Relabels a destination, enables or disables it, replaces its URL, replaces an ntfy access token, or rotates a webhook signing secret. Re-enabling clears the auto-disable state and the consecutive failure counter, so a repaired destination gets a clean slate rather than being switched off again on its next single failure. Changing the URL or the credential clears them too, since that is you asserting the previous failure no longer applies.
+
+The destination `type` is immutable. Turning an ntfy destination into a webhook would reinterpret its stored secret as a signing key rather than a bearer token, so it can only be changed by deleting the destination and adding a new one.
 
 **Request body**
 
@@ -216,6 +218,9 @@ Relabels a destination, or enables or disables it. Re-enabling clears the auto-d
 | --- | --- | --- | --- |
 | `label` | string | No | 1 to 60 characters. |
 | `enabled` | boolean | No | |
+| `url` | string | No | Re-validated exactly as at creation, including the ntfy server check, so an edit cannot reach a state creation would refuse. Draws on the same per-user outbound budget a test send does. |
+| `token` | string or null | No | ntfy only. A new access token, or `null` to remove the saved one. Omitting the field leaves it unchanged. |
+| `rotateSecret` | `true` | No | Webhook only. Issues a new signing secret and returns it once. |
 
 ```bash
 curl -X PUT https://your-instance.example.com/api/notifications/endpoints/clxendpoint1 \
@@ -228,7 +233,15 @@ curl -X PUT https://your-instance.example.com/api/notifications/endpoints/clxend
 { "success": true }
 ```
 
-Returns `400` for an invalid body, `401` if unauthenticated, `404` if the destination does not exist or belongs to another user.
+When `rotateSecret` was requested, the response also carries the new secret. This is the only time it is ever returned, the same contract as creation:
+
+```json
+{ "success": true, "secret": "9f2c..." }
+```
+
+Returns `400` for an invalid body or a URL that cannot be used, `401` if unauthenticated, `403` if re-enabling, re-pointing, or rotating the secret of a webhook without a Pro subscription in SaaS mode, `404` if the destination does not exist or belongs to another user, `409` if the new URL is already registered on another of your destinations, `429` if rate limited.
+
+Disabling and relabelling a webhook are deliberately **not** gated on the subscription, so a lapsed subscriber can still switch off or tidy up a destination that is no longer being delivered to.
 
 ## Delete a notification endpoint
 
@@ -255,7 +268,7 @@ Returns `401` if unauthenticated, `404` if the destination does not exist or bel
 POST /api/notifications/endpoints/{id}/test
 ```
 
-Sends a sample notification to one destination and reports the outcome immediately. This is the tightest rate limit in the app, 5 requests per 15 minutes, since it is a synchronous, user-triggered outbound request. A failed test is reported back but never counted toward auto-disable, and the response never carries a body or status line from the destination, only the coarse failure category below.
+Sends a sample notification to one destination and reports the outcome immediately. This is the tightest rate limit in the app, since it is a synchronous, user-triggered outbound request: 5 requests per 15 minutes **per destination**, under a ceiling of 25 per 15 minutes across all of your destinations. Keying it per destination means someone at the 5-destination cap is not left with one test each per window, which is what ordinary setup looks like; the per-user ceiling is what keeps the total bounded. A failed test is reported back but never counted toward auto-disable, and the response never carries a body or status line from the destination, only the coarse failure category below.
 
 ```bash
 curl -X POST https://your-instance.example.com/api/notifications/endpoints/clxendpoint1/test \
@@ -266,7 +279,7 @@ curl -X POST https://your-instance.example.com/api/notifications/endpoints/clxen
 { "ok": false, "code": "timeout" }
 ```
 
-`code` is present only when `ok` is `false`, and is one of `blocked`, `dns`, `timeout`, `refused`, `tls`, `redirect`, `http_4xx`, `http_429`, `http_5xx`, or `unknown`. `http_429` means the destination is rate limiting requests, which is distinct from `http_4xx` and does not count toward auto-disable.
+`code` is present only when `ok` is `false`, and is one of `blocked`, `dns`, `timeout`, `refused`, `tls`, `redirect`, `http_4xx`, `http_429`, `http_5xx`, `unexpected_response`, or `unknown`. `http_429` means the destination is rate limiting requests, which is distinct from `http_4xx` and does not count toward auto-disable. `unexpected_response` means the destination answered successfully but not in the shape the protocol expects: for ntfy, a `2xx` whose `Content-Type` is not JSON, which is what an address that is not actually an ntfy server looks like.
 
 Entitlement is re-checked here too, not only at creation time: testing a `WEBHOOK` destination without a Pro subscription in SaaS mode returns `403`, so a downgrade stops even a manual test-send immediately.
 
