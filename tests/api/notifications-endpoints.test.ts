@@ -740,6 +740,80 @@ describe('endpoint item API', () => {
     expect(mocks.updateMany.mock.calls[0][0].data).not.toHaveProperty('type');
   });
 
+  it('lets a lapsed subscriber switch a webhook OFF, and relabel it', async () => {
+    // Turning a webhook off does not use the capability, so gating it on
+    // entitlement left a user whose subscription had lapsed looking at a
+    // banner saying the destination was no longer being delivered to, and
+    // then getting a 403 when they tried to switch it off. Deleting it
+    // outright was their only way out.
+    mocks.findFirst.mockResolvedValue({ id: 'ep-1', type: 'WEBHOOK' });
+    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+
+    const disabled = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { enabled: false }),
+      ctx('ep-1')
+    );
+    expect(disabled.status).toBe(200);
+
+    const relabelled = await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { label: 'Old receiver' }),
+      ctx('ep-1')
+    );
+    expect(relabelled.status).toBe(200);
+  });
+
+  it('still refuses to let a lapsed subscriber put a webhook back into service', async () => {
+    // The other half: re-enabling, re-pointing, or issuing a new signing
+    // secret all USE the capability, so those stay gated. Catches widening
+    // the exemption above into "webhooks are never entitlement-checked on
+    // update", which would let a downgraded account resume delivery.
+    mocks.findFirst.mockResolvedValue({ id: 'ep-1', type: 'WEBHOOK' });
+    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+
+    for (const body of [
+      { enabled: true },
+      { url: 'https://hooks.example.com/new' },
+      { rotateSecret: true },
+    ]) {
+      const response = await updateEndpoint(
+        jsonRequest('http://localhost/api/notifications/endpoints/ep-1', body),
+        ctx('ep-1')
+      );
+      expect(response.status).toBe(403);
+    }
+
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('meters a URL change against the same per-user outbound ceiling a test send uses', async () => {
+    // A URL change triggers DNS and, for ntfy, a health probe. Both it and a
+    // test send are user-triggered outbound requests, so it is the total that
+    // needs bounding, not each in its own private allowance.
+    const types: string[] = [];
+    mocks.checkRateLimit.mockImplementation((_request: unknown, type: string) => {
+      types.push(type);
+      return null;
+    });
+
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', {
+        url: 'https://ntfy.sh/other-topic',
+      }),
+      ctx('ep-1')
+    );
+
+    expect(types).toContain('notificationEndpointTestPerUser');
+  });
+
+  it('does not spend outbound budget on an edit that changes no URL', async () => {
+    await updateEndpoint(
+      jsonRequest('http://localhost/api/notifications/endpoints/ep-1', { label: 'New' }),
+      ctx('ep-1')
+    );
+
+    expect(mocks.checkRateLimit).not.toHaveBeenCalled();
+  });
+
   it('returns 404 when the update matches nothing', async () => {
     mocks.updateMany.mockResolvedValue({ count: 0 });
 

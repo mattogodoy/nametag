@@ -25,11 +25,17 @@ export const PUT = withAuth(async (request, session, context) => {
     const { label, enabled, url, token, rotateSecret } = parsed.data;
 
     // Changing the URL means a fresh DNS resolution and, for ntfy, an
-    // outbound health probe. That is the same shape of user-triggered
-    // outbound request the test-send endpoint has, so it carries the same
-    // rate limit rather than being an unmetered way to reach it.
+    // outbound health probe, so it draws on the same per-user outbound
+    // ceiling a test send does rather than being an unmetered way to reach
+    // it. Sharing that one budget, rather than giving edits a private
+    // allowance, is the point: both are user-triggered outbound requests and
+    // it is the total that needs bounding.
     if (url !== undefined) {
-      const rateLimitResponse = checkRateLimit(request, 'notificationEndpointTest', session.user.id);
+      const rateLimitResponse = checkRateLimit(
+        request,
+        'notificationEndpointTestPerUser',
+        session.user.id
+      );
       if (rateLimitResponse) return rateLimitResponse;
     }
 
@@ -64,10 +70,24 @@ export const PUT = withAuth(async (request, session, context) => {
       );
     }
 
-    // Re-checked on every mutation, not only at creation, so a downgrade in
-    // SaaS mode stops a user editing or re-enabling a webhook they can no
-    // longer use, with no cleanup job to run.
-    if (existing.type === 'WEBHOOK' && !(await canUseWebhooks(session.user.id))) {
+    // Re-checked here, not only at creation, so a downgrade in SaaS mode
+    // stops a user putting a webhook back into service with no cleanup job to
+    // run.
+    //
+    // Scoped to the operations that would actually USE the capability:
+    // re-enabling delivery, re-pointing the destination, or issuing a new
+    // signing secret. Turning a webhook OFF and relabelling it are
+    // deliberately allowed without entitlement. Gating those too meant a user
+    // whose subscription had lapsed was shown a banner saying the destination
+    // was no longer being delivered to, and then got a 403 when they tried to
+    // switch it off, with deleting it outright as their only way out.
+    const wantsToUseWebhook = enabled === true || url !== undefined || rotateSecret === true;
+
+    if (
+      existing.type === 'WEBHOOK' &&
+      wantsToUseWebhook &&
+      !(await canUseWebhooks(session.user.id))
+    ) {
       return NextResponse.json(
         { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
         { status: 403 }

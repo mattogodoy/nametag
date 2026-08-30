@@ -160,7 +160,7 @@ export async function sendWebPush(
     // exactly as if it had been tried and timed out again, so this cannot
     // make a dead device look healthy or stop it auto-disabling; only the
     // waiting is skipped. See RunCircuitBreaker.
-    const trippedCode = circuit.trippedCode(subscription.id);
+    const trippedCode = circuit.subscriptionTrippedCode(subscription.id);
     if (trippedCode !== null) {
       lastError = trippedCode;
       health.recordSubscription(subscription.id, { ok: false, code: trippedCode });
@@ -215,7 +215,7 @@ export async function sendWebPush(
         'Push delivery failed, keeping subscription'
       );
       const failureCode = code ?? failureCodeOf(statusCode);
-      circuit.record(subscription.id, failureCode);
+      circuit.recordSubscription(subscription.id, failureCode);
       health.recordSubscription(subscription.id, { ok: false, code: failureCode });
     }
   }

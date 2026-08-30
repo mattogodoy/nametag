@@ -322,7 +322,7 @@ async function dispatchEndpoints(
     // and recorded as a failure, exactly as if it had been tried and timed
     // out again, so this cannot make a dead destination look healthy or stop
     // it auto-disabling. The only thing skipped is the waiting.
-    const trippedCode = circuit.trippedCode(endpoint.id);
+    const trippedCode = circuit.endpointTrippedCode(endpoint.id);
     if (trippedCode !== null) {
       bucket.lastError = trippedCode;
       health.recordEndpoint(endpoint.id, { ok: false, code: trippedCode });
@@ -368,7 +368,7 @@ async function dispatchEndpoints(
     }
 
     if (!result.ok) {
-      circuit.record(endpoint.id, result.code);
+      circuit.recordEndpoint(endpoint.id, result.code);
     }
 
     if (result.ok) {

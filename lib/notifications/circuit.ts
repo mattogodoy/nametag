@@ -63,28 +63,53 @@ const UNREACHABLE_CODES: ReadonlySet<OutboundFailureCode> = new Set([
  * make a broken destination look healthy, or stop it eventually auto-disabling.
  */
 export class RunCircuitBreaker {
-  private readonly tripped = new Map<string, OutboundFailureCode>();
+  // Two maps rather than one keyed by a bare id, mirroring HealthAccumulator.
+  // `NotificationEndpoint` and `PushSubscription` ids come from different
+  // tables, so a single shared map would let an id collision between them
+  // silence one destination because an unrelated one failed. Separate maps
+  // make that impossible by construction rather than by assuming ids never
+  // repeat across tables.
+  private readonly endpoints = new Map<string, OutboundFailureCode>();
+  private readonly subscriptions = new Map<string, OutboundFailureCode>();
 
-  /**
-   * Record an outcome. Only a code in UNREACHABLE_CODES trips the breaker;
-   * anything else, including a success, leaves it closed.
-   */
-  record(id: string, code: OutboundFailureCode): void {
+  private static set(
+    map: Map<string, OutboundFailureCode>,
+    id: string,
+    code: OutboundFailureCode
+  ): void {
     if (UNREACHABLE_CODES.has(code)) {
-      this.tripped.set(id, code);
+      map.set(id, code);
     }
   }
 
   /**
-   * The code that tripped this destination earlier in the run, or null if it
-   * is still worth attempting.
+   * Record an endpoint outcome. Only a code in UNREACHABLE_CODES trips the
+   * breaker; anything else, including a success, leaves it closed.
    */
-  trippedCode(id: string): OutboundFailureCode | null {
-    return this.tripped.get(id) ?? null;
+  recordEndpoint(endpointId: string, code: OutboundFailureCode): void {
+    RunCircuitBreaker.set(this.endpoints, endpointId, code);
+  }
+
+  /** Record a push subscription outcome. Same rule as recordEndpoint. */
+  recordSubscription(subscriptionId: string, code: OutboundFailureCode): void {
+    RunCircuitBreaker.set(this.subscriptions, subscriptionId, code);
+  }
+
+  /**
+   * The code that tripped this endpoint earlier in the run, or null if it is
+   * still worth attempting.
+   */
+  endpointTrippedCode(endpointId: string): OutboundFailureCode | null {
+    return this.endpoints.get(endpointId) ?? null;
+  }
+
+  /** As endpointTrippedCode, for a push subscription. */
+  subscriptionTrippedCode(subscriptionId: string): OutboundFailureCode | null {
+    return this.subscriptions.get(subscriptionId) ?? null;
   }
 
   /** How many destinations were given up on this run, for logging. */
   get size(): number {
-    return this.tripped.size;
+    return this.endpoints.size + this.subscriptions.size;
   }
 }
