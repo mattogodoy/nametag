@@ -241,6 +241,11 @@
       "upgradePlan": "Upgrade uw plan",
       "endpointTypeNtfy": "ntfy",
       "endpointTypeWebhook": "Webhook",
+      "ntfyTooltip": "ntfy is een eenvoudige pushmeldingenservice. Installeer de ntfy-app op je telefoon, abonneer je op een onderwerp en Nametag stuurt herinneringen daarheen.",
+      "ntfyNone": "Nog geen onderwerpen.",
+      "webhookSectionTitle": "Webhooks",
+      "webhookTooltip": "Een webhook stuurt een HTTP POST met herinneringsdetails naar een URL die je beheert, elke keer dat er een melding verstuurd moet worden.",
+      "webhookNone": "Nog geen webhooks.",
       "weekdays": {
         "0": "Zondag",
         "1": "Maandag",

@@ -241,6 +241,11 @@
       "upgradePlan": "Upgrade your plan",
       "endpointTypeNtfy": "ntfy",
       "endpointTypeWebhook": "Webhook",
+      "ntfyTooltip": "ntfy is a simple push notification service. Install the ntfy app on your phone, subscribe to a topic, and Nametag sends reminders there.",
+      "ntfyNone": "No topics yet.",
+      "webhookSectionTitle": "Webhooks",
+      "webhookTooltip": "A webhook sends an HTTP POST with reminder details to a URL you control whenever a notification is due.",
+      "webhookNone": "No webhooks yet.",
       "weekdays": {
         "0": "Sunday",
         "1": "Monday",
