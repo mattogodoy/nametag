@@ -214,9 +214,9 @@
       "endpointTestRejected": "The destination rejected the notification. Check the topic name and the access token.",
       "endpointTestRateLimited": "The destination is rate limiting us. It should recover on its own.",
       "endpointTestTls": "The destination's certificate could not be verified. If it is on your own network, this is often a self-signed certificate that needs to be trusted or replaced.",
-      "endpointTestBlockedSaved": "That URL cannot be used. Remove this destination and add it again with a working URL.",
-      "endpointTestRejectedSaved": "The destination rejected the notification. Remove this destination and add it again with the correct topic and access token.",
-      "endpointTestRedirectSaved": "That address redirects to a different location, which is not supported. Remove this destination and add it again with a URL that does not redirect.",
+      "endpointTestBlockedSaved": "That URL cannot be used. Edit this destination and give it a working URL.",
+      "endpointTestRejectedSaved": "The destination rejected the notification. Edit this destination to correct the topic or replace the access token.",
+      "endpointTestRedirectSaved": "That address redirects to a different location, which is not supported. Edit this destination and give it a URL that does not redirect.",
       "endpointDisabled": "Turned off after repeated failures. Fix the destination, then turn it back on.",
       "endpointDisabledManual": "Turned off. Turn it back on when you want reminders here again.",
       "endpointEnable": "Turn back on",
@@ -260,7 +260,7 @@
       "webhookAddCredentialsInUrl": "Remove the username and password from the URL. Nametag signs every webhook it sends, so the receiver can verify it without URL credentials.",
       "endpointAddNotNtfy": "No ntfy server answered at that address. Check the server URL and that the server is reachable.",
       "endpointTestNotNtfy": "That address answered, but it is not an ntfy server. Check the server URL.",
-      "endpointTestNotNtfySaved": "That address is answering, but it is no longer an ntfy server. Remove this destination and add it again with a working URL.",
+      "endpointTestNotNtfySaved": "That address is answering, but it is no longer an ntfy server. Edit this destination and give it a working URL.",
       "endpointEdit": "Edit",
       "endpointTokenReplacePlaceholder": "Leave blank to keep the current token",
       "endpointTokenReplaceHelp": "Type a new token to replace the saved one, or clear this field and save to remove it. The saved token is never shown back to you.",
@@ -269,7 +269,8 @@
       "webhookEntitlementLapsed": "This webhook is not being sent to. Outgoing webhooks need an active Pro subscription, and yours has ended.",
       "pushDeviceDisabled": "This device was switched off after repeated delivery failures.",
       "pushDeviceDisabledRejected": "The push service rejected the messages. Turn push back on from this device to re-register it.",
-      "pushDeviceDisabledUnreachable": "The device could not be reached. Turn push back on from this device to re-register it."
+      "pushDeviceDisabledUnreachable": "The device could not be reached. Turn push back on from this device to re-register it.",
+      "endpointAddTooLong": "That URL is too long. Shorten it and try again."
     },
     "security": {
       "title": "Security",

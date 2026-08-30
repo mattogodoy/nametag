@@ -184,7 +184,7 @@ beforeEach(() => {
   });
   mocks.sendNtfy.mockResolvedValue({ ok: true });
   mocks.getUserLocale.mockResolvedValue('en');
-  mocks.probeNtfyHealth.mockResolvedValue(true);
+  mocks.probeNtfyHealth.mockResolvedValue('ntfy');
   prismaMock.$transaction.mockImplementation(
     (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock)
   );
@@ -465,7 +465,7 @@ describe('webhook endpoint creation', () => {
     // The #437 guard at save time. A host that merely parses like a topic
     // URL but is not ntfy would otherwise return 2xx for the publish POST,
     // count as delivered, and permanently stamp the reminder.
-    mocks.probeNtfyHealth.mockResolvedValue(false);
+    mocks.probeNtfyHealth.mockResolvedValue('not_ntfy');
 
     const response = await POST(
       post({ type: 'NTFY', label: 'Phone', url: 'https://not-ntfy.test/my-topic' })
@@ -475,6 +475,22 @@ describe('webhook endpoint creation', () => {
     const body = await response.json();
     expect(body.code).toBe('not_ntfy');
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('still saves when the ntfy server could not be reached, since that proves nothing', async () => {
+    // A timeout or a connection failure is not evidence the host is wrong.
+    // Refusing on it would block any ntfy deployment whose /v1/health this
+    // app cannot reach (behind Cloudflare Access, an auth proxy, or a WAF)
+    // even though publishing to it works perfectly. The send-time guard still
+    // covers the case where it really is not ntfy.
+    mocks.probeNtfyHealth.mockResolvedValue('unreachable');
+
+    const response = await POST(
+      post({ type: 'NTFY', label: 'Phone', url: 'https://ntfy.internal/my-topic' })
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.create).toHaveBeenCalled();
   });
 
   it('does not health-probe a webhook URL, which has no such protocol to confirm', async () => {
@@ -667,7 +683,7 @@ describe('endpoint item API', () => {
     // An edit that skipped any check creation runs would be a way to reach a
     // state creation refuses to produce. The ntfy health probe is the one
     // most easily forgotten, so it is asserted specifically.
-    mocks.probeNtfyHealth.mockResolvedValue(false);
+    mocks.probeNtfyHealth.mockResolvedValue('not_ntfy');
 
     const response = await updateEndpoint(
       jsonRequest('http://localhost/api/notifications/endpoints/ep-1', {

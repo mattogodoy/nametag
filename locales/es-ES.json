@@ -214,9 +214,9 @@
       "endpointTestRejected": "El destino rechazó la notificación. Revisa el nombre del tópico y el token de acceso.",
       "endpointTestRateLimited": "El destino nos está limitando la velocidad de envío. Debería recuperarse por sí solo.",
       "endpointTestTls": "No se pudo verificar el certificado del destino. Si está en tu propia red, suele deberse a un certificado autofirmado que hay que confiar o sustituir.",
-      "endpointTestBlockedSaved": "Esa URL no se puede usar. Elimina este destino y añádelo de nuevo con una URL que funcione.",
-      "endpointTestRejectedSaved": "El destino rechazó la notificación. Elimina este destino y añádelo de nuevo con el tópico y el token de acceso correctos.",
-      "endpointTestRedirectSaved": "Esa dirección redirige a otro lugar, algo que no es compatible. Elimina este destino y añádelo de nuevo con una URL que no redirija.",
+      "endpointTestBlockedSaved": "Esa URL no se puede usar. Edita este destino y ponle una URL que funcione.",
+      "endpointTestRejectedSaved": "El destino rechazó la notificación. Edita este destino para corregir el topic o sustituir el token de acceso.",
+      "endpointTestRedirectSaved": "Esa dirección redirige a otro sitio, y eso no es compatible. Edita este destino y ponle una URL que no redirija.",
       "endpointDisabled": "Desactivado tras fallos repetidos. Arregla el destino y vuelve a activarlo.",
       "endpointDisabledManual": "Desactivado. Vuelve a activarlo cuando quieras recibir recordatorios aquí de nuevo.",
       "endpointEnable": "Volver a activar",
@@ -260,7 +260,7 @@
       "webhookAddCredentialsInUrl": "Quita el usuario y la contraseña de la URL. Nametag firma todos los webhooks que envía, así que el receptor puede verificarlos sin credenciales en la URL.",
       "endpointAddNotNtfy": "Ningún servidor ntfy respondió en esa dirección. Comprueba la URL del servidor y que sea accesible.",
       "endpointTestNotNtfy": "Esa dirección respondió, pero no es un servidor ntfy. Comprueba la URL del servidor.",
-      "endpointTestNotNtfySaved": "Esa dirección responde, pero ya no es un servidor ntfy. Elimina este destino y vuelve a añadirlo con una URL que funcione.",
+      "endpointTestNotNtfySaved": "Esa dirección responde, pero ya no es un servidor ntfy. Edita este destino y ponle una URL que funcione.",
       "endpointEdit": "Editar",
       "endpointTokenReplacePlaceholder": "Déjalo en blanco para mantener el token actual",
       "endpointTokenReplaceHelp": "Escribe un token nuevo para sustituir el guardado, o vacía este campo y guarda para eliminarlo. El token guardado nunca se te vuelve a mostrar.",
@@ -269,7 +269,8 @@
       "webhookEntitlementLapsed": "No se está enviando nada a este webhook. Los webhooks salientes necesitan una suscripción Pro activa, y la tuya ha terminado.",
       "pushDeviceDisabled": "Este dispositivo se desactivó tras varios fallos de entrega.",
       "pushDeviceDisabledRejected": "El servicio de notificaciones rechazó los mensajes. Vuelve a activar las notificaciones desde este dispositivo para registrarlo de nuevo.",
-      "pushDeviceDisabledUnreachable": "No se pudo contactar con el dispositivo. Vuelve a activar las notificaciones desde este dispositivo para registrarlo de nuevo."
+      "pushDeviceDisabledUnreachable": "No se pudo contactar con el dispositivo. Vuelve a activar las notificaciones desde este dispositivo para registrarlo de nuevo.",
+      "endpointAddTooLong": "Esa URL es demasiado larga. Acórtala e inténtalo de nuevo."
     },
     "security": {
       "title": "Seguridad",

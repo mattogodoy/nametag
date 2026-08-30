@@ -146,8 +146,24 @@ export async function checkEndpointUrl(
   // occurrence is silently and permanently lost. The send path has its own
   // guard (`expectJsonResponse` in sendNtfy), but catching it here is what
   // turns an invisible nightly failure into an error the user can still fix.
-  if (normalized.ntfyBase !== null && !(await probeNtfyHealth(normalized.ntfyBase))) {
-    return { code: 'not_ntfy' };
+  //
+  // Only a CONCLUSIVE "that is not ntfy" refuses the save. `unreachable` (a
+  // timeout, a TLS error, a connection failure) is deliberately let through:
+  // it proves nothing, and refusing on it would block every ntfy deployment
+  // whose /v1/health this app cannot reach (behind Cloudflare Access, an auth
+  // proxy, or a WAF) despite publishing working perfectly. That is the same
+  // conflation the dns-versus-policy distinction above exists to avoid. A
+  // host that is genuinely wrong almost always answers something, typically a
+  // 404, which lands in `not_ntfy` and is still refused.
+  //
+  // Compared against the literal rather than tested for truthiness: every
+  // NtfyProbeResult is a non-empty string, so a truthiness test silently
+  // disables this guard entirely and still type-checks.
+  if (normalized.ntfyBase !== null) {
+    const probe = await probeNtfyHealth(normalized.ntfyBase);
+    if (probe === 'not_ntfy') {
+      return { code: 'not_ntfy' };
+    }
   }
 
   return null;

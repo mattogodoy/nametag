@@ -106,13 +106,10 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
  * destination (the test-send result, or the auto-disabled banner), rather
  * than against the create form.
  *
- * `updateEndpointSchema` accepts only `label` and `enabled`: neither the URL
- * nor the token of a saved destination can be edited. `endpointTestBlocked`
- * and `endpointTestRejected` both read as if editing were possible ("change
- * it and save again", "check the topic name and the access token"), which is
- * correct on the create form but leaves a saved row's message pointing at an
- * action the UI cannot perform. The saved variants point at the one action
- * that actually exists: remove the destination and add it again.
+ * The create-form copy tells the user to change what they just typed, which
+ * makes no sense against a row that is already saved and is not currently in
+ * an edit form. The saved variants point at the Edit button instead, which
+ * can now replace the URL and the credential in place.
  */
 const SAVED_MESSAGE_OVERRIDES: Partial<Record<OutboundFailureCode, string>> = {
   blocked: 'endpointTestBlockedSaved',
@@ -260,6 +257,7 @@ export default function NotificationEndpointsCard({
           : t('endpointAddCredentialsInUrl');
       }
       if (code === 'not_ntfy') return t('endpointAddNotNtfy');
+      if (code === 'too_long') return t('endpointAddTooLong');
       return type === 'WEBHOOK' ? t('webhookAddInvalid') : t('endpointAddInvalid');
     }
     if (response.status === 429) {

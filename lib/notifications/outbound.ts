@@ -360,32 +360,48 @@ const HEALTH_PROBE_MAX_BYTES = 1024;
  * exception is deliberately narrow:
  *
  * - It is used at save time and test time, never on the nightly send path.
- * - It returns a boolean. The body is parsed, checked, and discarded; no part
- *   of it reaches the caller, the UI, or a log. The information disclosed is
- *   one bit ("an ntfy server answered here"), which is the minimum needed to
- *   tell a user their URL is wrong, and far less than the response-body oracle
- *   that `postJson` exists to avoid.
+ * - It returns one of three fixed values. The body is parsed, checked, and
+ *   discarded; no part of it reaches the caller, the UI, or a log. The
+ *   information disclosed is whether an ntfy server answered, which is the
+ *   minimum needed to tell a user their URL is wrong, and far less than the
+ *   response-body oracle that `postJson` exists to avoid.
  * - At most HEALTH_PROBE_MAX_BYTES are buffered.
  *
  * Everything else is inherited from `resolveTarget`: policy validation, the
  * pinned address, no redirects.
  */
-export async function probeNtfyHealth(baseUrl: string): Promise<boolean> {
+export type NtfyProbeResult =
+  /** An ntfy server answered and reported itself healthy. */
+  | 'ntfy'
+  /** Something answered, but it is not an ntfy server. */
+  | 'not_ntfy'
+  /**
+   * Nothing conclusive: a timeout, a TLS error, a connection failure, or a
+   * resolver hiccup. Deliberately distinct from `not_ntfy`, because they call
+   * for opposite responses. Refusing to save on `not_ntfy` is the whole point
+   * of the probe; refusing to save on `unreachable` would block any ntfy
+   * deployment whose `/v1/health` is not reachable from this app (behind
+   * Cloudflare Access, an auth proxy, or a WAF) even though publishing to it
+   * works perfectly.
+   */
+  | 'unreachable';
+
+export async function probeNtfyHealth(baseUrl: string): Promise<NtfyProbeResult> {
   let target: PinnedTarget;
 
   try {
     target = await resolveTarget(`${baseUrl}v1/health`, outboundPolicy());
   } catch {
-    return false;
+    return 'unreachable';
   }
 
   const client = target.parsed.protocol === 'https:' ? https : http;
 
-  return new Promise<boolean>((resolve) => {
+  return new Promise<NtfyProbeResult>((resolve) => {
     let settled = false;
     const timers: { deadline?: ReturnType<typeof setTimeout> } = {};
 
-    const settle = (value: boolean) => {
+    const settle = (value: NtfyProbeResult) => {
       if (!settled) {
         settled = true;
         if (timers.deadline) clearTimeout(timers.deadline);
@@ -413,8 +429,11 @@ export async function probeNtfyHealth(baseUrl: string): Promise<boolean> {
         (response) => {
           const status = response.statusCode ?? 0;
 
+          // Something answered and it was not a healthy ntfy endpoint. A 404
+          // here is exactly what a mistyped host that happens to run a web
+          // server looks like, which is the case worth refusing.
           if (status < 200 || status >= 300) {
-            settle(false);
+            settle('not_ntfy');
             response.destroy();
             return;
           }
@@ -424,41 +443,45 @@ export async function probeNtfyHealth(baseUrl: string): Promise<boolean> {
           response.on('data', (chunk: string) => {
             buffered += chunk;
             if (Buffer.byteLength(buffered, 'utf8') > HEALTH_PROBE_MAX_BYTES) {
-              settle(false);
+              // ntfy's health response is a few dozen bytes. Anything this
+              // large is not one, whatever else it is.
+              settle('not_ntfy');
               response.destroy();
             }
           });
           response.on('end', () => {
             try {
               const parsed: unknown = JSON.parse(buffered);
-              settle(
+              const healthy =
                 typeof parsed === 'object' &&
-                  parsed !== null &&
-                  (parsed as { healthy?: unknown }).healthy === true
-              );
+                parsed !== null &&
+                (parsed as { healthy?: unknown }).healthy === true;
+              settle(healthy ? 'ntfy' : 'not_ntfy');
             } catch {
-              settle(false);
+              // Answered 2xx with a body that is not ntfy's health JSON.
+              settle('not_ntfy');
             }
           });
-          response.on('error', () => settle(false));
+          // The response died mid-body. Nothing was proved either way.
+          response.on('error', () => settle('unreachable'));
         }
       );
     } catch {
-      settle(false);
+      settle('unreachable');
       return;
     }
 
     timers.deadline = setTimeout(() => {
-      settle(false);
+      settle('unreachable');
       request.destroy();
     }, TIMEOUT_MS);
     timers.deadline.unref?.();
 
     request.on('timeout', () => {
-      settle(false);
+      settle('unreachable');
       request.destroy();
     });
-    request.on('error', () => settle(false));
+    request.on('error', () => settle('unreachable'));
     request.end();
   });
 }

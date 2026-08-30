@@ -214,9 +214,9 @@
       "endpointTestRejected": "La destinazione ha rifiutato la notifica. Controlla il nome del topic e il token di accesso.",
       "endpointTestRateLimited": "La destinazione sta limitando le nostre richieste. Dovrebbe riprendersi da sola.",
       "endpointTestTls": "Non è stato possibile verificare il certificato della destinazione. Se si trova sulla tua rete locale, spesso è un certificato autofirmato che deve essere approvato o sostituito.",
-      "endpointTestBlockedSaved": "Questo URL non può essere usato. Rimuovi questa destinazione e aggiungila di nuovo con un URL funzionante.",
-      "endpointTestRejectedSaved": "La destinazione ha rifiutato la notifica. Rimuovi questa destinazione e aggiungila di nuovo con il topic e il token di accesso corretti.",
-      "endpointTestRedirectSaved": "Quell'indirizzo reindirizza altrove, cosa non supportata. Rimuovi questa destinazione e aggiungila di nuovo con un URL che non reindirizza.",
+      "endpointTestBlockedSaved": "Questo URL non si può usare. Modifica questa destinazione e dalle un URL valido.",
+      "endpointTestRejectedSaved": "La destinazione ha rifiutato la notifica. Modifica questa destinazione per correggere il topic o sostituire il token di accesso.",
+      "endpointTestRedirectSaved": "Questo indirizzo reindirizza altrove, cosa non supportata. Modifica questa destinazione e dalle un URL che non reindirizzi.",
       "endpointDisabled": "Disattivata dopo ripetuti errori. Correggi la destinazione, poi riattivala.",
       "endpointDisabledManual": "Disattivata. Riattivala quando vuoi ricevere di nuovo promemoria qui.",
       "endpointEnable": "Riattiva",
@@ -260,7 +260,7 @@
       "webhookAddCredentialsInUrl": "Rimuovi nome utente e password dall'URL. Nametag firma ogni webhook che invia, quindi il destinatario può verificarlo senza credenziali nell'URL.",
       "endpointAddNotNtfy": "Nessun server ntfy ha risposto a questo indirizzo. Controlla l'URL del server e che sia raggiungibile.",
       "endpointTestNotNtfy": "Questo indirizzo ha risposto, ma non è un server ntfy. Controlla l'URL del server.",
-      "endpointTestNotNtfySaved": "Questo indirizzo risponde, ma non è più un server ntfy. Rimuovi questa destinazione e aggiungila di nuovo con un URL valido.",
+      "endpointTestNotNtfySaved": "Questo indirizzo risponde, ma non è più un server ntfy. Modifica questa destinazione e dalle un URL valido.",
       "endpointEdit": "Modifica",
       "endpointTokenReplacePlaceholder": "Lascia vuoto per mantenere il token attuale",
       "endpointTokenReplaceHelp": "Scrivi un nuovo token per sostituire quello salvato, oppure svuota questo campo e salva per rimuoverlo. Il token salvato non ti viene mai mostrato di nuovo.",
@@ -269,7 +269,8 @@
       "webhookEntitlementLapsed": "A questo webhook non viene inviato nulla. I webhook in uscita richiedono un abbonamento Pro attivo, e il tuo è terminato.",
       "pushDeviceDisabled": "Questo dispositivo è stato disattivato dopo ripetuti errori di consegna.",
       "pushDeviceDisabledRejected": "Il servizio di notifiche ha rifiutato i messaggi. Riattiva le notifiche da questo dispositivo per registrarlo di nuovo.",
-      "pushDeviceDisabledUnreachable": "Non è stato possibile raggiungere il dispositivo. Riattiva le notifiche da questo dispositivo per registrarlo di nuovo."
+      "pushDeviceDisabledUnreachable": "Non è stato possibile raggiungere il dispositivo. Riattiva le notifiche da questo dispositivo per registrarlo di nuovo.",
+      "endpointAddTooLong": "Questo URL è troppo lungo. Accorcialo e riprova."
     },
     "security": {
       "title": "Sicurezza",

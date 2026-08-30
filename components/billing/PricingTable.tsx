@@ -201,6 +201,7 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
                     fullWidth
                     onClick={() => handleUpgrade(tier as Exclude<SubscriptionTier, 'FREE'>)}
                     disabled={loading !== null}
+                    variant="custom"
                     className={
                       tier === 'PERSONAL'
                         ? 'bg-purple-600 hover:bg-purple-700 text-white'

@@ -448,3 +448,43 @@ describe('rate-limit', () => {
     });
   });
 });
+
+describe('per-email ceilings on unauthenticated mail-sending endpoints', () => {
+  it('gives the email bucket more headroom than the IP bucket it sits behind', async () => {
+    // The IP bucket does the ordinary work; the email bucket exists only to
+    // bound what no IP-scoped limit can, an attacker with a proxy pool
+    // mail-bombing one address.
+    //
+    // It has to be looser, because keying on the address means exhausting it
+    // also locks the owner of that address out for the window. Setting it at
+    // or below the IP allowance would let one attacker deny a specific person
+    // registration or a verification resend for the cost of a handful of
+    // requests. At this ratio a real person is stopped by their own IP bucket
+    // long before reaching it, and an attacker has to actually send that many
+    // emails to the victim to get there.
+    const { rateLimitConfigs } = await import('@/lib/rate-limit');
+
+    for (const [ipKey, emailKey] of [
+      ['register', 'registerPerEmail'],
+      ['forgotPassword', 'forgotPasswordPerEmail'],
+      ['resendVerification', 'resendVerificationPerEmail'],
+    ] as const) {
+      expect(rateLimitConfigs[emailKey].maxAttempts).toBeGreaterThan(
+        rateLimitConfigs[ipKey].maxAttempts
+      );
+      // Same window, so the two are directly comparable rather than one being
+      // looser only because it measures over longer.
+      expect(rateLimitConfigs[emailKey].windowMs).toBe(rateLimitConfigs[ipKey].windowMs);
+    }
+  });
+
+  it('keeps two different addresses in separate buckets', async () => {
+    // Without this an attacker exhausting one address would take out every
+    // other address on the same endpoint.
+    const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+    expect(buildRateLimitKey('registerPerEmail', null, 'a@example.com')).not.toBe(
+      buildRateLimitKey('registerPerEmail', null, 'b@example.com')
+    );
+  });
+});

@@ -141,12 +141,12 @@ describe('NotificationEndpointsCard', () => {
       // action that actually exists (remove and re-add).
       [
         'blocked',
-        'That URL cannot be used. Remove this destination and add it again with a working URL.',
+        'That URL cannot be used. Edit this destination and give it a working URL.',
       ],
       ['dns', 'That hostname did not resolve. Check the spelling, or try again in a moment.'],
       [
         'http_4xx',
-        'The destination rejected the notification. Remove this destination and add it again with the correct topic and access token.',
+        'The destination rejected the notification. Edit this destination to correct the topic or replace the access token.',
       ],
       ['http_429', 'The destination is rate limiting us. It should recover on its own.'],
       [
@@ -159,7 +159,7 @@ describe('NotificationEndpointsCard', () => {
       // edit a URL that cannot be edited in place.
       [
         'redirect',
-        'That address redirects to a different location, which is not supported. Remove this destination and add it again with a URL that does not redirect.',
+        'That address redirects to a different location, which is not supported. Edit this destination and give it a URL that does not redirect.',
       ],
     ])('maps the %s code to its own message', async (code, expected) => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: false, code })));
@@ -214,7 +214,7 @@ describe('NotificationEndpointsCard', () => {
       });
       expect(
         screen.queryByText(
-          'That URL cannot be used. Remove this destination and add it again with a working URL.'
+          'That URL cannot be used. Edit this destination and give it a working URL.'
         )
       ).not.toBeInTheDocument();
     });
@@ -927,7 +927,7 @@ describe('NotificationEndpointsCard', () => {
       });
       expect(
         screen.queryByText(
-          'The destination rejected the notification. Remove this destination and add it again with the correct topic and access token.'
+          'The destination rejected the notification. Edit this destination to correct the topic or replace the access token.'
         )
       ).not.toBeInTheDocument();
     });
@@ -941,7 +941,7 @@ describe('NotificationEndpointsCard', () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            'The destination rejected the notification. Remove this destination and add it again with the correct topic and access token.'
+            'The destination rejected the notification. Edit this destination to correct the topic or replace the access token.'
           )
         ).toBeInTheDocument();
       });
@@ -962,7 +962,7 @@ describe('NotificationEndpointsCard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Send a test' }));
 
       const sharedMessage =
-        'That address redirects to a different location, which is not supported. Remove this destination and add it again with a URL that does not redirect.';
+        'That address redirects to a different location, which is not supported. Edit this destination and give it a URL that does not redirect.';
 
       await waitFor(() => {
         expect(screen.getByText(sharedMessage)).toBeInTheDocument();

@@ -45,7 +45,10 @@ export const PUT = withAuth(async (request, session, context) => {
     // Scoped by userId so this cannot read another account's row.
     const existing = await prisma.notificationEndpoint.findFirst({
       where: { id, userId: session.user.id },
-      select: { id: true, type: true },
+      // `autoDisabledAt` is read, not just written: clearing it correctly
+      // depends on whether the system or the user switched this row off. See
+      // the repair block below.
+      select: { id: true, type: true, autoDisabledAt: true },
     });
 
     if (!existing) {
@@ -164,12 +167,28 @@ export const PUT = withAuth(async (request, session, context) => {
     // A repaired destination should not stay tarred with the failure that
     // switched it off. Changing the URL or the credential is the user
     // asserting the previous reason no longer applies, so the health counters
-    // reset with it. Without this, an endpoint auto-disabled at ten failures
-    // would be edited, still show its old failure code, and still be off.
-    if (normalizedUrl !== undefined || token !== undefined || newSecret !== null) {
+    // reset with it.
+    const isRepair = normalizedUrl !== undefined || token !== undefined || newSecret !== null;
+
+    if (isRepair) {
       data.consecutiveFailures = 0;
       data.lastFailureCode = null;
-      data.autoDisabledAt = null;
+
+      // `autoDisabledAt` is cleared ONLY together with re-enabling, and only
+      // for a row the system switched off. endpoint-health.ts depends on the
+      // invariant "autoDisabledAt set implies enabled false", and its mirror
+      // matters just as much here: clearing the timestamp while leaving
+      // `enabled` false produces a row the settings page reads as "you turned
+      // this off" for something the system disabled after ten failures,
+      // erasing the reason without giving anything back.
+      //
+      // A row the USER disabled already has a null timestamp and is left
+      // alone: editing the URL of a destination someone deliberately switched
+      // off must not switch it back on behind them.
+      if (existing.autoDisabledAt !== null && enabled === undefined) {
+        data.autoDisabledAt = null;
+        data.enabled = true;
+      }
     }
 
     try {

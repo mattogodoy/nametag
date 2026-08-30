@@ -214,9 +214,9 @@
       "endpointTestRejected": "通知先が通知を拒否しました。トピック名とアクセストークンを確認してください。",
       "endpointTestRateLimited": "通知先からレート制限を受けています。自然に回復するはずです。",
       "endpointTestTls": "通知先の証明書を確認できませんでした。自宅のネットワーク内であれば、多くの場合は信頼するか置き換える必要がある自己署名証明書が原因です。",
-      "endpointTestBlockedSaved": "そのURLは使用できません。この通知先を削除し、有効なURLで追加し直してください。",
-      "endpointTestRejectedSaved": "通知先が通知を拒否しました。この通知先を削除し、正しいトピック名とアクセストークンで追加し直してください。",
-      "endpointTestRedirectSaved": "そのアドレスは別の場所にリダイレクトされるため、対応していません。この通知先を削除し、リダイレクトしないURLで追加し直してください。",
+      "endpointTestBlockedSaved": "そのURLは使用できません。この宛先を編集して、有効なURLを設定してください。",
+      "endpointTestRejectedSaved": "宛先が通知を拒否しました。この宛先を編集して、トピックを修正するかアクセストークンを差し替えてください。",
+      "endpointTestRedirectSaved": "そのアドレスは別の場所にリダイレクトしますが、これはサポートされていません。この宛先を編集して、リダイレクトしないURLを設定してください。",
       "endpointDisabled": "エラーが繰り返されたため無効になりました。通知先を修正してから、もう一度オンにしてください。",
       "endpointDisabledManual": "オフになっています。ここでリマインダーを受け取りたい場合は、オンに戻してください。",
       "endpointEnable": "オンに戻す",
@@ -260,7 +260,7 @@
       "webhookAddCredentialsInUrl": "URLからユーザー名とパスワードを削除してください。Nametagは送信するすべてのWebhookに署名するため、受信側はURLの認証情報なしで検証できます。",
       "endpointAddNotNtfy": "そのアドレスではntfyサーバーが応答しませんでした。サーバーのURLと、サーバーに接続できるかを確認してください。",
       "endpointTestNotNtfy": "そのアドレスは応答しましたが、ntfyサーバーではありません。サーバーのURLを確認してください。",
-      "endpointTestNotNtfySaved": "そのアドレスは応答していますが、すでにntfyサーバーではありません。この宛先を削除し、有効なURLで追加し直してください。",
+      "endpointTestNotNtfySaved": "そのアドレスは応答していますが、すでにntfyサーバーではありません。この宛先を編集して、有効なURLを設定してください。",
       "endpointEdit": "編集",
       "endpointTokenReplacePlaceholder": "現在のトークンを保持するには空欄のままにしてください",
       "endpointTokenReplaceHelp": "保存済みのトークンを置き換えるには新しいトークンを入力し、削除するにはこの欄を空にして保存してください。保存済みのトークンが再表示されることはありません。",
@@ -269,7 +269,8 @@
       "webhookEntitlementLapsed": "このWebhookには何も送信されていません。送信Webhookには有効なProサブスクリプションが必要ですが、あなたのサブスクリプションは終了しています。",
       "pushDeviceDisabled": "この端末は配信の失敗が続いたため、オフになりました。",
       "pushDeviceDisabledRejected": "プッシュサービスがメッセージを拒否しました。この端末でプッシュ通知をもう一度オンにして、登録し直してください。",
-      "pushDeviceDisabledUnreachable": "端末に接続できませんでした。この端末でプッシュ通知をもう一度オンにして、登録し直してください。"
+      "pushDeviceDisabledUnreachable": "端末に接続できませんでした。この端末でプッシュ通知をもう一度オンにして、登録し直してください。",
+      "endpointAddTooLong": "そのURLは長すぎます。短くしてもう一度お試しください。"
     },
     "security": {
       "title": "セキュリティ",

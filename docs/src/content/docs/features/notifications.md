@@ -26,6 +26,8 @@ Push is enabled per device, not per account. Each phone, tablet, or browser you 
 
 That device now appears in your device list, with a name pulled from its browser and operating system so you can tell your devices apart. Remove any device from that list at any time to stop reminders on it, without touching your other devices or your email setting.
 
+A device that fails ten consecutive nightly runs is switched off, the same as any other destination. Your browser has no way to notice this on its own, since its permission and service worker are still valid, so the device is marked in Settings with the reason. Turning push back on from that device re-registers it and clears the state.
+
 ### iOS needs the app installed first
 
 Safari does not support web push on its own. On an iPhone or iPad, install Nametag to your home screen before turning on push, see [Installing the App](/features/install/). Until it's installed, the Notifications page shows a hint explaining this instead of a push toggle that would not work.
@@ -35,8 +37,6 @@ You'll also need iOS or iPadOS 16.4 or later. Apple only added web push support 
 ## Sending reminders to ntfy
 
 [ntfy](https://ntfy.sh) is a simple pub-sub notification service. You pick a topic name, subscribe to it in the ntfy app or a browser tab, and anything published to that topic shows up as a notification. Nametag can publish your reminders there.
-
-A device that fails ten consecutive nightly runs is switched off, the same as any other destination. Your browser has no way to notice this on its own, since its permission and service worker are still valid, so the device is marked in Settings with the reason. Turning push back on from that device re-registers it and clears the state.
 
 1. In the ntfy app, or at [ntfy.sh](https://ntfy.sh) in a browser, pick a topic name and subscribe to it.
 2. In Nametag, go to Settings, Notifications, and add a destination with the full topic URL, for example `https://ntfy.sh/my-topic`.

@@ -356,26 +356,26 @@ describe('probeNtfyHealth', () => {
     handler = (_req, res) =>
       res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"healthy":true}');
 
-    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(true);
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('ntfy');
   });
 
   it('rejects a server that answers 200 but is not ntfy', async () => {
     handler = (_req, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end('<html></html>');
 
-    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
   });
 
   it('rejects a server that reports unhealthy', async () => {
     handler = (_req, res) =>
       res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"healthy":false}');
 
-    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
   });
 
   it('rejects a 404, which is what a non-ntfy host usually gives for /v1/health', async () => {
     handler = (_req, res) => res.writeHead(404).end();
 
-    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
   });
 
   it('does not buffer an unbounded body', async () => {
@@ -386,6 +386,39 @@ describe('probeNtfyHealth', () => {
       res.end('x'.repeat(200_000));
     };
 
-    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
+  });
+
+  it('reports a connection failure as unreachable, not as a wrong server', async () => {
+    // The distinction that decides whether the save is refused. Collapsing
+    // this into not_ntfy told a user "no ntfy server answered, check the
+    // URL" for a resolver hiccup, and hard-blocked any ntfy whose /v1/health
+    // this app cannot reach even though publishing to it works.
+    await expect(probeNtfyHealth('http://127.0.0.1:1/')).resolves.toBe('unreachable');
+  });
+
+  it('reports a stalled connection as unreachable', async () => {
+    await expect(probeNtfyHealth(`${trickleBase}/`)).resolves.toBe('unreachable');
+  }, 10_000);
+});
+
+describe('probeNtfyHealth gating', () => {
+  it('refuses a save only on a conclusive not_ntfy, never on unreachable', async () => {
+    // Pins the asymmetry directly, so a future change that starts refusing
+    // on 'unreachable' fails here rather than in a self-hoster's bug report.
+    const { checkEndpointUrl } = await import('../../../lib/notifications/endpoint-url');
+
+    mocks.resolve4.mockResolvedValue(['127.0.0.1']);
+    mocks.resolve6.mockRejectedValue(new Error('no AAAA'));
+
+    handler = (_req, res) => res.writeHead(404).end();
+    const wrongHost = await checkEndpointUrl({ url: `${base}/topic`, ntfyBase: `${base}/` });
+    expect(wrongHost).toEqual({ code: 'not_ntfy' });
+
+    const unreachable = await checkEndpointUrl({
+      url: 'http://127.0.0.1:1/topic',
+      ntfyBase: 'http://127.0.0.1:1/',
+    });
+    expect(unreachable).toBeNull();
   });
 });

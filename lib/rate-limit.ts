@@ -117,6 +117,33 @@ export const rateLimitConfigs = {
     maxAttempts: 5 * 5,
     windowMs: 15 * 60 * 1000,
   },
+  // Per-EMAIL ceilings for the three unauthenticated endpoints that send mail
+  // to an address the caller supplies. Deliberately looser than their
+  // IP-keyed counterparts above, and the reason is the whole design:
+  //
+  // The IP bucket does the ordinary work and stops the common case. These
+  // exist only to bound what no IP-scoped limit can, an attacker with a proxy
+  // pool mail-bombing one address. Because the bucket is keyed on the address
+  // rather than the sender, exhausting it necessarily also locks the owner of
+  // that address out of the same action for the window. That trade is
+  // unavoidable for per-address limiting and is what every mature service
+  // makes, but it is only acceptable if the ceiling is high enough that a
+  // real person never reaches it and an attacker has to actually send that
+  // many emails to the victim to reach it. Set equal to the IP allowance
+  // times a comfortable multiple: a legitimate user makes one or two
+  // attempts and is stopped by their IP bucket long before this one.
+  registerPerEmail: {
+    maxAttempts: 10,
+    windowMs: 60 * 60 * 1000,
+  },
+  forgotPasswordPerEmail: {
+    maxAttempts: 10,
+    windowMs: 60 * 60 * 1000,
+  },
+  resendVerificationPerEmail: {
+    maxAttempts: 10,
+    windowMs: 15 * 60 * 1000,
+  },
 } as const;
 
 export type RateLimitType = keyof typeof rateLimitConfigs;

@@ -1,7 +1,19 @@
 import React from 'react';
 import Link from 'next/link';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+/**
+ * `custom` supplies no colours at all, for the handful of buttons that carry
+ * their own background and text colour through `className`.
+ *
+ * It exists because this component concatenates its variant classes with the
+ * caller's `className` without merging them. Two utilities setting the same
+ * property therefore both land in the class attribute, and the generated
+ * stylesheet's ordering decides the winner rather than the caller. That was
+ * invisible while every variant used `text-white` (the overrides agreed with
+ * it by accident) and became a real conflict the moment `primary` started
+ * using the theme-aware `text-on-primary`.
+ */
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'custom';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface BaseButtonProps {
@@ -32,6 +44,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   secondary: 'border border-border bg-surface text-muted hover:bg-surface-elevated',
   danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md active:translate-y-px active:shadow-sm',
   ghost: 'text-muted hover:bg-surface-elevated',
+  custom: '',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
