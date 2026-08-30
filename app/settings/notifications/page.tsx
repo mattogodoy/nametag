@@ -41,13 +41,22 @@ export default async function NotificationSettingsPage() {
     // that row to their own account and silently kill the victim's push. Nothing
     // in the app exposes it today; keep it that way.
     // createdAt is ordered on but not selected: nothing renders it.
-    select: { id: true, userAgent: true },
+    //
+    // autoDisabledAt and lastFailureCode ARE selected, and rendered. A device
+    // that failed ten consecutive runs is excluded from sendWebPush by the
+    // autoDisabledAt filter, and a browser will not re-subscribe on its own
+    // because its permission and service worker are still perfectly valid.
+    // Without surfacing this the device sits in the list looking healthy,
+    // receives nothing, and the user has no signal at all. Endpoints already
+    // showed exactly this; push was the one destination type that did not.
+    select: { id: true, userAgent: true, autoDisabledAt: true, lastFailureCode: true },
     orderBy: { createdAt: 'asc' },
   });
 
   // A self-hoster without SMTP should not be able to switch on an email that
   // will never arrive.
   const emailAvailable = isEmailConfigured();
+  const pushAvailable = isPushConfigured();
 
   const endpoints = await prisma.notificationEndpoint.findMany({
     where: { userId: session.user.id },
@@ -63,13 +72,26 @@ export default async function NotificationSettingsPage() {
     orderBy: { createdAt: 'asc' },
   });
 
+  // Reminder timing describes SCHEDULING, not transport, so it is gated on
+  // having any way to deliver at all rather than on email specifically.
+  // Gating it on email alone meant a self-hoster with no SMTP but a working
+  // ntfy destination could receive reminders and not configure when they
+  // arrive, which contradicts the whole point of the channel being optional.
+  const anyChannelAvailable =
+    emailAvailable || pushAvailable || endpoints.some((endpoint) => endpoint.enabled);
+
   return (
     <div className="space-y-6">
       <NotificationChannelsCard
         emailEnabled={user?.emailRemindersEnabled ?? true}
         emailAvailable={emailAvailable}
-        pushAvailable={isPushConfigured()}
-        devices={devices.map((device) => ({ id: device.id, userAgent: device.userAgent }))}
+        pushAvailable={pushAvailable}
+        devices={devices.map((device) => ({
+          id: device.id,
+          userAgent: device.userAgent,
+          autoDisabledAt: device.autoDisabledAt?.toISOString() ?? null,
+          lastFailureCode: device.lastFailureCode,
+        }))}
       />
 
       <NotificationEndpointsCard
@@ -93,7 +115,7 @@ export default async function NotificationSettingsPage() {
         <p className="text-muted mb-6">{t('leadTimeDescription')}</p>
         <ReminderLeadTimeSelector
           currentLeadDays={user?.defaultReminderLeadDays ?? 0}
-          disabled={!emailAvailable}
+          disabled={!anyChannelAvailable}
         />
       </div>
 
@@ -103,7 +125,7 @@ export default async function NotificationSettingsPage() {
         <WeeklyDigestSettings
           currentEnabled={user?.weeklyDigestEnabled ?? false}
           currentWeekday={user?.weeklyDigestWeekday ?? 1}
-          disabled={!emailAvailable}
+          disabled={!anyChannelAvailable}
         />
       </div>
     </div>

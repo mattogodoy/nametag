@@ -664,7 +664,7 @@ export default function NotificationEndpointsCard({
               <button
                 type="submit"
                 disabled={editSubmitting}
-                className={`px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 ${FOCUS_RING}`}
+                className={`px-3 py-1 rounded-md bg-primary text-on-primary disabled:opacity-50 ${FOCUS_RING}`}
               >
                 {tCommon('save')}
               </button>
@@ -687,6 +687,12 @@ export default function NotificationEndpointsCard({
           >
             {result.text}
           </p>
+        )}
+
+        {endpoint.type === 'WEBHOOK' && !canUseWebhooks && endpoint.enabled && (
+          <div className="mt-2 rounded-md bg-muted/20 px-3 py-2">
+            <p className="text-sm text-muted">{t('webhookEntitlementLapsed')}</p>
+          </div>
         )}
 
         {!endpoint.enabled && (
@@ -808,7 +814,7 @@ export default function NotificationEndpointsCard({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    className="px-3 py-1 rounded-md bg-primary text-on-primary disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                   >
                     {t('endpointSave')}
                   </button>
@@ -902,7 +908,7 @@ export default function NotificationEndpointsCard({
                     <button
                       type="submit"
                       disabled={webhookSubmitting}
-                      className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                      className="px-3 py-1 rounded-md bg-primary text-on-primary disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                     >
                       {t('endpointSave')}
                     </button>
@@ -959,7 +965,7 @@ export default function NotificationEndpointsCard({
               <button
                 type="button"
                 onClick={dismissWebhookSecret}
-                className="px-3 py-1 rounded-md bg-primary text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                className="px-3 py-1 rounded-md bg-primary text-on-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 {t('webhookSecretDone')}
               </button>

@@ -1055,3 +1055,67 @@ describe('NotificationEndpointsCard', () => {
     });
   });
 });
+
+describe('lapsed webhook entitlement', () => {
+  it('says a webhook is no longer being delivered to when the subscription has lapsed', () => {
+    // The entitlement is re-checked every run rather than cached on the row,
+    // so delivery stops correctly and immediately. Nothing told the user: a
+    // skip is not a failure, so consecutiveFailures never increments and the
+    // destination never auto-disables. It renders as enabled and healthy
+    // indefinitely while sending nothing.
+    renderCard({
+      endpoints: [
+        {
+          id: 'ep-1',
+          type: 'WEBHOOK',
+          label: 'My receiver',
+          url: 'https://hooks.example.com/abc',
+          enabled: true,
+          lastFailureCode: null,
+          autoDisabledAt: null,
+        },
+      ],
+      canUseWebhooks: false,
+    });
+
+    expect(screen.getByText(/need an active Pro subscription/i)).toBeInTheDocument();
+  });
+
+  it('says nothing when the subscription is active', () => {
+    renderCard({
+      endpoints: [
+        {
+          id: 'ep-1',
+          type: 'WEBHOOK',
+          label: 'My receiver',
+          url: 'https://hooks.example.com/abc',
+          enabled: true,
+          lastFailureCode: null,
+          autoDisabledAt: null,
+        },
+      ],
+      canUseWebhooks: true,
+    });
+
+    expect(screen.queryByText(/need an active Pro subscription/i)).toBeNull();
+  });
+
+  it('says nothing for an ntfy destination, which needs no entitlement', () => {
+    renderCard({
+      endpoints: [
+        {
+          id: 'ep-1',
+          type: 'NTFY',
+          label: 'Phone',
+          url: 'https://ntfy.sh/my-topic',
+          enabled: true,
+          lastFailureCode: null,
+          autoDisabledAt: null,
+        },
+      ],
+      canUseWebhooks: false,
+    });
+
+    expect(screen.queryByText(/need an active Pro subscription/i)).toBeNull();
+  });
+});

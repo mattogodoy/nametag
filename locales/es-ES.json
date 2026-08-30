@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "Déjalo en blanco para mantener el token actual",
       "endpointTokenReplaceHelp": "Escribe un token nuevo para sustituir el guardado, o vacía este campo y guarda para eliminarlo. El token guardado nunca se te vuelve a mostrar.",
       "webhookRotateSecret": "Generar un nuevo secreto de firma",
-      "webhookRotateSecretHelp": "El nuevo secreto se muestra una sola vez. Tienes que actualizar tu receptor con él, o rechazará todos los webhooks."
+      "webhookRotateSecretHelp": "El nuevo secreto se muestra una sola vez. Tienes que actualizar tu receptor con él, o rechazará todos los webhooks.",
+      "webhookEntitlementLapsed": "No se está enviando nada a este webhook. Los webhooks salientes necesitan una suscripción Pro activa, y la tuya ha terminado.",
+      "pushDeviceDisabled": "Este dispositivo se desactivó tras varios fallos de entrega.",
+      "pushDeviceDisabledRejected": "El servicio de notificaciones rechazó los mensajes. Vuelve a activar las notificaciones desde este dispositivo para registrarlo de nuevo.",
+      "pushDeviceDisabledUnreachable": "No se pudo contactar con el dispositivo. Vuelve a activar las notificaciones desde este dispositivo para registrarlo de nuevo."
     },
     "security": {
       "title": "Seguridad",

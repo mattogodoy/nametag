@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "留空以保留当前令牌",
       "endpointTokenReplaceHelp": "输入新令牌以替换已保存的令牌，或清空此字段并保存以将其删除。已保存的令牌不会再次显示给你。",
       "webhookRotateSecret": "生成新的签名密钥",
-      "webhookRotateSecretHelp": "新密钥只显示一次。你必须用它更新接收方，否则接收方会拒绝所有 Webhook。"
+      "webhookRotateSecretHelp": "新密钥只显示一次。你必须用它更新接收方，否则接收方会拒绝所有 Webhook。",
+      "webhookEntitlementLapsed": "当前没有向该 Webhook 发送任何内容。发送 Webhook 需要有效的 Pro 订阅，而你的订阅已结束。",
+      "pushDeviceDisabled": "该设备在多次投递失败后已被关闭。",
+      "pushDeviceDisabledRejected": "推送服务拒绝了这些消息。请在该设备上重新开启推送以再次注册。",
+      "pushDeviceDisabledUnreachable": "无法连接到该设备。请在该设备上重新开启推送以再次注册。"
     },
     "security": {
       "title": "安全",

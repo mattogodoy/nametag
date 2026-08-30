@@ -106,7 +106,7 @@ export default function ConnectionWizard({ isOpen, onClose }: ConnectionWizardPr
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-primary text-white'
+                        ? 'bg-primary text-on-primary'
                         : isCompleted
                           ? 'bg-primary/20 text-primary border-2 border-primary'
                           : 'bg-surface-elevated text-muted'

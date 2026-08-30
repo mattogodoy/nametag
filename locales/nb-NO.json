@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "La stå tomt for å beholde nåværende token",
       "endpointTokenReplaceHelp": "Skriv inn et nytt token for å erstatte det lagrede, eller tøm dette feltet og lagre for å fjerne det. Det lagrede tokenet vises aldri tilbake til deg.",
       "webhookRotateSecret": "Lag en ny signeringsnøkkel",
-      "webhookRotateSecretHelp": "Den nye nøkkelen vises bare én gang. Du må oppdatere mottakeren din med den, ellers avviser den hver webhook."
+      "webhookRotateSecretHelp": "Den nye nøkkelen vises bare én gang. Du må oppdatere mottakeren din med den, ellers avviser den hver webhook.",
+      "webhookEntitlementLapsed": "Det sendes ikke noe til denne webhooken. Utgående webhooks krever et aktivt Pro-abonnement, og ditt er avsluttet.",
+      "pushDeviceDisabled": "Denne enheten ble slått av etter gjentatte leveringsfeil.",
+      "pushDeviceDisabledRejected": "Pushtjenesten avviste meldingene. Slå på push igjen fra denne enheten for å registrere den på nytt.",
+      "pushDeviceDisabledUnreachable": "Enheten kunne ikke nås. Slå på push igjen fra denne enheten for å registrere den på nytt."
     },
     "security": {
       "title": "Sikkerhet",

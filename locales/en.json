@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "Leave blank to keep the current token",
       "endpointTokenReplaceHelp": "Type a new token to replace the saved one, or clear this field and save to remove it. The saved token is never shown back to you.",
       "webhookRotateSecret": "Generate a new signing secret",
-      "webhookRotateSecretHelp": "The new secret is shown once. Your receiver has to be updated with it, or it will reject every webhook."
+      "webhookRotateSecretHelp": "The new secret is shown once. Your receiver has to be updated with it, or it will reject every webhook.",
+      "webhookEntitlementLapsed": "This webhook is not being sent to. Outgoing webhooks need an active Pro subscription, and yours has ended.",
+      "pushDeviceDisabled": "This device was switched off after repeated delivery failures.",
+      "pushDeviceDisabledRejected": "The push service rejected the messages. Turn push back on from this device to re-register it.",
+      "pushDeviceDisabledUnreachable": "The device could not be reached. Turn push back on from this device to re-register it."
     },
     "security": {
       "title": "Security",

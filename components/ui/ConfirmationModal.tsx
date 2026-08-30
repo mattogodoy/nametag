@@ -36,7 +36,7 @@ export default function ConfirmationModal({
   const confirmButtonStyles = {
     danger: 'bg-red-600 hover:bg-red-700',
     warning: 'bg-yellow-600 hover:bg-yellow-700',
-    default: 'bg-primary text-white hover:bg-primary-dark',
+    default: 'bg-primary text-on-primary hover:bg-primary-dark',
   };
 
   return (

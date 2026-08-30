@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "Laat leeg om het huidige token te behouden",
       "endpointTokenReplaceHelp": "Typ een nieuw token om het opgeslagen token te vervangen, of maak dit veld leeg en sla op om het te verwijderen. Het opgeslagen token wordt je nooit opnieuw getoond.",
       "webhookRotateSecret": "Nieuw ondertekeningsgeheim genereren",
-      "webhookRotateSecretHelp": "Het nieuwe geheim wordt één keer getoond. Je moet je ontvanger ermee bijwerken, anders weigert die elke webhook."
+      "webhookRotateSecretHelp": "Het nieuwe geheim wordt één keer getoond. Je moet je ontvanger ermee bijwerken, anders weigert die elke webhook.",
+      "webhookEntitlementLapsed": "Er wordt niets naar deze webhook gestuurd. Uitgaande webhooks hebben een actief Pro-abonnement nodig, en dat van jou is afgelopen.",
+      "pushDeviceDisabled": "Dit apparaat is uitgeschakeld na herhaalde bezorgfouten.",
+      "pushDeviceDisabledRejected": "De pushdienst heeft de berichten geweigerd. Zet push weer aan op dit apparaat om het opnieuw te registreren.",
+      "pushDeviceDisabledUnreachable": "Het apparaat was niet bereikbaar. Zet push weer aan op dit apparaat om het opnieuw te registreren."
     },
     "security": {
       "title": "Beveiliging",

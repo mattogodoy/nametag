@@ -139,7 +139,7 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
               }`}
             >
               {isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-medium px-3 py-1 rounded-full">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-xs font-medium px-3 py-1 rounded-full">
                   {t('currentPlan')}
                 </span>
               )}

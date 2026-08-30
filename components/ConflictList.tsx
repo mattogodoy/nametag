@@ -279,7 +279,7 @@ export default function ConflictList({ conflicts }: ConflictListProps) {
                 <button
                   onClick={() => handleResolve(conflict.id, 'keep_local')}
                   disabled={isResolving}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-primary text-on-primary rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isResolving ? t('resolving') : t('keepLocal')}
                 </button>

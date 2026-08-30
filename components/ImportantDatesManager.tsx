@@ -518,7 +518,7 @@ export default function ImportantDatesManager({
                     type="button"
                     onClick={handleSaveEdit}
                     disabled={(!editingDate.type && !editingDate.title.trim()) || !editingDate.date}
-                    className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('save')}
                   </button>
@@ -655,7 +655,7 @@ export default function ImportantDatesManager({
                 type="button"
                 onClick={handleAdd}
                 disabled={(!newDate.type && !newDate.title.trim()) || !newDate.date}
-                className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('add')}
               </button>

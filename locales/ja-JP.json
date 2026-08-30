@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "現在のトークンを保持するには空欄のままにしてください",
       "endpointTokenReplaceHelp": "保存済みのトークンを置き換えるには新しいトークンを入力し、削除するにはこの欄を空にして保存してください。保存済みのトークンが再表示されることはありません。",
       "webhookRotateSecret": "新しい署名シークレットを生成",
-      "webhookRotateSecretHelp": "新しいシークレットは一度だけ表示されます。受信側を更新しないと、すべてのWebhookが拒否されます。"
+      "webhookRotateSecretHelp": "新しいシークレットは一度だけ表示されます。受信側を更新しないと、すべてのWebhookが拒否されます。",
+      "webhookEntitlementLapsed": "このWebhookには何も送信されていません。送信Webhookには有効なProサブスクリプションが必要ですが、あなたのサブスクリプションは終了しています。",
+      "pushDeviceDisabled": "この端末は配信の失敗が続いたため、オフになりました。",
+      "pushDeviceDisabledRejected": "プッシュサービスがメッセージを拒否しました。この端末でプッシュ通知をもう一度オンにして、登録し直してください。",
+      "pushDeviceDisabledUnreachable": "端末に接続できませんでした。この端末でプッシュ通知をもう一度オンにして、登録し直してください。"
     },
     "security": {
       "title": "セキュリティ",

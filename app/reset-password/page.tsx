@@ -132,7 +132,7 @@ function ResetPasswordForm() {
           </div>
           <Link
             href="/login"
-            className="inline-block px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+            className="inline-block px-6 py-2 bg-primary text-on-primary rounded-lg font-semibold hover:bg-primary-dark transition-colors"
           >
             {t('goToLoginButton')}
           </Link>

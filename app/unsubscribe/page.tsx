@@ -104,7 +104,7 @@ function UnsubscribeContent() {
                 anyone who just unsubscribed from it. */}
             <Link
               href={reminderType === 'WEEKLY_DIGEST' ? '/settings/notifications' : '/people'}
-              className="block w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+              className="block w-full bg-primary text-on-primary py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
             >
               {reminderType === 'WEEKLY_DIGEST'
                 ? t('success.reEnableDigestInSettings')
@@ -150,7 +150,7 @@ function UnsubscribeContent() {
           </p>
           <Link
             href="/dashboard"
-            className="block w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+            className="block w-full bg-primary text-on-primary py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
           >
             {t('error.goToDashboard')}
           </Link>

@@ -152,7 +152,7 @@ describe('NotificationChannelsCard', () => {
   it('lists subscribed devices', () => {
     renderCard({
       devices: [
-        { id: 'sub-1', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120' },
+        { id: 'sub-1', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120', autoDisabledAt: null, lastFailureCode: null },
       ],
     });
 
@@ -168,7 +168,7 @@ describe('NotificationChannelsCard', () => {
   it('shows the translated fallback for a device with no user agent', () => {
     renderCard({
       devices: [
-        { id: 'sub-2', userAgent: null },
+        { id: 'sub-2', userAgent: null, autoDisabledAt: null, lastFailureCode: null },
       ],
     });
 
@@ -298,7 +298,7 @@ describe('NotificationChannelsCard', () => {
       // A device row is required here: with none, the card is in the
       // last-device-removed recovery state exercised below, which hides this
       // copy on purpose.
-      renderCard({ devices: [{ id: 'sub-1', userAgent: 'Mozilla/5.0 (iPhone) Safari/604.1' }] });
+      renderCard({ devices: [{ id: 'sub-1', userAgent: 'Mozilla/5.0 (iPhone) Safari/604.1', autoDisabledAt: null, lastFailureCode: null }] });
 
       await waitFor(() => {
         expect(screen.getByText('Enabled on this device')).toBeInTheDocument();
@@ -329,7 +329,7 @@ describe('NotificationChannelsCard', () => {
       stubServiceWorker({ toJSON: () => ({}) });
       stubNotification('granted');
 
-      renderCard({ devices: [{ id: 'sub-1', userAgent: null }] });
+      renderCard({ devices: [{ id: 'sub-1', userAgent: null, autoDisabledAt: null, lastFailureCode: null }] });
 
       await waitFor(() => {
         expect(screen.getByText('Enabled on this device')).toBeInTheDocument();
@@ -349,12 +349,66 @@ describe('NotificationChannelsCard', () => {
             emailEnabled={true}
             emailAvailable={true}
             pushAvailable={true}
-            devices={[{ id: 'sub-1', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120' }]}
+            devices={[{ id: 'sub-1', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120', autoDisabledAt: null, lastFailureCode: null }]}
           />
         </NextIntlClientProvider>
       );
 
       expect(screen.getByText('macOS の Chrome')).toBeTruthy();
     });
+  });
+});
+
+describe('auto-disabled push devices', () => {
+  it('tells the user when a device was switched off after repeated failures', () => {
+    // sendWebPush excludes a row with autoDisabledAt set, and a browser will
+    // not re-subscribe on its own: its permission and service worker are
+    // still perfectly valid, so nothing prompts it. Without this notice the
+    // device sits in the list looking healthy and silently receives nothing
+    // forever, which is the one thing the endpoints list already got right
+    // and push did not.
+    renderCard({
+      devices: [
+        {
+          id: 'sub-1',
+          userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120',
+          autoDisabledAt: '2026-08-20T00:00:00.000Z',
+          lastFailureCode: 'http_5xx',
+        },
+      ],
+    });
+
+    expect(screen.getByText(/switched off after repeated delivery failures/i)).toBeInTheDocument();
+    expect(screen.getByText(/could not be reached/i)).toBeInTheDocument();
+  });
+
+  it('distinguishes a rejection from an unreachable device', () => {
+    renderCard({
+      devices: [
+        {
+          id: 'sub-1',
+          userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120',
+          autoDisabledAt: '2026-08-20T00:00:00.000Z',
+          lastFailureCode: 'http_4xx',
+        },
+      ],
+    });
+
+    expect(screen.getByText(/rejected the messages/i)).toBeInTheDocument();
+  });
+
+  it('says nothing for a healthy device', () => {
+    renderCard({
+      devices: [
+        {
+          id: 'sub-1',
+          userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120',
+          autoDisabledAt: null,
+          lastFailureCode: null,
+        },
+      ],
+    });
+
+    expect(screen.queryByText(/switched off after repeated delivery failures/i)).toBeNull();
   });
 });

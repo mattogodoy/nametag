@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "Laissez vide pour conserver le jeton actuel",
       "endpointTokenReplaceHelp": "Saisissez un nouveau jeton pour remplacer celui enregistré, ou videz ce champ et enregistrez pour le supprimer. Le jeton enregistré ne vous est jamais réaffiché.",
       "webhookRotateSecret": "Générer un nouveau secret de signature",
-      "webhookRotateSecretHelp": "Le nouveau secret n'est affiché qu'une fois. Vous devez mettre à jour votre destinataire avec, sinon il rejettera chaque webhook."
+      "webhookRotateSecretHelp": "Le nouveau secret n'est affiché qu'une fois. Vous devez mettre à jour votre destinataire avec, sinon il rejettera chaque webhook.",
+      "webhookEntitlementLapsed": "Rien n'est envoyé à ce webhook. Les webhooks sortants nécessitent un abonnement Pro actif, et le vôtre a pris fin.",
+      "pushDeviceDisabled": "Cet appareil a été désactivé après plusieurs échecs de livraison.",
+      "pushDeviceDisabledRejected": "Le service de notifications a rejeté les messages. Réactivez les notifications depuis cet appareil pour le réenregistrer.",
+      "pushDeviceDisabledUnreachable": "L'appareil était injoignable. Réactivez les notifications depuis cet appareil pour le réenregistrer."
     },
     "security": {
       "title": "Sécurité",

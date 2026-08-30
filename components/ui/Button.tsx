@@ -28,7 +28,7 @@ type ButtonProps = ButtonAsButtonProps | ButtonAsLinkProps;
 const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary min-h-11 sm:min-h-0';
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-white hover:bg-primary-dark shadow-sm hover:shadow-md active:translate-y-px active:shadow-sm',
+  primary: 'bg-primary text-on-primary hover:bg-primary-dark shadow-sm hover:shadow-md active:translate-y-px active:shadow-sm',
   secondary: 'border border-border bg-surface text-muted hover:bg-surface-elevated',
   danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md active:translate-y-px active:shadow-sm',
   ghost: 'text-muted hover:bg-surface-elevated',

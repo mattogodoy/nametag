@@ -69,7 +69,7 @@ function VerifyEmailContent() {
           </div>
           <Link
             href="/login"
-            className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark"
+            className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-on-primary bg-primary hover:bg-primary-dark"
           >
             {t('goToLoginButton')}
           </Link>
@@ -89,7 +89,7 @@ function VerifyEmailContent() {
           <div className="space-y-2">
             <Link
               href="/register"
-              className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-dark"
+              className="inline-block w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-on-primary bg-primary hover:bg-primary-dark"
             >
               {t('registerAgain')}
             </Link>

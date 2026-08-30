@@ -265,7 +265,11 @@
       "endpointTokenReplacePlaceholder": "Leer lassen, um den aktuellen Token zu behalten",
       "endpointTokenReplaceHelp": "Gib einen neuen Token ein, um den gespeicherten zu ersetzen, oder leere dieses Feld und speichere, um ihn zu entfernen. Der gespeicherte Token wird dir nie wieder angezeigt.",
       "webhookRotateSecret": "Neues Signaturgeheimnis erzeugen",
-      "webhookRotateSecretHelp": "Das neue Geheimnis wird nur einmal angezeigt. Du musst deinen Empfänger damit aktualisieren, sonst weist er jeden Webhook ab."
+      "webhookRotateSecretHelp": "Das neue Geheimnis wird nur einmal angezeigt. Du musst deinen Empfänger damit aktualisieren, sonst weist er jeden Webhook ab.",
+      "webhookEntitlementLapsed": "An diesen Webhook wird nichts gesendet. Ausgehende Webhooks brauchen ein aktives Pro-Abo, und deines ist abgelaufen.",
+      "pushDeviceDisabled": "Dieses Gerät wurde nach wiederholten Zustellfehlern abgeschaltet.",
+      "pushDeviceDisabledRejected": "Der Push-Dienst hat die Nachrichten abgelehnt. Schalte Push auf diesem Gerät wieder ein, um es neu zu registrieren.",
+      "pushDeviceDisabledUnreachable": "Das Gerät war nicht erreichbar. Schalte Push auf diesem Gerät wieder ein, um es neu zu registrieren."
     },
     "security": {
       "title": "Sicherheit",

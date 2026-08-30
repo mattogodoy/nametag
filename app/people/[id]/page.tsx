@@ -363,7 +363,7 @@ export default async function PersonDetailsPage({
               <div className="flex flex-shrink-0 space-x-3 w-full sm:w-auto">
                 <Link
                   href={`/people/${person.id}/edit`}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors text-center"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-primary text-on-primary rounded-lg font-semibold hover:bg-primary-dark transition-colors text-center"
                 >
                   {t('edit')}
                 </Link>

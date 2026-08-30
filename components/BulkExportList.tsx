@@ -254,7 +254,7 @@ export default function BulkExportList({ people }: BulkExportListProps) {
         <button
           onClick={handleExport}
           disabled={exporting || selectedIds.size === 0}
-          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-6 py-2 bg-primary text-on-primary rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {exporting
             ? t('exporting')

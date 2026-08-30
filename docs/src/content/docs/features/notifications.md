@@ -36,6 +36,8 @@ You'll also need iOS or iPadOS 16.4 or later. Apple only added web push support 
 
 [ntfy](https://ntfy.sh) is a simple pub-sub notification service. You pick a topic name, subscribe to it in the ntfy app or a browser tab, and anything published to that topic shows up as a notification. Nametag can publish your reminders there.
 
+A device that fails ten consecutive nightly runs is switched off, the same as any other destination. Your browser has no way to notice this on its own, since its permission and service worker are still valid, so the device is marked in Settings with the reason. Turning push back on from that device re-registers it and clears the state.
+
 1. In the ntfy app, or at [ntfy.sh](https://ntfy.sh) in a browser, pick a topic name and subscribe to it.
 2. In Nametag, go to Settings, Notifications, and add a destination with the full topic URL, for example `https://ntfy.sh/my-topic`.
 
@@ -43,6 +45,8 @@ When you save the destination, Nametag checks that an ntfy server actually answe
 3. Send a test to confirm it arrives before you rely on it.
 
 On the public ntfy.sh server, the topic name is the only thing standing between your reminders and anyone who guesses it or finds it some other way: anyone who knows the topic name can subscribe to it too. Pick something long and hard to guess, not a word or your own name. If you run your own ntfy server, or the topic needs an access token to publish to, add that token when you create the destination. It's encrypted at rest and is never shown back to you once saved.
+
+Reminder timing (the lead time and the weekly digest) is configurable as long as you have any working channel, not just email. A self-hosted instance with no SMTP but a working ntfy destination can still choose when reminders arrive.
 
 You can add up to five destinations, ntfy or otherwise. A destination that fails delivery on ten consecutive nightly runs is switched off automatically, so a dead topic or a decommissioned server doesn't keep failing quietly forever. This is tracked per run, not per reminder, so a night with a weekly digest and several birthday reminders still only counts as one failure against the threshold if every one of them failed, and a `429` response (the destination telling us to slow down) never counts toward the threshold at all, so a receiver enforcing its own rate limit cannot get itself switched off for it. The destination stays visible in Settings, showing whether it was switched off automatically (with the reason for the last failure) or turned off manually, and you can turn it back on from either state.
 
@@ -145,6 +149,8 @@ Push notifications are encrypted end to end by the Web Push protocol itself. The
 You can edit a saved destination: change its URL, replace or clear an ntfy access token, or generate a new webhook signing secret. A replacement URL is re-checked exactly as it was when you first added it, including the ntfy server check, so an edit can't get a destination into a state that adding one wouldn't allow. Changing the URL or the credential also clears the failure counter, so a destination you've just repaired isn't still marked with the reason it was switched off. The destination type itself can't be changed.
 
 Being able to replace a credential in place matters most after you rotate `NEXTAUTH_SECRET`: that makes every stored token and signing secret undecryptable, and without a way to replace them the only option would be deleting each destination and adding it again.
+
+On nametag.one, outgoing webhooks need an active Pro subscription. The check runs on every send rather than being recorded on the destination, so delivery stops the moment a subscription ends. Because a skipped send isn't a failure, the destination doesn't accumulate failures or switch itself off, so Settings marks it explicitly as not being delivered to rather than leaving it looking healthy.
 
 A webhook's signing secret is encrypted at rest and never shown back to you after creation. Generating a new one shows it once, in the same way, and your receiver has to be updated with it or it will reject every webhook. The webhook URL itself is not: it's stored and displayed in plaintext, the same as an ntfy topic URL. That asymmetry matters because a webhook URL is often itself a credential, not just an address. Slack, Discord, and Home Assistant, among others, embed a secret token directly in the URL path, so anyone who can see that URL can post to it. Treat it with the same care you'd give a password.
 
