@@ -10,21 +10,33 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   count: vi.fn(),
   checkRateLimit: vi.fn(),
+  transaction: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock('../../lib/auth', () => ({ auth: mocks.auth }));
 
-vi.mock('../../lib/prisma', () => ({
-  prisma: {
-    pushSubscription: {
-      upsert: mocks.upsert,
-      deleteMany: mocks.deleteMany,
-      findUnique: mocks.findUnique,
-      count: mocks.count,
-    },
-    user: { update: mocks.userUpdate },
+// The subscribe route takes its existence check, cap count and upsert inside
+// one transaction behind a row lock on the owning user (lib/db/user-lock.ts),
+// so the cap cannot be beaten by two concurrent requests. $transaction hands
+// the callback the same delegates the base client exposes.
+// Built inside vi.hoisted so the vi.mock factory below, which is hoisted to
+// the top of the file, can close over it without a temporal-dead-zone error.
+const prismaMock = vi.hoisted(() => ({
+  pushSubscription: {
+    upsert: mocks.upsert,
+    deleteMany: mocks.deleteMany,
+    findUnique: mocks.findUnique,
+    count: mocks.count,
   },
+  user: { update: mocks.userUpdate },
+  $queryRaw: mocks.queryRaw,
+  $transaction: mocks.transaction,
 }));
+
+vi.mock('../../lib/prisma', () => ({ prisma: prismaMock }));
+
+vi.mock('../../lib/db/user-lock', () => ({ lockUserRow: vi.fn() }));
 
 vi.mock('../../lib/notifications/vapid', () => ({
   getVapidDetails: mocks.getVapidDetails,
@@ -90,6 +102,9 @@ describe('push API', () => {
     });
     mocks.upsert.mockResolvedValue({ id: 'sub-1' });
     mocks.checkRateLimit.mockReturnValue(null);
+    mocks.transaction.mockImplementation(
+      (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock)
+    );
     // No existing row and comfortably under the cap unless a test says otherwise.
     mocks.findUnique.mockResolvedValue(null);
     mocks.count.mockResolvedValue(0);
@@ -214,6 +229,54 @@ describe('push API', () => {
 
     expect(response.status).toBe(201);
     expect(mocks.upsert).toHaveBeenCalled();
+  });
+
+  it('takes the cap count inside the transaction, so two concurrent subscribes cannot both win', async () => {
+    // The TOCTOU fix. Counting outside the transaction lets two requests each
+    // read a count under the cap and both insert. The count has to happen
+    // under the same row lock the upsert happens under, which means inside
+    // the $transaction callback.
+    //
+    // Asserting on call ORDER rather than merely that a transaction happened:
+    // a version that counts first and only then opens a transaction to write
+    // still calls $transaction, and would still have the bug.
+    let inTransaction = false;
+    let countRanInsideTransaction: boolean | null = null;
+    let upsertRanInsideTransaction: boolean | null = null;
+
+    mocks.transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => unknown) => {
+      inTransaction = true;
+      try {
+        return await callback(prismaMock);
+      } finally {
+        inTransaction = false;
+      }
+    });
+    mocks.count.mockImplementation(() => {
+      countRanInsideTransaction = inTransaction;
+      return Promise.resolve(0);
+    });
+    mocks.upsert.mockImplementation(() => {
+      upsertRanInsideTransaction = inTransaction;
+      return Promise.resolve({ id: 'sub-1' });
+    });
+
+    await subscribe(request(validBody));
+
+    expect(countRanInsideTransaction).toBe(true);
+    expect(upsertRanInsideTransaction).toBe(true);
+  });
+
+  it('rejects the request when the count taken under the lock is already at the cap', async () => {
+    // The pre-lock world would have let this through; the authoritative count
+    // is the one taken inside the transaction.
+    mocks.findUnique.mockResolvedValue(null);
+    mocks.count.mockResolvedValue(20);
+
+    const response = await subscribe(request(validBody));
+
+    expect(response.status).toBe(409);
+    expect(mocks.upsert).not.toHaveBeenCalled();
   });
 
   it('is rate limited', async () => {

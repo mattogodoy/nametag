@@ -14,7 +14,7 @@ vi.mock('dns', () => ({
   promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6 },
 }));
 
-import { postJson } from '../../../lib/notifications/outbound';
+import { postJson, probeNtfyHealth } from '../../../lib/notifications/outbound';
 
 let server: http.Server;
 let base: string;
@@ -290,5 +290,102 @@ describe('TLS server name', () => {
     const options = await captureRequestOptions('https://hook.example.com/x');
 
     expect(options.servername).toBe('hook.example.com');
+  });
+});
+
+describe('expectJsonResponse', () => {
+  it('treats a 2xx with a non-JSON content type as unexpected_response', async () => {
+    // The #437 case: a mistyped ntfy URL pointing at an ordinary web server
+    // that happily returns 200 with an HTML body. Without this the delivery
+    // counts as a success, the reminder is stamped, and it is never retried.
+    handler = (_req, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end('<html></html>');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: false, code: 'unexpected_response' });
+  });
+
+  it('accepts a 2xx with application/json', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"id":"abc"}');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('accepts a JSON content type carrying a charset parameter', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }).end('{}');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('treats a 2xx with no content type at all as unexpected_response', async () => {
+    handler = (_req, res) => res.writeHead(204).end();
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: false, code: 'unexpected_response' });
+  });
+
+  it('leaves callers that did not opt in unaffected', async () => {
+    // Webhooks deliberately accept any 2xx: a receiver is free to answer with
+    // an empty body. Only ntfy opts in, because only ntfy has a documented
+    // response shape to check against.
+    handler = (_req, res) => res.writeHead(200, { 'Content-Type': 'text/plain' }).end('ok');
+
+    const result = await postJson(`${base}/`, '{}', {});
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('still reports a non-2xx by its status, not as unexpected_response', async () => {
+    handler = (_req, res) => res.writeHead(503, { 'Content-Type': 'text/html' }).end('nope');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: false, code: 'http_5xx' });
+  });
+});
+
+describe('probeNtfyHealth', () => {
+  it('accepts a server that reports healthy', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"healthy":true}');
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(true);
+  });
+
+  it('rejects a server that answers 200 but is not ntfy', async () => {
+    handler = (_req, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end('<html></html>');
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
+  });
+
+  it('rejects a server that reports unhealthy', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"healthy":false}');
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
+  });
+
+  it('rejects a 404, which is what a non-ntfy host usually gives for /v1/health', async () => {
+    handler = (_req, res) => res.writeHead(404).end();
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
+  });
+
+  it('does not buffer an unbounded body', async () => {
+    // A hostile or broken host must not be able to stream arbitrary data into
+    // memory. The probe gives up past its byte ceiling rather than reading on.
+    handler = (_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('x'.repeat(200_000));
+    };
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe(false);
   });
 });

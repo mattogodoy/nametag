@@ -254,7 +254,13 @@
         "4": "星期四",
         "5": "星期五",
         "6": "星期六"
-      }
+      },
+      "webhookAddDuplicate": "你已经添加过该 Webhook。",
+      "endpointAddCredentialsInUrl": "请从网址中移除用户名和密码。如果你的 ntfy 服务器需要认证，请使用下方的访问令牌字段。",
+      "webhookAddCredentialsInUrl": "请从网址中移除用户名和密码。Nametag 会为发送的每个 Webhook 签名，接收方无需网址中的凭据即可验证。",
+      "endpointAddNotNtfy": "该地址没有 ntfy 服务器响应。请检查服务器网址以及服务器是否可以访问。",
+      "endpointTestNotNtfy": "该地址有响应，但它不是 ntfy 服务器。请检查服务器网址。",
+      "endpointTestNotNtfySaved": "该地址仍有响应，但已不再是 ntfy 服务器。请删除此目标，并使用可用的网址重新添加。"
     },
     "security": {
       "title": "安全",

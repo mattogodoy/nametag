@@ -16,22 +16,43 @@ const mocks = vi.hoisted(() => ({
   sendNtfy: vi.fn(),
   recordEndpointResult: vi.fn(),
   getUserLocale: vi.fn(),
+  probeNtfyHealth: vi.fn(),
 }));
+
+// Built inside vi.hoisted so the vi.mock factory below, which is hoisted to
+// the top of the file, can close over it without a temporal-dead-zone error.
+const prismaMock = vi.hoisted(() => {
+  const client = {
+    notificationEndpoint: {
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      updateMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    $queryRaw: vi.fn(),
+    $transaction: vi.fn(),
+  };
+  return client;
+});
 
 vi.mock('../../lib/auth', () => ({ auth: mocks.auth }));
 
-vi.mock('../../lib/prisma', () => ({
-  prisma: {
-    notificationEndpoint: {
-      findMany: mocks.findMany,
-      count: mocks.count,
-      create: mocks.create,
-      findFirst: mocks.findFirst,
-      updateMany: mocks.updateMany,
-      deleteMany: mocks.deleteMany,
-    },
-  },
-}));
+// The create path runs its authoritative cap check and its insert inside one
+// transaction, behind a row lock on the owning user (see lib/db/user-lock.ts).
+// $transaction hands the callback this same object, so a test asserting on
+// the create delegate still sees the call.
+vi.mock('../../lib/prisma', () => ({ prisma: prismaMock }));
+
+vi.mock('../../lib/db/user-lock', () => ({ lockUserRow: vi.fn() }));
+
+vi.mock('../../lib/notifications/outbound', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/notifications/outbound')>(
+    '../../lib/notifications/outbound'
+  );
+  return { ...actual, probeNtfyHealth: mocks.probeNtfyHealth };
+});
 
 vi.mock('../../lib/crypto/secrets', () => ({
   encryptSecret: mocks.encryptSecret,
@@ -128,7 +149,19 @@ function listRequest(): Request {
 // test happened to leave behind.
 beforeEach(() => {
   Object.values(mocks).forEach((m) => m.mockReset());
+  Object.values(prismaMock.notificationEndpoint).forEach((m) => m.mockReset());
+  prismaMock.$queryRaw.mockReset();
+  prismaMock.$transaction.mockReset();
   mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
+  // The route reaches the delegates through the prisma mock; these aliases
+  // are what the assertions below are written against, so keep them the
+  // same function objects rather than two parallel sets of spies.
+  mocks.count = prismaMock.notificationEndpoint.count;
+  mocks.create = prismaMock.notificationEndpoint.create;
+  mocks.findMany = prismaMock.notificationEndpoint.findMany;
+  mocks.findFirst = prismaMock.notificationEndpoint.findFirst;
+  mocks.updateMany = prismaMock.notificationEndpoint.updateMany;
+  mocks.deleteMany = prismaMock.notificationEndpoint.deleteMany;
   mocks.count.mockResolvedValue(0);
   mocks.create.mockResolvedValue({ id: 'ep-1', ...valid, secret: null, enabled: true });
   mocks.findMany.mockResolvedValue([]);
@@ -151,6 +184,10 @@ beforeEach(() => {
   });
   mocks.sendNtfy.mockResolvedValue({ ok: true });
   mocks.getUserLocale.mockResolvedValue('en');
+  mocks.probeNtfyHealth.mockResolvedValue(true);
+  prismaMock.$transaction.mockImplementation(
+    (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock)
+  );
 });
 
 describe('endpoints API', () => {
@@ -400,7 +437,77 @@ describe('webhook endpoint creation', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.code).toBe('invalid');
+    // A distinct code, not the generic 'invalid'. The client cannot render
+    // the actionable "remove the credentials from the URL" message without
+    // it, and that is the one rejection a user cannot diagnose by looking at
+    // the URL themselves.
+    expect(body.code).toBe('credentials_in_url');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects an ntfy URL that carries a username or password, the same as a webhook', async () => {
+    // parseNtfyUrl builds its base from URL.origin, which silently discards
+    // userinfo. Left unchecked, the destination is stored and shown back
+    // without the credentials, then authenticates as nobody and fails every
+    // delivery with nothing to say why. The webhook branch already refused
+    // this; the ntfy branch did not.
+    const response = await POST(
+      post({ type: 'NTFY', label: 'Phone', url: 'https://user:pw@ntfy.test/my-topic' })
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.code).toBe('credentials_in_url');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects an ntfy URL where no ntfy server answers', async () => {
+    // The #437 guard at save time. A host that merely parses like a topic
+    // URL but is not ntfy would otherwise return 2xx for the publish POST,
+    // count as delivered, and permanently stamp the reminder.
+    mocks.probeNtfyHealth.mockResolvedValue(false);
+
+    const response = await POST(
+      post({ type: 'NTFY', label: 'Phone', url: 'https://not-ntfy.test/my-topic' })
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.code).toBe('not_ntfy');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('does not health-probe a webhook URL, which has no such protocol to confirm', async () => {
+    await POST(post(webhook));
+
+    expect(mocks.probeNtfyHealth).not.toHaveBeenCalled();
+  });
+
+  it('enforces the per-user cap inside the transaction, not only in the pre-check', async () => {
+    // The TOCTOU fix. The pre-check reads 0 (so the request proceeds), but the
+    // authoritative count taken under the row lock sees the cap already met,
+    // which is exactly the state two concurrent requests race into.
+    let call = 0;
+    prismaMock.notificationEndpoint.count.mockImplementation(() => {
+      call += 1;
+      return Promise.resolve(call === 1 ? 0 : 5);
+    });
+
+    const response = await POST(post(webhook));
+
+    expect(response.status).toBe(409);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a URL whose normalised form exceeds the index byte limit', async () => {
+    // 495 UTF-16 code units passes the schema's .max(500), but percent-encoding
+    // during normalisation expands it past what a Postgres btree index entry
+    // can hold, which would surface as a raw 500 instead of a clean 400.
+    const longUrl = `https://hooks.test/${'é'.repeat(480)}`;
+
+    const response = await POST(post({ ...webhook, url: longUrl }));
+
+    expect(response.status).toBe(400);
     expect(mocks.create).not.toHaveBeenCalled();
   });
 });
@@ -408,6 +515,15 @@ describe('webhook endpoint creation', () => {
 describe('endpoint item API', () => {
   beforeEach(() => {
     mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
+  // The route reaches the delegates through the prisma mock; these aliases
+  // are what the assertions below are written against, so keep them the
+  // same function objects rather than two parallel sets of spies.
+  mocks.count = prismaMock.notificationEndpoint.count;
+  mocks.create = prismaMock.notificationEndpoint.create;
+  mocks.findMany = prismaMock.notificationEndpoint.findMany;
+  mocks.findFirst = prismaMock.notificationEndpoint.findFirst;
+  mocks.updateMany = prismaMock.notificationEndpoint.updateMany;
+  mocks.deleteMany = prismaMock.notificationEndpoint.deleteMany;
   });
 
   it('scopes an update to the signed-in user', async () => {
@@ -483,6 +599,15 @@ describe('endpoint item API', () => {
 describe('endpoint test-send API', () => {
   beforeEach(() => {
     mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
+  // The route reaches the delegates through the prisma mock; these aliases
+  // are what the assertions below are written against, so keep them the
+  // same function objects rather than two parallel sets of spies.
+  mocks.count = prismaMock.notificationEndpoint.count;
+  mocks.create = prismaMock.notificationEndpoint.create;
+  mocks.findMany = prismaMock.notificationEndpoint.findMany;
+  mocks.findFirst = prismaMock.notificationEndpoint.findFirst;
+  mocks.updateMany = prismaMock.notificationEndpoint.updateMany;
+  mocks.deleteMany = prismaMock.notificationEndpoint.deleteMany;
     webhookMocks.canUseWebhooks.mockReset();
     webhookMocks.sendWebhook.mockReset();
     webhookMocks.canUseWebhooks.mockResolvedValue(true);

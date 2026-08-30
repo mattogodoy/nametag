@@ -254,7 +254,13 @@
         "4": "Thursday",
         "5": "Friday",
         "6": "Saturday"
-      }
+      },
+      "webhookAddDuplicate": "You have already added that webhook.",
+      "endpointAddCredentialsInUrl": "Remove the username and password from the URL. If your ntfy server needs authentication, use the access token field below.",
+      "webhookAddCredentialsInUrl": "Remove the username and password from the URL. Nametag signs every webhook it sends, so the receiver can verify it without URL credentials.",
+      "endpointAddNotNtfy": "No ntfy server answered at that address. Check the server URL and that the server is reachable.",
+      "endpointTestNotNtfy": "That address answered, but it is not an ntfy server. Check the server URL.",
+      "endpointTestNotNtfySaved": "That address is answering, but it is no longer an ntfy server. Remove this destination and add it again with a working URL."
     },
     "security": {
       "title": "Security",

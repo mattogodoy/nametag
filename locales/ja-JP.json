@@ -254,7 +254,13 @@
         "4": "木曜日",
         "5": "金曜日",
         "6": "土曜日"
-      }
+      },
+      "webhookAddDuplicate": "そのWebhookはすでに追加されています。",
+      "endpointAddCredentialsInUrl": "URLからユーザー名とパスワードを削除してください。ntfyサーバーで認証が必要な場合は、下のアクセストークン欄を使ってください。",
+      "webhookAddCredentialsInUrl": "URLからユーザー名とパスワードを削除してください。Nametagは送信するすべてのWebhookに署名するため、受信側はURLの認証情報なしで検証できます。",
+      "endpointAddNotNtfy": "そのアドレスではntfyサーバーが応答しませんでした。サーバーのURLと、サーバーに接続できるかを確認してください。",
+      "endpointTestNotNtfy": "そのアドレスは応答しましたが、ntfyサーバーではありません。サーバーのURLを確認してください。",
+      "endpointTestNotNtfySaved": "そのアドレスは応答していますが、すでにntfyサーバーではありません。この宛先を削除し、有効なURLで追加し直してください。"
     },
     "security": {
       "title": "セキュリティ",

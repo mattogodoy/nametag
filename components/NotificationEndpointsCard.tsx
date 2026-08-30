@@ -98,6 +98,7 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
   http_4xx: 'endpointTestRejected',
   http_429: 'endpointTestRateLimited',
   tls: 'endpointTestTls',
+  unexpected_response: 'endpointTestNotNtfy',
 };
 
 /**
@@ -117,6 +118,7 @@ const SAVED_MESSAGE_OVERRIDES: Partial<Record<OutboundFailureCode, string>> = {
   blocked: 'endpointTestBlockedSaved',
   http_4xx: 'endpointTestRejectedSaved',
   redirect: 'endpointTestRedirectSaved',
+  unexpected_response: 'endpointTestNotNtfySaved',
 };
 
 type MessageContext = 'form' | 'saved';
@@ -227,7 +229,11 @@ export default function NotificationEndpointsCard({
     if (response.status === 409) {
       const data: unknown = await response.json().catch(() => null);
       const code = isApiErrorBody(data) ? data.code : undefined;
-      if (code === 'duplicate') return t('endpointAddDuplicate');
+      // Type-specific: the ntfy copy says "topic", which is not what a
+      // webhook is, and this branch is reached by both.
+      if (code === 'duplicate') {
+        return type === 'WEBHOOK' ? t('webhookAddDuplicate') : t('endpointAddDuplicate');
+      }
       return t('endpointLimit');
     }
     if (response.status === 400) {
@@ -235,6 +241,15 @@ export default function NotificationEndpointsCard({
       const code = isApiErrorBody(data) ? data.code : undefined;
       if (code === 'dns') return t('endpointTestDns');
       if (code === 'policy') return t('endpointTestBlocked');
+      // Both of these are rejections a user cannot diagnose by re-reading
+      // their own URL, so the generic "check the URL and try again" fallback
+      // is the worst possible message for them.
+      if (code === 'credentials_in_url') {
+        return type === 'WEBHOOK'
+          ? t('webhookAddCredentialsInUrl')
+          : t('endpointAddCredentialsInUrl');
+      }
+      if (code === 'not_ntfy') return t('endpointAddNotNtfy');
       return type === 'WEBHOOK' ? t('webhookAddInvalid') : t('endpointAddInvalid');
     }
     if (response.status === 429) {

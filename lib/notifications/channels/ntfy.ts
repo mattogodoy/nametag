@@ -135,5 +135,13 @@ export async function sendNtfy(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  return postJson(parsed.base, payload, headers);
+  // `expectJsonResponse` is what stops a 2xx from a host that is not ntfy
+  // being recorded as a delivery. ntfy's publish endpoint answers with a JSON
+  // message object; an unrelated web server that happens to return 200 for a
+  // POST to `/` does not. Without this the reminder would be stamped as sent
+  // and never retried, so a mistyped host silently and permanently loses that
+  // occurrence. Save-time validation (probeNtfyHealth, see the create route)
+  // catches the common case earlier, but only this covers a host that is
+  // repointed after the destination was saved.
+  return postJson(parsed.base, payload, headers, { expectJsonResponse: true });
 }

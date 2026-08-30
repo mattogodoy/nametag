@@ -254,7 +254,13 @@
         "4": "Donderdag",
         "5": "Vrijdag",
         "6": "Zaterdag"
-      }
+      },
+      "webhookAddDuplicate": "Je hebt die webhook al toegevoegd.",
+      "endpointAddCredentialsInUrl": "Haal de gebruikersnaam en het wachtwoord uit de URL. Als je ntfy-server authenticatie nodig heeft, gebruik dan het veld voor het toegangstoken hieronder.",
+      "webhookAddCredentialsInUrl": "Haal de gebruikersnaam en het wachtwoord uit de URL. Nametag ondertekent elke webhook die het verstuurt, dus de ontvanger kan die verifiëren zonder inloggegevens in de URL.",
+      "endpointAddNotNtfy": "Geen ntfy-server antwoordde op dat adres. Controleer de server-URL en of de server bereikbaar is.",
+      "endpointTestNotNtfy": "Dat adres antwoordde, maar het is geen ntfy-server. Controleer de server-URL.",
+      "endpointTestNotNtfySaved": "Dat adres antwoordt, maar het is geen ntfy-server meer. Verwijder deze bestemming en voeg hem opnieuw toe met een werkende URL."
     },
     "security": {
       "title": "Beveiliging",

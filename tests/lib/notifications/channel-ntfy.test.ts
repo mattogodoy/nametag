@@ -195,3 +195,25 @@ describe('sendNtfy', () => {
     expect(mocks.postJson).not.toHaveBeenCalled();
   });
 });
+
+describe('sendNtfy protocol confirmation', () => {
+  beforeEach(() => {
+    mocks.postJson.mockReset();
+    mocks.postJson.mockResolvedValue({ ok: true });
+  });
+
+  it('asks postJson to require a JSON response', async () => {
+    // The guard against a 2xx from a host that is not ntfy. Without it, any
+    // web server that returns 200 for a POST to `/` is recorded as a
+    // delivery, the reminder is stamped, and that occurrence is lost for
+    // good because a stamped reminder is never retried.
+    //
+    // Catches: dropping the options argument, or passing
+    // expectJsonResponse: false.
+    await sendNtfy({ id: 'e1', url: 'https://ntfy.sh/my-topic', secret: null }, contact);
+
+    expect(mocks.postJson).toHaveBeenCalledTimes(1);
+    const [, , , options] = mocks.postJson.mock.calls[0];
+    expect(options).toEqual(expect.objectContaining({ expectJsonResponse: true }));
+  });
+});
