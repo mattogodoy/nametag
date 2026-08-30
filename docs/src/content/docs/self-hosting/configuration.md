@@ -96,7 +96,7 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `LOG_LEVEL` | Logging verbosity: `debug`, `info`, `warn`, or `error` | `info` |
 | `VAPID_PUBLIC_KEY` | Public key for browser push notifications | Not set |
 | `VAPID_PRIVATE_KEY` | Private key for browser push notifications | Not set |
-| `VAPID_SUBJECT` | Contact URI for push services, must be a `mailto:` address | Not set |
+| `VAPID_SUBJECT` | Contact URI for push services: a `mailto:` address or an `https:` URL | Not set |
 | `TRUSTED_PROXY_HEADER` | Which header your reverse proxy manages for the client IP: `x-forwarded-for`, `x-real-ip`, or `cf-connecting-ip` | `x-forwarded-for` |
 | `TRUSTED_PROXY_COUNT` | Number of trusted reverse proxy hops in front of the app, used to pick the real client IP out of `X-Forwarded-For` for rate limiting (ignored when `TRUSTED_PROXY_HEADER` is `x-real-ip`) | `1` |
 
@@ -110,7 +110,7 @@ Generate a keypair with:
 npm run generate-vapid-keys
 ```
 
-This prints a `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` pair to add to your `.env` file, plus a reminder to set `VAPID_SUBJECT` to a `mailto:` address a push service can reach you at if there's a problem with your traffic.
+This prints a `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` pair to add to your `.env` file, plus a reminder to set `VAPID_SUBJECT` to a contact a push service can reach you at if there's a problem with your traffic. Either a `mailto:` address or an `https:` URL works, as RFC 8292 allows both.
 
 Leave all three unset and the push channel stays hidden in Settings. Email reminders are unaffected either way.
 

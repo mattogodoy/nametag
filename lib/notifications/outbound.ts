@@ -6,6 +6,7 @@ import {
   BlockedUrlError,
   outboundPolicy,
   resolveTarget,
+  stripIpv6Brackets,
   type PinnedTarget,
 } from '@/lib/net/url-validation';
 
@@ -181,7 +182,14 @@ export async function postJson(
     // net.isIP returns 0 for a hostname, 4 or 6 for a literal address. An IP
     // literal is not a valid TLS server name and Node warns (DEP0123) if one
     // is passed as `servername`.
-    const isIpLiteral = net.isIP(target.parsed.hostname) !== 0;
+    //
+    // Brackets are stripped first. `URL.hostname` keeps them for IPv6
+    // (`https://[fd00::1]/x` gives `"[fd00::1]"`) and `net.isIP` returns 0 for
+    // that form, so testing the raw hostname made this guard work for IPv4 and
+    // silently do nothing for IPv6: a self-hosted `https://[fd00::1]/hook`
+    // webhook got `servername: "[fd00::1]"`, an invalid SNI value, which is
+    // exactly what the guard exists to prevent.
+    const isIpLiteral = net.isIP(stripIpv6Brackets(target.parsed.hostname)) !== 0;
 
     let request: http.ClientRequest;
     try {

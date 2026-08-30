@@ -237,3 +237,58 @@ describe('postJson', () => {
     expect(result).toEqual({ ok: false, code: 'tls' });
   }, 10000);
 });
+
+describe('TLS server name', () => {
+  // These assert on the options handed to the HTTP client rather than on a
+  // completed request: `servername` is consumed inside the TLS handshake, so
+  // it is not observable from a receiving server.
+  async function captureRequestOptions(url: string): Promise<Record<string, unknown>> {
+    const https = (await import('node:https')).default;
+    let captured: Record<string, unknown> | undefined;
+
+    const spy = vi.spyOn(https, 'request').mockImplementation(((options: unknown) => {
+      captured = options as Record<string, unknown>;
+      // postJson wraps client.request in a try/catch and settles with
+      // 'unknown', so throwing here ends the call cleanly without a socket.
+      throw new Error('captured');
+    }) as unknown as typeof https.request);
+
+    try {
+      await postJson(url, '{}', {});
+    } finally {
+      spy.mockRestore();
+    }
+
+    if (!captured) throw new Error('https.request was never called');
+    return captured;
+  }
+
+  it('omits servername for an IPv6 literal host', async () => {
+    // Catches reverting the guard to `net.isIP(target.parsed.hostname)`.
+    // URL.hostname keeps the brackets for IPv6 and net.isIP returns 0 for
+    // that form, so the unstripped version sets servername to the literal
+    // '[fd00::1]', an invalid SNI value and exactly the DEP0123 case the
+    // guard exists to prevent. It worked for IPv4 and silently did nothing
+    // for IPv6.
+    const options = await captureRequestOptions('https://[fd00::1]:8443/hook');
+
+    expect(options.servername).toBeUndefined();
+  });
+
+  it('omits servername for an IPv4 literal host', async () => {
+    const options = await captureRequestOptions('https://192.0.2.10/hook');
+
+    expect(options.servername).toBeUndefined();
+  });
+
+  it('still sets servername for a real hostname', async () => {
+    // The other half: stripping brackets must not disable SNI for the normal
+    // name-based case, which is what makes virtual hosts work.
+    mocks.resolve4.mockResolvedValue(['93.184.216.34']);
+    mocks.resolve6.mockRejectedValue(new Error('no AAAA'));
+
+    const options = await captureRequestOptions('https://hook.example.com/x');
+
+    expect(options.servername).toBe('hook.example.com');
+  });
+});

@@ -200,6 +200,85 @@ describe('env validation', () => {
     });
   });
 
+  describe('blank values mean "not set"', () => {
+    it('treats a blank TRUSTED_PROXY_COUNT as the default of 1, not as 0', () => {
+      // The dangerous case, and the reason blankAsUndefined exists.
+      // `envSchema.safeParse(process.env)` sees `TRUSTED_PROXY_COUNT=` as the
+      // empty string, `Number('') === 0`, and `.default(1)` only fires for
+      // undefined. Without the preprocessor this silently resolves to 0,
+      // which means "trust no proxy": resolveTrustedClientIp then returns
+      // null for every request and every rate limit collapses into one
+      // shared bucket fleet-wide, with register capped at 3/hour instance
+      // wide.
+      //
+      // Catches: removing blankAsUndefined from TRUSTED_PROXY_COUNT. Asserts
+      // the resolved value, not merely that validation passed, because the
+      // broken version passes validation too.
+      process.env = {
+        ...BASE_VALID_ENV,
+        TRUSTED_PROXY_COUNT: '',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(validateEnv().TRUSTED_PROXY_COUNT).toBe(1);
+    });
+
+    it('treats a whitespace-only TRUSTED_PROXY_COUNT as the default too', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        TRUSTED_PROXY_COUNT: '   ',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(validateEnv().TRUSTED_PROXY_COUNT).toBe(1);
+    });
+
+    it('still honours an explicit TRUSTED_PROXY_COUNT of 0', () => {
+      // The preprocessor must not swallow a deliberate 0, which is what an
+      // operator with no reverse proxy is told to set.
+      process.env = {
+        ...BASE_VALID_ENV,
+        TRUSTED_PROXY_COUNT: '0',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(validateEnv().TRUSTED_PROXY_COUNT).toBe(0);
+    });
+
+    it('treats a blank TRUSTED_PROXY_HEADER as the default rather than failing to boot', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        TRUSTED_PROXY_HEADER: '',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(validateEnv().TRUSTED_PROXY_HEADER).toBe('x-forwarded-for');
+    });
+
+    it('treats blank VAPID variables as unset rather than as a partial configuration', () => {
+      // Blank VAPID vars used to fail `.min(1)` and take the app down at
+      // startup. `VAPID_PUBLIC_KEY=` in a .env means "not set", and push
+      // should simply stay disabled.
+      process.env = {
+        ...BASE_VALID_ENV,
+        VAPID_PUBLIC_KEY: '',
+        VAPID_PRIVATE_KEY: '',
+        VAPID_SUBJECT: '',
+      } as unknown as NodeJS.ProcessEnv;
+
+      const parsed = validateEnv();
+      expect(parsed.VAPID_PUBLIC_KEY).toBeUndefined();
+      expect(parsed.VAPID_PRIVATE_KEY).toBeUndefined();
+      expect(parsed.VAPID_SUBJECT).toBeUndefined();
+    });
+
+    it('does not treat a blank DB_PASSWORD as unset, since an empty password is real', () => {
+      // The one variable blankAsUndefined must never be applied to.
+      process.env = {
+        ...BASE_VALID_ENV,
+        DB_PASSWORD: '',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(validateEnv().DB_PASSWORD).toBe('');
+    });
+  });
+
   describe('VAPID configuration', () => {
     it('should reject a partial VAPID configuration', () => {
       process.env = {
@@ -214,7 +293,7 @@ describe('env validation', () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it('should reject a VAPID_SUBJECT that is not a mailto: URL', () => {
+    it('should reject a VAPID_SUBJECT that is neither a mailto: address nor an https: URL', () => {
       process.env = {
         ...BASE_VALID_ENV,
         VAPID_PUBLIC_KEY: 'pub',
@@ -224,8 +303,25 @@ describe('env validation', () => {
 
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       expect(() => validateEnv()).toThrow();
-      expect(consoleErrorSpy.mock.calls.flat().join('\n')).toMatch(/must be a mailto: URL/);
+      expect(consoleErrorSpy.mock.calls.flat().join('\n')).toMatch(
+        /must be a mailto: address or an https: URL/
+      );
       consoleErrorSpy.mockRestore();
+    });
+
+    it('should accept an https: VAPID_SUBJECT, which RFC 8292 and web-push both allow', () => {
+      // Catches re-tightening this to mailto:-only. That rejection throws
+      // 'Invalid environment configuration', which takes the entire app down
+      // at startup rather than merely disabling push, so a self-hoster who
+      // followed the spec could not boot at all.
+      process.env = {
+        ...BASE_VALID_ENV,
+        VAPID_PUBLIC_KEY: 'pub',
+        VAPID_PRIVATE_KEY: 'priv',
+        VAPID_SUBJECT: 'https://example.com',
+      } as unknown as NodeJS.ProcessEnv;
+
+      expect(() => validateEnv()).not.toThrow();
     });
 
     it('should print the same .env hint every other validation failure prints', () => {
