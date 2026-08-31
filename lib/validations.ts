@@ -683,9 +683,6 @@ export const createEndpointSchema = z.discriminatedUnion('type', [
   webhookEndpointSchema,
 ]);
 
-/** @deprecated Use createEndpointSchema. Kept so existing references resolve. */
-export const createNtfyEndpointSchema = ntfyEndpointSchema;
-
 export const updateEndpointSchema = z.object({
   label: z.string().min(1).max(60).optional(),
   enabled: z.boolean().optional(),
