@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 /**
  * These tests exercise `resolveTrustedClientIp`, the function that decides
@@ -478,5 +478,188 @@ describe('warnNoTrustedClientIp', () => {
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
     warnSpy.mockRestore();
+  });
+});
+
+describe('proxy formats that are not a bare IP (GHSA-qwj2-9jr7-f273)', () => {
+  const originalCount = process.env.TRUSTED_PROXY_COUNT;
+  const originalHeader = process.env.TRUSTED_PROXY_HEADER;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.TRUSTED_PROXY_COUNT = '1';
+  });
+
+  afterEach(() => {
+    if (originalCount === undefined) delete process.env.TRUSTED_PROXY_COUNT;
+    else process.env.TRUSTED_PROXY_COUNT = originalCount;
+    if (originalHeader === undefined) delete process.env.TRUSTED_PROXY_HEADER;
+    else process.env.TRUSTED_PROXY_HEADER = originalHeader;
+  });
+
+  it('accepts an address with a port, as Azure App Service emits', async () => {
+    // Rejecting this resolved to no trusted IP at all, which drops the whole
+    // deployment into the single shared rate-limit bucket for every request
+    // forever, where one caller can deny authentication instance-wide.
+    const { resolveTrustedClientIp } = await import('@/lib/net/client-ip');
+
+    expect(resolveTrustedClientIp(requestWith({ 'x-forwarded-for': '203.0.113.7:54321' }))).toBe(
+      '203.0.113.7'
+    );
+  });
+
+  it('accepts bracketed IPv6, as some HAProxy and IIS configurations emit', async () => {
+    const { resolveTrustedClientIp } = await import('@/lib/net/client-ip');
+
+    expect(resolveTrustedClientIp(requestWith({ 'x-forwarded-for': '[2001:db8::1]' }))).toBe(
+      '2001:db8::1'
+    );
+  });
+
+  it('accepts bracketed IPv6 with a port', async () => {
+    const { resolveTrustedClientIp } = await import('@/lib/net/client-ip');
+
+    expect(resolveTrustedClientIp(requestWith({ 'x-forwarded-for': '[2001:db8::1]:443' }))).toBe(
+      '2001:db8::1'
+    );
+  });
+
+  it('discards the port rather than keeping it in the bucket key', async () => {
+    // The port varies per connection. Keeping it would hand one client a
+    // fresh rate-limit bucket on every request, which is exactly the bypass
+    // this module exists to prevent.
+    const { resolveTrustedClientIp } = await import('@/lib/net/client-ip');
+
+    const first = resolveTrustedClientIp(requestWith({ 'x-forwarded-for': '203.0.113.7:1111' }));
+    const second = resolveTrustedClientIp(requestWith({ 'x-forwarded-for': '203.0.113.7:2222' }));
+
+    expect(first).toBe(second);
+  });
+
+  it('still reads a bare IPv6 address, which also contains colons', async () => {
+    // The port-splitting branch must never run before the whole string has
+    // been tested as an address, or every bare IPv6 would be mangled.
+    const { resolveTrustedClientIp } = await import('@/lib/net/client-ip');
+
+    expect(resolveTrustedClientIp(requestWith({ 'x-forwarded-for': '2001:db8::1' }))).toBe(
+      '2001:db8::1'
+    );
+  });
+
+  it('still rejects values that are not an address in any of these shapes', async () => {
+    const { resolveTrustedClientIp } = await import('@/lib/net/client-ip');
+
+    for (const value of [
+      'not-an-ip',
+      '203.0.113.7:notaport',
+      '[2001:db8::1]trailing',
+      '[not-ipv6]',
+      '[2001:db8::1',
+      '1.2.3.4:5:6',
+    ]) {
+      expect(resolveTrustedClientIp(requestWith({ 'x-forwarded-for': value }))).toBeNull();
+    }
+  });
+
+  it('applies the same normalisation to x-real-ip and cf-connecting-ip', async () => {
+    process.env.TRUSTED_PROXY_HEADER = 'x-real-ip';
+    vi.resetModules();
+    const realIp = await import('@/lib/net/client-ip');
+    expect(realIp.resolveTrustedClientIp(requestWith({ 'x-real-ip': '203.0.113.7:54321' }))).toBe(
+      '203.0.113.7'
+    );
+
+    process.env.TRUSTED_PROXY_HEADER = 'cf-connecting-ip';
+    vi.resetModules();
+    const cf = await import('@/lib/net/client-ip');
+    expect(
+      cf.resolveTrustedClientIp(requestWith({ 'cf-connecting-ip': '[2001:db8::1]:443' }))
+    ).toBe('2001:db8::1');
+  });
+});
+
+describe('reporting the no-trusted-IP condition (GHSA-qwj2-9jr7-f273)', () => {
+  const originalCount = process.env.TRUSTED_PROXY_COUNT;
+
+  afterEach(() => {
+    if (originalCount === undefined) delete process.env.TRUSTED_PROXY_COUNT;
+    else process.env.TRUSTED_PROXY_COUNT = originalCount;
+    vi.useRealTimers();
+  });
+
+  it('emits a parseable object with a stable event name, not prose', async () => {
+    // The condition used to be reported as a sentence, so a deployment
+    // shipping structured logs had no field to alert on and no event type to
+    // filter by. It stayed unnoticed for exactly that reason.
+    process.env.TRUSTED_PROXY_COUNT = '0';
+    vi.resetModules();
+    const { warnNoTrustedClientIp, resetNoTrustedClientIpReporting } = await import(
+      '@/lib/net/client-ip'
+    );
+    resetNoTrustedClientIpReporting();
+
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnNoTrustedClientIp();
+    const line = spy.mock.calls[0][0] as string;
+    spy.mockRestore();
+
+    const parsed = JSON.parse(line);
+    expect(parsed.event).toBe('rate_limit.no_trusted_client_ip');
+    expect(parsed.level).toBe('warn');
+    expect(parsed.trustedProxyCount).toBe(0);
+  });
+
+  it('re-reports on an interval instead of once per process, with a count', async () => {
+    // Firing once per process meant an operator saw a single line from
+    // whenever the process started and nothing since, while the condition
+    // persisted on every request.
+    //
+    // Catches: reverting to a one-shot boolean guard. Under that version the
+    // second report never happens.
+    vi.useFakeTimers();
+    process.env.TRUSTED_PROXY_COUNT = '0';
+    vi.resetModules();
+    const { warnNoTrustedClientIp, resetNoTrustedClientIpReporting } = await import(
+      '@/lib/net/client-ip'
+    );
+    resetNoTrustedClientIpReporting();
+
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    warnNoTrustedClientIp();
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    // Still inside the window: counted, not printed.
+    warnNoTrustedClientIp();
+    warnNoTrustedClientIp();
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(16 * 60 * 1000);
+    warnNoTrustedClientIp();
+    expect(spy).toHaveBeenCalledTimes(2);
+
+    // The suppressed requests are reported, not silently dropped.
+    const second = JSON.parse(spy.mock.calls[1][0] as string);
+    expect(second.occurrences).toBe(3);
+    spy.mockRestore();
+  });
+
+  it('gives different advice for count 0 than for a possibly-wrong count', async () => {
+    // The old message was identical either way, and the docs frame those as
+    // different problems, so it could point an operator in the wrong direction.
+    const read = async (count: string) => {
+      process.env.TRUSTED_PROXY_COUNT = count;
+      vi.resetModules();
+      const m = await import('@/lib/net/client-ip');
+      m.resetNoTrustedClientIpReporting();
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      m.warnNoTrustedClientIp();
+      const line = JSON.parse(spy.mock.calls[0][0] as string).msg as string;
+      spy.mockRestore();
+      return line;
+    };
+
+    expect(await read('0')).toContain('no proxy is trusted');
+    expect(await read('2')).toContain('too high is as broken as too low');
   });
 });

@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getRedis, isRedisConnected } from './redis';
 import { securityLogger } from './logger';
-import { rateLimitConfigs, buildRateLimitKey, type RateLimitType } from './rate-limit';
+import {
+  rateLimitConfigs,
+  buildRateLimitKey,
+  maxAttemptsForKey,
+  type RateLimitType,
+} from './rate-limit';
 import { resolveTrustedClientIp } from '@/lib/net/client-ip';
 
 /**
@@ -216,11 +221,16 @@ export async function checkRateLimit(
 ): Promise<NextResponse | null> {
   const config = rateLimitConfigs[type];
   const ip = resolveTrustedClientIp(request);
-  const key = `ratelimit:${buildRateLimitKey(type, ip, identifier)}`;
+  const bucketKey = buildRateLimitKey(type, ip, identifier);
+  const key = `ratelimit:${bucketKey}`;
 
   return checkRateLimitRedis(
     key,
-    config.maxAttempts,
+    // Computed from the bucket key, not the config alone, so the shared
+    // fallback gets the same widened ceiling here as in the in-memory
+    // limiter. Two independent copies of that rule is how the two would
+    // drift into disagreeing about how many requests an endpoint allows.
+    maxAttemptsForKey(type, bucketKey),
     config.windowMs,
     ip ?? 'unknown',
     type,

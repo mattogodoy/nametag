@@ -1,0 +1,76 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "Nametag Logo" [ref=e6] [cursor=pointer]:
+            - /url: /dashboard
+            - img "Nametag Logo" [ref=e7]
+          - generic [ref=e10]:
+            - textbox "Buscar personas..." [ref=e11]
+            - generic [ref=e12]:
+              - generic [ref=e13]: ⌘
+              - text: K
+            - img [ref=e14]
+          - button "Demo User" [ref=e19]:
+            - generic [ref=e20]: Demo User
+            - img [ref=e21]
+        - generic [ref=e24]:
+          - link "Inicio" [ref=e26] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e27]
+            - text: Inicio
+          - link "Personas" [ref=e31] [cursor=pointer]:
+            - /url: /people
+            - img [ref=e32]
+            - text: Personas
+          - link "Grupos" [ref=e35] [cursor=pointer]:
+            - /url: /groups
+            - img [ref=e36]
+            - text: Grupos
+          - link "Mapa" [ref=e39] [cursor=pointer]:
+            - /url: /map
+            - img [ref=e40]
+            - text: Mapa
+          - link "Diario" [ref=e44] [cursor=pointer]:
+            - /url: /journal
+            - img [ref=e45]
+            - text: Diario
+          - link "Relaciones" [ref=e48] [cursor=pointer]:
+            - /url: /relationship-types
+            - img [ref=e49]
+            - text: Relaciones
+    - main [ref=e51]:
+      - generic [ref=e52]:
+        - heading "Buenas noches, Demo User" [level=1] [ref=e54]
+        - generic [ref=e55]:
+          - heading "Próximos Eventos" [level=2] [ref=e56]
+          - link "JM Jessica Martinez Hora de ponerse al día Atrasado 07/29/2026" [ref=e58] [cursor=pointer]:
+            - /url: /people/cmr5ems4v000o89jexys3kway
+            - generic [ref=e59]:
+              - generic [ref=e62]: JM
+              - generic [ref=e63]:
+                - generic [ref=e64]: Jessica Martinez
+                - generic [ref=e65]: Hora de ponerse al día
+            - generic [ref=e66]:
+              - generic [ref=e67]: Atrasado
+              - generic [ref=e68]: 07/29/2026
+    - generic [ref=e70]:
+      - generic [ref=e71]:
+        - heading "Tu Red" [level=2] [ref=e72]
+        - button "Ayuda de filtro de gráfico" [ref=e73]: "?"
+      - generic [ref=e74]:
+        - generic [ref=e76]:
+          - button "Coincidiendo con cualquier grupo. Haz clic para cambiar." [ref=e80]: Cualquiera
+          - textbox "Escribe para filtrar por grupos..." [ref=e86]
+        - generic [ref=e89]:
+          - button "Mostrar como grupos" [ref=e90]:
+            - img [ref=e91]
+          - button "Volver a centrar el gráfico" [ref=e94]:
+            - img [ref=e95]
+  - region "Notifications alt+T"
+  - alert [ref=e99]
+```

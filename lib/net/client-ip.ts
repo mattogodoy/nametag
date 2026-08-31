@@ -107,6 +107,73 @@ export function resolveTrustedClientIp(request: Request): string | null {
 }
 
 /**
+ * Normalise one forwarding-header entry to a bare IP address, or null.
+ *
+ * Proxies do not all emit a bare address, and the three formats below are
+ * emitted by real deployments rather than being theoretical:
+ *
+ * - `203.0.113.7:54321`, Azure App Service.
+ * - `[2001:db8::1]`, some HAProxy and IIS configurations.
+ * - `[2001:db8::1]:443`, the same with a port.
+ *
+ * `net.isIP` rejects all three, and a rejected candidate resolves to no
+ * trusted IP at all, which drops that deployment into the shared rate-limit
+ * bucket for every request forever. Accepting these keeps such deployments on
+ * per-IP buckets, which is both the correct behaviour and the one that avoids
+ * the instance-wide lockout the shared bucket exposes.
+ *
+ * The port is discarded rather than kept: it varies per connection, so
+ * including it would give one client a fresh rate-limit bucket per request,
+ * which is precisely the bypass this module exists to prevent.
+ *
+ * Order matters. A bare IPv6 address contains colons, so this must never
+ * split on `:` before checking whether the whole string is already an
+ * address; only the unambiguous bracketed and IPv4-with-port forms are
+ * unpacked.
+ */
+function normalizeForwardedIp(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  // Already a bare address, IPv4 or IPv6. Checked first, so a bare IPv6
+  // never reaches the port-splitting branch below.
+  if (net.isIP(trimmed) !== 0) {
+    return trimmed;
+  }
+
+  // Bracketed IPv6, with or without a trailing port.
+  if (trimmed.startsWith('[')) {
+    const end = trimmed.indexOf(']');
+    if (end === -1) {
+      return null;
+    }
+    const inner = trimmed.slice(1, end);
+    // Anything after the bracket must be nothing or a port, never more
+    // address, or this is malformed rather than merely bracketed.
+    const rest = trimmed.slice(end + 1);
+    if (rest.length > 0 && !/^:\d+$/.test(rest)) {
+      return null;
+    }
+    return net.isIP(inner) === 6 ? inner : null;
+  }
+
+  // IPv4 with a port. Exactly one colon, or this is not an IPv4 address and
+  // the split would be a guess.
+  const firstColon = trimmed.indexOf(':');
+  if (firstColon !== -1 && firstColon === trimmed.lastIndexOf(':')) {
+    const host = trimmed.slice(0, firstColon);
+    const port = trimmed.slice(firstColon + 1);
+    if (/^\d+$/.test(port) && net.isIP(host) === 4) {
+      return host;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Resolve via x-forwarded-for, counting `trustedProxyCount` entries from the
  * right. Used when TRUSTED_PROXY_HEADER is 'x-forwarded-for' (the default).
  *
@@ -167,7 +234,7 @@ function resolveFromForwardedFor(request: Request, trustedProxyCount: number): s
   // unvalidated value would become part of a rate-limit bucket key, which
   // would let an attacker who cannot move the position still poison the
   // keyspace with garbage instead of an IP.
-  return net.isIP(candidate) !== 0 ? candidate : null;
+  return normalizeForwardedIp(candidate);
 }
 
 /**
@@ -196,8 +263,7 @@ function resolveFromRealIp(request: Request): string | null {
     return null;
   }
 
-  const trimmed = realIp.trim();
-  return net.isIP(trimmed) !== 0 ? trimmed : null;
+  return normalizeForwardedIp(realIp);
 }
 
 /**
@@ -225,8 +291,7 @@ function resolveFromCfConnectingIp(request: Request): string | null {
     return null;
   }
 
-  const trimmed = cfConnectingIp.trim();
-  return net.isIP(trimmed) !== 0 ? trimmed : null;
+  return normalizeForwardedIp(cfConnectingIp);
 }
 
 /**
@@ -280,28 +345,68 @@ export function getRawTrustedProxyHeaderForLogging(request: Request): string | u
     : value;
 }
 
-let warnedMissingTrustedIp = false;
+/**
+ * How often the no-trusted-IP condition is re-reported.
+ *
+ * It used to be reported once per process. After a restart-free week an
+ * operator saw a single line from whenever the process started and nothing
+ * since, while the condition persisted on every request. Re-emitting on an
+ * interval, with a count of how many requests hit it in between, makes an
+ * ongoing misconfiguration visible instead of a one-off startup curiosity,
+ * without putting a line on every request.
+ */
+const NO_TRUSTED_IP_REPORT_INTERVAL_MS = 15 * 60 * 1000;
+
+let suppressedSinceLastReport = 0;
+let lastReportedAt = 0;
 
 /**
- * Log, once per process, that a rate limiter could not determine a trusted
- * client IP and is falling back to a shared bucket.
+ * Report that a request could not be attributed to a trusted client IP.
  *
- * This exists because a silently shared bucket is how a rate limit stays
- * broken for months: every unauthenticated request with no other identifier
- * collapses into one counter, and nothing about that is visible unless an
- * operator goes looking. Logging it once (rather than per request) keeps a
- * misconfigured deployment from flooding its own logs while still surfacing
- * the problem.
+ * Emitted as a single JSON line with a stable `event` field rather than as
+ * prose, so it can be filtered and alerted on by a log pipeline. It goes
+ * through `console.warn` rather than the pino logger for the layering reason
+ * described at the top of this module: this function sits underneath both
+ * rate limiters, and a large number of existing tests mock '@/lib/logger'
+ * without providing every export. `lib/env.ts` makes the same trade for the
+ * same reason. The shape below is what makes it alertable regardless.
  */
 export function warnNoTrustedClientIp(): void {
-  if (warnedMissingTrustedIp) return;
-  warnedMissingTrustedIp = true;
+  suppressedSinceLastReport += 1;
+
+  const now = Date.now();
+  if (lastReportedAt !== 0 && now - lastReportedAt < NO_TRUSTED_IP_REPORT_INTERVAL_MS) {
+    return;
+  }
+
+  const occurrences = suppressedSinceLastReport;
+  suppressedSinceLastReport = 0;
+  lastReportedAt = now;
+
   console.warn(
-    '[rate-limit] No trusted client IP could be determined for a rate-limited request. ' +
-      'Falling back to a single shared bucket for every request with no other ' +
-      'identifier, which weakens rate limiting fleet-wide. Check TRUSTED_PROXY_COUNT ' +
-      '(must equal the number of reverse proxies in front of Nametag) and ' +
-      'TRUSTED_PROXY_HEADER (must match the header your proxy actually manages: ' +
-      'x-forwarded-for, x-real-ip, or cf-connecting-ip).'
+    JSON.stringify({
+      level: 'warn',
+      time: new Date(now).toISOString(),
+      module: 'rate-limit',
+      event: 'rate_limit.no_trusted_client_ip',
+      occurrences,
+      trustedProxyCount: env.TRUSTED_PROXY_COUNT,
+      trustedProxyHeader: env.TRUSTED_PROXY_HEADER,
+      msg:
+        'No trusted client IP could be determined for a rate-limited request. ' +
+        'Requests with no other identifier share one per-process bucket, which weakens rate limiting. ' +
+        (env.TRUSTED_PROXY_COUNT === 0
+          ? 'TRUSTED_PROXY_COUNT is 0, which means no proxy is trusted to set a forwarding header. ' +
+            'Set it to the number of reverse proxies in front of Nametag if there are any.'
+          : `TRUSTED_PROXY_COUNT is ${env.TRUSTED_PROXY_COUNT}. Check that it equals the number of ` +
+            'reverse proxies in front of Nametag (too high is as broken as too low), and that ' +
+            `TRUSTED_PROXY_HEADER (${env.TRUSTED_PROXY_HEADER}) is the header your proxy actually sets.`),
+    })
   );
+}
+
+/** Test seam: forget the reporting interval so a suite can assert on it. */
+export function resetNoTrustedClientIpReporting(): void {
+  suppressedSinceLastReport = 0;
+  lastReportedAt = 0;
 }
