@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { emailTemplates } from '@/lib/email';
 
 const rows = [
-  { personName: 'Sarah Chen', eventTitle: 'Birthday', formattedDate: 'May 12, 2026', daysUntil: 1 },
-  { personName: 'Tom Rivera', eventTitle: 'Anniversary', formattedDate: 'May 15, 2026', daysUntil: 4 },
+  { personName: 'Sarah Chen', eventTitle: 'Birthday', formattedDate: 'May 12, 2026', date: '2026-09-01', daysUntil: 1 },
+  { personName: 'Tom Rivera', eventTitle: 'Anniversary', formattedDate: 'May 15, 2026', date: '2026-09-01', daysUntil: 4 },
 ];
 
 describe('weeklyDigest template', () => {

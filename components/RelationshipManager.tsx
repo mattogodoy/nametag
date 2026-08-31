@@ -273,7 +273,7 @@ export default function RelationshipManager({
         </h4>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-3 py-1 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
+          className="px-3 py-1 bg-primary text-on-primary rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
         >
           {t('addRelationship')}
         </button>

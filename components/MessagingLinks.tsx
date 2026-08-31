@@ -161,7 +161,7 @@ export default function MessagingLinks({ phoneNumber, personId }: MessagingLinks
                 <button
                   onClick={handleUpdateLastContact}
                   disabled={isUpdating}
-                  className="flex-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="flex-1 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-on-primary hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   {isUpdating ? t('updating') : t('yes')}
                 </button>

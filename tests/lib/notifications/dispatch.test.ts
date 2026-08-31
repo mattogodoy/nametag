@@ -43,14 +43,28 @@ const endpointMocks = vi.hoisted(() => ({
 
 vi.mock('../../../lib/notifications/channels/ntfy', () => ({ sendNtfy: endpointMocks.sendNtfy }));
 
-const webhookMocks = vi.hoisted(() => ({ sendWebhook: vi.fn(), canUseWebhooks: vi.fn() }));
+const webhookMocks = vi.hoisted(() => ({
+  sendWebhook: vi.fn(),
+  canUseWebhooksForUsers: vi.fn(),
+}));
 
 vi.mock('../../../lib/notifications/channels/webhook', () => ({
   sendWebhook: webhookMocks.sendWebhook,
 }));
 vi.mock('../../../lib/notifications/entitlements', () => ({
-  canUseWebhooks: webhookMocks.canUseWebhooks,
+  canUseWebhooksForUsers: webhookMocks.canUseWebhooksForUsers,
 }));
+
+/**
+ * canUseWebhooksForUsers takes the run's user ids and answers for all of them
+ * in one query, rather than one call per user. Tests still express intent as a
+ * single yes or no, so this builds the Map the batched API returns.
+ */
+function setWebhookEntitlement(allowed: boolean) {
+  webhookMocks.canUseWebhooksForUsers.mockImplementation((userIds: readonly string[]) =>
+    Promise.resolve(new Map(userIds.map((userId) => [userId, allowed])))
+  );
+}
 
 vi.mock('../../../lib/prisma', () => ({
   prisma: {
@@ -725,8 +739,8 @@ describe('dispatchAll with webhooks', () => {
     endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
     endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
     webhookMocks.sendWebhook.mockReset();
-    webhookMocks.canUseWebhooks.mockReset();
-    webhookMocks.canUseWebhooks.mockResolvedValue(true);
+    webhookMocks.canUseWebhooksForUsers.mockReset();
+    setWebhookEntitlement(true);
     endpointMocks.endpointFindMany.mockResolvedValue([
       { id: 'ep-1', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
     ]);
@@ -742,7 +756,7 @@ describe('dispatchAll with webhooks', () => {
   });
 
   it('does NOT send when the user is not entitled, so a downgrade stops delivery', async () => {
-    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+    setWebhookEntitlement(false);
 
     const [result] = await dispatchAll([envelope('1')]);
 
@@ -755,7 +769,7 @@ describe('dispatchAll with webhooks', () => {
     // this must not count as a failure. shouldStamp alone stays false either
     // way, which is why this needs its own assertion: changing that branch
     // to return 'failed' would leave every other test in this file green.
-    webhookMocks.canUseWebhooks.mockResolvedValue(false);
+    setWebhookEntitlement(false);
 
     const [result] = await dispatchAll([envelope('1')]);
 
@@ -766,12 +780,17 @@ describe('dispatchAll with webhooks', () => {
     expect(result.skipped).toBe(3);
   });
 
-  it('checks entitlement once per user, not once per envelope', async () => {
+  it('resolves entitlement in one batched call for the whole run', async () => {
+    // Not merely "once per envelope" but once for the entire run: the lookup
+    // is batched across every webhook-owning user, matching how
+    // loadEmailPreferences and loadEndpoints already work. The previous
+    // version issued one subscription query per user.
     webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
 
     await dispatchAll([envelope('1'), envelope('1'), envelope('1')]);
 
-    expect(webhookMocks.canUseWebhooks).toHaveBeenCalledTimes(1);
+    expect(webhookMocks.canUseWebhooksForUsers).toHaveBeenCalledTimes(1);
+    expect(webhookMocks.canUseWebhooksForUsers).toHaveBeenCalledWith(['user-1']);
   });
 
   it('does not check entitlement at all when the user has no webhook endpoints', async () => {
@@ -782,7 +801,7 @@ describe('dispatchAll with webhooks', () => {
 
     await dispatchAll([envelope('1')]);
 
-    expect(webhookMocks.canUseWebhooks).not.toHaveBeenCalled();
+    expect(webhookMocks.canUseWebhooksForUsers).not.toHaveBeenCalled();
   });
 
   it('records webhook outcomes for health tracking', async () => {
@@ -853,8 +872,8 @@ describe('dispatchAll with both an ntfy and a webhook endpoint on the same user'
     endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
     endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
     webhookMocks.sendWebhook.mockReset();
-    webhookMocks.canUseWebhooks.mockReset();
-    webhookMocks.canUseWebhooks.mockResolvedValue(true);
+    webhookMocks.canUseWebhooksForUsers.mockReset();
+    setWebhookEntitlement(true);
     endpointMocks.endpointFindMany.mockResolvedValue([
       { id: 'ep-ntfy', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
       { id: 'ep-hook', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
@@ -912,8 +931,8 @@ describe('guardEndpoints channel labelling', () => {
     endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
     endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
     webhookMocks.sendWebhook.mockReset();
-    webhookMocks.canUseWebhooks.mockReset();
-    webhookMocks.canUseWebhooks.mockResolvedValue(true);
+    webhookMocks.canUseWebhooksForUsers.mockReset();
+    setWebhookEntitlement(true);
     recordEndpointSpy = vi
       .spyOn(HealthAccumulator.prototype, 'recordEndpoint')
       .mockImplementation(() => {
@@ -978,7 +997,7 @@ describe('loadWebhookEntitlements try/catch', () => {
     endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
     endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
     webhookMocks.sendWebhook.mockReset();
-    webhookMocks.canUseWebhooks.mockReset();
+    webhookMocks.canUseWebhooksForUsers.mockReset();
     endpointMocks.endpointFindMany.mockResolvedValue([
       { id: 'ep-1', userId: 'user-1', type: 'WEBHOOK', url: 'https://hooks.test/x', secret: 'enc' },
     ]);
@@ -990,7 +1009,7 @@ describe('loadWebhookEntitlements try/catch', () => {
     // call throwing instead) must not escape dispatchAll and abort the run:
     // every other envelope's email, push, and ntfy delivery for the night
     // must still happen.
-    webhookMocks.canUseWebhooks.mockRejectedValue(new Error('billing lookup exploded'));
+    webhookMocks.canUseWebhooksForUsers.mockRejectedValue(new Error('billing lookup exploded'));
 
     const [result] = await dispatchAll([envelope('1')]);
 
@@ -1013,7 +1032,7 @@ describe('loadWebhookEntitlements try/catch', () => {
         }))
       );
     });
-    webhookMocks.canUseWebhooks.mockImplementation((userId: string) =>
+    webhookMocks.canUseWebhooksForUsers.mockImplementation((userId: string) =>
       userId === 'user-1' ? Promise.reject(new Error('billing lookup exploded')) : Promise.resolve(true)
     );
     webhookMocks.sendWebhook.mockResolvedValue({ ok: true });
@@ -1030,5 +1049,86 @@ describe('loadWebhookEntitlements try/catch', () => {
     // guarantee the code does not actually make.
     expect(firstResult.shouldStamp).toBe(false);
     expect(secondResult.shouldStamp).toBe(false);
+  });
+});
+
+describe('unreachable destinations within a run', () => {
+  // Mirrors the sibling suites above: these describe blocks are siblings of
+  // the main one, so they set up the mocks they depend on rather than
+  // inheriting them.
+  //
+  // Every envelope here belongs to the SAME user, which is the shape #436
+  // describes: one account with several due reminders, all delivered to the
+  // same destination list. envelope() gives each call a different user, which
+  // would not exercise the breaker at all.
+  beforeEach(() => {
+    mocks.isEmailConfigured.mockReturnValue(false);
+    pushMocks.sendWebPush.mockReset();
+    pushMocks.sendWebPush.mockResolvedValue({ channel: 'web_push', status: 'skipped' });
+    pushMocks.userFindMany.mockResolvedValue([{ id: 'user-1', emailRemindersEnabled: false }]);
+    endpointMocks.endpointUpdate.mockReset();
+    endpointMocks.endpointUpdateMany.mockReset();
+    endpointMocks.endpointUpdate.mockResolvedValue({ consecutiveFailures: 1 });
+    endpointMocks.endpointUpdateMany.mockResolvedValue({ count: 1 });
+    endpointMocks.sendNtfy.mockReset();
+    endpointMocks.endpointFindMany.mockReset();
+    endpointMocks.endpointFindMany.mockResolvedValue([
+      { id: 'ep-1', userId: 'user-1', type: 'NTFY', url: 'https://ntfy.sh/t', secret: null },
+    ]);
+  });
+
+  const forOneUser = (count: number) =>
+    Array.from({ length: count }, (_value, index) => envelopeForUser('user-1', `person-${index}`));
+
+  it('stops contacting a timed-out destination once the run has learned it is dead', async () => {
+    // The whole point of the circuit breaker. Without it a blackholed
+    // destination burns TIMEOUT_MS once per ENVELOPE, so a user with many due
+    // reminders degrades the shared worker pool for everyone else on the
+    // instance that night.
+    //
+    // The bound is the concurrency ceiling, not one: CHANNEL_CONCURRENCY
+    // envelopes are already in flight before the first failure trips the
+    // breaker. So the assertion is that attempts stop scaling with envelope
+    // count, which is the property that actually bounds the run. 30 envelopes
+    // is deliberately well above that ceiling; without the breaker this is 30.
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: false, code: 'timeout' });
+
+    await dispatchAll(forOneUser(30));
+
+    expect(endpointMocks.sendNtfy.mock.calls.length).toBeLessThanOrEqual(10);
+    expect(endpointMocks.sendNtfy.mock.calls.length).toBeLessThan(30);
+  });
+
+  it('still reports every skipped envelope as failed, never as delivered', async () => {
+    // Short-circuiting must not make a dead destination look healthy. Each
+    // envelope still gets a failure outcome and must not be stamped, or the
+    // reminder would be burned for an occurrence nobody received.
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: false, code: 'timeout' });
+
+    const results = await dispatchAll(forOneUser(3));
+
+    expect(results).toHaveLength(3);
+    for (const result of results) {
+      expect(result.failed).toBeGreaterThan(0);
+      expect(result.shouldStamp).toBe(false);
+    }
+  });
+
+  it('keeps retrying a destination that answered with a 429', async () => {
+    // A receiver's own rate limit is transient and costs no waiting, so
+    // giving up on it for the night would silence a working destination.
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: false, code: 'http_429' });
+
+    await dispatchAll(forOneUser(3));
+
+    expect(endpointMocks.sendNtfy).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps sending to a destination that keeps working', async () => {
+    endpointMocks.sendNtfy.mockResolvedValue({ ok: true });
+
+    await dispatchAll(forOneUser(3));
+
+    expect(endpointMocks.sendNtfy).toHaveBeenCalledTimes(3);
   });
 });

@@ -96,7 +96,7 @@ If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variabl
 | `LOG_LEVEL` | Logging verbosity: `debug`, `info`, `warn`, or `error` | `info` |
 | `VAPID_PUBLIC_KEY` | Public key for browser push notifications | Not set |
 | `VAPID_PRIVATE_KEY` | Private key for browser push notifications | Not set |
-| `VAPID_SUBJECT` | Contact URI for push services, must be a `mailto:` address | Not set |
+| `VAPID_SUBJECT` | Contact URI for push services: a `mailto:` address or an `https:` URL | Not set |
 | `TRUSTED_PROXY_HEADER` | Which header your reverse proxy manages for the client IP: `x-forwarded-for`, `x-real-ip`, or `cf-connecting-ip` | `x-forwarded-for` |
 | `TRUSTED_PROXY_COUNT` | Number of trusted reverse proxy hops in front of the app, used to pick the real client IP out of `X-Forwarded-For` for rate limiting (ignored when `TRUSTED_PROXY_HEADER` is `x-real-ip`) | `1` |
 
@@ -110,7 +110,7 @@ Generate a keypair with:
 npm run generate-vapid-keys
 ```
 
-This prints a `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` pair to add to your `.env` file, plus a reminder to set `VAPID_SUBJECT` to a `mailto:` address a push service can reach you at if there's a problem with your traffic.
+This prints a `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` pair to add to your `.env` file, plus a reminder to set `VAPID_SUBJECT` to a contact a push service can reach you at if there's a problem with your traffic. Either a `mailto:` address or an `https:` URL works, as RFC 8292 allows both.
 
 Leave all three unset and the push channel stays hidden in Settings. Email reminders are unaffected either way.
 
@@ -120,7 +120,9 @@ The old subscription rows are not removed automatically when you do this. A push
 
 ## Trusted proxy configuration and rate limiting
 
-Every rate limit in Nametag (login, registration, password reset, and more) keys on the client's IP address. A Web `Request` handler has no direct access to the TCP peer address, so the only source for that IP is a header set by whatever reverse proxy sits in front of the app, and that header can be set by the client itself if the proxy does not manage it. Two settings tell the app how to trust it: `TRUSTED_PROXY_HEADER` (which header) and `TRUSTED_PROXY_COUNT` (how many hops, when that header is a chain).
+Most rate limits in Nametag (login, registration, password reset, and more) key on the client's IP address. A Web `Request` handler has no direct access to the TCP peer address, so the only source for that IP is a header set by whatever reverse proxy sits in front of the app, and that header can be set by the client itself if the proxy does not manage it. Two settings tell the app how to trust it: `TRUSTED_PROXY_HEADER` (which header) and `TRUSTED_PROXY_COUNT` (how many hops, when that header is a chain).
+
+Registration, password reset, and verification resend carry a second limit keyed on the **email address** instead of the IP, because an attacker with a pool of addresses can rotate past any IP-based limit and mail-bomb one person. That second limit is set well above the IP one, so an ordinary user is stopped by their own IP limit long before reaching it. It does mean a determined attacker can occupy someone else's address bucket for the window, but only by actually sending that many emails to them, which is the thing the limit exists to stop.
 
 **This is only meaningful if the app is unreachable except through that proxy.** Trusting a header assumes every request genuinely passed through it. The default `docker-compose.yml` publishes the app's port on every interface, which lets anyone who can reach the host skip the proxy, and the header it sets, entirely. See [Reverse Proxy](/self-hosting/reverse-proxy/#trusted-proxy-configuration) for how to bind that port to localhost once you have a proxy in front.
 

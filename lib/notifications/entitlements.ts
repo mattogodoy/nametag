@@ -1,5 +1,6 @@
 import { isSaasMode } from '@/lib/features';
 import { getUserSubscription } from '@/lib/billing/subscription';
+import { prisma } from '@/lib/prisma';
 import { createModuleLogger } from '@/lib/logger';
 
 const log = createModuleLogger('notifications:entitlements');
@@ -34,5 +35,46 @@ export async function canUseWebhooks(userId: string): Promise<boolean> {
       'Webhook entitlement check failed, denying'
     );
     return false;
+  }
+}
+
+/**
+ * Resolve webhook entitlement for many users in one query.
+ *
+ * `canUseWebhooks` issues one `subscription.findUnique` per user, which the
+ * nightly run then repeats for every webhook owner. The sibling loaders in
+ * dispatch.ts (`loadEmailPreferences`, `loadEndpoints`) are both already
+ * batched, so this is a consistency fix as much as a performance one.
+ *
+ * Fails closed exactly as `canUseWebhooks` does: an error resolving the batch
+ * denies every user in it rather than handing out the capability. A user with
+ * no subscription row is absent from the result and therefore denied, which is
+ * the same answer `subscription?.tier === 'PRO'` gives for a null row.
+ */
+export async function canUseWebhooksForUsers(
+  userIds: readonly string[]
+): Promise<Map<string, boolean>> {
+  if (!isSaasMode()) {
+    return new Map(userIds.map((userId) => [userId, true]));
+  }
+
+  if (userIds.length === 0) {
+    return new Map();
+  }
+
+  try {
+    const subscriptions = await prisma.subscription.findMany({
+      where: { userId: { in: [...userIds] } },
+      select: { userId: true, tier: true },
+    });
+
+    const byUser = new Map(subscriptions.map((row) => [row.userId, row.tier === 'PRO']));
+    return new Map(userIds.map((userId) => [userId, byUser.get(userId) ?? false]));
+  } catch (error) {
+    log.error(
+      { count: userIds.length, errorMessage: error instanceof Error ? error.message : 'Unknown error' },
+      'Batched webhook entitlement check failed, denying'
+    );
+    return new Map(userIds.map((userId) => [userId, false]));
   }
 }

@@ -21,10 +21,18 @@ import type { NotificationEnvelope } from '@/lib/notifications/types';
  */
 export const POST = withAuth(async (request, session, context) => {
   try {
-    const rateLimitResponse = checkRateLimit(request, 'notificationEndpointTest', session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
     const { id } = await context.params;
+
+    // A cheap per-user bound BEFORE anything is looked up, so the query below
+    // is never unmetered. The per-destination limit that follows cannot go
+    // here: its key is built from a validated endpoint id, and validating one
+    // is exactly what this guards.
+    const userRateLimitResponse = checkRateLimit(
+      request,
+      'notificationEndpointTestPerUser',
+      session.user.id
+    );
+    if (userRateLimitResponse) return userRateLimitResponse;
 
     const endpoint = await prisma.notificationEndpoint.findFirst({
       where: { id, userId: session.user.id },
@@ -34,6 +42,18 @@ export const POST = withAuth(async (request, session, context) => {
     if (!endpoint) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
+
+    // Keyed per destination now that the id is known to exist and to belong
+    // to the caller. Keying on the raw path parameter instead would let a
+    // caller mint unbounded buckets in the limiter's store by inventing ids,
+    // and would let anyone who guessed a victim's endpoint id burn through
+    // that victim's allowance.
+    const rateLimitResponse = checkRateLimit(
+      request,
+      'notificationEndpointTest',
+      `endpoint:${endpoint.id}`
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     // Re-checked here, not only at creation time, so a downgrade stops even a
     // manual test-send immediately, with no cleanup job to run.

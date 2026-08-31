@@ -189,3 +189,43 @@ describe('sendWebhook', () => {
     expect(mocks.postJson).not.toHaveBeenCalled();
   });
 });
+
+describe('weekly digest payload dates', () => {
+  it('carries a raw ISO date on every digest row, not just formattedDate', async () => {
+    // Standalone important_date and important_date_lead payloads have carried
+    // a raw ISO `date` since they were added, precisely so a receiver never
+    // has to guess whether "26 de agosto de 2026" is day-month-year or
+    // month-day-year. Digest rows carried only formattedDate and daysUntil,
+    // so the same receiver could act on a date programmatically for one kind
+    // of reminder and not the other. That is an asymmetry in a published
+    // contract.
+    mocks.decryptSecret.mockReturnValue('secret');
+    mocks.postJson.mockResolvedValue({ ok: true });
+
+    await sendWebhook(
+      { id: 'ep-1', url: 'https://hooks.test/x', secret: 'enc' },
+      {
+        ...envelope,
+        notification: {
+        kind: 'weekly_digest',
+        rows: [
+          {
+            personName: 'Ana Torres',
+            eventTitle: 'Birthday',
+            formattedDate: '28 de agosto de 2026',
+            date: '2026-08-28',
+            daysUntil: 2,
+          },
+        ],
+        overflowCount: 0,
+        },
+      }
+    );
+
+    const [, body] = mocks.postJson.mock.calls[0];
+    const parsed = JSON.parse(body as string);
+
+    expect(parsed.data.events[0].date).toBe('2026-08-28');
+    expect(parsed.data.events[0].formattedDate).toBe('28 de agosto de 2026');
+  });
+});

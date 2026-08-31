@@ -233,6 +233,7 @@ export default function Step1ServerConfig({
             type="button"
             onClick={handleTestConnection}
             disabled={!isFormComplete || isTesting}
+            variant="custom"
             className="bg-muted text-white hover:bg-muted/80 border-0"
           >
             {isTesting ? t('testing') : t('testConnection')}

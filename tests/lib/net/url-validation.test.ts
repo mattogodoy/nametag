@@ -322,3 +322,24 @@ describe('isPrivateIP', () => {
     expect(isPrivateIP('not-an-ip')).toBe(false);
   });
 });
+
+describe('stripIpv6Brackets', () => {
+  it('strips brackets so net.isIP can recognise an IPv6 literal from URL.hostname', async () => {
+    const net = (await import('node:net')).default;
+    const { stripIpv6Brackets } = await import('../../../lib/net/url-validation');
+
+    const hostname = new URL('https://[fd00::1]:8443/hook').hostname;
+
+    expect(hostname).toBe('[fd00::1]');
+    expect(net.isIP(hostname)).toBe(0);
+    expect(net.isIP(stripIpv6Brackets(hostname))).toBe(6);
+  });
+
+  it('leaves an IPv4 literal and a bare hostname untouched', async () => {
+    const net = (await import('node:net')).default;
+    const { stripIpv6Brackets } = await import('../../../lib/net/url-validation');
+
+    expect(net.isIP(stripIpv6Brackets(new URL('https://192.168.1.5/h').hostname))).toBe(4);
+    expect(net.isIP(stripIpv6Brackets(new URL('https://ntfy.example.com/t').hostname))).toBe(0);
+  });
+});

@@ -86,8 +86,8 @@ describe('renderEmail', () => {
         {
           kind: 'weekly_digest',
           rows: [
-            { personName: 'Ana Torres', eventTitle: 'Birthday', formattedDate: 'August 28, 2026', daysUntil: 2 },
-            { personName: 'Bo Lin', eventTitle: 'Anniversary', formattedDate: 'August 30, 2026', daysUntil: 4 },
+            { personName: 'Ana Torres', eventTitle: 'Birthday', formattedDate: 'August 28, 2026', date: '2026-09-01', daysUntil: 2 },
+            { personName: 'Bo Lin', eventTitle: 'Anniversary', formattedDate: 'August 30, 2026', date: '2026-09-01', daysUntil: 4 },
           ],
           overflowCount: 3,
         },

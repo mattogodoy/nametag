@@ -192,7 +192,7 @@ export default function CustomFieldTemplateForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+          className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
         >
           {isSaving ? t('savingButton') : t('saveButton')}
         </button>

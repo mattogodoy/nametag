@@ -19,6 +19,22 @@
   --border: rgba(28, 25, 23, 0.1);
   --primary: #2563EB;
   --primary-dark: #1D4ED8;
+  /*
+   * Text and icons sitting ON a --primary surface.
+   *
+   * A token rather than a hardcoded text-white, because the correct answer
+   * flips with the theme: the light theme's primary is a mid blue that needs
+   * white on it, the dark theme's is a light blue that needs dark text. Using
+   * text-white in both measured about 2.54:1 in the dark theme, well under the
+   * 4.5:1 WCAG AA threshold, on every primary button in the app.
+   *
+   * Measured contrast, all four states above AA:
+   *   light base  #2563EB on #FFFFFF  5.17:1
+   *   light hover #1D4ED8 on #FFFFFF  6.70:1
+   *   dark  base  #60A5FA on #0B1220  7.36:1
+   *   dark  hover #3B82F6 on #0B1220  5.09:1
+   */
+  --on-primary: #FFFFFF;
   --secondary: #93C5FD;
   --tertiary: #93C5FD;
   --accent: #D97706;
@@ -42,6 +58,8 @@
   --border: rgba(237, 233, 225, 0.1);
   --primary: #60A5FA;
   --primary-dark: #3B82F6;
+  /* Dark text on the dark theme's light blue. See the light theme block. */
+  --on-primary: #0B1220;
   --secondary: #1D4ED8;
   --tertiary: #1D4ED8;
   --accent: #F59E0B;
@@ -67,6 +85,7 @@
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
+  --color-on-primary: var(--on-primary);
   --color-secondary: var(--secondary);
   --color-tertiary: var(--tertiary);
   --color-accent: var(--accent);

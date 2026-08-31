@@ -8,6 +8,15 @@ import { toast } from 'sonner';
 interface Device {
   id: string;
   userAgent: string | null;
+  /**
+   * Set when the device failed ten consecutive nightly runs and was switched
+   * off. `sendWebPush` filters these out, and a browser will not re-subscribe
+   * on its own (its permission and service worker are still valid), so
+   * without showing this the device looks healthy and silently receives
+   * nothing forever.
+   */
+  autoDisabledAt: string | null;
+  lastFailureCode: string | null;
 }
 
 interface Props {
@@ -108,7 +117,7 @@ export default function NotificationChannelsCard({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecting a one-time platform capability check into UI state is intentional
+    // Reflecting a one-time platform capability check into UI state.
     setIosHint(isIosWithoutInstall());
 
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -288,15 +297,25 @@ export default function NotificationChannelsCard({
         ) : (
           <ul className="space-y-2">
             {devices.map((device) => (
-              <li key={device.id} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{describeDevice(device.userAgent, t)}</span>
-                <button
-                  type="button"
-                  onClick={() => void removeDevice(device.id)}
-                  className="text-muted hover:text-foreground"
-                >
-                  {t('pushRemove')}
-                </button>
+              <li key={device.id} className="text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-foreground">{describeDevice(device.userAgent, t)}</span>
+                  <button
+                    type="button"
+                    onClick={() => void removeDevice(device.id)}
+                    className="text-muted hover:text-foreground"
+                  >
+                    {t('pushRemove')}
+                  </button>
+                </div>
+                {device.autoDisabledAt && (
+                  <p className="text-muted mt-1">
+                    {t('pushDeviceDisabled')}{' '}
+                    {device.lastFailureCode === 'http_4xx' || device.lastFailureCode === 'blocked'
+                      ? t('pushDeviceDisabledRejected')
+                      : t('pushDeviceDisabledUnreachable')}
+                  </p>
+                )}
               </li>
             ))}
           </ul>

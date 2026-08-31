@@ -207,7 +207,7 @@ export default function ComboboxInput({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectOption(option.value); } }}
               className={`w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer ${
                 highlightedIndex === index
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-on-primary'
                   : option.value === value
                     ? 'bg-surface-elevated text-primary'
                     : 'text-foreground hover:bg-surface-elevated'
@@ -225,7 +225,7 @@ export default function ComboboxInput({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectOther(); } }}
               className={`w-full text-left px-3 py-2 text-sm italic transition-colors cursor-pointer ${
                 highlightedIndex === filteredOptions.length
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-on-primary'
                   : 'text-muted hover:bg-surface-elevated'
               }`}
               role="option"

@@ -130,7 +130,8 @@ export default function BillingActions({
                 fullWidth
                 onClick={() => handleCancel(false)}
                 disabled={loading === 'cancel'}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                variant="custom"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white"
               >
                 {loading === 'cancel' ? 'Processing...' : 'Cancel at Period End'}
               </Button>

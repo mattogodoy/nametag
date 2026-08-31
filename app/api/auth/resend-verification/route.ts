@@ -38,10 +38,13 @@ export const POST = withLogging(async function POST(request: Request) {
     // Normalize email to lowercase for case-insensitive lookup
     const email = normalizeEmail(validation.data.email);
 
-    // Rate limit by email (and, when a trusted IP is available, by IP too).
+    // Rate limit by email, in a bucket that does NOT include the client IP.
     // This is a mail-bombing vector: an attacker who rotates the client IP
     // still shares a bucket with every other request for the same address.
-    const rateLimitResponse = checkRateLimit(request, 'resendVerification', email);
+    // The IP bound comes from the separate unkeyed check above, which every
+    // request passes through first; this one exists purely to bound the
+    // per-address volume that no IP-scoped limit can.
+    const rateLimitResponse = checkRateLimit(request, 'resendVerificationPerEmail', email);
     if (rateLimitResponse) {
       return rateLimitResponse;
     }

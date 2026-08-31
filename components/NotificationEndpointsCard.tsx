@@ -98,6 +98,7 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
   http_4xx: 'endpointTestRejected',
   http_429: 'endpointTestRateLimited',
   tls: 'endpointTestTls',
+  unexpected_response: 'endpointTestNotNtfy',
 };
 
 /**
@@ -105,18 +106,16 @@ const MESSAGE_BY_CODE: Partial<Record<OutboundFailureCode, string>> = {
  * destination (the test-send result, or the auto-disabled banner), rather
  * than against the create form.
  *
- * `updateEndpointSchema` accepts only `label` and `enabled`: neither the URL
- * nor the token of a saved destination can be edited. `endpointTestBlocked`
- * and `endpointTestRejected` both read as if editing were possible ("change
- * it and save again", "check the topic name and the access token"), which is
- * correct on the create form but leaves a saved row's message pointing at an
- * action the UI cannot perform. The saved variants point at the one action
- * that actually exists: remove the destination and add it again.
+ * The create-form copy tells the user to change what they just typed, which
+ * makes no sense against a row that is already saved and is not currently in
+ * an edit form. The saved variants point at the Edit button instead, which
+ * can now replace the URL and the credential in place.
  */
 const SAVED_MESSAGE_OVERRIDES: Partial<Record<OutboundFailureCode, string>> = {
   blocked: 'endpointTestBlockedSaved',
   http_4xx: 'endpointTestRejectedSaved',
   redirect: 'endpointTestRedirectSaved',
+  unexpected_response: 'endpointTestNotNtfySaved',
 };
 
 type MessageContext = 'form' | 'saved';
@@ -173,6 +172,16 @@ export default function NotificationEndpointsCard({
   const [newWebhookSecret, setNewWebhookSecret] = useState<string | null>(null);
   const [copyResult, setCopyResult] = useState<TestMessage | null>(null);
 
+  // Inline edit state. Only one destination is ever open for editing, so a
+  // single set of fields is enough and there is no per-row state to keep in
+  // sync with the server-rendered list.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editUrl, setEditUrl] = useState('');
+  const [editToken, setEditToken] = useState('');
+  const [editTokenTouched, setEditTokenTouched] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
   const [testResults, setTestResults] = useState<Record<string, TestMessage>>({});
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
@@ -227,7 +236,11 @@ export default function NotificationEndpointsCard({
     if (response.status === 409) {
       const data: unknown = await response.json().catch(() => null);
       const code = isApiErrorBody(data) ? data.code : undefined;
-      if (code === 'duplicate') return t('endpointAddDuplicate');
+      // Type-specific: the ntfy copy says "topic", which is not what a
+      // webhook is, and this branch is reached by both.
+      if (code === 'duplicate') {
+        return type === 'WEBHOOK' ? t('webhookAddDuplicate') : t('endpointAddDuplicate');
+      }
       return t('endpointLimit');
     }
     if (response.status === 400) {
@@ -235,6 +248,16 @@ export default function NotificationEndpointsCard({
       const code = isApiErrorBody(data) ? data.code : undefined;
       if (code === 'dns') return t('endpointTestDns');
       if (code === 'policy') return t('endpointTestBlocked');
+      // Both of these are rejections a user cannot diagnose by re-reading
+      // their own URL, so the generic "check the URL and try again" fallback
+      // is the worst possible message for them.
+      if (code === 'credentials_in_url') {
+        return type === 'WEBHOOK'
+          ? t('webhookAddCredentialsInUrl')
+          : t('endpointAddCredentialsInUrl');
+      }
+      if (code === 'not_ntfy') return t('endpointAddNotNtfy');
+      if (code === 'too_long') return t('endpointAddTooLong');
       return type === 'WEBHOOK' ? t('webhookAddInvalid') : t('endpointAddInvalid');
     }
     if (response.status === 429) {
@@ -435,6 +458,100 @@ export default function NotificationEndpointsCard({
     }
   }
 
+  function openEdit(endpoint: NotificationEndpointSummary) {
+    setEditingId(endpoint.id);
+    setEditUrl(endpoint.url);
+    setEditToken('');
+    // A token is never readable back, so the field starts blank and is only
+    // sent if the user actually types in it. Without this flag an untouched
+    // blank field would be indistinguishable from a deliberate clear.
+    setEditTokenTouched(false);
+    setEditError(null);
+  }
+
+  function closeEdit() {
+    setEditingId(null);
+    setEditUrl('');
+    setEditToken('');
+    setEditTokenTouched(false);
+    setEditError(null);
+  }
+
+  async function handleEditSubmit(
+    event: FormEvent<HTMLFormElement>,
+    endpoint: NotificationEndpointSummary
+  ) {
+    event.preventDefault();
+    setEditError(null);
+    setEditSubmitting(true);
+
+    try {
+      const body: Record<string, unknown> = {};
+
+      if (editUrl.trim() && editUrl.trim() !== endpoint.url) {
+        body.url = editUrl.trim();
+      }
+      if (endpoint.type === 'NTFY' && editTokenTouched) {
+        // An empty field after the user has touched it means "clear it",
+        // which the API distinguishes from "leave it alone" by null vs
+        // omitted.
+        body.token = editToken.trim() ? editToken.trim() : null;
+      }
+
+      if (Object.keys(body).length === 0) {
+        closeEdit();
+        return;
+      }
+
+      const response = await fetch(`/api/notifications/endpoints/${endpoint.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        setEditError(await readAddErrorMessage(response, endpoint.type));
+        return;
+      }
+
+      closeEdit();
+      router.refresh();
+    } catch {
+      setEditError(tErrors('internalError'));
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  async function handleRotateSecret(id: string) {
+    setBusy(id, true);
+    try {
+      const response = await fetch(`/api/notifications/endpoints/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rotateSecret: true }),
+      });
+
+      if (!response.ok) {
+        toast.error(await readErrorMessage(response));
+        return;
+      }
+
+      const data: unknown = await response.json();
+      // Shown once, in the same dialog creation uses. There is no endpoint
+      // that reads a secret back, so a user who dismisses this has to rotate
+      // again.
+      if (data && typeof data === 'object' && typeof (data as { secret?: unknown }).secret === 'string') {
+        setNewWebhookSecret((data as { secret: string }).secret);
+      }
+      router.refresh();
+    } catch {
+      toast.error(tErrors('internalError'));
+    } finally {
+      setBusy(id, false);
+    }
+  }
+
   const FOCUS_RING = 'focus:outline-none focus:ring-2 focus:ring-primary';
   const ntfyEndpoints = endpoints.filter((e) => e.type === 'NTFY');
   const webhookEndpoints = endpoints.filter((e) => e.type === 'WEBHOOK');
@@ -461,6 +578,15 @@ export default function NotificationEndpointsCard({
             </button>
             <button
               type="button"
+              onClick={() => (editingId === endpoint.id ? closeEdit() : openEdit(endpoint))}
+              disabled={busy}
+              className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
+              aria-expanded={editingId === endpoint.id}
+            >
+              {t('endpointEdit')}
+            </button>
+            <button
+              type="button"
               onClick={() => void handleRemove(endpoint.id)}
               disabled={busy}
               className={`text-muted hover:text-foreground disabled:opacity-50 rounded ${FOCUS_RING}`}
@@ -470,6 +596,88 @@ export default function NotificationEndpointsCard({
           </div>
         </div>
 
+        {editingId === endpoint.id && (
+          <form onSubmit={(event) => void handleEditSubmit(event, endpoint)} className="mt-3 space-y-3">
+            <div>
+              <label
+                htmlFor={`edit-url-${endpoint.id}`}
+                className="block text-sm font-medium text-foreground mb-1"
+              >
+                {endpoint.type === 'WEBHOOK' ? t('webhookUrl') : t('endpointUrl')}
+              </label>
+              <input
+                id={`edit-url-${endpoint.id}`}
+                type="url"
+                value={editUrl}
+                onChange={(event) => setEditUrl(event.target.value)}
+                className={`w-full px-3 py-2 rounded-md border border-border bg-background text-foreground ${FOCUS_RING}`}
+              />
+            </div>
+
+            {endpoint.type === 'NTFY' && (
+              <div>
+                <label
+                  htmlFor={`edit-token-${endpoint.id}`}
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
+                  {t('endpointToken')}
+                </label>
+                <input
+                  id={`edit-token-${endpoint.id}`}
+                  type="password"
+                  value={editToken}
+                  autoComplete="off"
+                  placeholder={t('endpointTokenReplacePlaceholder')}
+                  onChange={(event) => {
+                    setEditToken(event.target.value);
+                    setEditTokenTouched(true);
+                  }}
+                  className={`w-full px-3 py-2 rounded-md border border-border bg-background text-foreground ${FOCUS_RING}`}
+                />
+                <p className="text-sm text-muted mt-1">{t('endpointTokenReplaceHelp')}</p>
+              </div>
+            )}
+
+            {endpoint.type === 'WEBHOOK' && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => void handleRotateSecret(endpoint.id)}
+                  disabled={busy || editSubmitting}
+                  className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
+                >
+                  {t('webhookRotateSecret')}
+                </button>
+                <p className="text-sm text-muted mt-1">{t('webhookRotateSecretHelp')}</p>
+              </div>
+            )}
+
+            {editError && (
+              <p role="alert" className="text-sm text-muted">
+                {editError}
+              </p>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={editSubmitting}
+                className={`px-3 py-1 rounded-md bg-primary text-on-primary disabled:opacity-50 ${FOCUS_RING}`}
+              >
+                {tCommon('save')}
+              </button>
+              <button
+                type="button"
+                onClick={closeEdit}
+                disabled={editSubmitting}
+                className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
+              >
+                {tCommon('cancel')}
+              </button>
+            </div>
+          </form>
+        )}
+
         {result && (
           <p
             role="alert"
@@ -477,6 +685,12 @@ export default function NotificationEndpointsCard({
           >
             {result.text}
           </p>
+        )}
+
+        {endpoint.type === 'WEBHOOK' && !canUseWebhooks && endpoint.enabled && (
+          <div className="mt-2 rounded-md bg-muted/20 px-3 py-2">
+            <p className="text-sm text-muted">{t('webhookEntitlementLapsed')}</p>
+          </div>
         )}
 
         {!endpoint.enabled && (
@@ -598,7 +812,7 @@ export default function NotificationEndpointsCard({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    className="px-3 py-1 rounded-md bg-primary text-on-primary disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                   >
                     {t('endpointSave')}
                   </button>
@@ -692,7 +906,7 @@ export default function NotificationEndpointsCard({
                     <button
                       type="submit"
                       disabled={webhookSubmitting}
-                      className="px-3 py-1 rounded-md bg-primary text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                      className="px-3 py-1 rounded-md bg-primary text-on-primary disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                     >
                       {t('endpointSave')}
                     </button>
@@ -749,7 +963,7 @@ export default function NotificationEndpointsCard({
               <button
                 type="button"
                 onClick={dismissWebhookSecret}
-                className="px-3 py-1 rounded-md bg-primary text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                className="px-3 py-1 rounded-md bg-primary text-on-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 {t('webhookSecretDone')}
               </button>

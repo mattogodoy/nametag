@@ -112,7 +112,7 @@ export default function DuplicatesList({
               </button>
               <Link
                 href={`/people/merge?primary=${targetPersonId}&secondary=${candidate.personId}`}
-                className="inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors"
+                className="inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-on-primary hover:bg-primary-dark transition-colors"
               >
                 {t('merge')}
               </Link>
@@ -200,7 +200,7 @@ export default function DuplicatesList({
                     </button>
                     <Link
                       href={`/people/merge?primary=${person.id}&secondary=${other.id}`}
-                      className="inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-on-primary hover:bg-primary-dark transition-colors"
                     >
                       {t('merge')}
                     </Link>

@@ -5,6 +5,7 @@ import { getVapidDetails } from '../vapid';
 import { renderShortForm } from '../render';
 import { MAX_PUSH_SUBSCRIPTIONS_PER_USER } from '../push-limits';
 import type { HealthAccumulator } from '../endpoint-health';
+import type { RunCircuitBreaker } from '../circuit';
 import {
   TIMEOUT_MS,
   httpStatusToFailureCode,
@@ -122,7 +123,8 @@ function sendWithDeadline(
  */
 export async function sendWebPush(
   envelope: NotificationEnvelope,
-  health: HealthAccumulator
+  health: HealthAccumulator,
+  circuit: RunCircuitBreaker
 ): Promise<ChannelOutcome> {
   const vapid = getVapidDetails();
   if (!vapid) {
@@ -154,6 +156,17 @@ export async function sendWebPush(
   let lastError = 'Unknown push error';
 
   for (const subscription of subscriptions) {
+    // Already proved unreachable earlier in this run. Recorded as a failure
+    // exactly as if it had been tried and timed out again, so this cannot
+    // make a dead device look healthy or stop it auto-disabling; only the
+    // waiting is skipped. See RunCircuitBreaker.
+    const trippedCode = circuit.subscriptionTrippedCode(subscription.id);
+    if (trippedCode !== null) {
+      lastError = trippedCode;
+      health.recordSubscription(subscription.id, { ok: false, code: trippedCode });
+      continue;
+    }
+
     // The send itself lives in its own try/catch, kept separate from health
     // recording below, so a bookkeeping error can never be mistaken for (or
     // cause) a delivery failure.
@@ -201,7 +214,9 @@ export async function sendWebPush(
         { userId: envelope.userId, statusCode, errorMessage: message },
         'Push delivery failed, keeping subscription'
       );
-      health.recordSubscription(subscription.id, { ok: false, code: code ?? failureCodeOf(statusCode) });
+      const failureCode = code ?? failureCodeOf(statusCode);
+      circuit.recordSubscription(subscription.id, failureCode);
+      health.recordSubscription(subscription.id, { ok: false, code: failureCode });
     }
   }
 

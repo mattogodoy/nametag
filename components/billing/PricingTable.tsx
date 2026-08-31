@@ -139,7 +139,7 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
               }`}
             >
               {isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-medium px-3 py-1 rounded-full">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-xs font-medium px-3 py-1 rounded-full">
                   {t('currentPlan')}
                 </span>
               )}
@@ -201,6 +201,7 @@ export default function PricingTable({ currentTier, currentFrequency }: PricingT
                     fullWidth
                     onClick={() => handleUpgrade(tier as Exclude<SubscriptionTier, 'FREE'>)}
                     disabled={loading !== null}
+                    variant="custom"
                     className={
                       tier === 'PERSONAL'
                         ? 'bg-purple-600 hover:bg-purple-700 text-white'

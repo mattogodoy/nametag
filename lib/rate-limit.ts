@@ -97,8 +97,51 @@ export const rateLimitConfigs = {
   // Test send: tightest limit in the app. A synchronous, user-triggered
   // outbound request with immediate feedback is the most abusable surface in
   // the notification feature, so it is deliberately slower than everything else.
+  //
+  // Keyed per DESTINATION, so each one a user owns gets its own allowance.
+  // Keyed per user it gave someone at the five-destination cap exactly one
+  // test per destination per window, which they hit through ordinary setup.
   notificationEndpointTest: {
     maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+  },
+  // The per-user ceiling on test sends, checked BEFORE the destination is
+  // looked up. Two limits rather than one because the per-destination key
+  // above can only be built from a validated endpoint id, and validating it
+  // means a database query: without a cheaper bound in front, that query
+  // itself would be unmetered. Set to the per-destination allowance times the
+  // per-user destination cap, so it never binds before the per-destination
+  // limit does in ordinary use, and only catches someone cycling through
+  // every destination they own at once.
+  notificationEndpointTestPerUser: {
+    maxAttempts: 5 * 5,
+    windowMs: 15 * 60 * 1000,
+  },
+  // Per-EMAIL ceilings for the three unauthenticated endpoints that send mail
+  // to an address the caller supplies. Deliberately looser than their
+  // IP-keyed counterparts above, and the reason is the whole design:
+  //
+  // The IP bucket does the ordinary work and stops the common case. These
+  // exist only to bound what no IP-scoped limit can, an attacker with a proxy
+  // pool mail-bombing one address. Because the bucket is keyed on the address
+  // rather than the sender, exhausting it necessarily also locks the owner of
+  // that address out of the same action for the window. That trade is
+  // unavoidable for per-address limiting and is what every mature service
+  // makes, but it is only acceptable if the ceiling is high enough that a
+  // real person never reaches it and an attacker has to actually send that
+  // many emails to the victim to reach it. Set equal to the IP allowance
+  // times a comfortable multiple: a legitimate user makes one or two
+  // attempts and is stopped by their IP bucket long before this one.
+  registerPerEmail: {
+    maxAttempts: 10,
+    windowMs: 60 * 60 * 1000,
+  },
+  forgotPasswordPerEmail: {
+    maxAttempts: 10,
+    windowMs: 60 * 60 * 1000,
+  },
+  resendVerificationPerEmail: {
+    maxAttempts: 10,
     windowMs: 15 * 60 * 1000,
   },
 } as const;
@@ -108,25 +151,48 @@ export type RateLimitType = keyof typeof rateLimitConfigs;
 /**
  * Build the storage key for a rate-limit bucket.
  *
- * With a trusted IP, the key is IP-scoped, optionally narrowed further by an
- * identifier such as an email. Without a trusted IP, an identifier alone is
- * still a real per-account bound, so it is used on its own rather than
- * discarded. With neither, there is nothing to partition on: every such
- * request collapses into one shared bucket rather than being exempted from
- * rate limiting altogether, which is why a shared bucket is logged loudly
- * instead of happening quietly.
+ * An identifier produces an IP-INDEPENDENT bucket, deliberately. This used to
+ * return `${type}:${ip}:${identifier}` when both were available, which made
+ * the identifier a mere narrowing of a bucket the IP already scoped, and that
+ * had two consequences, both bad:
+ *
+ * - It provided no per-identifier bound at all in the recommended deployment.
+ *   An attacker with a proxy pool got a fresh
+ *   `forgotPassword:<newIp>:<victim@example.com>` bucket per source IP, so the
+ *   "an attacker who rotates the client IP still shares a bucket with every
+ *   other request for the same address" property the auth routes document was
+ *   simply not true whenever a trusted IP was available.
+ * - It made the keyed check dead code. The IP-only bucket and the composite
+ *   bucket share a `maxAttempts`, so the IP-only check the auth routes run
+ *   before parsing always tripped first, and the keyed check could never fire.
+ *
+ * Callers that want an IP bound as well as an identifier bound call this twice,
+ * once with the identifier and once without, which is what the auth routes do
+ * (see the pre-parse check in each). Every identifier in the app today is
+ * either an authenticated `session.user.id` or an email on a route that mails
+ * that address, so an IP-independent bound is the right one in both cases.
+ * Note that `login` deliberately passes no identifier: an IP-independent
+ * per-email bucket there would let anyone lock a victim out of their account.
+ *
+ * The `id:` segment namespaces identifier buckets away from IP buckets, so an
+ * identifier that happens to look like an IP address cannot collide with one.
+ *
+ * With neither an IP nor an identifier there is nothing to partition on, so
+ * every such request collapses into one shared bucket rather than being
+ * exempted from rate limiting altogether, which is why that case is logged
+ * loudly instead of happening quietly.
  */
 export function buildRateLimitKey(
   type: RateLimitType,
   ip: string | null,
   identifier?: string
 ): string {
-  if (ip) {
-    return identifier ? `${type}:${ip}:${identifier}` : `${type}:${ip}`;
+  if (identifier) {
+    return `${type}:id:${identifier}`;
   }
 
-  if (identifier) {
-    return `${type}:${identifier}`;
+  if (ip) {
+    return `${type}:${ip}`;
   }
 
   warnNoTrustedClientIp();

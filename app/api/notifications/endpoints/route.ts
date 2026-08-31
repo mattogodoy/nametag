@@ -4,8 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { encryptSecret } from '@/lib/crypto/secrets';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { BlockedUrlError, outboundPolicy, resolveTarget } from '@/lib/net/url-validation';
-import { parseNtfyUrl } from '@/lib/notifications/channels/ntfy';
+import { lockUserRow } from '@/lib/db/user-lock';
+import {
+  CredentialsInUrlError,
+  MESSAGE_BY_REJECTION,
+  checkEndpointUrl,
+  normalizeEndpointUrl,
+} from '@/lib/notifications/endpoint-url';
 import { canUseWebhooks } from '@/lib/notifications/entitlements';
 import { generateWebhookSecret } from '@/lib/notifications/signature';
 import { MAX_ENDPOINTS_PER_USER } from '@/lib/notifications/endpoint-health';
@@ -45,34 +50,8 @@ export const GET = withAuth(async (_request, session) => {
   }
 });
 
-/** Thrown by normalizeWebhookUrl when the URL carries a username or password. */
-class WebhookCredentialsInUrlError extends Error {}
-
-/**
- * Normalise a webhook URL before it is stored, so the per-user unique
- * constraint on (userId, url) actually catches the same destination typed
- * two different ways.
- *
- * Unlike an ntfy topic URL, a webhook URL's path and query string are part of
- * its identity and must be preserved, not discarded down to an origin. The
- * WHATWG URL parser already lowercases the scheme and host for http(s) URLs;
- * this rebuilds the string explicitly (dropping only the fragment) so the
- * exact shape being stored is visible here rather than implied.
- *
- * Userinfo (`https://user:pw@host/...`) is rejected rather than silently
- * dropped. Rebuilding from `parsed.host` already discards it, which used to
- * mean a URL containing credentials was stored, shown back to the user, and
- * sent to without the credentials ever reaching the receiver: a webhook that
- * needs basic auth in its URL would then fail every single delivery with no
- * indication that anything was ever removed. Better to refuse it up front.
- */
-function normalizeWebhookUrl(url: string): string {
-  const parsed = new URL(url);
-  if (parsed.username || parsed.password) {
-    throw new WebhookCredentialsInUrlError();
-  }
-  return `${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
-}
+/** Thrown inside the create transaction when the per-user cap is already met. */
+class EndpointCapReachedError extends Error {}
 
 export const POST = withAuth(async (request, session) => {
   try {
@@ -93,47 +72,41 @@ export const POST = withAuth(async (request, session) => {
       );
     }
 
-    let normalizedUrl: string;
+    let normalized;
 
-    if (type === 'NTFY') {
-      // A URL with no topic would produce a request ntfy silently ignores, so
-      // reject it here rather than letting it fail on every reminder forever.
-      const parsedNtfy = parseNtfyUrl(url);
-      if (!parsedNtfy) {
+    try {
+      normalized = normalizeEndpointUrl(type, url);
+    } catch (error) {
+      if (error instanceof CredentialsInUrlError) {
         return NextResponse.json(
           {
-            error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
-            code: 'invalid',
+            error:
+              'Remove the username and password from the URL. Nametag cannot store URL credentials.',
+            code: 'credentials_in_url',
           },
           { status: 400 }
         );
       }
-
-      // parseNtfyUrl already lowercases the host (via URL.origin) and drops the
-      // trailing slash, so its own output is what both the uniqueness check
-      // and every future outbound request should see.
-      normalizedUrl = `${parsedNtfy.base}${parsedNtfy.topic}`;
-    } else {
-      try {
-        normalizedUrl = normalizeWebhookUrl(url);
-      } catch (error) {
-        if (error instanceof WebhookCredentialsInUrlError) {
-          return NextResponse.json(
-            {
-              error:
-                'Remove the username and password from the URL. Nametag cannot store URL credentials.',
-              code: 'invalid',
-            },
-            { status: 400 }
-          );
-        }
-        throw error;
-      }
+      throw error;
     }
 
-    // Cap before the DNS work below. Checked first so a user already at the
-    // limit gets an immediate 409 rather than paying for a resolution on
-    // every request against a cap that was always going to reject them.
+    if (!normalized) {
+      return NextResponse.json(
+        {
+          error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
+          code: 'invalid',
+        },
+        { status: 400 }
+      );
+    }
+
+    const normalizedUrl = normalized.url;
+
+    // A cheap pre-check before the DNS work below, so a user already at the
+    // limit gets an immediate 409 rather than paying for a resolution against
+    // a cap that was always going to reject them. This is NOT the enforcement
+    // point: it races, and the authoritative check is the one taken under a
+    // row lock inside the transaction further down.
     const existing = await prisma.notificationEndpoint.count({
       where: { userId: session.user.id },
     });
@@ -144,23 +117,12 @@ export const POST = withAuth(async (request, session) => {
       );
     }
 
-    // Validate now as well as at send time. Save-time validation gives the
-    // user an immediate error instead of a silently dead endpoint; send-time
-    // validation is what actually protects us, because a hostname can be
-    // re-pointed after it is saved.
-    //
-    // The `code` here matters as much as the message: `policy` (a disallowed
-    // protocol, port, or private address) is permanent, the user must change
-    // the URL, while `dns` (the hostname did not resolve) can be a transient
-    // resolver hiccup. Losing that distinction here would put the create
-    // screen exactly where the test-send screen was before it was fixed: a
-    // self-hoster with a correct URL and a blipping resolver being told to go
-    // change it.
-    try {
-      await resolveTarget(normalizedUrl, outboundPolicy());
-    } catch (error) {
-      const code = error instanceof BlockedUrlError ? error.reason : 'invalid';
-      return NextResponse.json({ error: 'That URL cannot be used', code }, { status: 400 });
+    const rejection = await checkEndpointUrl(normalized);
+    if (rejection) {
+      return NextResponse.json(
+        { error: MESSAGE_BY_REJECTION[rejection.code], code: rejection.code },
+        { status: 400 }
+      );
     }
 
     // The signing secret is generated here, never accepted from the client. A
@@ -173,19 +135,36 @@ export const POST = withAuth(async (request, session) => {
     const ntfyToken = parsed.data.type === 'NTFY' ? parsed.data.token : undefined;
 
     try {
-      const endpoint = await prisma.notificationEndpoint.create({
-        data: {
-          userId: session.user.id,
-          type,
-          label,
-          url: normalizedUrl,
-          secret: webhookSecret
-            ? encryptSecret(webhookSecret)
-            : ntfyToken
-              ? encryptSecret(ntfyToken)
-              : null,
-        },
-        select: PUBLIC_FIELDS,
+      // Count and insert under one exclusive lock on the owning user row.
+      // The pre-check above races: two concurrent POSTs can each read a count
+      // under the cap and both insert, leaving the user over it. Taking the
+      // count inside the same transaction that does the insert, behind
+      // lockUserRow, is what actually enforces MAX_ENDPOINTS_PER_USER.
+      const endpoint = await prisma.$transaction(async (tx) => {
+        await lockUserRow(tx, session.user.id);
+
+        const current = await tx.notificationEndpoint.count({
+          where: { userId: session.user.id },
+        });
+
+        if (current >= MAX_ENDPOINTS_PER_USER) {
+          throw new EndpointCapReachedError();
+        }
+
+        return tx.notificationEndpoint.create({
+          data: {
+            userId: session.user.id,
+            type,
+            label,
+            url: normalizedUrl,
+            secret: webhookSecret
+              ? encryptSecret(webhookSecret)
+              : ntfyToken
+                ? encryptSecret(ntfyToken)
+                : null,
+          },
+          select: PUBLIC_FIELDS,
+        });
       });
 
       // The only time the signing secret is ever returned. It is stored
@@ -196,6 +175,15 @@ export const POST = withAuth(async (request, session) => {
         { status: 201 }
       );
     } catch (error) {
+      // Lost the race for the last slot. The transaction already rolled back,
+      // so nothing was created.
+      if (error instanceof EndpointCapReachedError) {
+        return NextResponse.json(
+          { error: `You can have at most ${MAX_ENDPOINTS_PER_USER} endpoints` },
+          { status: 409 }
+        );
+      }
+
       // The count check above only guards the per-user cap; it says nothing
       // about the same URL already being registered. `@@unique([userId,
       // url])` is what actually prevents a topic being added five times and

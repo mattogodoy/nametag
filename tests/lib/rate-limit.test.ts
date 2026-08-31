@@ -272,8 +272,41 @@ describe('rate-limit', () => {
 
       const key = buildRateLimitKey('forgotPassword', null, 'user@example.com');
 
-      expect(key).toBe('forgotPassword:user@example.com');
+      expect(key).toBe('forgotPassword:id:user@example.com');
       expect(key).not.toContain('shared');
+    });
+
+    it('keys on the identifier ALONE even when a trusted IP is available', async () => {
+      // The property the auth routes document: "an attacker who rotates the
+      // client IP still shares a bucket with every other request for the
+      // same address". That is only true if the IP is absent from the key.
+      //
+      // Catches the original implementation, which returned
+      // `${type}:${ip}:${identifier}` whenever an IP was available. Under
+      // that version these two keys differ, so an attacker with a proxy pool
+      // got a fresh bucket per source IP and there was no per-address bound
+      // at all in the recommended (proxied) deployment.
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const fromOneIp = buildRateLimitKey('forgotPassword', '203.0.113.1', 'victim@example.com');
+      const fromAnotherIp = buildRateLimitKey('forgotPassword', '198.51.100.7', 'victim@example.com');
+
+      expect(fromOneIp).toBe(fromAnotherIp);
+      expect(fromOneIp).not.toContain('203.0.113.1');
+      expect(fromOneIp).not.toContain('198.51.100.7');
+    });
+
+    it('namespaces identifier buckets so an IP-shaped identifier cannot collide with an IP bucket', async () => {
+      // Catches dropping the `id:` segment. Without it, an attacker who can
+      // choose an identifier (an email local part is not the only such
+      // surface) could pick one spelled exactly like a victim's IP address
+      // and land in the victim's bucket, or vice versa.
+      const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+      const ipBucket = buildRateLimitKey('forgotPassword', '203.0.113.9');
+      const identifierBucket = buildRateLimitKey('forgotPassword', null, '203.0.113.9');
+
+      expect(ipBucket).not.toBe(identifierBucket);
     });
 
     it('still distinguishes two different identifiers when there is no trusted IP', async () => {
@@ -413,5 +446,45 @@ describe('rate-limit', () => {
       expect(rateLimitConfigs.resendVerification.maxAttempts).toBe(3);
       expect(rateLimitConfigs.resendVerification.windowMs).toBe(15 * 60 * 1000);
     });
+  });
+});
+
+describe('per-email ceilings on unauthenticated mail-sending endpoints', () => {
+  it('gives the email bucket more headroom than the IP bucket it sits behind', async () => {
+    // The IP bucket does the ordinary work; the email bucket exists only to
+    // bound what no IP-scoped limit can, an attacker with a proxy pool
+    // mail-bombing one address.
+    //
+    // It has to be looser, because keying on the address means exhausting it
+    // also locks the owner of that address out for the window. Setting it at
+    // or below the IP allowance would let one attacker deny a specific person
+    // registration or a verification resend for the cost of a handful of
+    // requests. At this ratio a real person is stopped by their own IP bucket
+    // long before reaching it, and an attacker has to actually send that many
+    // emails to the victim to get there.
+    const { rateLimitConfigs } = await import('@/lib/rate-limit');
+
+    for (const [ipKey, emailKey] of [
+      ['register', 'registerPerEmail'],
+      ['forgotPassword', 'forgotPasswordPerEmail'],
+      ['resendVerification', 'resendVerificationPerEmail'],
+    ] as const) {
+      expect(rateLimitConfigs[emailKey].maxAttempts).toBeGreaterThan(
+        rateLimitConfigs[ipKey].maxAttempts
+      );
+      // Same window, so the two are directly comparable rather than one being
+      // looser only because it measures over longer.
+      expect(rateLimitConfigs[emailKey].windowMs).toBe(rateLimitConfigs[ipKey].windowMs);
+    }
+  });
+
+  it('keeps two different addresses in separate buckets', async () => {
+    // Without this an attacker exhausting one address would take out every
+    // other address on the same endpoint.
+    const { buildRateLimitKey } = await import('@/lib/rate-limit');
+
+    expect(buildRateLimitKey('registerPerEmail', null, 'a@example.com')).not.toBe(
+      buildRateLimitKey('registerPerEmail', null, 'b@example.com')
+    );
   });
 });

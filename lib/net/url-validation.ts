@@ -57,7 +57,7 @@ export async function validateServerUrl(url: string): Promise<void> {
     }
 
     // Reject IPv6 loopback (::1) - hostname may be with or without brackets
-    const cleanHostname = hostname.replace(/^\[|\]$/g, '');
+    const cleanHostname = stripIpv6Brackets(hostname);
     if (cleanHostname === '::1') {
       throw new Error('Internal addresses are not allowed');
     }
@@ -135,7 +135,7 @@ export async function validateServerUrl(url: string): Promise<void> {
  *   past this function inside an IPv6 literal.
  */
 export function isPrivateIP(hostname: string): boolean {
-  const ip = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const ip = stripIpv6Brackets(hostname).toLowerCase();
   const family = net.isIP(ip);
 
   if (family === 6) return isPrivateIPv6(ip);
@@ -332,6 +332,18 @@ export function outboundPolicy(): OutboundPolicy {
     : { requireHttps: false, allowedPorts: null, blockPrivateAddresses: false };
 }
 
+/**
+ * Strip the brackets the WHATWG URL parser keeps around an IPv6 host.
+ *
+ * `new URL('https://[fd00::1]/x').hostname` is `"[fd00::1]"`, brackets and
+ * all, and `net.isIP` returns 0 for that form. Any caller asking "is this
+ * host an IP literal?" has to strip first or it silently gets the wrong
+ * answer for every IPv6 address while working fine for IPv4.
+ */
+export function stripIpv6Brackets(hostname: string): string {
+  return hostname.replace(/^\[|\]$/g, '');
+}
+
 export interface PinnedTarget {
   /** The original URL. Supplies the Host header and the TLS server name. */
   parsed: URL;
@@ -382,7 +394,7 @@ export async function resolveTarget(
     throw new BlockedUrlError(`Port ${port} is not allowed`);
   }
 
-  const hostname = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const hostname = stripIpv6Brackets(parsed.hostname).toLowerCase();
 
   // A literal address needs no lookup, and looking it up would be wrong.
   const literalFamily = net.isIP(hostname);

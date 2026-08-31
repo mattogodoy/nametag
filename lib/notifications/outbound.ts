@@ -6,6 +6,7 @@ import {
   BlockedUrlError,
   outboundPolicy,
   resolveTarget,
+  stripIpv6Brackets,
   type PinnedTarget,
 } from '@/lib/net/url-validation';
 
@@ -29,6 +30,10 @@ export type OutboundFailureCode =
   | 'http_4xx'
   | 'http_429'
   | 'http_5xx'
+  // The destination answered 2xx but the response did not look like the
+  // protocol we were speaking. Only produced when a caller opts in via
+  // `expectJsonResponse`; see the ntfy driver for why that matters.
+  | 'unexpected_response'
   | 'unknown';
 
 export type OutboundResult = { ok: true } | { ok: false; code: OutboundFailureCode };
@@ -117,6 +122,31 @@ function categorizeStatus(status: number): OutboundResult {
   return { ok: false, code: httpStatusToFailureCode(status) };
 }
 
+/** True when a Content-Type header names JSON (`application/json`, `+json`). */
+function isJsonContentType(contentType: string | undefined): boolean {
+  if (!contentType) return false;
+  const essence = contentType.split(';')[0].trim().toLowerCase();
+  return essence === 'application/json' || essence.endsWith('+json');
+}
+
+export interface PostJsonOptions {
+  /**
+   * Treat a 2xx whose Content-Type is not JSON as a failure
+   * (`unexpected_response`) rather than as a delivery.
+   *
+   * This exists for ntfy. Its publish endpoint answers with a JSON message
+   * object, but any unrelated web server that happens to return 200 for a
+   * POST to `/` would otherwise be recorded as a successful delivery, and the
+   * reminder would be stamped and never retried: silent, permanent loss of
+   * that occurrence.
+   *
+   * Only the Content-Type HEADER is inspected. The body is still never read,
+   * so this does not turn the outbound client into a content oracle: it
+   * distinguishes "spoke JSON" from "did not", and nothing more.
+   */
+  expectJsonResponse?: boolean;
+}
+
 /**
  * POST a JSON body to a user-supplied URL, as safely as we know how.
  *
@@ -129,7 +159,8 @@ function categorizeStatus(status: number): OutboundResult {
  *   is the behaviour we want: following one would land downstream of every
  *   check above.
  * - The response body is never read, so this cannot be used to exfiltrate the
- *   contents of an internal endpoint.
+ *   contents of an internal endpoint. `expectJsonResponse` inspects the
+ *   Content-Type header only, never the body, so it does not weaken this.
  * - Only a coarse failure category is returned to the caller.
  * - The promise always resolves, never rejects, even when Node itself throws
  *   synchronously (invalid header names or values) or when the connection
@@ -138,7 +169,8 @@ function categorizeStatus(status: number): OutboundResult {
 export async function postJson(
   url: string,
   body: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  options: PostJsonOptions = {}
 ): Promise<OutboundResult> {
   let target: PinnedTarget;
 
@@ -181,7 +213,14 @@ export async function postJson(
     // net.isIP returns 0 for a hostname, 4 or 6 for a literal address. An IP
     // literal is not a valid TLS server name and Node warns (DEP0123) if one
     // is passed as `servername`.
-    const isIpLiteral = net.isIP(target.parsed.hostname) !== 0;
+    //
+    // Brackets are stripped first. `URL.hostname` keeps them for IPv6
+    // (`https://[fd00::1]/x` gives `"[fd00::1]"`) and `net.isIP` returns 0 for
+    // that form, so testing the raw hostname made this guard work for IPv4 and
+    // silently do nothing for IPv6: a self-hosted `https://[fd00::1]/hook`
+    // webhook got `servername: "[fd00::1]"`, an invalid SNI value, which is
+    // exactly what the guard exists to prevent.
+    const isIpLiteral = net.isIP(stripIpv6Brackets(target.parsed.hostname)) !== 0;
 
     let request: http.ClientRequest;
     try {
@@ -214,7 +253,21 @@ export async function postJson(
         },
         (response) => {
           const status = response.statusCode ?? 0;
-          const result = categorizeStatus(status);
+          let result = categorizeStatus(status);
+
+          // A 2xx from something that is not speaking our protocol. Checked
+          // on the header only, before the body is discarded below, so the
+          // never-read-the-body guarantee still holds.
+          if (result.ok && options.expectJsonResponse) {
+            const contentType = response.headers['content-type'];
+            if (!isJsonContentType(Array.isArray(contentType) ? contentType[0] : contentType)) {
+              log.warn(
+                { host: target.parsed.hostname, status, contentType },
+                'Outbound request got a 2xx that did not look like the expected protocol'
+              );
+              result = { ok: false, code: 'unexpected_response' };
+            }
+          }
 
           // The coarse code above is the right taxonomy for the user-facing
           // response (a 401, a 404, and a 422 all just need "the destination
@@ -287,6 +340,148 @@ export async function postJson(
     });
 
     request.write(body);
+    request.end();
+  });
+}
+
+/**
+ * Ceiling on the ntfy health-probe response we are willing to buffer.
+ *
+ * ntfy's `/v1/health` answers with a tiny object (`{"healthy":true}`), so this
+ * only needs to be large enough for that plus slack. It exists to stop a
+ * hostile or broken host from streaming unbounded data into memory.
+ */
+const HEALTH_PROBE_MAX_BYTES = 1024;
+
+/**
+ * Ask whether a URL is served by something that behaves like ntfy.
+ *
+ * This is the ONLY place the outbound client reads a response body, and the
+ * exception is deliberately narrow:
+ *
+ * - It is used at save time and test time, never on the nightly send path.
+ * - It returns one of three fixed values. The body is parsed, checked, and
+ *   discarded; no part of it reaches the caller, the UI, or a log. The
+ *   information disclosed is whether an ntfy server answered, which is the
+ *   minimum needed to tell a user their URL is wrong, and far less than the
+ *   response-body oracle that `postJson` exists to avoid.
+ * - At most HEALTH_PROBE_MAX_BYTES are buffered.
+ *
+ * Everything else is inherited from `resolveTarget`: policy validation, the
+ * pinned address, no redirects.
+ */
+export type NtfyProbeResult =
+  /** An ntfy server answered and reported itself healthy. */
+  | 'ntfy'
+  /** Something answered, but it is not an ntfy server. */
+  | 'not_ntfy'
+  /**
+   * Nothing conclusive: a timeout, a TLS error, a connection failure, or a
+   * resolver hiccup. Deliberately distinct from `not_ntfy`, because they call
+   * for opposite responses. Refusing to save on `not_ntfy` is the whole point
+   * of the probe; refusing to save on `unreachable` would block any ntfy
+   * deployment whose `/v1/health` is not reachable from this app (behind
+   * Cloudflare Access, an auth proxy, or a WAF) even though publishing to it
+   * works perfectly.
+   */
+  | 'unreachable';
+
+export async function probeNtfyHealth(baseUrl: string): Promise<NtfyProbeResult> {
+  let target: PinnedTarget;
+
+  try {
+    target = await resolveTarget(`${baseUrl}v1/health`, outboundPolicy());
+  } catch {
+    return 'unreachable';
+  }
+
+  const client = target.parsed.protocol === 'https:' ? https : http;
+
+  return new Promise<NtfyProbeResult>((resolve) => {
+    let settled = false;
+    const timers: { deadline?: ReturnType<typeof setTimeout> } = {};
+
+    const settle = (value: NtfyProbeResult) => {
+      if (!settled) {
+        settled = true;
+        if (timers.deadline) clearTimeout(timers.deadline);
+        resolve(value);
+      }
+    };
+
+    const isIpLiteral = net.isIP(stripIpv6Brackets(target.parsed.hostname)) !== 0;
+
+    let request: http.ClientRequest;
+    try {
+      request = client.request(
+        {
+          protocol: target.parsed.protocol,
+          hostname: target.parsed.hostname,
+          servername:
+            target.parsed.protocol === 'https:' && !isIpLiteral ? target.parsed.hostname : undefined,
+          port: target.port,
+          path: `${target.parsed.pathname}${target.parsed.search}`,
+          method: 'GET',
+          lookup: pinnedLookup(target),
+          timeout: TIMEOUT_MS,
+          agent: new client.Agent({ keepAlive: false }),
+        },
+        (response) => {
+          const status = response.statusCode ?? 0;
+
+          // Something answered and it was not a healthy ntfy endpoint. A 404
+          // here is exactly what a mistyped host that happens to run a web
+          // server looks like, which is the case worth refusing.
+          if (status < 200 || status >= 300) {
+            settle('not_ntfy');
+            response.destroy();
+            return;
+          }
+
+          let buffered = '';
+          response.setEncoding('utf8');
+          response.on('data', (chunk: string) => {
+            buffered += chunk;
+            if (Buffer.byteLength(buffered, 'utf8') > HEALTH_PROBE_MAX_BYTES) {
+              // ntfy's health response is a few dozen bytes. Anything this
+              // large is not one, whatever else it is.
+              settle('not_ntfy');
+              response.destroy();
+            }
+          });
+          response.on('end', () => {
+            try {
+              const parsed: unknown = JSON.parse(buffered);
+              const healthy =
+                typeof parsed === 'object' &&
+                parsed !== null &&
+                (parsed as { healthy?: unknown }).healthy === true;
+              settle(healthy ? 'ntfy' : 'not_ntfy');
+            } catch {
+              // Answered 2xx with a body that is not ntfy's health JSON.
+              settle('not_ntfy');
+            }
+          });
+          // The response died mid-body. Nothing was proved either way.
+          response.on('error', () => settle('unreachable'));
+        }
+      );
+    } catch {
+      settle('unreachable');
+      return;
+    }
+
+    timers.deadline = setTimeout(() => {
+      settle('unreachable');
+      request.destroy();
+    }, TIMEOUT_MS);
+    timers.deadline.unref?.();
+
+    request.on('timeout', () => {
+      settle('unreachable');
+      request.destroy();
+    });
+    request.on('error', () => settle('unreachable'));
     request.end();
   });
 }

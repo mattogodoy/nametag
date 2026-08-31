@@ -146,7 +146,7 @@ export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }: PhotoC
             type="button"
             onClick={handleConfirm}
             disabled={isProcessing || !croppedAreaPixels}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-on-primary bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50"
           >
             {isProcessing ? t('processing') : t('confirm')}
           </button>

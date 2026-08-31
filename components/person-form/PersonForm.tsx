@@ -679,7 +679,7 @@ export default function PersonForm({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2 bg-primary text-white rounded-l-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-primary text-on-primary rounded-l-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? t('saving') : t('create')}
               </button>
@@ -687,7 +687,7 @@ export default function PersonForm({
                 type="button"
                 disabled={isLoading}
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="px-2 py-2 bg-primary text-white border-l border-primary rounded-r-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-2 py-2 bg-primary text-on-primary border-l border-primary rounded-r-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg
                   className="w-4 h-4"

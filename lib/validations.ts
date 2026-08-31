@@ -652,22 +652,27 @@ export const emailRemindersSchema = z.object({
   enabled: z.boolean(),
 });
 
+/**
+ * ntfy access token, shared by the create and update schemas.
+ *
+ * Sent as a bearer credential in an HTTP header (see sendNtfy), so it is
+ * constrained to printable ASCII: a CRLF or a character outside latin1 makes
+ * Node's HTTP client throw synchronously when the header is built, which
+ * without this check surfaces at send time as "worth trying again" for a
+ * destination that is actually permanently broken, on every reminder, forever.
+ */
+const ntfyTokenSchema = z
+  .string()
+  .min(1)
+  .max(255)
+  .regex(/^[\x21-\x7e]+$/, 'Token must contain only printable ASCII characters, no spaces');
+
 const ntfyEndpointSchema = z.object({
   type: z.literal('NTFY'),
   label: z.string().min(1).max(60),
   url: z.string().url().max(500),
-  // ntfy access token. Optional: public topics need none. Sent as a bearer
-  // credential in an HTTP header (see sendNtfy), so it is constrained to
-  // printable ASCII: a CRLF or a character outside latin1 makes Node's HTTP
-  // client throw synchronously when the header is built, which without this
-  // check surfaces at send time as "worth trying again" for a destination
-  // that is actually permanently broken, on every reminder, forever.
-  token: z
-    .string()
-    .min(1)
-    .max(255)
-    .regex(/^[\x21-\x7e]+$/, 'Token must contain only printable ASCII characters, no spaces')
-    .optional(),
+  // ntfy access token. Optional: public topics need none.
+  token: ntfyTokenSchema.optional(),
 });
 
 const webhookEndpointSchema = z.object({
@@ -683,12 +688,33 @@ export const createEndpointSchema = z.discriminatedUnion('type', [
   webhookEndpointSchema,
 ]);
 
-/** @deprecated Use createEndpointSchema. Kept so existing references resolve. */
-export const createNtfyEndpointSchema = ntfyEndpointSchema;
-
 export const updateEndpointSchema = z.object({
   label: z.string().min(1).max(60).optional(),
   enabled: z.boolean().optional(),
+  /**
+   * A replacement URL. Re-validated exactly as at creation, including the
+   * ntfy health probe, so editing cannot reach a state creation refuses.
+   * The endpoint's `type` is deliberately NOT editable: changing an ntfy
+   * destination into a webhook would reinterpret its stored secret as a
+   * signing key rather than a bearer token.
+   */
+  url: z.string().url().max(500).optional(),
+  /**
+   * A replacement ntfy access token.
+   *
+   * `null` clears it (the topic is public, or the token was removed server
+   * side), which is distinct from omitting the field, meaning "leave it as it
+   * is". Without this there is no way back from a `NEXTAUTH_SECRET` rotation:
+   * every stored token becomes undecryptable, the destination fails nightly,
+   * auto-disables, and re-enabling puts it straight back on the same
+   * undecryptable token.
+   */
+  token: ntfyTokenSchema.nullable().optional(),
+  /**
+   * Ask for a new webhook signing secret. The new value is returned once, in
+   * the response, and never again, the same contract as creation.
+   */
+  rotateSecret: z.literal(true).optional(),
 });
 
 // ============================================

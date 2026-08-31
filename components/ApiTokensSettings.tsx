@@ -157,7 +157,7 @@ export default function ApiTokensSettings() {
             <button
               type="button"
               onClick={handleCopy}
-              className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors"
+              className="px-4 py-2 bg-primary text-on-primary rounded-lg font-medium hover:bg-primary-dark transition-colors"
             >
               {copied ? t('copied') : t('copy')}
             </button>
@@ -225,7 +225,7 @@ export default function ApiTokensSettings() {
           <button
             type="submit"
             disabled={creating}
-            className="px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary text-on-primary rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {creating ? t('creating') : t('createButton')}
           </button>

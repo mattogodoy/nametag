@@ -254,8 +254,22 @@ const MAX_LOGGED_RAW_HEADER_LENGTH = 500;
  * Returns `undefined` (not `null`) when the configured header is absent,
  * so callers can spread it into a log object and have the key disappear
  * entirely rather than appearing with an empty value.
+ *
+ * Also returns `undefined` whenever `TRUSTED_PROXY_COUNT` is 0. That is the
+ * value `.env.example` tells an operator to set when there is no reverse
+ * proxy at all, and in that configuration `resolveTrustedClientIp` returns
+ * `null` on every single request by design, without ever reading a header.
+ * The `null` therefore carries no diagnostic information, so attaching the
+ * raw header would put up to 500 bytes of client-controlled text on every
+ * access log line forever: precisely the per-request inflation the paragraph
+ * above says to avoid, reached through the one configuration where the
+ * caller's "only when resolution failed" guard is always true.
  */
 export function getRawTrustedProxyHeaderForLogging(request: Request): string | undefined {
+  if (env.TRUSTED_PROXY_COUNT === 0) {
+    return undefined;
+  }
+
   const value = request.headers.get(env.TRUSTED_PROXY_HEADER);
   if (!value) {
     return undefined;

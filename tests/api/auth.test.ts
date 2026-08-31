@@ -716,7 +716,19 @@ describe('Auth API', () => {
         expect(response.status).toBe(403);
         expect(callOrder).toEqual(['rateLimit', 'rateLimit', 'userCount']);
         expect(mocks.checkRateLimitAsync).toHaveBeenNthCalledWith(1, request, 'register');
-        expect(mocks.checkRateLimitAsync).toHaveBeenNthCalledWith(2, request, 'register', 'test@example.com');
+        // The second check uses a DIFFERENT rate-limit type from the first.
+        // The IP-keyed one does the ordinary work; the email-keyed one exists
+        // only to bound a proxy-pool mail bomb and is deliberately looser, so
+        // that exhausting a victim's address bucket requires actually sending
+        // them that many emails. Reusing 'register' for both would put an
+        // ordinary user's IP allowance and the anti-mail-bomb ceiling on the
+        // same number.
+        expect(mocks.checkRateLimitAsync).toHaveBeenNthCalledWith(
+          2,
+          request,
+          'registerPerEmail',
+          'test@example.com'
+        );
       });
     });
 

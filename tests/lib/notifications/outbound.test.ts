@@ -14,7 +14,7 @@ vi.mock('dns', () => ({
   promises: { resolve4: mocks.resolve4, resolve6: mocks.resolve6 },
 }));
 
-import { postJson } from '../../../lib/notifications/outbound';
+import { postJson, probeNtfyHealth } from '../../../lib/notifications/outbound';
 
 let server: http.Server;
 let base: string;
@@ -236,4 +236,189 @@ describe('postJson', () => {
 
     expect(result).toEqual({ ok: false, code: 'tls' });
   }, 10000);
+});
+
+describe('TLS server name', () => {
+  // These assert on the options handed to the HTTP client rather than on a
+  // completed request: `servername` is consumed inside the TLS handshake, so
+  // it is not observable from a receiving server.
+  async function captureRequestOptions(url: string): Promise<Record<string, unknown>> {
+    const https = (await import('node:https')).default;
+    let captured: Record<string, unknown> | undefined;
+
+    const spy = vi.spyOn(https, 'request').mockImplementation(((options: unknown) => {
+      captured = options as Record<string, unknown>;
+      // postJson wraps client.request in a try/catch and settles with
+      // 'unknown', so throwing here ends the call cleanly without a socket.
+      throw new Error('captured');
+    }) as unknown as typeof https.request);
+
+    try {
+      await postJson(url, '{}', {});
+    } finally {
+      spy.mockRestore();
+    }
+
+    if (!captured) throw new Error('https.request was never called');
+    return captured;
+  }
+
+  it('omits servername for an IPv6 literal host', async () => {
+    // Catches reverting the guard to `net.isIP(target.parsed.hostname)`.
+    // URL.hostname keeps the brackets for IPv6 and net.isIP returns 0 for
+    // that form, so the unstripped version sets servername to the literal
+    // '[fd00::1]', an invalid SNI value and exactly the DEP0123 case the
+    // guard exists to prevent. It worked for IPv4 and silently did nothing
+    // for IPv6.
+    const options = await captureRequestOptions('https://[fd00::1]:8443/hook');
+
+    expect(options.servername).toBeUndefined();
+  });
+
+  it('omits servername for an IPv4 literal host', async () => {
+    const options = await captureRequestOptions('https://192.0.2.10/hook');
+
+    expect(options.servername).toBeUndefined();
+  });
+
+  it('still sets servername for a real hostname', async () => {
+    // The other half: stripping brackets must not disable SNI for the normal
+    // name-based case, which is what makes virtual hosts work.
+    mocks.resolve4.mockResolvedValue(['93.184.216.34']);
+    mocks.resolve6.mockRejectedValue(new Error('no AAAA'));
+
+    const options = await captureRequestOptions('https://hook.example.com/x');
+
+    expect(options.servername).toBe('hook.example.com');
+  });
+});
+
+describe('expectJsonResponse', () => {
+  it('treats a 2xx with a non-JSON content type as unexpected_response', async () => {
+    // The #437 case: a mistyped ntfy URL pointing at an ordinary web server
+    // that happily returns 200 with an HTML body. Without this the delivery
+    // counts as a success, the reminder is stamped, and it is never retried.
+    handler = (_req, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end('<html></html>');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: false, code: 'unexpected_response' });
+  });
+
+  it('accepts a 2xx with application/json', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"id":"abc"}');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('accepts a JSON content type carrying a charset parameter', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }).end('{}');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('treats a 2xx with no content type at all as unexpected_response', async () => {
+    handler = (_req, res) => res.writeHead(204).end();
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: false, code: 'unexpected_response' });
+  });
+
+  it('leaves callers that did not opt in unaffected', async () => {
+    // Webhooks deliberately accept any 2xx: a receiver is free to answer with
+    // an empty body. Only ntfy opts in, because only ntfy has a documented
+    // response shape to check against.
+    handler = (_req, res) => res.writeHead(200, { 'Content-Type': 'text/plain' }).end('ok');
+
+    const result = await postJson(`${base}/`, '{}', {});
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('still reports a non-2xx by its status, not as unexpected_response', async () => {
+    handler = (_req, res) => res.writeHead(503, { 'Content-Type': 'text/html' }).end('nope');
+
+    const result = await postJson(`${base}/`, '{}', {}, { expectJsonResponse: true });
+
+    expect(result).toEqual({ ok: false, code: 'http_5xx' });
+  });
+});
+
+describe('probeNtfyHealth', () => {
+  it('accepts a server that reports healthy', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"healthy":true}');
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('ntfy');
+  });
+
+  it('rejects a server that answers 200 but is not ntfy', async () => {
+    handler = (_req, res) => res.writeHead(200, { 'Content-Type': 'text/html' }).end('<html></html>');
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
+  });
+
+  it('rejects a server that reports unhealthy', async () => {
+    handler = (_req, res) =>
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"healthy":false}');
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
+  });
+
+  it('rejects a 404, which is what a non-ntfy host usually gives for /v1/health', async () => {
+    handler = (_req, res) => res.writeHead(404).end();
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
+  });
+
+  it('does not buffer an unbounded body', async () => {
+    // A hostile or broken host must not be able to stream arbitrary data into
+    // memory. The probe gives up past its byte ceiling rather than reading on.
+    handler = (_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('x'.repeat(200_000));
+    };
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
+  });
+
+  it('reports a connection failure as unreachable, not as a wrong server', async () => {
+    // The distinction that decides whether the save is refused. Collapsing
+    // this into not_ntfy told a user "no ntfy server answered, check the
+    // URL" for a resolver hiccup, and hard-blocked any ntfy whose /v1/health
+    // this app cannot reach even though publishing to it works.
+    await expect(probeNtfyHealth('http://127.0.0.1:1/')).resolves.toBe('unreachable');
+  });
+
+  it('reports a stalled connection as unreachable', async () => {
+    await expect(probeNtfyHealth(`${trickleBase}/`)).resolves.toBe('unreachable');
+  }, 10_000);
+});
+
+describe('probeNtfyHealth gating', () => {
+  it('refuses a save only on a conclusive not_ntfy, never on unreachable', async () => {
+    // Pins the asymmetry directly, so a future change that starts refusing
+    // on 'unreachable' fails here rather than in a self-hoster's bug report.
+    const { checkEndpointUrl } = await import('../../../lib/notifications/endpoint-url');
+
+    mocks.resolve4.mockResolvedValue(['127.0.0.1']);
+    mocks.resolve6.mockRejectedValue(new Error('no AAAA'));
+
+    handler = (_req, res) => res.writeHead(404).end();
+    const wrongHost = await checkEndpointUrl({ url: `${base}/topic`, ntfyBase: `${base}/` });
+    expect(wrongHost).toEqual({ code: 'not_ntfy' });
+
+    const unreachable = await checkEndpointUrl({
+      url: 'http://127.0.0.1:1/topic',
+      ntfyBase: 'http://127.0.0.1:1/',
+    });
+    expect(unreachable).toBeNull();
+  });
 });

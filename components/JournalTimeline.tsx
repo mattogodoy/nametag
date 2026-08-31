@@ -106,7 +106,7 @@ export default function JournalTimeline({ entries, nameOrder, nameDisplayFormat,
         <p className="text-sm text-muted mb-6 max-w-md mx-auto">{t('noEntriesDescription')}</p>
         <Link
           href="/journal/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg text-on-primary bg-primary hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
         >
           {t('writeFirstEntry')}
         </Link>

@@ -46,6 +46,7 @@ vi.mock('../../../lib/notifications/render', () => ({
 
 import { sendWebPush } from '../../../lib/notifications/channels/web-push';
 import { HealthAccumulator } from '../../../lib/notifications/endpoint-health';
+import { RunCircuitBreaker } from '../../../lib/notifications/circuit';
 
 const envelope: NotificationEnvelope = {
   userId: 'user-1',
@@ -70,6 +71,7 @@ function subscription(id: string) {
 
 describe('sendWebPush', () => {
   let health: HealthAccumulator;
+  let circuit: RunCircuitBreaker;
 
   beforeEach(() => {
     Object.values(mocks).forEach((m) => m.mockReset());
@@ -88,24 +90,25 @@ describe('sendWebPush', () => {
     // resulting prisma write, is what actually exercises that path end to
     // end rather than mocking it away.
     health = new HealthAccumulator();
+    circuit = new RunCircuitBreaker();
   });
 
   it('skips when push is not configured on this server', async () => {
     mocks.getVapidDetails.mockReturnValue(null);
 
-    expect(await sendWebPush(envelope, health)).toEqual({ channel: 'web_push', status: 'skipped' });
+    expect(await sendWebPush(envelope, health, circuit)).toEqual({ channel: 'web_push', status: 'skipped' });
     expect(mocks.sendNotification).not.toHaveBeenCalled();
   });
 
   it('skips when the user has no subscribed devices', async () => {
     mocks.findMany.mockResolvedValue([]);
 
-    expect(await sendWebPush(envelope, health)).toEqual({ channel: 'web_push', status: 'skipped' });
+    expect(await sendWebPush(envelope, health, circuit)).toEqual({ channel: 'web_push', status: 'skipped' });
     expect(mocks.sendNotification).not.toHaveBeenCalled();
   });
 
   it('sends a rendered payload carrying the deep link', async () => {
-    const result = await sendWebPush(envelope, health);
+    const result = await sendWebPush(envelope, health, circuit);
 
     expect(result).toEqual({ channel: 'web_push', status: 'delivered' });
     const payload = JSON.parse(mocks.sendNotification.mock.calls[0][1] as string);
@@ -122,7 +125,7 @@ describe('sendWebPush', () => {
     // it was called with. Dropping the userId filter would broadcast every
     // user's push, including contact names, to every subscribed device on
     // the instance, and none of those tests would notice.
-    await sendWebPush(envelope, health);
+    await sendWebPush(envelope, health, circuit);
 
     expect(mocks.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 'user-1', autoDisabledAt: null } })
@@ -130,7 +133,7 @@ describe('sendWebPush', () => {
   });
 
   it('caps the subscription lookup, as a belt behind the per-user write cap', async () => {
-    await sendWebPush(envelope, health);
+    await sendWebPush(envelope, health, circuit);
 
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 20 }));
   });
@@ -141,7 +144,7 @@ describe('sendWebPush', () => {
       .mockRejectedValueOnce(Object.assign(new Error('gone'), { statusCode: 410 }))
       .mockResolvedValueOnce({ statusCode: 201 });
 
-    expect(await sendWebPush(envelope, health)).toEqual({ channel: 'web_push', status: 'delivered' });
+    expect(await sendWebPush(envelope, health, circuit)).toEqual({ channel: 'web_push', status: 'delivered' });
     await health.flush();
 
     // Health must be recorded for the live device and only the live device.
@@ -166,7 +169,7 @@ describe('sendWebPush', () => {
       .mockRejectedValueOnce(Object.assign(new Error('not found'), { statusCode: 404 }))
       .mockRejectedValueOnce(Object.assign(new Error('gone'), { statusCode: 410 }));
 
-    const result = await sendWebPush(envelope, health);
+    const result = await sendWebPush(envelope, health, circuit);
     await health.flush();
 
     expect(mocks.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['sub-1', 'sub-2'] } } });
@@ -185,7 +188,7 @@ describe('sendWebPush', () => {
       Object.assign(new Error('unavailable'), { statusCode: 503 })
     );
 
-    const result = await sendWebPush(envelope, health);
+    const result = await sendWebPush(envelope, health, circuit);
 
     expect(result.status).toBe('failed');
     expect(mocks.deleteMany).not.toHaveBeenCalled();
@@ -196,7 +199,7 @@ describe('sendWebPush', () => {
       Object.assign(new Error('unavailable'), { statusCode: 500 })
     );
 
-    const result = await sendWebPush(envelope, health);
+    const result = await sendWebPush(envelope, health, circuit);
 
     expect(result.status).toBe('failed');
   });
@@ -207,7 +210,7 @@ describe('sendWebPush', () => {
       Object.assign(new Error('unavailable'), { statusCode: 503 })
     );
 
-    await sendWebPush(envelope, health);
+    await sendWebPush(envelope, health, circuit);
     await health.flush();
 
     expect(mocks.update).toHaveBeenCalledWith({
@@ -227,7 +230,7 @@ describe('sendWebPush', () => {
       Object.assign(new Error('unauthorized'), { statusCode: 401 })
     );
 
-    const result = await sendWebPush(envelope, health);
+    const result = await sendWebPush(envelope, health, circuit);
     await health.flush();
 
     expect(mocks.update).toHaveBeenCalledWith({
@@ -256,7 +259,7 @@ describe('sendWebPush', () => {
       Object.assign(new Error('internal error'), { statusCode: 500 })
     );
 
-    await sendWebPush(envelope, health);
+    await sendWebPush(envelope, health, circuit);
     await health.flush();
 
     expect(mocks.update.mock.calls[0][0].data.lastFailureCode).toBe('http_5xx');
@@ -269,7 +272,7 @@ describe('sendWebPush', () => {
       Object.assign(new Error('too many requests'), { statusCode: 429 })
     );
 
-    await sendWebPush(envelope, health);
+    await sendWebPush(envelope, health, circuit);
     await health.flush();
 
     expect(mocks.update.mock.calls[0][0].data.lastFailureCode).toBe('http_429');
@@ -286,7 +289,7 @@ describe('sendWebPush', () => {
     vi.useFakeTimers();
     mocks.sendNotification.mockReturnValue(new Promise(() => {}));
 
-    const resultPromise = sendWebPush(envelope, health);
+    const resultPromise = sendWebPush(envelope, health, circuit);
     await vi.advanceTimersByTimeAsync(5000);
     const result = await resultPromise;
     await health.flush();
@@ -303,7 +306,7 @@ describe('sendWebPush', () => {
     mocks.findMany.mockResolvedValue([subscription('sub-1'), subscription('sub-2')]);
     mocks.update.mockRejectedValueOnce(new Error('connection reset')).mockResolvedValueOnce({});
 
-    const result = await sendWebPush(envelope, health);
+    const result = await sendWebPush(envelope, health, circuit);
     await health.flush();
 
     expect(mocks.sendNotification).toHaveBeenCalledTimes(2);
