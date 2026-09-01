@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.62.0](https://github.com/mattogodoy/nametag/compare/v0.61.0...v0.62.0) (2026-09-01)
+
+
+### Features
+
+* **notifications:** add ntfy channel and hardened outbound client ([#435](https://github.com/mattogodoy/nametag/issues/435)) ([d5ec6a9](https://github.com/mattogodoy/nametag/commit/d5ec6a9d26c3894d050a80b4b5dd71946c4b868a))
+* **notifications:** add signed outgoing webhooks ([#449](https://github.com/mattogodoy/nametag/issues/449)) ([44306f5](https://github.com/mattogodoy/nametag/commit/44306f5a311bcc6f98b244ff41df31046077db2f))
+* **notifications:** add web push as a reminder channel ([#434](https://github.com/mattogodoy/nametag/issues/434)) ([ae7bebe](https://github.com/mattogodoy/nametag/commit/ae7bebe92e21e776d002e75f51d2c53f8fab0465))
+
+
+### Bug Fixes
+
+* **notifications:** harden the notification channels release ([#459](https://github.com/mattogodoy/nametag/issues/459)) ([b616df3](https://github.com/mattogodoy/nametag/commit/b616df33ec9a021489a2090451a95eca850bb671))
+* **security:** resolve the client IP from a declared trusted proxy ([#450](https://github.com/mattogodoy/nametag/issues/450)) ([0216668](https://github.com/mattogodoy/nametag/commit/0216668807c84d749dc79f1cd56c9271c9c15eff))
+* **security:** scope the shared-bucket widening, and untrack Playwright output ([#461](https://github.com/mattogodoy/nametag/issues/461)) ([aa0f381](https://github.com/mattogodoy/nametag/commit/aa0f381d85252a52d735b04c372a6609ecb7d6f2))
+* **security:** stop one caller denying authentication instance-wide (GHSA-qwj2-9jr7-f273) ([#460](https://github.com/mattogodoy/nametag/issues/460)) ([7dc3a7e](https://github.com/mattogodoy/nametag/commit/7dc3a7e2c704d0640b6968aef107f69b761623db))
+
 ## [0.61.0](https://github.com/mattogodoy/nametag/compare/v0.60.0...v0.61.0) (2026-08-26)
 
 
