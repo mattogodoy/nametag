@@ -1,0 +1,63 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img "Nametag Logo" [ref=e5]
+      - heading "Create your account" [level=2] [ref=e6]
+      - paragraph [ref=e7]: Start managing your relationships with Nametag
+    - generic [ref=e8]:
+      - alert [ref=e9]:
+        - generic [ref=e10]: Too many attempts. Please try again in 60 minutes.
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]: Name
+          - textbox "Name" [ref=e14]:
+            - /placeholder: Name *
+            - text: Test User
+        - generic [ref=e15]:
+          - generic [ref=e16]: Last Name
+          - textbox "Last Name" [ref=e17]:
+            - /placeholder: Last Name (optional)
+        - generic [ref=e18]:
+          - generic [ref=e19]: Nickname
+          - textbox "Nickname" [ref=e20]:
+            - /placeholder: Nickname (optional)
+        - generic [ref=e21]:
+          - generic [ref=e22]: Email Address
+          - textbox "Email Address" [ref=e23]: test-1788124861276@example.com
+        - generic [ref=e24]:
+          - generic [ref=e25]: Password
+          - textbox "Password" [ref=e26]: TestPassword123!
+          - generic [ref=e27]:
+            - generic [ref=e31]: Very Strong
+            - generic [ref=e32]:
+              - generic [ref=e33]:
+                - img [ref=e34]
+                - generic [ref=e36]: At least 8 characters
+              - generic [ref=e37]:
+                - img [ref=e38]
+                - generic [ref=e40]: One uppercase letter (A-Z)
+              - generic [ref=e41]:
+                - img [ref=e42]
+                - generic [ref=e44]: One lowercase letter (a-z)
+              - generic [ref=e45]:
+                - img [ref=e46]
+                - generic [ref=e48]: One number (0-9)
+              - generic [ref=e49]:
+                - img [ref=e50]
+                - generic [ref=e52]: One special character (!@#$%^&*)
+        - generic [ref=e53]:
+          - generic [ref=e54]: Confirm Password
+          - textbox "Confirm Password" [ref=e55]:
+            - /placeholder: Confirm password
+            - text: TestPassword123!
+      - button "Sign up" [ref=e57]
+      - paragraph [ref=e59]:
+        - text: Already have an account?
+        - link "Sign in" [ref=e60]:
+          - /url: /login
+  - region "Notifications alt+T"
+  - alert [ref=e61]
+```

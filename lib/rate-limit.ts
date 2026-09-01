@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { securityLogger } from './logger';
 import { resolveTrustedClientIp, warnNoTrustedClientIp } from '@/lib/net/client-ip';
@@ -149,6 +150,56 @@ export const rateLimitConfigs = {
 export type RateLimitType = keyof typeof rateLimitConfigs;
 
 /**
+ * Distinguishes this process's shared fallback bucket from other instances'.
+ * Random per process, never persisted: it only has to be distinct, and a
+ * restart getting a fresh budget is the correct behaviour for a bucket that
+ * exists to bound in-flight work.
+ */
+const PROCESS_BUCKET_ID = randomUUID();
+
+/**
+ * How much more the shared fallback bucket allows than the per-IP bucket for
+ * the same endpoint.
+ *
+ * The shared bucket is reached only when no trusted client IP could be
+ * determined, and in that state it cannot distinguish callers at all: every
+ * request on the instance lands in one bucket. Sized at the per-IP limit it
+ * became an instance-wide kill switch, and a cheap one. Login allows 5 per 15
+ * minutes, so five requests denied login to every user of the instance
+ * (GHSA-qwj2-9jr7-f273).
+ *
+ * Raising it is the right trade in this specific state, because the tight
+ * value was buying almost nothing. What actually stops credential attacks on
+ * an account is the per-account lockout in lib/auth.ts (failedLoginAttempts
+ * and lockedUntil, reset on success), which is independent of this limiter
+ * and unaffected by the client's IP. The shared bucket's remaining job is to
+ * bound expensive work, chiefly the bcrypt comparison per login attempt, and
+ * a volume ceiling does that just as well as a per-caller one would.
+ *
+ * Deliberately NOT fail-open, which the advisory offers as an alternative:
+ * removing the bound entirely would leave the bcrypt cost per request
+ * unmetered, trading a denial-of-service for a cheaper one.
+ */
+const SHARED_BUCKET_MULTIPLIER = 20;
+
+/** True when this key is the no-trusted-IP fallback rather than a real partition. */
+function isSharedFallbackKey(key: string): boolean {
+  return key.endsWith(`:shared:${PROCESS_BUCKET_ID}`);
+}
+
+/**
+ * The attempt ceiling for one bucket, widened for the shared fallback.
+ *
+ * Exported so the Redis limiter applies the identical rule; two copies of
+ * this is how the two limiters would drift into disagreeing about how many
+ * requests an endpoint allows.
+ */
+export function maxAttemptsForKey(type: RateLimitType, key: string): number {
+  const base = rateLimitConfigs[type].maxAttempts;
+  return isSharedFallbackKey(key) ? base * SHARED_BUCKET_MULTIPLIER : base;
+}
+
+/**
  * Build the storage key for a rate-limit bucket.
  *
  * An identifier produces an IP-INDEPENDENT bucket, deliberately. This used to
@@ -196,7 +247,18 @@ export function buildRateLimitKey(
   }
 
   warnNoTrustedClientIp();
-  return `${type}:shared`;
+  // Scoped to this process, not to the deployment (GHSA-qwj2-9jr7-f273).
+  //
+  // With the Redis limiter, a single global `${type}:shared` key is shared by
+  // every instance behind the load balancer, so one caller exhausting it
+  // denies the endpoint across the entire fleet. Adding the process id caps
+  // the blast radius at the one instance that served those requests; the
+  // others keep their own budget and a load balancer keeps routing to them.
+  //
+  // This changes nothing for the in-memory limiter, whose store is already
+  // per process, and nothing at all for any request that resolved a trusted
+  // IP, which never reaches this line.
+  return `${type}:shared:${PROCESS_BUCKET_ID}`;
 }
 
 /**
@@ -214,6 +276,8 @@ export function checkRateLimit(
   const ip = resolveTrustedClientIp(request);
 
   const key = buildRateLimitKey(type, ip, identifier);
+  // Widened when this resolved to the shared fallback; see maxAttemptsForKey.
+  const maxAttempts = maxAttemptsForKey(type, key);
 
   const now = Date.now();
   const entry = rateLimitStore.get(key);
@@ -227,7 +291,7 @@ export function checkRateLimit(
     return null;
   }
 
-  if (entry.count >= config.maxAttempts) {
+  if (entry.count >= maxAttempts) {
     // Rate limit exceeded
     const retryAfterSeconds = Math.ceil((entry.resetTime - now) / 1000);
     const retryAfterMinutes = Math.ceil(retryAfterSeconds / 60);
@@ -237,7 +301,7 @@ export function checkRateLimit(
     // there is no trusted value.
     securityLogger.rateLimitExceeded(ip ?? 'unknown', type, {
       attempts: entry.count,
-      maxAttempts: config.maxAttempts,
+      maxAttempts,
       retryAfterSeconds,
       identifier: identifier || undefined,
     });

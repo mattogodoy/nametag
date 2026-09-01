@@ -142,7 +142,13 @@ describe('rate-limit', () => {
         },
       });
 
-      for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
+      // No trusted IP means the shared fallback, whose ceiling is widened
+      // (SHARED_BUCKET_MULTIPLIER) so that one caller cannot deny login
+      // instance-wide with a handful of requests.
+      const { buildRateLimitKey, maxAttemptsForKey } = await import('@/lib/rate-limit');
+      const ceiling = maxAttemptsForKey('login', buildRateLimitKey('login', null, undefined));
+
+      for (let i = 0; i < ceiling; i++) {
         checkRateLimit(request, 'login');
       }
 
@@ -251,13 +257,22 @@ describe('rate-limit', () => {
 
       // Two different callers, distinguished only by x-forwarded-for, share
       // the same bucket because no IP is trusted at all with count 0.
-      for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
+      //
+      // The shared bucket is deliberately much wider than the per-IP one
+      // (see SHARED_BUCKET_MULTIPLIER), so exhausting it takes the widened
+      // ceiling rather than login's nominal 5. That width is the fix for
+      // GHSA-qwj2-9jr7-f273; the sharing itself is still the point here.
+      const { maxAttemptsForKey, buildRateLimitKey } = await import('@/lib/rate-limit');
+      const ceiling = maxAttemptsForKey('login', buildRateLimitKey('login', null, undefined));
+
+      for (let i = 0; i < ceiling; i++) {
         checkRateLimit(requestWithChain('10.0.0.1'), 'login');
       }
 
       const result = checkRateLimit(requestWithChain('10.0.0.2'), 'login');
       expect(result).not.toBeNull();
       expect(result?.status).toBe(429);
+      expect(ceiling).toBeGreaterThan(rateLimitConfigs.login.maxAttempts);
     });
   });
 
@@ -323,7 +338,47 @@ describe('rate-limit', () => {
 
       const key = buildRateLimitKey('login', null, undefined);
 
-      expect(key).toBe('login:shared');
+      expect(key).toMatch(/^login:shared:/);
+    });
+
+    it('scopes the shared fallback per process, so one instance cannot deny the fleet', async () => {
+      // GHSA-qwj2-9jr7-f273. With the Redis limiter a single global
+      // `login:shared` key is shared by every instance behind the load
+      // balancer, so one caller exhausting it denies login fleet-wide. The
+      // process suffix caps the blast radius at the instance that served
+      // those requests.
+      //
+      // Catches: dropping the suffix. Under that version these two keys, from
+      // what are effectively two processes, are identical.
+      vi.resetModules();
+      const first = await import('@/lib/rate-limit');
+      const keyFromFirstProcess = first.buildRateLimitKey('login', null, undefined);
+
+      vi.resetModules();
+      const second = await import('@/lib/rate-limit');
+      const keyFromSecondProcess = second.buildRateLimitKey('login', null, undefined);
+
+      expect(keyFromFirstProcess).not.toBe(keyFromSecondProcess);
+    });
+
+    it('widens the ceiling only for the shared fallback, never for a real partition', async () => {
+      // The widening exists because the shared bucket cannot distinguish
+      // callers at all. A per-IP or per-identifier bucket can, so it must
+      // keep its configured limit; widening those would weaken every
+      // correctly configured deployment to fix one that is not.
+      const { buildRateLimitKey, maxAttemptsForKey, rateLimitConfigs } = await import(
+        '@/lib/rate-limit'
+      );
+
+      const shared = buildRateLimitKey('login', null, undefined);
+      const perIp = buildRateLimitKey('login', '203.0.113.7');
+      const perIdentifier = buildRateLimitKey('login', null, 'user@example.com');
+
+      expect(maxAttemptsForKey('login', shared)).toBeGreaterThan(
+        rateLimitConfigs.login.maxAttempts
+      );
+      expect(maxAttemptsForKey('login', perIp)).toBe(rateLimitConfigs.login.maxAttempts);
+      expect(maxAttemptsForKey('login', perIdentifier)).toBe(rateLimitConfigs.login.maxAttempts);
     });
   });
 
