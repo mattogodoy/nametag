@@ -1,5 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
+/*
+ * Several tests here deliberately build a rate-limit key with no trusted IP,
+ * which is the condition warnNoTrustedClientIp reports on. Left unstubbed,
+ * the suite prints genuine-looking `rate_limit.no_trusted_client_ip` operator
+ * alerts into CI output on every run, which is exactly the signal an operator
+ * is supposed to act on. Stubbed at file scope so no block can forget; the
+ * handful of tests that assert on the warning install their own spy, which
+ * takes precedence while it is active.
+ */
+beforeEach(() => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('rate-limit', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -505,6 +522,14 @@ describe('rate-limit', () => {
 });
 
 describe('per-email ceilings on unauthenticated mail-sending endpoints', () => {
+  // This block sits outside describe('rate-limit'), so it does not inherit
+  // that block's beforeEach. Without its own reset it runs against whatever
+  // module instance an earlier block left behind, which makes it order
+  // dependent and can make its assertions pass vacuously.
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
   it('gives the email bucket more headroom than the IP bucket it sits behind', async () => {
     // The IP bucket does the ordinary work; the email bucket exists only to
     // bound what no IP-scoped limit can, an attacker with a proxy pool
@@ -545,6 +570,14 @@ describe('per-email ceilings on unauthenticated mail-sending endpoints', () => {
 });
 
 describe('shared fallback widening is scoped by what the endpoint costs', () => {
+  // This block sits outside describe('rate-limit'), so it does not inherit
+  // that block's beforeEach. Without its own reset it runs against whatever
+  // module instance an earlier block left behind, which makes it order
+  // dependent and can make its assertions pass vacuously.
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
   it('does not widen the endpoints that send mail to a third party', async () => {
     // A blanket multiplier took forgot-password from 3 to 60 mails an hour,
     // to 60 DIFFERENT real addresses, from one anonymous caller. The

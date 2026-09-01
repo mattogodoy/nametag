@@ -200,8 +200,8 @@ const PROCESS_BUCKET_ID = randomUUID();
  * sends no forwarding header and sits here permanently. These numbers are
  * that deployment's real limits, not a rare degraded case.
  */
-const SHARED_BUCKET_MULTIPLIERS: Partial<Record<RateLimitType, number>> = {
-  // Local cost only.
+const SHARED_BUCKET_MULTIPLIERS: Record<RateLimitType, number> = {
+  // Local cost only: CPU, or a token comparison.
   login: 20,
   resetPassword: 20,
   verifyEmail: 20,
@@ -209,10 +209,23 @@ const SHARED_BUCKET_MULTIPLIERS: Partial<Record<RateLimitType, number>> = {
   register: 5,
   forgotPassword: 5,
   resendVerification: 5,
+  // An unauthenticated write path. Being denied it means client errors go
+  // unlogged, which does not justify widening it.
+  clientErrorLog: 1,
+  // Reached only by an authenticated caller, which always supplies an
+  // identifier, so these never land in the shared bucket at all. Listed
+  // anyway because the type below is exhaustive on purpose.
+  carddavTest: 1,
+  carddavSync: 1,
+  carddavBackup: 1,
+  pushSubscribe: 1,
+  notificationEndpointCreate: 1,
+  notificationEndpointTest: 1,
+  notificationEndpointTestPerUser: 1,
+  registerPerEmail: 1,
+  forgotPasswordPerEmail: 1,
+  resendVerificationPerEmail: 1,
 };
-
-/** Endpoints absent from the table above keep their configured limit. */
-const DEFAULT_SHARED_MULTIPLIER = 1;
 
 /** True when this key is the no-trusted-IP fallback rather than a real partition. */
 function isSharedFallbackKey(key: string): boolean {
@@ -231,7 +244,7 @@ export function maxAttemptsForKey(type: RateLimitType, key: string): number {
   if (!isSharedFallbackKey(key)) {
     return base;
   }
-  return base * (SHARED_BUCKET_MULTIPLIERS[type] ?? DEFAULT_SHARED_MULTIPLIER);
+  return base * SHARED_BUCKET_MULTIPLIERS[type];
 }
 
 /**
@@ -282,12 +295,17 @@ export function buildRateLimitKey(
     return `${type}:${ip}`;
   }
 
-  // Reported only when this key is about to gate a request. The reset path
-  // builds the same key to delete a bucket, and counting those would inflate
-  // the `occurrences` figure the warning publishes: on a no-proxy deployment
-  // every SUCCESSFUL login calls resetRateLimit, so an operator alerting on
-  // that number would be reading successful logins, not rate-limited
-  // requests, and a reset could be the thing that emits the line.
+  // Reported only when this key is about to gate a request.
+  //
+  // `resetRateLimit` builds the same key in order to DELETE a bucket, which
+  // is not a request being gated, so counting it would inflate the
+  // `occurrences` figure this warning publishes and could be the thing that
+  // emits the line. That is a correctness point about what the field means,
+  // not a live bug: `resetRateLimit` currently has no production callers at
+  // all (only its two definitions and tests reference it), so nothing
+  // reaches this branch today. It is guarded because the field is documented
+  // as a count of rate-limited requests and should stay true of whoever
+  // wires the reset path up.
   if (options.report !== false) {
     warnNoTrustedClientIp();
   }
