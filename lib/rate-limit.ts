@@ -158,29 +158,61 @@ export type RateLimitType = keyof typeof rateLimitConfigs;
 const PROCESS_BUCKET_ID = randomUUID();
 
 /**
- * How much more the shared fallback bucket allows than the per-IP bucket for
- * the same endpoint.
+ * How much more the shared fallback bucket allows than the per-IP bucket, per
+ * endpoint.
  *
  * The shared bucket is reached only when no trusted client IP could be
- * determined, and in that state it cannot distinguish callers at all: every
- * request on the instance lands in one bucket. Sized at the per-IP limit it
- * became an instance-wide kill switch, and a cheap one. Login allows 5 per 15
- * minutes, so five requests denied login to every user of the instance
- * (GHSA-qwj2-9jr7-f273).
+ * determined, and in that state it cannot distinguish callers at all. Sized
+ * like a per-IP limit it became an instance-wide kill switch and a cheap one:
+ * five requests denied login to every user (GHSA-qwj2-9jr7-f273). Widening it
+ * raises that cost.
  *
- * Raising it is the right trade in this specific state, because the tight
- * value was buying almost nothing. What actually stops credential attacks on
- * an account is the per-account lockout in lib/auth.ts (failedLoginAttempts
- * and lockedUntil, reset on success), which is independent of this limiter
- * and unaffected by the client's IP. The shared bucket's remaining job is to
- * bound expensive work, chiefly the bcrypt comparison per login attempt, and
- * a volume ceiling does that just as well as a per-caller one would.
+ * But widening is NOT free, and it is not uniformly safe, which is why this is
+ * a table rather than one constant. The cost of a widened bucket depends
+ * entirely on what the endpoint does when it lets a request through:
  *
- * Deliberately NOT fail-open, which the advisory offers as an alternative:
- * removing the bound entirely would leave the bcrypt cost per request
- * unmetered, trading a denial-of-service for a cheaper one.
+ * - Endpoints whose cost is LOCAL (CPU, a token comparison) can be widened
+ *   generously. Being hammered wastes our own resources and nothing else, and
+ *   for login the thing that actually stops a credential attack on an account
+ *   is the per-account lockout in lib/auth.ts, which is independent of the
+ *   client IP.
+ *
+ * - Endpoints that SEND MAIL TO A THIRD PARTY cannot. Their cost lands on
+ *   people who did not ask for it, plus our sending reputation, and no
+ *   per-account lockout mitigates that. The per-address ceilings bound what
+ *   one victim receives; they do nothing about breadth, because an attacker
+ *   sending to N distinct addresses gets a fresh per-address budget each time.
+ *   A blanket 20x here would have taken forgot-password from 3 to 60 mails an
+ *   hour to 60 DIFFERENT real people, from one anonymous caller, on any
+ *   deployment sitting in the shared state. That is a worse bug than the
+ *   denial it was meant to fix, so these get a small multiplier: enough that
+ *   denying the endpoint is no longer a three-request trick, nowhere near
+ *   enough to make the instance a useful mail cannon.
+ *
+ * - Everything else keeps its configured limit. Endpoints reached only by an
+ *   authenticated caller always have an identifier and never land in this
+ *   bucket at all, and for clientErrorLog the harm of being denied is that
+ *   client errors go unlogged, which does not justify widening an
+ *   unauthenticated write path.
+ *
+ * The shared state is not exotic: TRUSTED_PROXY_COUNT defaults to 1, so a
+ * self-hosted instance published directly on its port with no reverse proxy
+ * sends no forwarding header and sits here permanently. These numbers are
+ * that deployment's real limits, not a rare degraded case.
  */
-const SHARED_BUCKET_MULTIPLIER = 20;
+const SHARED_BUCKET_MULTIPLIERS: Partial<Record<RateLimitType, number>> = {
+  // Local cost only.
+  login: 20,
+  resetPassword: 20,
+  verifyEmail: 20,
+  // Sends mail to an address the caller supplies.
+  register: 5,
+  forgotPassword: 5,
+  resendVerification: 5,
+};
+
+/** Endpoints absent from the table above keep their configured limit. */
+const DEFAULT_SHARED_MULTIPLIER = 1;
 
 /** True when this key is the no-trusted-IP fallback rather than a real partition. */
 function isSharedFallbackKey(key: string): boolean {
@@ -196,7 +228,10 @@ function isSharedFallbackKey(key: string): boolean {
  */
 export function maxAttemptsForKey(type: RateLimitType, key: string): number {
   const base = rateLimitConfigs[type].maxAttempts;
-  return isSharedFallbackKey(key) ? base * SHARED_BUCKET_MULTIPLIER : base;
+  if (!isSharedFallbackKey(key)) {
+    return base;
+  }
+  return base * (SHARED_BUCKET_MULTIPLIERS[type] ?? DEFAULT_SHARED_MULTIPLIER);
 }
 
 /**
@@ -236,7 +271,8 @@ export function maxAttemptsForKey(type: RateLimitType, key: string): number {
 export function buildRateLimitKey(
   type: RateLimitType,
   ip: string | null,
-  identifier?: string
+  identifier?: string,
+  options: { report?: boolean } = {}
 ): string {
   if (identifier) {
     return `${type}:id:${identifier}`;
@@ -246,7 +282,15 @@ export function buildRateLimitKey(
     return `${type}:${ip}`;
   }
 
-  warnNoTrustedClientIp();
+  // Reported only when this key is about to gate a request. The reset path
+  // builds the same key to delete a bucket, and counting those would inflate
+  // the `occurrences` figure the warning publishes: on a no-proxy deployment
+  // every SUCCESSFUL login calls resetRateLimit, so an operator alerting on
+  // that number would be reading successful logins, not rate-limited
+  // requests, and a reset could be the thing that emits the line.
+  if (options.report !== false) {
+    warnNoTrustedClientIp();
+  }
   // Scoped to this process, not to the deployment (GHSA-qwj2-9jr7-f273).
   //
   // With the Redis limiter, a single global `${type}:shared` key is shared by
@@ -334,6 +378,6 @@ export function resetRateLimit(
   identifier?: string
 ): void {
   const ip = resolveTrustedClientIp(request);
-  const key = buildRateLimitKey(type, ip, identifier);
+  const key = buildRateLimitKey(type, ip, identifier, { report: false });
   rateLimitStore.delete(key);
 }

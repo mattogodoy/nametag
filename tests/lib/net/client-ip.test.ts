@@ -463,10 +463,12 @@ describe('resolveTrustedClientIp', () => {
 });
 
 describe('warnNoTrustedClientIp', () => {
-  it('logs at most once per process, not once per call', async () => {
-    // Catches: dropping the `warnedMissingTrustedIp` guard and logging on
-    // every call, which is the per-request log spam this function exists to
-    // avoid.
+  it('coalesces repeat calls inside the reporting interval, rather than logging per request', async () => {
+    // Not "once per process": that guard was deliberately removed, because it
+    // meant an operator saw one line from startup and nothing afterwards
+    // while the condition persisted. What must survive is the coalescing, so
+    // this stays off the per-request path. The companion test below asserts
+    // that a second line DOES appear once the interval has elapsed.
     vi.resetModules();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
