@@ -543,3 +543,69 @@ describe('per-email ceilings on unauthenticated mail-sending endpoints', () => {
     );
   });
 });
+
+describe('shared fallback widening is scoped by what the endpoint costs', () => {
+  it('does not widen the endpoints that send mail to a third party', async () => {
+    // A blanket multiplier took forgot-password from 3 to 60 mails an hour,
+    // to 60 DIFFERENT real addresses, from one anonymous caller. The
+    // per-address ceilings do not bound that: an attacker sending to N
+    // distinct addresses gets a fresh per-address budget every time. Since
+    // TRUSTED_PROXY_COUNT defaults to 1, any instance published directly on
+    // its port with no reverse proxy sits in this state permanently, so this
+    // is a real deployment's limit and not a rare degraded case.
+    const { buildRateLimitKey, maxAttemptsForKey, rateLimitConfigs } = await import(
+      '@/lib/rate-limit'
+    );
+
+    for (const type of ['forgotPassword', 'register', 'resendVerification'] as const) {
+      const shared = buildRateLimitKey(type, null, undefined);
+      const widened = maxAttemptsForKey(type, shared);
+
+      // Widened enough that denying it is no longer a three-request trick...
+      expect(widened).toBeGreaterThan(rateLimitConfigs[type].maxAttempts);
+      // ...but nowhere near the multiplier the local-cost endpoints get.
+      expect(widened).toBeLessThan(rateLimitConfigs[type].maxAttempts * 20);
+    }
+  });
+
+  it('widens the endpoints whose cost is local', async () => {
+    const { buildRateLimitKey, maxAttemptsForKey, rateLimitConfigs } = await import(
+      '@/lib/rate-limit'
+    );
+
+    for (const type of ['login', 'resetPassword', 'verifyEmail'] as const) {
+      const shared = buildRateLimitKey(type, null, undefined);
+      expect(maxAttemptsForKey(type, shared)).toBe(rateLimitConfigs[type].maxAttempts * 20);
+    }
+  });
+
+  it('leaves an unauthenticated write path at its configured limit', async () => {
+    // Being denied client error logging means client errors go unlogged. That
+    // does not justify widening an unauthenticated write path to 1200 per 5
+    // minutes.
+    const { buildRateLimitKey, maxAttemptsForKey, rateLimitConfigs } = await import(
+      '@/lib/rate-limit'
+    );
+
+    const shared = buildRateLimitKey('clientErrorLog', null, undefined);
+    expect(maxAttemptsForKey('clientErrorLog', shared)).toBe(
+      rateLimitConfigs.clientErrorLog.maxAttempts
+    );
+  });
+
+  it('does not count a bucket reset toward the reported occurrences', async () => {
+    // resetRateLimit builds the same key to delete a bucket. On a no-proxy
+    // deployment every SUCCESSFUL login resets its bucket, so counting those
+    // would make an operator alerting on `occurrences` read successful logins
+    // rather than rate-limited requests.
+    vi.resetModules();
+    const { resetRateLimit } = await import('@/lib/rate-limit');
+    const clientIp = await import('@/lib/net/client-ip');
+    clientIp.resetNoTrustedClientIpReporting();
+
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    resetRateLimit(new Request('http://localhost/api/test'), 'login');
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+});
