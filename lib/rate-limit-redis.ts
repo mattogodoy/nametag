@@ -250,7 +250,9 @@ export async function resetRateLimit(
   const ip = resolveTrustedClientIp(request);
   // report: false for the same reason as the in-memory reset path. Deleting a
   // bucket is not a request being gated, so it must not count toward the
-  // occurrences figure the no-trusted-IP warning publishes.
+  // occurrences figure the no-trusted-IP warning publishes. Note this
+  // function has no production callers today; see the comment on
+  // buildRateLimitKey.
   const key = `ratelimit:${buildRateLimitKey(type, ip, identifier, { report: false })}`;
 
   if (redis && isRedisConnected()) {
