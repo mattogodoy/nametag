@@ -1689,7 +1689,107 @@
       "errorSomethingWrong": "Une erreur est survenue",
       "errorConnection": "Impossible de se connecter au serveur. Vérifiez votre connexion et réessayez.",
       "successCreated": "Le type de relation \"{label}\" a été créé",
-      "successUpdated": "Le type de relation \"{label}\" a été mis à jour"
+      "successUpdated": "Le type de relation \"{label}\" a été mis à jour",
+      "conditionalLabels": {
+        "sectionTitle": "Libellés conditionnels",
+        "sectionHint": "La première variante dont toutes les conditions sont vraies donne le mot affiché. La personne décrite est celle que le libellé nomme.",
+        "expand": "Afficher les libellés conditionnels",
+        "collapse": "Masquer les libellés conditionnels",
+        "addVariant": "Ajouter une variante",
+        "removeVariant": "Supprimer cette variante",
+        "moveUp": "Monter",
+        "moveDown": "Descendre",
+        "labelShow": "afficher",
+        "labelOtherwise": "sinon afficher",
+        "addCondition": "Ajouter une condition",
+        "removeCondition": "Supprimer cette condition",
+        "conditionPrefix": "si",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "Les opérateurs négatifs ne correspondent pas aux données absentes. Utilisez \"n'est pas renseigné\" pour cela.",
+        "generate": "Générer à partir d'un champ",
+        "generateHint": "Crée une variante par valeur du champ sélectionné.",
+        "generateApply": "Créer les variantes",
+        "subject": {
+          "DESCRIBED": "la personne décrite",
+          "OTHER": "l'autre personne"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "Champs de la personne",
+          "CUSTOM_FIELD": "Champs personnalisés",
+          "GROUP": "Groupes",
+          "DATE_TYPE": "Dates importantes",
+          "DATE_TITLE": "Dates personnalisées"
+        },
+        "fields": {
+          "prefix": "préfixe",
+          "suffix": "suffixe",
+          "nickname": "surnom",
+          "name": "prénom",
+          "surname": "nom de famille",
+          "middleName": "deuxième prénom",
+          "secondLastName": "deuxième nom de famille",
+          "organization": "organisation",
+          "jobTitle": "fonction"
+        },
+        "operators": {
+          "IS": "est",
+          "IS_NOT": "n'est pas",
+          "CONTAINS": "contient",
+          "NOT_CONTAINS": "ne contient pas",
+          "EQUALS": "est égal à",
+          "NOT_EQUALS": "n'est pas égal à",
+          "GT": "est supérieur à",
+          "GTE": "est supérieur ou égal à",
+          "LT": "est inférieur à",
+          "LTE": "est inférieur ou égal à",
+          "IS_TRUE": "est vrai",
+          "IS_FALSE": "est faux",
+          "IN_GROUP": "appartient à",
+          "NOT_IN_GROUP": "n'appartient pas à",
+          "BEFORE": "est antérieure à",
+          "ON_OR_BEFORE": "est antérieure ou le même jour que",
+          "AFTER": "est postérieure à",
+          "ON_OR_AFTER": "est postérieure ou le même jour que",
+          "SAME_DAY": "est le même jour que",
+          "NOT_SAME_DAY": "n'est pas le même jour que",
+          "IS_SET": "est renseigné",
+          "IS_NOT_SET": "n'est pas renseigné"
+        },
+        "operandKind": {
+          "literal": "une valeur",
+          "now": "aujourd'hui",
+          "ref": "la même donnée chez l'autre personne"
+        },
+        "shortcuts": {
+          "isPast": "est passée",
+          "isFuture": "est à venir"
+        },
+        "controlLabels": {
+          "subject": "Quelle personne",
+          "data": "Quelle donnée",
+          "operator": "Comparaison",
+          "operandKind": "Comparer avec",
+          "value": "Valeur",
+          "dateTitle": "Titre de la date"
+        },
+        "preview": {
+          "title": "Aperçu",
+          "hint": "Choisissez deux contacts pour voir le mot que cela produit.",
+          "described": "Personne décrite",
+          "other": "Autre personne",
+          "result": "{described} est {label} de {other}.",
+          "matched": "La variante {index} s'applique.",
+          "fallback": "Aucune variante ne correspond, le repli s'applique.",
+          "failed": "L'aperçu n'a pas pu être calculé."
+        },
+        "warnings": {
+          "title": "Avertissements",
+          "UNREACHABLE_AFTER_FALLBACK": "Cette variante se trouve après le repli et ne sera jamais atteinte.",
+          "DUPLICATE_VARIANT": "Cette variante répète les conditions d'une variante précédente.",
+          "ALWAYS_TRUE": "Cette condition est toujours vraie, elle n'a donc aucun effet utile.",
+          "BROKEN_REFERENCE": "Cette condition pointe vers un groupe ou un champ qui n'existe plus."
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "Rechercher ou créer la relation inverse...",

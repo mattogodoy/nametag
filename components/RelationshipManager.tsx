@@ -35,6 +35,7 @@ interface Relationship {
   notes: string | null;
   person: Person;
   relationshipType: RelationshipType | null;
+  resolvedLabel?: string | null;
 }
 
 interface RelationshipManagerProps {
@@ -315,7 +316,9 @@ export default function RelationshipManager({
                           color: rel.relationshipType?.color || 'var(--badge-text)',
                         }}
                       >
-                        {rel.relationshipType?.label || 'Unknown'}
+                        <span title={rel.relationshipType?.label ?? undefined}>
+                          {rel.resolvedLabel || rel.relationshipType?.label || 'Unknown'}
+                        </span>
                       </span>
                     ),
                   })}

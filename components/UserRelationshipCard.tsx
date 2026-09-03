@@ -23,6 +23,7 @@ interface UserRelationshipCardProps {
     label: string;
     color: string | null;
   };
+  resolvedLabel?: string | null;
   relationshipTypes: RelationshipType[];
   userName?: string;
   userPhoto?: string | null;
@@ -32,6 +33,7 @@ export default function UserRelationshipCard({
   personId,
   personName,
   relationshipToUser,
+  resolvedLabel,
   relationshipTypes,
   userName,
   userPhoto,
@@ -138,7 +140,9 @@ export default function UserRelationshipCard({
                     color: relationshipToUser.color || 'var(--badge-text)',
                   }}
                 >
-                  {relationshipToUser.label}
+                  <span title={relationshipToUser.label}>
+                    {resolvedLabel || relationshipToUser.label}
+                  </span>
                 </span>
               ),
             })}

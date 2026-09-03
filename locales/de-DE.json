@@ -1689,7 +1689,107 @@
       "errorSomethingWrong": "Etwas ist schiefgelaufen",
       "errorConnection": "Verbindung zum Server nicht möglich. Bitte prüfe deine Verbindung und versuche es erneut.",
       "successCreated": "Beziehungsart \"{label}\" wurde erstellt",
-      "successUpdated": "Beziehungsart \"{label}\" wurde aktualisiert"
+      "successUpdated": "Beziehungsart \"{label}\" wurde aktualisiert",
+      "conditionalLabels": {
+        "sectionTitle": "Bedingte Bezeichnungen",
+        "sectionHint": "Die erste Variante, deren Bedingungen alle zutreffen, liefert das angezeigte Wort. Die beschriebene Person ist diejenige, die die Bezeichnung benennt.",
+        "expand": "Bedingte Bezeichnungen anzeigen",
+        "collapse": "Bedingte Bezeichnungen ausblenden",
+        "addVariant": "Variante hinzufügen",
+        "removeVariant": "Diese Variante entfernen",
+        "moveUp": "Nach oben verschieben",
+        "moveDown": "Nach unten verschieben",
+        "labelShow": "anzeigen",
+        "labelOtherwise": "sonst anzeigen",
+        "addCondition": "Bedingung hinzufügen",
+        "removeCondition": "Diese Bedingung entfernen",
+        "conditionPrefix": "wenn",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "Negative Operatoren gelten nicht für fehlende Daten. Verwende dafür \"ist nicht gesetzt\".",
+        "generate": "Aus einem Feld erzeugen",
+        "generateHint": "Erstellt eine Variante pro Wert des gewählten Feldes.",
+        "generateApply": "Varianten erstellen",
+        "subject": {
+          "DESCRIBED": "die beschriebene Person",
+          "OTHER": "die andere Person"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "Personenfelder",
+          "CUSTOM_FIELD": "Benutzerdefinierte Felder",
+          "GROUP": "Gruppen",
+          "DATE_TYPE": "Wichtige Daten",
+          "DATE_TITLE": "Benutzerdefinierte Daten"
+        },
+        "fields": {
+          "prefix": "Titel",
+          "suffix": "Namenszusatz",
+          "nickname": "Spitzname",
+          "name": "Vorname",
+          "surname": "Nachname",
+          "middleName": "Zweiter Vorname",
+          "secondLastName": "Zweiter Nachname",
+          "organization": "Organisation",
+          "jobTitle": "Berufsbezeichnung"
+        },
+        "operators": {
+          "IS": "ist",
+          "IS_NOT": "ist nicht",
+          "CONTAINS": "enthält",
+          "NOT_CONTAINS": "enthält nicht",
+          "EQUALS": "entspricht",
+          "NOT_EQUALS": "entspricht nicht",
+          "GT": "ist größer als",
+          "GTE": "ist größer als oder gleich",
+          "LT": "ist kleiner als",
+          "LTE": "ist kleiner als oder gleich",
+          "IS_TRUE": "ist wahr",
+          "IS_FALSE": "ist falsch",
+          "IN_GROUP": "gehört zu",
+          "NOT_IN_GROUP": "gehört nicht zu",
+          "BEFORE": "liegt vor",
+          "ON_OR_BEFORE": "liegt am oder vor",
+          "AFTER": "liegt nach",
+          "ON_OR_AFTER": "liegt am oder nach",
+          "SAME_DAY": "ist am selben Tag wie",
+          "NOT_SAME_DAY": "ist nicht am selben Tag wie",
+          "IS_SET": "ist gesetzt",
+          "IS_NOT_SET": "ist nicht gesetzt"
+        },
+        "operandKind": {
+          "literal": "ein Wert",
+          "now": "heute",
+          "ref": "dieselben Daten der anderen Person"
+        },
+        "shortcuts": {
+          "isPast": "liegt in der Vergangenheit",
+          "isFuture": "steht bevor"
+        },
+        "controlLabels": {
+          "subject": "Welche Person",
+          "data": "Welche Daten",
+          "operator": "Vergleich",
+          "operandKind": "Vergleichen mit",
+          "value": "Wert",
+          "dateTitle": "Datumstitel"
+        },
+        "preview": {
+          "title": "Vorschau",
+          "hint": "Wähle zwei Kontakte, um das erzeugte Wort zu sehen.",
+          "described": "Beschriebene Person",
+          "other": "Andere Person",
+          "result": "{described} ist {label} von {other}.",
+          "matched": "Variante {index} angewendet.",
+          "fallback": "Keine Variante passte, die Standardbezeichnung wurde angewendet.",
+          "failed": "Die Vorschau konnte nicht berechnet werden."
+        },
+        "warnings": {
+          "title": "Hinweise",
+          "UNREACHABLE_AFTER_FALLBACK": "Diese Variante kommt nach der Standardbezeichnung und wird nie erreicht.",
+          "DUPLICATE_VARIANT": "Diese Variante wiederholt die Bedingungen einer früheren.",
+          "ALWAYS_TRUE": "Diese Bedingung ist immer wahr und hat daher keine sinnvolle Wirkung.",
+          "BROKEN_REFERENCE": "Diese Bedingung verweist auf eine Gruppe oder ein Feld, das nicht mehr existiert."
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "Gegenbeziehung suchen oder erstellen...",

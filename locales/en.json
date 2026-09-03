@@ -1689,7 +1689,107 @@
       "errorSomethingWrong": "Something went wrong",
       "errorConnection": "Unable to connect to server. Please check your connection and try again.",
       "successCreated": "Relationship type \"{label}\" has been created",
-      "successUpdated": "Relationship type \"{label}\" has been updated"
+      "successUpdated": "Relationship type \"{label}\" has been updated",
+      "conditionalLabels": {
+        "sectionTitle": "Conditional labels",
+        "sectionHint": "The first variant whose conditions are all true gives the displayed word. The described person is the one the label names.",
+        "expand": "Show conditional labels",
+        "collapse": "Hide conditional labels",
+        "addVariant": "Add a variant",
+        "removeVariant": "Remove this variant",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "labelShow": "show",
+        "labelOtherwise": "otherwise show",
+        "addCondition": "Add a condition",
+        "removeCondition": "Remove this condition",
+        "conditionPrefix": "if",
+        "segmentOrder": "prefix,subject,data,operator,operand",
+        "absenceHint": "Negative operators do not match missing data. Use \"is not set\" for that.",
+        "generate": "Generate from a field",
+        "generateHint": "Creates one variant per value of the selected field.",
+        "generateApply": "Create the variants",
+        "subject": {
+          "DESCRIBED": "the described person",
+          "OTHER": "the other person"
+        },
+        "sourceGroups": {
+          "PERSON_FIELD": "Person fields",
+          "CUSTOM_FIELD": "Custom fields",
+          "GROUP": "Groups",
+          "DATE_TYPE": "Important dates",
+          "DATE_TITLE": "Custom dates"
+        },
+        "fields": {
+          "prefix": "prefix",
+          "suffix": "suffix",
+          "nickname": "nickname",
+          "name": "first name",
+          "surname": "last name",
+          "middleName": "middle name",
+          "secondLastName": "second last name",
+          "organization": "organization",
+          "jobTitle": "job title"
+        },
+        "operators": {
+          "IS": "is",
+          "IS_NOT": "is not",
+          "CONTAINS": "contains",
+          "NOT_CONTAINS": "does not contain",
+          "EQUALS": "equals",
+          "NOT_EQUALS": "does not equal",
+          "GT": "is greater than",
+          "GTE": "is greater than or equal to",
+          "LT": "is lower than",
+          "LTE": "is lower than or equal to",
+          "IS_TRUE": "is true",
+          "IS_FALSE": "is false",
+          "IN_GROUP": "belongs to",
+          "NOT_IN_GROUP": "does not belong to",
+          "BEFORE": "is before",
+          "ON_OR_BEFORE": "is on or before",
+          "AFTER": "is after",
+          "ON_OR_AFTER": "is on or after",
+          "SAME_DAY": "is the same day as",
+          "NOT_SAME_DAY": "is not the same day as",
+          "IS_SET": "is set",
+          "IS_NOT_SET": "is not set"
+        },
+        "operandKind": {
+          "literal": "a value",
+          "now": "today",
+          "ref": "the same data on the other person"
+        },
+        "shortcuts": {
+          "isPast": "is past",
+          "isFuture": "is upcoming"
+        },
+        "controlLabels": {
+          "subject": "Which person",
+          "data": "Which data",
+          "operator": "Comparison",
+          "operandKind": "Compare against",
+          "value": "Value",
+          "dateTitle": "Date title"
+        },
+        "preview": {
+          "title": "Preview",
+          "hint": "Pick two contacts to see the word this produces.",
+          "described": "Described person",
+          "other": "Other person",
+          "result": "{described} is {label} of {other}.",
+          "matched": "Variant {index} applied.",
+          "fallback": "No variant matched, the fallback applied.",
+          "failed": "The preview could not be computed."
+        },
+        "warnings": {
+          "title": "Notices",
+          "UNREACHABLE_AFTER_FALLBACK": "This variant comes after the fallback and will never be reached.",
+          "DUPLICATE_VARIANT": "This variant repeats the conditions of an earlier one.",
+          "ALWAYS_TRUE": "This condition is always true, so it has no useful effect.",
+          "BROKEN_REFERENCE": "This condition points at a group or field that no longer exists."
+        }
+      }
     },
     "autocomplete": {
       "placeholder": "Search or create inverse relationship...",

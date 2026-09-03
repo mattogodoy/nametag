@@ -28,6 +28,10 @@ Go to the Relationship Types page to manage them. Each type has:
 - **Color**: a hex color used for the type's badge
 - **Inverse type** (optional): the relationship type that should be applied automatically in the other direction
 
+## Conditional labels
+
+A relationship type doesn't have to show the same word to everyone. You can configure it to pick a different label depending on data stored on the two people involved, so a Sibling type can display "Frère" or "Soeur" and a Spouse type can become "Veuf" once the other spouse has died. See [Conditional Relationship Labels](/features/conditional-relationship-labels/) for how to set this up.
+
 ## Automatic inverse relationships
 
 When a relationship type has an inverse configured, Nametag applies it automatically. If you set Alice as the parent of Bob, Bob is automatically shown as the child of Alice, you don't need to add both directions by hand. Symmetric types, like Sibling or Friend, use themselves as their own inverse.
