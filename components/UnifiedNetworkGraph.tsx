@@ -62,6 +62,7 @@ export default function UnifiedNetworkGraph({
   const transformRef = useRef<ZoomTransform>(zoomIdentity);
   const zoomBehaviorRef = useRef<ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
   const hoveredNodeIdRef = useRef<string | null>(null);
+  const touchSelectedNodeIdRef = useRef<string | null>(null);
   const dirtyRef = useRef<boolean>(false);
   const rafRef = useRef<number | null>(null);
   const unpinTimeoutRef = useRef<number | null>(null);
@@ -242,7 +243,7 @@ export default function UnifiedNetworkGraph({
         lod,
         isDark,
         isMobile,
-        hoveredNodeId: hoveredNodeIdRef.current,
+        hoveredNodeId: touchSelectedNodeIdRef.current ?? hoveredNodeIdRef.current,
         getPhoto: getCachedPhoto,
         formatEdgeLabel,
       },
@@ -503,6 +504,16 @@ export default function UnifiedNetworkGraph({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const clientCoordsOf = (e: Event): [number, number] => {
+      if ('touches' in e) {
+        const te = e as TouchEvent;
+        const t = te.touches[0] ?? te.changedTouches[0];
+        return [t.clientX, t.clientY];
+      }
+      const me = e as MouseEvent;
+      return [me.clientX, me.clientY];
+    };
+
     const toGraphCoords = (clientX: number, clientY: number): [number, number] => {
       const rect = canvas.getBoundingClientRect();
       const xPx = clientX - rect.left;
@@ -515,7 +526,7 @@ export default function UnifiedNetworkGraph({
       const tree = quadtreeRef.current;
       if (!tree) return undefined;
       const [gx, gy] = toGraphCoords(clientX, clientY);
-      return findNodeAtPoint(tree, gx, gy, isMobile ? 18 : 22);
+      return findNodeAtPoint(tree, gx, gy, isMobile ? 28 : 22);
     };
 
     const zoomBehavior = zoom<HTMLCanvasElement, unknown>()
@@ -619,11 +630,13 @@ export default function UnifiedNetworkGraph({
     let dragStartX = 0;
     let dragStartY = 0;
     const CLICK_TRAVEL_PX = 4;
+    const TOUCH_TRAVEL_PX = 12;
 
     const drag_ = drag<HTMLCanvasElement, unknown>()
       .container(canvas)
       .subject((event) => {
-        const node = nodeAt(event.sourceEvent.clientX, event.sourceEvent.clientY);
+        const [cx, cy] = clientCoordsOf(event.sourceEvent);
+        const node = nodeAt(cx, cy);
         return node ?? null;
       })
       .on('start', (event) => {
@@ -639,7 +652,8 @@ export default function UnifiedNetworkGraph({
       .on('drag', (event) => {
         const d = event.subject as SimulationNode | null;
         if (!d) return;
-        const [gx, gy] = toGraphCoords(event.sourceEvent.clientX, event.sourceEvent.clientY);
+        const [cx, cy] = clientCoordsOf(event.sourceEvent);
+        const [gx, gy] = toGraphCoords(cx, cy);
         d.fx = gx;
         d.fy = gy;
       })
@@ -650,16 +664,42 @@ export default function UnifiedNetworkGraph({
         if (!event.active && simRef.current) simRef.current.alphaTarget(0);
         d.fx = null;
         d.fy = null;
+        const isTouch = event.sourceEvent?.type?.startsWith('touch');
+        const threshold = isTouch ? TOUCH_TRAVEL_PX : CLICK_TRAVEL_PX;
         const traveled = Math.hypot(event.x - dragStartX, event.y - dragStartY);
-        if (traveled < CLICK_TRAVEL_PX) handleNodeActivate(d);
+        if (traveled >= threshold) return;
+
+        if (isTouch) {
+          if (touchSelectedNodeIdRef.current === d.id) {
+            touchSelectedNodeIdRef.current = null;
+            requestPaint();
+            handleNodeActivate(d);
+          } else {
+            touchSelectedNodeIdRef.current = d.id;
+            requestPaint();
+          }
+        } else {
+          handleNodeActivate(d);
+        }
       });
 
     select(canvas).call(drag_);
 
+    const onTapEmpty = (event: TouchEvent) => {
+      if (!touchSelectedNodeIdRef.current) return;
+      const touch = event.changedTouches[0];
+      if (touch && !nodeAt(touch.clientX, touch.clientY)) {
+        touchSelectedNodeIdRef.current = null;
+        requestPaint();
+      }
+    };
+
     canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('touchend', onTapEmpty);
 
     return () => {
       canvas.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('touchend', onTapEmpty);
       select(canvas).on('.zoom', null);
       select(canvas).on('.drag', null);
       if (unpinTimeoutRef.current !== null) {
