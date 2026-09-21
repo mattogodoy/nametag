@@ -1535,7 +1535,8 @@
       "dropzoneText": "Slepen en neerzetten, plakken of klikken om te bladeren",
       "dropzoneActive": "Afbeelding hier neerzetten",
       "close": "Sluiten"
-    }
+    },
+    "viewPhoto": "Foto bekijken"
   },
   "groups": {
     "title": "Groepen",

@@ -1535,7 +1535,8 @@
       "dropzoneText": "Drag and drop, paste, or click to browse",
       "dropzoneActive": "Drop image here",
       "close": "Close"
-    }
+    },
+    "viewPhoto": "View photo"
   },
   "groups": {
     "title": "Groups",

@@ -1535,7 +1535,8 @@
       "dropzoneText": "ドラッグ＆ドロップ、貼り付け、またはクリックして参照",
       "dropzoneActive": "ここに画像をドロップ",
       "close": "閉じる"
-    }
+    },
+    "viewPhoto": "写真を表示"
   },
   "groups": {
     "title": "グループ",

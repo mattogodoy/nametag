@@ -1535,7 +1535,8 @@
       "dropzoneText": "拖放、粘贴或单击以浏览",
       "dropzoneActive": "在此处放置图像",
       "close": "关闭"
-    }
+    },
+    "viewPhoto": "查看照片"
   },
   "groups": {
     "title": "分组",

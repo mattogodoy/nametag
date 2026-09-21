@@ -16,6 +16,7 @@ import { getCountryName } from '@/lib/countries';
 import { formatCanonicalName, formatGraphName, type NameDisplayFormat } from '@/lib/nameUtils';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import PersonAvatar from '@/components/PersonPhoto';
+import PhotoLightbox from '@/components/PhotoLightbox';
 import { getTranslations } from 'next-intl/server';
 import { getDateDisplayTitle } from '@/lib/important-date-types';
 import JournalSection from '@/components/JournalSection';
@@ -313,13 +314,19 @@ export default async function PersonDetailsPage({
           <div className="bg-surface shadow rounded-lg overflow-hidden">
             <div className="px-6 py-6 border-b border-border flex flex-col sm:flex-row justify-between items-start gap-5">
               <div className="flex items-start gap-5 flex-1 min-w-0">
-                <PersonAvatar
+                <PhotoLightbox
                   personId={person.id}
                   name={formatGraphName(person, nameOrder, nameDisplayFormat)}
                   photo={person.photo}
-                  size={72}
-                  loading="eager"
-                />
+                >
+                  <PersonAvatar
+                    personId={person.id}
+                    name={formatGraphName(person, nameOrder, nameDisplayFormat)}
+                    photo={person.photo}
+                    size={72}
+                    loading="eager"
+                  />
+                </PhotoLightbox>
                 <div className="flex-1 min-w-0">
                   <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
                     {formatGraphName(person, nameOrder, nameDisplayFormat)}

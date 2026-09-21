@@ -1535,7 +1535,8 @@
       "dropzoneText": "Trascina e rilascia, incolla o clicca per sfogliare",
       "dropzoneActive": "Rilascia immagine qui",
       "close": "Chiudi"
-    }
+    },
+    "viewPhoto": "Vedi foto"
   },
   "groups": {
     "title": "Gruppi",
