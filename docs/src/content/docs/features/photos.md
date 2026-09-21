@@ -23,6 +23,10 @@ Your account has a profile photo too, set from Settings > Profile using the same
 
 If a person doesn't have a photo set, their initials are shown instead, generated from their name and used consistently as a fallback avatar throughout the app.
 
+## Viewing a photo full-size
+
+On a person's detail page, click their avatar to open a full-size lightbox viewer. The photo is shown at its full stored resolution (up to 256px by default, or whatever `PHOTO_SIZE` is configured to) in a rounded rectangle, so you can see parts of the image that the circular avatar crop hides. Click the backdrop, press Escape, or tap the close button to dismiss it.
+
 ## Where photos show up
 
 Beyond the person's own detail and edit pages, photos appear in a few other places:
