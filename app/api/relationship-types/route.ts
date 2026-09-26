@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createRelationshipTypeSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { getRandomColor } from '@/lib/colors';
+import { findForeignReference, replaceLabelVariants } from '@/lib/relationship-labels/persistence';
 
 export const GET = withAuth(async (_request, session) => {
   // Get all relationship types for the user
@@ -34,7 +35,14 @@ export const POST = withAuth(async (request, session) => {
       return validation.response;
     }
 
-    const { name, label, color, inverseId, inverseLabel, symmetric } = validation.data;
+    const { name, label, color, inverseId, inverseLabel, symmetric, variants } = validation.data;
+
+    if (variants !== undefined) {
+      const foreignReference = await findForeignReference(session.user.id, variants);
+      if (foreignReference) {
+        return apiResponse.error('A condition points at data you do not own');
+      }
+    }
 
     const normalizedName = name.toUpperCase().replace(/\s+/g, '_');
 
@@ -64,7 +72,7 @@ export const POST = withAuth(async (request, session) => {
       });
 
       // Update it to point to itself as the inverse
-      const updatedType = await prisma.relationshipType.update({
+      const selfInverseArgs = {
         where: { id: relationshipType.id },
         data: { inverseId: relationshipType.id },
         include: {
@@ -76,7 +84,16 @@ export const POST = withAuth(async (request, session) => {
             },
           },
         },
-      });
+      };
+
+      const updatedType =
+        variants === undefined
+          ? await prisma.relationshipType.update(selfInverseArgs)
+          : await prisma.$transaction(async (tx) => {
+              const selfInverseType = await tx.relationshipType.update(selfInverseArgs);
+              await replaceLabelVariants(tx, selfInverseType.id, variants);
+              return selfInverseType;
+            });
 
       return apiResponse.created({ relationshipType: updatedType });
     }
@@ -117,7 +134,7 @@ export const POST = withAuth(async (request, session) => {
     }
 
     // Create the main relationship type
-    const relationshipType = await prisma.relationshipType.create({
+    const createArgs = {
       data: {
         userId: session.user.id,
         name: normalizedName,
@@ -134,7 +151,16 @@ export const POST = withAuth(async (request, session) => {
           },
         },
       },
-    });
+    };
+
+    const relationshipType =
+      variants === undefined
+        ? await prisma.relationshipType.create(createArgs)
+        : await prisma.$transaction(async (tx) => {
+            const createdType = await tx.relationshipType.create(createArgs);
+            await replaceLabelVariants(tx, createdType.id, variants);
+            return createdType;
+          });
 
     // If we created a new inverse type, update it to point back to the main type
     if (inverseLabel && finalInverseId) {
