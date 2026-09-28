@@ -6,7 +6,18 @@ import { toast } from 'sonner';
 import 'flag-icons/css/flag-icons.min.css';
 
 interface LanguageSelectorProps {
-  currentLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN' | 'it-IT' | 'ru-RU' | 'nl-NL' | 'fr-FR';
+  currentLanguage:
+    | 'en'
+    | 'es-ES'
+    | 'ja-JP'
+    | 'nb-NO'
+    | 'de-DE'
+    | 'zh-CN'
+    | 'it-IT'
+    | 'ru-RU'
+    | 'nl-NL'
+    | 'fr-FR'
+    | 'pt-BR';
 }
 
 const LANGUAGES = [
@@ -20,6 +31,7 @@ const LANGUAGES = [
   { code: 'ru-RU' as const, name: 'Русский', flag: 'ru' },
   { code: 'nl-NL' as const, name: 'Nederlands (Dutch)', flag: 'nl' },
   { code: 'fr-FR' as const, name: 'Français (France)', flag: 'fr' },
+  { code: 'pt-BR' as const, name: 'Português (Brasil)', flag: 'br' },
 ];
 
 const labelMap = {
