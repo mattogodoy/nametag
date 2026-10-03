@@ -1076,7 +1076,7 @@
     "isRelationshipOf": "<name></name> ist {personName}s <type></type>",
     "isYourRelationship": "<name></name> ist dein/e <type></type>",
     "formPreview": "{name} ist {personName}s {type}",
-    "formPreviewYour": "{name} ist dein/e {type}",
+    "formPreviewYour": "Du bist {personName}s {type}",
     "formPreviewSelectPerson": "Person auswählen",
     "formPreviewSelectType": "Typ auswählen",
     "graphEdgeLabel": "ist {type} von",

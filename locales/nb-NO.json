@@ -1076,7 +1076,7 @@
     "isRelationshipOf": "<name></name> er {personName}s <type></type>",
     "isYourRelationship": "<name></name> er din <type></type>",
     "formPreview": "{name} er {personName}s {type}",
-    "formPreviewYour": "{name} er din {type}",
+    "formPreviewYour": "Du er {personName}s {type}",
     "formPreviewSelectPerson": "Velg en person",
     "formPreviewSelectType": "Velg en type",
     "graphEdgeLabel": "er {type} av",
