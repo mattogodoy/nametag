@@ -1076,7 +1076,7 @@
     "isRelationshipOf": "<name></name>は{personName}の<type></type>です",
     "isYourRelationship": "<name></name>はあなたの<type></type>です",
     "formPreview": "{name}は{personName}の{type}です",
-    "formPreviewYour": "{name}はあなたの{type}です",
+    "formPreviewYour": "あなたは{personName}の{type}です",
     "formPreviewSelectPerson": "人物を選択",
     "formPreviewSelectType": "タイプを選択",
     "graphEdgeLabel": "の{type}です",
