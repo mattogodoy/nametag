@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.63.1](https://github.com/mattogodoy/nametag/compare/v0.63.0...v0.63.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **i18n:** update formPreviewYour in de-DE, ja-JP and nb-NO ([#471](https://github.com/mattogodoy/nametag/issues/471)) ([c5feaa0](https://github.com/mattogodoy/nametag/commit/c5feaa0ccc76ae9b3f6d6c86cd8acfb2f5748797))
+
 ## [0.63.0](https://github.com/mattogodoy/nametag/compare/v0.62.0...v0.63.0) (2026-09-21)
 
 
