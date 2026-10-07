@@ -7,6 +7,13 @@ import { useTranslations } from 'next-intl';
 import RelationshipTypeAutocomplete from './RelationshipTypeAutocomplete';
 import { getRandomColor, PRESET_COLORS } from '@/lib/colors';
 import { Button } from './ui/Button';
+import ConditionalLabelsSection from './relationship-labels/ConditionalLabelsSection';
+import type {
+  ConditionRowCustomFieldTemplate,
+  ConditionRowGroup,
+} from './relationship-labels/LabelVariantRow';
+import type { LabelPreviewPerson } from './relationship-labels/LabelPreview';
+import type { LabelVariant } from '@/lib/relationship-labels/types';
 
 interface RelationshipType {
   id: string;
@@ -19,18 +26,25 @@ interface RelationshipType {
     name: string;
     label: string;
   } | null;
+  labelVariants?: LabelVariant[];
 }
 
 interface RelationshipTypeFormProps {
   relationshipType?: RelationshipType;
   availableTypes: RelationshipType[];
   mode: 'create' | 'edit';
+  groups: ConditionRowGroup[];
+  templates: ConditionRowCustomFieldTemplate[];
+  people: LabelPreviewPerson[];
 }
 
 export default function RelationshipTypeForm({
   relationshipType,
   availableTypes,
   mode,
+  groups,
+  templates,
+  people,
 }: RelationshipTypeFormProps) {
   const t = useTranslations('relationshipTypes.form');
   const router = useRouter();
@@ -50,6 +64,8 @@ export default function RelationshipTypeForm({
   // Symmetric relationship toggle (inverse is the same as main, e.g., friend <-> friend)
   const isInitiallySymmetric = relationshipType?.inverseId === relationshipType?.id;
   const [isSymmetric, setIsSymmetric] = useState(isInitiallySymmetric);
+
+  const [variants, setVariants] = useState<LabelVariant[]>(relationshipType?.labelVariants ?? []);
 
   const handleRerollColor = () => {
     setFormData((prev) => ({
@@ -72,6 +88,7 @@ export default function RelationshipTypeForm({
     symmetric?: true;
     inverseId?: string | null;
     inverseLabel?: string;
+    variants: LabelVariant[];
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -93,6 +110,7 @@ export default function RelationshipTypeForm({
       const payload: RelationshipTypePayload = {
         ...formData,
         name,
+        variants,
       };
 
       // Add inverse relationship data
@@ -279,6 +297,15 @@ export default function RelationshipTypeForm({
           </div>
         </div>
       </div>
+
+      <ConditionalLabelsSection
+        variants={variants}
+        typeLabel={formData.label}
+        groups={groups}
+        templates={templates}
+        people={people}
+        onChange={setVariants}
+      />
 
       <div className="flex justify-end space-x-4 pt-4">
         <Button variant="secondary" href="/relationship-types">

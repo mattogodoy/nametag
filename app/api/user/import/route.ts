@@ -5,6 +5,8 @@ import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { isSaasMode } from '@/lib/features';
 import { formatCanonicalName } from '@/lib/nameUtils';
 import { validateRawValue } from '@/lib/customFields/values';
+import { replaceLabelVariants } from '@/lib/relationship-labels/persistence';
+import type { LabelCondition, LabelVariant } from '@/lib/relationship-labels';
 import type { CustomFieldType, ReminderIntervalUnit } from '@prisma/client';
 
 import { z } from 'zod';
@@ -273,6 +275,71 @@ export const POST = withAuth(async (request, session) => {
           },
         });
         groupIdMap.set(group.id, newGroup.id);
+      }
+    }
+
+    // 2b. Import relationship label variants. Needs relationship types,
+    // groups, and custom field templates to already exist, since a
+    // condition's subjectRef must be remapped to the newly created entity.
+    // A condition whose target was not part of this import is dropped; the
+    // rest of the variant survives, so one missing reference degrades a
+    // rule instead of failing the whole import.
+    if (importRelationshipTypes && importRelationshipTypes.length > 0) {
+      for (const relType of importRelationshipTypes) {
+        const newTypeId = relationshipTypeIdMap.get(relType.id);
+        const variants = relType.variants;
+        if (!newTypeId || !variants || variants.length === 0) continue;
+
+        // A relationship type that already carries its own variants keeps
+        // them: the file's variants apply only to a type that has none,
+        // whether newly created by this import or pre-existing and
+        // unconfigured. Everything else about merging into an existing type
+        // is non-destructive; this is the one path that could otherwise
+        // delete configuration the user built locally.
+        const existingVariantCount = await prisma.relationshipLabelVariant.count({
+          where: { relationshipTypeId: newTypeId },
+        });
+        if (existingVariantCount > 0) continue;
+
+        const remappedVariants: LabelVariant[] = variants.reduce<LabelVariant[]>((acc, variant) => {
+          const remappedConditions = variant.conditions.reduce<LabelCondition[]>((condAcc, condition) => {
+            if (condition.source === 'GROUP') {
+              const newGroupId = groupIdMap.get(condition.subjectRef);
+              if (!newGroupId) return condAcc;
+              condAcc.push({ ...condition, subjectRef: newGroupId });
+              return condAcc;
+            }
+            if (condition.source === 'CUSTOM_FIELD') {
+              // subjectRef travels as the template's slug (see the export
+              // route), the stable cross-account identifier customFieldValues
+              // already use, since the raw database id is not portable.
+              const template = slugToTemplate.get(condition.subjectRef);
+              if (!template) return condAcc;
+              condAcc.push({ ...condition, subjectRef: template.id });
+              return condAcc;
+            }
+            condAcc.push(condition);
+            return condAcc;
+          }, []);
+
+          // A variant that arrived WITH conditions but lost all of them to
+          // unmappable references is not the fallback: it is a broken rule.
+          // Writing it as an empty-condition variant would make it match
+          // unconditionally (resolveLabel treats [].every(...) as true),
+          // winning every relationship of this type and shadowing every
+          // variant after it, including the real fallback. Drop it whole.
+          // A variant that genuinely arrived with no conditions is the real
+          // fallback and is kept as-is.
+          if (variant.conditions.length > 0 && remappedConditions.length === 0) {
+            return acc;
+          }
+          acc.push({ label: variant.label, conditions: remappedConditions });
+          return acc;
+        }, []);
+
+        await prisma.$transaction(async (tx) => {
+          await replaceLabelVariants(tx, newTypeId, remappedVariants);
+        });
       }
     }
 

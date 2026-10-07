@@ -9,6 +9,7 @@ import {
   relationshipToGraphEdge,
   inverseRelationshipToGraphEdge,
 } from '@/lib/graph-utils';
+import { createLabelResolver } from '@/lib/relationship-labels';
 
 export const GET = withAuth(async (_request, session, context) => {
   try {
@@ -25,6 +26,25 @@ export const GET = withAuth(async (_request, session, context) => {
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
     const nodeIds = new Set<string>();
+
+    // One resolver for the whole graph: it loads every displayed person's data
+    // up front, so `resolve` below is a synchronous, cheap call per edge.
+    const allPersonIds = new Set<string>([person.id]);
+    person.relationshipsFrom.forEach((rel) => {
+      allPersonIds.add(rel.relatedPersonId);
+    });
+    const labelResolver = await createLabelResolver(session.user.id, Array.from(allPersonIds), {
+      userContext: {
+        fields: {
+          name: session.user.name ?? null,
+          surname: session.user.surname ?? null,
+          nickname: session.user.nickname ?? null,
+        },
+        groupIds: new Set<string>(),
+        customValues: new Map(),
+        dates: [],
+      },
+    });
 
     // Fetch user photo and name order preference
     const user = await prisma.user.findUnique({
@@ -44,7 +64,7 @@ export const GET = withAuth(async (_request, session, context) => {
     nodeIds.add(userId);
 
     // if person has direct relationship to user, add them
-    edges.push(...relationshipsWithUserToGraphEdges(person, userId));
+    edges.push(...relationshipsWithUserToGraphEdges(person, userId, labelResolver));
 
     // Add related people as nodes
     person.relationshipsFrom.forEach((rel) => {
@@ -53,7 +73,7 @@ export const GET = withAuth(async (_request, session, context) => {
 
       // If the related person has direct relationship to the user, add them
       edges.push(
-        ...relationshipsWithUserToGraphEdges(rel.relatedPerson, userId),
+        ...relationshipsWithUserToGraphEdges(rel.relatedPerson, userId, labelResolver),
       );
     });
 
@@ -62,7 +82,7 @@ export const GET = withAuth(async (_request, session, context) => {
 
     // Add edges from center person to related people
     person.relationshipsFrom
-      .map(relationshipToGraphEdge)
+      .map((r) => relationshipToGraphEdge(r, labelResolver))
       .filter((e) => e !== undefined)
       .forEach((e) => {
           dedupedEdges.set(`${e.source}-${e.target}`, e);
@@ -70,7 +90,7 @@ export const GET = withAuth(async (_request, session, context) => {
 
     // include the inverse relationships too
     person.relationshipsFrom
-      .map(inverseRelationshipToGraphEdge)
+      .map((r) => inverseRelationshipToGraphEdge(r, labelResolver))
       .filter((e) => e !== undefined)
       .forEach((e) => {
           dedupedEdges.set(`${e.source}-${e.target}`, e);
@@ -86,7 +106,7 @@ export const GET = withAuth(async (_request, session, context) => {
       // and add edge only if this other related person's already in the graph
       rel.relatedPerson.relationshipsFrom
         .filter((r) => nodeIds.has(r.relatedPersonId))
-        .map(relationshipToGraphEdge)
+        .map((r) => relationshipToGraphEdge(r, labelResolver))
         .filter((e) => e !== undefined)
         .forEach((e) => {
           dedupedEdges.set(`${e.source}-${e.target}`, e);
@@ -95,7 +115,7 @@ export const GET = withAuth(async (_request, session, context) => {
       // include the inverse relationships too
       rel.relatedPerson.relationshipsFrom
         .filter((r) => nodeIds.has(r.relatedPersonId))
-        .map(inverseRelationshipToGraphEdge)
+        .map((r) => inverseRelationshipToGraphEdge(r, labelResolver))
         .filter((e) => e !== undefined)
         .forEach((e) => {
           dedupedEdges.set(`${e.source}-${e.target}`, e);

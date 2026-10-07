@@ -5,6 +5,10 @@ import { prisma } from '@/lib/prisma';
 import RelationshipTypeForm from '@/components/RelationshipTypeForm';
 import Navigation from '@/components/Navigation';
 import { getTranslations } from 'next-intl/server';
+import { formatFullName } from '@/lib/nameUtils';
+import { getUserDisplayPreferences } from '@/lib/user-preferences';
+
+const PREVIEW_PEOPLE_LIMIT = 200;
 
 export default async function EditRelationshipTypePage({
   params,
@@ -20,7 +24,9 @@ export default async function EditRelationshipTypePage({
 
   const { id } = await params;
 
-  const [relationshipType, availableTypes] = await Promise.all([
+  const { nameOrder, nameDisplayFormat } = await getUserDisplayPreferences(session.user.id);
+
+  const [relationshipType, availableTypes, groups, templates, people] = await Promise.all([
     prisma.relationshipType.findFirst({
       where: {
         id,
@@ -33,6 +39,14 @@ export default async function EditRelationshipTypePage({
             id: true,
             name: true,
             label: true,
+          },
+        },
+        labelVariants: {
+          orderBy: { order: 'asc' },
+          include: {
+            conditions: {
+              orderBy: { order: 'asc' },
+            },
           },
         },
       },
@@ -52,11 +66,51 @@ export default async function EditRelationshipTypePage({
       },
       orderBy: { name: 'asc' },
     }),
+    prisma.group.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.customFieldTemplate.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      select: { id: true, name: true, type: true, options: true },
+      orderBy: { order: 'asc' },
+    }),
+    prisma.person.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        surname: true,
+        middleName: true,
+        secondLastName: true,
+        nickname: true,
+        displayNameOverride: true,
+      },
+      orderBy: { name: 'asc' },
+      take: PREVIEW_PEOPLE_LIMIT,
+    }),
   ]);
 
   if (!relationshipType) {
     notFound();
   }
+
+  const labelVariants = relationshipType.labelVariants.map((variant) => ({
+    label: variant.label,
+    conditions: variant.conditions.map((condition) => ({
+      subject: condition.subject,
+      source: condition.source,
+      subjectRef: condition.subjectRef,
+      operator: condition.operator,
+      operand: condition.operand,
+    })),
+  }));
+
+  const previewPeople = people.map((person) => ({
+    id: person.id,
+    name: formatFullName(person, nameOrder, nameDisplayFormat),
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,9 +138,12 @@ export default async function EditRelationshipTypePage({
               {t('editType')}
             </h1>
             <RelationshipTypeForm
-              relationshipType={relationshipType}
+              relationshipType={{ ...relationshipType, labelVariants }}
               availableTypes={availableTypes}
               mode="edit"
+              groups={groups}
+              templates={templates}
+              people={previewPeople}
             />
           </div>
         </div>

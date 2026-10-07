@@ -34,6 +34,7 @@ interface DeletedRelationship {
   person: { id: string; name: string; surname: string | null };
   relatedPerson: { id: string; name: string; surname: string | null };
   relationshipType: { id: string; label: string } | null;
+  resolvedLabel?: string | null;
 }
 
 interface DeletedRelationshipType {
@@ -242,7 +243,7 @@ export default function TrashManager() {
         return (item as DeletedGroup).name;
       case 'relationships': {
         const rel = item as DeletedRelationship;
-        const typeLabel = rel.relationshipType?.label ?? '?';
+        const typeLabel = rel.resolvedLabel || rel.relationshipType?.label || '?';
         return t('relationshipLabel', {
           personA: formatPersonName(rel.person),
           type: typeLabel,
@@ -260,6 +261,18 @@ export default function TrashManager() {
         });
       }
     }
+  };
+
+  // The resolved word is interpolated mid-sentence into a translated string
+  // (see renderItemLabel above), so unlike RelationshipManager and
+  // UserRelationshipCard there is no single badge element to hang a title
+  // on. Instead, the type's own name goes on the row's whole sentence, so
+  // it is still recoverable on hover even though it now describes the full
+  // line rather than just the resolved word.
+  const renderItemTitle = (type: EntityType, item: DeletedItem): string | undefined => {
+    if (type !== 'relationships') return undefined;
+    const rel = item as DeletedRelationship;
+    return rel.relationshipType?.label ?? undefined;
   };
 
   const getDeletedAt = (item: DeletedItem): string => {
@@ -331,7 +344,7 @@ export default function TrashManager() {
               <li key={item.id} className="flex flex-wrap items-center justify-between py-3 gap-x-4 gap-y-2">
                 <div className="flex items-center gap-2 min-w-0">
                   {renderColorDot(activeTab, item)}
-                  <span className="text-foreground truncate">
+                  <span className="text-foreground truncate" title={renderItemTitle(activeTab, item)}>
                     {renderItemLabel(activeTab, item)}
                   </span>
                   <span className={`text-xs whitespace-nowrap ${days <= 7 ? 'text-warning' : 'text-muted'}`}>
