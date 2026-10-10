@@ -64,7 +64,39 @@
     },
     "journal": "Diario",
     "createJournal": "Nuova voce",
-    "map": "Mappa"
+    "map": "Mappa",
+    "advancedSearch": "Ricerca"
+  },
+  "advancedSearch": {
+    "title": "Ricerca avanzata",
+    "description": "Trova persone per nome, luogo, recapiti o parole nelle loro note. Compila qualsiasi combinazione di campi; le persone devono corrispondere a tutti.",
+    "fields": {
+      "name": {
+        "label": "Nome",
+        "placeholder": "Nome, cognome o soprannome"
+      },
+      "location": {
+        "label": "Luogo",
+        "placeholder": "Città, regione, paese o CAP"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Indirizzo completo o parziale"
+      },
+      "phone": {
+        "label": "Telefono",
+        "placeholder": "Qualsiasi parte del numero"
+      },
+      "keywords": {
+        "label": "Parole chiave nelle note",
+        "placeholder": "Parole presenti nelle loro note"
+      }
+    },
+    "submit": "Cerca",
+    "clear": "Cancella",
+    "resultCount": "{count, plural, =1 {1 persona trovata} other {# persone trovate}}",
+    "resultsTruncated": "Mostrati i primi {shown} di {total} risultati. Aggiungi altri filtri per restringere la ricerca.",
+    "noResults": "Nessuna persona corrisponde a questi filtri."
   },
   "notifications": {
     "push": {

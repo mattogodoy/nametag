@@ -64,7 +64,39 @@
     },
     "journal": "ジャーナル",
     "createJournal": "新しいエントリー",
-    "map": "マップ"
+    "map": "マップ",
+    "advancedSearch": "検索"
+  },
+  "advancedSearch": {
+    "title": "詳細検索",
+    "description": "名前、所在地、連絡先、メモ内の単語で人を検索します。任意の項目を組み合わせて入力でき、すべてに一致する人が表示されます。",
+    "fields": {
+      "name": {
+        "label": "名前",
+        "placeholder": "名、姓、またはニックネーム"
+      },
+      "location": {
+        "label": "所在地",
+        "placeholder": "市区町村、地域、国、または郵便番号"
+      },
+      "email": {
+        "label": "メール",
+        "placeholder": "アドレスの全体または一部"
+      },
+      "phone": {
+        "label": "電話",
+        "placeholder": "番号の一部"
+      },
+      "keywords": {
+        "label": "メモ内のキーワード",
+        "placeholder": "メモに含まれる単語"
+      }
+    },
+    "submit": "検索",
+    "clear": "クリア",
+    "resultCount": "{count, plural, =1 {1人見つかりました} other {#人見つかりました}}",
+    "resultsTruncated": "{total}件中、最初の{shown}件を表示しています。フィルターを追加して絞り込んでください。",
+    "noResults": "条件に一致する人はいません。"
   },
   "notifications": {
     "push": {

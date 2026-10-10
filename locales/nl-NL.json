@@ -64,7 +64,39 @@
     },
     "journal": "Dagboek",
     "createJournal": "Nieuwe invoer",
-    "map": "Kaart"
+    "map": "Kaart",
+    "advancedSearch": "Zoeken"
+  },
+  "advancedSearch": {
+    "title": "Uitgebreid zoeken",
+    "description": "Vind mensen op naam, locatie, contactgegevens of woorden in hun notities. Vul elke combinatie van velden in; mensen moeten aan alle velden voldoen.",
+    "fields": {
+      "name": {
+        "label": "Naam",
+        "placeholder": "Voornaam, achternaam of bijnaam"
+      },
+      "location": {
+        "label": "Locatie",
+        "placeholder": "Stad, regio, land of postcode"
+      },
+      "email": {
+        "label": "E-mail",
+        "placeholder": "Volledig of gedeeltelijk adres"
+      },
+      "phone": {
+        "label": "Telefoon",
+        "placeholder": "Elk deel van het nummer"
+      },
+      "keywords": {
+        "label": "Trefwoorden in notities",
+        "placeholder": "Woorden die in hun notities staan"
+      }
+    },
+    "submit": "Zoeken",
+    "clear": "Wissen",
+    "resultCount": "{count, plural, =1 {1 persoon gevonden} other {# personen gevonden}}",
+    "resultsTruncated": "De eerste {shown} van {total} resultaten worden getoond. Voeg filters toe om te verfijnen.",
+    "noResults": "Geen mensen voldoen aan deze filters."
   },
   "notifications": {
     "push": {

@@ -64,7 +64,39 @@
     },
     "journal": "Journal",
     "createJournal": "Ny oppføring",
-    "map": "Kart"
+    "map": "Kart",
+    "advancedSearch": "Søk"
+  },
+  "advancedSearch": {
+    "title": "Avansert søk",
+    "description": "Finn personer etter navn, sted, kontaktinformasjon eller ord i notatene deres. Fyll ut hvilke som helst felt; personene må samsvare med alle.",
+    "fields": {
+      "name": {
+        "label": "Navn",
+        "placeholder": "Fornavn, etternavn eller kallenavn"
+      },
+      "location": {
+        "label": "Sted",
+        "placeholder": "By, region, land eller postnummer"
+      },
+      "email": {
+        "label": "E-post",
+        "placeholder": "Hele eller deler av adressen"
+      },
+      "phone": {
+        "label": "Telefon",
+        "placeholder": "Hvilken som helst del av nummeret"
+      },
+      "keywords": {
+        "label": "Nøkkelord i notater",
+        "placeholder": "Ord som står i notatene deres"
+      }
+    },
+    "submit": "Søk",
+    "clear": "Tøm",
+    "resultCount": "{count, plural, =1 {1 person funnet} other {# personer funnet}}",
+    "resultsTruncated": "Viser de første {shown} av {total} treff. Legg til flere filtre for å snevre inn.",
+    "noResults": "Ingen personer samsvarer med disse filtrene."
   },
   "notifications": {
     "push": {

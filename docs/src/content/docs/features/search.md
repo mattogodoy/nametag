@@ -40,3 +40,21 @@ Click any result to go straight to that person's detail page.
 - **Combine mode**: AND (all search words must match)
 - **Prefix matching**: enabled, so results appear as you type
 - **Indexed fields**: name, surname, middle name, second last name, nickname, display name override, organization, job title, notes, phones, emails, addresses, URLs, IM handles, groups, custom fields
+
+## Advanced search
+
+When you need more than a name, open **Search** in the main navigation (or go to `/search`). The advanced search page has a separate field for each kind of detail:
+
+- **Name**: first name, middle name, surname, second last name, nickname, or display name
+- **Location**: street, city, region, postal code, or country (by name, like "Germany", or by its two-letter code, like "DE")
+- **Email**: any part of an email address
+- **Phone**: any part of a phone number. Spaces, dashes, and parentheses are ignored, so "612345" finds "+34 612 345 678"
+- **Keywords in notes**: words that appear in the person's notes. Every word you type must appear, in any order
+
+Fill in as many fields as you like. A person shows up only if they match every field you filled in. Matching ignores case and accents and accepts partial values, so "mad" finds "Madrid". The search lives in the page URL, so you can bookmark a search or share the link with yourself.
+
+### Technical details
+
+- Advanced search runs on the server and reads your contacts fresh on every search, so it does not use the browser search index
+- No fuzzy matching: a field must contain the text you typed
+- **Max results shown**: 200. The page tells you the total when there are more

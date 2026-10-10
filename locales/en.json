@@ -64,7 +64,39 @@
     },
     "journal": "Journal",
     "createJournal": "New entry",
-    "map": "Map"
+    "map": "Map",
+    "advancedSearch": "Search"
+  },
+  "advancedSearch": {
+    "title": "Advanced search",
+    "description": "Find people by name, location, contact details, or words in their notes. Fill in any combination of fields; people must match all of them.",
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "First name, surname, or nickname"
+      },
+      "location": {
+        "label": "Location",
+        "placeholder": "City, region, country, or postal code"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Full or partial address"
+      },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "Any part of the number"
+      },
+      "keywords": {
+        "label": "Keywords in notes",
+        "placeholder": "Words that appear in their notes"
+      }
+    },
+    "submit": "Search",
+    "clear": "Clear",
+    "resultCount": "{count, plural, =1 {1 person found} other {# people found}}",
+    "resultsTruncated": "Showing the first {shown} of {total} matches. Add more filters to narrow it down.",
+    "noResults": "No people match these filters."
   },
   "notifications": {
     "push": {

@@ -64,7 +64,39 @@
     },
     "journal": "Diario",
     "createJournal": "Nueva entrada",
-    "map": "Mapa"
+    "map": "Mapa",
+    "advancedSearch": "Buscar"
+  },
+  "advancedSearch": {
+    "title": "Búsqueda avanzada",
+    "description": "Busca personas por nombre, ubicación, datos de contacto o palabras de sus notas. Rellena cualquier combinación de campos; las personas deben coincidir con todos.",
+    "fields": {
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Nombre, apellido o apodo"
+      },
+      "location": {
+        "label": "Ubicación",
+        "placeholder": "Ciudad, región, país o código postal"
+      },
+      "email": {
+        "label": "Correo electrónico",
+        "placeholder": "Dirección completa o parcial"
+      },
+      "phone": {
+        "label": "Teléfono",
+        "placeholder": "Cualquier parte del número"
+      },
+      "keywords": {
+        "label": "Palabras clave en las notas",
+        "placeholder": "Palabras que aparecen en sus notas"
+      }
+    },
+    "submit": "Buscar",
+    "clear": "Limpiar",
+    "resultCount": "{count, plural, =1 {1 persona encontrada} other {# personas encontradas}}",
+    "resultsTruncated": "Mostrando las primeras {shown} de {total} coincidencias. Añade más filtros para acotar.",
+    "noResults": "Ninguna persona coincide con estos filtros."
   },
   "notifications": {
     "push": {

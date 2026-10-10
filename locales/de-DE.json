@@ -64,7 +64,39 @@
     },
     "journal": "Tagebuch",
     "createJournal": "Neuer Eintrag",
-    "map": "Karte"
+    "map": "Karte",
+    "advancedSearch": "Suche"
+  },
+  "advancedSearch": {
+    "title": "Erweiterte Suche",
+    "description": "Finde Personen nach Name, Ort, Kontaktdaten oder Wörtern in ihren Notizen. Fülle beliebige Felder aus; Personen müssen alle erfüllen.",
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "Vorname, Nachname oder Spitzname"
+      },
+      "location": {
+        "label": "Ort",
+        "placeholder": "Stadt, Region, Land oder Postleitzahl"
+      },
+      "email": {
+        "label": "E-Mail",
+        "placeholder": "Vollständige oder teilweise Adresse"
+      },
+      "phone": {
+        "label": "Telefon",
+        "placeholder": "Beliebiger Teil der Nummer"
+      },
+      "keywords": {
+        "label": "Stichwörter in Notizen",
+        "placeholder": "Wörter, die in ihren Notizen vorkommen"
+      }
+    },
+    "submit": "Suchen",
+    "clear": "Zurücksetzen",
+    "resultCount": "{count, plural, =1 {1 Person gefunden} other {# Personen gefunden}}",
+    "resultsTruncated": "Die ersten {shown} von {total} Treffern werden angezeigt. Füge weitere Filter hinzu, um die Suche einzugrenzen.",
+    "noResults": "Keine Personen entsprechen diesen Filtern."
   },
   "notifications": {
     "push": {

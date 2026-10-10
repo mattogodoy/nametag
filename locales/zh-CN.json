@@ -64,7 +64,39 @@
     },
     "journal": "日记",
     "createJournal": "新条目",
-    "map": "地图"
+    "map": "地图",
+    "advancedSearch": "搜索"
+  },
+  "advancedSearch": {
+    "title": "高级搜索",
+    "description": "按姓名、地点、联系方式或备注中的词语查找联系人。可以任意组合填写字段，结果须全部符合。",
+    "fields": {
+      "name": {
+        "label": "姓名",
+        "placeholder": "名、姓或昵称"
+      },
+      "location": {
+        "label": "地点",
+        "placeholder": "城市、地区、国家或邮政编码"
+      },
+      "email": {
+        "label": "电子邮件",
+        "placeholder": "完整或部分地址"
+      },
+      "phone": {
+        "label": "电话",
+        "placeholder": "号码的任意部分"
+      },
+      "keywords": {
+        "label": "备注关键词",
+        "placeholder": "备注中出现的词语"
+      }
+    },
+    "submit": "搜索",
+    "clear": "清除",
+    "resultCount": "{count, plural, =1 {找到 1 人} other {找到 # 人}}",
+    "resultsTruncated": "显示 {total} 个结果中的前 {shown} 个。添加更多筛选条件以缩小范围。",
+    "noResults": "没有符合这些筛选条件的联系人。"
   },
   "notifications": {
     "push": {
