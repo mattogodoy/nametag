@@ -1,0 +1,185 @@
+name: nametag
+services:
+  nametag:
+    image: ghcr.io/mattogodoy/nametag:0.63.0
+    container_name: nametag
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          memory: 256M
+    ports:
+      - target: 3000
+        published: "10300"
+        protocol: tcp
+    environment:
+      DB_HOST: nametag-db
+      DB_PORT: "5432"
+      DB_NAME: nametag
+      DB_USER: nametag
+      DB_PASSWORD: casaos-nametag
+      NEXTAUTH_URL: http://localhost:10300
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/data
+        target: /app/data
+    # NEXTAUTH_SECRET and CRON_SECRET are generated on first start and kept in
+    # the data directory, so every install gets its own secrets.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        secrets=/app/data/secrets.env
+        if [ ! -f "$$secrets" ]; then
+          umask 077
+          printf 'NEXTAUTH_SECRET=%s\nCRON_SECRET=%s\n' \
+            "$$(head -c 32 /dev/urandom | base64 | tr -d '\n')" \
+            "$$(head -c 24 /dev/urandom | base64 | tr -d '\n')" > "$$secrets"
+        fi
+        set -a
+        . "$$secrets"
+        set +a
+        exec docker-entrypoint.sh node server.js
+    depends_on:
+      nametag-init:
+        condition: service_completed_successfully
+      nametag-db:
+        condition: service_healthy
+    networks:
+      - nametag
+    x-casaos:
+      ports:
+        - container: "3000"
+          description:
+            en_US: WebUI HTTP Port
+            es_ES: Puerto HTTP de la interfaz web
+      volumes:
+        - container: /app/data
+          description:
+            en_US: Photos and generated secrets
+            es_ES: Fotos y secretos generados
+      envs:
+        - container: NEXTAUTH_URL
+          description:
+            en_US: The address you use to open Nametag, for example http://192.168.1.10:10300
+            es_ES: La dirección con la que abres Nametag, por ejemplo http://192.168.1.10:10300
+
+  # The app runs as UID 1001, but Docker creates bind-mounted folders as root.
+  nametag-init:
+    image: alpine:3.20
+    container_name: nametag-init
+    restart: "no"
+    command: ["chown", "-R", "1001:1001", "/data"]
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/data
+        target: /data
+
+  nametag-db:
+    image: postgres:16-alpine
+    container_name: nametag-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nametag
+      POSTGRES_PASSWORD: casaos-nametag
+      POSTGRES_DB: nametag
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/postgres
+        target: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nametag -d nametag"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nametag
+    x-casaos:
+      volumes:
+        - container: /var/lib/postgresql/data
+          description:
+            en_US: PostgreSQL database
+            es_ES: Base de datos PostgreSQL
+
+  # Calls the scheduled endpoints (reminders, CardDAV sync, cleanup, geocoding).
+  nametag-cron:
+    image: alpine:3.20
+    container_name: nametag-cron
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/data
+        target: /data
+        read_only: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        while [ ! -f /data/secrets.env ]; do sleep 2; done
+        . /data/secrets.env
+        auth="Authorization: Bearer $$CRON_SECRET"
+        job() { echo "$$1 wget -q -O - --header='$$auth' http://nametag:3000/api/cron/$$2 > /proc/1/fd/1 2>&1"; }
+        {
+          job '0 8 * * *' send-reminders
+          job '0 3 * * *' purge-deleted
+          job '0 2,10,18 * * *' carddav-sync
+          job '*/5 * * * *' geocode
+        } > /etc/crontabs/root
+        exec crond -f -l 2
+    depends_on:
+      - nametag
+    networks:
+      - nametag
+
+networks:
+  nametag:
+    name: nametag
+
+x-casaos:
+  id: one.nametag.nametag
+  main: nametag
+  index: /
+  port_map: "10300"
+  scheme: http
+  architectures:
+    - amd64
+    - arm64
+  author: Matto Godoy
+  developer: Matto Godoy
+  category: Productivity
+  icon: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Nametag/icon.png
+  thumbnail: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Nametag/thumbnail.png
+  screenshot_link:
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Nametag/screenshot-1.png
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Nametag/screenshot-2.png
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Nametag/screenshot-3.png
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Nametag/screenshot-4.png
+  title:
+    en_US: Nametag
+  tagline:
+    en_US: A personal CRM for the people in your life
+    es_ES: Un CRM personal para las personas de tu vida
+  description:
+    en_US: Nametag helps you remember the people you care about. Keep notes, birthdays and important dates, see how everyone is connected in an interactive network graph, organize people into groups, keep a journal, and get reminders to stay in touch. Two-way CardDAV sync keeps it in step with Google Contacts, iCloud, Outlook or Nextcloud.
+    es_ES: Nametag te ayuda a recordar a las personas que te importan. Guarda notas, cumpleaños y fechas importantes, mira cómo se conecta todo el mundo en un gráfico de red interactivo, organiza a las personas en grupos, lleva un diario y recibe recordatorios para mantener el contacto. La sincronización CardDAV bidireccional lo mantiene al día con Google Contacts, iCloud, Outlook o Nextcloud.
+  tips:
+    before_install:
+      en_US: |
+        After installing, open Nametag and create your account. Anyone who can reach this port can also register, so once your account exists you can add DISABLE_REGISTRATION=true to close sign-ups.
+
+        Set NEXTAUTH_URL to the address you open Nametag at (for example http://192.168.1.10:10300) so links in emails point to the right place.
+
+        Email is optional. To send reminder and password-reset emails, add the SMTP_* variables described at https://docs.nametag.one/self-hosting/email/
+      es_ES: |
+        Después de instalarlo, abre Nametag y crea tu cuenta. Cualquiera que pueda acceder a este puerto también puede registrarse, así que cuando tengas tu cuenta puedes añadir DISABLE_REGISTRATION=true para cerrar el registro.
+
+        Cambia NEXTAUTH_URL a la dirección con la que abres Nametag (por ejemplo http://192.168.1.10:10300) para que los enlaces de los correos apunten al sitio correcto.
+
+        El correo es opcional. Para enviar recordatorios y correos de restablecimiento de contraseña, añade las variables SMTP_* que se explican en https://docs.nametag.one/self-hosting/email/
+  website: https://nametag.one
+  repo: https://github.com/mattogodoy/nametag
+  docs: https://docs.nametag.one
+  support: https://github.com/mattogodoy/nametag/issues
+  version: "0.63.0"
+  update_at: "2026-10-14"
+  release_notes:
+    en_US: First version in the CasaOS App Store.
