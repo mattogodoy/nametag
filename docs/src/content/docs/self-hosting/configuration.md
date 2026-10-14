@@ -24,6 +24,7 @@ This is the default mode when `NODE_ENV` is `production` or unset, and `SAAS_MOD
 - Billing is hidden, all features are unlimited
 - OIDC is available if configured, password login can be disabled once it is
 - Google OAuth is not available (self-hosted instances use OIDC instead)
+- `/robots.txt` asks search engines not to crawl any page, so your instance stays out of search results
 
 ### SaaS mode (`SAAS_MODE=true`)
 
