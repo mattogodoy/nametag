@@ -202,7 +202,7 @@ describe('env validation', () => {
 
   describe('blank values mean "not set"', () => {
     it('treats a blank TRUSTED_PROXY_COUNT as the default of 1, not as 0', () => {
-      // The dangerous case, and the reason blankAsUndefined exists.
+      // The dangerous case, and the reason withoutBlankValues exists.
       // `envSchema.safeParse(process.env)` sees `TRUSTED_PROXY_COUNT=` as the
       // empty string, `Number('') === 0`, and `.default(1)` only fires for
       // undefined. Without the preprocessor this silently resolves to 0,
@@ -211,7 +211,7 @@ describe('env validation', () => {
       // shared bucket fleet-wide, with register capped at 3/hour instance
       // wide.
       //
-      // Catches: removing blankAsUndefined from TRUSTED_PROXY_COUNT. Asserts
+      // Catches: dropping the blank-value normalization in validateEnv. Asserts
       // the resolved value, not merely that validation passed, because the
       // broken version passes validation too.
       process.env = {
@@ -269,13 +269,62 @@ describe('env validation', () => {
     });
 
     it('does not treat a blank DB_PASSWORD as unset, since an empty password is real', () => {
-      // The one variable blankAsUndefined must never be applied to.
+      // The one variable whose blank value must survive normalization.
       process.env = {
         ...BASE_VALID_ENV,
         DB_PASSWORD: '',
       } as unknown as NodeJS.ProcessEnv;
 
       expect(validateEnv().DB_PASSWORD).toBe('');
+    });
+    it('starts when every optional variable is present but blank', () => {
+      // Unraid, and other template editors, pass fields the user left empty
+      // as empty strings. Each of these used to fail validation on its own:
+      // REDIS_URL and the URL fields are not valid URLs, SMTP_HOST and the
+      // OIDC fields are shorter than 1 character, and a blank SMTP_USER
+      // counted as "some SMTP config is set" and demanded SMTP_HOST.
+      process.env = {
+        ...BASE_VALID_ENV,
+        REDIS_URL: '',
+        NEXT_PUBLIC_APP_URL: '',
+        GEOCODER_URL: '',
+        SMTP_HOST: '',
+        SMTP_PORT: '',
+        SMTP_SECURE: '',
+        SMTP_USER: '',
+        SMTP_PASS: '',
+        SMTP_FROM: '',
+        RESEND_API_KEY: '',
+        EMAIL_DOMAIN: '',
+        OIDC_ISSUER_URL: '',
+        OIDC_CLIENT_ID: '',
+        OIDC_CLIENT_SECRET: '',
+        OIDC_DISPLAY_NAME: '',
+        STRIPE_WEBHOOK_SECRET: '',
+        PHOTO_SIZE: '',
+        PHOTO_QUALITY: '',
+      } as unknown as NodeJS.ProcessEnv;
+
+      const parsed = validateEnv();
+      expect(parsed.REDIS_URL).toBeUndefined();
+      expect(parsed.SMTP_HOST).toBeUndefined();
+      expect(parsed.SMTP_USER).toBeUndefined();
+      expect(parsed.GEOCODER_URL).toBe('https://nominatim.openstreetmap.org');
+      expect(parsed.OIDC_DISPLAY_NAME).toBe('SSO');
+      expect(parsed.PHOTO_SIZE).toBe(256);
+      expect(parsed.PHOTO_QUALITY).toBe(80);
+    });
+
+    it('reports a blank required variable as missing', () => {
+      process.env = {
+        ...BASE_VALID_ENV,
+        NEXTAUTH_SECRET: '',
+      } as unknown as NodeJS.ProcessEnv;
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => validateEnv()).toThrow('Invalid environment configuration');
+      expect(consoleError.mock.calls.flat().join('\n')).toContain('NEXTAUTH_SECRET');
+      consoleError.mockRestore();
     });
   });
 

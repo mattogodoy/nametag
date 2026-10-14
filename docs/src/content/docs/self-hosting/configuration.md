@@ -164,6 +164,8 @@ There is no in-place way to re-encrypt a stored token with a new key. The only f
 
 ## Value constraints and defaults
 
+A variable that is set but blank (`VAR=` in `.env`, or a field left empty in a template editor like Unraid's) is treated as not set, so it gets its default. The one exception is `DB_PASSWORD`, where an empty value means an empty password.
+
 Some variables are validated against a specific range or format at startup. If a value falls outside these bounds, the app falls back to the default rather than starting with an invalid value.
 
 | Variable | Constraint | Default |

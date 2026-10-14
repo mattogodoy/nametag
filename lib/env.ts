@@ -15,24 +15,31 @@ const booleanFromString = z
   .default(false);
 
 /**
- * Treat a blank value in `.env` as "not set".
+ * Treat a blank value as "not set".
  *
- * `envSchema.safeParse(process.env)` sees `VAR=` as the empty string, not as
- * `undefined`, and `.default()` only fires for `undefined`. For a coerced
- * number that is actively dangerous: `Number('') === 0`, so `VAR=` passes a
- * `.min(0)` floor and silently becomes 0 rather than the documented default.
- * That is how `TRUSTED_PROXY_COUNT=` would mean "trust no proxy" (collapsing
- * every rate limit into one shared bucket) instead of the documented 1.
+ * `VAR=` in `.env`, and every field left empty in tools like the Unraid
+ * template editor, reaches `process.env` as the empty string rather than as
+ * `undefined`. Zod's `.optional()` and `.default()` only fire for
+ * `undefined`, so without this an empty optional value either fails
+ * validation and stops the app from starting (`REDIS_URL=` is not a valid
+ * URL, `SMTP_HOST=` is shorter than 1 character), or is silently wrong:
+ * `Number('') === 0`, so `TRUSTED_PROXY_COUNT=` would clear its `.min(0)`
+ * floor and mean "trust no proxy" (collapsing every rate limit into one
+ * shared bucket) instead of the documented 1.
  *
- * Wrap any optional or defaulted variable in this. The one place it must NOT
- * be used is `DB_PASSWORD`, where an empty password is a real, supported
- * value rather than an unset one.
+ * `DB_PASSWORD` is the one exception: an empty password is a real,
+ * supported value rather than an unset one.
  */
-function blankAsUndefined<T extends z.ZodTypeAny>(schema: T) {
-  return z.preprocess(
-    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
-    schema
-  );
+const BLANK_IS_MEANINGFUL = new Set(['DB_PASSWORD']);
+
+function withoutBlankValues(source: NodeJS.ProcessEnv): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    if (value.trim() === '' && !BLANK_IS_MEANINGFUL.has(key)) continue;
+    result[key] = value;
+  }
+  return result;
 }
 
 const envSchema = z.object({
@@ -111,19 +118,19 @@ const envSchema = z.object({
   // Web push (optional). All three are required together; the channel is
   // hidden when any is missing. Generate a pair with:
   //   npm run generate-vapid-keys
-  VAPID_PUBLIC_KEY: blankAsUndefined(z.string().min(1).optional()),
-  VAPID_PRIVATE_KEY: blankAsUndefined(z.string().min(1).optional()),
-  VAPID_SUBJECT: blankAsUndefined(z.string().min(1).optional()),
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  VAPID_SUBJECT: z.string().min(1).optional(),
 
   // Number of reverse proxy hops in front of this app that are trusted to
   // append to X-Forwarded-For (or set X-Real-IP). Defaults to 1, matching
   // both documented reverse-proxy configs (a single nginx or Caddy in
   // front). See docs/self-hosting/reverse-proxy.md for how to choose a
   // different value.
-  // Wrapped in blankAsUndefined because this is the one variable where a
-  // blank value is silently wrong rather than loudly wrong: `Number('')` is
-  // 0, which clears the `.min(0)` floor and means "trust no proxy".
-  TRUSTED_PROXY_COUNT: blankAsUndefined(z.coerce.number().int().min(0).default(1)),
+  // A blank value is dropped by withoutBlankValues before parsing; without
+  // that, `Number('')` is 0, which clears the `.min(0)` floor and means
+  // "trust no proxy".
+  TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).default(1),
 
   // Which header the trusted proxy actually manages. This cannot be
   // inferred from the request: a proxy that replaces X-Real-IP but never
@@ -141,9 +148,9 @@ const envSchema = z.object({
   // refuses connections that did not come from Cloudflare (IP allowlist,
   // Authenticated Origin Pulls, or a Cloudflare Tunnel); see
   // docs/self-hosting/reverse-proxy.md.
-  TRUSTED_PROXY_HEADER: blankAsUndefined(
-    z.enum(['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip']).default('x-forwarded-for')
-  ),
+  TRUSTED_PROXY_HEADER: z
+    .enum(['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'])
+    .default('x-forwarded-for'),
 });
 
 /**
@@ -163,7 +170,7 @@ export type Env = z.infer<typeof envSchema>;
  * Throws an error with details if validation fails
  */
 export function validateEnv(): Env {
-  const result = envSchema.safeParse(process.env);
+  const result = envSchema.safeParse(withoutBlankValues(process.env));
 
   if (!result.success) {
     const errors = result.error.issues.map(
