@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<Maintainer>
+  <Profile>Templates for Nametag, an open-source personal CRM for the people in your life. Questions and bug reports go to the GitHub issue tracker.</Profile>
+  <Icon>https://raw.githubusercontent.com/mattogodoy/nametag/master/public/icons/icon-512.png</Icon>
+  <WebPage>https://nametag.one</WebPage>
+  <Forum>https://github.com/mattogodoy/nametag/issues</Forum>
+</Maintainer>
