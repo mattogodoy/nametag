@@ -14,9 +14,9 @@ too. Its v2 format still uses `x-casaos` keys, so those stay as they are.
 The image tag and `version` are pinned, so each Nametag release needs a small
 update PR.
 
-## Unraid (`unraid/`)
+## Unraid
 
-Community Applications scans public GitHub repositories. Submit this repository
-at https://ca.unraid.net/submit/new, run **Validate** and **Scan**, and point it
-at `deploy/unraid/`. The template uses the `latest` tag, so it needs no update
-per release.
+The template lives in its own repository,
+[mattogodoy/unraid-templates](https://github.com/mattogodoy/unraid-templates),
+because Community Applications expects `ca_profile.xml` at the repository root.
+It uses the `latest` tag, so it needs no update per release.
