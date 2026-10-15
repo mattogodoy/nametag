@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.64.0](https://github.com/mattogodoy/nametag/compare/v0.63.0...v0.64.0) (2026-10-15)
+
+
+### Features
+
+* **deploy:** add Unraid and CasaOS app store listings ([#478](https://github.com/mattogodoy/nametag/issues/478)) ([9f53b4c](https://github.com/mattogodoy/nametag/commit/9f53b4c953f27e39f2e0271a2b6076b32d2b86ac))
+* **seo:** serve robots.txt that keeps the app out of search ([#477](https://github.com/mattogodoy/nametag/issues/477)) ([475426a](https://github.com/mattogodoy/nametag/commit/475426a64eb4af099307fb7bb89d6ef768dfa77f))
+
+
+### Bug Fixes
+
+* **env:** treat every blank environment variable as unset ([#479](https://github.com/mattogodoy/nametag/issues/479)) ([90f5cd4](https://github.com/mattogodoy/nametag/commit/90f5cd41da76f48cf3682fd2e3dc0b85b7941a3c))
+* **i18n:** update formPreviewYour in de-DE, ja-JP and nb-NO ([#471](https://github.com/mattogodoy/nametag/issues/471)) ([c5feaa0](https://github.com/mattogodoy/nametag/commit/c5feaa0ccc76ae9b3f6d6c86cd8acfb2f5748797))
+
 ## [0.63.0](https://github.com/mattogodoy/nametag/compare/v0.62.0...v0.63.0) (2026-09-21)
 
 
