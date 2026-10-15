@@ -17,26 +17,18 @@ services:
       DB_PORT: "5432"
       DB_NAME: nametag
       DB_USER: nametag
-      DB_PASSWORD: casaos-nametag
       NEXTAUTH_URL: http://localhost:10300
     volumes:
       - type: bind
         source: /DATA/AppData/$AppID/data
         target: /app/data
-    # NEXTAUTH_SECRET and CRON_SECRET are generated on first start and kept in
-    # the data directory, so every install gets its own secrets.
+    # DB_PASSWORD, NEXTAUTH_SECRET and CRON_SECRET come from the file that
+    # nametag-init generates, so every install gets its own secrets.
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        secrets=/app/data/secrets.env
-        if [ ! -f "$$secrets" ]; then
-          umask 077
-          printf 'NEXTAUTH_SECRET=%s\nCRON_SECRET=%s\n' \
-            "$$(head -c 32 /dev/urandom | base64 | tr -d '\n')" \
-            "$$(head -c 24 /dev/urandom | base64 | tr -d '\n')" > "$$secrets"
-        fi
         set -a
-        . "$$secrets"
+        . /app/data/secrets.env
         set +a
         exec docker-entrypoint.sh node server.js
     depends_on:
@@ -63,16 +55,40 @@ services:
             en_US: The address you use to open Nametag, for example http://192.168.1.10:10300
             es_ES: La dirección con la que abres Nametag, por ejemplo http://192.168.1.10:10300
 
-  # The app runs as UID 1001, but Docker creates bind-mounted folders as root.
+  # Generates the secrets on first start and fixes folder ownership: the app
+  # runs as UID 1001 and Postgres as UID 70, but Docker creates bind-mounted
+  # folders as root.
   nametag-init:
     image: alpine:3.20
     container_name: nametag-init
     restart: "no"
-    command: ["chown", "-R", "1001:1001", "/data"]
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        secrets=/data/secrets.env
+        if [ ! -f "$$secrets" ]; then
+          rand() { head -c "$$1" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
+          # Keep the database password if Postgres already has one.
+          db=$$(cat /db-secret/password 2>/dev/null || true)
+          [ -n "$$db" ] || db=$$(rand 24)
+          umask 077
+          printf 'NEXTAUTH_SECRET=%s\nCRON_SECRET=%s\nDB_PASSWORD=%s\n' \
+            "$$(rand 32)" "$$(rand 24)" "$$db" > "$$secrets"
+        fi
+        . "$$secrets"
+        umask 077
+        printf '%s' "$$DB_PASSWORD" > /db-secret/password
+        chown 70:70 /db-secret/password
+        chown -R 1001:1001 /data
     volumes:
       - type: bind
         source: /DATA/AppData/$AppID/data
         target: /data
+      - type: bind
+        source: /DATA/AppData/$AppID/db-secret
+        target: /db-secret
 
   nametag-db:
     image: postgres:16-alpine
@@ -80,12 +96,19 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: nametag
-      POSTGRES_PASSWORD: casaos-nametag
+      POSTGRES_PASSWORD_FILE: /run/nametag/password
       POSTGRES_DB: nametag
     volumes:
       - type: bind
         source: /DATA/AppData/$AppID/postgres
         target: /var/lib/postgresql/data
+      - type: bind
+        source: /DATA/AppData/$AppID/db-secret
+        target: /run/nametag
+        read_only: true
+    depends_on:
+      nametag-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nametag -d nametag"]
       interval: 10s

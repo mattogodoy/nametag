@@ -16,7 +16,7 @@ CasaOS has been succeeded by ZimaOS, and both use the same app store. The app in
 3. Open Nametag from the dashboard and create your account.
 4. If other people on your network can reach the port, add `DISABLE_REGISTRATION=true` to the app's environment once your account exists.
 
-`NEXTAUTH_SECRET` and `CRON_SECRET` are generated on first start and stored in `/DATA/AppData/nametag/data/secrets.env`. Keep that file with your backups: if you lose it, everyone is signed out, but no data is lost.
+`NEXTAUTH_SECRET`, `CRON_SECRET` and the database password are generated on first start and stored in `/DATA/AppData/nametag/data/secrets.env`. Keep that file with your backups: if you lose it, new secrets are generated and everyone is signed out, but no data is lost.
 
 To send reminder and password-reset emails, add the `SMTP_*` variables from [Email](/self-hosting/email/) to the `nametag` container.
 
