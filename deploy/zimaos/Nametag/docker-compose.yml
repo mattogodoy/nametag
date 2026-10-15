@@ -1,7 +1,7 @@
 name: nametag
 services:
   nametag:
-    image: ghcr.io/mattogodoy/nametag:0.63.0
+    image: ghcr.io/mattogodoy/nametag:0.64.0
     container_name: nametag
     restart: unless-stopped
     deploy:
@@ -202,7 +202,7 @@ x-casaos:
   repo: https://github.com/mattogodoy/nametag
   docs: https://docs.nametag.one
   support: https://github.com/mattogodoy/nametag/issues
-  version: "0.63.0"
-  update_at: "2026-10-14"
+  version: "0.64.0"
+  update_at: "2026-10-15"
   release_notes:
     en_US: First version in the ZimaOS App Store.

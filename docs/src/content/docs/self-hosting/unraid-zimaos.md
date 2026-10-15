@@ -66,4 +66,4 @@ curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$NAMETAG_URL/api/cron/send-re
 
 ### Optional settings
 
-Redis, SMTP and other optional settings are not in the template, because Unraid passes empty fields to the container and Nametag treats an empty value as invalid. To use one, click **Add another Path, Port, Variable, Label or Device**, choose **Variable**, and enter the name and value from [Configuration](/self-hosting/configuration/).
+Redis and SMTP settings are in the template under **Show more settings**. Leave them empty if you don't use them. To send email, fill in `EMAIL_DOMAIN`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` and `SMTP_PASS` as described in [Email](/self-hosting/email/). For any other setting, click **Add another Path, Port, Variable, Label or Device**, choose **Variable**, and enter the name and value from [Configuration](/self-hosting/configuration/).
