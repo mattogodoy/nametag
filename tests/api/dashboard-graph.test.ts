@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({
   personFindMany: vi.fn(),
   userFindUnique: vi.fn(),
+  variantFindMany: vi.fn(),
 }));
 
 // Mock Prisma
@@ -15,6 +16,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: mocks.userFindUnique,
+    },
+    relationshipLabelVariant: {
+      findMany: mocks.variantFindMany,
     },
   },
 }));
@@ -47,12 +51,13 @@ vi.mock('@/lib/logger', () => ({
 // Import after mocking
 import { GET } from '@/app/api/dashboard/graph/route';
 
-const { personFindMany, userFindUnique } = mocks;
+const { personFindMany, userFindUnique, variantFindMany } = mocks;
 
 describe('Dashboard Graph API Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userFindUnique.mockResolvedValue({ photo: null });
+    variantFindMany.mockResolvedValue([]);
   });
 
   it('should deduplicate when same edge is defined from both persons', async () => {

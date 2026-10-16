@@ -1,5 +1,13 @@
 import { z } from 'zod';
 import { PREDEFINED_DATE_TYPES } from './important-date-types';
+import {
+  ALL_LABEL_OPERATORS,
+  LABEL_SOURCES,
+  LABEL_SUBJECTS,
+  OPERATORS_WITHOUT_OPERAND,
+  PERSON_FIELD_KEYS,
+  operatorsForSource,
+} from '@/lib/relationship-labels/types';
 
 // ============================================
 // Common schemas
@@ -376,6 +384,106 @@ export const updateRelationshipSchema = z.object({
 });
 
 // ============================================
+// Conditional relationship label schemas
+// ============================================
+
+// Subjects, sources, operators and the operator-per-source table all live in
+// lib/relationship-labels/types.ts, and are imported here rather than copied.
+// The editor filters operators with the same table this schema validates
+// against, so two literal copies would drift apart.
+
+export const labelConditionSchema = z
+  .object({
+    subject: z.enum(LABEL_SUBJECTS),
+    source: z.enum(LABEL_SOURCES),
+    subjectRef: z.string().min(1, 'A reference is required').max(200),
+    operator: z.enum(ALL_LABEL_OPERATORS),
+    operand: z.string().max(500).nullable(),
+  })
+  .superRefine((condition, ctx) => {
+    if (
+      condition.source === 'PERSON_FIELD' &&
+      !(PERSON_FIELD_KEYS as readonly string[]).includes(condition.subjectRef)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['subjectRef'],
+        message: 'This person field cannot be used in a condition',
+      });
+    }
+
+    if (!operatorsForSource(condition.source).includes(condition.operator)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['operator'],
+        message: 'This operator does not fit the selected data',
+      });
+    }
+
+    const needsOperand = !OPERATORS_WITHOUT_OPERAND.has(condition.operator);
+    if (needsOperand && condition.operand === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['operand'],
+        message: 'This operator needs a value to compare against',
+      });
+    }
+    if (!needsOperand && condition.operand !== null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['operand'],
+        message: 'This operator takes no value',
+      });
+    }
+    if (
+      condition.operand !== null &&
+      condition.operand !== 'now' &&
+      !condition.operand.startsWith('lit:') &&
+      !condition.operand.startsWith('ref:')
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['operand'],
+        message: 'Malformed value',
+      });
+    }
+  });
+
+export const labelVariantSchema = z.object({
+  label: z.string().min(1, 'A label is required').max(80),
+  conditions: z.array(labelConditionSchema).max(5, 'A variant holds at most 5 conditions'),
+});
+
+export const labelVariantsSchema = z
+  .array(labelVariantSchema)
+  .max(20, 'A relationship type holds at most 20 variants')
+  .superRefine((variants, ctx) => {
+    const fallbackIndexes = variants
+      .map((variant, index) => (variant.conditions.length === 0 ? index : -1))
+      .filter((index) => index >= 0);
+
+    if (fallbackIndexes.length > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Only one fallback variant is allowed',
+      });
+    }
+    if (fallbackIndexes.length === 1 && fallbackIndexes[0] !== variants.length - 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'The fallback variant must come last',
+      });
+    }
+  });
+
+export const previewLabelSchema = z.object({
+  typeLabel: z.string().min(1).max(80),
+  describedPersonId: z.string().min(1),
+  otherPersonId: z.string().min(1),
+  variants: labelVariantsSchema,
+});
+
+// ============================================
 // Relationship Type schemas
 // ============================================
 
@@ -391,6 +499,8 @@ export const createRelationshipTypeSchema = z.object({
     .describe('Label for a new inverse type to auto-create'),
   symmetric: z.boolean().optional()
     .describe('If true, the type is its own inverse'),
+  variants: labelVariantsSchema.optional()
+    .describe('Conditional label variants. Omit to leave unchanged, send [] to clear.'),
 });
 
 export const updateRelationshipTypeSchema = createRelationshipTypeSchema;
@@ -550,6 +660,7 @@ export const importDataSchema = z.object({
     label: z.string(),
     color: z.string().nullable().optional(),
     inverseId: z.string().nullable().optional(),
+    variants: labelVariantsSchema.optional(),
   })).optional(),
   relationshipTypes: z.array(z.object({
     id: z.string(),
@@ -557,6 +668,7 @@ export const importDataSchema = z.object({
     label: z.string(),
     color: z.string().nullable().optional(),
     inverseId: z.string().nullable().optional(),
+    variants: labelVariantsSchema.optional(),
   })).optional(),
   journalEntries: z.array(z.object({
     id: z.string(),

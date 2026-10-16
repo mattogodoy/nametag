@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { formatGraphName, type NameDisplayFormat } from './nameUtils';
+import type { LabelResolver } from './relationship-labels';
 
 export interface GraphNode {
   id: string;
@@ -24,7 +25,7 @@ type PersonId = Prisma.PersonGetPayload<{
 }>;
 
 type RelationshipToUser = Prisma.RelationshipTypeGetPayload<{
-  select: { label: true; color: true };
+  select: { id: true; label: true; color: true };
 }>;
 
 type InverseRelationship = RelationshipToUser;
@@ -43,16 +44,25 @@ interface PersonWithRelationshipToUser extends PersonId {
 export function relationshipsWithUserToGraphEdges(
   person: PersonWithRelationshipToUser,
   userId: string,
+  resolver?: LabelResolver,
 ): GraphEdge[] {
   const edges: GraphEdge[] = [];
 
   if (person.relationshipToUser) {
+    const directType = person.relationshipToUser;
     // Add edge from person to user (their relationship to you)
     edges.push({
       source: person.id,
       target: userId,
-      type: person.relationshipToUser.label,
-      color: person.relationshipToUser.color || '#9CA3AF',
+      type: resolver
+        ? resolver.resolve({
+            relationshipTypeId: directType.id,
+            typeLabel: directType.label,
+            describedPersonId: person.id,
+            otherPersonId: 'USER',
+          }).label
+        : directType.label,
+      color: directType.color || '#9CA3AF',
     });
 
     // Add edge from user to person (your relationship to them)
@@ -62,7 +72,14 @@ export function relationshipsWithUserToGraphEdges(
     edges.push({
       source: userId,
       target: person.id,
-      type: inverseType.label,
+      type: resolver
+        ? resolver.resolve({
+            relationshipTypeId: inverseType.id,
+            typeLabel: inverseType.label,
+            describedPersonId: 'USER',
+            otherPersonId: person.id,
+          }).label
+        : inverseType.label,
       color: inverseType.color || '#9CA3AF',
     });
   }
@@ -73,7 +90,7 @@ type Relationship = Prisma.RelationshipGetPayload<{
   select: {
     personId: true;
     relatedPersonId: true;
-    relationshipType: { select: { label: true; color: true } };
+    relationshipType: { select: { id: true; label: true; color: true } };
   };
 }>;
 
@@ -83,15 +100,24 @@ type Relationship = Prisma.RelationshipGetPayload<{
  */
 export function relationshipToGraphEdge(
   relationship: Relationship,
+  resolver?: LabelResolver,
 ): GraphEdge | undefined {
-  if (!relationship.relationshipType) {
+  const type = relationship.relationshipType;
+  if (!type) {
     return;
   }
   return {
     source: relationship.personId,
     target: relationship.relatedPersonId,
-    type: relationship.relationshipType.label,
-    color: relationship.relationshipType.color || '#999999',
+    type: resolver
+      ? resolver.resolve({
+          relationshipTypeId: type.id,
+          typeLabel: type.label,
+          describedPersonId: relationship.personId,
+          otherPersonId: relationship.relatedPersonId,
+        }).label
+      : type.label,
+    color: type.color || '#999999',
   };
 }
 
@@ -111,6 +137,7 @@ interface RelationshipWithInverse extends Relationship {
  */
 export function inverseRelationshipToGraphEdge(
   relationship: RelationshipWithInverse,
+  resolver?: LabelResolver,
 ): GraphEdge | undefined {
   if (!relationship.relationshipType) {
     return;
@@ -121,7 +148,14 @@ export function inverseRelationshipToGraphEdge(
   return {
     source: relationship.relatedPersonId,
     target: relationship.personId,
-    type: inverseType.label,
+    type: resolver
+      ? resolver.resolve({
+          relationshipTypeId: inverseType.id,
+          typeLabel: inverseType.label,
+          describedPersonId: relationship.relatedPersonId,
+          otherPersonId: relationship.personId,
+        }).label
+      : inverseType.label,
     color: inverseType.color || '#999999',
   };
 }

@@ -1,5 +1,6 @@
 import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { createLabelResolver } from '@/lib/relationship-labels';
 
 const RETENTION_DAYS = 30;
 
@@ -51,8 +52,8 @@ export const GET = withAuth(async (request, session) => {
         });
         break;
 
-      case 'relationships':
-        deleted = await prismaIncludingDeleted.relationship.findMany({
+      case 'relationships': {
+        const deletedRelationships = await prismaIncludingDeleted.relationship.findMany({
           where: {
             person: { userId: session.user.id },
             deletedAt: { not: null, gte: cutoffDate },
@@ -72,7 +73,29 @@ export const GET = withAuth(async (request, session) => {
           },
           orderBy: { deletedAt: 'desc' },
         });
+
+        // A deleted relationship may involve people who are themselves
+        // deleted. The resolver only loads context for live people, so it
+        // naturally falls back to the type's own label there, which is the
+        // correct behaviour for a trash row rather than a bug to work around.
+        const relationshipPersonIds = Array.from(
+          new Set(deletedRelationships.flatMap((rel) => [rel.person.id, rel.relatedPerson.id]))
+        );
+        const resolver = await createLabelResolver(session.user.id, relationshipPersonIds);
+
+        deleted = deletedRelationships.map((rel) => ({
+          ...rel,
+          resolvedLabel: rel.relationshipType
+            ? resolver.resolve({
+                relationshipTypeId: rel.relationshipType.id,
+                typeLabel: rel.relationshipType.label,
+                describedPersonId: rel.person.id,
+                otherPersonId: rel.relatedPerson.id,
+              }).label
+            : null,
+        }));
         break;
+      }
 
       case 'relationshipTypes':
         deleted = await prismaIncludingDeleted.relationshipType.findMany({
