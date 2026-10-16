@@ -25,6 +25,37 @@ const notificationEndpointObject = {
   },
 };
 
+/**
+ * The 400 shared by creating an endpoint and editing one. Both run the same
+ * URL checks (lib/notifications/endpoint-url.ts), so they can refuse for the
+ * same reasons and a client should handle the codes identically.
+ */
+function endpointUrlRejection400() {
+  return jsonResponse('Invalid body or URL', {
+    type: 'object',
+    properties: {
+      error: { type: 'string', description: 'Human-readable error message' },
+      code: {
+        type: 'string',
+        description:
+          'Machine-readable reason, so a client can tell a permanent problem from a ' +
+          'transient one. `policy` means the URL was refused by the outbound SSRF ' +
+          'policy (wrong protocol, disallowed port, or a private address): permanent, ' +
+          'the URL must change. `dns` means the hostname did not resolve: possibly ' +
+          'transient, worth retrying as-is. `too_long` means the URL is over the length ' +
+          'limit. `not_ntfy` means a server answered at an ntfy URL but is not an ntfy ' +
+          'server, typically a 404 from /v1/health. `credentials_in_url` means the URL ' +
+          'carries a username or password, which is rejected rather than silently ' +
+          'stripped. `invalid` covers everything else: a body that failed validation, a ' +
+          'topic URL with no topic segment, or a credential that does not belong to the ' +
+          "endpoint's type.",
+        enum: ['policy', 'dns', 'too_long', 'not_ntfy', 'credentials_in_url', 'invalid'],
+      },
+    },
+    required: ['error', 'code'],
+  });
+}
+
 export function notificationsPaths(): Record<string, Record<string, unknown>> {
   return {
     '/api/notifications/push/public-key': {
@@ -143,26 +174,7 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
             },
             required: ['endpoint'],
           }),
-          '400': jsonResponse('Invalid body or URL', {
-            type: 'object',
-            properties: {
-              error: { type: 'string', description: 'Human-readable error message' },
-              code: {
-                type: 'string',
-                description:
-                  'Machine-readable reason, so a client can tell a permanent problem from a ' +
-                  'transient one. `policy` means the URL was refused by the outbound SSRF ' +
-                  'policy (wrong protocol, disallowed port, or a private address): permanent, ' +
-                  'the URL must change. `dns` means the hostname did not resolve: possibly ' +
-                  "transient, worth retrying as-is. `invalid` covers everything else, a body " +
-                  'that failed validation, a topic URL with no topic segment, or a webhook ' +
-                  'URL carrying a username or password, which is rejected rather than ' +
-                  'silently stripped.',
-                enum: ['policy', 'dns', 'invalid'],
-              },
-            },
-            required: ['error', 'code'],
-          }),
+          '400': endpointUrlRejection400(),
           '401': ref401(),
           '403': resp(
             "Two unrelated causes share this status. The Pro entitlement gate returns it, " +
@@ -210,7 +222,7 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
             },
             required: ['success'],
           }),
-          '400': ref400(),
+          '400': endpointUrlRejection400(),
           '401': ref401(),
           '403': jsonResponse('Outgoing webhooks require a Pro subscription', {
             type: 'object',

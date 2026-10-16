@@ -194,7 +194,7 @@ A `400` carries a machine-readable `code` alongside `error`, so a client can tel
 { "error": "That URL cannot be used", "code": "dns" }
 ```
 
-`code` is one of `policy` (the URL was refused by the outbound SSRF policy: wrong protocol, disallowed port, or a private address, permanent, the URL must change), `dns` (the hostname did not resolve, possibly transient, worth retrying as-is), or `invalid` (the request body failed validation, or an ntfy topic URL has no topic segment).
+`code` is one of `policy` (the URL was refused by the outbound SSRF policy: wrong protocol, disallowed port, or a private address, permanent, the URL must change), `dns` (the hostname did not resolve, possibly transient, worth retrying as-is), `too_long` (the URL is over the length limit), `not_ntfy` (a server answered at an ntfy URL but is not an ntfy server, typically a `404` from `/v1/health`), `credentials_in_url` (the URL carries a username or password; use the access token field instead), or `invalid` (the request body failed validation, or an ntfy topic URL has no topic segment).
 
 A `409` also carries a `code`: `duplicate` means this exact URL is already registered to your account, distinct from the plain cap message you get when you already have 5 destinations.
 
@@ -239,7 +239,7 @@ When `rotateSecret` was requested, the response also carries the new secret. Thi
 { "success": true, "secret": "9f2c..." }
 ```
 
-Returns `400` for an invalid body or a URL that cannot be used, `401` if unauthenticated, `403` if re-enabling, re-pointing, or rotating the secret of a webhook without a Pro subscription in SaaS mode, `404` if the destination does not exist or belongs to another user, `409` if the new URL is already registered on another of your destinations, `429` if rate limited.
+Returns `400` for an invalid body or a URL that cannot be used, with the same `code` values as creating a destination, `401` if unauthenticated, `403` if re-enabling, re-pointing, or rotating the secret of a webhook without a Pro subscription in SaaS mode, `404` if the destination does not exist or belongs to another user, `409` if the new URL is already registered on another of your destinations, `429` if rate limited.
 
 Disabling and relabelling a webhook are deliberately **not** gated on the subscription, so a lapsed subscriber can still switch off or tidy up a destination that is no longer being delivered to.
 

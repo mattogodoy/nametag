@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateOpenAPISpec } from '../../lib/openapi';
+import type { EndpointUrlRejection } from '../../lib/notifications/endpoint-url';
 
 describe('OpenAPI Specification', () => {
   // Cast to Record for deep property access — the test validates the shape at runtime
@@ -83,6 +84,28 @@ describe('OpenAPI Specification', () => {
     expect(spec.paths['/api/openapi.json'].get.security).toBeUndefined();
     expect(spec.paths['/api/docs'].get.security).toBeUndefined();
     expect(spec.paths['/api/health'].get.security).toBeUndefined();
+  });
+
+  it('documents every 400 code the endpoint create and update routes return', () => {
+    // A Record keyed on the union, so a rejection code added to
+    // EndpointUrlRejection fails typecheck here until the spec lists it too.
+    const routeCodes: Record<EndpointUrlRejection['code'] | 'credentials_in_url' | 'invalid', true> = {
+      policy: true,
+      dns: true,
+      too_long: true,
+      not_ntfy: true,
+      credentials_in_url: true,
+      invalid: true,
+    };
+    const expected = Object.keys(routeCodes).sort();
+
+    const post = spec.paths['/api/notifications/endpoints'].post.responses['400'];
+    const put = spec.paths['/api/notifications/endpoints/{id}'].put.responses['400'];
+
+    for (const response of [post, put]) {
+      const schema = response.content['application/json'].schema;
+      expect([...schema.properties.code.enum].sort()).toEqual(expected);
+    }
   });
 
   it('should have all $ref paths resolve to existing schemas', () => {
