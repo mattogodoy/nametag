@@ -45,7 +45,7 @@ curl https://your-instance.example.com/api/server-info
 - `apiVersion` changes only when an endpoint used by native clients changes in a breaking way.
 - `registration.reason` appears only when registration is off. It is `passwordLoginDisabled` (sign-in is SSO only) or `registrationDisabled` (`DISABLE_REGISTRATION=true` and at least one account exists).
 - New fields may be added at any time. Clients should ignore fields they don't know.
-- The response can be cached for 60 seconds.
+- Clients may cache the response for up to 60 seconds, so a change to registration settings can take that long to show. Shared proxies are told not to cache it.
 
 ## Authentication
 

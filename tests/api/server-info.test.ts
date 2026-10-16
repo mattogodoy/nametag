@@ -37,10 +37,10 @@ describe('GET /api/server-info', () => {
     expect(await res.json()).toEqual(INFO);
   });
 
-  it('allows short shared caching', async () => {
+  it('allows short private caching only', async () => {
     mocks.getServerInfo.mockResolvedValue(INFO);
     const res = await GET(new Request('http://localhost/api/server-info'));
-    expect(res.headers.get('Cache-Control')).toBe('public, max-age=60');
+    expect(res.headers.get('Cache-Control')).toBe('private, max-age=60');
   });
 
   it('returns 503 without internals when the database is unreachable', async () => {

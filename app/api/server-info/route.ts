@@ -11,7 +11,7 @@ export const GET = withLogging(async function GET() {
   try {
     const info = await getServerInfo();
     return NextResponse.json(info, {
-      headers: { 'Cache-Control': 'public, max-age=60' },
+      headers: { 'Cache-Control': 'private, max-age=60' },
     });
   } catch (error) {
     return handleApiError(error, 'server-info');
