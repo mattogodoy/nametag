@@ -258,7 +258,14 @@ describe('send-reminders weekly digest', () => {
   });
 
   it('lets day-of, lead, and contact reminders send when the digest candidate query itself fails', async () => {
-    mocks.userFindMany.mockRejectedValue(new Error('db unreachable'));
+    // Only the digest candidate query fails. The dispatcher's email
+    // preference lookup is the same delegate, and it fails closed on its own
+    // error, so it has to succeed here for the email to be sent at all.
+    mocks.userFindMany.mockImplementation((args: { select?: { emailRemindersEnabled?: boolean } }) =>
+      args.select?.emailRemindersEnabled
+        ? Promise.resolve([{ id: 'user-dayof', emailRemindersEnabled: true }])
+        : Promise.reject(new Error('db unreachable'))
+    );
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
