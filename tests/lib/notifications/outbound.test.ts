@@ -378,6 +378,25 @@ describe('probeNtfyHealth', () => {
     await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
   });
 
+  it.each([401, 403])('reports a %i from an auth proxy as unreachable, not as a wrong server', async (status) => {
+    handler = (_req, res) => res.writeHead(status).end();
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('unreachable');
+  });
+
+  it.each([301, 302, 303, 307, 308])('reports a %i to a login page as unreachable', async (status) => {
+    handler = (_req, res) =>
+      res.writeHead(status, { Location: 'https://example.cloudflareaccess.com/login' }).end();
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('unreachable');
+  });
+
+  it('still rejects a 5xx as not ntfy', async () => {
+    handler = (_req, res) => res.writeHead(500).end();
+
+    await expect(probeNtfyHealth(`${base}/`)).resolves.toBe('not_ntfy');
+  });
+
   it('does not buffer an unbounded body', async () => {
     // A hostile or broken host must not be able to stream arbitrary data into
     // memory. The probe gives up past its byte ceiling rather than reading on.

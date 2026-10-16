@@ -376,7 +376,8 @@ export type NtfyProbeResult =
   /** Something answered, but it is not an ntfy server. */
   | 'not_ntfy'
   /**
-   * Nothing conclusive: a timeout, a TLS error, a connection failure, or a
+   * Nothing conclusive: a timeout, a TLS error, a connection failure, an auth
+   * wall (401, 403, or a redirect to a login page), or a
    * resolver hiccup. Deliberately distinct from `not_ntfy`, because they call
    * for opposite responses. Refusing to save on `not_ntfy` is the whole point
    * of the probe; refusing to save on `unreachable` would block any ntfy
@@ -428,6 +429,16 @@ export async function probeNtfyHealth(baseUrl: string): Promise<NtfyProbeResult>
         },
         (response) => {
           const status = response.statusCode ?? 0;
+
+          // An auth wall in front of the server: a 401 or 403 from an auth
+          // proxy, or a 3xx to a login page such as Cloudflare Access. That
+          // says nothing about whether ntfy is behind it, and publishing with
+          // a token can still work, so it must not refuse the save.
+          if (status === 401 || status === 403 || (status >= 300 && status < 400)) {
+            settle('unreachable');
+            response.destroy();
+            return;
+          }
 
           // Something answered and it was not a healthy ntfy endpoint. A 404
           // here is exactly what a mistyped host that happens to run a web
