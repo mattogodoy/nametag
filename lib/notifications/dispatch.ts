@@ -114,17 +114,20 @@ export async function dispatchAll(
  * A run holds many envelopes per user, so this is one query rather than one
  * per envelope. A user missing from the result defaults to enabled, matching
  * the column default.
+ *
+ * Returns null when the lookup itself fails, which is NOT the same as an
+ * empty result. Nobody's preference is known, so nobody can be emailed.
  */
 async function loadEmailPreferences(
   envelopes: readonly NotificationEnvelope[]
-): Promise<Map<string, boolean>> {
+): Promise<Map<string, boolean> | null> {
   const userIds = [...new Set(envelopes.map((envelope) => envelope.userId))];
 
   // Guarded like every other query in this file: a lookup failure here must
   // not take down the whole run and silently drop every already-collected
-  // day-of, lead, and contact reminder for the night. An empty map defaults
-  // every user to enabled, the same safe default as a user missing from the
-  // result.
+  // day-of, lead, and contact reminder for the night. It fails closed, like
+  // the endpoint and entitlement lookups below: defaulting everyone to
+  // enabled would email people who turned email reminders off.
   try {
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
@@ -136,9 +139,9 @@ async function loadEmailPreferences(
     const message = error instanceof Error ? error.message : 'Unknown error';
     log.error(
       { errorMessage: message, count: userIds.length },
-      'Failed to load email preferences, defaulting every user to enabled'
+      'Failed to load email preferences, skipping email delivery for this run'
     );
-    return new Map();
+    return null;
   }
 }
 
@@ -421,8 +424,19 @@ function outcomeFor(
  */
 async function dispatchEmail(
   envelopes: readonly NotificationEnvelope[],
-  emailEnabled: Map<string, boolean>
+  emailEnabled: Map<string, boolean> | null
 ): Promise<ChannelOutcome[]> {
+  // The preference lookup failed. Reported as failed rather than skipped, so
+  // a reminder no other channel delivered is not stamped and goes out on the
+  // next run instead of being lost.
+  if (emailEnabled === null) {
+    return envelopes.map(() =>
+      isEmailConfigured()
+        ? { channel: 'email', status: 'failed', error: 'Email preferences unavailable' }
+        : { channel: 'email', status: 'skipped' }
+    );
+  }
+
   const eligible = envelopes.map((envelope) => emailEnabled.get(envelope.userId) !== false);
 
   const outcomes: ChannelOutcome[] = envelopes.map(() => ({ channel: 'email', status: 'skipped' }));
