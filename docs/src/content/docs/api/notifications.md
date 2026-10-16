@@ -59,6 +59,27 @@ curl -X POST https://your-instance.example.com/api/notifications/push/subscribe 
 
 Returns `201` on success, `400` for an invalid body, `401` if unauthenticated.
 
+## Check a push subscription
+
+```
+POST /api/notifications/push/status
+```
+
+Tells a browser whether its own push subscription is registered to the authenticated account. A browser keeps its subscription after its row is removed from the device list, so this is how the Settings page knows whether push is really on for the current device. The caller sends the endpoint it already holds; the server never returns endpoints.
+
+```bash
+curl -X POST https://your-instance.example.com/api/notifications/push/status \
+  -H "Authorization: Bearer ntag_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"endpoint": "https://fcm.googleapis.com/fcm/send/abc123"}'
+```
+
+```json
+{ "registered": true }
+```
+
+`registered` is `false` when no subscription with that endpoint belongs to your account, including one that belongs to a different account on the same browser. Returns `400` for an invalid body, `401` if unauthenticated.
+
 ## Revoke a push subscription
 
 ```

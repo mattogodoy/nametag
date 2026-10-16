@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   userUpdate: vi.fn(),
   getVapidDetails: vi.fn(),
   findUnique: vi.fn(),
+  findFirst: vi.fn(),
   count: vi.fn(),
   checkRateLimit: vi.fn(),
   transaction: vi.fn(),
@@ -27,6 +28,7 @@ const prismaMock = vi.hoisted(() => ({
     upsert: mocks.upsert,
     deleteMany: mocks.deleteMany,
     findUnique: mocks.findUnique,
+    findFirst: mocks.findFirst,
     count: mocks.count,
   },
   user: { update: mocks.userUpdate },
@@ -54,6 +56,7 @@ vi.mock('../../lib/rate-limit', async () => {
 
 import { GET as getPublicKey } from '../../app/api/notifications/push/public-key/route';
 import { POST as subscribe } from '../../app/api/notifications/push/subscribe/route';
+import { POST as pushStatus } from '../../app/api/notifications/push/status/route';
 import { DELETE as revoke } from '../../app/api/notifications/push/subscriptions/[id]/route';
 import { PUT as toggleEmailReminders } from '../../app/api/notifications/email/route';
 
@@ -336,6 +339,51 @@ describe('push API', () => {
       );
 
       expect(response.status).toBe(404);
+    });
+  });
+
+  describe('POST /api/notifications/push/status', () => {
+    function statusRequest(body: unknown): Request {
+      return new Request('http://localhost/api/notifications/push/status', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
+
+    it('rejects an unauthenticated check', async () => {
+      mocks.auth.mockResolvedValue(null);
+
+      expect((await pushStatus(statusRequest({ endpoint: validBody.endpoint }))).status).toBe(401);
+      expect(mocks.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("reports registered only for the caller's own row", async () => {
+      mocks.findFirst.mockResolvedValue({ id: 'sub-1' });
+
+      const response = await pushStatus(statusRequest({ endpoint: validBody.endpoint }));
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ registered: true });
+      expect(mocks.findFirst).toHaveBeenCalledWith({
+        where: { endpoint: validBody.endpoint, userId: 'user-1' },
+        select: { id: true },
+      });
+    });
+
+    it('reports not registered once the row is gone', async () => {
+      mocks.findFirst.mockResolvedValue(null);
+
+      const response = await pushStatus(statusRequest({ endpoint: validBody.endpoint }));
+
+      expect(await response.json()).toEqual({ registered: false });
+    });
+
+    it('rejects a body without an https endpoint', async () => {
+      const response = await pushStatus(statusRequest({ endpoint: 'http://push.test/abc' }));
+
+      expect(response.status).toBe(400);
+      expect(mocks.findFirst).not.toHaveBeenCalled();
     });
   });
 

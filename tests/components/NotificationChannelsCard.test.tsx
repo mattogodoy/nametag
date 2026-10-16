@@ -73,6 +73,7 @@ const IPHONE_UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
 
 interface StubSubscription {
+  endpoint?: string;
   toJSON: () => Record<string, unknown>;
 }
 
@@ -335,6 +336,85 @@ describe('NotificationChannelsCard', () => {
         expect(screen.getByText('Enabled on this device')).toBeInTheDocument();
       });
       expect(screen.queryByRole('button', { name: 'Enable on this device' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('a device removed while this browser keeps its subscription', () => {
+    const device = { id: 'sub-1', userAgent: null, autoDisabledAt: null, lastFailureCode: null };
+    const other = { id: 'sub-2', userAgent: null, autoDisabledAt: null, lastFailureCode: null };
+
+    /** Routes the status check separately from every other request. */
+    function stubFetch(registered: () => boolean) {
+      const fetchMock = vi.fn((url: string) =>
+        Promise.resolve({
+          ok: true,
+          json: async () =>
+            url === '/api/notifications/push/status' ? { registered: registered() } : { success: true },
+        })
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      return fetchMock;
+    }
+
+    it("offers Enable when this browser's row is gone even though other devices remain", async () => {
+      // Removed from another browser: the local subscription survives, and the
+      // list still has the other device, so devices.length alone cannot tell.
+      stubFetch(() => false);
+      stubServiceWorker({ endpoint: 'https://push.test/this-browser', toJSON: () => ({}) });
+      stubNotification('granted');
+
+      renderCard({ devices: [other] });
+
+      await screen.findByRole('button', { name: 'Enable on this device' });
+      expect(screen.queryByText('Enabled on this device')).not.toBeInTheDocument();
+    });
+
+    it('sends only its own endpoint to the status check', async () => {
+      const fetchMock = stubFetch(() => true);
+      stubServiceWorker({ endpoint: 'https://push.test/this-browser', toJSON: () => ({}) });
+      stubNotification('granted');
+
+      renderCard({ devices: [device] });
+
+      await screen.findByText('Enabled on this device');
+      expect(fetchMock).toHaveBeenCalledWith('/api/notifications/push/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: 'https://push.test/this-browser' }),
+      });
+    });
+
+    it('offers Enable right after removing its own row while another device remains', async () => {
+      let registered = true;
+      stubFetch(() => registered);
+      stubServiceWorker({ endpoint: 'https://push.test/this-browser', toJSON: () => ({}) });
+      stubNotification('granted');
+
+      renderCard({ devices: [device, other] });
+      await screen.findByText('Enabled on this device');
+
+      registered = false;
+      fireEvent.click(screen.getAllByRole('button', { name: 'Remove' })[0]);
+
+      await screen.findByRole('button', { name: 'Enable on this device' });
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+
+    it('trusts the local subscription when the status check fails', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((url: string) =>
+          url === '/api/notifications/push/status'
+            ? Promise.reject(new Error('network down'))
+            : Promise.resolve({ ok: true, json: async () => ({}) })
+        )
+      );
+      stubServiceWorker({ endpoint: 'https://push.test/this-browser', toJSON: () => ({}) });
+      stubNotification('granted');
+
+      renderCard({ devices: [device] });
+
+      await screen.findByText('Enabled on this device');
     });
   });
 

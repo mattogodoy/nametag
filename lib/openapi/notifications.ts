@@ -1,5 +1,6 @@
 import {
   pushSubscribeSchema,
+  pushStatusSchema,
   emailRemindersSchema,
   createEndpointSchema,
   updateEndpointSchema,
@@ -93,6 +94,28 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
           '401': ref401(),
           '409': resp('Maximum number of devices reached'),
           '429': resp('Rate limited'),
+        },
+      },
+    },
+    '/api/notifications/push/status': {
+      post: {
+        tags: ['Notifications'],
+        summary: "Check whether this browser's push subscription is registered",
+        description:
+          'Reports whether a push subscription with the given endpoint belongs to the current ' +
+          'user. A browser keeps its local PushSubscription after its row is removed, so the ' +
+          'settings page uses this to tell whether push is really on for the current device. ' +
+          'The caller sends the endpoint it already holds; endpoints are never returned.',
+        security: sessionOrToken(),
+        requestBody: zodBody(pushStatusSchema),
+        responses: {
+          '200': jsonResponse('Registration status', {
+            type: 'object',
+            properties: { registered: { type: 'boolean' } },
+            required: ['registered'],
+          }),
+          '400': ref400(),
+          '401': ref401(),
         },
       },
     },
