@@ -335,6 +335,29 @@ describe('NotificationEndpointsCard', () => {
     });
   });
 
+  it('turns off an active endpoint via PUT without deleting it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderCard({ endpoints: [endpoint] });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Turn off' }));
+
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/notifications/endpoints/ep-1', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: false }),
+    });
+  });
+
+  it('offers turn off only on an active endpoint, not on one that is already off', () => {
+    renderCard({ endpoints: [{ ...endpoint, enabled: false, autoDisabledAt: null }] });
+
+    expect(screen.queryByRole('button', { name: 'Turn off' })).not.toBeInTheDocument();
+  });
+
   it('removes an endpoint via DELETE and refreshes', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true }));
     vi.stubGlobal('fetch', fetchMock);

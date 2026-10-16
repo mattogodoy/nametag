@@ -220,6 +220,7 @@
       "endpointDisabled": "エラーが繰り返されたため無効になりました。通知先を修正してから、もう一度オンにしてください。",
       "endpointDisabledManual": "オフになっています。ここでリマインダーを受け取りたい場合は、オンに戻してください。",
       "endpointEnable": "オンに戻す",
+      "endpointTurnOff": "オフにする",
       "endpointAddInvalid": "トピックのURLを確認してから、もう一度お試しください。",
       "endpointAddRateLimited": "試行回数が多すぎます。数分待ってから、もう一度お試しください。",
       "endpointAddDuplicate": "そのトピックはすでに追加されています。",

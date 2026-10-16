@@ -220,6 +220,7 @@
       "endpointDisabled": "Nach wiederholten Fehlern deaktiviert. Behebe das Problem am Ziel und schalte es dann wieder ein.",
       "endpointDisabledManual": "Ausgeschaltet. Schalte es wieder ein, wenn du hier wieder Erinnerungen erhalten möchtest.",
       "endpointEnable": "Wieder einschalten",
+      "endpointTurnOff": "Ausschalten",
       "endpointAddInvalid": "Überprüfe die Themen-URL und versuche es erneut.",
       "endpointAddRateLimited": "Zu viele Versuche. Warte ein paar Minuten und versuche es erneut.",
       "endpointAddDuplicate": "Du hast dieses Thema bereits hinzugefügt.",

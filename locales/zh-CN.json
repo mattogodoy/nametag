@@ -220,6 +220,7 @@
       "endpointDisabled": "由于多次失败已被关闭。修复该目标后重新打开。",
       "endpointDisabledManual": "已关闭。当您想再次在此接收提醒时，请重新打开。",
       "endpointEnable": "重新打开",
+      "endpointTurnOff": "关闭",
       "endpointAddInvalid": "请检查主题 URL 后重试。",
       "endpointAddRateLimited": "尝试次数过多，请等待几分钟后重试。",
       "endpointAddDuplicate": "您已添加过该主题。",
