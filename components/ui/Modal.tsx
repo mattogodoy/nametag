@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useRef } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -45,39 +46,7 @@ export default function Modal({
     };
   }, [isOpen]);
 
-  // Focus trap
-  useEffect(() => {
-    if (isOpen && modalRef.current) {
-      const focusableElements = Array.from(
-        modalRef.current?.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        ) ?? []
-      ).filter((el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      const handleTab = (e: KeyboardEvent) => {
-        if (e.key === 'Tab') {
-          if (e.shiftKey) {
-            if (document.activeElement === firstElement) {
-              e.preventDefault();
-              lastElement?.focus();
-            }
-          } else {
-            if (document.activeElement === lastElement) {
-              e.preventDefault();
-              firstElement?.focus();
-            }
-          }
-        }
-      };
-
-      document.addEventListener('keydown', handleTab);
-      firstElement?.focus();
-
-      return () => document.removeEventListener('keydown', handleTab);
-    }
-  }, [isOpen]);
+  useFocusTrap(modalRef, isOpen);
 
   if (!isOpen) return null;
 
