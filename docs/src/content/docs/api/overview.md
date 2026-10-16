@@ -17,6 +17,36 @@ https://your-instance.example.com
 
 If you're using the hosted service, that's `https://app.nametag.one`. Note that `nametag.one` itself is the marketing site and doesn't serve the API. If you're self-hosting, it's whatever domain you've configured.
 
+## Server info
+
+`GET /api/server-info` describes the server and needs no authentication. Native clients call it first to check that a URL really is a Nametag server and to decide which sign-in options to show.
+
+```bash
+curl https://your-instance.example.com/api/server-info
+```
+
+```json
+{
+  "name": "Nametag",
+  "version": "0.64.0",
+  "apiVersion": 1,
+  "mode": "selfhosted",
+  "auth": {
+    "password": true,
+    "google": false,
+    "oidc": { "enabled": true, "name": "Authentik" },
+    "emailVerificationRequired": false,
+    "registration": { "enabled": false, "reason": "registrationDisabled" }
+  },
+  "features": { "billing": false, "cardDav": true, "webPush": true }
+}
+```
+
+- `apiVersion` changes only when an endpoint used by native clients changes in a breaking way.
+- `registration.reason` appears only when registration is off. It is `passwordLoginDisabled` (sign-in is SSO only) or `registrationDisabled` (`DISABLE_REGISTRATION=true` and at least one account exists).
+- New fields may be added at any time. Clients should ignore fields they don't know.
+- The response can be cached for 60 seconds.
+
 ## Authentication
 
 The API supports two authentication methods.

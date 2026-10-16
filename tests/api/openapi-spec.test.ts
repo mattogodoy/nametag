@@ -83,6 +83,7 @@ describe('OpenAPI Specification', () => {
     expect(spec.paths['/api/openapi.json'].get.security).toBeUndefined();
     expect(spec.paths['/api/docs'].get.security).toBeUndefined();
     expect(spec.paths['/api/health'].get.security).toBeUndefined();
+    expect(spec.paths['/api/server-info'].get.security).toBeUndefined();
   });
 
   it('should have all $ref paths resolve to existing schemas', () => {

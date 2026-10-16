@@ -464,6 +464,63 @@ export function generateOpenAPISpec(): OpenAPISpec {
           },
         },
       },
+      '/api/server-info': {
+        get: {
+          tags: ['System'],
+          summary: 'Server capabilities',
+          description:
+            'Describes this server for native clients before sign-in: version, API version, ' +
+            'mode, login methods, registration status and optional features. ' +
+            'Clients must ignore unknown fields.',
+          responses: {
+            '200': jsonResponse('Server info', {
+              type: 'object',
+              properties: {
+                name: { type: 'string', enum: ['Nametag'] },
+                version: { type: 'string', example: '0.64.0' },
+                apiVersion: { type: 'integer', example: 1 },
+                mode: { type: 'string', enum: ['saas', 'selfhosted'] },
+                auth: {
+                  type: 'object',
+                  properties: {
+                    password: { type: 'boolean' },
+                    google: { type: 'boolean' },
+                    oidc: {
+                      type: 'object',
+                      properties: {
+                        enabled: { type: 'boolean' },
+                        name: { type: 'string', example: 'SSO' },
+                      },
+                      required: ['enabled', 'name'],
+                    },
+                    emailVerificationRequired: { type: 'boolean' },
+                    registration: {
+                      type: 'object',
+                      properties: {
+                        enabled: { type: 'boolean' },
+                        reason: { type: 'string', enum: ['passwordLoginDisabled', 'registrationDisabled'] },
+                      },
+                      required: ['enabled'],
+                    },
+                  },
+                  required: ['password', 'google', 'oidc', 'emailVerificationRequired', 'registration'],
+                },
+                features: {
+                  type: 'object',
+                  properties: {
+                    billing: { type: 'boolean' },
+                    cardDav: { type: 'boolean' },
+                    webPush: { type: 'boolean' },
+                  },
+                  required: ['billing', 'cardDav', 'webPush'],
+                },
+              },
+              required: ['name', 'version', 'apiVersion', 'mode', 'auth', 'features'],
+            }),
+            '503': resp('Database unavailable'),
+          },
+        },
+      },
     },
   };
 }
