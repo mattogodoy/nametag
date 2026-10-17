@@ -60,6 +60,20 @@ curl -X POST https://your-instance.example.com/api/auth/native/logout \
 
 Returns 204.
 
+## Signed-in devices
+
+```bash
+curl https://your-instance.example.com/api/user/sessions \
+  -H "Authorization: Bearer ntsa_..."
+```
+
+Returns `{ "sessions": [...] }` with each device's `id`, `name`, `platform`, `appVersion`, `lastUsedAt`, `createdAt` and `current` (true for the device making the request).
+
+- `DELETE /api/user/sessions/{id}` signs out one device (404 if it isn't yours).
+- `DELETE /api/user/sessions` signs out every device except the one making the request.
+
+These endpoints accept a browser session or a device token, not a personal API token.
+
 ## Error codes
 
 Every error body has an English `error` message and a stable `code`:

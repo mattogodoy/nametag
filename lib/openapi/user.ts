@@ -7,10 +7,59 @@ import {
   importDataSchema,
 } from '../validations';
 import { SUPPORTED_LOCALES } from '../locale';
-import { zodBody, jsonBody, jsonResponse, ref400, ref401, refMessage, resp, sessionOrToken } from './helpers';
+import { zodBody, jsonBody, jsonResponse, ref400, ref401, ref404, refMessage, resp, sessionOrToken, sessionOnly, pathParam } from './helpers';
 
 export function userPaths(): Record<string, Record<string, unknown>> {
   return {
+    '/api/user/sessions': {
+      get: {
+        tags: ['User Settings'],
+        summary: 'List signed-in devices',
+        description: 'Lists the native apps signed in to this account. `current` marks the calling device.',
+        security: sessionOnly(),
+        responses: {
+          '200': jsonResponse('Devices', {
+            type: 'object',
+            properties: {
+              sessions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    name: { type: 'string' },
+                    platform: { type: 'string', enum: ['IOS', 'ANDROID'] },
+                    appVersion: { type: 'string' },
+                    lastUsedAt: { type: 'string', format: 'date-time' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    current: { type: 'boolean' },
+                  },
+                  required: ['id', 'name', 'platform', 'appVersion', 'lastUsedAt', 'createdAt', 'current'],
+                },
+              },
+            },
+            required: ['sessions'],
+          }),
+          '401': ref401(),
+        },
+      },
+      delete: {
+        tags: ['User Settings'],
+        summary: 'Sign out all other devices',
+        description: 'Signs out every native app except the calling one.',
+        security: sessionOnly(),
+        responses: { '204': { description: 'Signed out' }, '401': ref401() },
+      },
+    },
+    '/api/user/sessions/{id}': {
+      delete: {
+        tags: ['User Settings'],
+        summary: 'Sign out a device',
+        security: sessionOnly(),
+        parameters: [pathParam('id', 'Device session ID')],
+        responses: { '204': { description: 'Signed out' }, '401': ref401(), '404': ref404() },
+      },
+    },
     '/api/user/profile': {
       get: {
         tags: ['User Settings'],
