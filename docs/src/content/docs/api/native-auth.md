@@ -76,7 +76,7 @@ These endpoints accept a browser session or a device token, not a personal API t
 
 ## Error codes
 
-Every error body has an English `error` message and a stable `code`:
+Error bodies have an English `error` message and a stable `code`. The one exception is a request with no credentials at all, which gets the plain `{ "error": "Unauthorized" }` that every endpoint returns; treat a 401 without a `code` as "sign in".
 
 | Status | Code | Meaning |
 |---|---|---|
