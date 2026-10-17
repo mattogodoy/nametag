@@ -57,6 +57,8 @@ model User {
   unsubscribeTokens     UnsubscribeToken[]
   pushSubscriptions     PushSubscription[]
   apiTokens             ApiToken[]
+  deviceSessions        DeviceSession[]
+  sessionsInvalidatedAt DateTime? // Set on password change or reset; web JWTs issued before it are rejected
   cardDavConnection     CardDavConnection?
   cardDavPendingImports CardDavPendingImport[]
   customFieldTemplates  CustomFieldTemplate[]
@@ -607,6 +609,35 @@ model ApiToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("api_tokens")
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+}
+
+// DeviceSession Model - A signed-in native app. One row per device sign-in.
+// Revoking deletes the row. Only SHA-256 hashes of the tokens are stored.
+model DeviceSession {
+  id                       String         @id @default(cuid())
+  userId                   String
+  name                     String         // Sent by the app, max 100 chars
+  platform                 DevicePlatform
+  appVersion               String         // Max 32 chars
+  accessTokenHash          String         @unique
+  accessExpiresAt          DateTime
+  refreshTokenHash         String         @unique
+  previousRefreshTokenHash String?        @unique
+  rotatedAt                DateTime?
+  idleExpiresAt            DateTime
+  lastUsedAt               DateTime       @default(now())
+  createdAt                DateTime       @default(now())
+
+  user                     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([idleExpiresAt])
+  @@map("device_sessions")
 }
 
 // ============================================

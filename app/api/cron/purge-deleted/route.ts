@@ -6,6 +6,7 @@ import { resolveTrustedClientIp } from '@/lib/net/client-ip';
 import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { logger, securityLogger } from '@/lib/logger';
 import { deletePersonPhotos } from '@/lib/photo-storage';
+import { deleteIdleDeviceSessions } from '@/lib/native-auth/sessions';
 
 const RETENTION_DAYS = 30;
 
@@ -45,6 +46,7 @@ export const GET = withLogging(async function GET(request: Request) {
       groups: 0,
       relationshipTypes: 0,
       people: 0,
+      deviceSessions: 0,
     };
 
     // 1. Purge ImportantDates that are soft-deleted past retention
@@ -168,6 +170,10 @@ export const GET = withLogging(async function GET(request: Request) {
     });
     purged.people = peopleResult.count;
 
+    // 10. Delete native app sessions idle past their window
+    const deviceSessionsResult = await deleteIdleDeviceSessions(new Date());
+    purged.deviceSessions = deviceSessionsResult;
+
     const result = {
       success: true,
       purged,
@@ -186,7 +192,7 @@ export const GET = withLogging(async function GET(request: Request) {
         data: {
           status: 'completed',
           duration,
-          message: `Purged ${totalPurged} records (${purged.people} people, ${purged.groups} groups, ${purged.relationships} relationships, ${purged.relationshipTypes} relationship types, ${purged.importantDates} important dates, ${purged.personGroups} person-groups)`,
+          message: `Purged ${totalPurged} records (${purged.people} people, ${purged.groups} groups, ${purged.relationships} relationships, ${purged.relationshipTypes} relationship types, ${purged.importantDates} important dates, ${purged.personGroups} person-groups, ${purged.deviceSessions} device sessions)`,
         },
       });
     }

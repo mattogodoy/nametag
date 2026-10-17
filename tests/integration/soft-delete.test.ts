@@ -73,6 +73,9 @@ const mockEnv = vi.hoisted(() => ({
 }));
 
 // Mock Prisma
+const deleteIdleDeviceSessions = vi.hoisted(() => vi.fn().mockResolvedValue(0));
+vi.mock('../../lib/native-auth/sessions', () => ({ deleteIdleDeviceSessions }));
+
 vi.mock('../../lib/prisma', () => ({
   prisma: {
     person: {
@@ -652,6 +655,10 @@ describe('Soft Delete Integration', () => {
       expect(mocks.personDeleteMany).toHaveBeenCalled();
       expect(mocks.groupDeleteMany).toHaveBeenCalled();
       expect(mocks.relationshipDeleteMany).toHaveBeenCalled();
+
+      // Idle native app sessions are purged by the same job
+      expect(deleteIdleDeviceSessions).toHaveBeenCalledWith(expect.any(Date));
+      expect(body.purged.deviceSessions).toBe(0);
     });
 
     it('should clean up related data when purging persons', async () => {
