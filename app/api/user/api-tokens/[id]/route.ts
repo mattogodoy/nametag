@@ -16,5 +16,5 @@ export const DELETE = withAuth(
       return handleApiError(error, 'api-tokens-revoke');
     }
   },
-  { allowApiToken: false }
+  { allowApiTokens: false }
 );

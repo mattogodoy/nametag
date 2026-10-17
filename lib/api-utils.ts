@@ -6,6 +6,8 @@ import { logger, createModuleLogger } from './logger';
 import { validateOrigin } from '@/lib/csrf';
 import { runWithContext, updateContext } from '@/lib/logging/context';
 import { resolveApiToken } from '@/lib/api-tokens';
+import { resolveDeviceAccessToken } from '@/lib/native-auth/sessions';
+import { ACCESS_TOKEN_PREFIX } from '@/lib/native-auth/tokens';
 import {
   resolveTrustedClientIp,
   getRawTrustedProxyHeaderForLogging,
@@ -108,6 +110,13 @@ export const apiResponse = {
    */
   created: <T extends Record<string, unknown>>(data: T) =>
     NextResponse.json(data, { status: 201 }),
+
+  /**
+   * Return an error with a machine-readable code for native clients
+   * @example apiResponse.coded(401, 'session_expired', 'Session expired')
+   */
+  coded: (status: number, code: string, message: string) =>
+    NextResponse.json({ error: message, code }, { status }),
 
   /**
    * Return success message
@@ -228,6 +237,10 @@ export function normalizeEmail(email: string): string {
  */
 export interface AuthenticatedSession extends Session {
   user: Session['user'] & { id: string };
+  /** How this request authenticated. Absent only in legacy test doubles. */
+  authMethod?: 'session' | 'apiToken' | 'device';
+  /** Set when authMethod is 'device'. */
+  deviceSessionId?: string;
 }
 
 /**
@@ -354,33 +367,56 @@ export function withLogging<
  */
 export interface WithAuthOptions {
   /**
-   * Whether `Authorization: Bearer <token>` API-token auth is accepted on this
-   * route. Defaults to true. Set to false for sensitive routes that must only
-   * be reachable from an interactive (cookie) session, e.g. API-token
-   * management itself, to prevent a token from minting or revoking tokens.
+   * Whether personal API tokens (`ntag_`) are accepted on this route. Defaults
+   * to true. Set to false for sensitive routes that must not be reachable from
+   * a script's long-lived token, e.g. API-token management itself.
+   *
+   * Native app device sessions (`ntsa_`) are interactive sign-ins and are
+   * accepted regardless of this option.
    */
-  allowApiToken?: boolean;
+  allowApiTokens?: boolean;
 }
 
 export function withAuth(
   handler: AuthenticatedHandler,
   options: WithAuthOptions = {}
 ) {
-  const allowApiToken = options.allowApiToken !== false;
+  const allowApiTokens = options.allowApiTokens !== false;
 
   return withLogging(async (
     request: Request,
     context?: RouteContext
   ): Promise<Response | NextResponse> => {
-    // API-token (Bearer) auth path: for programmatic clients and MCP servers.
-    // Bearer tokens are not subject to CSRF, so the Origin check is skipped
-    // (a non-browser client has no Origin header to validate anyway).
-    const bearer = allowApiToken ? extractBearerToken(request) : null;
-    if (bearer) {
+    const bearer = extractBearerToken(request);
+
+    // Native app device session. Bearer auth is not subject to CSRF, so the
+    // Origin check is skipped.
+    if (bearer && bearer.startsWith(ACCESS_TOKEN_PREFIX)) {
+      const resolved = await resolveDeviceAccessToken(bearer);
+      if (resolved.status === 'expired') {
+        return apiResponse.coded(401, 'access_token_expired', 'Access token expired');
+      }
+      if (resolved.status === 'invalid') {
+        return apiResponse.coded(401, 'invalid_token', 'Invalid token');
+      }
+
+      updateContext({ userId: resolved.userId });
+
+      const deviceSession = {
+        user: { id: resolved.userId },
+        authMethod: 'device',
+        deviceSessionId: resolved.sessionId,
+      } as AuthenticatedSession;
+
+      return handler(request, deviceSession, context as RouteContext);
+    }
+
+    // Personal API token: for programmatic clients and MCP servers.
+    if (bearer && allowApiTokens) {
       const resolved = await resolveApiToken(bearer);
 
       if (!resolved) {
-        return apiResponse.unauthorized('Invalid or expired API token');
+        return apiResponse.coded(401, 'invalid_token', 'Invalid or expired API token');
       }
 
       // Read-only tokens may only perform safe (non-mutating) requests.
@@ -392,6 +428,7 @@ export function withAuth(
 
       const tokenSession = {
         user: { id: resolved.userId },
+        authMethod: 'apiToken',
       } as AuthenticatedSession;
 
       return handler(request, tokenSession, context as RouteContext);
@@ -410,6 +447,10 @@ export function withAuth(
 
     updateContext({ userId: session.user.id });
 
-    return handler(request, session as AuthenticatedSession, context as RouteContext);
+    return handler(
+      request,
+      { ...(session as AuthenticatedSession), authMethod: 'session' },
+      context as RouteContext
+    );
   });
 }

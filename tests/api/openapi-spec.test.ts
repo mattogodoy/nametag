@@ -65,14 +65,14 @@ describe('OpenAPI Specification', () => {
     // These accept either a browser session or a personal API token, which is
     // the default for withAuth. Routes that reject tokens list session alone;
     // tests/api/openapi-coverage.test.ts checks that against the route options.
-    const sessionOrToken = [{ session: [] }, { apiToken: [] }];
+    const sessionOrToken = [{ session: [] }, { deviceSession: [] }, { apiToken: [] }];
     expect(spec.paths['/api/dashboard/stats'].get.security).toEqual(sessionOrToken);
     expect(spec.paths['/api/relationships'].get.security).toEqual(sessionOrToken);
     expect(spec.paths['/api/user/profile'].get.security).toEqual(sessionOrToken);
   });
 
   it('should reject API tokens on credential and billing endpoints', () => {
-    const sessionOnly = [{ session: [] }];
+    const sessionOnly = [{ session: [] }, { deviceSession: [] }];
     expect(spec.paths['/api/user/api-tokens'].post.security).toEqual(sessionOnly);
     expect(spec.paths['/api/billing/checkout'].post.security).toEqual(sessionOnly);
     expect(spec.paths['/api/carddav/connection'].post.security).toEqual(sessionOnly);

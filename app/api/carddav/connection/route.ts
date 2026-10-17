@@ -125,7 +125,7 @@ export const POST = withAuth(async (request, session) => {
       { status: 500 }
     );
   }
-}, { allowApiToken: false });
+}, { allowApiTokens: false });
 
 export const PUT = withAuth(async (request, session) => {
   try {
@@ -252,7 +252,7 @@ export const PUT = withAuth(async (request, session) => {
       { status: 500 }
     );
   }
-}, { allowApiToken: false });
+}, { allowApiTokens: false });
 
 export const DELETE = withAuth(async (_request, session) => {
   try {
@@ -293,4 +293,4 @@ export const DELETE = withAuth(async (_request, session) => {
       { status: 500 }
     );
   }
-}, { allowApiToken: false });
+}, { allowApiTokens: false });

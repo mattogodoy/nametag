@@ -49,7 +49,7 @@ curl https://your-instance.example.com/api/server-info
 
 ## Authentication
 
-The API supports two authentication methods.
+The API supports three authentication methods.
 
 ### Session cookie
 
@@ -71,6 +71,17 @@ API tokens work on nearly every endpoint that accepts a session cookie. A few re
 - `/api/carddav/connection`, `/api/carddav/connection/test`, and `/api/carddav/backup`, which read or replace stored CardDAV credentials, and where the last two dial whatever host the caller supplies
 
 Requests to those with a bearer token return `401`. Each endpoint's accepted schemes are listed in the [OpenAPI spec](#interactive-docs), and see [API Tokens](/api/tokens/) for scopes, expiry, and full examples.
+
+### Native app session
+
+The Nametag mobile apps sign in with `POST /api/auth/native/login` and receive a one-hour access token (`ntsa_...`) and a refresh token (`ntsr_...`). The access token is sent like an API token:
+
+```bash
+curl https://your-instance.example.com/api/people \
+  -H "Authorization: Bearer ntsa_xxxxxxxx"
+```
+
+App sessions count as interactive sign-ins, so they are accepted on the endpoints that reject API tokens. Each signed-in app appears under **Settings > Security > Signed-in devices**, where it can be signed out. See [Native app sign-in](/api/native-auth/) for the full flow.
 
 ## Response format
 

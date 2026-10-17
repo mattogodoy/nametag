@@ -75,7 +75,7 @@ const routes: RouteFile[] = collectRouteFiles(API_ROOT).map((file) => {
       ),
     ],
     // Routes opted out of bearer-token auth via withAuth's options.
-    sessionOnly: /allowApiToken:\s*false/.test(source),
+    sessionOnly: /allowApiTokens:\s*false/.test(source),
   };
 });
 
@@ -145,9 +145,12 @@ describe('OpenAPI coverage', () => {
         const acceptsToken = security.some((scheme) => 'apiToken' in scheme);
         if (acceptsToken) {
           wrong.push(
-            `${method.toUpperCase()} ${route.path} uses allowApiToken: false ` +
+            `${method.toUpperCase()} ${route.path} uses allowApiTokens: false ` +
               'but the spec advertises apiToken'
           );
+        }
+        if (!security.some((scheme) => 'deviceSession' in scheme)) {
+          wrong.push(`${method.toUpperCase()} ${route.path} does not advertise deviceSession`);
         }
       }
     }
@@ -177,6 +180,9 @@ describe('OpenAPI coverage', () => {
             `${method.toUpperCase()} ${route.path} accepts API tokens but the ` +
               'spec only advertises session'
           );
+        }
+        if (!security.some((scheme) => 'deviceSession' in scheme)) {
+          wrong.push(`${method.toUpperCase()} ${route.path} does not advertise deviceSession`);
         }
       }
     }

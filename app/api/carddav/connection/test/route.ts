@@ -140,4 +140,4 @@ export const POST = withAuth(async (request, session) => {
       { status: 500 }
     );
   }
-}, { allowApiToken: false });
+}, { allowApiTokens: false });

@@ -316,7 +316,7 @@ describe('api-utils', () => {
       const request = new Request('http://localhost/api/test');
       const response = await wrappedHandler(request);
 
-      expect(handler).toHaveBeenCalledWith(request, mockSession, undefined);
+      expect(handler).toHaveBeenCalledWith(request, { ...mockSession, authMethod: 'session' }, undefined);
       expect(response.status).toBe(200);
     });
 
@@ -368,7 +368,7 @@ describe('api-utils', () => {
       const context = { params: Promise.resolve({ id: 'person-123' }) };
       await wrappedHandler(request, context);
 
-      expect(handler).toHaveBeenCalledWith(request, mockSession, context);
+      expect(handler).toHaveBeenCalledWith(request, { ...mockSession, authMethod: 'session' }, context);
     });
 
     it('should log request with withLogging', async () => {

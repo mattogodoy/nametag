@@ -3,17 +3,19 @@ import { z } from 'zod';
 export type JsonSchema = Record<string, unknown>;
 
 /**
- * Security for an endpoint reachable with either a browser session or a
- * personal API token. This is the default for authenticated endpoints: withAuth
- * accepts `Authorization: Bearer <token>` unless the route opts out.
+ * Security for an endpoint reachable with a browser session, a native app
+ * device session, or a personal API token. This is the default for
+ * authenticated endpoints: withAuth accepts all three unless the route opts out
+ * of API tokens.
  */
 export function sessionOrToken() {
-  return [{ session: [] }, { apiToken: [] }];
+  return [{ session: [] }, { deviceSession: [] }, { apiToken: [] }];
 }
 
 /**
- * Security for an endpoint that rejects bearer tokens, matching
- * `withAuth(handler, { allowApiToken: false })`.
+ * Security for an endpoint that rejects personal API tokens, matching
+ * `withAuth(handler, { allowApiTokens: false })`. Native app device sessions
+ * are interactive sign-ins and stay accepted.
  *
  * Used where a token must not be able to escalate its own reach: token
  * management, billing, and the CardDAV endpoints that read or replace stored
@@ -21,7 +23,7 @@ export function sessionOrToken() {
  * stays in step with the route options.
  */
 export function sessionOnly() {
-  return [{ session: [] }];
+  return [{ session: [] }, { deviceSession: [] }];
 }
 
 export function pathParam(name: string, description: string) {

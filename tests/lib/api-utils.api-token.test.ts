@@ -85,11 +85,11 @@ describe('withAuth — API token (Bearer) auth', () => {
     expect(res.status).toBe(403);
   });
 
-  it('ignores bearer auth when allowApiToken is false', async () => {
+  it('ignores bearer auth when allowApiTokens is false', async () => {
     vi.mocked(auth).mockResolvedValue(null as never);
     const handler = vi.fn();
 
-    const res = await withAuth(handler, { allowApiToken: false })(
+    const res = await withAuth(handler, { allowApiTokens: false })(
       makeRequest('GET', 'ntag_abc')
     );
 

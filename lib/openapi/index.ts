@@ -91,9 +91,18 @@ export function generateOpenAPISpec(): OpenAPISpec {
             'Per-user personal API token sent as `Authorization: Bearer <token>`. ' +
             'Created and revoked in Settings → API Tokens. Read-only (`READ`) tokens are ' +
             'restricted to GET, HEAD, and OPTIONS; a write attempt returns 403. ' +
-            'Each endpoint lists the schemes it accepts: those showing only `session` ' +
-            'reject bearer tokens outright, which covers token management, billing, and ' +
+            'Each endpoint lists the schemes it accepts: those showing only `session` and `deviceSession` ' +
+            'reject API tokens outright, which covers token management, billing, and ' +
             'the CardDAV endpoints that read or replace stored server credentials.',
+        },
+        deviceSession: {
+          type: 'http',
+          scheme: 'bearer',
+          description:
+            'Native app access token (`ntsa_` prefix) sent as `Authorization: Bearer <token>`. ' +
+            'Obtained from POST /api/auth/native/login, valid for one hour, renewed with ' +
+            'POST /api/auth/native/refresh. A 401 with code `access_token_expired` means refresh ' +
+            'and retry. Accepted everywhere a browser session is.',
         },
       },
       schemas: sharedSchemas(),
