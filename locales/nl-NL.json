@@ -1845,6 +1845,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Ongeldig e-mailadres of wachtwoord",
+      "signInFailed": "Inloggen is niet gelukt. Probeer het opnieuw.",
       "emailNotVerified": "Verifieer uw e-mail voordat u inlogt",
       "accountLocked": "Account vergrendeld vanwege te veel mislukte inlogpogingen. Neem contact op met ondersteuning.",
       "sessionExpired": "Uw sessie is verlopen. Log opnieuw in.",
@@ -2178,6 +2179,12 @@
       "iosStep3": "Tik op «Voeg toe»",
       "dismiss": "Niet nu",
       "unsupported": "Je browser kan de app misschien installeren via het eigen menu. Zoek naar «Zet op beginscherm», «Installeren» of «Voeg toe aan Dock»."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Inloglink verlopen",
+      "body": "Deze inloglink is verlopen. Ga terug naar de app en probeer het opnieuw."
     }
   }
 }

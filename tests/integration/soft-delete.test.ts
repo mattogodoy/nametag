@@ -75,6 +75,8 @@ const mockEnv = vi.hoisted(() => ({
 // Mock Prisma
 const deleteIdleDeviceSessions = vi.hoisted(() => vi.fn().mockResolvedValue(3));
 vi.mock('../../lib/native-auth/sessions', () => ({ deleteIdleDeviceSessions }));
+const deleteExpiredNativeAuthCodes = vi.hoisted(() => vi.fn().mockResolvedValue(4));
+vi.mock('../../lib/native-auth/codes', () => ({ deleteExpiredNativeAuthCodes }));
 
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -659,6 +661,10 @@ describe('Soft Delete Integration', () => {
       // Idle native app sessions are purged by the same job
       expect(deleteIdleDeviceSessions).toHaveBeenCalledWith(expect.any(Date));
       expect(body.purged.deviceSessions).toBe(3);
+
+      // Expired single-use sign-in codes are purged by the same job
+      expect(deleteExpiredNativeAuthCodes).toHaveBeenCalledWith(expect.any(Date));
+      expect(body.purged.nativeAuthCodes).toBe(4);
     });
 
     it('should clean up related data when purging persons', async () => {

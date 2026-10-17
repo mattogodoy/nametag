@@ -58,6 +58,7 @@ model User {
   pushSubscriptions     PushSubscription[]
   apiTokens             ApiToken[]
   deviceSessions        DeviceSession[]
+  nativeAuthCodes       NativeAuthCode[]
   sessionsInvalidatedAt DateTime? // Set on password change or reset; web JWTs issued before it are rejected
   cardDavConnection     CardDavConnection?
   cardDavPendingImports CardDavPendingImport[]
@@ -638,6 +639,25 @@ model DeviceSession {
   @@index([userId])
   @@index([idleExpiresAt])
   @@map("device_sessions")
+}
+
+// NativeAuthCode Model - Single-use code handed from the browser sign-in sheet
+// back to a native app. Exchanged once with the PKCE verifier, then deleted.
+model NativeAuthCode {
+  id            String         @id @default(cuid())
+  userId        String
+  codeHash      String         @unique // SHA-256 of the code
+  codeChallenge String         // BASE64URL(SHA256(code_verifier))
+  deviceName    String
+  platform      DevicePlatform
+  appVersion    String
+  expiresAt     DateTime       // createdAt + 60 seconds
+  createdAt     DateTime       @default(now())
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("native_auth_codes")
 }
 
 // ============================================

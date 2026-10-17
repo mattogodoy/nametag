@@ -1845,6 +1845,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Ugyldig e-post eller passord",
+      "signInFailed": "Innloggingen mislyktes. Prøv igjen.",
       "emailNotVerified": "Bekreft e-posten din før du logger inn",
       "accountLocked": "Kontoen er låst på grunn av flere mislykkede innloggingsforsøk. Kontakt kundestøtte.",
       "sessionExpired": "Økten din har utløpt. Logg inn på nytt.",
@@ -2178,6 +2179,12 @@
       "iosStep3": "Trykk «Legg til»",
       "dismiss": "Ikke nå",
       "unsupported": "Nettleseren din kan kanskje installere appen fra sin egen meny. Se etter Legg til på Hjem-skjerm, Installer eller Legg til i Dock."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Innloggingslenken er utløpt",
+      "body": "Denne innloggingslenken er utløpt. Gå tilbake til appen og prøv igjen."
     }
   }
 }

@@ -36,6 +36,8 @@ All three connection variables, `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, and `OIDC_C
 
 `OIDC_DISPLAY_NAME` controls the label shown on the login button (defaults to "SSO") so it can read "Continue with Authentik" or whatever fits your setup.
 
+The Nametag mobile apps sign in through the same OIDC client. You don't need to register another client or redirect URL for them.
+
 ### Account behavior
 
 - On first OIDC login, Nametag creates an account automatically using the email and name your provider returns

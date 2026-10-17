@@ -1845,6 +1845,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Email o password non validi",
+      "signInFailed": "Accesso non riuscito. Riprova.",
       "emailNotVerified": "Verifica la tua email prima di accedere",
       "accountLocked": "Account bloccato a causa di troppi tentativi di accesso falliti. Contatta il supporto.",
       "sessionExpired": "La tua sessione è scaduta. Accedi di nuovo.",
@@ -2178,6 +2179,12 @@
       "iosStep3": "Tocca «Aggiungi»",
       "dismiss": "Non ora",
       "unsupported": "Il tuo browser potrebbe consentire l'installazione dal suo menu. Cerca «Aggiungi a Home», «Installa» o «Aggiungi al Dock»."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Link di accesso scaduto",
+      "body": "Questo link di accesso è scaduto. Torna all'app e riprova."
     }
   }
 }

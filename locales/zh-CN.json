@@ -1845,6 +1845,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "无效的邮箱或密码",
+      "signInFailed": "登录失败，请重试。",
       "emailNotVerified": "请在登录前验证您的邮箱",
       "accountLocked": "由于登录尝试失败多次，账户已被锁定。请联系支持团队。",
       "sessionExpired": "您的会话已过期。请重新登录。",
@@ -2178,6 +2179,12 @@
       "iosStep3": "点按“添加”",
       "dismiss": "暂不",
       "unsupported": "你的浏览器可能支持从自身菜单安装。请查找“添加到主屏幕”“安装”或“添加到程序坞”。"
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "登录链接已过期",
+      "body": "此登录链接已过期。请返回应用后重试。"
     }
   }
 }

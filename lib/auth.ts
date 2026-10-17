@@ -130,7 +130,8 @@ export async function authorizeCredentials(credentials: {
   };
 }
 
-async function handleOAuthSignIn(
+// Exported for unit tests.
+export async function handleOAuthSignIn(
   user: User,
   account: Account,
   profile: Profile,
@@ -150,6 +151,8 @@ async function handleOAuthSignIn(
       { event: 'auth.login.failed', reason: 'email_not_verified', provider: account.provider },
       'OIDC login rejected: provider did not verify email',
     );
+    const { recordNativeAuthFailure } = await import('@/lib/native-auth/browser-cookie');
+    await recordNativeAuthFailure('email_not_verified');
     throw new Error('OIDC_EMAIL_NOT_VERIFIED');
   }
 
@@ -177,6 +180,8 @@ async function handleOAuthSignIn(
         { event: 'auth.login.failed', reason: 'provider_mismatch', email, existingProvider: existingUser.provider },
         'OAuth login rejected: account already linked to a different provider',
       );
+      const { recordNativeAuthFailure } = await import('@/lib/native-auth/browser-cookie');
+      await recordNativeAuthFailure('account_linked_elsewhere');
       throw new Error('ACCOUNT_LINKED_TO_DIFFERENT_PROVIDER');
     }
     user.id = existingUser.id;
@@ -365,6 +370,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   pages: {
     signIn: '/login',
+    // Sign-in rejections land on /login too, so native sign-ins can be reported.
+    error: '/login',
   },
   session: {
     strategy: 'jwt',
