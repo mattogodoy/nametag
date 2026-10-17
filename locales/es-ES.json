@@ -293,7 +293,27 @@
       "errorValidation": "Por favor, corrige los errores a continuación",
       "errorUpdate": "Error al cambiar la contraseña",
       "errorConnection": "No se puede conectar al servidor. Por favor, verifica tu conexión e inténtalo de nuevo.",
-      "successUpdate": "Contraseña cambiada correctamente"
+      "successUpdate": "Contraseña cambiada correctamente",
+      "devices": {
+        "title": "Dispositivos conectados",
+        "description": "Apps de Nametag con tu cuenta iniciada. Cierra la sesión de cualquier dispositivo que no reconozcas.",
+        "empty": "No hay ninguna app conectada. Cuando inicies sesión en la app de Nametag en un teléfono, aparecerá aquí.",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "Versión {version}",
+        "lastUsed": "Último uso: {date}",
+        "signedIn": "Conectado el {date}",
+        "signOut": "Cerrar sesión",
+        "signOutAll": "Cerrar sesión en todos los dispositivos",
+        "confirmSignOutTitle": "¿Cerrar sesión en {name}?",
+        "confirmSignOutBody": "La app de este dispositivo tendrá que volver a iniciar sesión.",
+        "confirmSignOutAllTitle": "¿Cerrar sesión en todos los dispositivos?",
+        "confirmSignOutAllBody": "Todas las apps de Nametag con tu cuenta tendrán que volver a iniciar sesión.",
+        "cancel": "Cancelar",
+        "signingOut": "Cerrando sesión...",
+        "loadError": "No se pudieron cargar tus dispositivos. Inténtalo más tarde.",
+        "signOutError": "No se pudo cerrar la sesión de ese dispositivo. Inténtalo de nuevo."
+      }
     },
     "carddav": {
       "title": "Sincronización CardDAV",

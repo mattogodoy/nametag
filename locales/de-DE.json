@@ -293,7 +293,27 @@
       "errorValidation": "Bitte behebe die untenstehenden Fehler",
       "errorUpdate": "Passwort konnte nicht geändert werden",
       "errorConnection": "Verbindung zum Server nicht möglich. Bitte prüfe deine Verbindung und versuche es erneut.",
-      "successUpdate": "Passwort erfolgreich geändert"
+      "successUpdate": "Passwort erfolgreich geändert",
+      "devices": {
+        "title": "Angemeldete Geräte",
+        "description": "Nametag-Apps, die bei deinem Konto angemeldet sind. Melde jedes Gerät ab, das du nicht kennst.",
+        "empty": "Keine App ist angemeldet. Wenn du dich in der Nametag-App auf einem Telefon anmeldest, erscheint sie hier.",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "Version {version}",
+        "lastUsed": "Zuletzt verwendet: {date}",
+        "signedIn": "Angemeldet am {date}",
+        "signOut": "Abmelden",
+        "signOutAll": "Alle Geräte abmelden",
+        "confirmSignOutTitle": "{name} abmelden?",
+        "confirmSignOutBody": "Die App auf diesem Gerät muss sich erneut anmelden.",
+        "confirmSignOutAllTitle": "Alle Geräte abmelden?",
+        "confirmSignOutAllBody": "Jede bei deinem Konto angemeldete Nametag-App muss sich erneut anmelden.",
+        "cancel": "Abbrechen",
+        "signingOut": "Abmelden...",
+        "loadError": "Deine Geräte konnten nicht geladen werden. Versuche es später erneut.",
+        "signOutError": "Dieses Gerät konnte nicht abgemeldet werden. Versuche es erneut."
+      }
     },
     "carddav": {
       "title": "CardDAV-Synchronisation",

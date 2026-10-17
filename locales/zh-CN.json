@@ -293,7 +293,27 @@
       "errorValidation": "请修复下面的错误",
       "errorUpdate": "更改密码失败",
       "errorConnection": "无法连接到服务器。请检查您的连接并重试。",
-      "successUpdate": "密码已成功更改"
+      "successUpdate": "密码已成功更改",
+      "devices": {
+        "title": "已登录的设备",
+        "description": "已登录你账户的 Nametag 应用。请退出你不认识的任何设备。",
+        "empty": "没有已登录的应用。当你在手机上登录 Nametag 应用后，它会显示在这里。",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "版本 {version}",
+        "lastUsed": "最近使用:{date}",
+        "signedIn": "登录于 {date}",
+        "signOut": "退出登录",
+        "signOutAll": "退出所有设备",
+        "confirmSignOutTitle": "退出 {name}?",
+        "confirmSignOutBody": "此设备上的应用需要重新登录。",
+        "confirmSignOutAllTitle": "退出所有设备?",
+        "confirmSignOutAllBody": "所有已登录你账户的 Nametag 应用都需要重新登录。",
+        "cancel": "取消",
+        "signingOut": "正在退出...",
+        "loadError": "无法加载你的设备。请稍后再试。",
+        "signOutError": "无法退出该设备。请重试。"
+      }
     },
     "carddav": {
       "title": "CardDAV 同步",

@@ -293,7 +293,27 @@
       "errorValidation": "以下のエラーを修正してください",
       "errorUpdate": "パスワードの変更に失敗しました",
       "errorConnection": "サーバーに接続できません。接続を確認してもう一度お試しください。",
-      "successUpdate": "パスワードが正常に変更されました"
+      "successUpdate": "パスワードが正常に変更されました",
+      "devices": {
+        "title": "ログイン中のデバイス",
+        "description": "アカウントにログインしている Nametag アプリです。見覚えのないデバイスはログアウトしてください。",
+        "empty": "ログイン中のアプリはありません。スマートフォンで Nametag アプリにログインすると、ここに表示されます。",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "バージョン {version}",
+        "lastUsed": "最終使用: {date}",
+        "signedIn": "ログイン日: {date}",
+        "signOut": "ログアウト",
+        "signOutAll": "すべてのデバイスをログアウト",
+        "confirmSignOutTitle": "{name} をログアウトしますか?",
+        "confirmSignOutBody": "このデバイスのアプリは、再度ログインが必要になります。",
+        "confirmSignOutAllTitle": "すべてのデバイスをログアウトしますか?",
+        "confirmSignOutAllBody": "アカウントにログインしているすべての Nametag アプリで、再度ログインが必要になります。",
+        "cancel": "キャンセル",
+        "signingOut": "ログアウトしています...",
+        "loadError": "デバイスを読み込めませんでした。後でもう一度お試しください。",
+        "signOutError": "そのデバイスをログアウトできませんでした。もう一度お試しください。"
+      }
     },
     "carddav": {
       "title": "CardDAV同期",

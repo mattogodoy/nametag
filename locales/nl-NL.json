@@ -293,7 +293,27 @@
       "errorValidation": "Corrigeer de fouten hieronder",
       "errorUpdate": "Wachtwoord wijzigen mislukt",
       "errorConnection": "Kan geen verbinding maken met de server. Controleer uw verbinding en probeer het opnieuw.",
-      "successUpdate": "Wachtwoord succesvol gewijzigd"
+      "successUpdate": "Wachtwoord succesvol gewijzigd",
+      "devices": {
+        "title": "Ingelogde apparaten",
+        "description": "Nametag-apps die zijn ingelogd op je account. Log elk apparaat uit dat je niet herkent.",
+        "empty": "Er zijn geen apps ingelogd. Als je inlogt in de Nametag-app op een telefoon, verschijnt die hier.",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "Versie {version}",
+        "lastUsed": "Laatst gebruikt: {date}",
+        "signedIn": "Ingelogd op {date}",
+        "signOut": "Uitloggen",
+        "signOutAll": "Alle apparaten uitloggen",
+        "confirmSignOutTitle": "{name} uitloggen?",
+        "confirmSignOutBody": "De app op dit apparaat moet opnieuw inloggen.",
+        "confirmSignOutAllTitle": "Alle apparaten uitloggen?",
+        "confirmSignOutAllBody": "Elke Nametag-app die is ingelogd op je account moet opnieuw inloggen.",
+        "cancel": "Annuleren",
+        "signingOut": "Uitloggen...",
+        "loadError": "Je apparaten konden niet worden geladen. Probeer het later opnieuw.",
+        "signOutError": "Dat apparaat kon niet worden uitgelogd. Probeer het opnieuw."
+      }
     },
     "carddav": {
       "title": "CardDAV Synchronisatie",

@@ -293,7 +293,27 @@
       "errorValidation": "Rett opp feilene nedenfor",
       "errorUpdate": "Feil ved endring av passord",
       "errorConnection": "Kan ikke koble til serveren. Kontroller tilkoblingen din og prøv igjen.",
-      "successUpdate": "Passordet ble endret"
+      "successUpdate": "Passordet ble endret",
+      "devices": {
+        "title": "Påloggede enheter",
+        "description": "Nametag-apper som er logget inn på kontoen din. Logg ut alle enheter du ikke kjenner igjen.",
+        "empty": "Ingen apper er logget inn. Når du logger inn i Nametag-appen på en telefon, vises den her.",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "Versjon {version}",
+        "lastUsed": "Sist brukt {date}",
+        "signedIn": "Logget inn {date}",
+        "signOut": "Logg ut",
+        "signOutAll": "Logg ut alle enheter",
+        "confirmSignOutTitle": "Logge ut {name}?",
+        "confirmSignOutBody": "Appen på denne enheten må logge inn på nytt.",
+        "confirmSignOutAllTitle": "Logge ut alle enheter?",
+        "confirmSignOutAllBody": "Alle Nametag-apper som er logget inn på kontoen din må logge inn på nytt.",
+        "cancel": "Avbryt",
+        "signingOut": "Logger ut...",
+        "loadError": "Kunne ikke laste enhetene dine. Prøv igjen senere.",
+        "signOutError": "Kunne ikke logge ut den enheten. Prøv igjen."
+      }
     },
     "carddav": {
       "title": "CardDAV-synkronisering",

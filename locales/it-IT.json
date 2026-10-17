@@ -293,7 +293,27 @@
       "errorValidation": "Correggi gli errori qui sotto",
       "errorUpdate": "Cambio password fallito",
       "errorConnection": "Impossibile connettersi al server. Verifica la connessione e riprova.",
-      "successUpdate": "Password cambiata con successo"
+      "successUpdate": "Password cambiata con successo",
+      "devices": {
+        "title": "Dispositivi connessi",
+        "description": "App di Nametag connesse al tuo account. Disconnetti qualsiasi dispositivo che non riconosci.",
+        "empty": "Nessuna app è connessa. Quando accedi all'app di Nametag su un telefono, comparirà qui.",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "Versione {version}",
+        "lastUsed": "Ultimo utilizzo: {date}",
+        "signedIn": "Accesso effettuato il {date}",
+        "signOut": "Esci",
+        "signOutAll": "Disconnetti tutti i dispositivi",
+        "confirmSignOutTitle": "Disconnettere {name}?",
+        "confirmSignOutBody": "L'app su questo dispositivo dovrà accedere di nuovo.",
+        "confirmSignOutAllTitle": "Disconnettere tutti i dispositivi?",
+        "confirmSignOutAllBody": "Ogni app di Nametag connessa al tuo account dovrà accedere di nuovo.",
+        "cancel": "Annulla",
+        "signingOut": "Disconnessione...",
+        "loadError": "Impossibile caricare i tuoi dispositivi. Riprova più tardi.",
+        "signOutError": "Impossibile disconnettere quel dispositivo. Riprova."
+      }
     },
     "carddav": {
       "title": "Sincronizzazione CardDAV",

@@ -293,7 +293,27 @@
       "errorValidation": "Please fix the errors below",
       "errorUpdate": "Failed to change password",
       "errorConnection": "Unable to connect to server. Please check your connection and try again.",
-      "successUpdate": "Password changed successfully"
+      "successUpdate": "Password changed successfully",
+      "devices": {
+        "title": "Signed-in devices",
+        "description": "Nametag apps signed in to your account. Sign out any device you don't recognize.",
+        "empty": "No apps are signed in. When you sign in to the Nametag app on a phone, it will show up here.",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "Version {version}",
+        "lastUsed": "Last used {date}",
+        "signedIn": "Signed in {date}",
+        "signOut": "Sign out",
+        "signOutAll": "Sign out all devices",
+        "confirmSignOutTitle": "Sign out {name}?",
+        "confirmSignOutBody": "The app on this device will need to sign in again.",
+        "confirmSignOutAllTitle": "Sign out all devices?",
+        "confirmSignOutAllBody": "Every Nametag app signed in to your account will need to sign in again.",
+        "cancel": "Cancel",
+        "signingOut": "Signing out...",
+        "loadError": "Couldn't load your devices. Try again later.",
+        "signOutError": "Couldn't sign out that device. Try again."
+      }
     },
     "carddav": {
       "title": "CardDAV Sync",

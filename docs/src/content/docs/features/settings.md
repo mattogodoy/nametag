@@ -42,7 +42,15 @@ If the instance has no email delivery configured (no SMTP or Resend, see [Email]
 
 ## Security
 
+### Changing your password
+
 Change your password. You'll need to enter your current password to confirm the change. Changing your password (or resetting it by email) signs you out on every other browser and device, including the mobile app. The browser you changed it in stays signed in.
+
+### Signed-in devices
+
+Every Nametag app you sign in to on a phone shows up here, with its platform, app version, when it was last used and when it signed in. Use **Sign out** next to a device you don't recognize, or **Sign out all devices** to sign out every app at once. The app on that device will need to sign in again.
+
+Browser sessions aren't listed here.
 
 ## CardDAV
 
