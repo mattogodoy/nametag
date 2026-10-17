@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.65.0](https://github.com/mattogodoy/nametag/compare/v0.64.1...v0.65.0) (2026-10-17)
+
+
+### Features
+
+* **api:** add server info endpoint for native clients ([#486](https://github.com/mattogodoy/nametag/issues/486)) ([4b53405](https://github.com/mattogodoy/nametag/commit/4b53405c9af06663b6a989c2710636bcab1e5d74))
+* **auth:** native app sessions and signed-in devices ([#488](https://github.com/mattogodoy/nametag/issues/488)) ([c138307](https://github.com/mattogodoy/nametag/commit/c138307cff8c7d22e649330422bd4fa588893483))
+
 ## [0.64.1](https://github.com/mattogodoy/nametag/compare/v0.64.0...v0.64.1) (2026-10-16)
 
 
