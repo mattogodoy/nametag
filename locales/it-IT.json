@@ -303,7 +303,7 @@
         "version": "Versione {version}",
         "lastUsed": "Ultimo utilizzo: {date}",
         "signedIn": "Accesso effettuato il {date}",
-        "signOut": "Esci",
+        "signOut": "Disconnetti",
         "signOutAll": "Disconnetti tutti i dispositivi",
         "confirmSignOutTitle": "Disconnettere {name}?",
         "confirmSignOutBody": "L'app su questo dispositivo dovrà accedere di nuovo.",

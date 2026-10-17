@@ -310,7 +310,7 @@
         "confirmSignOutAllTitle": "Alle Geräte abmelden?",
         "confirmSignOutAllBody": "Jede bei deinem Konto angemeldete Nametag-App muss sich erneut anmelden.",
         "cancel": "Abbrechen",
-        "signingOut": "Abmelden...",
+        "signingOut": "Wird abgemeldet...",
         "loadError": "Deine Geräte konnten nicht geladen werden. Versuche es später erneut.",
         "signOutError": "Dieses Gerät konnte nicht abgemeldet werden. Versuche es erneut."
       }

@@ -2,20 +2,23 @@ import { test, expect, type Page } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import 'dotenv/config';
 
 /**
  * E2E Test: Signed-in devices and sign-out-everywhere on password change.
  *
- * The demo user's credentials are the seeded ones used by every other e2e
- * spec. The form cannot restore "password123" (it fails the strength rules),
- * so the original hash is written back through the database afterwards.
+ * Runs as its own throwaway user. Changing a password signs out every session
+ * of that account, so using the shared demo user would break every other spec
+ * that is logged in as it in parallel.
  */
-const TEST_EMAIL = 'demo@nametag.one';
-const TEST_PASSWORD = 'password123';
+const RUN_ID = Date.now();
+const TEST_EMAIL = `e2e-devices-${RUN_ID}@example.com`;
+// Random per run and shaped to satisfy the password rules.
+const TEST_PASSWORD = `Aa1!${randomBytes(8).toString('hex')}`;
+const CHANGED_PASSWORD = `Bb2@${randomBytes(8).toString('hex')}`;
 // Unique per run so leftovers from an aborted run never collide.
-const DEVICE_NAME = `E2E Phone ${Date.now()}`;
-const CHANGED_PASSWORD = 'ChangedPassword123!';
+const DEVICE_NAME = `E2E Phone ${RUN_ID}`;
 
 function connectionString(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -24,38 +27,34 @@ function connectionString(): string {
   return `postgresql://${DB_USER}${password}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
 }
 
-let originalLanguage: string | null = null;
-
 // A bare client, not lib/prisma: the soft-delete extension and env
 // validation are not needed here and the spec runs outside the app.
 function createClient(): PrismaClient {
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: connectionString() }) });
 }
 
-// Login applies the user's saved language, so pin it to English for the
-// label assertions and put the previous value back afterwards.
-async function useEnglish(): Promise<void> {
+async function createTestUser(): Promise<void> {
   const db = createClient();
   try {
-    const user = await db.user.findUnique({
-      where: { email: TEST_EMAIL },
-      select: { language: true },
+    await db.user.create({
+      data: {
+        email: TEST_EMAIL,
+        password: await bcrypt.hash(TEST_PASSWORD, 10),
+        name: 'E2E Devices',
+        emailVerified: true,
+        language: 'en',
+      },
     });
-    originalLanguage = user?.language ?? null;
-    await db.user.update({ where: { email: TEST_EMAIL }, data: { language: 'en' } });
   } finally {
     await db.$disconnect();
   }
 }
 
-async function restoreUser(): Promise<void> {
+// Cascades to the user's native app sessions.
+async function deleteTestUser(): Promise<void> {
   const db = createClient();
   try {
-    const password = await bcrypt.hash(TEST_PASSWORD, 10);
-    await db.user.update({
-      where: { email: TEST_EMAIL },
-      data: { password, language: originalLanguage ?? 'en' },
-    });
+    await db.user.deleteMany({ where: { email: TEST_EMAIL } });
   } finally {
     await db.$disconnect();
   }
@@ -77,11 +76,11 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('Signed-in devices', () => {
   test.beforeAll(async () => {
-    await useEnglish();
+    await createTestUser();
   });
 
   test.afterAll(async () => {
-    await restoreUser();
+    await deleteTestUser();
   });
 
   test('lists, revokes, and signs out everywhere on password change', async ({
@@ -120,6 +119,8 @@ test.describe('Signed-in devices', () => {
     const otherContext = await browser.newContext({ locale: 'en-US' });
     const otherPage = await otherContext.newPage();
     await signIn(otherPage, TEST_PASSWORD);
+    const staleCookies = await otherContext.cookies();
+    expect(staleCookies.some((c) => c.name.includes('session-token'))).toBe(true);
 
     // 5. Change the password in the first browser; it stays signed in.
     await page.fill('input[id="currentPassword"]', TEST_PASSWORD);
@@ -130,12 +131,21 @@ test.describe('Signed-in devices', () => {
     await page.reload();
     await expect(page).toHaveURL(/\/settings\/security/);
 
-    // 6. The other browser is signed out. Two requests in a row: the second
-    // one covers a session cookie that NextAuth re-encoded after the first.
+    // 6. The other browser is signed out.
     await otherPage.goto('/settings/security');
     await expect(otherPage).toHaveURL(/\/login/, { timeout: 10000 });
-    await otherPage.goto('/settings/security');
-    await expect(otherPage).toHaveURL(/\/login/, { timeout: 10000 });
+
+    // Replay the ORIGINAL cookie, captured before the change, in a fresh
+    // context. NextAuth clears the cookie on the first rejection above, so
+    // this is the check that the stale token itself is refused.
+    const replayContext = await browser.newContext({ locale: 'en-US' });
+    await replayContext.addCookies(staleCookies);
+    const replayPage = await replayContext.newPage();
+    const replayPeople = await replayPage.request.get('/api/people');
+    expect(replayPeople.status()).toBe(401);
+    await replayPage.goto('/dashboard');
+    await expect(replayPage).toHaveURL(/\/login/, { timeout: 10000 });
+    await replayContext.close();
     await otherContext.close();
   });
 });
