@@ -27,5 +27,6 @@ declare module 'next-auth/jwt' {
     nickname: string | null;
     photo: string | null;
     jti?: string; // JWT ID for token blacklist tracking
+    authTime?: number; // Sign-in time in seconds, stable across JWT re-encoding
   }
 }

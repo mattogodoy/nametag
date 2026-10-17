@@ -304,9 +304,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // fresh one with a new iat. Skipped on sign-in, when `user` is present.
       if (!user) {
         const { shouldRejectJwt } = await import('@/lib/session-invalidation');
-        if (await shouldRejectJwt(token)) {
+        // authTime is stable across re-encoding; iat is not. Legacy tokens
+        // without it fall back to iat, and get it persisted below.
+        const authTime = token.authTime ?? (typeof token.iat === 'number' ? token.iat : undefined);
+        if (await shouldRejectJwt({ id: token.id, iat: token.iat, authTime })) {
           return null;
         }
+        token.authTime = authTime ?? Math.floor(Date.now() / 1000);
       }
       if (user) {
         token.id = user.id;
@@ -315,6 +319,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.nickname = user.nickname;
         token.email = user.email;
         token.photo = user.photo;
+        token.authTime = Math.floor(Date.now() / 1000);
       }
       // Ensure jti exists for blacklist tracking (even on existing sessions)
       if (!token.jti) {

@@ -29,14 +29,18 @@ async function writeCache(userId: string, value: number | null): Promise<void> {
 }
 
 async function readCache(userId: string): Promise<{ hit: boolean; value: number | null }> {
+  // Redis is the shared source of truth when available: a miss there means
+  // "read the database", since local memory can be staler than the database.
+  // Memory is only used when Redis is unavailable or its call throws.
   try {
     if (isRedisConnected()) {
       const redis = getRedis();
       if (redis) {
         const raw = await redis.get(cacheKey(userId));
-        if (raw !== null) {
-          return { hit: true, value: raw === NEVER ? null : Number(raw) };
+        if (raw === null) {
+          return { hit: false, value: null };
         }
+        return { hit: true, value: raw === NEVER ? null : Number(raw) };
       }
     }
   } catch (error) {
@@ -85,9 +89,9 @@ export async function getSessionsInvalidatedAt(userId: string): Promise<Date | n
 }
 
 /**
- * JWT `iat` is in whole seconds, so compare at second precision: a token
- * issued in the same second as the change (the re-sign-in right after it) is
- * accepted.
+ * Receives the token's sign-in time in whole seconds (the `authTime` claim,
+ * or `iat` for legacy tokens). Compared at second precision: a sign-in in the
+ * same second as the change (the re-sign-in right after it) is accepted.
  */
 export function isIssuedBeforeCutoff(iat: number | undefined, cutoff: Date | null): boolean {
   if (cutoff === null) {
@@ -104,13 +108,33 @@ export function __resetSessionInvalidationCacheForTests(): void {
 }
 
 /**
- * For the NextAuth jwt callback: true when an existing token was issued
- * before the user's last password change and must be rejected.
+ * For the NextAuth jwt callback: true when an existing token was signed in
+ * before the user's last password change and must be rejected. Uses the
+ * stable `authTime` claim, because NextAuth re-encodes the JWT with a fresh
+ * `iat` on refresh; falls back to `iat` for legacy tokens without it.
+ * Fails open (with a warning) if the cut-off cannot be read.
  */
-export async function shouldRejectJwt(token: { id?: unknown; iat?: unknown }): Promise<boolean> {
+export async function shouldRejectJwt(token: {
+  id?: unknown;
+  iat?: unknown;
+  authTime?: unknown;
+}): Promise<boolean> {
   if (typeof token.id !== 'string') {
     return false;
   }
-  const iat = typeof token.iat === 'number' ? token.iat : undefined;
-  return isIssuedBeforeCutoff(iat, await getSessionsInvalidatedAt(token.id));
+  const signedInAt =
+    typeof token.authTime === 'number'
+      ? token.authTime
+      : typeof token.iat === 'number'
+        ? token.iat
+        : undefined;
+  try {
+    return isIssuedBeforeCutoff(signedInAt, await getSessionsInvalidatedAt(token.id));
+  } catch (error) {
+    log.warn(
+      { err: error as Error, event: 'auth.sessions_invalidated_check_failed', userId: token.id },
+      'Could not check the session cut-off, allowing the token'
+    );
+    return false;
+  }
 }
