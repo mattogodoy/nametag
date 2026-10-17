@@ -202,9 +202,19 @@ describe('device sessions', () => {
         refreshDeviceSession(issued.refreshToken, at(1000)),
         refreshDeviceSession(issued.refreshToken, at(1000)),
       ]);
-      expect(a.status).toBe('ok');
-      expect(b.status).toBe('ok');
+      if (a.status !== 'ok' || b.status !== 'ok') throw new Error('expected both ok');
       expect(db.rows).toHaveLength(1);
+
+      // Clients must single-flight refreshes: the loser's retry rotates again, so only one returned pair stays valid.
+      const accessStatuses = [
+        (await resolveDeviceAccessToken(a.session.accessToken, at(1001))).status,
+        (await resolveDeviceAccessToken(b.session.accessToken, at(1001))).status,
+      ];
+      expect([...accessStatuses].sort()).toEqual(['invalid', 'ok']);
+
+      const [live, dead] = accessStatuses[0] === 'ok' ? [a, b] : [b, a];
+      expect((await refreshDeviceSession(dead.session.refreshToken, at(1002))).status).toBe('expired');
+      expect((await refreshDeviceSession(live.session.refreshToken, at(1003))).status).toBe('ok');
     });
   });
 
