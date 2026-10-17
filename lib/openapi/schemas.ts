@@ -1,5 +1,28 @@
 export function sharedSchemas(): Record<string, unknown> {
   return {
+    CodedError: {
+      type: 'object',
+      properties: {
+        error: { type: 'string', description: 'English message for logs and scripts' },
+        code: { type: 'string', description: 'Stable machine-readable error code' },
+      },
+      required: ['error', 'code'],
+    },
+    NativeSession: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string', example: 'ntsa_…' },
+        accessTokenExpiresAt: { type: 'string', format: 'date-time' },
+        refreshToken: { type: 'string', example: 'ntsr_…' },
+        sessionId: { type: 'string' },
+        user: {
+          type: 'object',
+          properties: { id: { type: 'string' }, email: { type: 'string' }, name: { type: 'string' } },
+          required: ['id', 'email', 'name'],
+        },
+      },
+      required: ['accessToken', 'accessTokenExpiresAt', 'refreshToken', 'sessionId', 'user'],
+    },
     Error: {
       type: 'object',
       properties: {

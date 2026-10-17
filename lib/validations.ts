@@ -411,6 +411,22 @@ export const updatePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+export const nativeDeviceSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  platform: z.enum(['IOS', 'ANDROID']),
+  appVersion: z.string().trim().min(1).max(32),
+});
+
+export const nativeLoginSchema = z.object({
+  email: z.string().trim().min(1).max(254),
+  password: z.string().min(1).max(1024),
+  device: nativeDeviceSchema,
+});
+
+export const nativeRefreshSchema = z.object({
+  refreshToken: z.string().min(1).max(256),
+});
+
 export const updateThemeSchema = z.object({
   theme: z.enum(['LIGHT', 'DARK']),
 });

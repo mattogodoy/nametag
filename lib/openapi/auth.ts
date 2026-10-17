@@ -1,11 +1,58 @@
 import {
   registerSchema, forgotPasswordSchema, resetPasswordSchema,
-  resendVerificationSchema, checkVerificationSchema,
+  resendVerificationSchema, checkVerificationSchema, nativeLoginSchema, nativeRefreshSchema,
 } from '../validations';
-import { zodBody, jsonBody, ref400, refMessage, resp } from './helpers';
+import { zodBody, jsonBody, ref400, ref401, refMessage, resp, jsonResponse, sessionOrToken } from './helpers';
 
 export function authPaths(): Record<string, Record<string, unknown>> {
   return {
+    '/api/auth/native/login': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Native app sign-in',
+        description:
+          'Signs in a native app with email and password and returns an access token (one hour) ' +
+          'and a refresh token. Every error includes a machine-readable `code`.',
+        requestBody: zodBody(nativeLoginSchema),
+        responses: {
+          '200': jsonResponse('Signed in', { $ref: '#/components/schemas/NativeSession' }),
+          '400': jsonResponse('Invalid body (code validation_failed)', { $ref: '#/components/schemas/CodedError' }),
+          '401': jsonResponse('Wrong email or password (code invalid_credentials)', { $ref: '#/components/schemas/CodedError' }),
+          '403': jsonResponse('Code account_locked, email_not_verified or password_login_disabled', { $ref: '#/components/schemas/CodedError' }),
+          '429': jsonResponse('Too many attempts (code rate_limited); see Retry-After', { $ref: '#/components/schemas/CodedError' }),
+        },
+      },
+    },
+    '/api/auth/native/refresh': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Refresh a native app session',
+        description:
+          'Exchanges a refresh token for a new access and refresh token pair. The old refresh token ' +
+          'stops working. Replaying it within 60 seconds returns a fresh pair (lost response); ' +
+          'replaying it later signs the device out.',
+        requestBody: zodBody(nativeRefreshSchema),
+        responses: {
+          '200': jsonResponse('New tokens', { $ref: '#/components/schemas/NativeSession' }),
+          '400': jsonResponse('Invalid body (code validation_failed)', { $ref: '#/components/schemas/CodedError' }),
+          '401': jsonResponse('Session expired or revoked (code session_expired)', { $ref: '#/components/schemas/CodedError' }),
+          '429': jsonResponse('Too many attempts (code rate_limited)', { $ref: '#/components/schemas/CodedError' }),
+        },
+      },
+    },
+    '/api/auth/native/logout': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Sign out a native app',
+        description: 'Deletes the calling device session. Requires a device access token.',
+        security: sessionOrToken(),
+        responses: {
+          '204': { description: 'Signed out' },
+          '400': jsonResponse('Not called with a device token (code not_a_device_session)', { $ref: '#/components/schemas/CodedError' }),
+          '401': ref401(),
+        },
+      },
+    },
     '/api/auth/register': {
       post: {
         tags: ['Auth'],
