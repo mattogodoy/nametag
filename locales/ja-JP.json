@@ -278,6 +278,7 @@
       "description": "パスワードと認証",
       "passwordTitle": "パスワード",
       "passwordDescription": "アカウントを安全に保つためにパスワードを更新してください。",
+      "passwordSignsOutEverywhere": "パスワードを変更すると、他のすべてのブラウザとデバイスからサインアウトされます。",
       "currentPassword": "現在のパスワード",
       "newPassword": "新しいパスワード",
       "confirmPassword": "新しいパスワードの確認",

@@ -5,6 +5,7 @@ import { resetPasswordSchema, validateRequest } from '@/lib/validations';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateUserSessions } from '@/lib/session-invalidation';
 import { hashToken } from '@/lib/token-hash';
 import { validateOrigin } from '@/lib/csrf';
 import { isFeatureEnabled } from '@/lib/features';
@@ -57,15 +58,11 @@ export const POST = withLogging(async function POST(request: Request) {
     // Hash new password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Update user with new password and clear reset token
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        passwordResetSentAt: null,
-      },
+    // Update password, clear the reset token and sign out every device and browser
+    await invalidateUserSessions(user.id, hashedPassword, {
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      passwordResetSentAt: null,
     });
 
     logger.info({ userId: user.id }, 'Password reset successful');

@@ -2,6 +2,8 @@
 
 import { useState, FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSession, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 
 interface PasswordChangeFormProps {
@@ -10,6 +12,8 @@ interface PasswordChangeFormProps {
 
 export default function PasswordChangeForm({}: PasswordChangeFormProps) {
   const t = useTranslations('settings.security');
+  const { data: session } = useSession();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<Array<{ field: string; message: string }>>([]);
@@ -79,6 +83,17 @@ export default function PasswordChangeForm({}: PasswordChangeFormProps) {
         } else {
           setError(data.error || t('errorUpdate'));
         }
+        return;
+      }
+
+      // The change signed out every session, including this one. Sign back in
+      // with the new password so this browser gets a fresh token.
+      const email = session?.user?.email;
+      const reSignIn = email
+        ? await signIn('credentials', { email, password: formData.newPassword, redirect: false })
+        : undefined;
+      if (!reSignIn || reSignIn.error) {
+        router.push('/login');
         return;
       }
 

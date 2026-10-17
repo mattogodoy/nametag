@@ -278,6 +278,7 @@
       "description": "Passord og autentisering",
       "passwordTitle": "Passord",
       "passwordDescription": "Oppdater passordet ditt for å holde kontoen din sikker.",
+      "passwordSignsOutEverywhere": "Når du endrer passordet ditt, logges du ut av alle andre nettlesere og enheter.",
       "currentPassword": "Nåværende passord",
       "newPassword": "Nytt passord",
       "confirmPassword": "Bekreft nytt passord",

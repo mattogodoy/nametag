@@ -16,8 +16,11 @@ export default async function SecuritySettingsPage() {
       <h2 className="text-xl font-bold text-foreground mb-4">
         {t('passwordTitle')}
       </h2>
-      <p className="text-muted mb-6">
+      <p className="text-muted mb-2">
         {t('passwordDescription')}
+      </p>
+      <p className="text-muted text-sm mb-6">
+        {t('passwordSignsOutEverywhere')}
       </p>
       <PasswordChangeForm userId={session.user.id} />
     </div>

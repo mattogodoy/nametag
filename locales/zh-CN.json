@@ -278,6 +278,7 @@
       "description": "密码和身份验证",
       "passwordTitle": "密码",
       "passwordDescription": "更新您的密码以确保账户安全。",
+      "passwordSignsOutEverywhere": "更改密码后，您将在所有其他浏览器和设备上退出登录。",
       "currentPassword": "当前密码",
       "newPassword": "新密码",
       "confirmPassword": "确认新密码",

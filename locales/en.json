@@ -278,6 +278,7 @@
       "description": "Password and authentication",
       "passwordTitle": "Password",
       "passwordDescription": "Update your password to keep your account secure.",
+      "passwordSignsOutEverywhere": "Changing your password signs you out on every other browser and device.",
       "currentPassword": "Current Password",
       "newPassword": "New Password",
       "confirmPassword": "Confirm New Password",

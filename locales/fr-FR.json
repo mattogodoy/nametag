@@ -278,6 +278,7 @@
       "description": "Mot de passe et authentification",
       "passwordTitle": "Mot de passe",
       "passwordDescription": "Mettez à jour votre mot de passe pour garder votre compte sécurisé.",
+      "passwordSignsOutEverywhere": "Changer votre mot de passe vous déconnecte de tous les autres navigateurs et appareils.",
       "currentPassword": "Mot de passe actuel",
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le nouveau mot de passe",

@@ -42,7 +42,7 @@ If the instance has no email delivery configured (no SMTP or Resend, see [Email]
 
 ## Security
 
-Change your password. You'll need to enter your current password to confirm the change.
+Change your password. You'll need to enter your current password to confirm the change. Changing your password (or resetting it by email) signs you out on every other browser and device, including the mobile app. The browser you changed it in stays signed in.
 
 ## CardDAV
 

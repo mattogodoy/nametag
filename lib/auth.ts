@@ -299,6 +299,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
     async jwt({ token, user, trigger, session }) {
+      // An existing token issued before the last password change is rejected.
+      // Returning null makes NextAuth clear the cookie instead of re-issuing a
+      // fresh one with a new iat. Skipped on sign-in, when `user` is present.
+      if (!user) {
+        const { shouldRejectJwt } = await import('@/lib/session-invalidation');
+        if (await shouldRejectJwt(token)) {
+          return null;
+        }
+      }
       if (user) {
         token.id = user.id;
         token.name = user.name;

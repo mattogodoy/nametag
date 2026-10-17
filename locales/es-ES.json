@@ -278,6 +278,7 @@
       "description": "Contraseña y autenticación",
       "passwordTitle": "Contraseña",
       "passwordDescription": "Actualiza tu contraseña para mantener tu cuenta segura.",
+      "passwordSignsOutEverywhere": "Al cambiar tu contraseña se cerrará la sesión en todos los demás navegadores y dispositivos.",
       "currentPassword": "Contraseña actual",
       "newPassword": "Nueva contraseña",
       "confirmPassword": "Confirmar nueva contraseña",

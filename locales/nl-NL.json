@@ -278,6 +278,7 @@
       "description": "Wachtwoord en authenticatie",
       "passwordTitle": "Wachtwoord",
       "passwordDescription": "Werk uw wachtwoord bij om uw account veilig te houden.",
+      "passwordSignsOutEverywhere": "Als u uw wachtwoord wijzigt, wordt u afgemeld in alle andere browsers en op alle andere apparaten.",
       "currentPassword": "Huidige wachtwoord",
       "newPassword": "Nieuwe wachtwoord",
       "confirmPassword": "Bevestig nieuwe wachtwoord",

@@ -278,6 +278,7 @@
       "description": "Пароль и аутентификация",
       "passwordTitle": "Пароль",
       "passwordDescription": "Обновите пароль, чтобы защитить свой аккаунт.",
+      "passwordSignsOutEverywhere": "После смены пароля вы выйдете из аккаунта во всех остальных браузерах и на всех устройствах.",
       "currentPassword": "Текущий пароль",
       "newPassword": "Новый пароль",
       "confirmPassword": "Подтвердите новый пароль",
