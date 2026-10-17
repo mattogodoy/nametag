@@ -48,7 +48,7 @@ describe('session invalidation', () => {
 
   it('updates the password, stamps the cut-off and deletes device sessions in one transaction', async () => {
     const now = new Date('2026-10-17T10:00:00.500Z');
-    await invalidateUserSessions('u1', 'hash', { passwordResetToken: null }, now);
+    await invalidateUserSessions('u1', 'hash', { extra: { passwordResetToken: null }, now });
 
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: 'u1' },
@@ -58,9 +58,15 @@ describe('session invalidation', () => {
     expect(mocks.transaction).toHaveBeenCalledWith(['update-op', 'delete-op']);
   });
 
+  it('keeps the calling device session when keepDeviceSessionId is given', async () => {
+    await invalidateUserSessions('u1', 'hash', { keepDeviceSessionId: 'ds1' });
+
+    expect(mocks.deleteMany).toHaveBeenCalledWith({ where: { userId: 'u1', id: { not: 'ds1' } } });
+  });
+
   it('serves the new cut-off from cache right after invalidating, without a database read', async () => {
     const now = new Date('2026-10-17T10:00:00.000Z');
-    await invalidateUserSessions('u1', 'hash', {}, now);
+    await invalidateUserSessions('u1', 'hash', { now });
     expect(await getSessionsInvalidatedAt('u1')).toEqual(now);
     expect(mocks.findUnique).not.toHaveBeenCalled();
   });
@@ -125,7 +131,7 @@ describe('session invalidation', () => {
     it('rejects a token issued before the cut-off and accepts one after', async () => {
       mocks.findUnique.mockResolvedValue({ sessionsInvalidatedAt: null });
       const now = new Date('2026-10-17T10:00:00.000Z');
-      await invalidateUserSessions('u1', 'hash', {}, now);
+      await invalidateUserSessions('u1', 'hash', { now });
       const second = Math.floor(now.getTime() / 1000);
       expect(await shouldRejectJwt({ id: 'u1', iat: second - 3600 })).toBe(true);
       expect(await shouldRejectJwt({ id: 'u1', iat: second })).toBe(false);
@@ -134,21 +140,21 @@ describe('session invalidation', () => {
 
     it('rejects a re-encoded cookie: fresh iat but authTime before the cut-off', async () => {
       const now = new Date('2026-10-17T10:00:00.000Z');
-      await invalidateUserSessions('u1', 'hash', {}, now);
+      await invalidateUserSessions('u1', 'hash', { now });
       const second = Math.floor(now.getTime() / 1000);
       expect(await shouldRejectJwt({ id: 'u1', iat: second + 5, authTime: second - 3600 })).toBe(true);
     });
 
     it('accepts a token whose authTime is after the cut-off even with an old iat', async () => {
       const now = new Date('2026-10-17T10:00:00.000Z');
-      await invalidateUserSessions('u1', 'hash', {}, now);
+      await invalidateUserSessions('u1', 'hash', { now });
       const second = Math.floor(now.getTime() / 1000);
       expect(await shouldRejectJwt({ id: 'u1', iat: second - 3600, authTime: second + 1 })).toBe(false);
     });
 
     it('falls back to iat for legacy tokens without authTime', async () => {
       const now = new Date('2026-10-17T10:00:00.000Z');
-      await invalidateUserSessions('u1', 'hash', {}, now);
+      await invalidateUserSessions('u1', 'hash', { now });
       const second = Math.floor(now.getTime() / 1000);
       expect(await shouldRejectJwt({ id: 'u1', iat: second - 3600 })).toBe(true);
       expect(await shouldRejectJwt({ id: 'u1', iat: second })).toBe(false);

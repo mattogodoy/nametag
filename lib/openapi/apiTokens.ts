@@ -53,7 +53,7 @@ export function apiTokenPaths(): Record<string, Record<string, unknown>> {
         tags: ['API Tokens'],
         summary: 'Create an API token',
         description:
-          'Creates a new API token. The plaintext token is returned ONCE in the response and cannot be retrieved again. Session (cookie) auth only.',
+          'Creates a new API token. The plaintext token is returned ONCE in the response and cannot be retrieved again. Session (cookie) auth only. Native app device sessions are refused with 403 `interactive_session_required`: creating a token requires signing in on the web.',
         security: sessionOnly(),
         requestBody: zodBody(createApiTokenSchema),
         responses: {
@@ -63,6 +63,7 @@ export function apiTokenPaths(): Record<string, Record<string, unknown>> {
           }),
           '400': ref400(),
           '401': ref401(),
+          '403': jsonResponse('Device (native app) session; code interactive_session_required', { $ref: '#/components/schemas/CodedError' }),
         },
       },
     },

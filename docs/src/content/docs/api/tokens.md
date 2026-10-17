@@ -83,7 +83,7 @@ curl https://your-instance.example.com/api/user/api-tokens \
 POST /api/user/api-tokens
 ```
 
-Session (cookie) auth only. Returns the plaintext token in the `token` field, once.
+Session (cookie) auth only. Returns the plaintext token in the `token` field, once. A native app device session is refused with `403` and code `interactive_session_required`: creating an API token requires signing in on the web.
 
 **Request body**
 

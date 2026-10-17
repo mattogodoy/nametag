@@ -78,10 +78,15 @@ describe('withAuth: device session tokens', () => {
     vi.mocked(resolveDeviceAccessToken).mockResolvedValue({ status: 'invalid' });
     vi.mocked(resolveApiToken).mockResolvedValue(null);
     vi.mocked(auth).mockResolvedValue(null as never);
-    for (const value of ['Bearer abc', 'Bearer ntsa_', 'Bearer ']) {
+    for (const value of ['Bearer abc', 'Bearer ntsa_']) {
       const res = await withAuth(vi.fn())(makeRequest('GET', value));
       expect(res.status, value).toBe(401);
+      expect((await res.json()).code, value).toBe('invalid_token');
     }
+    // An empty bearer value is not extracted as a token, so it falls to the
+    // cookie path (no session), which has no `code`: assert the status only.
+    const empty = await withAuth(vi.fn())(makeRequest('GET', 'Bearer '));
+    expect(empty.status).toBe(401);
   });
 
   it('marks cookie sessions and API tokens with their authMethod', async () => {

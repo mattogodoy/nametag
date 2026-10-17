@@ -60,9 +60,11 @@ export const POST = withLogging(async function POST(request: Request) {
 
     // Update password, clear the reset token and sign out every device and browser
     await invalidateUserSessions(user.id, hashedPassword, {
-      passwordResetToken: null,
-      passwordResetExpires: null,
-      passwordResetSentAt: null,
+      extra: {
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        passwordResetSentAt: null,
+      },
     });
 
     logger.info({ userId: user.id }, 'Password reset successful');

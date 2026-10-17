@@ -53,22 +53,33 @@ async function readCache(userId: string): Promise<{ hit: boolean; value: number 
   return { hit: false, value: null };
 }
 
+export interface InvalidateUserSessionsOptions {
+  /** Extra user columns to set in the same update (e.g. clearing reset fields). */
+  extra?: Record<string, null>;
+  /** A device session to keep signed in (the app that made the change). */
+  keepDeviceSessionId?: string;
+  now?: Date;
+}
+
 /**
  * Change the password and sign out everywhere: stamps the cut-off for web
- * JWTs and deletes every native app session, in one transaction.
+ * JWTs and deletes every native app session (except `keepDeviceSessionId`),
+ * in one transaction.
  */
 export async function invalidateUserSessions(
   userId: string,
   passwordHash: string,
-  extra: Record<string, null> = {},
-  now: Date = new Date()
+  options: InvalidateUserSessionsOptions = {}
 ): Promise<void> {
+  const { extra = {}, keepDeviceSessionId, now = new Date() } = options;
   await prisma.$transaction([
     prisma.user.update({
       where: { id: userId },
       data: { password: passwordHash, sessionsInvalidatedAt: now, ...extra },
     }),
-    prisma.deviceSession.deleteMany({ where: { userId } }),
+    prisma.deviceSession.deleteMany({
+      where: keepDeviceSessionId ? { userId, id: { not: keepDeviceSessionId } } : { userId },
+    }),
   ]);
   await writeCache(userId, now.getTime());
   log.info({ event: 'auth.sessions_invalidated', userId }, 'All sessions invalidated after password change');

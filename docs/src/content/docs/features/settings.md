@@ -44,7 +44,7 @@ If the instance has no email delivery configured (no SMTP or Resend, see [Email]
 
 ### Changing your password
 
-Change your password. You'll need to enter your current password to confirm the change. Changing your password (or resetting it by email) signs you out on every other browser and device, including the mobile app. The browser you changed it in stays signed in.
+Change your password. You'll need to enter your current password to confirm the change. Changing your password (or resetting it by email) signs you out on every other browser and device, including the mobile app. The browser or app you changed it in stays signed in.
 
 ### Signed-in devices
 

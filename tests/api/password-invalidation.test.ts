@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  session: { user: { id: 'u1' }, authMethod: 'session' } as Record<string, unknown>,
   invalidate: vi.fn(),
   findUnique: vi.fn(),
   findFirst: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock('@/lib/api-utils', async (importOriginal) => {
   return {
     ...actual,
     withAuth: (handler: (req: Request, session: unknown, ctx: unknown) => Promise<Response>) =>
-      (req: Request) => handler(req, { user: { id: 'u1' }, authMethod: 'session' }, { params: Promise.resolve({}) }),
+      (req: Request) => handler(req, mocks.session, { params: Promise.resolve({}) }),
   };
 });
 vi.mock('@/lib/logger', () => {
@@ -37,7 +38,10 @@ const json = (body: unknown) => ({
 });
 
 describe('password changes sign out everywhere', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.session = { user: { id: 'u1' }, authMethod: 'session' };
+  });
 
   it('a password change invalidates all sessions with the new hash', async () => {
     mocks.findUnique.mockResolvedValue({ id: 'u1', password: 'old-hash' });
@@ -45,8 +49,18 @@ describe('password changes sign out everywhere', () => {
       new Request('http://localhost/api/user/password', { method: 'PUT', ...json({ currentPassword: 'Old1!pass', newPassword: 'New1!passw' }) })
     );
     expect(res.status).toBe(200);
-    expect(mocks.invalidate).toHaveBeenCalledWith('u1', 'new-hash');
+    expect(mocks.invalidate).toHaveBeenCalledWith('u1', 'new-hash', {});
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('a password change made with a device token keeps the calling device session', async () => {
+    mocks.session = { user: { id: 'u1' }, authMethod: 'device', deviceSessionId: 'ds1' };
+    mocks.findUnique.mockResolvedValue({ id: 'u1', password: 'old-hash' });
+    const res = await changePassword(
+      new Request('http://localhost/api/user/password', { method: 'PUT', ...json({ currentPassword: 'Old1!pass', newPassword: 'New1!passw' }) })
+    );
+    expect(res.status).toBe(200);
+    expect(mocks.invalidate).toHaveBeenCalledWith('u1', 'new-hash', { keepDeviceSessionId: 'ds1' });
   });
 
   it('a password reset invalidates all sessions and clears the reset token', async () => {
@@ -56,9 +70,11 @@ describe('password changes sign out everywhere', () => {
     );
     expect(res.status).toBe(200);
     expect(mocks.invalidate).toHaveBeenCalledWith('u1', 'new-hash', {
-      passwordResetToken: null,
-      passwordResetExpires: null,
-      passwordResetSentAt: null,
+      extra: {
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        passwordResetSentAt: null,
+      },
     });
   });
 });

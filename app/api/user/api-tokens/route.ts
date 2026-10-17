@@ -25,6 +25,15 @@ export const GET = withAuth(
 export const POST = withAuth(
   async (request, session) => {
     try {
+      // A short-lived device access token must not mint long-lived tokens.
+      if (session.authMethod === 'device') {
+        return apiResponse.coded(
+          403,
+          'interactive_session_required',
+          'Creating API tokens requires signing in on the web'
+        );
+      }
+
       const body = await parseRequestBody(request);
       const validation = validateRequest(createApiTokenSchema, body);
 

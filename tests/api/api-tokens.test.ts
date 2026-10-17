@@ -10,9 +10,12 @@ vi.mock('@/lib/api-tokens', () => ({
   resolveApiToken: vi.fn(),
 }));
 
+vi.mock('@/lib/native-auth/sessions', () => ({ resolveDeviceAccessToken: vi.fn() }));
+
 import { GET, POST } from '@/app/api/user/api-tokens/route';
 import { DELETE } from '@/app/api/user/api-tokens/[id]/route';
 import { auth } from '@/lib/auth';
+import { resolveDeviceAccessToken } from '@/lib/native-auth/sessions';
 import {
   createApiToken,
   listApiTokens,
@@ -92,6 +95,26 @@ describe('/api/user/api-tokens', () => {
       expect(createApiToken).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 'u1', name: 'MCP', scope: 'READ_WRITE' })
       );
+    });
+
+    it('refuses a device (native app) session with 403 interactive_session_required', async () => {
+      vi.mocked(resolveDeviceAccessToken).mockResolvedValue({
+        status: 'ok',
+        userId: 'u1',
+        sessionId: 'ds1',
+      });
+
+      const res = await POST(
+        new NextRequest('http://localhost/api/user/api-tokens', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'MCP', scope: 'READ_WRITE' }),
+          headers: { 'content-type': 'application/json', authorization: 'Bearer ntsa_abc' },
+        })
+      );
+
+      expect(res.status).toBe(403);
+      expect((await res.json()).code).toBe('interactive_session_required');
+      expect(createApiToken).not.toHaveBeenCalled();
     });
 
     it('rejects an empty name with 400', async () => {

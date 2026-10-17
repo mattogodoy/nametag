@@ -96,7 +96,7 @@ Every error body has an English `error` message and a stable `code`:
 
 ## Password changes
 
-Changing or resetting the password signs out every device and every browser.
+Resetting the password by email signs out every device and every browser. Changing it with `PUT /api/user/password` signs out every other device and browser, but a change made from the app keeps that app signed in.
 
 ## Technical details
 
