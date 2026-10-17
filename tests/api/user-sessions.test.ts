@@ -38,6 +38,9 @@ const row = (id: string) => ({
   appVersion: '1.0.0',
   lastUsedAt: new Date('2026-10-17T10:00:00.000Z'),
   createdAt: new Date('2026-10-01T10:00:00.000Z'),
+  accessTokenHash: 'a-hash',
+  refreshTokenHash: 'r-hash',
+  previousRefreshTokenHash: 'p-hash',
 });
 
 describe('/api/user/sessions', () => {
