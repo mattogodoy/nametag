@@ -121,6 +121,18 @@ describe('POST /api/auth/native/login', () => {
     expect((await res.json()).code).toBe('validation_failed');
   });
 
+  it('rejects an unparseable body with 400 validation_failed', async () => {
+    const res = await POST(
+      new Request('http://localhost/api/auth/native/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: 'not json',
+      })
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe('validation_failed');
+  });
+
   it('accepts ANDROID devices', async () => {
     mocks.authorizeCredentials.mockResolvedValue({ id: 'u1', email: 'a@b.c', name: 'M', surname: null, nickname: null, photo: null });
     const res = await login({ email: 'a@b.c', password: 'pw', device: { ...device, platform: 'ANDROID' } });

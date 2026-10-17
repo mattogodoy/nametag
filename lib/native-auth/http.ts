@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-utils';
 import type { IssuedSession } from './sessions';
 
 /**
@@ -29,4 +30,18 @@ export function sessionResponse(
     sessionId: session.sessionId,
     user,
   });
+}
+
+/**
+ * Run an unexpected error through handleApiError and add a machine-readable
+ * `code`, so every error on the native endpoints carries one.
+ */
+export async function codedApiError(error: unknown, context: string): Promise<Response> {
+  const res = handleApiError(error, context);
+  const codes: Record<number, string> = {
+    400: 'validation_failed',
+    413: 'payload_too_large',
+    503: 'service_unavailable',
+  };
+  return withCode(res, codes[res.status] ?? 'internal_error');
 }

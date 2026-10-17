@@ -1,10 +1,10 @@
 import { authorizeCredentials } from '@/lib/auth';
-import { apiResponse, handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
+import { apiResponse, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { isFeatureEnabled } from '@/lib/features';
 import { nativeLoginSchema, validateRequest } from '@/lib/validations';
 import { createDeviceSession } from '@/lib/native-auth/sessions';
-import { sessionResponse, withCode } from '@/lib/native-auth/http';
+import { codedApiError, sessionResponse, withCode } from '@/lib/native-auth/http';
 
 export const runtime = 'nodejs';
 
@@ -52,6 +52,6 @@ export const POST = withLogging(async function POST(request: Request) {
     const session = await createDeviceSession(user.id, device);
     return sessionResponse(session, { id: user.id, email: user.email, name: user.name });
   } catch (error) {
-    return handleApiError(error, 'native-login');
+    return codedApiError(error, 'native-login');
   }
 });

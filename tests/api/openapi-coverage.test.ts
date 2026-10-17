@@ -169,8 +169,13 @@ describe('OpenAPI coverage', () => {
       const entry = spec.paths[route.path];
       if (!entry) continue;
 
+      // A route that rejects everything but a native app device session in its
+      // own handler (logout) honestly advertises deviceSession alone.
+      const deviceOnly = /authMethod !== 'device'/.test(route.source);
+
       for (const method of route.methods) {
         const security = entry[method]?.security;
+        if (deviceOnly && security?.every((scheme) => 'deviceSession' in scheme)) continue;
         if (!security) {
           wrong.push(`${method.toUpperCase()} ${route.path} declares no security`);
           continue;

@@ -36,6 +36,11 @@ export const rateLimitConfigs = {
     maxAttempts: 5,
     windowMs: 15 * 60 * 1000,
   },
+  // Native app token refresh: 60 attempts per 15 minutes
+  nativeRefresh: {
+    maxAttempts: 60,
+    windowMs: 15 * 60 * 1000,
+  },
   // Register: 3 attempts per hour
   register: {
     maxAttempts: 3,
@@ -203,6 +208,7 @@ const PROCESS_BUCKET_ID = randomUUID();
 const SHARED_BUCKET_MULTIPLIERS: Record<RateLimitType, number> = {
   // Local cost only: CPU, or a token comparison.
   login: 20,
+  nativeRefresh: 20,
   resetPassword: 20,
   verifyEmail: 20,
   // Sends mail to an address the caller supplies.

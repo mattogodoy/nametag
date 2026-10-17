@@ -66,18 +66,30 @@ describe('POST /api/auth/native/refresh', () => {
     expect(res.status).toBe(401);
   });
 
+  it('rejects an unparseable body with 400 validation_failed', async () => {
+    const res = await POST(
+      new Request('http://localhost/api/auth/native/refresh', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: 'not json',
+      })
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe('validation_failed');
+  });
+
   it('rejects a malformed body with 400 validation_failed', async () => {
     const res = await refresh({});
     expect(res.status).toBe(400);
     expect((await res.json()).code).toBe('validation_failed');
   });
 
-  it('shares the login rate limit', async () => {
+  it('uses its own nativeRefresh rate limit', async () => {
     mocks.checkRateLimit.mockReturnValue(
       new Response(JSON.stringify({ error: 'Too many' }), { status: 429, headers: { 'Retry-After': '60' } })
     );
     const res = await refresh({ refreshToken: 'ntsr_a' });
     expect(res.status).toBe(429);
-    expect(mocks.checkRateLimit).toHaveBeenCalledWith(expect.any(Request), 'login');
+    expect(mocks.checkRateLimit).toHaveBeenCalledWith(expect.any(Request), 'nativeRefresh');
   });
 });

@@ -2,7 +2,7 @@ import {
   registerSchema, forgotPasswordSchema, resetPasswordSchema,
   resendVerificationSchema, checkVerificationSchema, nativeLoginSchema, nativeRefreshSchema,
 } from '../validations';
-import { zodBody, jsonBody, ref400, ref401, refMessage, resp, jsonResponse, sessionOrToken } from './helpers';
+import { zodBody, jsonBody, ref400, ref401, refMessage, resp, jsonResponse } from './helpers';
 
 export function authPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -45,7 +45,7 @@ export function authPaths(): Record<string, Record<string, unknown>> {
         tags: ['Auth'],
         summary: 'Sign out a native app',
         description: 'Deletes the calling device session. Requires a device access token.',
-        security: sessionOrToken(),
+        security: [{ deviceSession: [] }],
         responses: {
           '204': { description: 'Signed out' },
           '400': jsonResponse('Not called with a device token (code not_a_device_session)', { $ref: '#/components/schemas/CodedError' }),

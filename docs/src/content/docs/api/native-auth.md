@@ -2,7 +2,7 @@
 title: Native app sign-in
 description: How the Nametag mobile apps sign in, refresh and sign out.
 sidebar:
-  order: 2
+  order: 14
 ---
 
 The Nametag mobile apps use their own sign-in endpoints. They return tokens instead of a browser cookie. If you're writing your own client, use these endpoints rather than a personal API token so users never have to copy tokens around.
@@ -75,7 +75,10 @@ Every error body has an English `error` message and a stable `code`:
 | 403 | `account_locked` | Too many failed attempts. Try again in 30 minutes. |
 | 403 | `email_not_verified` | Verify the email address first (hosted service only). |
 | 403 | `password_login_disabled` | This server only allows single sign-on. |
+| 413 | `payload_too_large` | The request body is too large. |
 | 429 | `rate_limited` | Wait for the number of seconds in `Retry-After`. |
+| 500 | `internal_error` | Something went wrong on the server. |
+| 503 | `service_unavailable` | The server could not reach its database. Try again shortly. |
 
 ## Password changes
 
@@ -84,5 +87,5 @@ Changing or resetting the password signs out every device and every browser.
 ## Technical details
 
 - Device name: 1 to 100 characters. App version: 1 to 32 characters.
-- Sign-in and refresh share the web login rate limit (5 attempts per 15 minutes).
+- Sign-in shares the web login rate limit. Refresh has its own, more generous limit.
 - Only SHA-256 hashes of the tokens are stored.

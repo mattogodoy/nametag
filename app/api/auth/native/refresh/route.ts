@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma';
-import { apiResponse, handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
+import { apiResponse, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { nativeRefreshSchema, validateRequest } from '@/lib/validations';
 import { refreshDeviceSession } from '@/lib/native-auth/sessions';
-import { sessionResponse, withCode } from '@/lib/native-auth/http';
+import { codedApiError, sessionResponse, withCode } from '@/lib/native-auth/http';
 
 export const runtime = 'nodejs';
 
@@ -12,7 +12,7 @@ const sessionExpired = () =>
 
 /** Exchange a refresh token for a new access and refresh token pair. */
 export const POST = withLogging(async function POST(request: Request) {
-  const limited = checkRateLimit(request, 'login');
+  const limited = checkRateLimit(request, 'nativeRefresh');
   if (limited) {
     return withCode(limited, 'rate_limited');
   }
@@ -39,6 +39,6 @@ export const POST = withLogging(async function POST(request: Request) {
 
     return sessionResponse(result.session, user);
   } catch (error) {
-    return handleApiError(error, 'native-refresh');
+    return codedApiError(error, 'native-refresh');
   }
 });
