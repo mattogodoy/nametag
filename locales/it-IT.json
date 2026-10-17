@@ -220,6 +220,7 @@
       "endpointDisabled": "Disattivata dopo ripetuti errori. Correggi la destinazione, poi riattivala.",
       "endpointDisabledManual": "Disattivata. Riattivala quando vuoi ricevere di nuovo promemoria qui.",
       "endpointEnable": "Riattiva",
+      "endpointTurnOff": "Disattiva",
       "endpointAddInvalid": "Controlla l'URL del topic e riprova.",
       "endpointAddRateLimited": "Troppi tentativi. Attendi qualche minuto e riprova.",
       "endpointAddDuplicate": "Hai già aggiunto questo topic.",

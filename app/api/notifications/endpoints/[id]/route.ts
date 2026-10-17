@@ -18,7 +18,7 @@ export const PUT = withAuth(async (request, session, context) => {
   try {
     const parsed = updateEndpointSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request', code: 'invalid' }, { status: 400 });
     }
 
     const { id } = await context.params;

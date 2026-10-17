@@ -220,6 +220,7 @@
       "endpointDisabled": "Turned off after repeated failures. Fix the destination, then turn it back on.",
       "endpointDisabledManual": "Turned off. Turn it back on when you want reminders here again.",
       "endpointEnable": "Turn back on",
+      "endpointTurnOff": "Turn off",
       "endpointAddInvalid": "Check the topic URL and try again.",
       "endpointAddRateLimited": "Too many attempts. Wait a few minutes and try again.",
       "endpointAddDuplicate": "You have already added that topic.",

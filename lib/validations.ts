@@ -648,6 +648,10 @@ export const pushSubscribeSchema = z.object({
   }),
 });
 
+export const pushStatusSchema = z.object({
+  endpoint: pushSubscribeSchema.shape.endpoint,
+});
+
 export const emailRemindersSchema = z.object({
   enabled: z.boolean(),
 });

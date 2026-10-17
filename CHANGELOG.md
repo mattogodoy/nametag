@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.64.1](https://github.com/mattogodoy/nametag/compare/v0.64.0...v0.64.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* notification channel and photo lightbox issues from [#482](https://github.com/mattogodoy/nametag/issues/482) ([#483](https://github.com/mattogodoy/nametag/issues/483)) ([efddadf](https://github.com/mattogodoy/nametag/commit/efddadf5aa2c9ceb435f16cd82a97bd91ccd3b4d))
+
 ## [0.64.0](https://github.com/mattogodoy/nametag/compare/v0.63.0...v0.64.0) (2026-10-15)
 
 

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { getPhotoUrl } from '@/lib/photo-url';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface PhotoLightboxProps {
   personId: string;
@@ -23,6 +24,11 @@ export default function PhotoLightbox({
   const src = getPhotoUrl(personId, photo);
 
   const close = useCallback(() => setOpen(false), []);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // aria-modal tells assistive technology the page behind is inert, so focus
+  // has to move in, stay in, and come back to the avatar on close.
+  useFocusTrap(dialogRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -55,6 +61,7 @@ export default function PhotoLightbox({
 
       {open && (
         <div
+          ref={dialogRef}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-in fade-in duration-200"
           onClick={close}
           role="dialog"

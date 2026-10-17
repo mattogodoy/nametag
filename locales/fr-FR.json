@@ -220,6 +220,7 @@
       "endpointDisabled": "Désactivée après des échecs répétés. Corrigez la destination, puis réactivez-la.",
       "endpointDisabledManual": "Désactivée. Réactivez-la quand vous voudrez recevoir des rappels ici à nouveau.",
       "endpointEnable": "Réactiver",
+      "endpointTurnOff": "Désactiver",
       "endpointAddInvalid": "Vérifiez l'URL du sujet et réessayez.",
       "endpointAddRateLimited": "Trop de tentatives. Attendez quelques minutes et réessayez.",
       "endpointAddDuplicate": "Vous avez déjà ajouté ce sujet.",

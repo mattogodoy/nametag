@@ -491,14 +491,28 @@ describe('dispatchAll with push', () => {
     expect(result.shouldStamp).toBe(true);
   });
 
-  it('keeps dispatching with everyone treated as email-enabled when the preference lookup itself fails', async () => {
+  it('sends no email when the preference lookup itself fails, so an opt-out is never ignored', async () => {
     pushMocks.userFindMany.mockRejectedValue(new Error('connection refused'));
     pushMocks.sendWebPush.mockResolvedValue({ status: 'skipped' });
     mocks.sendEmailBatch.mockResolvedValue({ success: true, results: [{ success: true }] });
 
     const [result] = await dispatchAll([envelope('1')]);
 
-    expect(mocks.sendEmailBatch).toHaveBeenCalledTimes(1);
+    expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
+    // Failed, not skipped: the reminder is left unstamped so the next run
+    // retries it instead of dropping it.
+    expect(result.shouldStamp).toBe(false);
+    expect(result.failedChannels).toEqual(['email']);
+  });
+
+  it('still delivers other channels when the preference lookup fails', async () => {
+    pushMocks.userFindMany.mockRejectedValue(new Error('connection refused'));
+    pushMocks.sendWebPush.mockResolvedValue({ channel: 'web_push', status: 'delivered' });
+
+    const [result] = await dispatchAll([envelope('1')]);
+
+    expect(mocks.sendEmailBatch).not.toHaveBeenCalled();
+    expect(result.delivered).toBe(1);
     expect(result.shouldStamp).toBe(true);
   });
 });

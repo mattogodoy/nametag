@@ -50,6 +50,38 @@ function waitForServiceWorker(): Promise<ServiceWorkerRegistration | null> {
 }
 
 /**
+ * Whether this browser's push is really on for this account.
+ *
+ * A local PushSubscription is not enough: removing this browser's row from the
+ * device list, here or from another browser, leaves the subscription in
+ * place, and the browser would keep reporting itself enabled with no way to
+ * turn push back on. The server is asked about this browser's own endpoint.
+ * If that check fails, the local subscription is trusted as before, so a
+ * network blip does not flip the card to the Enable state.
+ */
+async function readPushState(): Promise<'available' | 'subscribed'> {
+  const registration = await waitForServiceWorker();
+  const subscription = (await registration?.pushManager.getSubscription()) ?? null;
+  if (!subscription) return 'available';
+
+  try {
+    const response = await fetch('/api/notifications/push/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: subscription.endpoint }),
+    });
+    if (response.ok) {
+      const body = (await response.json()) as { registered?: unknown };
+      if (body.registered === false) return 'available';
+    }
+  } catch {
+    // Fall through to trusting the local subscription.
+  }
+
+  return 'subscribed';
+}
+
+/**
  * Turn a raw User-Agent into something a person recognises.
  *
  * Deliberately crude. The goal is only to let someone tell two of their own
@@ -130,9 +162,8 @@ export default function NotificationChannelsCard({
       return;
     }
 
-    void waitForServiceWorker()
-      .then((registration) => registration?.pushManager.getSubscription() ?? null)
-      .then((subscription) => setPushState(subscription ? 'subscribed' : 'available'))
+    void readPushState()
+      .then(setPushState)
       .catch(() => setPushState('available'));
   }, []);
 
@@ -222,6 +253,11 @@ export default function NotificationChannelsCard({
       });
 
       if (response.ok) {
+        // The removed row may have been this browser's own. Re-checked rather
+        // than assumed, since the list carries no endpoints to compare with.
+        if (pushState === 'subscribed') {
+          setPushState(await readPushState().catch(() => pushState));
+        }
         router.refresh();
       } else {
         toast.error(t('pushRemoveError'));

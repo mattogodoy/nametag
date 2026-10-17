@@ -437,13 +437,13 @@ export default function NotificationEndpointsCard({
     }
   }
 
-  async function handleEnable(id: string) {
+  async function handleSetEnabled(id: string, enabled: boolean) {
     setBusy(id, true);
     try {
       const response = await fetch(`/api/notifications/endpoints/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: true }),
+        body: JSON.stringify({ enabled }),
       });
 
       if (response.ok) {
@@ -585,6 +585,16 @@ export default function NotificationEndpointsCard({
             >
               {t('endpointEdit')}
             </button>
+            {endpoint.enabled && (
+              <button
+                type="button"
+                onClick={() => void handleSetEnabled(endpoint.id, false)}
+                disabled={busy}
+                className={`px-3 py-1 rounded-md border border-border disabled:opacity-50 ${FOCUS_RING}`}
+              >
+                {t('endpointTurnOff')}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void handleRemove(endpoint.id)}
@@ -707,7 +717,7 @@ export default function NotificationEndpointsCard({
             </div>
             <button
               type="button"
-              onClick={() => void handleEnable(endpoint.id)}
+              onClick={() => void handleSetEnabled(endpoint.id, true)}
               disabled={busy}
               className={`text-sm text-foreground underline disabled:opacity-50 flex-shrink-0 rounded ${FOCUS_RING}`}
             >

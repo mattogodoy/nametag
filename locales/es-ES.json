@@ -220,6 +220,7 @@
       "endpointDisabled": "Desactivado tras fallos repetidos. Arregla el destino y vuelve a activarlo.",
       "endpointDisabledManual": "Desactivado. Vuelve a activarlo cuando quieras recibir recordatorios aquí de nuevo.",
       "endpointEnable": "Volver a activar",
+      "endpointTurnOff": "Desactivar",
       "endpointAddInvalid": "Revisa la URL del tópico e inténtalo de nuevo.",
       "endpointAddRateLimited": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
       "endpointAddDuplicate": "Ya has añadido ese tópico.",
