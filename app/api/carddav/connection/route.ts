@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { apiError } from '@/lib/api-errors';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { encryptPassword } from '@/lib/carddav/encryption';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
@@ -45,7 +45,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = connectionSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return apiError('validation_failed', 'Invalid input');
+      return validationFailed(validationResult.error.issues, 'Invalid input', validationResult.error.issues);
     }
 
     const {
@@ -120,7 +120,7 @@ export const PUT = withAuth(async (request, session) => {
     const validationResult = updateConnectionSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return apiError('validation_failed', 'Invalid input');
+      return validationFailed(validationResult.error.issues, 'Invalid input', validationResult.error.issues);
     }
 
     const {

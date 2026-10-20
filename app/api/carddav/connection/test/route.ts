@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { apiError } from '@/lib/api-errors';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -26,7 +26,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = connectionTestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return apiError('validation_failed', 'Invalid input');
+      return validationFailed(validationResult.error.issues, 'Invalid input', validationResult.error.issues);
     }
 
     const { serverUrl, username, password } = validationResult.data;

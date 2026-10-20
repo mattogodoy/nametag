@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { apiError } from '@/lib/api-errors';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from '@/lib/carddav/client';
 import { getAddressBook } from '@/lib/carddav/address-book';
@@ -24,7 +24,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = exportBulkSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return apiError('validation_failed', 'Invalid input');
+      return validationFailed(validationResult.error.issues, 'Invalid input', validationResult.error.issues);
     }
 
     const { personIds } = validationResult.data;

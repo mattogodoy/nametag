@@ -128,4 +128,23 @@ describe('CardDAV route error codes', () => {
     expect(data.code).toBe('conflict_already_resolved');
     expect(data.error).toBe('Conflict already resolved');
   });
+
+  it('connection test 404 returns 502 carddav_unreachable', async () => {
+    mocks.createDAVClient.mockRejectedValue(new Error('404 not found'));
+    const res = await testConnection(post('/api/carddav/connection/test', validConnection));
+    const data = await res.json();
+    expect(res.status).toBe(502);
+    expect(data.code).toBe('carddav_unreachable');
+    expect(data.error).toBe('Server not found. Please check the server URL.');
+  });
+
+  it('invalid input returns validation_failed with legacy details and fields', async () => {
+    const res = await exportBulk(post('/api/carddav/export-bulk', { personIds: 'nope' }));
+    const data = await res.json();
+    expect(res.status).toBe(400);
+    expect(data.code).toBe('validation_failed');
+    expect(data.error).toBe('Invalid input');
+    expect(data.details[0]).toEqual(expect.objectContaining({ path: ['personIds'], code: 'invalid_type' }));
+    expect(data.fields).toContainEqual(expect.objectContaining({ path: 'personIds' }));
+  });
 });

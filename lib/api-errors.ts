@@ -150,3 +150,29 @@ export function zodIssuesToFields(issues: readonly z.core.$ZodIssue[]): ApiError
     }
   });
 }
+
+/**
+ * 400 validation_failed response. `details` keeps the legacy array the web
+ * reads; `fields` is the client-localizable form. Pass `details` to keep a
+ * route's historical details shape.
+ */
+export function validationFailed(
+  issues: readonly z.core.$ZodIssue[],
+  message = 'Validation failed',
+  details?: unknown
+): NextResponse {
+  return NextResponse.json(
+    {
+      error: message,
+      code: 'validation_failed',
+      details:
+        details ??
+        issues.map((issue) => ({
+          field: issue.path.map(String).join('.'),
+          message: issue.message,
+        })),
+      fields: zodIssuesToFields(issues),
+    },
+    { status: 400 }
+  );
+}

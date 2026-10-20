@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { apiError } from '@/lib/api-errors';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma, prismaIncludingDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
@@ -30,7 +30,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = importSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return apiError('validation_failed', 'Invalid input');
+      return validationFailed(validationResult.error.issues, 'Invalid input', validationResult.error.issues);
     }
 
     const { importIds, groupIds, globalGroupIds, perContactGroups, globalRelationshipTypeId, perContactRelationshipTypeId, updateExistingIds } = validationResult.data;

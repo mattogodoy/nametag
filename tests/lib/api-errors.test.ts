@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { API_ERRORS, apiError, genericCodeFor, zodIssuesToFields } from '@/lib/api-errors';
+import { API_ERRORS, apiError, genericCodeFor, validationFailed, zodIssuesToFields } from '@/lib/api-errors';
 
 describe('apiError', () => {
   it('takes the status from the catalog and includes params', async () => {
@@ -54,5 +54,29 @@ describe('zodIssuesToFields', () => {
     const r2 = z.object({}).refine(() => false).safeParse({});
     if (r2.success) throw new Error('expected failure');
     expect(zodIssuesToFields(r2.error.issues)).toEqual([{ path: '', issue: 'invalid_value' }]);
+  });
+});
+
+describe('validationFailed', () => {
+  const failure = z.object({ name: z.string() }).safeParse({});
+  if (failure.success) throw new Error('expected failure');
+  const issues = failure.error.issues;
+
+  it('defaults the message and derives details from the issues', async () => {
+    const res = validationFailed(issues);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: 'Validation failed',
+      code: 'validation_failed',
+      details: [{ field: 'name', message: issues[0].message }],
+      fields: [{ path: 'name', issue: 'required' }],
+    });
+  });
+
+  it('uses a custom message and caller-supplied details verbatim', async () => {
+    const body = await validationFailed(issues, 'Invalid input', issues).json();
+    expect(body.error).toBe('Invalid input');
+    expect(body.details).toEqual(JSON.parse(JSON.stringify(issues)));
+    expect(body.fields).toEqual([{ path: 'name', issue: 'required' }]);
   });
 });

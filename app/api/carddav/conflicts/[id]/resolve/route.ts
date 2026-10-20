@@ -1,4 +1,4 @@
-import { apiError } from '@/lib/api-errors';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/vcard-import';
@@ -20,7 +20,7 @@ export const POST = withAuth(async (request, session, context) => {
     const validationResult = resolveSchema.safeParse(await request.json());
 
     if (!validationResult.success) {
-      return apiError('validation_failed', 'Invalid resolution type');
+      return validationFailed(validationResult.error.issues, 'Invalid resolution type', validationResult.error.issues);
     }
 
     const { resolution } = validationResult.data;
