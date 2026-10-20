@@ -2,11 +2,13 @@ import { describe, it, expect, afterAll, beforeEach } from 'vitest';
 import { testPrisma, createUser, resetDb } from './client';
 import { getChangesSince, type SyncPage } from '@/lib/sync/changes';
 
-async function drain(userId: string, limit: number): Promise<SyncPage[]> {
+type Client = Parameters<typeof getChangesSince>[0];
+
+async function drain(userId: string, limit: number, client: Client = testPrisma): Promise<SyncPage[]> {
   const pages: SyncPage[] = [];
   let cursor = BigInt(0);
   for (let i = 0; i < 100; i++) {
-    const page = await getChangesSince(testPrisma, userId, cursor, limit);
+    const page = await getChangesSince(client, userId, cursor, limit);
     pages.push(page);
     cursor = BigInt(page.cursor);
     if (!page.hasMore) break;
@@ -32,6 +34,7 @@ describe('getChangesSince', () => {
   afterAll(async () => {
     await resetDb();
     await testPrisma.$disconnect();
+    await (await import('@/lib/prisma')).prismaIncludingDeleted.$disconnect();
   });
 
   it('returns every change exactly once across mixed-type pages', async () => {
@@ -101,15 +104,34 @@ describe('getChangesSince', () => {
     expect(ids([again])).toEqual([]);
   });
 
-  it('opts back in to syncVersion on the real app client, which omits it', async () => {
+  it('opts back in to syncVersion on every table with the real app client, which omits it', async () => {
     const { prismaIncludingDeleted } = await import('@/lib/prisma');
-    for (let i = 0; i < 3; i++) await testPrisma.group.create({ data: { userId, name: `G${i}` } });
-    const first = await getChangesSince(prismaIncludingDeleted, userId, BigInt(0), 2);
-    expect(first.changes.groups.map((g) => typeof g.syncVersion)).toEqual(['string', 'string']);
-    expect(first.hasMore).toBe(true);
-    const next = await getChangesSince(prismaIncludingDeleted, userId, BigInt(first.cursor), 2);
-    expect(next.changes.groups.map((g) => g.name)).toEqual(['G2']);
-    expect(next.hasMore).toBe(false);
-    await prismaIncludingDeleted.$disconnect();
+    const a = await testPrisma.person.create({ data: { userId, name: 'A' } });
+    const b = await testPrisma.person.create({ data: { userId, name: 'B' } });
+    const g = await testPrisma.group.create({ data: { userId, name: 'G' } });
+    const t = await testPrisma.relationshipType.create({ data: { userId, name: 'FRIEND', label: 'Friend' } });
+    const r = await testPrisma.relationship.create({
+      data: { personId: a.id, relatedPersonId: b.id, relationshipTypeId: t.id },
+    });
+    const d = await testPrisma.importantDate.create({ data: { personId: a.id, title: 'B', date: new Date('2000-01-01') } });
+    const j = await testPrisma.journalEntry.create({ data: { userId, title: 'J', date: new Date(), body: 'x' } });
+    const c = await testPrisma.customFieldTemplate.create({ data: { userId, name: 'C', slug: 'c', type: 'TEXT' } });
+    const created = [a.id, b.id, g.id, t.id, r.id, d.id, j.id, c.id];
+
+    const pages = await drain(userId, 2, prismaIncludingDeleted);
+    expect(pages.length).toBeGreaterThan(1);
+    const records = pages.flatMap((p) => Object.values(p.changes).flat());
+    expect(records.map((x) => typeof x.syncVersion)).toEqual(created.map(() => 'string'));
+    expect(ids(pages).sort()).toEqual(created.sort());
+  });
+
+  it('returns custom field values whose template is in the trash', async () => {
+    const p = await testPrisma.person.create({ data: { userId, name: 'A' } });
+    const tpl = await testPrisma.customFieldTemplate.create({ data: { userId, name: 'C', slug: 'c', type: 'TEXT' } });
+    await testPrisma.personCustomFieldValue.create({ data: { personId: p.id, templateId: tpl.id, value: 'v' } });
+    await testPrisma.customFieldTemplate.update({ where: { id: tpl.id }, data: { deletedAt: new Date() } });
+    const page = await getChangesSince(testPrisma, userId, BigInt(0), 500);
+    const person = page.changes.people.find((x) => x.id === p.id);
+    expect(person?.customFieldValues).toEqual([expect.objectContaining({ templateId: tpl.id, value: 'v' })]);
   });
 });

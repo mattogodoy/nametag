@@ -60,7 +60,14 @@ export async function getChangesSince(
     await Promise.all([
       client.person.findMany({
         where: byUser, orderBy: order, take, omit,
-        include: { ...multiValueFieldsInclude(), groups: { select: { groupId: true } } },
+        include: {
+          ...multiValueFieldsInclude(),
+          // Unfiltered: values on a trashed template must still sync, since
+          // restoring the template does not bump the person. Templates sync
+          // as their own table.
+          customFieldValues: true,
+          groups: { select: { groupId: true } },
+        },
       }),
       client.group.findMany({ where: byUser, orderBy: order, take, omit }),
       client.relationship.findMany({ where: byPerson, orderBy: order, take, omit }),
@@ -85,6 +92,7 @@ export async function getChangesSince(
     ...stones.map((s): Entry => ({
       version: s.syncVersion, key: 'deleted', row: { type: s.entityType, id: s.entityId },
     })),
+  // Versions come from one per-user counter, so they are unique: no ties to split.
   ].sort((a, b) => (a.version < b.version ? -1 : a.version > b.version ? 1 : 0));
 
   const kept = all.slice(0, limit);
