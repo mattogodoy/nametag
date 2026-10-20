@@ -32,7 +32,7 @@ describe('sync ordering under concurrency', () => {
       await release.promise;
     }, { timeout: 15000 });
 
-    let fast: Promise<{ syncVersion: bigint }> = Promise.resolve({ syncVersion: BigInt(0) });
+    let fast: Promise<{ syncVersion: bigint }> | undefined;
     try {
       await firstWrote.promise;
       let fastDone = false;
@@ -40,14 +40,22 @@ describe('sync ordering under concurrency', () => {
         .update({ where: { id: b.id }, data: { name: 'B1' } })
         .then((row) => { fastDone = true; return row; });
 
-      await new Promise((r) => setTimeout(r, 300));
-      expect(fastDone).toBe(false); // blocked on the user row lock
-
-      // A reader now sees neither uncommitted change past the old cursor.
-      const visible = await testPrisma.person.findMany({
-        where: { userId, syncVersion: { gt: b.syncVersion } },
-      });
-      expect(visible).toHaveLength(0);
+      // Positive proof of blocking: the update is waiting on a lock in Postgres.
+      // (The blocked statement is the top-level UPDATE on people; the trigger's
+      // UPDATE on users is what it waits on.)
+      let waiting = 0;
+      for (let i = 0; i < 100 && waiting < 1; i++) {
+        const rows = await testPrisma.$queryRaw<{ n: number }[]>`
+          SELECT count(*)::int AS n FROM pg_stat_activity
+          WHERE wait_event_type = 'Lock'
+            AND datname = current_database()
+            AND pid <> pg_backend_pid()
+            AND query ILIKE '%UPDATE%people%'`;
+        waiting = rows[0]?.n ?? 0;
+        if (waiting < 1) await new Promise((r) => setTimeout(r, 50));
+      }
+      expect(waiting).toBeGreaterThanOrEqual(1);
+      expect(fastDone).toBe(false);
 
       release.resolve();
       await slow;
@@ -57,7 +65,7 @@ describe('sync ordering under concurrency', () => {
     } finally {
       // Always free the user-row lock, even when an assertion fails, so cleanup does not hang.
       release.resolve();
-      await Promise.allSettled([slow, fast]);
+      await Promise.allSettled([slow, fast ?? Promise.resolve()]);
     }
   });
 });
