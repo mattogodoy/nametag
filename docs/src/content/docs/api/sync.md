@@ -72,3 +72,7 @@ See [Errors](/api/errors/) for the error format.
 - `limit` must be a positive integer.
 - The cursor is a decimal string of up to 19 digits.
 - Cursor `0` is always valid.
+- `cursor` and every record's `syncVersion` are strings, because the values can exceed the safe integer range in JavaScript.
+- Decimal fields (address and location `latitude` and `longitude`) are numeric strings.
+- A write to synced data takes a short lock on that user's change counter. One very long transaction therefore delays that user's other writes until it commits.
+- After upgrading to the release that adds sync, existing data is numbered once, so the first sync from cursor `0` returns everything.

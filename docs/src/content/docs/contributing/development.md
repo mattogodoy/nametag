@@ -242,7 +242,7 @@ Some behavior (database triggers, locking) can only be verified against a real P
 TEST_DATABASE_URL=postgresql://user:password@localhost:5432/nametag_test npm run test:db
 ```
 
-Before the tests start, the suite runs `prisma migrate reset --force` against `TEST_DATABASE_URL`, so the schema is built from migrations only. This wipes the database, which is why its name must contain `test`; the suite refuses to run otherwise. Never point it at a database you care about.
+Before the tests start, the suite runs `prisma migrate reset --force` against `TEST_DATABASE_URL`, so the schema is built from migrations only. This wipes the database, so the suite refuses to run unless the database name ends in `_test` or `-test` and the host is `localhost`, `127.0.0.1` or `::1`. Never point it at a database you care about.
 
 ### Code quality checks
 

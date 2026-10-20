@@ -48,6 +48,7 @@ export function syncPaths(): Record<string, Record<string, unknown>> {
                 type: 'array',
                 items: {
                   type: 'object',
+                  required: ['type', 'id'],
                   properties: {
                     type: {
                       type: 'string',
