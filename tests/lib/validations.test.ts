@@ -715,6 +715,25 @@ describe('validations', () => {
   });
 
   describe('validateRequest', () => {
+    it('returns validation_failed with details and per-field issues', async () => {
+      const result = validateRequest(createGroupSchema, { name: '' });
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.response.status).toBe(400);
+      const body = await result.response.json();
+      expect(body.code).toBe('validation_failed');
+      expect(body.error).toBe('Validation failed');
+      expect(Array.isArray(body.details)).toBe(true);
+      expect(body.fields).toContainEqual(expect.objectContaining({ path: 'name' }));
+    });
+
+    it('reports a missing field as required', async () => {
+      const result = validateRequest(createGroupSchema, {});
+      if (result.success) throw new Error('expected failure');
+      const body = await result.response.json();
+      expect(body.fields).toContainEqual({ path: 'name', issue: 'required' });
+    });
+
     it('should return success with valid data', () => {
       const result = validateRequest(emailSchema, 'test@example.com');
       expect(result.success).toBe(true);

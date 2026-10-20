@@ -136,6 +136,8 @@ Error bodies have an English `error` message and a stable `code`. The one except
 | 500 | `internal_error` | Something went wrong on the server. |
 | 503 | `service_unavailable` | The server could not reach its database. Try again shortly. |
 
+All codes: [Errors](/api/errors/).
+
 ## Password changes
 
 Resetting the password by email signs out every device and every browser. Changing it with `PUT /api/user/password` signs out every other device and browser, but a change made from the app keeps that app signed in.

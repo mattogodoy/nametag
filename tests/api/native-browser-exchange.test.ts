@@ -76,12 +76,16 @@ describe('POST /api/auth/native/browser/exchange', () => {
     expect((await res.json()).code).toBe('invalid_code');
   });
 
-  it.each([[{ code: 'ntc_abc' }], [{ code: 'ntc_abc', codeVerifier: 'short' }], ['not json']])(
-    'rejects a bad body with 400 validation_failed',
-    async (body) => {
+  it.each([
+    [{ code: 'ntc_abc' }, 'validation_failed'],
+    [{ code: 'ntc_abc', codeVerifier: 'short' }, 'validation_failed'],
+    ['not json', 'invalid_json'],
+  ])(
+    'rejects a bad body with 400 %#',
+    async (body, code) => {
       const res = await exchange(body);
       expect(res.status).toBe(400);
-      expect((await res.json()).code).toBe('validation_failed');
+      expect((await res.json()).code).toBe(code);
       expect(mocks.consume).not.toHaveBeenCalled();
     }
   );

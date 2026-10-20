@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createGroupSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { getRandomColor } from '@/lib/colors';
 import { canCreateResource } from '@/lib/billing';
@@ -40,9 +41,11 @@ export const POST = withAuth(async (request, session) => {
     // Check if user has reached their plan limit for groups
     const usageCheck = await canCreateResource(session.user.id, 'groups');
     if (!usageCheck.allowed) {
-      return apiResponse.forbidden(
+      return apiError(
+        'plan_limit_reached',
         `You've reached your plan limit of ${usageCheck.limit} groups. ` +
-        `Please upgrade your plan to add more.`
+        `Please upgrade your plan to add more.`,
+        { resource: 'groups', limit: usageCheck.limit }
       );
     }
 
@@ -72,7 +75,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (existingGroup) {
-      return apiResponse.error('A group with this name already exists');
+      return apiError('group_name_taken', 'A group with this name already exists');
     }
 
     // Create the group and optionally add people to it

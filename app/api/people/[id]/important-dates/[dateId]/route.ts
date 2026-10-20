@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateImportantDateSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 
 // PUT /api/people/[id]/important-dates/[dateId] - Update an important date
 export const PUT = withAuth(async (request, session, context) => {
@@ -34,7 +35,7 @@ export const PUT = withAuth(async (request, session, context) => {
         where: { personId: id, type, deletedAt: null, id: { not: dateId } },
       });
       if (existing) {
-        return apiResponse.error(`A "${type}" date already exists for this person.`);
+        return apiError('important_date_type_exists', `A "${type}" date already exists for this person.`, { type });
       }
     }
 

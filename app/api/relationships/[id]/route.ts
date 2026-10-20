@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 
 // GET /api/relationships/[id] - Get a single relationship
 export const GET = withAuth(async (_request, session, context) => {
@@ -73,7 +74,7 @@ export const PUT = withAuth(async (request, session, context) => {
     }
 
     if (!relationshipTypeId) {
-      return apiResponse.error('Relationship type is required');
+      return apiError('relationship_type_required', 'Relationship type is required');
     }
 
     // Get the new relationship type to find its inverse

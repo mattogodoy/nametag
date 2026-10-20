@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { createCardDavClient } from '@/lib/carddav/client';
 import { getAddressBook } from '@/lib/carddav/address-book';
@@ -23,10 +24,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = exportBulkSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.issues },
-        { status: 400 }
-      );
+      return validationFailed(validationResult.error.issues, 'Invalid input', validationResult.error.issues);
     }
 
     const { personIds } = validationResult.data;
@@ -37,17 +35,11 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (!connection) {
-      return NextResponse.json(
-        { error: 'CardDAV connection not found' },
-        { status: 404 }
-      );
+      return apiError('not_found', 'CardDAV connection not found');
     }
 
     if (!connection.syncEnabled) {
-      return NextResponse.json(
-        { error: 'Sync is disabled for this connection' },
-        { status: 400 }
-      );
+      return apiError('feature_disabled', 'Sync is disabled for this connection', { feature: 'carddav_sync', scope: 'user' });
     }
 
     const user = await prisma.user.findUnique({
@@ -63,10 +55,7 @@ export const POST = withAuth(async (request, session) => {
     try {
       addressBook = await getAddressBook(client, connection);
     } catch {
-      return NextResponse.json(
-        { error: 'No address books found' },
-        { status: 404 }
-      );
+      return apiError('not_found', 'No address books found');
     }
 
     // Get people to export
@@ -101,10 +90,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (people.length === 0) {
-      return NextResponse.json(
-        { error: 'No contacts found to export' },
-        { status: 404 }
-      );
+      return apiError('not_found', 'No contacts found to export');
     }
 
     // Pre-fetch all existing mappings for the requested person IDs in one query
@@ -213,9 +199,6 @@ export const POST = withAuth(async (request, session) => {
     });
   } catch (error) {
     log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Bulk export failed');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Internal server error');
   }
 });

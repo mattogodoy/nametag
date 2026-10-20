@@ -1,10 +1,10 @@
 import { authorizeCredentials } from '@/lib/auth';
-import { apiResponse, parseRequestBody, withLogging } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { isFeatureEnabled } from '@/lib/features';
 import { nativeLoginSchema, validateRequest } from '@/lib/validations';
 import { createDeviceSession } from '@/lib/native-auth/sessions';
-import { codedApiError, sessionResponse, withCode } from '@/lib/native-auth/http';
+import { sessionResponse } from '@/lib/native-auth/http';
 
 export const runtime = 'nodejs';
 
@@ -16,18 +16,18 @@ export const runtime = 'nodejs';
 export const POST = withLogging(async function POST(request: Request) {
   const limited = checkRateLimit(request, 'login');
   if (limited) {
-    return withCode(limited, 'rate_limited');
+    return limited;
   }
 
   if (!isFeatureEnabled('passwordLogin')) {
-    return apiResponse.coded(403, 'password_login_disabled', 'Password login is disabled on this server');
+    return apiResponse.coded('password_login_disabled', 'Password login is disabled on this server');
   }
 
   try {
     const body = await parseRequestBody(request);
     const validation = validateRequest(nativeLoginSchema, body);
     if (!validation.success) {
-      return withCode(validation.response, 'validation_failed');
+      return validation.response;
     }
     const { email, password, device } = validation.data;
 
@@ -37,21 +37,21 @@ export const POST = withLogging(async function POST(request: Request) {
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       if (message === 'ACCOUNT_LOCKED') {
-        return apiResponse.coded(403, 'account_locked', 'Account temporarily locked after too many failed attempts');
+        return apiResponse.coded('account_locked', 'Account temporarily locked after too many failed attempts');
       }
       if (message === 'EMAIL_NOT_VERIFIED') {
-        return apiResponse.coded(403, 'email_not_verified', 'Email address not verified');
+        return apiResponse.coded('email_not_verified', 'Email address not verified');
       }
       throw error;
     }
 
     if (!user) {
-      return apiResponse.coded(401, 'invalid_credentials', 'Invalid email or password');
+      return apiResponse.coded('invalid_credentials', 'Invalid email or password');
     }
 
     const session = await createDeviceSession(user.id, device);
     return sessionResponse(session, { id: user.id, email: user.email, name: user.name });
   } catch (error) {
-    return codedApiError(error, 'native-login');
+    return handleApiError(error, 'native-login');
   }
 });

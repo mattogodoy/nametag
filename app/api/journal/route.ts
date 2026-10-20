@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createJournalEntrySchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 
 const ITEMS_PER_PAGE = 50;
@@ -86,7 +87,7 @@ export const POST = withAuth(async (request, session) => {
         where: { id: { in: personIds }, userId: session.user.id, deletedAt: null },
       });
       if (validCount !== personIds.length) {
-        return apiResponse.error('One or more person IDs are invalid');
+        return apiError('invalid_person_ids', 'One or more person IDs are invalid');
       }
     }
 

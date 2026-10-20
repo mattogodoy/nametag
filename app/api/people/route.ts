@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createPersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { canCreateResource, canEnableReminder } from '@/lib/billing';
 import { savePhoto } from '@/lib/photo-storage';
 import { createPerson } from '@/lib/services/person';
@@ -30,12 +31,12 @@ export const GET = withAuth(async (request, session) => {
 
     const requestedLimit = parseNonNegativeInt(searchParams.get('limit'));
     if (requestedLimit === null || requestedLimit === 0) {
-      return apiResponse.error('limit must be a positive integer');
+      return apiError('invalid_query', 'limit must be a positive integer', { param: 'limit' });
     }
 
     const requestedOffset = parseNonNegativeInt(searchParams.get('offset'));
     if (requestedOffset === null) {
-      return apiResponse.error('offset must be a non-negative integer');
+      return apiError('invalid_query', 'offset must be a non-negative integer', { param: 'offset' });
     }
 
     // An export must be complete, so includeAll opts out of the default page
@@ -147,9 +148,11 @@ export const POST = withAuth(async (request, session) => {
     // Check if user has reached their plan limit for people
     const usageCheck = await canCreateResource(session.user.id, 'people');
     if (!usageCheck.allowed) {
-      return apiResponse.forbidden(
+      return apiError(
+        'plan_limit_reached',
         `You've reached your plan limit of ${usageCheck.limit} people. ` +
-        `Please upgrade your plan to add more.`
+        `Please upgrade your plan to add more.`,
+        { resource: 'people', limit: usageCheck.limit }
       );
     }
 
@@ -172,9 +175,9 @@ export const POST = withAuth(async (request, session) => {
     // Relationship type is always required when creating a person
     if (!relationshipToUserId) {
       if (connectedThroughId) {
-        return apiResponse.error('Relationship type is required for person-to-person connections');
+        return apiError('relationship_type_required', 'Relationship type is required for person-to-person connections');
       } else {
-        return apiResponse.error('Relationship to user is required');
+        return apiError('relationship_type_required', 'Relationship to user is required');
       }
     }
 
@@ -199,9 +202,11 @@ export const POST = withAuth(async (request, session) => {
       if (!reminderCheck.isUnlimited) {
         const remainingSlots = reminderCheck.limit - reminderCheck.current;
         if (newRemindersCount > remainingSlots) {
-          return apiResponse.forbidden(
+          return apiError(
+            'plan_limit_reached',
             `You can only add ${remainingSlots} more reminder(s) on your current plan ` +
-            `(limit: ${reminderCheck.limit}). Please upgrade your plan to add more.`
+            `(limit: ${reminderCheck.limit}). Please upgrade your plan to add more.`,
+            { resource: 'reminders', limit: reminderCheck.limit }
           );
         }
       }
@@ -214,7 +219,7 @@ export const POST = withAuth(async (request, session) => {
         await validateCustomFieldValues(prisma, session.user.id, validation.data.customFieldValues);
       } catch (err) {
         if (err instanceof CustomFieldValidationError) {
-          return apiResponse.error(err.message);
+          return apiError('bad_request', err.message);
         }
         throw err;
       }

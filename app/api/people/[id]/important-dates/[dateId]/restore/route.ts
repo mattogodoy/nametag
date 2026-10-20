@@ -1,5 +1,6 @@
 import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { requireTrashedRecord } from '@/lib/api/trash-guards';
 
 // POST /api/people/[id]/important-dates/[dateId]/restore - Restore a soft-deleted important date
@@ -34,8 +35,10 @@ export const POST = withAuth(async (_request, session, context) => {
         },
       });
       if (existing) {
-        return apiResponse.error(
-          `A ${importantDate.type} date already exists for this person. Delete it first before restoring this one.`
+        return apiError(
+          'important_date_type_exists',
+          `A ${importantDate.type} date already exists for this person. Delete it first before restoring this one.`,
+          { type: importantDate.type }
         );
       }
     }

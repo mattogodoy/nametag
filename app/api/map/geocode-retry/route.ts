@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { retryGeocodeSchema, validateRequest } from '@/lib/validations';
@@ -15,7 +16,10 @@ export const POST = withAuth(async (request, session) => {
     }
 
     if (env.DISABLE_GEOCODING) {
-      return apiResponse.error('Geocoding is disabled on this instance');
+      return apiError('feature_disabled', 'Geocoding is disabled on this instance', {
+        feature: 'geocoding',
+        scope: 'instance',
+      });
     }
 
     const { addressId } = validation.data;
@@ -35,7 +39,10 @@ export const POST = withAuth(async (request, session) => {
       select: { geocodingEnabled: true },
     });
     if (!user?.geocodingEnabled) {
-      return apiResponse.error('Geocoding is disabled in your settings');
+      return apiError('feature_disabled', 'Geocoding is disabled in your settings', {
+        feature: 'geocoding',
+        scope: 'user',
+      });
     }
 
     // A manual retry means the user believes the address should resolve, so

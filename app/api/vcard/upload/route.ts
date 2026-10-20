@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 
 const log = createModuleLogger('vcard');
 
@@ -20,7 +21,7 @@ export const POST = withAuth(async (request, session) => {
     }
 
     if (!vcardText || !vcardText.trim().startsWith('BEGIN:VCARD')) {
-      return apiResponse.error('Invalid vCard file');
+      return apiError('invalid_vcard', 'Invalid vCard file');
     }
 
     // Delete any existing pending file imports for this user

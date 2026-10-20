@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateRelationshipTypeSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { getRandomColor } from '@/lib/colors';
 
 export const GET = withAuth(async (_request, session, context) => {
@@ -69,7 +70,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (duplicateType) {
-      return apiResponse.error('A relationship type with this name already exists');
+      return apiError('relationship_type_name_taken', 'A relationship type with this name already exists');
     }
 
     // Handle symmetric relationships (e.g., friend <-> friend)
@@ -116,7 +117,11 @@ export const PUT = withAuth(async (request, session, context) => {
       });
 
       if (existingInverseType) {
-        return apiResponse.error(`The inverse relationship type "${inverseLabel}" already exists`);
+        return apiError(
+          'relationship_type_name_taken',
+          `The inverse relationship type "${inverseLabel}" already exists`,
+          { name: inverseLabel }
+        );
       }
 
       // Create the inverse type with the same color
@@ -194,7 +199,8 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (inUseCount > 0) {
-      return apiResponse.error(
+      return apiError(
+        'bad_request',
         `Cannot delete relationship type that is in use by ${inUseCount} relationship(s)`
       );
     }

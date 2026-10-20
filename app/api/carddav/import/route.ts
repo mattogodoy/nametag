@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma, prismaIncludingDeleted } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { parseVCard } from '@/lib/carddav/vcard-parser';
@@ -29,10 +30,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = importSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.issues },
-        { status: 400 }
-      );
+      return validationFailed(validationResult.error.issues, 'Invalid input', validationResult.error.issues);
     }
 
     const { importIds, groupIds, globalGroupIds, perContactGroups, globalRelationshipTypeId, perContactRelationshipTypeId, updateExistingIds } = validationResult.data;
@@ -63,10 +61,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (pendingImports.length === 0) {
-      return NextResponse.json(
-        { error: 'No pending imports found' },
-        { status: 404 }
-      );
+      return apiError('not_found', 'No pending imports found');
     }
 
     const results = {
@@ -184,16 +179,17 @@ export const POST = withAuth(async (request, session) => {
         const available = usageCheck.limit - currentUsage.people;
 
         if (!usageCheck.isUnlimited && totalAfterImport > usageCheck.limit) {
-          return NextResponse.json(
+          return apiError(
+            'plan_limit_reached',
+            `This import would exceed your plan's contact limit. ` +
+              `You have ${currentUsage.people} contacts and are trying to add ${newCount}, ` +
+              `but your plan allows ${usageCheck.limit}.`,
             {
-              error: `This import would exceed your plan's contact limit. ` +
-                `You have ${currentUsage.people} contacts and are trying to add ${newCount}, ` +
-                `but your plan allows ${usageCheck.limit}.`,
-              code: 'LIMIT_EXCEEDED',
+              resource: 'people',
+              limit: usageCheck.limit,
               available: Math.max(0, available),
               requested: newCount,
-            },
-            { status: 403 }
+            }
           );
         }
       }
@@ -418,9 +414,6 @@ export const POST = withAuth(async (request, session) => {
     });
   } catch (error) {
     log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Import failed');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Internal server error');
   }
 });

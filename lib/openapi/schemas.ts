@@ -1,10 +1,42 @@
+import { API_ERRORS } from '../api-errors';
+
 export function sharedSchemas(): Record<string, unknown> {
   return {
     CodedError: {
       type: 'object',
       properties: {
         error: { type: 'string', description: 'English message for logs and scripts' },
-        code: { type: 'string', description: 'Stable machine-readable error code' },
+        code: {
+          type: 'string',
+          enum: Object.keys(API_ERRORS),
+          description: 'Stable machine-readable error code. Unknown codes: fall back to the generic code for the HTTP status.',
+        },
+        params: {
+          type: 'object',
+          additionalProperties: { oneOf: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }] },
+          description: 'Values for building a localized message; keys depend on the code',
+        },
+        details: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { field: { type: 'string' }, message: { type: 'string' } },
+          },
+          description: 'validation_failed only (legacy)',
+        },
+        fields: {
+          type: 'array',
+          description: 'validation_failed only',
+          items: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', example: 'phones.0.number' },
+              issue: { type: 'string', enum: ['required', 'too_long', 'too_short', 'invalid_format', 'invalid_value'] },
+              params: { type: 'object', additionalProperties: { type: 'number' } },
+            },
+            required: ['path', 'issue'],
+          },
+        },
       },
       required: ['error', 'code'],
     },
@@ -23,30 +55,8 @@ export function sharedSchemas(): Record<string, unknown> {
       },
       required: ['accessToken', 'accessTokenExpiresAt', 'refreshToken', 'sessionId', 'user'],
     },
-    Error: {
-      type: 'object',
-      properties: {
-        error: { type: 'string', description: 'Human-readable error message' },
-      },
-      required: ['error'],
-    },
-    ValidationError: {
-      type: 'object',
-      properties: {
-        error: { type: 'string', example: 'Validation failed' },
-        details: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              field: { type: 'string', description: 'Dot-separated field path' },
-              message: { type: 'string' },
-            },
-          },
-        },
-      },
-      required: ['error', 'details'],
-    },
+    Error: { $ref: '#/components/schemas/CodedError' },
+    ValidationError: { $ref: '#/components/schemas/CodedError' },
     Message: {
       type: 'object',
       properties: {
@@ -206,7 +216,7 @@ export function sharedSchemas(): Record<string, unknown> {
         name: { type: 'string', description: 'Internal name (UPPER_SNAKE_CASE)' },
         label: { type: 'string', description: 'Human-readable display label' },
         color: { type: ['string', 'null'], description: 'Hex color' },
-        inverseId: { type: ['string', 'null'], description: 'CUID – ID of the inverse type (e.g. Child for Parent)' },
+        inverseId: { type: ['string', 'null'], description: 'CUID, ID of the inverse type (e.g. Child for Parent)' },
         inverse: {
           oneOf: [
             { $ref: '#/components/schemas/RelationshipTypeSummary' },
@@ -472,7 +482,7 @@ export function sharedSchemas(): Record<string, unknown> {
         username: { type: 'string' },
         provider: { type: ['string', 'null'], description: 'Provider hint: google, icloud, outlook, nextcloud, custom' },
         syncEnabled: { type: 'boolean' },
-        autoSyncInterval: { type: 'integer', description: 'Sync interval in seconds (60–86400)' },
+        autoSyncInterval: { type: 'integer', description: 'Sync interval in seconds (60 to 86400)' },
         lastSyncAt: { type: ['string', 'null'], format: 'date-time' },
         autoExportNew: { type: 'boolean' },
         importMode: { type: 'string', enum: ['manual', 'notify', 'auto'] },

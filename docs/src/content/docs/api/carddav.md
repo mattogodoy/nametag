@@ -103,7 +103,7 @@ curl -X POST https://your-instance.example.com/api/carddav/connection/test \
 { "success": true, "message": "Connection successful" }
 ```
 
-Returns `401` for bad credentials, `404` if the server can't be found, `408` on timeout.
+Returns `400` with code `carddav_auth_failed` for bad credentials. Returns `502` with code `carddav_unreachable` if the server can't be found, times out, or otherwise fails.
 
 ## Sync
 
@@ -146,6 +146,8 @@ curl -X POST https://your-instance.example.com/api/carddav/discover \
 ```json
 { "success": true, "discovered": 5, "errors": 0, "errorMessages": [] }
 ```
+
+If discovery fails the endpoint returns HTTP 500 with the standard error body (`code: "internal_error"`).
 
 ### Get pending import count
 

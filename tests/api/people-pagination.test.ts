@@ -84,12 +84,18 @@ describe('GET /api/people paging', () => {
     for (const bad of ['0', '-5', 'abc', '1.5', '']) {
       const res = await GET(get(`?limit=${bad}`));
       expect(res.status, `limit=${bad} should be rejected`).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe('invalid_query');
+      expect(body.params).toEqual({ param: 'limit' });
     }
   });
 
   it('rejects a negative offset', async () => {
     const res = await GET(get('?offset=-1'));
     expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.code).toBe('invalid_query');
+    expect(body.params).toEqual({ param: 'offset' });
   });
 
   it('reports total, limit, offset, and hasMore', async () => {

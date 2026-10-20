@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, withAuth } from '@/lib/api-utils';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -40,7 +41,7 @@ export const POST = withAuth(async (request, session, context) => {
     });
 
     if (!endpoint) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return apiError('not_found', 'Not found');
     }
 
     // Keyed per destination now that the id is known to exist and to belong
@@ -58,10 +59,7 @@ export const POST = withAuth(async (request, session, context) => {
     // Re-checked here, not only at creation time, so a downgrade stops even a
     // manual test-send immediately, with no cleanup job to run.
     if (endpoint.type === 'WEBHOOK' && !(await canUseWebhooks(session.user.id))) {
-      return NextResponse.json(
-        { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
-        { status: 403 }
-      );
+      return apiError('forbidden', 'Outgoing webhooks require a Pro subscription');
     }
 
     const locale = await getUserLocale(session.user.id);

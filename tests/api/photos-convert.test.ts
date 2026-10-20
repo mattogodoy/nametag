@@ -84,7 +84,8 @@ describe('POST /api/photos/convert', () => {
     const body = await response.json();
 
     expect(response.status).toBe(400);
-    expect(body.error).toBeDefined();
+    expect(body.code).toBe('unsupported_file_type');
+    expect(body.error).toBe('File is not HEIC/HEIF format. Only HEIC files need conversion.');
     expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 
@@ -99,6 +100,11 @@ describe('POST /api/photos/convert', () => {
 
     const response = await POST(largeRequest);
     expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({
+      error: 'Photo exceeds maximum size of 50MB',
+      code: 'photo_too_large',
+      params: { maxBytes: 50 * 1024 * 1024 },
+    });
     expect(mocks.heicConvert).not.toHaveBeenCalled();
   });
 
@@ -111,6 +117,7 @@ describe('POST /api/photos/convert', () => {
 
     const response = await POST(request);
     expect(response.status).toBe(400);
+    expect((await response.json()).code).toBe('photo_missing');
   });
 
   it('should accept heix brand variant', async () => {

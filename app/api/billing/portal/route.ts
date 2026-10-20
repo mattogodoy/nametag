@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { createBillingPortalSession } from '@/lib/billing';
 import { isSaasMode } from '@/lib/features';
@@ -21,7 +22,7 @@ export const POST = withAuth(async (_request, session) => {
     return apiResponse.ok({ url: portalSession.url });
   } catch (error) {
     if (error instanceof Error && error.message === 'No Stripe customer found for this user') {
-      return apiResponse.error('You need an active subscription to access the billing portal', 400);
+      return apiError('subscription_required', 'You need an active subscription to access the billing portal');
     }
     return handleApiError(error, 'billing-portal');
   }

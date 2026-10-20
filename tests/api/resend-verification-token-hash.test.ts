@@ -159,4 +159,28 @@ describe('POST /api/auth/resend-verification - token hashing', () => {
       .filter((identifier): identifier is string => identifier !== undefined);
     expect(identifiers).toEqual(['case@example.com', 'case@example.com']);
   });
+
+  it('returns a coded 429 with retryAfter in params and Retry-After during the cooldown', async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: 'user-1',
+      emailVerified: false,
+      emailVerifySentAt: new Date(),
+    });
+
+    const request = new Request('http://localhost/api/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'test@example.com' }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const response = await POST(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(body.code).toBe('rate_limited');
+    expect(body.error).toMatch(/^Please wait \d+ seconds before requesting another verification email\.$/);
+    expect(typeof body.params.retryAfter).toBe('number');
+    expect(response.headers.get('Retry-After')).toBe(String(body.params.retryAfter));
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
 });

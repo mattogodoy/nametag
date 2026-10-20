@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { customFieldTemplateCreateSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { sanitizeName } from '@/lib/sanitize';
 import { canCreateResource } from '@/lib/billing';
 import { deriveSlug } from '@/lib/customFields/slug';
@@ -34,9 +35,11 @@ export const POST = withAuth(async (request, session) => {
     // Check tier limit
     const usageCheck = await canCreateResource(session.user.id, 'customFieldTemplates');
     if (!usageCheck.allowed) {
-      return apiResponse.forbidden(
+      return apiError(
+        'plan_limit_reached',
         `You've reached your plan limit of ${usageCheck.limit} custom fields. ` +
-          `Please upgrade your plan to add more.`
+          `Please upgrade your plan to add more.`,
+        { resource: 'customFieldTemplates', limit: usageCheck.limit }
       );
     }
 
@@ -55,7 +58,7 @@ export const POST = withAuth(async (request, session) => {
     // Derive slug from name
     const slug = deriveSlug(sanitizedName);
     if (!slug) {
-      return apiResponse.error('Name must contain at least one alphanumeric character');
+      return apiError('name_needs_alphanumeric', 'Name must contain at least one alphanumeric character');
     }
 
     // Compute next order value
@@ -85,7 +88,7 @@ export const POST = withAuth(async (request, session) => {
     return apiResponse.created({ template });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return apiResponse.error('A custom field with this name already exists', 409);
+      return apiError('custom_field_name_taken', 'A custom field with this name already exists');
     }
     return handleApiError(error, 'custom-field-templates-create');
   }

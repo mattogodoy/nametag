@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import * as bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { resetPasswordSchema, validateRequest } from '@/lib/validations';
@@ -12,7 +13,7 @@ import { isFeatureEnabled } from '@/lib/features';
 
 export const POST = withLogging(async function POST(request: Request) {
   if (!validateOrigin(request)) {
-    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
+    return apiError('invalid_origin', 'Invalid request origin');
   }
 
   // Check rate limit
@@ -23,10 +24,7 @@ export const POST = withLogging(async function POST(request: Request) {
 
   try {
     if (!isFeatureEnabled('passwordLogin')) {
-      return NextResponse.json(
-        { error: 'Password login is disabled on this instance.' },
-        { status: 403 }
-      );
+      return apiError('password_login_disabled', 'Password login is disabled on this instance.');
     }
 
     const body = await parseRequestBody(request);
@@ -49,10 +47,7 @@ export const POST = withLogging(async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid or expired reset token. Please request a new password reset.' },
-        { status: 400 }
-      );
+      return apiError('bad_request', 'Invalid or expired reset token. Please request a new password reset.');
     }
 
     // Hash new password

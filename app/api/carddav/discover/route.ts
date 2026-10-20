@@ -1,8 +1,5 @@
 import { discoverNewContacts } from '@/lib/carddav/discover';
-import { createModuleLogger } from '@/lib/logger';
-import { apiResponse, withAuth } from '@/lib/api-utils';
-
-const log = createModuleLogger('carddav');
+import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
 export const POST = withAuth(async (_request, session) => {
   try {
@@ -16,14 +13,6 @@ export const POST = withAuth(async (_request, session) => {
       errorMessages: result.errorMessages,
     });
   } catch (error) {
-    log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Discovery failed');
-
-    return apiResponse.ok(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Discovery failed',
-      },
-      500
-    );
+    return handleApiError(error, 'carddav-discover');
   }
 });

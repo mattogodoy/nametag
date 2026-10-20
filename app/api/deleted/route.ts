@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 
@@ -111,8 +112,10 @@ export const GET = withAuth(async (request, session) => {
         break;
 
       default:
-        return apiResponse.error(
-          'Invalid type parameter. Must be one of: people, groups, relationships, relationshipTypes, importantDates'
+        return apiError(
+          'invalid_query',
+          'Invalid type parameter. Must be one of: people, groups, relationships, relationshipTypes, importantDates',
+          { param: 'type' }
         );
     }
 

@@ -106,6 +106,8 @@ describe('Redis Rate Limiting', () => {
       const json = await result?.json();
       expect(json.error).toContain('Too many attempts');
       expect(json.retryAfter).toBe(600);
+      expect(json.code).toBe('rate_limited');
+      expect(result?.headers.get('Retry-After')).toBe('600');
     });
 
     it('should include rate limit headers in blocked responses', async () => {
@@ -183,6 +185,26 @@ describe('Redis Rate Limiting', () => {
 
       const result = await checkRateLimit(request, 'login');
       expect(result).toBeNull(); // Should use memory fallback
+    });
+
+    it('returns the rate_limited code from the memory store', async () => {
+      (process.env as { NODE_ENV?: string }).NODE_ENV = 'development';
+      getRedis.mockReturnValue(null);
+      isRedisConnected.mockReturnValue(false);
+
+      const request = new Request('http://localhost:3000/api/test', {
+        headers: { 'x-forwarded-for': '10.9.8.7' },
+      });
+
+      let blocked: NextResponse | null = null;
+      for (let i = 0; i < 7 && !blocked; i++) {
+        blocked = await checkRateLimit(request, 'login');
+      }
+      expect(blocked?.status).toBe(429);
+      const json = await blocked?.json();
+      expect(json.code).toBe('rate_limited');
+      expect(typeof json.retryAfter).toBe('number');
+      expect(blocked?.headers.get('Retry-After')).toBeTruthy();
     });
 
     it('should fail open in production when Redis is unavailable', async () => {

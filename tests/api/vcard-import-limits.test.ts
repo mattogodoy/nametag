@@ -170,10 +170,9 @@ describe('VCF Import Tier Limits', () => {
     const data = await response.json();
 
     expect(response.status).toBe(403);
-    expect(data.code).toBe('LIMIT_EXCEEDED');
+    expect(data.code).toBe('plan_limit_reached');
     expect(data.error).toContain('exceed');
-    expect(data.available).toBe(2);
-    expect(data.requested).toBe(5);
+    expect(data.params).toEqual({ resource: 'people', limit: 50, available: 2, requested: 5 });
   });
 
   it('should allow VCF import when within limits', async () => {
@@ -302,8 +301,7 @@ describe('VCF Import Tier Limits', () => {
 
     // 49 + 2 = 51 > 50, should be rejected
     expect(response.status).toBe(403);
-    expect(data.code).toBe('LIMIT_EXCEEDED');
-    expect(data.available).toBe(1);
-    expect(data.requested).toBe(2);
+    expect(data.code).toBe('plan_limit_reached');
+    expect(data.params).toEqual({ resource: 'people', limit: 50, available: 1, requested: 2 });
   });
 });

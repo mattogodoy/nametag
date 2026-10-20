@@ -181,8 +181,11 @@ describe('Important Dates API', () => {
       const context = { params: Promise.resolve({ id: 'person-1' }) };
 
       const response = await POST(request, context);
+      const body = await response.json();
 
       expect(response.status).toBe(403);
+      expect(body.code).toBe('plan_limit_reached');
+      expect(body.params).toEqual({ resource: 'reminders', limit: 2 });
     });
 
     it('should allow creation with reminder when under limit', async () => {

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateJournalEntrySchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 
 // GET /api/journal/[id] - Get a single journal entry
@@ -74,7 +75,7 @@ export const PUT = withAuth(async (request, session, context) => {
         where: { id: { in: personIds }, userId: session.user.id, deletedAt: null },
       });
       if (validCount !== personIds.length) {
-        return apiResponse.error('One or more person IDs are invalid');
+        return apiError('invalid_person_ids', 'One or more person IDs are invalid');
       }
     }
 

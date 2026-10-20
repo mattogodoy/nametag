@@ -78,6 +78,20 @@ describe('rate-limit', () => {
       expect(result?.headers.get('Retry-After')).toBeTruthy();
     });
 
+    it('should include the rate_limited code, retryAfter and header', async () => {
+      const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
+      const request = createMockRequest('10.0.0.6');
+      for (let i = 0; i < rateLimitConfigs.login.maxAttempts; i++) {
+        checkRateLimit(request, 'login');
+      }
+      const result = checkRateLimit(request, 'login');
+      const body = await result?.json();
+      expect(result?.status).toBe(429);
+      expect(body.code).toBe('rate_limited');
+      expect(typeof body.retryAfter).toBe('number');
+      expect(result?.headers.get('Retry-After')).toBe(String(body.retryAfter));
+    });
+
     it('should return error message with retry time', async () => {
       const { checkRateLimit, rateLimitConfigs } = await import('@/lib/rate-limit');
       const request = createMockRequest('10.0.0.5');

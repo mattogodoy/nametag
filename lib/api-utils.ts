@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Session } from 'next-auth';
 import { randomUUID } from 'node:crypto';
 import { auth } from './auth';
+import { apiError, genericCodeFor, type ApiErrorCode, type ApiErrorParams } from '@/lib/api-errors';
 import { logger, createModuleLogger } from './logger';
 import { validateOrigin } from '@/lib/csrf';
 import { runWithContext, updateContext } from '@/lib/logging/context';
@@ -113,10 +114,11 @@ export const apiResponse = {
 
   /**
    * Return an error with a machine-readable code for native clients
-   * @example apiResponse.coded(401, 'session_expired', 'Session expired')
+   * The status comes from the catalog in lib/api-errors.ts.
+   * @example apiResponse.coded('session_expired', 'Session expired')
    */
-  coded: (status: number, code: string, message: string) =>
-    NextResponse.json({ error: message, code }, { status }),
+  coded: (code: ApiErrorCode, message: string, params?: ApiErrorParams) =>
+    apiError(code, message, params),
 
   /**
    * Return success message
@@ -137,37 +139,37 @@ export const apiResponse = {
    * @example apiResponse.error('Invalid input') // returns { error: '...' } with 400 status
    */
   error: (message: string, status = 400) =>
-    NextResponse.json({ error: message }, { status }),
+    NextResponse.json({ error: message, code: genericCodeFor(status) }, { status }),
 
   /**
    * Return 401 Unauthorized
    */
   unauthorized: (message = 'Unauthorized') =>
-    NextResponse.json({ error: message }, { status: 401 }),
+    NextResponse.json({ error: message, code: genericCodeFor(401) }, { status: 401 }),
 
   /**
    * Return 403 Forbidden
    */
   forbidden: (message = 'Forbidden') =>
-    NextResponse.json({ error: message }, { status: 403 }),
+    NextResponse.json({ error: message, code: genericCodeFor(403) }, { status: 403 }),
 
   /**
    * Return 404 Not Found
    */
   notFound: (message = 'Not found') =>
-    NextResponse.json({ error: message }, { status: 404 }),
+    NextResponse.json({ error: message, code: genericCodeFor(404) }, { status: 404 }),
 
   /**
    * Return 413 Payload Too Large
    */
   payloadTooLarge: (message = 'Request body too large') =>
-    NextResponse.json({ error: message }, { status: 413 }),
+    NextResponse.json({ error: message, code: genericCodeFor(413) }, { status: 413 }),
 
   /**
    * Return 500 Internal Server Error
    */
   serverError: (message = 'Internal server error') =>
-    NextResponse.json({ error: message }, { status: 500 }),
+    NextResponse.json({ error: message, code: genericCodeFor(500) }, { status: 500 }),
 };
 
 /**
@@ -182,12 +184,12 @@ export function handleApiError(
   // Handle specific error types with appropriate status codes
   if (error instanceof RequestTooLargeError) {
     logger.warn({ context, ...additionalInfo }, `Request too large in ${context}`);
-    return apiResponse.payloadTooLarge(error.message);
+    return apiError('payload_too_large', error.message);
   }
 
   if (error instanceof InvalidJsonError) {
     logger.warn({ context, ...additionalInfo }, `Invalid JSON in ${context}`);
-    return apiResponse.error(error.message);
+    return apiError('invalid_json', error.message);
   }
 
   const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -203,10 +205,7 @@ export function handleApiError(
 
   if (isDbConnectionError) {
     logger.error({ err: errorObj, context, ...additionalInfo }, `Database connection error in ${context}`);
-    return NextResponse.json(
-      { error: 'Service temporarily unavailable. Please try again later.' },
-      { status: 503 }
-    );
+    return apiError('service_unavailable', 'Service temporarily unavailable. Please try again later.');
   }
 
   logger.error({ err: errorObj, context, ...additionalInfo }, `API Error in ${context}`);
@@ -216,7 +215,7 @@ export function handleApiError(
     ? 'Something went wrong'
     : errorObj.message;
 
-  return apiResponse.serverError(message);
+  return apiError('internal_error', message);
 }
 
 /**
@@ -394,10 +393,10 @@ export function withAuth(
     if (bearer && bearer.startsWith(ACCESS_TOKEN_PREFIX)) {
       const resolved = await resolveDeviceAccessToken(bearer);
       if (resolved.status === 'expired') {
-        return apiResponse.coded(401, 'access_token_expired', 'Access token expired');
+        return apiResponse.coded('access_token_expired', 'Access token expired');
       }
       if (resolved.status === 'invalid') {
-        return apiResponse.coded(401, 'invalid_token', 'Invalid token');
+        return apiResponse.coded('invalid_token', 'Invalid token');
       }
 
       updateContext({ userId: resolved.userId });
@@ -416,7 +415,7 @@ export function withAuth(
       const resolved = await resolveApiToken(bearer);
 
       if (!resolved) {
-        return apiResponse.coded(401, 'invalid_token', 'Invalid or expired API token');
+        return apiResponse.coded('invalid_token', 'Invalid or expired API token');
       }
 
       // Read-only tokens may only perform safe (non-mutating) requests.
@@ -436,7 +435,7 @@ export function withAuth(
 
     // Session (cookie) auth path.
     if (!validateOrigin(request)) {
-      return apiResponse.forbidden('Invalid request origin');
+      return apiError('invalid_origin', 'Invalid request origin');
     }
 
     const session = await auth();

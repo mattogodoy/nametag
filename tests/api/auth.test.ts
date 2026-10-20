@@ -172,8 +172,9 @@ describe('Auth API', () => {
       const response = await register(request);
       const body = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(body.error).toContain('already exists');
+      expect(response.status).toBe(409);
+      expect(body.error).toBe('User already exists');
+      expect(body.code).toBe('email_in_use');
     });
 
     it('should require email field', async () => {
@@ -559,6 +560,28 @@ describe('Auth API', () => {
       });
     });
 
+    it('returns feature_disabled for password_login when password login is off', async () => {
+      mocks.isFeatureEnabled.mockImplementation((feature: string) => feature !== 'passwordLogin');
+
+      const request = new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'test@example.com',
+          password: 'ValidPassword123!',
+          name: 'Test User',
+        }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      const response = await register(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.error).toBe('Password registration is disabled. Use the configured SSO provider.');
+      expect(body.code).toBe('feature_disabled');
+      expect(body.params).toEqual({ feature: 'password_login', scope: 'instance' });
+    });
+
     describe('DISABLE_REGISTRATION Feature', () => {
       it('should allow registration when DISABLE_REGISTRATION is not set', async () => {
         mocks.userFindUnique.mockResolvedValue(null);
@@ -656,6 +679,8 @@ describe('Auth API', () => {
 
         expect(response.status).toBe(403);
         expect(body.error).toBe('Registration is currently disabled');
+        expect(body.code).toBe('feature_disabled');
+        expect(body.params).toEqual({ feature: 'registration', scope: 'instance' });
         expect(mocks.userCreate).not.toHaveBeenCalled();
         expect(mocks.userFindUnique).not.toHaveBeenCalled();
       });
@@ -679,6 +704,8 @@ describe('Auth API', () => {
 
         expect(response.status).toBe(403);
         expect(body.error).toBe('Registration is currently disabled');
+        expect(body.code).toBe('feature_disabled');
+        expect(body.params).toEqual({ feature: 'registration', scope: 'instance' });
         expect(mocks.userCreate).not.toHaveBeenCalled();
       });
 
@@ -788,8 +815,9 @@ describe('Auth API', () => {
         const response = await register(request);
         const body = await response.json();
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(409);
         expect(body.error).toContain('already exists');
+        expect(body.code).toBe('email_in_use');
         expect(mocks.userFindUnique).toHaveBeenCalledWith({
           where: { email: 'test@example.com' },
         });
@@ -831,6 +859,38 @@ describe('Auth API', () => {
   });
 
   describe('POST /api/auth/forgot-password', () => {
+    it('rejects a foreign origin with invalid_origin', async () => {
+      const request = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'test@example.com' }),
+        headers: { 'content-type': 'application/json', origin: 'http://evil.example' },
+      });
+
+      const response = await forgotPassword(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.error).toBe('Invalid request origin');
+      expect(body.code).toBe('invalid_origin');
+    });
+
+    it('returns password_login_disabled when password login is off', async () => {
+      mocks.isFeatureEnabled.mockImplementation((feature: string) => feature !== 'passwordLogin');
+
+      const request = new Request('http://localhost/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'test@example.com' }),
+        headers: { 'content-type': 'application/json' },
+      });
+
+      const response = await forgotPassword(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.error).toBe('Password login is disabled on this instance.');
+      expect(body.code).toBe('password_login_disabled');
+    });
+
     it('should respect rate limiting', async () => {
       // Override the mock just for this test
       mocks.checkRateLimitSync.mockReturnValueOnce(
@@ -906,7 +966,9 @@ describe('Auth API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(429);
-      expect(body.retryAfter).toBeDefined();
+      expect(body.code).toBe('rate_limited');
+      expect(typeof body.params.retryAfter).toBe('number');
+      expect(response.headers.get('Retry-After')).toBe(String(body.params.retryAfter));
       expect(mocks.sendEmail).not.toHaveBeenCalled();
     });
 

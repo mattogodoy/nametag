@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { checkVerificationSchema, validateRequest } from '@/lib/validations';
 import { parseRequestBody, normalizeEmail, withLogging } from '@/lib/api-utils';
@@ -30,9 +31,6 @@ export const POST = withLogging(async function POST(request: Request) {
     return NextResponse.json({ verified: user.emailVerified, locked });
   } catch (error) {
     logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Check verification error');
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Something went wrong');
   }
 });

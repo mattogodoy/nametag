@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
@@ -60,16 +61,13 @@ export const POST = withAuth(async (request, session) => {
 
     const parsed = createEndpointSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid endpoint', code: 'invalid' }, { status: 400 });
+      return apiError('invalid', 'Invalid endpoint');
     }
 
     const { type, label, url } = parsed.data;
 
     if (type === 'WEBHOOK' && !(await canUseWebhooks(session.user.id))) {
-      return NextResponse.json(
-        { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
-        { status: 403 }
-      );
+      return apiError('forbidden', 'Outgoing webhooks require a Pro subscription');
     }
 
     let normalized;
@@ -78,25 +76,18 @@ export const POST = withAuth(async (request, session) => {
       normalized = normalizeEndpointUrl(type, url);
     } catch (error) {
       if (error instanceof CredentialsInUrlError) {
-        return NextResponse.json(
-          {
-            error:
-              'Remove the username and password from the URL. Nametag cannot store URL credentials.',
-            code: 'credentials_in_url',
-          },
-          { status: 400 }
+        return apiError(
+          'credentials_in_url',
+          'Remove the username and password from the URL. Nametag cannot store URL credentials.'
         );
       }
       throw error;
     }
 
     if (!normalized) {
-      return NextResponse.json(
-        {
-          error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
-          code: 'invalid',
-        },
-        { status: 400 }
+      return apiError(
+        'invalid',
+        'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic'
       );
     }
 
@@ -111,18 +102,16 @@ export const POST = withAuth(async (request, session) => {
       where: { userId: session.user.id },
     });
     if (existing >= MAX_ENDPOINTS_PER_USER) {
-      return NextResponse.json(
-        { error: `You can have at most ${MAX_ENDPOINTS_PER_USER} endpoints` },
-        { status: 409 }
+      return apiError(
+        'endpoint_limit_reached',
+        `You can have at most ${MAX_ENDPOINTS_PER_USER} endpoints`,
+        { limit: MAX_ENDPOINTS_PER_USER }
       );
     }
 
     const rejection = await checkEndpointUrl(normalized);
     if (rejection) {
-      return NextResponse.json(
-        { error: MESSAGE_BY_REJECTION[rejection.code], code: rejection.code },
-        { status: 400 }
-      );
+      return apiError(rejection.code, MESSAGE_BY_REJECTION[rejection.code]);
     }
 
     // The signing secret is generated here, never accepted from the client. A
@@ -178,9 +167,10 @@ export const POST = withAuth(async (request, session) => {
       // Lost the race for the last slot. The transaction already rolled back,
       // so nothing was created.
       if (error instanceof EndpointCapReachedError) {
-        return NextResponse.json(
-          { error: `You can have at most ${MAX_ENDPOINTS_PER_USER} endpoints` },
-          { status: 409 }
+        return apiError(
+          'endpoint_limit_reached',
+          `You can have at most ${MAX_ENDPOINTS_PER_USER} endpoints`,
+          { limit: MAX_ENDPOINTS_PER_USER }
         );
       }
 
@@ -190,10 +180,7 @@ export const POST = withAuth(async (request, session) => {
       // multiplying every reminder into five identical publishes, and this
       // is where that constraint surfaces as a response instead of a 500.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'You have already added that destination', code: 'duplicate' },
-          { status: 409 }
-        );
+        return apiError('duplicate', 'You have already added that destination');
       }
       throw error;
     }

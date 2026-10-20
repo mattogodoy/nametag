@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { addGroupMemberSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { autoUpdatePerson } from '@/lib/carddav/auto-export';
 import { createModuleLogger } from '@/lib/logger';
 
@@ -56,7 +57,7 @@ export const POST = withAuth(async (request, session, context) => {
     });
 
     if (existingMembership) {
-      return apiResponse.error('Person is already a member of this group');
+      return apiError('already_group_member', 'Person is already a member of this group');
     }
 
     // Add person to group

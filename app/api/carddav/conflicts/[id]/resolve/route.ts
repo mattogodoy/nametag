@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/vcard-import';
@@ -20,10 +20,7 @@ export const POST = withAuth(async (request, session, context) => {
     const validationResult = resolveSchema.safeParse(await request.json());
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid resolution type', details: validationResult.error.issues },
-        { status: 400 }
-      );
+      return validationFailed(validationResult.error.issues, 'Invalid resolution type', validationResult.error.issues);
     }
 
     const { resolution } = validationResult.data;
@@ -63,7 +60,7 @@ export const POST = withAuth(async (request, session, context) => {
 
     // Already resolved?
     if (conflict.resolvedAt) {
-      return apiResponse.error('Conflict already resolved');
+      return apiError('conflict_already_resolved', 'Conflict already resolved');
     }
 
     if (resolution === 'keep_local') {

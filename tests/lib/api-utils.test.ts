@@ -158,7 +158,7 @@ describe('api-utils', () => {
         expect(response.status).toBe(400);
 
         const body = await response.json();
-        expect(body).toEqual({ error: 'Invalid input' });
+        expect(body).toEqual({ error: 'Invalid input', code: 'bad_request' });
       });
 
       it('should accept custom status', async () => {
@@ -173,13 +173,13 @@ describe('api-utils', () => {
         expect(response.status).toBe(401);
 
         const body = await response.json();
-        expect(body).toEqual({ error: 'Unauthorized' });
+        expect(body).toEqual({ error: 'Unauthorized', code: 'unauthorized' });
       });
 
       it('should accept custom message', async () => {
         const response = apiResponse.unauthorized('Session expired');
         const body = await response.json();
-        expect(body).toEqual({ error: 'Session expired' });
+        expect(body).toEqual({ error: 'Session expired', code: 'unauthorized' });
       });
     });
 
@@ -189,7 +189,7 @@ describe('api-utils', () => {
         expect(response.status).toBe(403);
 
         const body = await response.json();
-        expect(body).toEqual({ error: 'Forbidden' });
+        expect(body).toEqual({ error: 'Forbidden', code: 'forbidden' });
       });
     });
 
@@ -199,13 +199,13 @@ describe('api-utils', () => {
         expect(response.status).toBe(404);
 
         const body = await response.json();
-        expect(body).toEqual({ error: 'Not found' });
+        expect(body).toEqual({ error: 'Not found', code: 'not_found' });
       });
 
       it('should accept custom message', async () => {
         const response = apiResponse.notFound('Person not found');
         const body = await response.json();
-        expect(body).toEqual({ error: 'Person not found' });
+        expect(body).toEqual({ error: 'Person not found', code: 'not_found' });
       });
     });
 
@@ -215,7 +215,7 @@ describe('api-utils', () => {
         expect(response.status).toBe(413);
 
         const body = await response.json();
-        expect(body).toEqual({ error: 'Request body too large' });
+        expect(body).toEqual({ error: 'Request body too large', code: 'payload_too_large' });
       });
     });
 
@@ -225,13 +225,13 @@ describe('api-utils', () => {
         expect(response.status).toBe(500);
 
         const body = await response.json();
-        expect(body).toEqual({ error: 'Internal server error' });
+        expect(body).toEqual({ error: 'Internal server error', code: 'internal_error' });
       });
 
       it('should accept custom message', async () => {
         const response = apiResponse.serverError('Database error');
         const body = await response.json();
-        expect(body).toEqual({ error: 'Database error' });
+        expect(body).toEqual({ error: 'Database error', code: 'internal_error' });
       });
     });
   });
@@ -674,5 +674,36 @@ describe('api-utils', () => {
     it('should be 1MB', () => {
       expect(MAX_REQUEST_SIZE).toBe(1 * 1024 * 1024);
     });
+  });
+});
+
+describe('error codes from shared helpers', () => {
+  it.each([
+    [() => apiResponse.error('x'), 'bad_request'],
+    [() => apiResponse.error('x', 409), 'conflict'],
+    [() => apiResponse.unauthorized(), 'unauthorized'],
+    [() => apiResponse.forbidden(), 'forbidden'],
+    [() => apiResponse.notFound(), 'not_found'],
+    [() => apiResponse.payloadTooLarge(), 'payload_too_large'],
+    [() => apiResponse.serverError(), 'internal_error'],
+  ])('helper adds generic code %#', async (make, code) => {
+    expect((await make().json()).code).toBe(code);
+  });
+  it('handleApiError maps InvalidJsonError to invalid_json', async () => {
+    const res = handleApiError(new InvalidJsonError(), 'test');
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe('invalid_json');
+  });
+  it('handleApiError maps unknown errors to internal_error and db outages to service_unavailable', async () => {
+    expect((await handleApiError(new Error('boom'), 't').json()).code).toBe('internal_error');
+    const db = Object.assign(new Error('x'), { code: 'ECONNREFUSED' });
+    const res = handleApiError(db, 't');
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('service_unavailable');
+  });
+  it('apiResponse.coded takes its status from the catalog', async () => {
+    const res = apiResponse.coded('session_expired', 'Expired');
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: 'Expired', code: 'session_expired' });
   });
 });

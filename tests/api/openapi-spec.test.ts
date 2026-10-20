@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateOpenAPISpec } from '../../lib/openapi';
+import { resp } from '../../lib/openapi/helpers';
+import { API_ERRORS } from '../../lib/api-errors';
 import type { EndpointUrlRejection } from '../../lib/notifications/endpoint-url';
 
 describe('OpenAPI Specification', () => {
@@ -133,5 +135,16 @@ describe('OpenAPI Specification', () => {
     // ImportantDate.reminderType should use oneOf
     const reminderType = spec.components.schemas.ImportantDate.properties.reminderType;
     expect(reminderType.oneOf).toBeDefined();
+  });
+
+  it('CodedError enumerates every catalog code and describes params and fields', () => {
+    const coded = (spec.components.schemas as Record<string, { properties: Record<string, { enum?: string[] }> }>).CodedError;
+    expect(coded.properties.code.enum?.slice().sort()).toEqual(Object.keys(API_ERRORS).sort());
+    expect(coded.properties).toHaveProperty('params');
+    expect(coded.properties).toHaveProperty('fields');
+  });
+
+  it('generic error responses reference CodedError', () => {
+    expect(JSON.stringify(resp('x'))).toContain('#/components/schemas/CodedError');
   });
 });

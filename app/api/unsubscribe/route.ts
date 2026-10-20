@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { consumeUnsubscribeToken } from '@/lib/unsubscribe-tokens';
 import { handleApiError, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
@@ -9,19 +10,13 @@ export const POST = withLogging(async function POST(request: Request) {
     const { token } = body;
 
     if (!token || typeof token !== 'string') {
-      return NextResponse.json(
-        { error: 'MISSING_TOKEN' },
-        { status: 400 }
-      );
+      return apiError('bad_request', 'MISSING_TOKEN');
     }
 
     const result = await consumeUnsubscribeToken(token);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
+      return apiError('bad_request', result.error);
     }
 
     logger.info({

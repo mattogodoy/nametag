@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { logger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
 
@@ -15,10 +15,7 @@ export const GET = withLogging(async function GET(request: Request) {
     ip: request.headers.get('x-forwarded-for') || 'unknown',
   }, 'API endpoint not found');
 
-  return NextResponse.json(
-    { error: 'Not Found', path: pathname },
-    { status: 404 }
-  );
+  return apiError('not_found', 'Not Found', { path: pathname });
 });
 
 export const POST = withLogging(async function POST(request: Request) {
@@ -30,10 +27,7 @@ export const POST = withLogging(async function POST(request: Request) {
     ip: request.headers.get('x-forwarded-for') || 'unknown',
   }, 'API endpoint not found');
 
-  return NextResponse.json(
-    { error: 'Not Found', path: pathname },
-    { status: 404 }
-  );
+  return apiError('not_found', 'Not Found', { path: pathname });
 });
 
 export const PUT = withLogging(async function PUT(request: Request) {
@@ -45,10 +39,7 @@ export const PUT = withLogging(async function PUT(request: Request) {
     ip: request.headers.get('x-forwarded-for') || 'unknown',
   }, 'API endpoint not found');
 
-  return NextResponse.json(
-    { error: 'Not Found', path: pathname },
-    { status: 404 }
-  );
+  return apiError('not_found', 'Not Found', { path: pathname });
 });
 
 export const DELETE = withLogging(async function DELETE(request: Request) {
@@ -60,10 +51,7 @@ export const DELETE = withLogging(async function DELETE(request: Request) {
     ip: request.headers.get('x-forwarded-for') || 'unknown',
   }, 'API endpoint not found');
 
-  return NextResponse.json(
-    { error: 'Not Found', path: pathname },
-    { status: 404 }
-  );
+  return apiError('not_found', 'Not Found', { path: pathname });
 });
 
 export const PATCH = withLogging(async function PATCH(request: Request) {
@@ -75,8 +63,5 @@ export const PATCH = withLogging(async function PATCH(request: Request) {
     ip: request.headers.get('x-forwarded-for') || 'unknown',
   }, 'API endpoint not found');
 
-  return NextResponse.json(
-    { error: 'Not Found', path: pathname },
-    { status: 404 }
-  );
+  return apiError('not_found', 'Not Found', { path: pathname });
 });

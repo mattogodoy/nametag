@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createImportantDateSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { canEnableReminder } from '@/lib/billing';
 
 // GET /api/people/[id]/important-dates - List important dates for a person
@@ -57,9 +58,11 @@ export const POST = withAuth(async (request, session, context) => {
       if (!reminderCheck.isUnlimited) {
         const remainingSlots = reminderCheck.limit - reminderCheck.current;
         if (remainingSlots <= 0) {
-          return apiResponse.forbidden(
+          return apiError(
+            'plan_limit_reached',
             `You've reached your plan limit of ${reminderCheck.limit} reminders. ` +
-            `Please upgrade your plan to add more.`
+            `Please upgrade your plan to add more.`,
+            { resource: 'reminders', limit: reminderCheck.limit }
           );
         }
       }
@@ -71,7 +74,7 @@ export const POST = withAuth(async (request, session, context) => {
         where: { personId: id, type, deletedAt: null },
       });
       if (existing) {
-        return apiResponse.error(`A "${type}" date already exists for this person.`);
+        return apiError('important_date_type_exists', `A "${type}" date already exists for this person.`, { type });
       }
     }
 

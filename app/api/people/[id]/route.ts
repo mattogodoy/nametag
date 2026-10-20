@@ -3,6 +3,7 @@ import { findPersonWithDetails } from '@/lib/prisma-queries';
 import { updatePerson, deletePerson } from '@/lib/services/person';
 import { updatePersonSchema, deletePersonSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { canEnableReminder } from '@/lib/billing';
 import { autoExportPerson } from '@/lib/carddav/auto-export';
 import { deleteFromCardDav as deleteContactFromCardDav } from '@/lib/carddav/delete-contact';
@@ -82,9 +83,11 @@ export const PUT = withAuth(async (request, session, context) => {
       if (!reminderCheck.isUnlimited) {
         const remainingSlots = reminderCheck.limit - reminderCheck.current;
         if (netChange > remainingSlots) {
-          return apiResponse.forbidden(
+          return apiError(
+            'plan_limit_reached',
             `You can only add ${remainingSlots} more reminder(s) on your current plan ` +
-            `(limit: ${reminderCheck.limit}). Please upgrade your plan to add more.`
+            `(limit: ${reminderCheck.limit}). Please upgrade your plan to add more.`,
+            { resource: 'reminders', limit: reminderCheck.limit }
           );
         }
       }
@@ -118,7 +121,7 @@ export const PUT = withAuth(async (request, session, context) => {
         await applyCustomFieldValues(prisma, session.user.id, id, validation.data.customFieldValues);
       } catch (err) {
         if (err instanceof CustomFieldValidationError) {
-          return apiResponse.error(err.message);
+          return apiError('bad_request', err.message);
         }
         throw err;
       }
