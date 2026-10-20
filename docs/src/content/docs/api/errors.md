@@ -68,6 +68,7 @@ Each entry has a `path` (dot-separated, array indexes as numbers), an `issue` an
 | `invalid_json` | 400 | The body is not valid JSON. |  |
 | `invalid_origin` | 403 | The request origin is not allowed. |  |
 | `invalid_query` | 400 | A query parameter is invalid. | `param` |
+| `sync_cursor_expired` | 410 | The sync cursor is older than retained deletions. Discard the local cache and sync again from cursor `0`. |  |
 | `invalid_credentials` | 401 | Wrong email or password. |  |
 | `account_locked` | 403 | Too many failed sign-ins; the account is temporarily locked. |  |
 | `email_not_verified` | 403 | The email address has not been verified. |  |

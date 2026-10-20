@@ -77,6 +77,9 @@ export const API_ERRORS = {
   carddav_auth_failed: { status: 400, description: 'The CardDAV server rejected the credentials.' },
   carddav_unreachable: { status: 502, description: 'The CardDAV server could not be reached or failed.' },
 
+  // Sync
+  sync_cursor_expired: { status: 410, description: 'The sync cursor is older than retained deletions. Discard the cache and sync from cursor 0.' },
+
   // Notification endpoints (shipped before 0.3; the web reads these)
   invalid: { status: 400, description: 'Notification endpoint: the request or URL is invalid.' },
   duplicate: { status: 409, description: 'Notification endpoint: that destination is already added.' },

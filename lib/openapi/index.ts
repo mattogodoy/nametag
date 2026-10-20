@@ -12,6 +12,7 @@ import { journalPaths } from './journal';
 import { customFieldsPaths } from './customFields';
 import { apiTokenPaths } from './apiTokens';
 import { mapPaths } from './map';
+import { syncPaths } from './sync';
 import { notificationsPaths } from './notifications';
 import { jsonResponse, ref400, ref401, ref404, refSuccess, pathParam, jsonBody, resp, sessionOrToken } from './helpers';
 
@@ -67,6 +68,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       { name: 'vCard', description: 'Direct vCard file import and upload for preview' },
       { name: 'Photos', description: 'Person and user photo management' },
       { name: 'Map', description: 'Map markers and address geocoding' },
+      { name: 'Sync', description: 'Change feed for native clients' },
       { name: 'Notifications', description: 'Reminder delivery channels: email and browser push' },
       { name: 'Cron', description: 'Background jobs authenticated via CRON_SECRET bearer token' },
       { name: 'System', description: 'Health checks and system endpoints' },
@@ -120,6 +122,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       ...customFieldsPaths(),
       ...apiTokenPaths(),
       ...mapPaths(),
+      ...syncPaths(),
       ...notificationsPaths(),
 
       // Photos (non-person-specific)

@@ -56,5 +56,6 @@
   "credentials_in_url": 400,
   "not_ntfy": 400,
   "too_long": 400,
-  "endpoint_limit_reached": 409
+  "endpoint_limit_reached": 409,
+  "sync_cursor_expired": 410
 }
