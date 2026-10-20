@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, beforeEach } from 'vitest';
 import { testPrisma, createUser, resetDb } from './client';
-import { getChangesSince, type SyncPage } from '@/lib/sync/changes';
+import { type SyncPage } from '@/lib/sync/changes';
+import { getPage } from './sync-helpers';
 
 function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve: () => void = () => {};
@@ -135,7 +136,7 @@ describe('sync ordering under concurrency', () => {
       }, { timeout: 15000, maxWait: 15000 });
       expect(await waitForLockWait('%LOCK TABLE%groups%')).toBeGreaterThanOrEqual(1);
 
-      first = getChangesSince(prismaIncludingDeleted, userId, start, 500);
+      first = getPage(prismaIncludingDeleted, userId, start, 500);
       expect(await waitForLockWait('%SELECT%FROM "public"."groups"%')).toBeGreaterThanOrEqual(1);
       // Let every reader query that is not parked finish against the old state.
       await new Promise((r) => setTimeout(r, 300));
@@ -153,7 +154,7 @@ describe('sync ordering under concurrency', () => {
       const seen = Object.values(page1.changes).flat().map((r) => String(r.id));
       let cursor = BigInt(page1.cursor);
       for (let i = 0; i < 10; i++) {
-        const page = await getChangesSince(prismaIncludingDeleted, userId, cursor, 1);
+        const page = await getPage(prismaIncludingDeleted, userId, cursor, 1);
         seen.push(...Object.values(page.changes).flat().map((r) => String(r.id)));
         cursor = BigInt(page.cursor);
         if (!page.hasMore) break;

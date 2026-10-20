@@ -44,9 +44,20 @@ function toEntries<T extends { syncVersion: bigint }>(
   return rows.map((r) => ({ version: r.syncVersion, key, row: jsonSafe(shape(r)) as SyncRecord }));
 }
 
+/**
+ * Outcome of a delta read. 'ahead' means the cursor is beyond this server's
+ * syncSeq, 'expired' means tombstones the cursor needs may have been purged,
+ * and 'no_user' means the user row is gone.
+ */
+export type SyncResult =
+  | { status: 'ok'; page: SyncPage }
+  | { status: 'expired' }
+  | { status: 'ahead' }
+  | { status: 'no_user' };
+
 export async function getChangesSince(
   client: PrismaClient, userId: string, cursor: bigint, limit: number
-): Promise<SyncPage> {
+): Promise<SyncResult> {
   const take = limit + 1;
   const after = { gt: cursor };
   const order = { syncVersion: 'asc' as const };
@@ -63,7 +74,23 @@ export async function getChangesSince(
   // groups after it, returning a later group version while an earlier person
   // version is skipped for good once the cursor moves past it. The queries run
   // one after another because a transaction client serves one query at a time.
+  //
+  // The cursor checks read syncSeq and syncTombstoneFloor inside that same
+  // snapshot, as its first query. If they were read before the transaction, the
+  // tombstone purge cron could commit in between: it raises the floor above the
+  // cursor and deletes tombstones at or below it, and this read would then miss
+  // those deletions for good while still answering 200. Read in the snapshot,
+  // the floor and the tombstones are always consistent with each other.
   const read = await client.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { syncSeq: true, syncTombstoneFloor: true },
+    });
+    if (!user) return { status: 'no_user' as const };
+    if (cursor > user.syncSeq) return { status: 'ahead' as const };
+    // Cursor 0 is a full resync and is always valid.
+    if (cursor !== BigInt(0) && cursor < user.syncTombstoneFloor) return { status: 'expired' as const };
+
     const people = await tx.person.findMany({
       where: byUser, orderBy: order, take, omit,
       include: {
@@ -85,8 +112,9 @@ export async function getChangesSince(
     });
     const templates = await tx.customFieldTemplate.findMany({ where: byUser, orderBy: order, take, omit });
     const stones = await tx.syncTombstone.findMany({ where: byUser, orderBy: order, take });
-    return { people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones };
+    return { status: 'ok' as const, people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30000 });
+  if (read.status !== 'ok') return { status: read.status };
   const { people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones } = read;
 
   const all: Entry[] = [
@@ -117,5 +145,5 @@ export async function getChangesSince(
     if (e.key === 'deleted') page.deleted.push(e.row as { type: SyncEntityType; id: string });
     else page.changes[e.key].push(e.row);
   }
-  return page;
+  return { status: 'ok', page };
 }

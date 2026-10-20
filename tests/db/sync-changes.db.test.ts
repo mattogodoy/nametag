@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, beforeEach } from 'vitest';
 import { testPrisma, createUser, resetDb } from './client';
 import { getChangesSince, type SyncPage } from '@/lib/sync/changes';
+import { getPage } from './sync-helpers';
 
 type Client = Parameters<typeof getChangesSince>[0];
 
@@ -8,7 +9,7 @@ async function drain(userId: string, limit: number, client: Client = testPrisma)
   const pages: SyncPage[] = [];
   let cursor = BigInt(0);
   for (let i = 0; i < 100; i++) {
-    const page = await getChangesSince(client, userId, cursor, limit);
+    const page = await getPage(client, userId, cursor, limit);
     pages.push(page);
     cursor = BigInt(page.cursor);
     if (!page.hasMore) break;
@@ -54,13 +55,13 @@ describe('getChangesSince', () => {
   it('includes soft-deleted rows with deletedAt set', async () => {
     const p = await testPrisma.person.create({ data: { userId, name: 'A' } });
     await testPrisma.person.update({ where: { id: p.id }, data: { deletedAt: new Date() } });
-    const page = await getChangesSince(testPrisma, userId, BigInt(0), 500);
+    const page = await getPage(testPrisma, userId, BigInt(0), 500);
     expect(page.changes.people[0].deletedAt).not.toBeNull();
   });
 
   it('serializes bigints as strings and survives JSON.stringify', async () => {
     await testPrisma.person.create({ data: { userId, name: 'A' } });
-    const page = await getChangesSince(testPrisma, userId, BigInt(0), 500);
+    const page = await getPage(testPrisma, userId, BigInt(0), 500);
     expect(typeof page.changes.people[0].syncVersion).toBe('string');
     expect(() => JSON.stringify(page)).not.toThrow();
   });
@@ -70,7 +71,7 @@ describe('getChangesSince', () => {
     const g = await testPrisma.group.create({ data: { userId, name: 'G' } });
     await testPrisma.personPhone.create({ data: { personId: p.id, type: 'mobile', number: '1' } });
     await testPrisma.personGroup.create({ data: { personId: p.id, groupId: g.id } });
-    const page = await getChangesSince(testPrisma, userId, BigInt(0), 500);
+    const page = await getPage(testPrisma, userId, BigInt(0), 500);
     const person = page.changes.people.find((r) => r.id === p.id);
     expect(person?.phoneNumbers).toHaveLength(1);
     expect(person?.groupIds).toEqual([g.id]);
@@ -80,26 +81,26 @@ describe('getChangesSince', () => {
     const other = (await createUser()).id;
     const a = await testPrisma.person.create({ data: { userId: other, name: 'X' } });
     await testPrisma.importantDate.create({ data: { personId: a.id, title: 'B', date: new Date('2000-01-01') } });
-    const page = await getChangesSince(testPrisma, userId, BigInt(0), 500);
+    const page = await getPage(testPrisma, userId, BigInt(0), 500);
     expect(ids([page])).toEqual([]);
   });
 
   it('pages exactly at the limit boundary', async () => {
     for (let i = 0; i < 3; i++) await testPrisma.group.create({ data: { userId, name: `G${i}` } });
-    const exact = await getChangesSince(testPrisma, userId, BigInt(0), 3);
+    const exact = await getPage(testPrisma, userId, BigInt(0), 3);
     expect(exact.hasMore).toBe(false);
     await testPrisma.group.create({ data: { userId, name: 'G3' } });
-    const over = await getChangesSince(testPrisma, userId, BigInt(0), 3);
+    const over = await getPage(testPrisma, userId, BigInt(0), 3);
     expect(over.hasMore).toBe(true);
-    const next = await getChangesSince(testPrisma, userId, BigInt(over.cursor), 3);
+    const next = await getPage(testPrisma, userId, BigInt(over.cursor), 3);
     expect(next.changes.groups.map((g) => g.name)).toEqual(['G3']);
     expect(next.hasMore).toBe(false);
   });
 
   it('returns the same cursor and an empty page when nothing changed', async () => {
     await testPrisma.group.create({ data: { userId, name: 'G' } });
-    const first = await getChangesSince(testPrisma, userId, BigInt(0), 500);
-    const again = await getChangesSince(testPrisma, userId, BigInt(first.cursor), 500);
+    const first = await getPage(testPrisma, userId, BigInt(0), 500);
+    const again = await getPage(testPrisma, userId, BigInt(first.cursor), 500);
     expect(again.cursor).toBe(first.cursor);
     expect(ids([again])).toEqual([]);
   });
@@ -130,8 +131,30 @@ describe('getChangesSince', () => {
     const tpl = await testPrisma.customFieldTemplate.create({ data: { userId, name: 'C', slug: 'c', type: 'TEXT' } });
     await testPrisma.personCustomFieldValue.create({ data: { personId: p.id, templateId: tpl.id, value: 'v' } });
     await testPrisma.customFieldTemplate.update({ where: { id: tpl.id }, data: { deletedAt: new Date() } });
-    const page = await getChangesSince(testPrisma, userId, BigInt(0), 500);
+    const page = await getPage(testPrisma, userId, BigInt(0), 500);
     const person = page.changes.people.find((x) => x.id === p.id);
     expect(person?.customFieldValues).toEqual([expect.objectContaining({ templateId: tpl.id, value: 'v' })]);
+  });
+
+  describe('cursor checks inside the snapshot', () => {
+    it('answers expired when the floor is above a nonzero cursor', async () => {
+      await testPrisma.user.update({ where: { id: userId }, data: { syncSeq: BigInt(10), syncTombstoneFloor: BigInt(5) } });
+      expect(await getChangesSince(testPrisma, userId, BigInt(4), 500)).toEqual({ status: 'expired' });
+    });
+
+    it('treats a cursor equal to the floor and cursor 0 as valid', async () => {
+      await testPrisma.user.update({ where: { id: userId }, data: { syncSeq: BigInt(10), syncTombstoneFloor: BigInt(5) } });
+      expect((await getChangesSince(testPrisma, userId, BigInt(5), 500)).status).toBe('ok');
+      expect((await getChangesSince(testPrisma, userId, BigInt(0), 500)).status).toBe('ok');
+    });
+
+    it('answers ahead when the cursor is beyond syncSeq', async () => {
+      const { syncSeq } = await testPrisma.user.findUniqueOrThrow({ where: { id: userId }, select: { syncSeq: true } });
+      expect(await getChangesSince(testPrisma, userId, syncSeq + BigInt(1), 500)).toEqual({ status: 'ahead' });
+    });
+
+    it('answers no_user for an unknown user', async () => {
+      expect(await getChangesSince(testPrisma, 'no-such-user', BigInt(0), 500)).toEqual({ status: 'no_user' });
+    });
   });
 });

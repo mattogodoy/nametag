@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  userFind: vi.fn(),
   getChangesSince: vi.fn(),
 }));
 
 vi.mock('../../lib/prisma', () => ({
-  prisma: { user: { findUnique: mocks.userFind } },
   prismaIncludingDeleted: {},
 }));
 vi.mock('../../lib/auth', () => ({
@@ -28,8 +26,7 @@ function call(qs: string) {
 describe('GET /api/sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.userFind.mockResolvedValue({ syncSeq: BigInt(10), syncTombstoneFloor: BigInt(4) });
-    mocks.getChangesSince.mockResolvedValue(emptyPage);
+    mocks.getChangesSince.mockResolvedValue({ status: 'ok', page: emptyPage });
   });
 
   it('returns a page and passes cursor and default limit', async () => {
@@ -40,33 +37,37 @@ describe('GET /api/sync', () => {
   });
 
   it('returns 401 when the user no longer exists', async () => {
-    mocks.userFind.mockResolvedValue(null);
+    mocks.getChangesSince.mockResolvedValue({ status: 'no_user' });
     const res = await call('?cursor=0');
     expect(res.status).toBe(401);
     expect((await res.json()).code).toBe('unauthorized');
-    expect(mocks.getChangesSince).not.toHaveBeenCalled();
   });
 
-  it('accepts cursor 0, a cursor equal to the floor, and one equal to syncSeq', async () => {
-    expect((await call('?cursor=0')).status).toBe(200);
-    expect((await call('?cursor=4')).status).toBe(200);
-    expect((await call('?cursor=10')).status).toBe(200);
-  });
-
-  it('returns 410 sync_cursor_expired below the floor', async () => {
+  it('returns 410 sync_cursor_expired when the read reports expired', async () => {
+    mocks.getChangesSince.mockResolvedValue({ status: 'expired' });
     const res = await call('?cursor=3');
     expect(res.status).toBe(410);
     expect((await res.json()).code).toBe('sync_cursor_expired');
-    expect(mocks.getChangesSince).not.toHaveBeenCalled();
   });
 
-  it.each(['', '?cursor=', '?cursor=-1', '?cursor=1.5', '?cursor=abc', '?cursor=11'])(
+  it('returns 400 invalid_query on param cursor when the read reports ahead', async () => {
+    mocks.getChangesSince.mockResolvedValue({ status: 'ahead' });
+    const res = await call('?cursor=11');
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.code).toBe('invalid_query');
+    expect(body.params.param).toBe('cursor');
+    expect(body.message ?? body.error).toContain('ahead');
+  });
+
+  it.each(['', '?cursor=', '?cursor=-1', '?cursor=1.5', '?cursor=abc'])(
     'returns 400 invalid_query for %s', async (qs) => {
       const res = await call(qs);
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.code).toBe('invalid_query');
       expect(body.params.param).toBe('cursor');
+      expect(mocks.getChangesSince).not.toHaveBeenCalled();
     }
   );
 

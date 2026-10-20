@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, beforeEach } from 'vitest';
 import { testPrisma, createUser, resetDb } from './client';
-import { getChangesSince, type SyncPage } from '@/lib/sync/changes';
+import { type SyncPage } from '@/lib/sync/changes';
+import { getPage } from './sync-helpers';
 
 const synced = [
   'people', 'groups', 'relationship_types', 'journal_entries',
@@ -63,7 +64,7 @@ describe('nametag_sync_backfill', () => {
     await testPrisma.$executeRaw`SELECT nametag_sync_backfill()`;
 
     for (const [userId, rows] of [[u1, rows1], [u2, rows2]] as const) {
-      const page = await getChangesSince(testPrisma, userId, BigInt(0), 500);
+      const page = await getPage(testPrisma, userId, BigInt(0), 500);
       const seen = pageIds(page);
       expect(seen.sort()).toEqual([...rows].sort());
       expect(new Set(seen).size).toBe(seen.length);

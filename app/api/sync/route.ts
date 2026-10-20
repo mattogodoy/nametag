@@ -1,4 +1,4 @@
-import { prisma, prismaIncludingDeleted } from '@/lib/prisma';
+import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { apiError } from '@/lib/api-errors';
 import { getChangesSince } from '@/lib/sync/changes';
@@ -26,24 +26,20 @@ export const GET = withAuth(async (request, session) => {
     }
 
     const cursor = BigInt(rawCursor);
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { syncSeq: true, syncTombstoneFloor: true },
-    });
-    if (!user) return apiResponse.unauthorized();
-
-    if (cursor > user.syncSeq) {
-      return apiError('invalid_query', 'cursor is ahead of this server', { param: 'cursor' });
-    }
-    // Cursor 0 is a full resync and is always valid.
-    if (cursor !== BigInt(0) && cursor < user.syncTombstoneFloor) {
-      return apiError('sync_cursor_expired', 'Sync cursor expired; sync again from 0');
-    }
-
     // Reads through the unfiltered client on purpose: soft-deleted rows are
     // part of the change feed.
-    const page = await getChangesSince(prismaIncludingDeleted, session.user.id, cursor, limit);
-    return apiResponse.ok({ ...page });
+    // The cursor checks run inside the same snapshot as the reads.
+    const result = await getChangesSince(prismaIncludingDeleted, session.user.id, cursor, limit);
+    switch (result.status) {
+      case 'no_user':
+        return apiResponse.unauthorized();
+      case 'ahead':
+        return apiError('invalid_query', 'cursor is ahead of this server', { param: 'cursor' });
+      case 'expired':
+        return apiError('sync_cursor_expired', 'Sync cursor expired; sync again from 0');
+      case 'ok':
+        return apiResponse.ok({ ...result.page });
+    }
   } catch (error) {
     return handleApiError(error, 'sync');
   }
