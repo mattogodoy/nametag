@@ -128,7 +128,8 @@ describe('User Settings API', () => {
       const response = await updateProfile(request);
       const body = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(409);
+      expect(body.code).toBe('email_in_use');
       expect(body.error).toContain('already in use');
     });
 

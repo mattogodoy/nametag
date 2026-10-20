@@ -130,7 +130,8 @@ describe('POST /api/billing/cancel', () => {
     const response = await POST(request);
     const body = await response.json();
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
+    expect(body.code).toBe('subscription_required');
     expect(body.error).toBe('Cannot cancel a free subscription');
   });
 
@@ -149,7 +150,8 @@ describe('POST /api/billing/cancel', () => {
     const response = await POST(request);
     const body = await response.json();
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
+    expect(body.code).toBe('subscription_required');
     expect(body.error).toBe('No active Stripe subscription found');
   });
 

@@ -80,14 +80,24 @@ describe('POST /api/map/geocode-retry', () => {
   it('rejects when geocoding is disabled instance-wide', async () => {
     mocks.envValues.DISABLE_GEOCODING = true;
     const response = await POST(makeRequest({ addressId: 'addr-1' }));
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: 'Geocoding is disabled on this instance',
+      code: 'feature_disabled',
+      params: { feature: 'geocoding', scope: 'instance' },
+    });
     expect(mocks.geocodeSingleAddress).not.toHaveBeenCalled();
   });
 
   it('rejects when the user has geocoding disabled', async () => {
     mocks.userFindUnique.mockResolvedValue({ geocodingEnabled: false });
     const response = await POST(makeRequest({ addressId: 'addr-1' }));
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: 'Geocoding is disabled in your settings',
+      code: 'feature_disabled',
+      params: { feature: 'geocoding', scope: 'user' },
+    });
     expect(mocks.geocodeSingleAddress).not.toHaveBeenCalled();
   });
 

@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { savePhotoFromBuffer, deletePersonPhotos } from '@/lib/photo-storage';
@@ -21,11 +22,15 @@ export const POST = withAuth(async (request, session) => {
 
     const file = formData.get('photo');
     if (!file || typeof file === 'string') {
-      return apiResponse.error('No photo file provided');
+      return apiError('photo_missing', 'No photo file provided');
     }
 
     if (file.size > MAX_UPLOAD_SIZE) {
-      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`);
+      return apiError(
+        'photo_too_large',
+        `Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`,
+        { maxBytes: MAX_UPLOAD_SIZE }
+      );
     }
 
     const arrayBuffer = await file.arrayBuffer();

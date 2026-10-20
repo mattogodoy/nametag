@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
@@ -43,11 +44,11 @@ export const POST = withAuth(async (request, session) => {
     }
 
     if (subscription.tier === 'FREE') {
-      return apiResponse.error('Cannot cancel a free subscription');
+      return apiError('subscription_required', 'Cannot cancel a free subscription');
     }
 
     if (!subscription.stripeSubscriptionId) {
-      return apiResponse.error('No active Stripe subscription found');
+      return apiError('subscription_required', 'No active Stripe subscription found');
     }
 
     // Cancel in Stripe and get the updated subscription

@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import convert from 'heic-convert';
 import sharp from 'sharp';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
@@ -24,18 +25,22 @@ export const POST = withAuth(async (request) => {
 
     const file = formData.get('photo');
     if (!file || typeof file === 'string') {
-      return apiResponse.error('No photo file provided');
+      return apiError('photo_missing', 'No photo file provided');
     }
 
     if (file.size > MAX_UPLOAD_SIZE) {
-      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`, 413);
+      return apiError(
+        'photo_too_large',
+        `Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`,
+        { maxBytes: MAX_UPLOAD_SIZE }
+      );
     }
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     if (!isHeicBuffer(buffer)) {
-      return apiResponse.error('File is not HEIC/HEIF format. Only HEIC files need conversion.');
+      return apiError('unsupported_file_type', 'File is not HEIC/HEIF format. Only HEIC files need conversion.');
     }
 
     const quality = getJpegQuality();

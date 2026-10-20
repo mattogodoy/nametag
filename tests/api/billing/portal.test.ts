@@ -64,7 +64,8 @@ describe('POST /api/billing/portal', () => {
     const response = await POST(request);
     const body = await response.json();
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
+    expect(body.code).toBe('subscription_required');
     expect(body.error).toBe('You need an active subscription to access the billing portal');
   });
 

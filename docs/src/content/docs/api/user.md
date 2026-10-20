@@ -51,7 +51,7 @@ PUT /api/user/profile
 | `nickname` | string or null | |
 | `email` | string | Required, valid email. |
 
-If `email` changes, a verification email is sent and the account is marked unverified until confirmed.
+If `email` changes, a verification email is sent and the account is marked unverified until confirmed. Returns `409` with `code` `email_in_use` if another account already uses that email.
 
 ```bash
 curl -X PUT https://your-instance.example.com/api/user/profile \
@@ -234,7 +234,7 @@ curl -X PUT https://your-instance.example.com/api/user/language \
 POST /api/user/photo
 ```
 
-`multipart/form-data` with a `photo` field. Cropped to 256x256, converted to JPEG, EXIF stripped.
+`multipart/form-data` with a `photo` field. Cropped to 256x256, converted to JPEG, EXIF stripped. Returns `400` with `code` `photo_missing` if no `photo` field is sent, and `413` with `code` `photo_too_large` (`params.maxBytes`) if the file exceeds 50 MB.
 
 ```bash
 curl -X POST https://your-instance.example.com/api/user/photo \

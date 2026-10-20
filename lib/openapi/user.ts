@@ -90,6 +90,7 @@ export function userPaths(): Record<string, Record<string, unknown>> {
           }),
           '400': ref400(),
           '401': ref401(),
+          '409': resp('Email already in use (code email_in_use)'),
         },
       },
     },
@@ -458,8 +459,9 @@ export function userPaths(): Record<string, Record<string, unknown>> {
             },
             required: ['photo'],
           }),
-          '400': resp('Validation error or invalid image'),
+          '400': resp('Validation error or invalid image (code photo_missing when no file is sent)'),
           '401': ref401(),
+          '413': resp('Photo too large (code photo_too_large, params.maxBytes)'),
         },
       },
       delete: {

@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { importDataSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, MAX_REQUEST_SIZE, parseRequestBody, withAuth } from '@/lib/api-utils';
@@ -92,11 +93,13 @@ export const POST = withAuth(async (request, session) => {
       const totalAfterImport = currentUsage.people + newPeopleCount;
 
       if (!usageCheck.isUnlimited && totalAfterImport > usageCheck.limit) {
-        return apiResponse.forbidden(
+        return apiError(
+          'plan_limit_reached',
           `Import would exceed your plan limit. You would have ${totalAfterImport} people ` +
           `but your plan allows ${usageCheck.limit}. You need to add ${newPeopleCount} new people ` +
           `but only have ${usageCheck.limit - currentUsage.people} slots remaining. ` +
-          `Please upgrade your plan or reduce the import size.`
+          `Please upgrade your plan or reduce the import size.`,
+          { resource: 'people', limit: usageCheck.limit }
         );
       }
 
@@ -124,11 +127,13 @@ export const POST = withAuth(async (request, session) => {
       const totalGroupsAfterImport = currentUsage.groups + newGroupsCount;
 
       if (!groupsCheck.isUnlimited && totalGroupsAfterImport > groupsCheck.limit) {
-        return apiResponse.forbidden(
+        return apiError(
+          'plan_limit_reached',
           `Import would exceed your group limit. You would have ${totalGroupsAfterImport} groups ` +
           `but your plan allows ${groupsCheck.limit}. You need to add ${newGroupsCount} new groups ` +
           `but only have ${groupsCheck.limit - currentUsage.groups} slots remaining. ` +
-          `Please upgrade your plan or reduce the import size.`
+          `Please upgrade your plan or reduce the import size.`,
+          { resource: 'groups', limit: groupsCheck.limit }
         );
       }
 
@@ -148,9 +153,11 @@ export const POST = withAuth(async (request, session) => {
           if (!templatesCheck.isUnlimited) {
             const remainingSlots = templatesCheck.limit - templatesCheck.current;
             if (newTemplateCount > remainingSlots) {
-              return apiResponse.forbidden(
+              return apiError(
+                'plan_limit_reached',
                 `Importing this file would exceed your custom field limit of ${templatesCheck.limit}. ` +
-                `You have room for ${remainingSlots} more. Upgrade your plan to import more.`
+                `You have room for ${remainingSlots} more. Upgrade your plan to import more.`,
+                { resource: 'customFieldTemplates', limit: templatesCheck.limit }
               );
             }
           }

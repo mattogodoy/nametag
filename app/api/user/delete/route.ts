@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
@@ -10,7 +11,7 @@ export const DELETE = withAuth(async (request, session) => {
 
     // Verify confirmation text
     if (confirmationText !== 'DELETE') {
-      return apiResponse.error('Confirmation text must be "DELETE"');
+      return apiError('invalid_confirmation', 'Confirmation text must be "DELETE"');
     }
 
     // Get user with password
@@ -25,13 +26,13 @@ export const DELETE = withAuth(async (request, session) => {
     // Verify password (only for users with password - OAuth users don't have passwords)
     if (user.password) {
       if (!password) {
-        return apiResponse.error('Password is required');
+        return apiError('password_required', 'Password is required');
       }
 
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (!passwordMatch) {
-        return apiResponse.error('Password is incorrect');
+        return apiError('wrong_password', 'Password is incorrect');
       }
     }
 

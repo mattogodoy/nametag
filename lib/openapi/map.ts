@@ -1,5 +1,5 @@
 import { retryGeocodeSchema } from '../validations';
-import { jsonResponse, ref400, ref401, ref404, zodBody, sessionOrToken } from './helpers';
+import { jsonResponse, resp, ref400, ref401, ref404, zodBody, sessionOrToken } from './helpers';
 
 export function mapPaths(): Record<string, Record<string, unknown>> {
   return {
@@ -94,6 +94,7 @@ export function mapPaths(): Record<string, Record<string, unknown>> {
           }),
           '400': ref400(),
           '401': ref401(),
+          '403': resp('Geocoding is disabled (code feature_disabled, params.scope is instance or user)'),
           '404': ref404(),
         },
       },

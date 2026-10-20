@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { constructWebhookEvent } from '@/lib/billing/stripe';
@@ -39,12 +40,12 @@ export const POST = withLogging(async function POST(request: Request) {
 
   if (!webhookSecret) {
     logger.error('STRIPE_WEBHOOK_SECRET is not configured');
-    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    return apiError('internal_error', 'Webhook secret not configured');
   }
 
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
-    return NextResponse.json({ error: 'No signature provided' }, { status: 400 });
+    return apiError('bad_request', 'No signature provided');
   }
 
   let event: Stripe.Event;
@@ -55,7 +56,7 @@ export const POST = withLogging(async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     logger.error({ err: err instanceof Error ? err : new Error(String(err)) }, 'Webhook signature verification failed');
-    return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
+    return apiError('bad_request', `Webhook Error: ${message}`);
   }
 
   // Idempotency: skip duplicate events using unique constraint
@@ -112,7 +113,7 @@ export const POST = withLogging(async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error({ err: error instanceof Error ? error : new Error(String(error)), eventType: event.type }, 'Webhook handler error');
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError('internal_error', message);
   }
 });
 

@@ -1,3 +1,4 @@
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { updateProfileSchema, validateRequest } from '@/lib/validations';
@@ -70,7 +71,7 @@ export const PUT = withAuth(async (request, session) => {
     });
 
     if (existingUser && existingUser.id !== session.user.id) {
-      return apiResponse.error('Email already in use');
+      return apiError('email_in_use', 'Email already in use');
     }
 
     // Check if email is being changed
