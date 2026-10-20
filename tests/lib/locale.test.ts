@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getUserLocale, detectBrowserLocale, isSupportedLocale, normalizeLocale } from '@/lib/locale';
+import {
+  getUserLocale,
+  detectBrowserLocale,
+  isSupportedLocale,
+  normalizeLocale,
+} from '@/lib/locale';
 import { prisma } from '@/lib/prisma';
 
 // Mock prisma
@@ -59,8 +64,11 @@ describe('Locale Utilities', () => {
       expect(isSupportedLocale('fr-FR')).toBe(true);
     });
 
+    it('should return true for "pt-BR"', () => {
+      expect(isSupportedLocale('pt-BR')).toBe(true);
+    });
+
     it('should return false for unsupported locales', () => {
-      expect(isSupportedLocale('pt-BR')).toBe(false);
       expect(isSupportedLocale('pt')).toBe(false);
     });
   });
@@ -76,6 +84,7 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('ru-RU')).toBe('ru-RU');
       expect(normalizeLocale('nl-NL')).toBe('nl-NL');
       expect(normalizeLocale('fr-FR')).toBe('fr-FR');
+      expect(normalizeLocale('pt-BR')).toBe('pt-BR');
     });
 
     it('should map "es" to "es-ES"', () => {
@@ -118,9 +127,13 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('fr')).toBe('fr-FR');
     });
 
+    it('should map "pt" to "pt-BR"', () => {
+      expect(normalizeLocale('pt')).toBe('pt-BR');
+    });
+
     it('should default to "en" for unsupported locales', () => {
-      expect(normalizeLocale('pt-BR')).toBe('en');
-      expect(normalizeLocale('pt')).toBe('en');
+      expect(normalizeLocale('xx-XX')).toBe('en');
+      expect(normalizeLocale('xx')).toBe('en');
     });
   });
 
@@ -211,9 +224,11 @@ describe('Locale Utilities', () => {
       });
 
       const { cookies, headers } = await import('next/headers');
+
       vi.mocked(cookies).mockResolvedValue({
         get: vi.fn().mockReturnValue(null),
       } as any);
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue(null),
       } as any);
@@ -227,9 +242,11 @@ describe('Locale Utilities', () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
       const { cookies, headers } = await import('next/headers');
+
       vi.mocked(cookies).mockResolvedValue({
         get: vi.fn().mockReturnValue(null),
       } as any);
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue(null),
       } as any);
@@ -241,9 +258,11 @@ describe('Locale Utilities', () => {
 
     it('should return "en" if no userId provided', async () => {
       const { cookies, headers } = await import('next/headers');
+
       vi.mocked(cookies).mockResolvedValue({
         get: vi.fn().mockReturnValue(null),
       } as any);
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue(null),
       } as any);
@@ -258,6 +277,7 @@ describe('Locale Utilities', () => {
   describe('detectBrowserLocale', () => {
     it('should detect Spanish from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('es-ES,es;q=0.9,en;q=0.8'),
       } as any);
@@ -269,6 +289,7 @@ describe('Locale Utilities', () => {
 
     it('should map "es" to "es-ES"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('es,en;q=0.9'),
       } as any);
@@ -280,6 +301,7 @@ describe('Locale Utilities', () => {
 
     it('should detect English from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('en-US,en;q=0.9'),
       } as any);
@@ -291,6 +313,7 @@ describe('Locale Utilities', () => {
 
     it('should detect Japanese from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('ja-JP,ja;q=0.9,en;q=0.8'),
       } as any);
@@ -302,6 +325,7 @@ describe('Locale Utilities', () => {
 
     it('should map "ja" to "ja-JP"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('ja,en;q=0.9'),
       } as any);
@@ -313,6 +337,7 @@ describe('Locale Utilities', () => {
 
     it('should detect Norwegian Bokmål from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('nb-NO,nb;q=0.9,en;q=0.8'),
       } as any);
@@ -324,6 +349,7 @@ describe('Locale Utilities', () => {
 
     it('should map "nb" to "nb-NO"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('nb,en;q=0.9'),
       } as any);
@@ -335,6 +361,7 @@ describe('Locale Utilities', () => {
 
     it('should map "no" to "nb-NO"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('no,no-NO;q=0.9,en;q=0.8'),
       } as any);
@@ -346,6 +373,7 @@ describe('Locale Utilities', () => {
 
     it('should detect German from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('de-DE,de;q=0.9,en;q=0.8'),
       } as any);
@@ -357,6 +385,7 @@ describe('Locale Utilities', () => {
 
     it('should map "de" to "de-DE"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('de,en;q=0.9'),
       } as any);
@@ -368,6 +397,7 @@ describe('Locale Utilities', () => {
 
     it('should detect Italian from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('it-IT,it;q=0.9,en;q=0.8'),
       } as any);
@@ -379,6 +409,7 @@ describe('Locale Utilities', () => {
 
     it('should map "it" to "it-IT"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('it,en;q=0.9'),
       } as any);
@@ -390,6 +421,7 @@ describe('Locale Utilities', () => {
 
     it('should detect Russian from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('ru-RU,ru;q=0.9,en;q=0.8'),
       } as any);
@@ -401,6 +433,7 @@ describe('Locale Utilities', () => {
 
     it('should map "ru" to "ru-RU"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('ru,en;q=0.9'),
       } as any);
@@ -412,6 +445,7 @@ describe('Locale Utilities', () => {
 
     it('should detect Dutch from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('nl-NL,nl;q=0.9,en;q=0.8'),
       } as any);
@@ -423,6 +457,7 @@ describe('Locale Utilities', () => {
 
     it('should map "nl" to "nl-NL"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('nl,en;q=0.9'),
       } as any);
@@ -434,6 +469,7 @@ describe('Locale Utilities', () => {
 
     it('should detect French from Accept-Language header', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('fr-FR,fr;q=0.9,en;q=0.8'),
       } as any);
@@ -445,6 +481,7 @@ describe('Locale Utilities', () => {
 
     it('should map "fr" to "fr-FR"', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue('fr,en;q=0.9'),
       } as any);
@@ -454,11 +491,35 @@ describe('Locale Utilities', () => {
       expect(locale).toBe('fr-FR');
     });
 
+    it('should detect Portuguese (Brazil) from Accept-Language header', async () => {
+      const { headers } = await import('next/headers');
+
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('pt-BR,pt;q=0.9,en;q=0.8'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('pt-BR');
+    });
+
+    it('should map "pt" to "pt-BR"', async () => {
+      const { headers } = await import('next/headers');
+
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('pt,en;q=0.9'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('pt-BR');
+    });
 
     it('should default to "en" for unsupported languages', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
-        get: vi.fn().mockReturnValue('pt-BR,pt;q=0.9'),
+        get: vi.fn().mockReturnValue('xx-XX,xx;q=0.9'),
       } as any);
 
       const locale = await detectBrowserLocale();
@@ -468,6 +529,7 @@ describe('Locale Utilities', () => {
 
     it('should default to "en" if no header provided', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue(null),
       } as any);
@@ -479,6 +541,7 @@ describe('Locale Utilities', () => {
 
     it('should default to "en" if header is empty', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
         get: vi.fn().mockReturnValue(''),
       } as any);
@@ -490,13 +553,16 @@ describe('Locale Utilities', () => {
 
     it('should handle complex Accept-Language headers', async () => {
       const { headers } = await import('next/headers');
+
       vi.mocked(headers).mockResolvedValue({
-        get: vi.fn().mockReturnValue('pt-BR,pt;q=0.9,es-ES;q=0.8,es;q=0.7,en;q=0.6'),
+        get: vi
+          .fn()
+          .mockReturnValue('pt-BR,pt;q=0.9,es-ES;q=0.8,es;q=0.7,en;q=0.6'),
       } as any);
 
       const locale = await detectBrowserLocale();
 
-      expect(locale).toBe('es-ES');
+      expect(locale).toBe('pt-BR');
     });
   });
 });
