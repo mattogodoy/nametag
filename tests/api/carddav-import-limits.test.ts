@@ -209,10 +209,9 @@ describe('CardDAV Import Tier Limits', () => {
     const data = await response.json();
 
     expect(response.status).toBe(403);
-    expect(data.code).toBe('LIMIT_EXCEEDED');
+    expect(data.code).toBe('plan_limit_reached');
     expect(data.error).toContain('exceed');
-    expect(data.available).toBe(2);
-    expect(data.requested).toBe(5);
+    expect(data.params).toEqual({ resource: 'people', limit: 50, available: 2, requested: 5 });
   });
 
   it('should not count existing/duplicate contacts toward new count', async () => {

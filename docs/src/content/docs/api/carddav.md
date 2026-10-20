@@ -103,7 +103,7 @@ curl -X POST https://your-instance.example.com/api/carddav/connection/test \
 { "success": true, "message": "Connection successful" }
 ```
 
-Returns `401` for bad credentials, `404` if the server can't be found, `408` on timeout.
+Returns `400` with code `carddav_auth_failed` for bad credentials. Returns `502` with code `carddav_unreachable` if the server can't be found, times out, or otherwise fails.
 
 ## Sync
 

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
@@ -37,10 +37,7 @@ export const POST = withAuth(async (request, session) => {
       });
 
       if (!connection) {
-        return NextResponse.json(
-          { error: 'No CardDAV connection found. Please set up a connection first.' },
-          { status: 404 }
-        );
+        return apiError('not_found', 'No CardDAV connection found. Please set up a connection first.');
       }
 
       serverUrl = connection.serverUrl;
@@ -52,10 +49,7 @@ export const POST = withAuth(async (request, session) => {
     try {
       await validateServerUrl(serverUrl);
     } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Invalid server URL' },
-        { status: 400 }
-      );
+      return apiError('bad_request', error instanceof Error ? error.message : 'Invalid server URL');
     }
 
     try {
@@ -100,29 +94,17 @@ export const POST = withAuth(async (request, session) => {
 
       if (error instanceof Error) {
         if (error.message.includes('401') || error.message.includes('unauthorized')) {
-          return NextResponse.json(
-            { error: 'Authentication failed. Please check your credentials.' },
-            { status: 401 }
-          );
+          return apiError('unauthorized', 'Authentication failed. Please check your credentials.');
         }
         if (error.message.includes('404') || error.message.includes('not found')) {
-          return NextResponse.json(
-            { error: 'Server not found. Please check the server URL.' },
-            { status: 404 }
-          );
+          return apiError('not_found', 'Server not found. Please check the server URL.');
         }
       }
 
-      return NextResponse.json(
-        { error: 'Failed to fetch contacts from server.' },
-        { status: 500 }
-      );
+      return apiError('internal_error', 'Failed to fetch contacts from server.');
     }
   } catch (error) {
     log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error in CardDAV backup');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Internal server error');
   }
 }, { allowApiTokens: false });

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { encryptPassword } from '@/lib/carddav/encryption';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
@@ -44,10 +45,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = connectionSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.issues },
-        { status: 400 }
-      );
+      return apiError('validation_failed', 'Invalid input');
     }
 
     const {
@@ -68,17 +66,11 @@ export const POST = withAuth(async (request, session) => {
     try {
       await validateServerUrl(serverUrl);
     } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Invalid server URL' },
-        { status: 400 }
-      );
+      return apiError('bad_request', error instanceof Error ? error.message : 'Invalid server URL');
     }
 
     if (!password) {
-      return NextResponse.json(
-        { error: 'Password is required when creating a new connection' },
-        { status: 400 }
-      );
+      return apiError('password_required', 'Password is required when creating a new connection');
     }
 
     // Check if connection already exists
@@ -87,10 +79,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (existingConnection) {
-      return NextResponse.json(
-        { error: 'Connection already exists. Use PUT to update.' },
-        { status: 409 }
-      );
+      return apiError('conflict', 'Connection already exists. Use PUT to update.');
     }
 
     // Encrypt password (reversible encryption, not hashing)
@@ -120,10 +109,7 @@ export const POST = withAuth(async (request, session) => {
     return NextResponse.json(safeConnection, { status: 201 });
   } catch (error) {
     log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error creating CardDAV connection');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Internal server error');
   }
 }, { allowApiTokens: false });
 
@@ -134,10 +120,7 @@ export const PUT = withAuth(async (request, session) => {
     const validationResult = updateConnectionSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.issues },
-        { status: 400 }
-      );
+      return apiError('validation_failed', 'Invalid input');
     }
 
     const {
@@ -157,10 +140,7 @@ export const PUT = withAuth(async (request, session) => {
       try {
         await validateServerUrl(serverUrl);
       } catch (error) {
-        return NextResponse.json(
-          { error: error instanceof Error ? error.message : 'Invalid server URL' },
-          { status: 400 }
-        );
+        return apiError('bad_request', error instanceof Error ? error.message : 'Invalid server URL');
       }
     }
 
@@ -170,10 +150,7 @@ export const PUT = withAuth(async (request, session) => {
     });
 
     if (!existingConnection) {
-      return NextResponse.json(
-        { error: 'Connection not found. Use POST to create.' },
-        { status: 404 }
-      );
+      return apiError('not_found', 'Connection not found. Use POST to create.');
     }
 
     // Prepare update data - only include fields that were provided
@@ -247,10 +224,7 @@ export const PUT = withAuth(async (request, session) => {
     return NextResponse.json(safeConnection);
   } catch (error) {
     log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error updating CardDAV connection');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Internal server error');
   }
 }, { allowApiTokens: false });
 
@@ -263,10 +237,7 @@ export const DELETE = withAuth(async (_request, session) => {
     });
 
     if (!existingConnection) {
-      return NextResponse.json(
-        { error: 'Connection not found' },
-        { status: 404 }
-      );
+      return apiError('not_found', 'Connection not found');
     }
 
     // Delete all related data and the connection in a single transaction
@@ -288,9 +259,6 @@ export const DELETE = withAuth(async (_request, session) => {
     return NextResponse.json({ success: true });
   } catch (error) {
     log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error deleting CardDAV connection');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Internal server error');
   }
 }, { allowApiTokens: false });

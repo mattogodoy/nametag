@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -25,10 +26,7 @@ export const POST = withAuth(async (request, session) => {
     const validationResult = connectionTestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.issues },
-        { status: 400 }
-      );
+      return apiError('validation_failed', 'Invalid input');
     }
 
     const { serverUrl, username, password } = validationResult.data;
@@ -37,10 +35,7 @@ export const POST = withAuth(async (request, session) => {
     try {
       await validateServerUrl(serverUrl);
     } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Invalid server URL' },
-        { status: 400 }
-      );
+      return apiError('bad_request', error instanceof Error ? error.message : 'Invalid server URL');
     }
 
     // Test connection using tsdav
@@ -109,35 +104,20 @@ export const POST = withAuth(async (request, session) => {
       // Provide more specific error messages
       if (error instanceof Error) {
         if (error.message.includes('401') || error.message.includes('unauthorized')) {
-          return NextResponse.json(
-            { error: 'Authentication failed. Please check your username and password.' },
-            { status: 401 }
-          );
+          return apiError('carddav_auth_failed', 'Authentication failed. Please check your username and password.');
         }
         if (error.message.includes('404') || error.message.includes('not found')) {
-          return NextResponse.json(
-            { error: 'Server not found. Please check the server URL.' },
-            { status: 404 }
-          );
+          return apiError('carddav_unreachable', 'Server not found. Please check the server URL.');
         }
         if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
-          return NextResponse.json(
-            { error: 'Connection timeout. Please check the server URL and your network.' },
-            { status: 408 }
-          );
+          return apiError('carddav_unreachable', 'Connection timeout. Please check the server URL and your network.');
         }
       }
 
-      return NextResponse.json(
-        { error: 'Failed to connect to CardDAV server. Please check your settings.' },
-        { status: 500 }
-      );
+      return apiError('carddav_unreachable', 'Failed to connect to CardDAV server. Please check your settings.');
     }
   } catch (error) {
     log.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error testing CardDAV connection');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Internal server error');
   }
 }, { allowApiTokens: false });
