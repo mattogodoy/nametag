@@ -108,3 +108,105 @@ CREATE TRIGGER sync_stamp BEFORE INSERT OR UPDATE ON "relationships"
   FOR EACH ROW EXECUTE FUNCTION nametag_sync_stamp_by_person();
 CREATE TRIGGER sync_stamp BEFORE INSERT OR UPDATE ON "important_dates"
   FOR EACH ROW EXECUTE FUNCTION nametag_sync_stamp_by_person();
+
+-- Child rows carry no sync columns; touching the parent restamps it through
+-- its own sync_stamp trigger. A parent that is being deleted matches no row.
+CREATE OR REPLACE FUNCTION nametag_sync_touch_person() RETURNS TRIGGER AS $$
+DECLARE
+  pid TEXT;
+BEGIN
+  IF TG_OP = 'DELETE' THEN pid := OLD."personId"; ELSE pid := NEW."personId"; END IF;
+  UPDATE "people" SET "syncVersion" = "syncVersion" WHERE "id" = pid;
+  IF TG_OP = 'UPDATE' AND OLD."personId" IS DISTINCT FROM NEW."personId" THEN
+    UPDATE "people" SET "syncVersion" = "syncVersion" WHERE "id" = OLD."personId";
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION nametag_sync_touch_journal() RETURNS TRIGGER AS $$
+DECLARE
+  jid TEXT;
+BEGIN
+  IF TG_OP = 'DELETE' THEN jid := OLD."journalEntryId"; ELSE jid := NEW."journalEntryId"; END IF;
+  UPDATE "journal_entries" SET "syncVersion" = "syncVersion" WHERE "id" = jid;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_phones"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_emails"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_addresses"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_urls"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_im_handles"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_locations"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_custom_fields"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_custom_field_values"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "person_groups"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_person();
+CREATE TRIGGER sync_touch AFTER INSERT OR UPDATE OR DELETE ON "journal_entry_people"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_touch_journal();
+
+-- Hard deletes leave a tombstone. These run BEFORE DELETE on purpose: the
+-- internal cascade triggers sort ahead of ours, so with AFTER DELETE a cascaded
+-- child would run before its person's tombstone exists. BEFORE DELETE writes the
+-- parent's tombstone first, and a cascaded child (whose person row is already
+-- gone) finds its owner there. TG_ARGV[0] is the entity type the API reports.
+CREATE OR REPLACE FUNCTION nametag_sync_tombstone_by_user() RETURNS TRIGGER AS $$
+DECLARE
+  v BIGINT;
+BEGIN
+  v := nametag_sync_next(OLD."userId");
+  IF v IS NOT NULL THEN
+    INSERT INTO "sync_tombstones" ("id", "userId", "entityType", "entityId", "syncVersion", "deletedAt")
+    VALUES (gen_random_uuid()::text, OLD."userId", TG_ARGV[0], OLD."id", v, now());
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION nametag_sync_tombstone_by_person() RETURNS TRIGGER AS $$
+DECLARE
+  owner TEXT;
+  v BIGINT;
+BEGIN
+  SELECT "userId" INTO owner FROM "people" WHERE "id" = OLD."personId";
+  IF owner IS NULL THEN
+    -- Cascade from a person delete: the person row is gone, its tombstone is not.
+    SELECT "userId" INTO owner FROM "sync_tombstones"
+      WHERE "entityType" = 'person' AND "entityId" = OLD."personId"
+      ORDER BY "syncVersion" DESC LIMIT 1;
+  END IF;
+  IF owner IS NOT NULL THEN
+    v := nametag_sync_next(owner);
+    IF v IS NOT NULL THEN
+      INSERT INTO "sync_tombstones" ("id", "userId", "entityType", "entityId", "syncVersion", "deletedAt")
+      VALUES (gen_random_uuid()::text, owner, TG_ARGV[0], OLD."id", v, now());
+    END IF;
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER sync_tombstone BEFORE DELETE ON "people"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_tombstone_by_user('person');
+CREATE TRIGGER sync_tombstone BEFORE DELETE ON "groups"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_tombstone_by_user('group');
+CREATE TRIGGER sync_tombstone BEFORE DELETE ON "relationship_types"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_tombstone_by_user('relationshipType');
+CREATE TRIGGER sync_tombstone BEFORE DELETE ON "journal_entries"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_tombstone_by_user('journalEntry');
+CREATE TRIGGER sync_tombstone BEFORE DELETE ON "custom_field_templates"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_tombstone_by_user('customFieldTemplate');
+CREATE TRIGGER sync_tombstone BEFORE DELETE ON "relationships"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_tombstone_by_person('relationship');
+CREATE TRIGGER sync_tombstone BEFORE DELETE ON "important_dates"
+  FOR EACH ROW EXECUTE FUNCTION nametag_sync_tombstone_by_person('importantDate');
