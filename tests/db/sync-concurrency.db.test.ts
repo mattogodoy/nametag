@@ -1,0 +1,63 @@
+import { describe, it, expect, afterAll, beforeEach } from 'vitest';
+import { testPrisma, createUser, resetDb } from './client';
+
+function deferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolve: () => void = () => {};
+  const promise = new Promise<void>((r) => { resolve = r; });
+  return { promise, resolve };
+}
+
+describe('sync ordering under concurrency', () => {
+  let userId: string;
+
+  beforeEach(async () => {
+    await resetDb();
+    userId = (await createUser()).id;
+  });
+
+  afterAll(async () => {
+    await resetDb();
+    await testPrisma.$disconnect();
+  });
+
+  it('a later writer waits for an open one, so versions follow commit order', async () => {
+    const a = await testPrisma.person.create({ data: { userId, name: 'A' } });
+    const b = await testPrisma.person.create({ data: { userId, name: 'B' } });
+    const release = deferred();
+    const firstWrote = deferred();
+
+    const slow = testPrisma.$transaction(async (tx) => {
+      await tx.person.update({ where: { id: a.id }, data: { name: 'A1' } });
+      firstWrote.resolve();
+      await release.promise;
+    }, { timeout: 15000 });
+
+    let fast: Promise<{ syncVersion: bigint }> = Promise.resolve({ syncVersion: BigInt(0) });
+    try {
+      await firstWrote.promise;
+      let fastDone = false;
+      fast = testPrisma.person
+        .update({ where: { id: b.id }, data: { name: 'B1' } })
+        .then((row) => { fastDone = true; return row; });
+
+      await new Promise((r) => setTimeout(r, 300));
+      expect(fastDone).toBe(false); // blocked on the user row lock
+
+      // A reader now sees neither uncommitted change past the old cursor.
+      const visible = await testPrisma.person.findMany({
+        where: { userId, syncVersion: { gt: b.syncVersion } },
+      });
+      expect(visible).toHaveLength(0);
+
+      release.resolve();
+      await slow;
+      const fastRow = await fast;
+      const aRow = await testPrisma.person.findUniqueOrThrow({ where: { id: a.id } });
+      expect(fastRow.syncVersion).toBe(aRow.syncVersion + BigInt(1));
+    } finally {
+      // Always free the user-row lock, even when an assertion fails, so cleanup does not hang.
+      release.resolve();
+      await Promise.allSettled([slow, fast]);
+    }
+  });
+});
