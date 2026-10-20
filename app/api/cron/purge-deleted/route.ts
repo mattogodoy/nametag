@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prismaIncludingDeleted, prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { handleApiError, withLogging } from '@/lib/api-utils';
@@ -22,7 +23,7 @@ export const GET = withLogging(async function GET(request: Request) {
       securityLogger.authFailure(resolveTrustedClientIp(request) ?? 'unknown', 'Invalid cron secret', {
         endpoint: 'purge-deleted',
       });
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('unauthorized', 'Unauthorized');
     }
 
     // Log cron job start

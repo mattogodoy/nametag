@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { getRedis } from '@/lib/redis';
 import { logger, securityLogger } from '@/lib/logger';
 import { withLogging } from '@/lib/api-utils';
@@ -24,15 +25,12 @@ export const DELETE = withLogging(async function DELETE(request: Request) {
     securityLogger.authFailure(resolveTrustedClientIp(request) ?? 'unknown', 'Invalid cron secret', {
       endpoint: 'clear-rate-limits',
     });
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return apiError('unauthorized', 'Unauthorized');
   }
 
   const redis = getRedis();
   if (!redis) {
-    return NextResponse.json(
-      { error: 'Redis not available' },
-      { status: 503 }
-    );
+    return apiError('service_unavailable', 'Redis not available');
   }
 
   try {
@@ -46,10 +44,7 @@ export const DELETE = withLogging(async function DELETE(request: Request) {
     } else if (type) {
       pattern = `ratelimit:${type}:*`;
     } else {
-      return NextResponse.json(
-        { error: 'Must specify type parameter or all=true' },
-        { status: 400 }
-      );
+      return apiError('bad_request', 'Must specify type parameter or all=true');
     }
 
     // Get all keys matching pattern
@@ -76,9 +71,6 @@ export const DELETE = withLogging(async function DELETE(request: Request) {
     });
   } catch (error) {
     logger.error({ err: error instanceof Error ? error : new Error(String(error)) }, 'Error clearing rate limits');
-    return NextResponse.json(
-      { error: 'Failed to clear rate limits' },
-      { status: 500 }
-    );
+    return apiError('internal_error', 'Failed to clear rate limits');
   }
 });

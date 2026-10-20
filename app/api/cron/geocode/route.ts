@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
@@ -31,7 +32,7 @@ export const GET = withLogging(async function GET(request: Request) {
   try {
     if (!hasValidBearerSecret(request, env.CRON_SECRET)) {
       securityLogger.authFailure(resolveTrustedClientIp(request) ?? 'unknown', 'Invalid cron secret', { endpoint: 'geocode' });
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('unauthorized', 'Unauthorized');
     }
 
     if (env.DISABLE_GEOCODING) {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import * as bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { generateToken, hashToken } from '@/lib/token-hash';
@@ -17,7 +18,7 @@ const TOKEN_EXPIRY_HOURS = 24;
 
 export const POST = withLogging(async function POST(request: Request) {
   if (!validateOrigin(request)) {
-    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
+    return apiError('invalid_origin', 'Invalid request origin');
   }
 
   // Unkeyed (IP-only) check before the body is parsed. There is no email to
@@ -34,9 +35,10 @@ export const POST = withLogging(async function POST(request: Request) {
   try {
     // Block password registration when password login is disabled
     if (!isFeatureEnabled('passwordLogin')) {
-      return NextResponse.json(
-        { error: 'Password registration is disabled. Use the configured SSO provider.' },
-        { status: 403 }
+      return apiError(
+        'feature_disabled',
+        'Password registration is disabled. Use the configured SSO provider.',
+        { feature: 'password_login', scope: 'instance' }
       );
     }
 
@@ -67,10 +69,10 @@ export const POST = withLogging(async function POST(request: Request) {
     if (process.env.DISABLE_REGISTRATION === 'true') {
       const userCount = await prisma.user.count();
       if (userCount > 0) {
-        return NextResponse.json(
-          { error: 'Registration is currently disabled' },
-          { status: 403 }
-        );
+        return apiError('feature_disabled', 'Registration is currently disabled', {
+          feature: 'registration',
+          scope: 'instance',
+        });
       }
     }
 
@@ -80,10 +82,7 @@ export const POST = withLogging(async function POST(request: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User already exists' },
-        { status: 400 }
-      );
+      return apiError('email_in_use', 'User already exists');
     }
 
     // Hash password

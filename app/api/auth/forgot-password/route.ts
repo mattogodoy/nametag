@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { forgotPasswordSchema, validateRequest } from '@/lib/validations';
@@ -14,7 +15,7 @@ const RESEND_COOLDOWN_MINUTES = 2;
 
 export const POST = withLogging(async function POST(request: Request) {
   if (!validateOrigin(request)) {
-    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
+    return apiError('invalid_origin', 'Invalid request origin');
   }
 
   // Unkeyed (IP-only) check before the body is parsed. There is no email to
@@ -30,10 +31,7 @@ export const POST = withLogging(async function POST(request: Request) {
 
   try {
     if (!isFeatureEnabled('passwordLogin')) {
-      return NextResponse.json(
-        { error: 'Password login is disabled on this instance.' },
-        { status: 403 }
-      );
+      return apiError('password_login_disabled', 'Password login is disabled on this instance.');
     }
 
     const body = await parseRequestBody(request);
@@ -81,12 +79,11 @@ export const POST = withLogging(async function POST(request: Request) {
 
       if (timeSinceLastSend < cooldownMs) {
         const remainingSeconds = Math.ceil((cooldownMs - timeSinceLastSend) / 1000);
-        return NextResponse.json(
-          {
-            error: `Please wait ${remainingSeconds} seconds before requesting another reset email.`,
-            retryAfter: remainingSeconds,
-          },
-          { status: 429 }
+        return apiError(
+          'rate_limited',
+          `Please wait ${remainingSeconds} seconds before requesting another reset email.`,
+          { retryAfter: remainingSeconds },
+          { headers: { 'Retry-After': String(remainingSeconds) } }
         );
       }
     }

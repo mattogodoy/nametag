@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
@@ -8,7 +9,7 @@ import { validateOrigin } from '@/lib/csrf';
 
 export const POST = withLogging(async function POST(request: Request) {
   if (!validateOrigin(request)) {
-    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
+    return apiError('invalid_origin', 'Invalid request origin');
   }
 
   try {
@@ -18,10 +19,7 @@ export const POST = withLogging(async function POST(request: Request) {
     const { token } = await parseRequestBody<{ token?: string }>(request);
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'Verification token is required' },
-        { status: 400 }
-      );
+      return apiError('bad_request', 'Verification token is required');
     }
 
     // Hash the incoming token to compare against stored hash
@@ -33,10 +31,7 @@ export const POST = withLogging(async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid verification token' },
-        { status: 400 }
-      );
+      return apiError('bad_request', 'Invalid verification token');
     }
 
     // Check if already verified
@@ -49,10 +44,7 @@ export const POST = withLogging(async function POST(request: Request) {
 
     // Check if token has expired
     if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
-      return NextResponse.json(
-        { error: 'Verification token has expired. Please request a new one.' },
-        { status: 400 }
-      );
+      return apiError('bad_request', 'Verification token has expired. Please request a new one.');
     }
 
     // Verify the email
