@@ -51,7 +51,7 @@ describe('withAuth same-origin enforcement', () => {
       );
 
       expect(res.status).toBe(403);
-      expect(await res.json()).toEqual({ error: 'Invalid request origin' });
+      expect(await res.json()).toEqual({ error: 'Invalid request origin', code: 'invalid_origin' });
       expect(handler).not.toHaveBeenCalled();
     }
   );

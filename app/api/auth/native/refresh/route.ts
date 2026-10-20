@@ -1,27 +1,27 @@
 import { prisma } from '@/lib/prisma';
-import { apiResponse, parseRequestBody, withLogging } from '@/lib/api-utils';
+import { apiResponse, handleApiError, parseRequestBody, withLogging } from '@/lib/api-utils';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { nativeRefreshSchema, validateRequest } from '@/lib/validations';
 import { refreshDeviceSession } from '@/lib/native-auth/sessions';
-import { codedApiError, sessionResponse, withCode } from '@/lib/native-auth/http';
+import { sessionResponse } from '@/lib/native-auth/http';
 
 export const runtime = 'nodejs';
 
 const sessionExpired = () =>
-  apiResponse.coded(401, 'session_expired', 'Session expired. Please sign in again.');
+  apiResponse.coded('session_expired', 'Session expired. Please sign in again.');
 
 /** Exchange a refresh token for a new access and refresh token pair. */
 export const POST = withLogging(async function POST(request: Request) {
   const limited = checkRateLimit(request, 'nativeRefresh');
   if (limited) {
-    return withCode(limited, 'rate_limited');
+    return limited;
   }
 
   try {
     const body = await parseRequestBody(request);
     const validation = validateRequest(nativeRefreshSchema, body);
     if (!validation.success) {
-      return withCode(validation.response, 'validation_failed');
+      return validation.response;
     }
 
     const result = await refreshDeviceSession(validation.data.refreshToken);
@@ -39,6 +39,6 @@ export const POST = withLogging(async function POST(request: Request) {
 
     return sessionResponse(result.session, user);
   } catch (error) {
-    return codedApiError(error, 'native-refresh');
+    return handleApiError(error, 'native-refresh');
   }
 });

@@ -66,7 +66,7 @@ describe('POST /api/auth/native/refresh', () => {
     expect(res.status).toBe(401);
   });
 
-  it('rejects an unparseable body with 400 validation_failed', async () => {
+  it('rejects an unparseable body with 400 invalid_json', async () => {
     const res = await POST(
       new Request('http://localhost/api/auth/native/refresh', {
         method: 'POST',
@@ -75,7 +75,7 @@ describe('POST /api/auth/native/refresh', () => {
       })
     );
     expect(res.status).toBe(400);
-    expect((await res.json()).code).toBe('validation_failed');
+    expect((await res.json()).code).toBe('invalid_json');
   });
 
   it('rejects a malformed body with 400 validation_failed', async () => {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PREDEFINED_DATE_TYPES } from './important-date-types';
+import { zodIssuesToFields } from './api-errors';
 
 // ============================================
 // Common schemas
@@ -758,7 +759,12 @@ export function validateRequest<T>(
     return {
       success: false,
       response: NextResponse.json(
-        { error: 'Validation failed', details: errors },
+        {
+          error: 'Validation failed',
+          code: 'validation_failed',
+          details: errors,
+          fields: zodIssuesToFields(result.error.issues),
+        },
         { status: 400 }
       ),
     };

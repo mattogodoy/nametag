@@ -377,6 +377,7 @@ export function checkRateLimit(
     return NextResponse.json(
       {
         error: `Too many attempts. Please try again in ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'}.`,
+        code: 'rate_limited',
         retryAfter: retryAfterSeconds,
       },
       {

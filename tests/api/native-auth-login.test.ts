@@ -98,7 +98,7 @@ describe('POST /api/auth/native/login', () => {
 
   it('passes the login rate limit through with a code and Retry-After', async () => {
     mocks.checkRateLimit.mockReturnValue(
-      new Response(JSON.stringify({ error: 'Too many attempts. Please try again in 15 minutes.' }), {
+      new Response(JSON.stringify({ error: 'Too many attempts. Please try again in 15 minutes.', code: 'rate_limited' }), {
         status: 429,
         headers: { 'Retry-After': '900', 'content-type': 'application/json' },
       })
@@ -121,7 +121,7 @@ describe('POST /api/auth/native/login', () => {
     expect((await res.json()).code).toBe('validation_failed');
   });
 
-  it('rejects an unparseable body with 400 validation_failed', async () => {
+  it('rejects an unparseable body with 400 invalid_json', async () => {
     const res = await POST(
       new Request('http://localhost/api/auth/native/login', {
         method: 'POST',
@@ -130,7 +130,7 @@ describe('POST /api/auth/native/login', () => {
       })
     );
     expect(res.status).toBe(400);
-    expect((await res.json()).code).toBe('validation_failed');
+    expect((await res.json()).code).toBe('invalid_json');
   });
 
   it('accepts ANDROID devices', async () => {

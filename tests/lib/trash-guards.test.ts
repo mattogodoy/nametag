@@ -22,7 +22,7 @@ describe('requireTrashedRecord', () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('unreachable');
     expect(result.response.status).toBe(404);
-    expect(await result.response.json()).toEqual({ error: 'Person not found' });
+    expect(await result.response.json()).toEqual({ error: 'Person not found', code: 'not_found' });
   });
 
   it('answers 400 when the record exists but is not trashed', async () => {
@@ -36,6 +36,7 @@ describe('requireTrashedRecord', () => {
     expect(result.response.status).toBe(400);
     expect(await result.response.json()).toEqual({
       error: 'Person is not deleted',
+      code: 'bad_request',
     });
   });
 

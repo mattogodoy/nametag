@@ -28,7 +28,6 @@ export const POST = withAuth(
       // A short-lived device access token must not mint long-lived tokens.
       if (session.authMethod === 'device') {
         return apiResponse.coded(
-          403,
           'interactive_session_required',
           'Creating API tokens requires signing in on the web'
         );
