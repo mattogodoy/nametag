@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { OidcSignInButton } from '@/components/OidcSignInButton';
 import { fetchAvailableProviders } from '@/lib/client-features';
+import { getRetryAfterSeconds } from '@/lib/retry-after';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -99,7 +100,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.status === 429) {
-        setResendCooldown(data.retryAfter || 120);
+        setResendCooldown(getRetryAfterSeconds(data, 120));
         setError(data.error);
       } else if (response.ok) {
         setResendSuccess(true);
