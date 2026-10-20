@@ -1,3 +1,4 @@
+import type { ApiErrorCode } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { importDataSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, MAX_REQUEST_SIZE, parseRequestBody, withAuth } from '@/lib/api-utils';
@@ -5,6 +6,10 @@ import { canCreateResource, getUserUsage } from '@/lib/billing';
 import { isSaasMode } from '@/lib/features';
 
 import { z } from 'zod';
+
+// The refusal stays a 200 (the web reads `error` as a resource name); the code
+// and params are added beside it for native clients.
+const PLAN_LIMIT_CODE: ApiErrorCode = 'plan_limit_reached';
 
 type ImportData = z.infer<typeof importDataSchema>;
 
@@ -75,6 +80,8 @@ export const POST = withAuth(async (request, session) => {
         newCount: newPeopleCount,
         limit: usageCheck.limit,
         totalAfterImport,
+        code: PLAN_LIMIT_CODE,
+        params: { resource: 'people', limit: usageCheck.limit },
       });
     }
 
@@ -114,6 +121,8 @@ export const POST = withAuth(async (request, session) => {
         newCount: newGroupsCount,
         limit: groupsCheck.limit,
         totalAfterImport,
+        code: PLAN_LIMIT_CODE,
+        params: { resource: 'groups', limit: groupsCheck.limit },
       });
     }
 

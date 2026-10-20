@@ -74,6 +74,8 @@ curl -X POST https://your-instance.example.com/api/user/import/validate \
 { "valid": true, "newPeopleCount": 84, "newGroupsCount": 6 }
 ```
 
+In SaaS mode, an import that would exceed your plan limit still returns `200`, with `valid: false`, `error` set to `people` or `groups`, a `message`, and `code` `plan_limit_reached` with `params.resource` and `params.limit`.
+
 ### Import user data
 
 ```
