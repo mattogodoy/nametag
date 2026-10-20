@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { pushSubscribeSchema } from '@/lib/validations';
@@ -19,7 +20,7 @@ export const POST = withAuth(async (request, session) => {
 
     const parsed = pushSubscribeSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid subscription' }, { status: 400 });
+      return apiError('bad_request', 'Invalid subscription');
     }
 
     const { endpoint, keys } = parsed.data;
@@ -91,9 +92,9 @@ export const POST = withAuth(async (request, session) => {
       // Lost the race for the last slot. The transaction rolled back, so
       // nothing was written.
       if (error instanceof PushSubscriptionCapReachedError) {
-        return NextResponse.json(
-          { error: 'You have reached the maximum number of devices for push notifications' },
-          { status: 409 }
+        return apiError(
+          'conflict',
+          'You have reached the maximum number of devices for push notifications'
         );
       }
       throw error;

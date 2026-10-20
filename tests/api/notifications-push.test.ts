@@ -122,10 +122,17 @@ describe('push API', () => {
     expect(JSON.stringify(json)).not.toContain('priv');
   });
 
-  it('returns 404 for the public key when push is not configured', async () => {
+  it('returns feature_disabled for the public key when push is not configured', async () => {
     mocks.getVapidDetails.mockReturnValue(null);
 
-    expect((await getPublicKey()).status).toBe(404);
+    const response = await getPublicKey();
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'feature_disabled',
+      params: { feature: 'push', scope: 'instance' },
+      error: 'Push notifications are not configured',
+    });
   });
 
   it('rejects an unauthenticated subscribe', async () => {
@@ -173,6 +180,10 @@ describe('push API', () => {
     const response = await subscribe(request({ endpoint: 'not-a-url', keys: {} }));
 
     expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: 'bad_request',
+      error: 'Invalid subscription',
+    });
     expect(mocks.upsert).not.toHaveBeenCalled();
   });
 

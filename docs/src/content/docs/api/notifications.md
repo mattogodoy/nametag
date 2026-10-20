@@ -15,7 +15,7 @@ GET /api/notifications/push/public-key
 
 Returns the public key browsers need to create a push subscription. Unauthenticated, since the key is public by definition and the subscribe flow has to work before a session is confirmed. Served from a runtime endpoint rather than a build-time environment variable, so it works correctly against a prebuilt Docker image.
 
-Returns `404` if the instance has no VAPID keys configured.
+Returns `403` with `code: "feature_disabled"` (and `params: { feature: "push", scope: "instance" }`) if the instance has no VAPID keys configured.
 
 ```bash
 curl https://your-instance.example.com/api/notifications/push/public-key

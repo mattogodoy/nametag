@@ -108,7 +108,7 @@ vi.mock('../../lib/notifications/channels/webhook', () => ({
   sendWebhook: webhookMocks.sendWebhook,
 }));
 
-import { outboundPolicy } from '../../lib/net/url-validation';
+import { BlockedUrlError, outboundPolicy } from '../../lib/net/url-validation';
 import { GET, POST } from '../../app/api/notifications/endpoints/route';
 import {
   PUT as updateEndpoint,
@@ -222,11 +222,17 @@ describe('endpoints API', () => {
   });
 
   it('validates the URL against SSRF policy before storing it', async () => {
-    mocks.resolveTarget.mockRejectedValue(new Error('Internal addresses are not allowed'));
+    mocks.resolveTarget.mockRejectedValue(
+      new BlockedUrlError('Internal addresses are not allowed', 'policy')
+    );
 
     const response = await POST(post({ ...valid, url: 'https://internal.test/topic' }));
 
     expect(response.status).toBe(400);
+    // An existing web-read code, unchanged by the error-code sweep.
+    expect(await response.json()).toEqual(
+      expect.objectContaining({ code: 'policy', error: 'That URL cannot be used' })
+    );
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
@@ -234,6 +240,10 @@ describe('endpoints API', () => {
     const response = await POST(post({ ...valid, url: 'https://ntfy.sh/' }));
 
     expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: 'invalid',
+      error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
+    });
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
@@ -268,6 +278,11 @@ describe('endpoints API', () => {
     const response = await POST(post(valid));
 
     expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: 'endpoint_limit_reached',
+      params: { limit: 5 },
+      error: 'You can have at most 5 endpoints',
+    });
     expect(mocks.create).not.toHaveBeenCalled();
     // count({ where: {} }) would still satisfy every assertion above while
     // turning a per-user cap into an instance-wide one, bricking every
@@ -512,6 +527,10 @@ describe('webhook endpoint creation', () => {
     const response = await POST(post(webhook));
 
     expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: 'endpoint_limit_reached',
+      params: { limit: 5 },
+    });
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
@@ -796,6 +815,10 @@ describe('endpoint item API', () => {
         ctx('ep-1')
       );
       expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({
+        code: 'forbidden',
+        error: 'Outgoing webhooks require a Pro subscription',
+      });
     }
 
     expect(mocks.updateMany).not.toHaveBeenCalled();
@@ -839,6 +862,7 @@ describe('endpoint item API', () => {
     );
 
     expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ code: 'not_found', error: 'Not found' });
   });
 
   it('scopes a delete to the signed-in user', async () => {
@@ -861,6 +885,7 @@ describe('endpoint item API', () => {
     );
 
     expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ code: 'not_found', error: 'Not found' });
   });
 });
 
@@ -895,6 +920,7 @@ describe('endpoint test-send API', () => {
     const response = await testEndpoint(jsonRequest('http://localhost/x'), ctx('ep-1'));
 
     expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ code: 'not_found', error: 'Not found' });
     expect(mocks.sendNtfy).not.toHaveBeenCalled();
   });
 

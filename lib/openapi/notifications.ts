@@ -74,7 +74,7 @@ export function notificationsPaths(): Record<string, Record<string, unknown>> {
             type: 'object',
             properties: { publicKey: { type: 'string' } },
           }),
-          '404': ref404(),
+          '403': resp('Push notifications are not configured on this instance (code feature_disabled)'),
         },
       },
     },

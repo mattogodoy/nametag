@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { pushStatusSchema } from '@/lib/validations';
@@ -21,7 +22,7 @@ export const POST = withAuth(async (request, session) => {
   try {
     const parsed = pushStatusSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+      return apiError('bad_request', 'Invalid request');
     }
 
     // Scoped by userId: a row that belongs to another account sharing this

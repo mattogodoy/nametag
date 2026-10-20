@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { getVapidDetails } from '@/lib/notifications/vapid';
 
 /**
@@ -17,7 +18,10 @@ export async function GET(): Promise<NextResponse> {
   const vapid = getVapidDetails();
 
   if (!vapid) {
-    return NextResponse.json({ error: 'Push notifications are not configured' }, { status: 404 });
+    return apiError('feature_disabled', 'Push notifications are not configured', {
+      feature: 'push',
+      scope: 'instance',
+    });
   }
 
   return NextResponse.json({ publicKey: vapid.publicKey });

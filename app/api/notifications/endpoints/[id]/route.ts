@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
@@ -18,7 +19,7 @@ export const PUT = withAuth(async (request, session, context) => {
   try {
     const parsed = updateEndpointSchema.safeParse(await parseRequestBody(request));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request', code: 'invalid' }, { status: 400 });
+      return apiError('invalid', 'Invalid request');
     }
 
     const { id } = await context.params;
@@ -52,7 +53,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (!existing) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return apiError('not_found', 'Not found');
     }
 
     // A token belongs to ntfy and a signing secret to a webhook. Applying
@@ -60,17 +61,11 @@ export const PUT = withAuth(async (request, session, context) => {
     // type would then misuse: sendNtfy puts the stored secret straight into
     // an `Authorization: Bearer` header, sendWebhook uses it as an HMAC key.
     if (token !== undefined && existing.type !== 'NTFY') {
-      return NextResponse.json(
-        { error: 'Only an ntfy destination has an access token', code: 'invalid' },
-        { status: 400 }
-      );
+      return apiError('invalid', 'Only an ntfy destination has an access token');
     }
 
     if (rotateSecret && existing.type !== 'WEBHOOK') {
-      return NextResponse.json(
-        { error: 'Only a webhook has a signing secret', code: 'invalid' },
-        { status: 400 }
-      );
+      return apiError('invalid', 'Only a webhook has a signing secret');
     }
 
     // Re-checked here, not only at creation, so a downgrade in SaaS mode
@@ -91,10 +86,7 @@ export const PUT = withAuth(async (request, session, context) => {
       wantsToUseWebhook &&
       !(await canUseWebhooks(session.user.id))
     ) {
-      return NextResponse.json(
-        { error: 'Outgoing webhooks require a Pro subscription', code: 'forbidden' },
-        { status: 403 }
-      );
+      return apiError('forbidden', 'Outgoing webhooks require a Pro subscription');
     }
 
     let normalizedUrl: string | undefined;
@@ -106,25 +98,18 @@ export const PUT = withAuth(async (request, session, context) => {
         normalized = normalizeEndpointUrl(existing.type, url);
       } catch (error) {
         if (error instanceof CredentialsInUrlError) {
-          return NextResponse.json(
-            {
-              error:
-                'Remove the username and password from the URL. Nametag cannot store URL credentials.',
-              code: 'credentials_in_url',
-            },
-            { status: 400 }
+          return apiError(
+            'credentials_in_url',
+            'Remove the username and password from the URL. Nametag cannot store URL credentials.'
           );
         }
         throw error;
       }
 
       if (!normalized) {
-        return NextResponse.json(
-          {
-            error: 'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic',
-            code: 'invalid',
-          },
-          { status: 400 }
+        return apiError(
+          'invalid',
+          'Enter a full ntfy topic URL, for example https://ntfy.sh/my-topic'
         );
       }
 
@@ -132,10 +117,7 @@ export const PUT = withAuth(async (request, session, context) => {
       // creation refuses to produce.
       const rejection = await checkEndpointUrl(normalized);
       if (rejection) {
-        return NextResponse.json(
-          { error: MESSAGE_BY_REJECTION[rejection.code], code: rejection.code },
-          { status: 400 }
-        );
+        return apiError(rejection.code, MESSAGE_BY_REJECTION[rejection.code]);
       }
 
       normalizedUrl = normalized.url;
@@ -200,17 +182,14 @@ export const PUT = withAuth(async (request, session, context) => {
       });
 
       if (result.count === 0) {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        return apiError('not_found', 'Not found');
       }
     } catch (error) {
       // `@@unique([userId, url])` is what stops the same destination being
       // registered twice and multiplying every reminder into duplicates. An
       // edit can collide with an existing row just as a creation can.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'You have already added that destination', code: 'duplicate' },
-          { status: 409 }
-        );
+        return apiError('duplicate', 'You have already added that destination');
       }
       throw error;
     }
@@ -235,7 +214,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (result.count === 0) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return apiError('not_found', 'Not found');
     }
 
     return NextResponse.json({ success: true });

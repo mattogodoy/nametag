@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, withAuth } from '@/lib/api-utils';
 
@@ -14,7 +15,7 @@ export const DELETE = withAuth(async (_request, session, context) => {
     });
 
     if (result.count === 0) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return apiError('not_found', 'Not found');
     }
 
     return NextResponse.json({ success: true });
