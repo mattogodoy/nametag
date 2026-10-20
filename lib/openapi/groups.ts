@@ -35,7 +35,7 @@ export function groupsPaths(): Record<string, Record<string, unknown>> {
           '400': ref400(),
           '401': ref401(),
           '409': resp("A group with this name already exists (code: 'group_name_taken')"),
-          '403': resp('Plan limit reached'),
+          '403': resp('Plan limit reached (code plan_limit_reached)'),
         },
       },
     },

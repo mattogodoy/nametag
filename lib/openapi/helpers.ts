@@ -73,7 +73,7 @@ export function resp(description: string) {
   return {
     description,
     content: {
-      'application/json': { schema: { $ref: '#/components/schemas/Error' } },
+      'application/json': { schema: { $ref: '#/components/schemas/CodedError' } },
     },
   };
 }

@@ -116,6 +116,8 @@ Validation failures (HTTP 400) additionally include a `details` array with per-f
 }
 ```
 
+Every error also carries a stable machine-readable `code` (for example `group_name_taken`), and validation failures add a `fields` array. See [Errors](/api/errors/) for the response format and the full list of codes.
+
 ## Common status codes
 
 | Status | Meaning |
