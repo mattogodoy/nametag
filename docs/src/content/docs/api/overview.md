@@ -138,7 +138,7 @@ Every error also carries a stable machine-readable `code` (for example `group_na
 
 Rate limiting applies to sensitive, unauthenticated endpoints, not to the general CRUD API. It protects things like login, registration, password reset, and CardDAV credential testing from brute-force abuse. Limits are IP-based sliding windows: for example, login allows 5 attempts per 15 minutes, and registration allows 3 attempts per hour.
 
-Storage is Redis-backed in production when Redis is configured (falling back to an in-memory store per instance otherwise) and always in-memory in development. A `429` response includes a `Retry-After` header and a `retryAfter` field in seconds.
+Storage is Redis-backed in production when Redis is configured (falling back to an in-memory store per instance otherwise) and always in-memory in development. A `429` response includes a `Retry-After` header, `code: "rate_limited"`, and the wait in seconds: a top-level `retryAfter` field from the shared rate limiter, or `params.retryAfter` on the password reset and verification email cooldowns.
 
 Everyday endpoints like `/api/people` or `/api/groups` are not rate-limited beyond your plan's usage limits.
 

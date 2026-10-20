@@ -20,11 +20,11 @@ Some `200` validation responses also carry a `code`. For example, `POST /api/use
 
 ## Unknown codes
 
-New codes are added over time. If a client meets a code it does not know, it should fall back to the generic code for the HTTP status: `400` is `bad_request`, `401` is `unauthorized`, `403` is `forbidden`, `404` is `not_found`, `409` is `conflict`, `413` is `payload_too_large`, `429` is `rate_limited`, `500` is `internal_error` and `503` is `service_unavailable`.
+New codes are added over time. If a client meets a code it does not know, it should fall back to the generic code for the HTTP status: `400` is `bad_request`, `401` is `unauthorized`, `403` is `forbidden`, `404` is `not_found`, `409` is `conflict`, `413` is `payload_too_large`, `429` is `rate_limited`, `500` is `internal_error` and `503` is `service_unavailable`. Any other `4xx` falls back to `bad_request` and any other `5xx` (such as the `502` of `carddav_unreachable`) to `internal_error`.
 
 ## Stability
 
-A code is never renamed, removed or reused once it has shipped, and its HTTP status does not change. Existing response fields such as `error` and `details` keep their shape; `code`, `params` and `fields` are additions.
+A code is never renamed, removed or reused once it has shipped, and its HTTP status does not change. From this version on, existing response fields such as `error` and `details` keep their shape, and new information arrives as new codes or new `params` keys. The release that introduced codes moved a few top-level fields into `params` (`retryAfter` on the password reset and verification email cooldowns, `path` on unknown API routes, `available` and `requested` on import limits) and replaced the import code `LIMIT_EXCEEDED` with `plan_limit_reached`.
 
 ## Validation errors
 
@@ -45,7 +45,7 @@ Each entry has a `path` (dot-separated, array indexes as numbers), an `issue` an
 
 | Issue | Meaning |
 | --- | --- |
-| `required` | The field is missing or empty. |
+| `required` | The field is missing. An empty string is reported as `too_short` with `params.min`. |
 | `too_long` | The value is longer than allowed. `params.max` gives the limit. |
 | `too_short` | The value is shorter than required. `params.min` gives the limit. |
 | `invalid_format` | The value does not have the expected format, such as an email address or URL. |
@@ -58,10 +58,10 @@ Each entry has a `path` (dot-separated, array indexes as numbers), an `issue` an
 | `bad_request` | 400 | The request could not be processed. |  |
 | `unauthorized` | 401 | Authentication is missing or invalid. |  |
 | `forbidden` | 403 | The caller may not perform this action. |  |
-| `not_found` | 404 | The resource does not exist or is not visible to the caller. |  |
+| `not_found` | 404 | The resource does not exist or is not visible to the caller. | `path` (unknown API routes only) |
 | `conflict` | 409 | The request conflicts with the current state. |  |
 | `payload_too_large` | 413 | The request body is too large. |  |
-| `rate_limited` | 429 | Too many requests. Retry after the Retry-After header. |  |
+| `rate_limited` | 429 | Too many requests. Retry after the Retry-After header. | `retryAfter` (password reset and verification email cooldowns) |
 | `internal_error` | 500 | Unexpected server error. |  |
 | `service_unavailable` | 503 | A dependency such as the database is unavailable. |  |
 | `validation_failed` | 400 | The body failed validation. See fields. |  |
@@ -78,7 +78,7 @@ Each entry has a `path` (dot-separated, array indexes as numbers), an `issue` an
 | `invalid_code` | 401 | The sign-in code is unknown, expired or the verifier does not match. |  |
 | `interactive_session_required` | 403 | This action needs a browser or device session, not an API token. |  |
 | `not_a_device_session` | 400 | The caller is not a device session. |  |
-| `plan_limit_reached` | 403 | The plan limit for a resource is reached. | `resource`, `limit` |
+| `plan_limit_reached` | 403 | The plan limit for a resource is reached. | `resource`, `limit`; imports also send `available`, `requested` |
 | `subscription_required` | 403 | An active paid subscription is required. |  |
 | `group_name_taken` | 409 | A group with this name already exists. |  |
 | `relationship_type_name_taken` | 409 | A relationship type with this name already exists. | `name` |
