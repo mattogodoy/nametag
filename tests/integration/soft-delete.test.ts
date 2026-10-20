@@ -77,6 +77,8 @@ const deleteIdleDeviceSessions = vi.hoisted(() => vi.fn().mockResolvedValue(3));
 vi.mock('../../lib/native-auth/sessions', () => ({ deleteIdleDeviceSessions }));
 const deleteExpiredNativeAuthCodes = vi.hoisted(() => vi.fn().mockResolvedValue(4));
 vi.mock('../../lib/native-auth/codes', () => ({ deleteExpiredNativeAuthCodes }));
+const purgeTombstones = vi.hoisted(() => vi.fn().mockResolvedValue(5));
+vi.mock('../../lib/sync/tombstones', () => ({ purgeTombstones }));
 
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -665,6 +667,12 @@ describe('Soft Delete Integration', () => {
       // Expired single-use sign-in codes are purged by the same job
       expect(deleteExpiredNativeAuthCodes).toHaveBeenCalledWith(expect.any(Date));
       expect(body.purged.nativeAuthCodes).toBe(4);
+
+      // Sync tombstones are purged on a 90 day window, not the 30 day trash one
+      const tombstoneCutoff = purgeTombstones.mock.calls[0][1] as Date;
+      const days = (Date.now() - tombstoneCutoff.getTime()) / 86_400_000;
+      expect(Math.round(days)).toBe(90);
+      expect(body.purged.syncTombstones).toBe(5);
     });
 
     it('should clean up related data when purging persons', async () => {
