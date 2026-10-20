@@ -9,6 +9,7 @@ import type { PersonWithRelations } from '@/lib/carddav/types';
 describe('vCard v3.0 Compliance (RFC 2426)', () => {
   const createTestPerson = (overrides = {}): PersonWithRelations => ({
     id: 'test-1',
+    syncVersion: BigInt(0),
     userId: 'user-1',
     name: 'John',
     surname: 'Doe',

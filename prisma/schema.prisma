@@ -69,6 +69,9 @@ model User {
   journalEntries        JournalEntry[]
 
   @@unique([provider, providerAccountId])
+  syncSeq            BigInt @default(0)
+  syncTombstoneFloor BigInt @default(0)
+  syncTombstones     SyncTombstone[]
   @@map("users")
 }
 
@@ -141,6 +144,8 @@ model Person {
   @@index([contactReminderEnabled, lastContact]) // For contact reminder queries
   @@index([userId, deletedAt]) // For soft delete filtering
   @@unique([userId, uid])
+  syncVersion BigInt @default(0)
+  @@index([userId, syncVersion])
   @@map("people")
 }
 
@@ -161,6 +166,8 @@ model Group {
 
   @@index([userId])
   @@index([userId, deletedAt]) // For soft delete filtering
+  syncVersion BigInt @default(0)
+  @@index([userId, syncVersion])
   @@map("groups")
 }
 
@@ -198,6 +205,8 @@ model JournalEntry {
 
   @@index([userId, date])
   @@index([userId, deletedAt])
+  syncVersion BigInt @default(0)
+  @@index([userId, syncVersion])
   @@map("journal_entries")
 }
 
@@ -236,6 +245,8 @@ model Relationship {
   @@index([relatedPersonId])
   @@index([relationshipTypeId])
   @@index([personId, deletedAt]) // For soft delete filtering
+  syncVersion BigInt @default(0)
+  @@index([personId, syncVersion])
   @@map("relationships")
 }
 
@@ -267,6 +278,8 @@ model ImportantDate {
   @@index([personId, date]) // For sorting by date
   @@index([reminderEnabled, date]) // For querying due reminders
   @@index([personId, deletedAt]) // For soft delete filtering
+  syncVersion BigInt @default(0)
+  @@index([personId, syncVersion])
   @@map("important_dates")
 }
 
@@ -309,6 +322,8 @@ model RelationshipType {
 
   @@index([userId])
   @@index([userId, deletedAt]) // For soft delete filtering
+  syncVersion BigInt @default(0)
+  @@index([userId, syncVersion])
   @@map("relationship_types")
 }
 
@@ -990,6 +1005,8 @@ model CustomFieldTemplate {
   // recreate a template with the same name after soft-deleting the previous one.
   @@index([userId, slug])
   @@index([userId, deletedAt])
+  syncVersion BigInt @default(0)
+  @@index([userId, syncVersion])
   @@map("custom_field_templates")
 }
 
@@ -1057,4 +1074,21 @@ model NotificationEndpoint {
   @@unique([userId, url])
   @@index([userId, enabled])
   @@map("notification_endpoints")
+}
+
+// Hard-deleted synced rows, so native clients learn about them. Written by
+// database triggers (see the delta_sync migration), purged after 90 days.
+model SyncTombstone {
+  id          String   @id @default(cuid())
+  userId      String
+  entityType  String
+  entityId    String
+  syncVersion BigInt
+  deletedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, syncVersion])
+  @@index([deletedAt])
+  @@map("sync_tombstones")
 }

@@ -137,6 +137,8 @@ describe('Locale Utilities', () => {
     it('should return user language preference if set', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         id: 'user1',
+        syncSeq: BigInt(0),
+        syncTombstoneFloor: BigInt(0),
         language: 'es-ES',
         email: 'test@example.com',
         password: 'hash',
@@ -184,6 +186,8 @@ describe('Locale Utilities', () => {
     it('should return "en" if user language is not set', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         id: 'user1',
+        syncSeq: BigInt(0),
+        syncTombstoneFloor: BigInt(0),
         language: null,
         email: 'test@example.com',
         password: 'hash',

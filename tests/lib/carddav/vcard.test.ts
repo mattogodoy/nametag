@@ -13,6 +13,7 @@ describe('vCard Transformation', () => {
     it('should create minimal vCard with required fields', () => {
       const person: PersonWithRelations = {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -65,6 +66,7 @@ describe('vCard Transformation', () => {
     it('should include all name fields', () => {
       const person: PersonWithRelations = {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -114,6 +116,7 @@ describe('vCard Transformation', () => {
     it('should include contact information', () => {
       const person: PersonWithRelations = {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -178,6 +181,7 @@ describe('vCard Transformation', () => {
     it('should include professional information', () => {
       const person: PersonWithRelations = {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -226,6 +230,7 @@ describe('vCard Transformation', () => {
     it('should include birthday from important dates', () => {
       const person: PersonWithRelations = {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -263,6 +268,7 @@ describe('vCard Transformation', () => {
         importantDates: [
           {
             id: 'date-1',
+            syncVersion: BigInt(0),
             personId: 'test-1',
             type: 'birthday',
             title: '',
@@ -291,6 +297,7 @@ describe('vCard Transformation', () => {
     it('should include categories from groups', () => {
       const person: PersonWithRelations = {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -331,6 +338,7 @@ describe('vCard Transformation', () => {
           {
             group: {
               id: 'group-1',
+              syncVersion: BigInt(0),
               userId: 'user-1',
               name: 'Family',
               description: null,
@@ -343,6 +351,7 @@ describe('vCard Transformation', () => {
           {
             group: {
               id: 'group-2',
+              syncVersion: BigInt(0),
               userId: 'user-1',
               name: 'Friends',
               description: null,
@@ -486,6 +495,7 @@ END:VCARD`;
     function makePersonWithIM(imHandles: { protocol: string; handle: string }[]): PersonWithRelations {
       return {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -620,6 +630,7 @@ END:VCARD`;
       // Step 2: Re-export as vCard
       const reExported = personToVCard({
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: parsed.name,
         surname: parsed.surname || null,
@@ -693,6 +704,7 @@ END:VCARD`;
     function makePerson(overrides: Partial<PersonWithRelations>): PersonWithRelations {
       return {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -906,6 +918,7 @@ END:VCARD`;
     it('should include preservedProperties in generated vCard', () => {
       const person: PersonWithRelations = {
         id: 'test-id',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'Test',
         surname: 'User',
@@ -958,6 +971,7 @@ END:VCARD`;
     it('should include group prefix and params in preserved properties', () => {
       const person: PersonWithRelations = {
         id: 'test-id',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'Test',
         surname: 'User',
@@ -1010,6 +1024,7 @@ END:VCARD`;
     it('should preserve data through round-trip conversion', () => {
       const original: PersonWithRelations = {
         id: 'test-1',
+        syncVersion: BigInt(0),
         userId: 'user-1',
         name: 'John',
         surname: 'Doe',
@@ -1088,6 +1103,7 @@ END:VCARD`;
   function buildPerson(overrides: Partial<PersonWithRelations> = {}): PersonWithRelations {
     return {
       id: 'test-1',
+      syncVersion: BigInt(0),
       userId: 'user-1',
       name: 'Maria',
       surname: 'Gonzalez',

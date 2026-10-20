@@ -47,6 +47,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 
 const mockPerson: PersonWithRelations = {
   id: 'person-1',
+  syncVersion: BigInt(0),
   userId: 'user-1',
   name: 'John',
   surname: 'Doe',
