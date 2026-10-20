@@ -104,6 +104,42 @@ jobs:
       - name: Run unit tests
         run: npm run test:run
 
+  db-tests:
+    name: Database Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nametag
+          POSTGRES_PASSWORD: nametag
+          POSTGRES_DB: nametag_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U nametag"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://nametag:nametag@localhost:5432/nametag_test
+      DATABASE_URL: postgresql://nametag:nametag@localhost:5432/nametag_test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run database tests
+        run: npm run test:db
+
   build:
     name: Build
     runs-on: ubuntu-latest

@@ -165,6 +165,7 @@ npx prisma migrate reset
 | `npm run typecheck` | Run the TypeScript compiler in check-only mode |
 | `npm run test` | Run unit tests in watch mode |
 | `npm run test:run` | Run unit tests once |
+| `npm run test:db` | Run database tests against a real PostgreSQL (needs `TEST_DATABASE_URL`) |
 | `npm run test:coverage` | Run unit tests with coverage |
 | `npm run test:e2e` | Run Playwright end-to-end tests |
 | `npm run verify` | Lint, typecheck, unit tests, and build |
@@ -232,6 +233,16 @@ npm run test:coverage  # unit tests with coverage
 npm run test:e2e       # end-to-end tests
 npm run test:e2e:ui    # end-to-end tests with UI
 ```
+
+### Database tests
+
+Some behavior (database triggers, locking) can only be verified against a real PostgreSQL, so those tests live in `tests/db/` as `*.db.test.ts` files. They are excluded from `npm run test:run` and run separately:
+
+```bash
+TEST_DATABASE_URL=postgresql://user:password@localhost:5432/nametag_test npm run test:db
+```
+
+Before the tests start, the suite runs `prisma migrate reset --force` against `TEST_DATABASE_URL`, so the schema is built from migrations only. This wipes the database, which is why its name must contain `test`; the suite refuses to run otherwise. Never point it at a database you care about.
 
 ### Code quality checks
 
