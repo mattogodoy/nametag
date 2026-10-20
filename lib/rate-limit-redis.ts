@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getRedis, isRedisConnected } from './redis';
 import { securityLogger } from './logger';
+import type { ApiErrorCode } from './api-errors';
 import {
   rateLimitConfigs,
   buildRateLimitKey,
@@ -126,6 +127,7 @@ async function checkRateLimitRedis(
       return NextResponse.json(
         {
           error: `Too many attempts. Please try again in ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'}.`,
+          code: 'rate_limited' satisfies ApiErrorCode,
           retryAfter: retryAfterSeconds,
         },
         {
@@ -192,6 +194,7 @@ function checkRateLimitMemory(
     return NextResponse.json(
       {
         error: `Too many attempts. Please try again in ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'}.`,
+        code: 'rate_limited' satisfies ApiErrorCode,
         retryAfter: retryAfterSeconds,
       },
       {

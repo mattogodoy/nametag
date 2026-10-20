@@ -164,7 +164,7 @@ export function validationFailed(
   return NextResponse.json(
     {
       error: message,
-      code: 'validation_failed',
+      code: 'validation_failed' satisfies ApiErrorCode,
       details:
         details ??
         issues.map((issue) => ({

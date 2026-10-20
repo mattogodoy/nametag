@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { securityLogger } from './logger';
+import type { ApiErrorCode } from './api-errors';
 import { resolveTrustedClientIp, warnNoTrustedClientIp } from '@/lib/net/client-ip';
 
 interface RateLimitEntry {
@@ -377,7 +378,7 @@ export function checkRateLimit(
     return NextResponse.json(
       {
         error: `Too many attempts. Please try again in ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'}.`,
-        code: 'rate_limited',
+        code: 'rate_limited' satisfies ApiErrorCode,
         retryAfter: retryAfterSeconds,
       },
       {

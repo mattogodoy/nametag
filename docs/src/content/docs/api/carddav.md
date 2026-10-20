@@ -147,6 +147,8 @@ curl -X POST https://your-instance.example.com/api/carddav/discover \
 { "success": true, "discovered": 5, "errors": 0, "errorMessages": [] }
 ```
 
+If discovery fails the endpoint returns HTTP 500 with the standard error body (`code: "internal_error"`).
+
 ### Get pending import count
 
 ```

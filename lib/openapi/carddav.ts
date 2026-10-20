@@ -236,6 +236,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
             },
           }),
           '401': ref401(),
+          '500': resp('Discovery failed (code internal_error)'),
         },
       },
     },
