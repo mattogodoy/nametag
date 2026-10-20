@@ -39,6 +39,14 @@ describe('GET /api/sync', () => {
     expect(mocks.getChangesSince).toHaveBeenCalledWith(expect.anything(), 'user-1', BigInt(5), 500);
   });
 
+  it('returns 401 when the user no longer exists', async () => {
+    mocks.userFind.mockResolvedValue(null);
+    const res = await call('?cursor=0');
+    expect(res.status).toBe(401);
+    expect((await res.json()).code).toBe('unauthorized');
+    expect(mocks.getChangesSince).not.toHaveBeenCalled();
+  });
+
   it('accepts cursor 0, a cursor equal to the floor, and one equal to syncSeq', async () => {
     expect((await call('?cursor=0')).status).toBe(200);
     expect((await call('?cursor=4')).status).toBe(200);
