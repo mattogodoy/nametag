@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateGroupSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { getRandomColor } from '@/lib/colors';
 import { syncGroupMembersToCardDav } from '@/lib/carddav/group-sync';
 import { createModuleLogger } from '@/lib/logger';
@@ -83,7 +84,7 @@ export const PUT = withAuth(async (request, session, context) => {
     });
 
     if (duplicateGroup) {
-      return apiResponse.error('A group with this name already exists');
+      return apiError('group_name_taken', 'A group with this name already exists');
     }
 
     const nameChanged = name !== existingGroup.name;

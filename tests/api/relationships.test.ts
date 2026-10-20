@@ -98,7 +98,8 @@ describe('Relationships API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body.error).toContain('same person');
+      expect(body.code).toBe('self_relationship');
+      expect(body.error).toBe('Cannot create a relationship with the same person');
     });
 
     it('should prevent duplicate relationships', async () => {
@@ -121,8 +122,9 @@ describe('Relationships API', () => {
       const response = await POST(request);
       const body = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(body.error).toContain('already exists');
+      expect(response.status).toBe(409);
+      expect(body.code).toBe('relationship_exists');
+      expect(body.error).toBe('This relationship already exists');
     });
 
     it('should return 404 when person not found', async () => {
@@ -157,9 +159,11 @@ describe('Relationships API', () => {
       });
 
       const response = await POST(request);
-      await response.json();
+      const body = await response.json();
 
       expect(response.status).toBe(400);
+      expect(body.code).toBe('relationship_type_required');
+      expect(body.error).toBe('Relationship type is required');
     });
 
     it('should create inverse relationship when type has inverseId', async () => {
@@ -267,9 +271,11 @@ describe('Relationships API', () => {
       const context = { params: Promise.resolve({ id: 'rel-1' }) };
 
       const response = await PUT(request, context);
-      await response.json();
+      const body = await response.json();
 
       expect(response.status).toBe(400);
+      expect(body.code).toBe('relationship_type_required');
+      expect(body.error).toBe('Relationship type is required');
     });
 
     it('should return 401 when relationship belongs to another user', async () => {

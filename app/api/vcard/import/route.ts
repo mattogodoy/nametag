@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { vCardToPerson } from '@/lib/carddav/vcard-import';
 import { sanitizeName, sanitizeNotes } from '@/lib/sanitize';
 import { createPersonFromVCardData } from '@/lib/carddav/vcard-import';
 import { createModuleLogger } from '@/lib/logger';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { isSaasMode } from '@/lib/features';
 import { canCreateResource, getUserUsage } from '@/lib/billing';
 
@@ -25,7 +25,7 @@ export const POST = withAuth(async (request, session) => {
     }
 
     if (!vcardText || !vcardText.trim().startsWith('BEGIN:VCARD')) {
-      return apiResponse.error('Invalid vCard file');
+      return apiError('invalid_vcard', 'Invalid vCard file');
     }
 
     // Split into individual vCards (handle multiple contacts in one file)
@@ -77,16 +77,17 @@ export const POST = withAuth(async (request, session) => {
         const available = usageCheck.limit - currentUsage.people;
 
         if (!usageCheck.isUnlimited && totalAfterImport > usageCheck.limit) {
-          return NextResponse.json(
+          return apiError(
+            'plan_limit_reached',
+            `This import would exceed your plan's contact limit. ` +
+              `You have ${currentUsage.people} contacts and are trying to add ${newCount}, ` +
+              `but your plan allows ${usageCheck.limit}.`,
             {
-              error: `This import would exceed your plan's contact limit. ` +
-                `You have ${currentUsage.people} contacts and are trying to add ${newCount}, ` +
-                `but your plan allows ${usageCheck.limit}.`,
-              code: 'LIMIT_EXCEEDED',
+              resource: 'people',
+              limit: usageCheck.limit,
               available: Math.max(0, available),
               requested: newCount,
-            },
-            { status: 403 }
+            }
           );
         }
       }

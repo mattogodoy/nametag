@@ -66,6 +66,8 @@ curl -X POST https://your-instance.example.com/api/relationships \
 { "relationship": { "id": "clxrel1", "personId": "clx1", "relatedPersonId": "clx2" } }
 ```
 
+Returns `400` with `code` `self_relationship` if both people are the same, and `409` with `code` `relationship_exists` if the relationship already exists.
+
 ### Get a relationship by ID
 
 ```
@@ -198,6 +200,8 @@ curl -X POST https://your-instance.example.com/api/relationship-types \
 { "relationshipType": { "id": "clxtype1", "name": "PARENT", "label": "Parent", "inverseId": "clxtype2" } }
 ```
 
+Returns `409` with `code` `relationship_type_name_taken` if a type with that name already exists, or if the inverse type to auto-create does (then `params.name` is the inverse name).
+
 ### Get a relationship type by ID
 
 ```
@@ -231,6 +235,8 @@ curl -X PUT https://your-instance.example.com/api/relationship-types/clxtype1 \
 ```json
 { "relationshipType": { "id": "clxtype1", "color": "#4287f5" } }
 ```
+
+Returns `409` with `code` `relationship_type_name_taken` if another type already has that name.
 
 ### Delete a relationship type
 

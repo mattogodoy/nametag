@@ -184,7 +184,8 @@ describe('People API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body.error).toContain('Relationship');
+      expect(body.code).toBe('relationship_type_required');
+      expect(body.error).toBe('Relationship to user is required');
     });
 
     it('should allow person connected through another person', async () => {

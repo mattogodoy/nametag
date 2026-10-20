@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 import { savePhotoFromBuffer, deletePersonPhotos } from '@/lib/photo-storage';
 import { autoUpdatePerson } from '@/lib/carddav/auto-export';
 import { createModuleLogger } from '@/lib/logger';
@@ -18,17 +19,21 @@ export const POST = withAuth(async (request, session, context) => {
     try {
       formData = await request.formData();
     } catch {
-      return apiResponse.error('Invalid form data');
+      return apiError('bad_request', 'Invalid form data');
     }
 
     const file = formData.get('photo');
     if (!file || typeof file === 'string') {
-      return apiResponse.error('No photo file provided');
+      return apiError('photo_missing', 'No photo file provided');
     }
 
     // Check file size before reading full buffer
     if (file.size > MAX_UPLOAD_SIZE) {
-      return apiResponse.error(`Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`);
+      return apiError(
+        'photo_too_large',
+        `Photo exceeds maximum size of ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB`,
+        { maxBytes: MAX_UPLOAD_SIZE }
+      );
     }
 
     // Verify person exists and is owned by user
@@ -55,7 +60,7 @@ export const POST = withAuth(async (request, session, context) => {
       filename = await savePhotoFromBuffer(session.user.id, id, buffer);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process photo';
-      return apiResponse.error(message);
+      return apiError('bad_request', message);
     }
 
     // Update person record

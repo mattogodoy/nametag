@@ -6,6 +6,7 @@ import {
   parseRequestBody,
   withAuth,
 } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 
 export const PUT = withAuth(async (request, session) => {
   try {
@@ -25,13 +26,13 @@ export const PUT = withAuth(async (request, session) => {
 
     // The submitted list must be an exact match of the active set (same length, same ids)
     if (activeTemplates.length !== ids.length) {
-      return apiResponse.error('Reorder must include all active templates');
+      return apiError('reorder_incomplete', 'Reorder must include all active templates');
     }
 
     const activeIdSet = new Set(activeTemplates.map((t) => t.id));
     const submittedIdSet = new Set(ids);
     if (activeIdSet.size !== submittedIdSet.size || [...activeIdSet].some((id) => !submittedIdSet.has(id))) {
-      return apiResponse.error('Reorder must include all active templates');
+      return apiError('reorder_incomplete', 'Reorder must include all active templates');
     }
 
     // Apply order updates atomically

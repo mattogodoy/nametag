@@ -164,8 +164,9 @@ describe('Relationship Types API', () => {
       const response = await POST(request);
       const body = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(body.error).toContain('already exists');
+      expect(response.status).toBe(409);
+      expect(body.code).toBe('relationship_type_name_taken');
+      expect(body.error).toBe('A relationship type with this name already exists');
     });
 
     it('should create inverse type when inverseLabel is provided', async () => {

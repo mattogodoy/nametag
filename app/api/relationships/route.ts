@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createRelationshipSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
+import { apiError } from '@/lib/api-errors';
 
 // GET /api/relationships - List all relationships for the current user
 export const GET = withAuth(async (_request, session) => {
@@ -48,12 +49,12 @@ export const POST = withAuth(async (request, session) => {
     const { personId, relatedPersonId, relationshipTypeId, notes } = validation.data;
 
     if (!relationshipTypeId) {
-      return apiResponse.error('Relationship type is required');
+      return apiError('relationship_type_required', 'Relationship type is required');
     }
 
     // Prevent self-relationships
     if (personId === relatedPersonId) {
-      return apiResponse.error('Cannot create a relationship with the same person');
+      return apiError('self_relationship', 'Cannot create a relationship with the same person');
     }
 
     // Check for duplicate relationship
@@ -67,7 +68,7 @@ export const POST = withAuth(async (request, session) => {
     });
 
     if (existingRelationship) {
-      return apiResponse.error('This relationship already exists');
+      return apiError('relationship_exists', 'This relationship already exists');
     }
 
     // Verify both people belong to the user

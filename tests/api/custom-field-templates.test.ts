@@ -161,6 +161,8 @@ describe('Custom Field Templates API', () => {
 
       expect(response.status).toBe(403);
       expect(body.error).toContain('5');
+      expect(body.code).toBe('plan_limit_reached');
+      expect(body.params).toEqual({ resource: 'customFieldTemplates', limit: 5 });
     });
 
     it('returns 400 when derived slug is empty (e.g. name is "???")', async () => {
@@ -174,6 +176,7 @@ describe('Custom Field Templates API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
+      expect(body.code).toBe('name_needs_alphanumeric');
       expect(body.error).toBe('Name must contain at least one alphanumeric character');
     });
 
@@ -195,7 +198,8 @@ describe('Custom Field Templates API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(409);
-      expect(body.error).toContain('already exists');
+      expect(body.code).toBe('custom_field_name_taken');
+      expect(body.error).toBe('A custom field with this name already exists');
     });
   });
 
@@ -607,6 +611,7 @@ describe('Custom Field Templates API', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
+      expect(body.code).toBe('reorder_incomplete');
       expect(body.error).toBe('Reorder must include all active templates');
       expect(mocks.transaction).not.toHaveBeenCalled();
     });

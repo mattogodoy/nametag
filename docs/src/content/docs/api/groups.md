@@ -56,7 +56,7 @@ curl -X POST https://your-instance.example.com/api/groups \
 { "group": { "id": "clxgroup1", "name": "Family", "color": "#FF5733" } }
 ```
 
-Returns `403` if you've reached your plan's group limit.
+Returns `403` if you've reached your plan's group limit (`code` is `plan_limit_reached`), `409` if a group with that name already exists (`code` is `group_name_taken`).
 
 ## Get a group by ID
 
@@ -91,6 +91,8 @@ curl -X PUT https://your-instance.example.com/api/groups/clxgroup1 \
 ```json
 { "group": { "id": "clxgroup1", "name": "Immediate Family" } }
 ```
+
+Returns `409` if another group already has that name (`code` is `group_name_taken`).
 
 ## Delete a group
 
@@ -163,6 +165,8 @@ curl -X POST https://your-instance.example.com/api/groups/clxgroup1/members \
 ```json
 { "success": true }
 ```
+
+Returns `409` if the person is already in the group (`code` is `already_group_member`).
 
 ## Remove a person from a group
 

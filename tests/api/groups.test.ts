@@ -179,8 +179,9 @@ describe('Groups API', () => {
       const response = await POST(request);
       const body = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(body.error).toContain('already exists');
+      expect(response.status).toBe(409);
+      expect(body.code).toBe('group_name_taken');
+      expect(body.error).toBe('A group with this name already exists');
     });
 
     it('should check for duplicate names case-insensitively', async () => {

@@ -125,7 +125,7 @@ curl -X POST https://your-instance.example.com/api/vcard/import \
 { "success": true, "imported": 12, "skipped": 1, "errors": 0, "errorMessages": [] }
 ```
 
-Returns `413` if the file exceeds 2 MB.
+Returns `413` if the file exceeds 2 MB, `400` with `code` `invalid_vcard` if the body is not a vCard, and `403` with `code` `plan_limit_reached` if the import would exceed your plan's contact limit (`params` carries `resource`, `limit`, `available` and `requested`).
 
 ### Upload a vCard for preview
 

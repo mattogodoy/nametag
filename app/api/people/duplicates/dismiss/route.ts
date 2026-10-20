@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
+import { apiError, validationFailed } from '@/lib/api-errors';
 import { z } from 'zod';
 
 const dismissSchema = z.object({
@@ -14,13 +15,13 @@ export const POST = withAuth(async (request, session) => {
     const parsed = dismissSchema.safeParse(body);
 
     if (!parsed.success) {
-      return apiResponse.error('Invalid request body');
+      return validationFailed(parsed.error.issues, 'Invalid request body');
     }
 
     const { personAId, personBId } = parsed.data;
 
     if (personAId === personBId) {
-      return apiResponse.error('Cannot dismiss a person with themselves');
+      return apiError('self_relationship', 'Cannot dismiss a person with themselves');
     }
 
     // Always store with smaller ID first for consistent lookups

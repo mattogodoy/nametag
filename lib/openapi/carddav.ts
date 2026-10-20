@@ -307,6 +307,7 @@ export function carddavPaths(): Record<string, Record<string, unknown>> {
           }),
           '400': ref400(),
           '401': ref401(),
+          '403': resp("The import would exceed the plan limit (code: 'plan_limit_reached', params.resource, limit, available, requested)"),
           '413': resp('File too large (max 2 MB)'),
         },
       },
