@@ -27,7 +27,7 @@ export function customFieldValuesInclude() {
 }
 
 /** Multi-value contact fields (phones, emails, etc.) – always included as `true`. */
-function multiValueFieldsInclude() {
+export function multiValueFieldsInclude() {
   return {
     phoneNumbers: true,
     emails: true,
