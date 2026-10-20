@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import { multiValueFieldsInclude } from '@/lib/prisma-queries';
 
 // Delta sync reads deliberately include soft-deleted rows (deletedAt set), so
@@ -56,30 +56,38 @@ export async function getChangesSince(
   const byUser = { userId, syncVersion: after };
   const byPerson = { person: { userId }, syncVersion: after };
 
-  const [people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones] =
-    await Promise.all([
-      client.person.findMany({
-        where: byUser, orderBy: order, take, omit,
-        include: {
-          ...multiValueFieldsInclude(),
-          // Unfiltered: values on a trashed template must still sync, since
-          // restoring the template does not bump the person. Templates sync
-          // as their own table.
-          customFieldValues: true,
-          groups: { select: { groupId: true } },
-        },
-      }),
-      client.group.findMany({ where: byUser, orderBy: order, take, omit }),
-      client.relationship.findMany({ where: byPerson, orderBy: order, take, omit }),
-      client.importantDate.findMany({ where: byPerson, orderBy: order, take, omit }),
-      client.relationshipType.findMany({ where: byUser, orderBy: order, take, omit }),
-      client.journalEntry.findMany({
-        where: byUser, orderBy: order, take, omit,
-        include: { people: { select: { personId: true } } },
-      }),
-      client.customFieldTemplate.findMany({ where: byUser, orderBy: order, take, omit }),
-      client.syncTombstone.findMany({ where: byUser, orderBy: order, take }),
-    ]);
+  // All reads share one REPEATABLE READ snapshot. Versions are handed out under
+  // the user-row lock, so they commit in version order: a single snapshot that
+  // holds version v also holds every lower version. Separate snapshots (one per
+  // pooled connection) break that. People could be read before a commit and
+  // groups after it, returning a later group version while an earlier person
+  // version is skipped for good once the cursor moves past it. The queries run
+  // one after another because a transaction client serves one query at a time.
+  const read = await client.$transaction(async (tx) => {
+    const people = await tx.person.findMany({
+      where: byUser, orderBy: order, take, omit,
+      include: {
+        ...multiValueFieldsInclude(),
+        // Unfiltered: values on a trashed template must still sync, since
+        // restoring the template does not bump the person. Templates sync
+        // as their own table.
+        customFieldValues: true,
+        groups: { select: { groupId: true } },
+      },
+    });
+    const groups = await tx.group.findMany({ where: byUser, orderBy: order, take, omit });
+    const relationships = await tx.relationship.findMany({ where: byPerson, orderBy: order, take, omit });
+    const importantDates = await tx.importantDate.findMany({ where: byPerson, orderBy: order, take, omit });
+    const relationshipTypes = await tx.relationshipType.findMany({ where: byUser, orderBy: order, take, omit });
+    const journalEntries = await tx.journalEntry.findMany({
+      where: byUser, orderBy: order, take, omit,
+      include: { people: { select: { personId: true } } },
+    });
+    const templates = await tx.customFieldTemplate.findMany({ where: byUser, orderBy: order, take, omit });
+    const stones = await tx.syncTombstone.findMany({ where: byUser, orderBy: order, take });
+    return { people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30000 });
+  const { people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones } = read;
 
   const all: Entry[] = [
     ...toEntries('people', people, ({ groups: g, ...rest }) => ({ ...rest, groupIds: g.map((x) => x.groupId) })),

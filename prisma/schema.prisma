@@ -1090,5 +1090,6 @@ model SyncTombstone {
 
   @@index([userId, syncVersion])
   @@index([deletedAt])
+  @@index([entityType, entityId])
   @@map("sync_tombstones")
 }

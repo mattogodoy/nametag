@@ -42,6 +42,9 @@ CREATE INDEX "sync_tombstones_userId_syncVersion_idx" ON "sync_tombstones"("user
 CREATE INDEX "sync_tombstones_deletedAt_idx" ON "sync_tombstones"("deletedAt");
 
 -- CreateIndex
+CREATE INDEX "sync_tombstones_entityType_entityId_idx" ON "sync_tombstones"("entityType", "entityId");
+
+-- CreateIndex
 CREATE INDEX "people_userId_syncVersion_idx" ON "people"("userId", "syncVersion");
 
 -- CreateIndex
@@ -77,8 +80,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- The stamp triggers step aside while nametag_sync_backfill() runs, so the
+-- backfill can write its own numbers even when the triggers exist.
 CREATE OR REPLACE FUNCTION nametag_sync_stamp_by_user() RETURNS TRIGGER AS $$
 BEGIN
+  IF current_setting('nametag.sync_backfill', true) = 'on' THEN RETURN NEW; END IF;
   NEW."syncVersion" := COALESCE(nametag_sync_next(NEW."userId"), NEW."syncVersion");
   RETURN NEW;
 END;
@@ -88,11 +94,56 @@ CREATE OR REPLACE FUNCTION nametag_sync_stamp_by_person() RETURNS TRIGGER AS $$
 DECLARE
   owner TEXT;
 BEGIN
+  IF current_setting('nametag.sync_backfill', true) = 'on' THEN RETURN NEW; END IF;
   SELECT "userId" INTO owner FROM "people" WHERE "id" = NEW."personId";
   NEW."syncVersion" := COALESCE(nametag_sync_next(owner), NEW."syncVersion");
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Rows that exist before this migration start at syncVersion 0, and a reader
+-- only returns rows above its cursor, so they would never sync. This numbers
+-- each user's existing rows 1..n (by table, then createdAt, then id) and sets
+-- the user's counter to n. It is set-based so large instances stay fast.
+CREATE OR REPLACE FUNCTION nametag_sync_backfill() RETURNS void AS $$
+BEGIN
+  PERFORM set_config('nametag.sync_backfill', 'on', true);
+
+  DROP TABLE IF EXISTS _nametag_sync_backfill;
+  CREATE TEMP TABLE _nametag_sync_backfill AS
+  SELECT s.tbl, s.id, s.uid,
+         row_number() OVER (PARTITION BY s.uid ORDER BY s.tbl, s.created, s.id) AS v
+  FROM (
+    SELECT 1 AS tbl, "id", "userId" AS uid, "createdAt" AS created FROM "people"
+    UNION ALL SELECT 2, "id", "userId", "createdAt" FROM "groups"
+    UNION ALL SELECT 3, "id", "userId", "createdAt" FROM "relationship_types"
+    UNION ALL SELECT 4, "id", "userId", "createdAt" FROM "journal_entries"
+    UNION ALL SELECT 5, "id", "userId", "createdAt" FROM "custom_field_templates"
+    UNION ALL SELECT 6, r."id", p."userId", r."createdAt"
+      FROM "relationships" r JOIN "people" p ON p."id" = r."personId"
+    UNION ALL SELECT 7, d."id", p."userId", d."createdAt"
+      FROM "important_dates" d JOIN "people" p ON p."id" = d."personId"
+  ) s;
+
+  UPDATE "people" t SET "syncVersion" = b.v FROM _nametag_sync_backfill b WHERE b.tbl = 1 AND b.id = t."id";
+  UPDATE "groups" t SET "syncVersion" = b.v FROM _nametag_sync_backfill b WHERE b.tbl = 2 AND b.id = t."id";
+  UPDATE "relationship_types" t SET "syncVersion" = b.v FROM _nametag_sync_backfill b WHERE b.tbl = 3 AND b.id = t."id";
+  UPDATE "journal_entries" t SET "syncVersion" = b.v FROM _nametag_sync_backfill b WHERE b.tbl = 4 AND b.id = t."id";
+  UPDATE "custom_field_templates" t SET "syncVersion" = b.v FROM _nametag_sync_backfill b WHERE b.tbl = 5 AND b.id = t."id";
+  UPDATE "relationships" t SET "syncVersion" = b.v FROM _nametag_sync_backfill b WHERE b.tbl = 6 AND b.id = t."id";
+  UPDATE "important_dates" t SET "syncVersion" = b.v FROM _nametag_sync_backfill b WHERE b.tbl = 7 AND b.id = t."id";
+
+  UPDATE "users" u SET "syncSeq" = c.n
+  FROM (SELECT uid, max(v) AS n FROM _nametag_sync_backfill GROUP BY uid) c
+  WHERE u."id" = c.uid;
+
+  DROP TABLE _nametag_sync_backfill;
+  PERFORM set_config('nametag.sync_backfill', 'off', true);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Runs before the stamp triggers exist. Kept defined afterwards for tests.
+SELECT nametag_sync_backfill();
 
 CREATE TRIGGER sync_stamp BEFORE INSERT OR UPDATE ON "people"
   FOR EACH ROW EXECUTE FUNCTION nametag_sync_stamp_by_user();
