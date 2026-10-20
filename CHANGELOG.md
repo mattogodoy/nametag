@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.65.0](https://github.com/mattogodoy/nametag/compare/v0.64.1...v0.65.0) (2026-10-20)
+
+
+### Features
+
+* add Polish (pl-PL) translation ([#492](https://github.com/mattogodoy/nametag/issues/492)) ([4c9aa52](https://github.com/mattogodoy/nametag/commit/4c9aa52a7ac5a2eb64556b785ac74288f2013c12))
+* **api:** add server info endpoint for native clients ([#486](https://github.com/mattogodoy/nametag/issues/486)) ([4b53405](https://github.com/mattogodoy/nametag/commit/4b53405c9af06663b6a989c2710636bcab1e5d74))
+* **api:** machine-readable error codes on every API error ([#493](https://github.com/mattogodoy/nametag/issues/493)) ([f239b99](https://github.com/mattogodoy/nametag/commit/f239b99d51eaa48728675a2d3d40991f5a0c35e6))
+* **auth:** native app sessions and signed-in devices ([#488](https://github.com/mattogodoy/nametag/issues/488)) ([c138307](https://github.com/mattogodoy/nametag/commit/c138307cff8c7d22e649330422bd4fa588893483))
+* **auth:** single sign-on for native apps ([#489](https://github.com/mattogodoy/nametag/issues/489)) ([12e93d9](https://github.com/mattogodoy/nametag/commit/12e93d976af844ed8cc7725b4097941486306eea))
+
+
+### Bug Fixes
+
+* **graph:** translate the "You" label on the user node ([#491](https://github.com/mattogodoy/nametag/issues/491)) ([f61f300](https://github.com/mattogodoy/nametag/commit/f61f3005bad0c0c618188e4d72604f2ae486e0c5))
+* **trash:** stop Relationships and Important Dates tabs from crashing ([#490](https://github.com/mattogodoy/nametag/issues/490)) ([9f23cf0](https://github.com/mattogodoy/nametag/commit/9f23cf0de9777712fc015a32261b6d9425780983))
+
 ## [0.64.1](https://github.com/mattogodoy/nametag/compare/v0.64.0...v0.64.1) (2026-10-16)
 
 
