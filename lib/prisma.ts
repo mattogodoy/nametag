@@ -21,6 +21,19 @@ function createBaseClient() {
 
   return new PrismaClient({
     adapter,
+    // Sync internals are hidden by default: BigInt does not serialize to JSON,
+    // so any route returning a whole row would throw. Sync code opts in per
+    // query with `omit: { syncVersion: false }`.
+    omit: {
+      person: { syncVersion: true },
+      group: { syncVersion: true },
+      relationship: { syncVersion: true },
+      importantDate: { syncVersion: true },
+      relationshipType: { syncVersion: true },
+      journalEntry: { syncVersion: true },
+      customFieldTemplate: { syncVersion: true },
+      user: { syncSeq: true, syncTombstoneFloor: true },
+    },
     log:
       env.NODE_ENV === 'production'
         ? ['error', 'warn']
