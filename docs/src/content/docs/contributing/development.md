@@ -244,6 +244,20 @@ TEST_DATABASE_URL=postgresql://user:password@localhost:5432/nametag_test npm run
 
 Before the tests start, the suite runs `prisma migrate reset --force` against `TEST_DATABASE_URL`, so the schema is built from migrations only. This wipes the database, so the suite refuses to run unless the database name ends in `_test` or `-test` and the host is `localhost`, `127.0.0.1` or `::1`. Never point it at a database you care about.
 
+### Writing transactions
+
+Every write to a synced table (people, groups, relationships, important dates, relationship types, journal entries, custom field templates and the contact child tables) takes a per-user lock for delta sync. Two concurrent transactions for the same user can therefore deadlock, and Postgres aborts one of them. Single queries on `prisma` are retried automatically, but a whole transaction must be retried by its caller:
+
+```ts
+import { withDeadlockRetry } from '@/lib/db/deadlock';
+
+await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
+  // ...
+}));
+```
+
+Build a batch transaction's queries inside the callback, so a retry gets fresh ones. A transaction that writes several records should also call `lockUserRow(tx, userId)` from `lib/db/user-lock.ts` first, so it waits its turn instead of deadlocking. `tests/unit/db/transaction-retry-guard.test.ts` fails on an unwrapped `$transaction` unless its file is allowlisted with a reason.
+
 ### Code quality checks
 
 ```bash

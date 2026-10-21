@@ -1,4 +1,5 @@
 import { prisma as prismaClient } from '@/lib/prisma';
+import { withDeadlockRetry } from '@/lib/db/deadlock';
 import { validateRawValue, isEmptyRawValue } from './values';
 
 // Type that accepts the extended Prisma client (with soft-delete extension)
@@ -91,7 +92,10 @@ export async function applyCustomFieldValues(
 
   // Apply: delete templates no longer in the set + upsert each provided value, in one transaction
   const incomingIds = inputs.map((i) => i.templateId);
-  await prisma.$transaction([
+  // Retried as a whole on a sync deadlock (lib/db/deadlock.ts). The queries
+  // are built inside the callback: a batch's queries run once, so a retry
+  // needs fresh ones.
+  await withDeadlockRetry(() => prisma.$transaction([
     prisma.personCustomFieldValue.deleteMany({
       where: { personId, templateId: { notIn: incomingIds } },
     }),
@@ -102,5 +106,5 @@ export async function applyCustomFieldValues(
         update: { value: input.value },
       })
     ),
-  ]);
+  ]));
 }

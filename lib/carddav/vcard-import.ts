@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { withDeadlockRetry } from '@/lib/db/deadlock';
 import { savePhoto } from '@/lib/photo-storage';
 import type { ParsedVCardData } from './types';
 import type { Person } from '@prisma/client';
@@ -239,7 +240,8 @@ export async function updatePersonFromVCard(
 
   // Delete all multi-value fields and update person in a single atomic transaction
   // to prevent partial data loss if either step fails
-  await prisma.$transaction(async (tx) => {
+  // Retried as a whole on a sync deadlock (lib/db/deadlock.ts).
+  await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
     await tx.personPhone.deleteMany({ where: { personId } });
     await tx.personEmail.deleteMany({ where: { personId } });
     await tx.personAddress.deleteMany({ where: { personId } });
@@ -288,7 +290,7 @@ export async function updatePersonFromVCard(
           : undefined,
       },
     });
-  });
+  }));
 }
 
 /**

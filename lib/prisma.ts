@@ -42,27 +42,40 @@ function createBaseClient() {
   });
 }
 
+/**
+ * True when Prisma says a query runs outside any transaction. Prisma exposes
+ * this only through the undocumented `__internalParams.transaction` (kind
+ * "batch" or "itx" inside one). If that shape ever changes, this answers
+ * false, so nothing is rerun rather than rerun outside its transaction.
+ * tests/db/sync-deadlock.db.test.ts pins the behavior.
+ */
+function isStandalone(params: object): boolean {
+  if (!('__internalParams' in params)) return false;
+  const internal = params.__internalParams;
+  return typeof internal === 'object' && internal !== null
+    && (!('transaction' in internal) || internal.transaction === undefined || internal.transaction === null);
+}
+
 // Create an extended Prisma client with soft-delete filtering
 function createExtendedClient() {
   const baseClient = createBaseClient();
 
   return baseClient.$extends({
     // A standalone write can be the victim of a delta sync deadlock (see
-    // lib/db/deadlock.ts); it committed nothing, so it is run again. Inside a
-    // transaction the deadlock has aborted the whole transaction and the rerun
-    // fails, so the original error goes up for the transaction to retry.
+    // lib/db/deadlock.ts); it committed nothing, so it is run again.
+    // Queries inside a transaction are never rerun here: the deadlock aborted
+    // the whole transaction, and rerunning one statement of a batch would run
+    // it on its own, outside the batch. Those callers wrap the whole
+    // transaction in withDeadlockRetry instead.
     name: 'deadlockRetry',
     query: {
-      async $allOperations({ args, query }) {
+      async $allOperations(params) {
+        const { args, query } = params;
         try {
           return await query(args);
         } catch (error) {
-          if (!isDeadlock(error)) throw error;
-          try {
-            return await withDeadlockRetry(() => query(args));
-          } catch {
-            throw error;
-          }
+          if (!isDeadlock(error) || !isStandalone(params)) throw error;
+          return withDeadlockRetry(() => query(args));
         }
       },
     },
