@@ -34,6 +34,10 @@ Beyond the person's own detail and edit pages, photos appear in a few other plac
 - **Network graph**: each person's photo (or initials, if none is set) is used as their node avatar
 - **Global search**: photos appear next to matching people in search results, making it easier to spot the right person at a glance
 
+## Caching
+
+Browsers and the mobile app keep a private copy of each photo and check with the server before showing it. An unchanged photo is not downloaded again, and a replaced photo shows up right away.
+
 ## Where photos are stored
 
 Photos are stored on disk, not in the database, at the path configured by the `PHOTO_STORAGE_PATH` environment variable. If you're running Nametag with Docker, this needs to point at a persistent volume (the `photo_data` volume defined in `docker-compose.yml`), otherwise uploaded photos will be lost the next time the container restarts. See [Configuration](/self-hosting/configuration/) for details on setting this up.

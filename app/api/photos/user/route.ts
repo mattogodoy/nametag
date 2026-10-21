@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth } from '@/lib/api-utils';
 import { isPhotoFilename, readPhotoFile } from '@/lib/photo-storage';
+import { photoResponse } from '@/lib/photo-response';
 
 // GET /api/photos/user - Serve the logged-in user's photo from disk
-export const GET = withAuth(async (_request, session) => {
+export const GET = withAuth(async (request, session) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -24,14 +25,7 @@ export const GET = withAuth(async (_request, session) => {
       return new NextResponse(null, { status: 404 });
     }
 
-    return new NextResponse(new Uint8Array(result.buffer), {
-      status: 200,
-      headers: {
-        'Content-Type': result.mimeType,
-        'Content-Length': String(result.buffer.length),
-        'Cache-Control': 'private, no-store',
-      },
-    });
+    return photoResponse(request, result);
   } catch {
     return new NextResponse(null, { status: 500 });
   }

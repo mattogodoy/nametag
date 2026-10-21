@@ -273,6 +273,8 @@ curl https://your-instance.example.com/api/photos/user \
   -o me.jpg
 ```
 
+Like person photos, the response has an `ETag` and answers `304 Not Modified` to a matching `If-None-Match`.
+
 ## Account deletion
 
 ```

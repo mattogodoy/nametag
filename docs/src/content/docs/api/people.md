@@ -609,3 +609,11 @@ curl https://your-instance.example.com/api/photos/clx1 \
   -H "Authorization: Bearer ntag_xxx" \
   -o ada.jpg
 ```
+
+The response carries an `ETag` that changes whenever the photo does, and `Cache-Control: private, no-cache`, so a client may keep a copy but should check it before use. Send the stored tag back in `If-None-Match`: if the photo is unchanged, the server answers `304 Not Modified` with no body.
+
+```bash
+curl -i https://your-instance.example.com/api/photos/clx1 \
+  -H "Authorization: Bearer ntag_xxx" \
+  -H 'If-None-Match: "q8Jx2nV0b1Lw7mR3kTzA9c"'
+```

@@ -51,6 +51,10 @@ People include their contact child arrays (phones, emails, addresses and so on),
 3. Store the returned `cursor` only after the page has been applied.
 4. Repeat with the new cursor while `hasMore` is `true`.
 
+## Photos
+
+A person's `photo` field names the stored file, but the name does not change when the photo is replaced. When a person appears in `changes`, revalidate the cached image with `GET /api/photos/{personId}` and `If-None-Match`. An unchanged photo costs a `304` with no body. A `photo` of `null` means the person has no photo. See [Get a person photo](/api/people/#get-a-person-photo).
+
 ## Soft-deleted records
 
 Records in the trash are included in `changes` with `deletedAt` set, so a client can hide them or show them in a trash view. When a trashed record is restored, it comes back with `deletedAt` set to `null`.
