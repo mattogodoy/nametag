@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { lockUserRow } from '@/lib/db/user-lock';
+import { withDeadlockRetry } from '@/lib/db/deadlock';
 import { customFieldTemplateUpdateSchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { sanitizeName } from '@/lib/sanitize';
@@ -104,7 +106,9 @@ export const PUT = withAuth(async (request, session, context) => {
 
     if (rename !== null) {
       // Wrap in a transaction to cascade the option rename
-      await prisma.$transaction(async (tx) => {
+      // User lock first: the rename touches many contacts (lib/db/deadlock.ts).
+      await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
+        await lockUserRow(tx, session.user.id);
         await tx.customFieldTemplate.update({
           where: { id },
           data: updateData,
@@ -114,7 +118,7 @@ export const PUT = withAuth(async (request, session, context) => {
           where: { templateId: id, value: rename.from },
           data: { value: rename.to },
         });
-      });
+      }));
 
       // Reload with _count after transaction
       const reloaded = await prisma.customFieldTemplate.findFirst({

@@ -15,6 +15,8 @@ import { autoExportPerson, autoUpdatePerson } from '@/lib/carddav/auto-export';
 import { geocodePersonAddresses } from '@/lib/geocoding/geocode-person';
 import { personUpdateInclude, personDetailsInclude } from '@/lib/prisma-queries';
 import { createModuleLogger } from '@/lib/logger';
+import { lockUserRow } from '@/lib/db/user-lock';
+import { withDeadlockRetry } from '@/lib/db/deadlock';
 
 const log = createModuleLogger('person-service');
 
@@ -820,7 +822,11 @@ export async function mergePeople(
     ...source.relationshipsTo.map((r) => r.id),
   ].filter((relId) => !transferredRelIds.has(relId));
 
-  await prisma.$transaction(async (tx) => {
+  // Takes the user lock first so it queues behind other multi-contact
+  // writes instead of deadlocking with them (lib/db/deadlock.ts).
+  await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
+    await lockUserRow(tx, userId);
+
     // (a) Apply scalar updates
     if (Object.keys(scalarUpdates).length > 0) {
       await tx.person.update({ where: { id: targetId }, data: scalarUpdates });
@@ -957,7 +963,7 @@ export async function mergePeople(
       where: { id: sourceId },
       data: { deletedAt: new Date() },
     });
-  });
+  }));
 
   log.info({ targetId, sourceId, userId }, 'Successfully merged contacts');
 

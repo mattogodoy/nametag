@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { getEnv } from './env';
+import { isDeadlock, withDeadlockRetry } from './db/deadlock';
 
 // Models that support soft delete
 const SOFT_DELETE_MODELS = ['Person', 'Group', 'Relationship', 'RelationshipType', 'ImportantDate'] as const;
@@ -46,6 +47,26 @@ function createExtendedClient() {
   const baseClient = createBaseClient();
 
   return baseClient.$extends({
+    // A standalone write can be the victim of a delta sync deadlock (see
+    // lib/db/deadlock.ts); it committed nothing, so it is run again. Inside a
+    // transaction the deadlock has aborted the whole transaction and the rerun
+    // fails, so the original error goes up for the transaction to retry.
+    name: 'deadlockRetry',
+    query: {
+      async $allOperations({ args, query }) {
+        try {
+          return await query(args);
+        } catch (error) {
+          if (!isDeadlock(error)) throw error;
+          try {
+            return await withDeadlockRetry(() => query(args));
+          } catch {
+            throw error;
+          }
+        }
+      },
+    },
+  }).$extends({
     name: 'softDelete',
     query: {
       $allModels: {

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   templateUpdate: vi.fn(),
   personCustomFieldValueUpdateMany: vi.fn(),
   transaction: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 // Mock Prisma
@@ -323,8 +324,9 @@ describe('Custom Field Templates API', () => {
 
       // Simulate $transaction calling the callback with a tx object
       mocks.transaction.mockImplementation(
-        async (fn: (tx: { customFieldTemplate: { update: typeof mocks.templateUpdate }; personCustomFieldValue: { updateMany: typeof mocks.personCustomFieldValueUpdateMany } }) => Promise<unknown>) => {
+        async (fn: (tx: { $queryRaw: typeof mocks.queryRaw; customFieldTemplate: { update: typeof mocks.templateUpdate }; personCustomFieldValue: { updateMany: typeof mocks.personCustomFieldValueUpdateMany } }) => Promise<unknown>) => {
           const tx = {
+            $queryRaw: mocks.queryRaw,
             customFieldTemplate: { update: mocks.templateUpdate },
             personCustomFieldValue: { updateMany: mocks.personCustomFieldValueUpdateMany },
           };
@@ -555,11 +557,10 @@ describe('Custom Field Templates API', () => {
       // Mock findMany returns all 3 active templates (full set)
       mocks.templateFindMany.mockResolvedValue([a, b, c]);
 
-      // Mock transaction with update calls
+      // Interactive transaction: lock the user row, then update each template
       mocks.transaction.mockImplementation(
-        async (updates: Array<unknown>) => {
-          return Promise.all(updates.map((u) => u));
-        }
+        async (fn: (tx: { $queryRaw: typeof mocks.queryRaw; customFieldTemplate: { update: typeof mocks.templateUpdate } }) => Promise<unknown>) =>
+          fn({ $queryRaw: mocks.queryRaw, customFieldTemplate: { update: mocks.templateUpdate } })
       );
 
       const request = new Request('http://localhost/api/custom-field-templates/reorder', {
@@ -585,10 +586,14 @@ describe('Custom Field Templates API', () => {
         })
       );
 
-      // Verify transaction was called with 3 update calls
-      expect(mocks.transaction).toHaveBeenCalled();
-      const transactionArg = (mocks.transaction as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0];
-      expect(transactionArg).toHaveLength(3);
+      // One transaction: the user lock, then the three updates in submitted order
+      expect(mocks.transaction).toHaveBeenCalledOnce();
+      expect(mocks.queryRaw).toHaveBeenCalledOnce();
+      expect(mocks.templateUpdate.mock.calls.map((c) => c[0])).toEqual([
+        { where: { id: id3 }, data: { order: 0 } },
+        { where: { id: id1 }, data: { order: 1 } },
+        { where: { id: id2 }, data: { order: 2 } },
+      ]);
     });
 
     it('returns 400 when a subset of active template ids is submitted', async () => {
