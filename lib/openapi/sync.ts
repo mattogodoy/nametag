@@ -20,7 +20,7 @@ export function syncPaths(): Record<string, Record<string, unknown>> {
         summary: 'Changes since a cursor',
         description:
           'Returns every change and deletion since `cursor`, oldest first, for keeping a local copy in sync. ' +
-          'Start with cursor 0, then pass the returned cursor until hasMore is false. ' +
+          'Start with cursor 0, then pass the returned cursor until hasMore is false. The cursor is opaque: send it back unchanged (a full sync can return cursors like 812:950). ' +
           'Soft-deleted records are included with deletedAt set. Every record carries syncVersion as a string. ' +
           'People include contact child arrays, groupIds and customFieldValues; journal entries include personIds. ' +
           'Decimal fields such as latitude and longitude are numeric strings. ' +
@@ -28,7 +28,7 @@ export function syncPaths(): Record<string, Record<string, unknown>> {
           'A cursor ahead of the server returns 400 invalid_query and also calls for a full resync.',
         security: sessionOrToken(),
         parameters: [
-          { name: 'cursor', in: 'query', required: true, schema: { type: 'string', pattern: '^\\d+$' } },
+          { name: 'cursor', in: 'query', required: true, schema: { type: 'string', pattern: '^\\d+(:\\d+)?$' } },
           { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 1000, default: 500 } },
         ],
         responses: {

@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, beforeEach } from 'vitest';
 import { testPrisma, createUser, resetDb } from './client';
-import { getChangesSince, type SyncPage } from '@/lib/sync/changes';
+import { getChangesSince, parseSyncCursor, type SyncCursor, type SyncPage } from '@/lib/sync/changes';
+import { purgeTombstones } from '@/lib/sync/tombstones';
 import { getPage } from './sync-helpers';
 
 type Client = Parameters<typeof getChangesSince>[0];
@@ -146,6 +147,66 @@ describe('getChangesSince', () => {
       await testPrisma.user.update({ where: { id: userId }, data: { syncSeq: BigInt(10), syncTombstoneFloor: BigInt(5) } });
       expect((await getChangesSince(testPrisma, userId, BigInt(5), 500)).status).toBe('ok');
       expect((await getChangesSince(testPrisma, userId, BigInt(0), 500)).status).toBe('ok');
+    });
+
+    describe('full sync below the floor', () => {
+      // Two live contacts at versions 1 and 2, then a deletion whose tombstone
+      // is purged, raising the floor above both (the review's reproduction).
+      async function seedPurgedFloor(): Promise<bigint> {
+        await testPrisma.group.create({ data: { userId, name: 'a' } });
+        await testPrisma.group.create({ data: { userId, name: 'b' } });
+        const gone = await testPrisma.group.create({ data: { userId, name: 'gone' } });
+        await testPrisma.group.delete({ where: { id: gone.id } });
+        await testPrisma.syncTombstone.updateMany({ where: { userId }, data: { deletedAt: new Date('2020-01-01') } });
+        await purgeTombstones(testPrisma, new Date('2021-01-01'));
+        const { syncTombstoneFloor } = await testPrisma.user.findUniqueOrThrow({ where: { id: userId } });
+        expect(syncTombstoneFloor).toBe(BigInt(4));
+        return syncTombstoneFloor;
+      }
+
+      async function pageAt(raw: string, limit: number) {
+        const cursor = parseSyncCursor(raw) as SyncCursor;
+        expect(cursor).not.toBeNull();
+        return getChangesSince(testPrisma, userId, cursor, limit);
+      }
+
+      it('pages a full sync one record at a time past the floor', async () => {
+        await seedPurgedFloor();
+        const seen: string[] = [];
+        let raw = '0';
+        for (let i = 0; i < 10; i++) {
+          const result = await pageAt(raw, 1);
+          if (result.status !== 'ok') throw new Error(`page ${i} from ${raw}: ${result.status}`);
+          seen.push(...result.page.changes.groups.map((g) => String(g.name)));
+          raw = result.page.cursor;
+          if (!result.page.hasMore) break;
+        }
+        expect(seen).toEqual(['a', 'b']);
+        // The first page is below the floor, so it carries it; the last is plain.
+        expect(raw).toBe('4');
+      });
+
+      it('marks a below-floor page cursor with the floor and a plain one without', async () => {
+        await seedPurgedFloor();
+        const first = await pageAt('0', 1);
+        expect(first.status === 'ok' && first.page.cursor).toBe('1:4');
+      });
+
+      it('expires a full-sync cursor once a later purge moves the floor', async () => {
+        await seedPurgedFloor();
+        const first = await pageAt('0', 1);
+        if (first.status !== 'ok') throw new Error(first.status);
+        const g = await testPrisma.group.create({ data: { userId, name: 'later' } });
+        await testPrisma.group.delete({ where: { id: g.id } });
+        await testPrisma.syncTombstone.updateMany({ where: { userId }, data: { deletedAt: new Date('2020-01-01') } });
+        await purgeTombstones(testPrisma, new Date('2021-01-01'));
+        expect(await pageAt(first.page.cursor, 1)).toEqual({ status: 'expired' });
+      });
+
+      it('still expires a plain incremental cursor below the floor', async () => {
+        await seedPurgedFloor();
+        expect(await pageAt('1', 1)).toEqual({ status: 'expired' });
+      });
     });
 
     it('answers ahead when the cursor is beyond syncSeq', async () => {

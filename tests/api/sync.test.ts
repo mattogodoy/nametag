@@ -10,7 +10,10 @@ vi.mock('../../lib/prisma', () => ({
 vi.mock('../../lib/auth', () => ({
   auth: vi.fn(() => Promise.resolve({ user: { id: 'user-1', email: 'a@b.c', name: 'A' } })),
 }));
-vi.mock('../../lib/sync/changes', () => ({ getChangesSince: mocks.getChangesSince }));
+vi.mock('../../lib/sync/changes', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/sync/changes')>()),
+  getChangesSince: mocks.getChangesSince,
+}));
 
 import { GET } from '../../app/api/sync/route';
 
@@ -33,7 +36,7 @@ describe('GET /api/sync', () => {
     const res = await call('?cursor=5');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(emptyPage);
-    expect(mocks.getChangesSince).toHaveBeenCalledWith(expect.anything(), 'user-1', BigInt(5), 500);
+    expect(mocks.getChangesSince).toHaveBeenCalledWith(expect.anything(), 'user-1', { seq: BigInt(5), fullSyncFloor: null }, 500);
   });
 
   it('returns 401 when the user no longer exists', async () => {
@@ -41,6 +44,11 @@ describe('GET /api/sync', () => {
     const res = await call('?cursor=0');
     expect(res.status).toBe(401);
     expect((await res.json()).code).toBe('unauthorized');
+  });
+
+  it('passes a full-sync cursor with its floor', async () => {
+    await call('?cursor=7%3A9');
+    expect(mocks.getChangesSince).toHaveBeenCalledWith(expect.anything(), 'user-1', { seq: BigInt(7), fullSyncFloor: BigInt(9) }, 500);
   });
 
   it('returns 410 sync_cursor_expired when the read reports expired', async () => {
@@ -60,7 +68,7 @@ describe('GET /api/sync', () => {
     expect(body.message ?? body.error).toContain('ahead');
   });
 
-  it.each(['', '?cursor=', '?cursor=-1', '?cursor=1.5', '?cursor=abc'])(
+  it.each(['', '?cursor=', '?cursor=-1', '?cursor=1.5', '?cursor=abc', '?cursor=1:', '?cursor=:4', '?cursor=1:2:3'])(
     'returns 400 invalid_query for %s', async (qs) => {
       const res = await call(qs);
       expect(res.status).toBe(400);
@@ -73,7 +81,7 @@ describe('GET /api/sync', () => {
 
   it('clamps limit to 1000 and rejects non-positive limits', async () => {
     await call('?cursor=0&limit=5000');
-    expect(mocks.getChangesSince).toHaveBeenCalledWith(expect.anything(), 'user-1', BigInt(0), 1000);
+    expect(mocks.getChangesSince).toHaveBeenCalledWith(expect.anything(), 'user-1', { seq: BigInt(0), fullSyncFloor: null }, 1000);
     const res = await call('?cursor=0&limit=0');
     expect(res.status).toBe(400);
     expect((await res.json()).params.param).toBe('limit');

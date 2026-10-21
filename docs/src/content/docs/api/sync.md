@@ -59,6 +59,8 @@ Records in the trash are included in `changes` with `deletedAt` set, so a client
 
 Permanent deletions are remembered as tombstones for 90 days and reported in `deleted`. A cursor older than the retained tombstones cannot be served reliably.
 
+A full sync from `0` is not affected by this while it pages. Its cursors can look like `"812:950"`, which records how far the purge had gone when the sync started, and stay valid until the next purge. If a purge runs in the middle of a full sync, the next page returns `410` and the sync starts again from `0`.
+
 ## Errors
 
 - `410 sync_cursor_expired`: the cursor is older than the retained deletions. Discard the local cache and sync again from cursor `0`.
@@ -70,9 +72,10 @@ See [Errors](/api/errors/) for the error format.
 
 - Default page size is 500 records, maximum 1000. Larger values are clamped to 1000.
 - `limit` must be a positive integer.
-- The cursor is a decimal string of up to 19 digits.
+- Treat the cursor as an opaque string and send it back unchanged. It is a decimal number of up to 19 digits, or two of them joined by a colon during a full sync.
 - Cursor `0` is always valid.
 - `cursor` and every record's `syncVersion` are strings, because the values can exceed the safe integer range in JavaScript.
 - Decimal fields (address and location `latitude` and `longitude`) are numeric strings.
 - A write to synced data takes a short lock on that user's change counter. One very long transaction therefore delays that user's other writes until it commits.
+- Two concurrent writes for the same user that touch several records can deadlock on that lock. The server retries the losing write up to 3 times, and writes that change many records take the lock first so they wait their turn instead.
 - After upgrading to the release that adds sync, existing data is numbered once, so the first sync from cursor `0` returns everything.

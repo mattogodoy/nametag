@@ -1,11 +1,10 @@
 import { prismaIncludingDeleted } from '@/lib/prisma';
 import { apiResponse, handleApiError, withAuth } from '@/lib/api-utils';
 import { apiError } from '@/lib/api-errors';
-import { getChangesSince } from '@/lib/sync/changes';
+import { getChangesSince, parseSyncCursor } from '@/lib/sync/changes';
 
 const DEFAULT_LIMIT = 500;
 const MAX_LIMIT = 1000;
-const INTEGER = /^\d{1,19}$/;
 
 // GET /api/sync - Changes since a cursor, for native clients' local cache
 export const GET = withAuth(async (request, session) => {
@@ -14,8 +13,9 @@ export const GET = withAuth(async (request, session) => {
     const rawCursor = url.searchParams.get('cursor') ?? '';
     const rawLimit = url.searchParams.get('limit');
 
-    if (!INTEGER.test(rawCursor)) {
-      return apiError('invalid_query', 'cursor must be a non-negative integer', { param: 'cursor' });
+    const cursor = parseSyncCursor(rawCursor);
+    if (!cursor) {
+      return apiError('invalid_query', 'cursor must be a cursor returned by this endpoint, or 0', { param: 'cursor' });
     }
     let limit = DEFAULT_LIMIT;
     if (rawLimit !== null) {
@@ -25,7 +25,6 @@ export const GET = withAuth(async (request, session) => {
       limit = Math.min(Number(rawLimit), MAX_LIMIT);
     }
 
-    const cursor = BigInt(rawCursor);
     // Reads through the unfiltered client on purpose: soft-deleted rows are
     // part of the change feed.
     // The cursor checks run inside the same snapshot as the reads.

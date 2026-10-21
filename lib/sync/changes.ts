@@ -55,9 +55,34 @@ export type SyncResult =
   | { status: 'ahead' }
   | { status: 'no_user' };
 
+/**
+ * A parsed cursor. Incremental cursors are a plain sequence number. A full
+ * sync (one that started from 0) that is still below the tombstone floor
+ * carries the floor it started under as `seq:floor`: such a client cannot
+ * hold anything whose tombstone was purged before it started, so the cursor
+ * stays valid until the floor moves again. Without this, every page of a full
+ * sync below the floor would be refused and the client would restart from 0
+ * forever.
+ */
+export interface SyncCursor {
+  seq: bigint;
+  fullSyncFloor: bigint | null;
+}
+
+const CURSOR = /^(\d{1,19})(?::(\d{1,19}))?$/;
+
+/** Parses `N` or `N:F`; null when malformed. */
+export function parseSyncCursor(raw: string): SyncCursor | null {
+  const m = CURSOR.exec(raw);
+  if (!m) return null;
+  return { seq: BigInt(m[1]), fullSyncFloor: m[2] === undefined ? null : BigInt(m[2]) };
+}
+
 export async function getChangesSince(
-  client: PrismaClient, userId: string, cursor: bigint, limit: number
+  client: PrismaClient, userId: string, cursorIn: bigint | SyncCursor, limit: number
 ): Promise<SyncResult> {
+  const parsed: SyncCursor = typeof cursorIn === 'bigint' ? { seq: cursorIn, fullSyncFloor: null } : cursorIn;
+  const cursor = parsed.seq;
   const take = limit + 1;
   const after = { gt: cursor };
   const order = { syncVersion: 'asc' as const };
@@ -88,8 +113,16 @@ export async function getChangesSince(
     });
     if (!user) return { status: 'no_user' as const };
     if (cursor > user.syncSeq) return { status: 'ahead' as const };
-    // Cursor 0 is a full resync and is always valid.
-    if (cursor !== BigInt(0) && cursor < user.syncTombstoneFloor) return { status: 'expired' as const };
+    const floor = user.syncTombstoneFloor;
+    // Cursor 0 starts a full sync and is always valid. A full-sync cursor is
+    // valid while no purge has run since the sync started; a plain cursor
+    // must not be below the floor.
+    let fullSyncFloor: bigint | null = null;
+    if (cursor === BigInt(0) && parsed.fullSyncFloor === null) fullSyncFloor = floor;
+    else if (parsed.fullSyncFloor !== null) {
+      if (parsed.fullSyncFloor !== floor) return { status: 'expired' as const };
+      fullSyncFloor = floor;
+    } else if (cursor < floor) return { status: 'expired' as const };
 
     const people = await tx.person.findMany({
       where: byUser, orderBy: order, take, omit,
@@ -112,10 +145,10 @@ export async function getChangesSince(
     });
     const templates = await tx.customFieldTemplate.findMany({ where: byUser, orderBy: order, take, omit });
     const stones = await tx.syncTombstone.findMany({ where: byUser, orderBy: order, take });
-    return { status: 'ok' as const, people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones };
+    return { status: 'ok' as const, fullSyncFloor, syncSeq: user.syncSeq, people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30000 });
   if (read.status !== 'ok') return { status: read.status };
-  const { people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones } = read;
+  const { fullSyncFloor, syncSeq, people, groups, relationships, importantDates, relationshipTypes, journalEntries, templates, stones } = read;
 
   const all: Entry[] = [
     ...toEntries('people', people, ({ groups: g, ...rest }) => ({ ...rest, groupIds: g.map((x) => x.groupId) })),
@@ -132,9 +165,16 @@ export async function getChangesSince(
   ].sort((a, b) => (a.version < b.version ? -1 : a.version > b.version ? 1 : 0));
 
   const kept = all.slice(0, limit);
+  const hasMore = all.length > limit;
+  let next = kept.length > 0 ? kept[kept.length - 1].version : cursor;
+  // A finished full sync has read every version up to syncSeq in this
+  // snapshot, so it can hand back syncSeq, which is never below the floor.
+  // Otherwise its last page could stay below the floor (the gap being purged
+  // tombstones) and expire on the next purge for no reason.
+  if (fullSyncFloor !== null && !hasMore) next = syncSeq;
   const page: SyncPage = {
-    cursor: (kept.length > 0 ? kept[kept.length - 1].version : cursor).toString(),
-    hasMore: all.length > limit,
+    cursor: fullSyncFloor !== null && next < fullSyncFloor ? `${next}:${fullSyncFloor}` : next.toString(),
+    hasMore,
     changes: {
       people: [], groups: [], relationships: [], importantDates: [],
       relationshipTypes: [], journalEntries: [], customFieldTemplates: [],
