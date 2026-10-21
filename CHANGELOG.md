@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.67.0](https://github.com/mattogodoy/nametag/compare/v0.66.0...v0.67.0) (2026-10-21)
+
+
+### Features
+
+* **photos:** ETag revalidation for photo downloads ([#497](https://github.com/mattogodoy/nametag/issues/497)) ([3736678](https://github.com/mattogodoy/nametag/commit/3736678af5fd31800590a085e1d4d148ae1cb792))
+
 ## [0.66.0](https://github.com/mattogodoy/nametag/compare/v0.65.0...v0.66.0) (2026-10-21)
 
 
