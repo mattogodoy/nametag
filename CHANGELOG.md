@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.66.0](https://github.com/mattogodoy/nametag/compare/v0.65.0...v0.66.0) (2026-10-21)
+
+
+### Features
+
+* **api:** delta sync for native clients ([#495](https://github.com/mattogodoy/nametag/issues/495)) ([8a9297b](https://github.com/mattogodoy/nametag/commit/8a9297bb194adb536bb6d3687add801836cd0fb5))
+
 ## [0.65.0](https://github.com/mattogodoy/nametag/compare/v0.64.1...v0.65.0) (2026-10-20)
 
 
