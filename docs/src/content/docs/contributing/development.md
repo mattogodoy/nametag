@@ -70,7 +70,7 @@ Best for daily work: faster iteration and a more familiar debugging experience. 
 
 **Prerequisites:**
 
-- Node.js 20+
+- Node.js 24 (22.23.4 or newer also works)
 - Docker and Docker Compose
 - Git
 
@@ -182,7 +182,7 @@ npx prisma migrate reset
 
 **Local Development issues:**
 
-- Verify your Node.js version: `node --version` (should be 20 or newer).
+- Verify your Node.js version: `node --version` (should be 24, or 22.23.4 or newer).
 - Make sure the Docker services are running: `docker-compose -f docker-compose.services.yml ps`.
 - Check the database connection: `npx prisma db execute --stdin <<< "SELECT 1"`.
 - Clear and reinstall dependencies: `rm -rf node_modules && npm install`.

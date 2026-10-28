@@ -74,7 +74,7 @@
     "@types/d3-transition": "^3.0.9",
     "@types/d3-zoom": "^3.0.8",
     "@types/heic-convert": "^2.1.1",
-    "@types/node": "^20.19.26",
+    "@types/node": "^24.19.2",
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
