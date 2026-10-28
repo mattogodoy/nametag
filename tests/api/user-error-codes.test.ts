@@ -1,3 +1,5 @@
+// @vitest-environment node
+// jsdom Blob/FormData globals trip an assertion in the undici bundled with Node 24.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
