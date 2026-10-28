@@ -65,21 +65,31 @@ services:
     command:
       - /bin/sh
       - -c
+      # ZimaOS interpolates this file twice, so even escaped shell
+      # variables arrive empty. This script and the cron one use none.
       - |
         set -e
-        secrets=/data/secrets.env
-        if [ ! -f "$$secrets" ]; then
-          rand() { head -c "$$1" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
-          # Keep the database password if Postgres already has one.
-          db=$$(cat /db-secret/password 2>/dev/null || true)
-          [ -n "$$db" ] || db=$$(rand 24)
+        cd /data
+        if [ ! -f secrets.env ]; then
           umask 077
-          printf 'NEXTAUTH_SECRET=%s\nCRON_SECRET=%s\nDB_PASSWORD=%s\n' \
-            "$$(rand 32)" "$$(rand 24)" "$$db" > "$$secrets"
+          {
+            printf 'NEXTAUTH_SECRET='
+            head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'
+            printf '\nCRON_SECRET='
+            head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'
+            printf '\nDB_PASSWORD='
+            # Keep the database password if Postgres already has one.
+            if [ -s /db-secret/password ]; then
+              tr -d '\n' < /db-secret/password
+            else
+              head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'
+            fi
+            printf '\n'
+          } > secrets.env.tmp
+          mv secrets.env.tmp secrets.env
         fi
-        . "$$secrets"
         umask 077
-        printf '%s' "$$DB_PASSWORD" > /db-secret/password
+        sed -n 's/^DB_PASSWORD=//p' secrets.env | tr -d '\n' > /db-secret/password
         chown 70:70 /db-secret/password
         chown -R 1001:1001 /data
     volumes:
@@ -136,17 +146,19 @@ services:
     command:
       - /bin/sh
       - -c
+      # No shell variables here either (see nametag-init). sed builds one
+      # crontab entry per schedule line, then fills in the secret.
       - |
         while [ ! -f /data/secrets.env ]; do sleep 2; done
-        . /data/secrets.env
-        auth="Authorization: Bearer $$CRON_SECRET"
-        job() { echo "$$1 wget -q -O - --header='$$auth' http://nametag:3000/api/cron/$$2 > /proc/1/fd/1 2>&1"; }
-        {
-          job '0 8 * * *' send-reminders
-          job '0 3 * * *' purge-deleted
-          job '0 2,10,18 * * *' carddav-sync
-          job '*/5 * * * *' geocode
-        } > /etc/crontabs/root
+        printf '%s\n' \
+          '0 8 * * * send-reminders' \
+          '0 3 * * * purge-deleted' \
+          '0 2,10,18 * * * carddav-sync' \
+          '*/5 * * * * geocode' > /tmp/jobs
+        sed -n 's/^CRON_SECRET=//p' /data/secrets.env > /tmp/secret
+        sed 's|^\(.* \)\([a-z-]*\)|\1wget -q -O - --header="Authorization: Bearer SECRET" http://nametag:3000/api/cron/\2 > /proc/1/fd/1 2>\&1|' /tmp/jobs > /tmp/crontab
+        sed "s|SECRET|`cat /tmp/secret`|" /tmp/crontab > /etc/crontabs/root
+        rm -f /tmp/jobs /tmp/secret /tmp/crontab
         exec crond -f -l 2
     depends_on:
       - nametag
@@ -187,15 +199,15 @@ x-casaos:
   tips:
     before_install:
       en_US: |
-        After installing, open Nametag and create your account. Anyone who can reach this port can also register, so once your account exists you can add DISABLE_REGISTRATION=true to close sign-ups.
+        Before installing, set NEXTAUTH_URL to the address you will open Nametag at, for example http://192.168.1.10:10300 (use your ZimaOS IP or domain). The default, http://localhost:10300, only works from the ZimaOS device itself, and sign-in and email links will point to the wrong place.
 
-        Set NEXTAUTH_URL to the address you open Nametag at (for example http://192.168.1.10:10300) so links in emails point to the right place.
+        After installing, open Nametag and create your account. Anyone who can reach this port can also register, so once your account exists you can add DISABLE_REGISTRATION=true to close sign-ups.
 
         Email is optional. To send reminder and password-reset emails, add the SMTP_* variables described at https://docs.nametag.one/self-hosting/email/
       es_ES: |
-        Después de instalarlo, abre Nametag y crea tu cuenta. Cualquiera que pueda acceder a este puerto también puede registrarse, así que cuando tengas tu cuenta puedes añadir DISABLE_REGISTRATION=true para cerrar el registro.
+        Antes de instalarlo, cambia NEXTAUTH_URL a la dirección con la que abrirás Nametag, por ejemplo http://192.168.1.10:10300 (usa la IP o el dominio de tu ZimaOS). El valor por defecto, http://localhost:10300, solo funciona desde el propio dispositivo ZimaOS, y los enlaces de inicio de sesión y de los correos apuntarán al sitio equivocado.
 
-        Cambia NEXTAUTH_URL a la dirección con la que abres Nametag (por ejemplo http://192.168.1.10:10300) para que los enlaces de los correos apunten al sitio correcto.
+        Después de instalarlo, abre Nametag y crea tu cuenta. Cualquiera que pueda acceder a este puerto también puede registrarse, así que cuando tengas tu cuenta puedes añadir DISABLE_REGISTRATION=true para cerrar el registro.
 
         El correo es opcional. Para enviar recordatorios y correos de restablecimiento de contraseña, añade las variables SMTP_* que se explican en https://docs.nametag.one/self-hosting/email/
   website: https://nametag.one
