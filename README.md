@@ -90,6 +90,12 @@ Then visit `http://localhost:3000`. For the full installation guide, environment
 
 **[Read the full docs →](https://docs.nametag.one)**
 
+### Easypanel
+
+Nametag has a one-click deployment template on [Easypanel](https://easypanel.io), a self-hosted Docker deployment platform:
+
+[![Deploy on Easypanel](https://easypanel.io/img/deploy-on-easypanel-40.svg)](https://easypanel.io/templates/nametag)
+
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get involved, and the [development setup guide](https://docs.nametag.one/contributing/development/) for detailed instructions on running Nametag locally.
