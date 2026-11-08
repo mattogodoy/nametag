@@ -1,6 +1,7 @@
 import { createDAVClient, DAVAddressBook, DAVVCard } from 'tsdav';
 import { CardDavConnection } from '@prisma/client';
 import { decryptPassword } from './encryption';
+import { fetchAllVCards } from './fetch-vcards';
 import { createModuleLogger } from '@/lib/logger';
 import { ExternalServiceError } from '@/lib/errors';
 import { readBodySafely } from '@/lib/logging/http-body';
@@ -114,9 +115,7 @@ export async function createCardDavClient(
     },
 
     async fetchVCards(addressBook: AddressBook): Promise<VCard[]> {
-      const vCards = await client.fetchVCards({
-        addressBook: addressBook.raw,
-      });
+      const vCards = await fetchAllVCards(client, addressBook.raw);
 
       return vCards.map((vc: DAVVCard) => ({
         // Ensure vCard URL is absolute
