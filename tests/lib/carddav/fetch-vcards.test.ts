@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { DAVAddressBook, DAVVCard } from 'tsdav';
 
+const logMock = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }));
+
 vi.mock('@/lib/logger', () => ({
-  createModuleLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
+  createModuleLogger: () => logMock,
 }));
 
 import { fetchAllVCards } from '@/lib/carddav/fetch-vcards';
@@ -25,6 +27,7 @@ const card = (name: string): DAVVCard => ({
 beforeEach(() => {
   fetchVCardsMock.mockReset();
   propfindMock.mockReset();
+  Object.values(logMock).forEach((fn) => fn.mockReset());
 });
 
 describe('fetchAllVCards', () => {
@@ -105,5 +108,57 @@ describe('fetchAllVCards', () => {
     const result = await fetchAllVCards(client, addressBook);
 
     expect(result).toEqual([]);
+  });
+
+  it('logs a failed fallback listing at debug so empty books do not warn on every sync', async () => {
+    fetchVCardsMock.mockResolvedValueOnce([]);
+    propfindMock.mockRejectedValueOnce(new Error('PROPFIND not allowed'));
+
+    await fetchAllVCards(client, addressBook);
+
+    expect(logMock.debug).toHaveBeenCalledTimes(1);
+    expect(logMock.warn).not.toHaveBeenCalled();
+  });
+
+  it('logs at info when every listed contact was fetched', async () => {
+    fetchVCardsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([card('a'), card('b')]);
+    propfindMock.mockResolvedValueOnce([
+      { href: '/carddav/32/a.vcf', ok: true },
+      { href: '/carddav/32/b.vcf', ok: true },
+    ]);
+
+    await fetchAllVCards(client, addressBook);
+
+    expect(logMock.info).toHaveBeenCalledTimes(1);
+    expect(logMock.warn).not.toHaveBeenCalled();
+  });
+
+  it('logs a warning when the fetch by URL returns no contacts although some were listed', async () => {
+    fetchVCardsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    propfindMock.mockResolvedValueOnce([{ href: '/carddav/32/a.vcf', ok: true }]);
+
+    await fetchAllVCards(client, addressBook);
+
+    expect(logMock.warn).toHaveBeenCalledTimes(1);
+    expect(logMock.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ listed: 1, fetched: 0 }),
+      expect.any(String),
+    );
+    expect(logMock.info).not.toHaveBeenCalled();
+  });
+
+  it('logs a warning when the fetch by URL returns fewer contacts than were listed', async () => {
+    fetchVCardsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([card('a')]);
+    propfindMock.mockResolvedValueOnce([
+      { href: '/carddav/32/a.vcf', ok: true },
+      { href: '/carddav/32/b.vcf', ok: true },
+    ]);
+
+    await fetchAllVCards(client, addressBook);
+
+    expect(logMock.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ listed: 2, fetched: 1 }),
+      expect.any(String),
+    );
   });
 });
