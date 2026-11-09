@@ -90,11 +90,7 @@ Then visit `http://localhost:3000`. For the full installation guide, environment
 
 **[Read the full docs →](https://docs.nametag.one)**
 
-### Easypanel
-
-Nametag has a one-click deployment template on [Easypanel](https://easypanel.io), a self-hosted Docker deployment platform:
-
-[![Deploy on Easypanel](https://easypanel.io/img/deploy-on-easypanel-40.svg)](https://easypanel.io/templates/nametag)
+Also available from the Unraid, ZimaOS/CasaOS and Easypanel app stores. See [one-click installs](https://docs.nametag.one/self-hosting/unraid-zimaos/).
 
 ## Contributing
 
