@@ -1,11 +1,19 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import CalendarMonth from '@/components/calendar/CalendarMonth';
 import type { CalendarEvent } from '@/lib/calendar-events';
 import enMessages from '@/locales/en.json';
 
-afterEach(cleanup);
+const replace = vi.fn();
+const router = { replace };
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
+
+beforeEach(() => replace.mockClear());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const events: CalendarEvent[] = [
   {
@@ -28,7 +36,9 @@ const events: CalendarEvent[] = [
   },
 ];
 
-function renderMonth(props: { year?: number; monthIndex?: number; events?: CalendarEvent[] } = {}) {
+function renderMonth(
+  props: { year?: number; monthIndex?: number; events?: CalendarEvent[]; isDefaultMonth?: boolean } = {}
+) {
   return render(
     <NextIntlClientProvider locale="en" messages={enMessages}>
       <CalendarMonth year={2026} monthIndex={4} events={events} {...props} />
@@ -52,7 +62,32 @@ describe('CalendarMonth', () => {
       'href',
       '/calendar?month=2026-06'
     );
-    expect(screen.getByRole('link', { name: enMessages.calendar.today })).toHaveAttribute('href', '/calendar');
+    expect(screen.getByRole('link', { name: enMessages.calendar.today })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^\/calendar\?month=\d{4}-\d{2}$/)
+    );
+  });
+
+  it('points the Today link at the month of the browser clock', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 10, 30, 23, 30) });
+    renderMonth();
+    expect(screen.getByRole('link', { name: enMessages.calendar.today })).toHaveAttribute(
+      'href',
+      '/calendar?month=2026-11'
+    );
+  });
+
+  it('switches to the browser month when the server guessed another one', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 5, 1, 0, 30) });
+    renderMonth({ year: 2026, monthIndex: 4, isDefaultMonth: true });
+    expect(replace).toHaveBeenCalledWith('/calendar?month=2026-06');
+  });
+
+  it('keeps an explicitly chosen month and an agreeing default month', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 5, 1) });
+    renderMonth({ year: 2026, monthIndex: 4 });
+    renderMonth({ year: 2026, monthIndex: 5, isDefaultMonth: true });
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('wraps from January back to December of the previous year', () => {

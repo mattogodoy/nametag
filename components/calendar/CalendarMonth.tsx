@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { CalendarEvent } from '@/lib/calendar-events';
 import {
@@ -14,6 +15,8 @@ import {
 
 interface CalendarMonthProps extends MonthRef {
   events: CalendarEvent[];
+  /** True when the URL names no month, so the server picked it from its own clock. */
+  isDefaultMonth?: boolean;
 }
 
 const chevron = (path: string) => (
@@ -22,7 +25,8 @@ const chevron = (path: string) => (
   </svg>
 );
 
-export default function CalendarMonth({ year, monthIndex, events }: CalendarMonthProps) {
+export default function CalendarMonth({ year, monthIndex, events, isDefaultMonth = false }: CalendarMonthProps) {
+  const router = useRouter();
   const t = useTranslations('calendar');
   const tDashboard = useTranslations('dashboard');
   const locale = useLocale();
@@ -31,6 +35,16 @@ export default function CalendarMonth({ year, monthIndex, events }: CalendarMont
   // after mount rather than rendered on the server in the server's timezone.
   const [today, setToday] = useState<Date | null>(null);
   useEffect(() => setToday(new Date()), []);
+
+  // When the server guessed the month from its own clock and the browser is in
+  // another month (different timezone near a month boundary), switch to the browser's.
+  useEffect(() => {
+    if (!isDefaultMonth) return;
+    const now = new Date();
+    if (now.getFullYear() !== year || now.getMonth() !== monthIndex) {
+      router.replace(`/calendar?month=${formatMonthParam({ year: now.getFullYear(), monthIndex: now.getMonth() })}`);
+    }
+  }, [isDefaultMonth, year, monthIndex, router]);
 
   const month: MonthRef = { year, monthIndex };
   const firstDayOfWeek = getFirstDayOfWeek(locale);
@@ -106,7 +120,10 @@ export default function CalendarMonth({ year, monthIndex, events }: CalendarMont
           >
             {chevron('M15.75 19.5L8.25 12l7.5-7.5')}
           </Link>
-          <Link href="/calendar" className={navLinkClass}>
+          <Link
+            href={today ? `/calendar?month=${formatMonthParam({ year: today.getFullYear(), monthIndex: today.getMonth() })}` : '/calendar'}
+            className={navLinkClass}
+          >
             {t('today')}
           </Link>
           <Link

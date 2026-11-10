@@ -30,7 +30,12 @@ export default async function CalendarPage({
         currentPath="/calendar"
       />
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <CalendarMonth year={year} monthIndex={monthIndex} events={events} />
+        <CalendarMonth
+          year={year}
+          monthIndex={monthIndex}
+          events={events}
+          isDefaultMonth={params.month === undefined}
+        />
       </main>
     </div>
   );
