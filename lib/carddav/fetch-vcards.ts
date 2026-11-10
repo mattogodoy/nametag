@@ -24,6 +24,7 @@ export async function fetchAllVCards(
     return vCards;
   }
 
+  let objectUrls: string[];
   try {
     const listing = await client.propfind({
       url: addressBook.url,
@@ -32,33 +33,46 @@ export async function fetchAllVCards(
     });
 
     const bookPath = new URL(addressBook.url).pathname.replace(/\/+$/, '');
-    const objectUrls = listing
+    objectUrls = listing
       .filter((entry) => entry.ok && entry.href)
       .map((entry) => new URL(entry.href as string, addressBook.url).pathname)
       .filter((path) => !path.endsWith('/') && path !== bookPath);
-
-    if (objectUrls.length === 0) {
-      return vCards;
-    }
-
-    const fetched = await client.fetchVCards({ addressBook, objectUrls });
-    const fallback = { event: 'carddav.fetch.fallback', listed: objectUrls.length, fetched: fetched.length };
-    if (fetched.length < objectUrls.length) {
-      // Listing found contacts but fetching them did not return all: the same
-      // silent "nothing imported" symptom, so it must not stay at info.
-      log.warn(fallback, 'Fetching contacts by URL returned fewer contacts than were listed');
-    } else {
-      log.info(fallback, 'Address book query returned no contacts, fetched them by URL instead');
-    }
-    return fetched;
   } catch (error) {
-    // Keep the old behaviour (empty result) if the fallback itself fails. Some
-    // servers reject the listing and a genuinely empty book then lands here on
-    // every background sync, so this stays at debug.
-    log.debug(
-      { err: error instanceof Error ? error : new Error(String(error)) },
-      'Fallback listing of address book contacts failed',
+    // Keep the old behaviour (empty result) if the listing fails. Some servers
+    // reject it and a genuinely empty book then lands here on every background
+    // sync, so this stays at debug.
+    log.debug({ err: toError(error) }, 'Fallback listing of address book contacts failed');
+    return vCards;
+  }
+
+  if (objectUrls.length === 0) {
+    return vCards;
+  }
+
+  let fetched: DAVVCard[];
+  try {
+    fetched = await client.fetchVCards({ addressBook, objectUrls });
+  } catch (error) {
+    // The listing found contacts but fetching them failed: the same silent
+    // "nothing imported" symptom, so it must not stay at debug.
+    log.warn(
+      { err: toError(error), event: 'carddav.fetch.fallback', listed: objectUrls.length, fetched: 0 },
+      'Fetching listed contacts by URL failed',
     );
     return vCards;
   }
+
+  const fallback = { event: 'carddav.fetch.fallback', listed: objectUrls.length, fetched: fetched.length };
+  if (fetched.length < objectUrls.length) {
+    // Listing found contacts but fetching them did not return all: the same
+    // silent "nothing imported" symptom, so it must not stay at info.
+    log.warn(fallback, 'Fetching contacts by URL returned fewer contacts than were listed');
+  } else {
+    log.info(fallback, 'Address book query returned no contacts, fetched them by URL instead');
+  }
+  return fetched;
+}
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
 }
