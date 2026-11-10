@@ -67,3 +67,14 @@ curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$NAMETAG_URL/api/cron/send-re
 ### Optional settings
 
 Redis and SMTP settings are in the template under **Show more settings**. Leave them empty if you don't use them. To send email, fill in `EMAIL_DOMAIN`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` and `SMTP_PASS` as described in [Email](/self-hosting/email/). For any other setting, click **Add another Path, Port, Variable, Label or Device**, choose **Variable**, and enter the name and value from [Configuration](/self-hosting/configuration/).
+
+## Easypanel
+
+[Easypanel](https://easypanel.io) is a self-hosted Docker deployment platform with a community-maintained one-click template for Nametag. It installs the app, a PostgreSQL database, and a small container that runs the [scheduled jobs](/self-hosting/cron-jobs/), with a persistent volume for photo storage already wired up.
+
+1. Click **[Deploy on Easypanel](https://easypanel.io/templates/nametag)**, or search for **Nametag** in your panel's template list.
+2. Review the generated secrets and database settings, or customize them.
+3. Optionally fill in the Resend or SMTP fields under the template form if you want password resets and reminder emails.
+4. Click **Deploy**.
+
+Once the services show as running, open the app's domain and register your first account.

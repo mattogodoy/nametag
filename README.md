@@ -90,6 +90,8 @@ Then visit `http://localhost:3000`. For the full installation guide, environment
 
 **[Read the full docs →](https://docs.nametag.one)**
 
+Also available from the Unraid, ZimaOS/CasaOS and Easypanel app stores. See [one-click installs](https://docs.nametag.one/self-hosting/unraid-zimaos/).
+
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get involved, and the [development setup guide](https://docs.nametag.one/contributing/development/) for detailed instructions on running Nametag locally.
