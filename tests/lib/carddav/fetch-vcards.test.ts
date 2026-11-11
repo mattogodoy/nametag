@@ -161,4 +161,19 @@ describe('fetchAllVCards', () => {
       expect.any(String),
     );
   });
+
+  it('logs a warning when the listing succeeds but the fetch by URL fails', async () => {
+    fetchVCardsMock.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('REPORT rejected'));
+    propfindMock.mockResolvedValueOnce([{ href: '/carddav/32/a.vcf', ok: true }]);
+
+    const result = await fetchAllVCards(client, addressBook);
+
+    expect(result).toEqual([]);
+    expect(logMock.warn).toHaveBeenCalledTimes(1);
+    expect(logMock.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ listed: 1, fetched: 0 }),
+      expect.any(String),
+    );
+    expect(logMock.debug).not.toHaveBeenCalled();
+  });
 });
