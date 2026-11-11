@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.67.1](https://github.com/mattogodoy/nametag/compare/v0.67.0...v0.67.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **carddav:** fetch contacts by URL when the default query returns none ([#507](https://github.com/mattogodoy/nametag/issues/507)) ([bec7ebb](https://github.com/mattogodoy/nametag/commit/bec7ebb2cc2e7bf39f723d0485bb8645bc863668))
+* **carddav:** warn when the by-URL fallback fetch fails ([#509](https://github.com/mattogodoy/nametag/issues/509)) ([b028eaf](https://github.com/mattogodoy/nametag/commit/b028eaff9bc73c2520677fe108b5bf053f4466d5))
+* **zimaos:** avoid shell variables in inline scripts ([#502](https://github.com/mattogodoy/nametag/issues/502)) ([a3a31ab](https://github.com/mattogodoy/nametag/commit/a3a31ab7bcac080ecd0b019e06b1171b9eb0d3fe))
+
 ## [0.67.0](https://github.com/mattogodoy/nametag/compare/v0.66.0...v0.67.0) (2026-10-28)
 
 
