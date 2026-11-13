@@ -64,7 +64,8 @@
     },
     "journal": "Tagebuch",
     "createJournal": "Neuer Eintrag",
-    "map": "Karte"
+    "map": "Karte",
+    "calendar": "Kalender"
   },
   "notifications": {
     "push": {
@@ -1636,6 +1637,12 @@
     "noMembersYet": "Noch keine Mitglieder",
     "oneMember": "1 Mitglied",
     "membersCount": "{count} Mitglieder"
+  },
+  "calendar": {
+    "previousMonth": "Vorheriger Monat",
+    "nextMonth": "Nächster Monat",
+    "today": "Heute",
+    "noEvents": "Diesen Monat steht nichts an"
   },
   "map": {
     "title": "Karte",

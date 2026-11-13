@@ -145,6 +145,29 @@ export function getIntervalMs(interval: number, unit: string): number {
   }
 }
 
+/**
+ * The day a contact reminder falls due: `lastContact` plus the configured
+ * interval. Null when the person has never been contacted, since there is
+ * nothing to count from.
+ */
+export function getContactReminderDueDate(
+  lastContact: Date | null,
+  interval: number | null,
+  intervalUnit: string | null
+): Date | null {
+  if (!lastContact) return null;
+
+  const intervalMs = getIntervalMs(interval || 1, intervalUnit || 'MONTHS');
+
+  // lastContact is a stored calendar date (UTC midnight); anchor it to the
+  // local calendar day before doing day arithmetic, and add whole days
+  // rather than milliseconds so DST transitions cannot shift the result.
+  const dueDate = parseCalendarDate(lastContact);
+  dueDate.setDate(dueDate.getDate() + Math.round(intervalMs / MS_PER_DAY));
+  dueDate.setHours(0, 0, 0, 0);
+  return dueDate;
+}
+
 export function getDaysUntil(date: Date, today: Date): number {
   const targetDate = new Date(date);
   targetDate.setHours(0, 0, 0, 0);
@@ -250,21 +273,13 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
 
   // Process contact reminders
   for (const person of peopleWithContactReminders) {
-    const interval = person.contactReminderInterval || 1;
-    const unit = person.contactReminderIntervalUnit || 'MONTHS';
-    const intervalMs = getIntervalMs(interval, unit);
+    const reminderDueDate = getContactReminderDueDate(
+      person.lastContact,
+      person.contactReminderInterval,
+      person.contactReminderIntervalUnit
+    );
 
-    // lastContact is a stored calendar date (UTC midnight); anchor it to the
-    // local calendar day before doing day arithmetic, and add whole days
-    // rather than milliseconds so DST transitions cannot shift the result.
-    const referenceDate = person.lastContact ? parseCalendarDate(person.lastContact) : null;
-
-    if (referenceDate) {
-      const intervalDays = Math.round(intervalMs / MS_PER_DAY);
-      const reminderDueDate = new Date(referenceDate);
-      reminderDueDate.setDate(reminderDueDate.getDate() + intervalDays);
-      reminderDueDate.setHours(0, 0, 0, 0);
-
+    if (reminderDueDate) {
       const daysUntil = getDaysUntil(reminderDueDate, today);
 
       if (daysUntil <= 30) {

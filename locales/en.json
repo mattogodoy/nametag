@@ -64,7 +64,8 @@
     },
     "journal": "Journal",
     "createJournal": "New entry",
-    "map": "Map"
+    "map": "Map",
+    "calendar": "Calendar"
   },
   "notifications": {
     "push": {
@@ -1636,6 +1637,12 @@
     "noMembersYet": "No members yet",
     "oneMember": "1 member",
     "membersCount": "{count} members"
+  },
+  "calendar": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "today": "Today",
+    "noEvents": "Nothing planned this month"
   },
   "map": {
     "title": "Map",

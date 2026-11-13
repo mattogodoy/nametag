@@ -64,7 +64,8 @@
     },
     "journal": "Journal",
     "createJournal": "Ny oppføring",
-    "map": "Kart"
+    "map": "Kart",
+    "calendar": "Kalender"
   },
   "notifications": {
     "push": {
@@ -1636,6 +1637,12 @@
     "noMembersYet": "Ingen medlemmer ennå",
     "oneMember": "1 medlem",
     "membersCount": "{count} medlemmer"
+  },
+  "calendar": {
+    "previousMonth": "Forrige måned",
+    "nextMonth": "Neste måned",
+    "today": "I dag",
+    "noEvents": "Ingenting planlagt denne måneden"
   },
   "map": {
     "title": "Kart",

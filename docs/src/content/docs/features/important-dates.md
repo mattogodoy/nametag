@@ -39,6 +39,10 @@ If a recurring date comes round more often than the lead time you asked for, for
 
 Your dashboard shows a list of upcoming birthdays, anniversaries, and other important dates across your whole network, sorted by how soon they're coming up. It's a quick way to see what's approaching without opening each person individually.
 
+## The calendar
+
+The [Calendar](/features/calendar/) tab shows all your important dates by month, including the ones without a reminder.
+
 ## Notifications
 
 If you'd like to actually be notified when a reminder is due, rather than only seeing it on the dashboard, turn on a delivery channel in Settings under Notifications: email (needs Resend or SMTP configured on your instance) or browser push (needs VAPID keys configured). See [Notifications](/features/notifications/) for how to set either one up. Without any channel configured, reminders still work: they show up on the dashboard, they're just not delivered anywhere else.
