@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { CalendarEvent } from '@/lib/calendar-events';
 import {
@@ -14,6 +15,11 @@ import {
 
 interface CalendarMonthProps extends MonthRef {
   events: CalendarEvent[];
+  /**
+   * True when no month was asked for, so the server picked "this month" from
+   * its own clock. The browser then moves to its own month if they differ.
+   */
+  followToday?: boolean;
 }
 
 const chevron = (path: string) => (
@@ -22,7 +28,7 @@ const chevron = (path: string) => (
   </svg>
 );
 
-export default function CalendarMonth({ year, monthIndex, events }: CalendarMonthProps) {
+export default function CalendarMonth({ year, monthIndex, events, followToday = false }: CalendarMonthProps) {
   const t = useTranslations('calendar');
   const tDashboard = useTranslations('dashboard');
   const locale = useLocale();
@@ -30,7 +36,18 @@ export default function CalendarMonth({ year, monthIndex, events }: CalendarMont
   // The viewer's own "today" is only known in the browser, so it is filled in
   // after mount rather than rendered on the server in the server's timezone.
   const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  const router = useRouter();
+  useEffect(() => {
+    const now = new Date();
+    setToday(now);
+    // Near a month boundary the server and the viewer can disagree on which
+    // month it is. The viewer's clock wins.
+    if (followToday && (now.getFullYear() !== year || now.getMonth() !== monthIndex)) {
+      router.replace(
+        `/calendar?month=${formatMonthParam({ year: now.getFullYear(), monthIndex: now.getMonth() })}`
+      );
+    }
+  }, [followToday, year, monthIndex, router]);
 
   const month: MonthRef = { year, monthIndex };
   const firstDayOfWeek = getFirstDayOfWeek(locale);

@@ -1,11 +1,22 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import CalendarMonth from '@/components/calendar/CalendarMonth';
 import type { CalendarEvent } from '@/lib/calendar-events';
 import enMessages from '@/locales/en.json';
 
-afterEach(cleanup);
+const { replace, router } = vi.hoisted(() => {
+  const replace = vi.fn();
+  // Stable like the real router, so the effect does not re-run on every render.
+  return { replace, router: { replace } };
+});
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
+
+beforeEach(() => replace.mockClear());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const events: CalendarEvent[] = [
   {
@@ -28,7 +39,9 @@ const events: CalendarEvent[] = [
   },
 ];
 
-function renderMonth(props: { year?: number; monthIndex?: number; events?: CalendarEvent[] } = {}) {
+function renderMonth(
+  props: { year?: number; monthIndex?: number; events?: CalendarEvent[]; followToday?: boolean } = {}
+) {
   return render(
     <NextIntlClientProvider locale="en" messages={enMessages}>
       <CalendarMonth year={2026} monthIndex={4} events={events} {...props} />
@@ -101,5 +114,28 @@ describe('CalendarMonth', () => {
   it('does not show the empty message when there are events', () => {
     renderMonth();
     expect(screen.queryByText(enMessages.calendar.noEvents)).not.toBeInTheDocument();
+  });
+
+  describe('when the server picked the month', () => {
+    it("moves to the browser's month when the server's clock is in another month", () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 5, 1, 0, 30));
+      renderMonth({ followToday: true });
+      expect(replace).toHaveBeenCalledWith('/calendar?month=2026-06');
+    });
+
+    it('stays put when both clocks agree on the month', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 4, 20));
+      renderMonth({ followToday: true });
+      expect(replace).not.toHaveBeenCalled();
+    });
+  });
+
+  it('never moves away from a month the user asked for', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 5, 1));
+    renderMonth();
+    expect(replace).not.toHaveBeenCalled();
   });
 });
