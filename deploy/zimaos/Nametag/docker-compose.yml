@@ -1,7 +1,7 @@
 name: nametag
 services:
   nametag:
-    image: ghcr.io/mattogodoy/nametag:0.64.0
+    image: ghcr.io/mattogodoy/nametag:0.68.0
     container_name: nametag
     restart: unless-stopped
     deploy:
@@ -214,7 +214,7 @@ x-casaos:
   repo: https://github.com/mattogodoy/nametag
   docs: https://docs.nametag.one
   support: https://github.com/mattogodoy/nametag/issues
-  version: "0.64.0"
-  update_at: "2026-10-15"
+  version: "0.68.0"
+  update_at: "2026-11-18"
   release_notes:
-    en_US: First version in the ZimaOS App Store.
+    en_US: Adds a calendar view for important dates, Polish translation, sign-in for native apps, and runs on Node 24 LTS for a security fix. Includes many smaller fixes.
