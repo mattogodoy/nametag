@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import CalendarMonth from '@/components/calendar/CalendarMonth';
 import { getCalendarEvents } from '@/lib/calendar-events';
-import { parseMonthParam } from '@/lib/calendar-month';
+import { formatMonthParam, parseMonthParam } from '@/lib/calendar-month';
 
 export default async function CalendarPage({
   searchParams,
@@ -18,6 +18,8 @@ export default async function CalendarPage({
 
   const params = await searchParams;
   const { year, monthIndex } = parseMonthParam(params.month);
+  // Anything other than a valid month param fell back to the server's month.
+  const followToday = params.month !== formatMonthParam({ year, monthIndex });
   const events = await getCalendarEvents(session.user.id, year, monthIndex);
 
   return (
@@ -30,7 +32,7 @@ export default async function CalendarPage({
         currentPath="/calendar"
       />
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <CalendarMonth year={year} monthIndex={monthIndex} events={events} />
+        <CalendarMonth year={year} monthIndex={monthIndex} events={events} followToday={followToday} />
       </main>
     </div>
   );

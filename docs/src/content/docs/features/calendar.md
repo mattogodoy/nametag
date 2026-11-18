@@ -9,7 +9,7 @@ The Calendar tab shows your [important dates](/features/important-dates/) laid o
 
 ## Browsing months
 
-The calendar opens on the current month. Use the arrows next to the month name to move one month back or forward, and the **Today** button to jump back to the current month. The selected month is part of the address (`/calendar?month=2026-05`), so you can bookmark or share a link to a specific month.
+The calendar opens on the current month, using your device's clock and time zone. Use the arrows next to the month name to move one month back or forward, and the **Today** button to jump back to the current month. The selected month is part of the address (`/calendar?month=2026-05`), so you can bookmark or share a link to a specific month.
 
 On wide screens the month is a grid with one cell per day. On narrow screens, where seven columns would be too tight to read, it becomes a list of the days that have something on them.
 
