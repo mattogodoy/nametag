@@ -64,7 +64,8 @@
     },
     "journal": "Dagboek",
     "createJournal": "Nieuwe invoer",
-    "map": "Kaart"
+    "map": "Kaart",
+    "calendar": "Kalender"
   },
   "notifications": {
     "push": {
@@ -1636,6 +1637,12 @@
     "noMembersYet": "Nog geen leden",
     "oneMember": "1 lid",
     "membersCount": "{count} leden"
+  },
+  "calendar": {
+    "previousMonth": "Vorige maand",
+    "nextMonth": "Volgende maand",
+    "today": "Vandaag",
+    "noEvents": "Niets gepland deze maand"
   },
   "map": {
     "title": "Kaart",

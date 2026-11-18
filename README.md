@@ -55,6 +55,7 @@ _Relationships page_
 - Visualize your network with interactive force-directed graphs
 - Organize contacts into custom groups
 - Interactive map view with geocoded addresses and clustered markers
+- Monthly calendar of birthdays, anniversaries, and other important dates
 - Journal for logging interactions and notes over time
 - Set reminders for important dates and staying in touch
 - CardDAV sync with Google Contacts, iCloud, Outlook, and Nextcloud

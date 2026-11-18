@@ -64,7 +64,8 @@
     },
     "journal": "ジャーナル",
     "createJournal": "新しいエントリー",
-    "map": "マップ"
+    "map": "マップ",
+    "calendar": "カレンダー"
   },
   "notifications": {
     "push": {
@@ -1636,6 +1637,12 @@
     "noMembersYet": "まだメンバーはいません",
     "oneMember": "1人のメンバー",
     "membersCount": "{count}人のメンバー"
+  },
+  "calendar": {
+    "previousMonth": "前の月",
+    "nextMonth": "次の月",
+    "today": "今日",
+    "noEvents": "今月の予定はありません"
   },
   "map": {
     "title": "マップ",
