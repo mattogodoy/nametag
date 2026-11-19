@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.69.0](https://github.com/mattogodoy/nametag/compare/v0.68.0...v0.69.0) (2026-11-19)
+
+
+### Features
+
+* add pt-BR translation ([#470](https://github.com/mattogodoy/nametag/issues/470)) ([0f8c574](https://github.com/mattogodoy/nametag/commit/0f8c574477acb1946489a2b31313f9d32fe51e23))
+
 ## [0.68.0](https://github.com/mattogodoy/nametag/compare/v0.67.0...v0.68.0) (2026-11-18)
 
 
