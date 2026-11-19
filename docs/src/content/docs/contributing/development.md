@@ -70,7 +70,7 @@ Best for daily work: faster iteration and a more familiar debugging experience. 
 
 **Prerequisites:**
 
-- Node.js 20+
+- Node.js 24 (22.23.4 or newer also works)
 - Docker and Docker Compose
 - Git
 
@@ -165,6 +165,7 @@ npx prisma migrate reset
 | `npm run typecheck` | Run the TypeScript compiler in check-only mode |
 | `npm run test` | Run unit tests in watch mode |
 | `npm run test:run` | Run unit tests once |
+| `npm run test:db` | Run database tests against a real PostgreSQL (needs `TEST_DATABASE_URL`) |
 | `npm run test:coverage` | Run unit tests with coverage |
 | `npm run test:e2e` | Run Playwright end-to-end tests |
 | `npm run verify` | Lint, typecheck, unit tests, and build |
@@ -181,7 +182,7 @@ npx prisma migrate reset
 
 **Local Development issues:**
 
-- Verify your Node.js version: `node --version` (should be 20 or newer).
+- Verify your Node.js version: `node --version` (should be 24, or 22.23.4 or newer).
 - Make sure the Docker services are running: `docker-compose -f docker-compose.services.yml ps`.
 - Check the database connection: `npx prisma db execute --stdin <<< "SELECT 1"`.
 - Clear and reinstall dependencies: `rm -rf node_modules && npm install`.
@@ -232,6 +233,30 @@ npm run test:coverage  # unit tests with coverage
 npm run test:e2e       # end-to-end tests
 npm run test:e2e:ui    # end-to-end tests with UI
 ```
+
+### Database tests
+
+Some behavior (database triggers, locking) can only be verified against a real PostgreSQL, so those tests live in `tests/db/` as `*.db.test.ts` files. They are excluded from `npm run test:run` and run separately:
+
+```bash
+TEST_DATABASE_URL=postgresql://user:password@localhost:5432/nametag_test npm run test:db
+```
+
+Before the tests start, the suite runs `prisma migrate reset --force` against `TEST_DATABASE_URL`, so the schema is built from migrations only. This wipes the database, so the suite refuses to run unless the database name ends in `_test` or `-test` and the host is `localhost`, `127.0.0.1` or `::1`. Never point it at a database you care about.
+
+### Writing transactions
+
+Every write to a synced table (people, groups, relationships, important dates, relationship types, journal entries, custom field templates and the contact child tables) takes a per-user lock for delta sync. Two concurrent transactions for the same user can therefore deadlock, and Postgres aborts one of them. Single queries on `prisma` are retried automatically, but a whole transaction must be retried by its caller:
+
+```ts
+import { withDeadlockRetry } from '@/lib/db/deadlock';
+
+await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
+  // ...
+}));
+```
+
+Build a batch transaction's queries inside the callback, so a retry gets fresh ones. A transaction that writes several records should also call `lockUserRow(tx, userId)` from `lib/db/user-lock.ts` first, so it waits its turn instead of deadlocking. `tests/unit/db/transaction-retry-guard.test.ts` fails on an unwrapped `$transaction` unless its file is allowlisted with a reason.
 
 ### Code quality checks
 

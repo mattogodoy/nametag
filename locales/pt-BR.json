@@ -64,7 +64,8 @@
     },
     "journal": "Diário",
     "createJournal": "Nova entrada",
-    "map": "Mapa"
+    "map": "Mapa",
+    "calendar": "Calendário"
   },
   "notifications": {
     "push": {
@@ -153,6 +154,7 @@
         "ruRU": "Русский (Russian)",
         "nlNL": "Nederlands (Dutch)",
         "frFR": "Français (French)",
+        "plPL": "Polski (Polonês)",
         "ptBR": "Português (Brasil)"
       }
     },
@@ -221,6 +223,7 @@
       "endpointDisabled": "Desativado após falhas repetidas. Corrija o destino e depois reative-o.",
       "endpointDisabledManual": "Desativado. Reative quando quiser voltar a receber lembretes aqui.",
       "endpointEnable": "Reativar",
+      "endpointTurnOff": "Desativar",
       "endpointAddInvalid": "Verifique a URL do tópico e tente novamente.",
       "endpointAddRateLimited": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
       "endpointAddDuplicate": "Você já adicionou esse tópico.",
@@ -278,6 +281,7 @@
       "description": "Senha e autenticação",
       "passwordTitle": "Senha",
       "passwordDescription": "Atualize sua senha para manter sua conta segura.",
+      "passwordSignsOutEverywhere": "Alterar sua senha encerra a sessão em todos os outros navegadores e dispositivos.",
       "currentPassword": "Senha atual",
       "newPassword": "Nova senha",
       "confirmPassword": "Confirmar nova senha",
@@ -292,7 +296,27 @@
       "errorValidation": "Corrija os erros abaixo",
       "errorUpdate": "Falha ao alterar a senha",
       "errorConnection": "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
-      "successUpdate": "Senha alterada com sucesso"
+      "successUpdate": "Senha alterada com sucesso",
+      "devices": {
+        "title": "Dispositivos conectados",
+        "description": "Apps do Nametag conectados à sua conta. Desconecte qualquer dispositivo que você não reconheça.",
+        "empty": "Nenhum app está conectado. Quando você entrar no app do Nametag em um celular, ele aparecerá aqui.",
+        "platformIos": "iOS",
+        "platformAndroid": "Android",
+        "version": "Versão {version}",
+        "lastUsed": "Usado pela última vez em {date}",
+        "signedIn": "Conectado em {date}",
+        "signOut": "Sair",
+        "signOutAll": "Sair de todos os dispositivos",
+        "confirmSignOutTitle": "Desconectar {name}?",
+        "confirmSignOutBody": "O app neste dispositivo precisará entrar novamente.",
+        "confirmSignOutAllTitle": "Sair de todos os dispositivos?",
+        "confirmSignOutAllBody": "Todos os apps do Nametag conectados à sua conta precisarão entrar novamente.",
+        "cancel": "Cancelar",
+        "signingOut": "Saindo...",
+        "loadError": "Não foi possível carregar seus dispositivos. Tente novamente mais tarde.",
+        "signOutError": "Não foi possível desconectar esse dispositivo. Tente novamente."
+      }
     },
     "carddav": {
       "title": "Sincronização CardDAV",
@@ -1615,6 +1639,12 @@
     "oneMember": "1 membro",
     "membersCount": "{count} membros"
   },
+  "calendar": {
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "today": "Hoje",
+    "noEvents": "Nada planejado para este mês"
+  },
   "map": {
     "title": "Mapa",
     "loading": "Carregando mapa...",
@@ -1824,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "E-mail ou senha inválidos",
+      "signInFailed": "Não foi possível entrar. Tente novamente.",
       "emailNotVerified": "Por favor, verifique seu e-mail antes de entrar",
       "accountLocked": "Conta bloqueada devido a várias tentativas de login malsucedidas. Entre em contato com o suporte.",
       "sessionExpired": "Sua sessão expirou. Por favor, faça login novamente.",
@@ -2157,6 +2188,12 @@
       "iosStep3": "Toque em Adicionar",
       "dismiss": "Agora não",
       "unsupported": "Seu navegador pode instalar este aplicativo através do seu próprio menu. Procure por Adicionar à Tela Inicial, Instalar ou Adicionar ao Dock."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Link de acesso expirado",
+      "body": "Este link de acesso expirou. Volte ao app e tente novamente."
     }
   }
 }

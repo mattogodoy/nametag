@@ -738,9 +738,10 @@ describe('NotificationEndpointsCard', () => {
         expect(screen.getByDisplayValue(secret)).toBeInTheDocument();
       });
 
-      fireEvent.keyDown(document, { key: 'Escape' });
-
+      // Modal registers its keydown listener in an effect, which can run after
+      // the input is already in the DOM. Retry the keypress until it lands.
       await waitFor(() => {
+        fireEvent.keyDown(document, { key: 'Escape' });
         expect(screen.queryByDisplayValue(secret)).not.toBeInTheDocument();
       });
     });

@@ -53,7 +53,7 @@ If email isn't configured on your instance, this job effectively has nothing to 
 
 Endpoint: `GET /api/cron/purge-deleted`
 
-Nametag soft-deletes records (people, groups, relationships, relationship types, and important dates) so they can be recovered from [Trash](/features/trash/) within a 30-day window. This job permanently removes anything past that 30-day retention period, in an order that respects foreign key relationships: important dates first, then person-group links, relationships, groups, relationship types (clearing any dangling references along the way), and finally people. It also deletes the actual photo files on disk for any people being purged.
+Nametag soft-deletes records (people, groups, relationships, relationship types, and important dates) so they can be recovered from [Trash](/features/trash/) within a 30-day window. This job permanently removes anything past that 30-day retention period, in an order that respects foreign key relationships: important dates first, then person-group links, relationships, groups, relationship types (clearing any dangling references along the way), and finally people. It also deletes the actual photo files on disk for any people being purged. Finally, it removes sync tombstones (the records that tell native apps what was permanently deleted) older than 90 days and raises each affected user's sync floor, so a native app that has been offline longer than that does a full resync instead of missing deletions.
 
 This is the job responsible for eventually freeing disk space and database rows tied to old deletions. Skipping it doesn't break anything immediately, but trash accumulates indefinitely.
 

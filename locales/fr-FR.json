@@ -64,7 +64,8 @@
     },
     "journal": "Journal",
     "createJournal": "Nouvelle entrée",
-    "map": "Carte"
+    "map": "Carte",
+    "calendar": "Calendrier"
   },
   "notifications": {
     "push": {
@@ -152,7 +153,9 @@
         "itIT": "Italiano (italien)",
         "ruRU": "Русский (russe)",
         "nlNL": "Nederlands (néerlandais)",
-        "frFR": "Français (France)"
+        "frFR": "Français (France)",
+        "plPL": "Polski (Polish)",
+        "ptBR": "Português (Portugais du Brésil)"
       }
     },
     "notifications": {
@@ -1636,6 +1639,12 @@
     "oneMember": "1 membre",
     "membersCount": "{count} membres"
   },
+  "calendar": {
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "today": "Aujourd'hui",
+    "noEvents": "Rien de prévu ce mois-ci"
+  },
   "map": {
     "title": "Carte",
     "loading": "Chargement de la carte...",
@@ -1845,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "E-mail ou mot de passe invalide",
+      "signInFailed": "La connexion a échoué. Veuillez réessayer.",
       "emailNotVerified": "Vérifiez votre e-mail avant de vous connecter",
       "accountLocked": "Compte verrouillé après plusieurs tentatives de connexion échouées. Contactez le support.",
       "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
@@ -2178,6 +2188,12 @@
       "iosStep3": "Appuyez sur Ajouter",
       "dismiss": "Plus tard",
       "unsupported": "Votre navigateur peut peut-être installer l'application depuis son propre menu. Cherchez Sur l'écran d'accueil, Installer ou Ajouter au Dock."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Lien de connexion expiré",
+      "body": "Ce lien de connexion a expiré. Retournez dans l'application et réessayez."
     }
   }
 }

@@ -12,6 +12,7 @@ import { journalPaths } from './journal';
 import { customFieldsPaths } from './customFields';
 import { apiTokenPaths } from './apiTokens';
 import { mapPaths } from './map';
+import { syncPaths } from './sync';
 import { notificationsPaths } from './notifications';
 import { jsonResponse, ref400, ref401, ref404, refSuccess, pathParam, jsonBody, resp, sessionOrToken } from './helpers';
 
@@ -67,6 +68,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       { name: 'vCard', description: 'Direct vCard file import and upload for preview' },
       { name: 'Photos', description: 'Person and user photo management' },
       { name: 'Map', description: 'Map markers and address geocoding' },
+      { name: 'Sync', description: 'Change feed for native clients' },
       { name: 'Notifications', description: 'Reminder delivery channels: email and browser push' },
       { name: 'Cron', description: 'Background jobs authenticated via CRON_SECRET bearer token' },
       { name: 'System', description: 'Health checks and system endpoints' },
@@ -120,6 +122,7 @@ export function generateOpenAPISpec(): OpenAPISpec {
       ...customFieldsPaths(),
       ...apiTokenPaths(),
       ...mapPaths(),
+      ...syncPaths(),
       ...notificationsPaths(),
 
       // Photos (non-person-specific)
@@ -127,16 +130,24 @@ export function generateOpenAPISpec(): OpenAPISpec {
         get: {
           tags: ['Photos'],
           summary: 'Get person photo',
-          description: 'Returns the photo image for a person. Served from disk with appropriate MIME type and caching headers.',
+          description: 'Returns the photo image for a person. Served from disk with an ETag; a matching If-None-Match returns 304.',
           security: sessionOrToken(),
-          parameters: [pathParam('personId', 'Person ID')],
+          parameters: [
+            pathParam('personId', 'Person ID'),
+            { name: 'If-None-Match', in: 'header', required: false, schema: { type: 'string' }, description: 'ETag from an earlier response.' },
+          ],
           responses: {
             '200': {
               description: 'Photo image',
+              headers: {
+                ETag: { schema: { type: 'string', description: 'Changes whenever the photo changes. Send it back in If-None-Match to revalidate.' } },
+                'Cache-Control': { schema: { type: 'string', example: 'private, no-cache' } },
+              },
               content: {
                 'image/*': { schema: { type: 'string', format: 'binary' } },
               },
             },
+            '304': { description: 'Not modified: the If-None-Match tag matches the current photo. No body.' },
             '404': ref404(),
           },
         },
@@ -147,13 +158,21 @@ export function generateOpenAPISpec(): OpenAPISpec {
           summary: 'Get current user photo',
           description: 'Returns the photo image for the logged-in user.',
           security: sessionOrToken(),
+          parameters: [
+            { name: 'If-None-Match', in: 'header', required: false, schema: { type: 'string' }, description: 'ETag from an earlier response.' },
+          ],
           responses: {
             '200': {
               description: 'Photo image',
+              headers: {
+                ETag: { schema: { type: 'string', description: 'Changes whenever the photo changes. Send it back in If-None-Match to revalidate.' } },
+                'Cache-Control': { schema: { type: 'string', example: 'private, no-cache' } },
+              },
               content: {
                 'image/*': { schema: { type: 'string', format: 'binary' } },
               },
             },
+            '304': { description: 'Not modified: the If-None-Match tag matches the current photo. No body.' },
             '401': ref401(),
             '404': ref404(),
           },

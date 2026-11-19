@@ -1,5 +1,6 @@
 import { apiError, validationFailed } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
+import { withDeadlockRetry } from '@/lib/db/deadlock';
 import { syncToServer } from '@/lib/carddav/sync';
 import { updatePersonFromVCardInTransaction, savePhotoForPerson } from '@/lib/carddav/vcard-import';
 import type { ParsedVCardData } from '@/lib/carddav/types';
@@ -95,7 +96,8 @@ export const POST = withAuth(async (request, session, context) => {
         || !!conflict.mapping.person.displayNameOverride;
 
       // Wrap all operations in a single interactive transaction for atomicity
-      await prisma.$transaction(async (tx) => {
+      // Retried as a whole on a sync deadlock (lib/db/deadlock.ts).
+      await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
         // Update person with remote data (delete multi-value fields + recreate)
         await updatePersonFromVCardInTransaction(
           tx,
@@ -121,7 +123,7 @@ export const POST = withAuth(async (request, session, context) => {
             lastSyncedAt: new Date(),
           },
         });
-      });
+      }));
 
       // Save photo as file if present (outside transaction - file I/O)
       if (remoteData.photo) {

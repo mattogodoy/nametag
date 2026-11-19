@@ -4,6 +4,7 @@ import { createDAVClient } from 'tsdav';
 import { validateServerUrl } from '@/lib/carddav/url-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { decryptPassword } from '@/lib/carddav/encryption';
+import { fetchAllVCards } from '@/lib/carddav/fetch-vcards';
 import { createModuleLogger } from '@/lib/logger';
 import { withAuth } from '@/lib/api-utils';
 
@@ -68,9 +69,7 @@ export const POST = withAuth(async (request, session) => {
       const allVCards: string[] = [];
 
       for (const addressBook of addressBooks) {
-        const vcards = await client.fetchVCards({
-          addressBook,
-        });
+        const vcards = await fetchAllVCards(client, addressBook);
 
         for (const vcard of vcards) {
           if (vcard.data) {

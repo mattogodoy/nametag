@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { lockUserRow } from '@/lib/db/user-lock';
+import { withDeadlockRetry } from '@/lib/db/deadlock';
 import { customFieldTemplateReorderSchema, validateRequest } from '@/lib/validations';
 import {
   apiResponse,
@@ -35,15 +37,14 @@ export const PUT = withAuth(async (request, session) => {
       return apiError('reorder_incomplete', 'Reorder must include all active templates');
     }
 
-    // Apply order updates atomically
-    await prisma.$transaction(
-      ids.map((id, idx) =>
-        prisma.customFieldTemplate.update({
-          where: { id },
-          data: { order: idx },
-        })
-      )
-    );
+    // Apply order updates atomically, user lock first so this queues behind
+    // other multi-row writes instead of deadlocking (lib/db/deadlock.ts)
+    await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
+      await lockUserRow(tx, session.user.id);
+      for (const [idx, id] of ids.entries()) {
+        await tx.customFieldTemplate.update({ where: { id }, data: { order: idx } });
+      }
+    }));
 
     return apiResponse.success();
   } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
@@ -124,19 +124,38 @@ export default function TrashManager() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ type: EntityType; item: DeletedItem } | null>(null);
 
+  // Only the most recent request may update the list, so a slow response for a
+  // tab the user already left cannot overwrite the current tab's items.
+  const latestRequestRef = useRef(0);
+
   const fetchItems = useCallback(async (type: EntityType) => {
+    const requestId = ++latestRequestRef.current;
     setLoading(true);
     try {
       const response = await fetch(`/api/deleted?type=${type}`);
       if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
+      if (requestId !== latestRequestRef.current) return;
       setItems(data.deleted);
     } catch {
+      if (requestId !== latestRequestRef.current) return;
       setItems([]);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestRef.current) setLoading(false);
     }
   }, []);
+
+  // Switching tabs must drop the previous tab's items in the same render that
+  // changes activeTab. Otherwise the first render after the click would pass
+  // items of one type (e.g. people) to the label renderer of another
+  // (relationships, important dates), which read fields those items lack and
+  // crash the page.
+  const handleTabChange = (type: EntityType) => {
+    if (type === activeTab) return;
+    setItems([]);
+    setLoading(true);
+    setActiveTab(type);
+  };
 
   const fetchCounts = useCallback(async () => {
     const results = await Promise.allSettled(
@@ -289,7 +308,7 @@ export default function TrashManager() {
           {ENTITY_TYPES.map((type) => (
             <button
               key={type}
-              onClick={() => setActiveTab(type)}
+              onClick={() => handleTabChange(type)}
               className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === type
                   ? 'border-primary text-primary'

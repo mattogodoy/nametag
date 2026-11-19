@@ -392,7 +392,12 @@ export default function UnifiedNetworkGraph({
 
   // Step 3: Composition helper — recomposes sim data from raw cache
   const recomposeAndBuildSim = useCallback((raw: { nodes: RawGraphPerson[]; edges: SimulationEdge[] }) => {
-    const incomingPeople = raw.nodes;
+    // The API labels the signed-in user's node with a fixed English "You"
+    // (user node ids are prefixed "user-"), so translate it here.
+    const youLabel = tPeople('you');
+    const incomingPeople = raw.nodes.map((n) =>
+      n.id.startsWith('user-') ? { ...n, label: youLabel } : n,
+    );
 
     // If no groups prop, we're not on the dashboard — skip bubble logic.
     const resolvedMode = groups ? resolveGraphMode(localGraphMode) : 'individuals';
@@ -459,7 +464,7 @@ export default function UnifiedNetworkGraph({
     }
   }, [
     groups, localGraphMode, expandedBubbles,
-    includeGroupIds, ungroupedLabel, buildSimulation,
+    includeGroupIds, ungroupedLabel, buildSimulation, tPeople,
   ]);
 
   // Step 4: Data-fetch effect

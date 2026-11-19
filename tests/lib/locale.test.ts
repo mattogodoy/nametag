@@ -64,6 +64,10 @@ describe('Locale Utilities', () => {
       expect(isSupportedLocale('fr-FR')).toBe(true);
     });
 
+    it('should return true for "pl-PL"', () => {
+      expect(isSupportedLocale('pl-PL')).toBe(true);
+    });
+
     it('should return true for "pt-BR"', () => {
       expect(isSupportedLocale('pt-BR')).toBe(true);
     });
@@ -84,6 +88,7 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('ru-RU')).toBe('ru-RU');
       expect(normalizeLocale('nl-NL')).toBe('nl-NL');
       expect(normalizeLocale('fr-FR')).toBe('fr-FR');
+      expect(normalizeLocale('pl-PL')).toBe('pl-PL');
       expect(normalizeLocale('pt-BR')).toBe('pt-BR');
     });
 
@@ -127,6 +132,10 @@ describe('Locale Utilities', () => {
       expect(normalizeLocale('fr')).toBe('fr-FR');
     });
 
+    it('should map "pl" to "pl-PL"', () => {
+      expect(normalizeLocale('pl')).toBe('pl-PL');
+    });
+
     it('should map "pt" to "pt-BR"', () => {
       expect(normalizeLocale('pt')).toBe('pt-BR');
     });
@@ -141,6 +150,8 @@ describe('Locale Utilities', () => {
     it('should return user language preference if set', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         id: 'user1',
+        syncSeq: BigInt(0),
+        syncTombstoneFloor: BigInt(0),
         language: 'es-ES',
         email: 'test@example.com',
         password: 'hash',
@@ -188,6 +199,8 @@ describe('Locale Utilities', () => {
     it('should return "en" if user language is not set', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         id: 'user1',
+        syncSeq: BigInt(0),
+        syncTombstoneFloor: BigInt(0),
         language: null,
         email: 'test@example.com',
         password: 'hash',
@@ -369,6 +382,17 @@ describe('Locale Utilities', () => {
       const locale = await detectBrowserLocale();
 
       expect(locale).toBe('nb-NO');
+    });
+
+    it('should map "pl" to "pl-PL"', async () => {
+      const { headers } = await import('next/headers');
+      vi.mocked(headers).mockResolvedValue({
+        get: vi.fn().mockReturnValue('pl,pl-PL;q=0.9,en;q=0.8'),
+      } as any);
+
+      const locale = await detectBrowserLocale();
+
+      expect(locale).toBe('pl-PL');
     });
 
     it('should detect German from Accept-Language header', async () => {

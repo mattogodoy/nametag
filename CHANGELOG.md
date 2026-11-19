@@ -6,6 +6,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.68.0](https://github.com/mattogodoy/nametag/compare/v0.67.0...v0.68.0) (2026-11-18)
+
+
+### Features
+
+* add a calendar tab for important dates ([#508](https://github.com/mattogodoy/nametag/issues/508)) ([9edda57](https://github.com/mattogodoy/nametag/commit/9edda578ced358a54b06595d100cfac304350a0b))
+
+
+### Bug Fixes
+
+* **calendar:** open on the viewer's month, not the server's ([#511](https://github.com/mattogodoy/nametag/issues/511)) ([6fa54c7](https://github.com/mattogodoy/nametag/commit/6fa54c7559b1acbab667901cdb8ab8394e71c04c))
+* **carddav:** fetch contacts by URL when the default query returns none ([#507](https://github.com/mattogodoy/nametag/issues/507)) ([bec7ebb](https://github.com/mattogodoy/nametag/commit/bec7ebb2cc2e7bf39f723d0485bb8645bc863668))
+* **carddav:** warn when the by-URL fallback fetch fails ([#509](https://github.com/mattogodoy/nametag/issues/509)) ([b028eaf](https://github.com/mattogodoy/nametag/commit/b028eaff9bc73c2520677fe108b5bf053f4466d5))
+* **zimaos:** avoid shell variables in inline scripts ([#502](https://github.com/mattogodoy/nametag/issues/502)) ([a3a31ab](https://github.com/mattogodoy/nametag/commit/a3a31ab7bcac080ecd0b019e06b1171b9eb0d3fe))
+
+## [0.67.0](https://github.com/mattogodoy/nametag/compare/v0.66.0...v0.67.0) (2026-10-28)
+
+
+### Features
+
+* **photos:** ETag revalidation for photo downloads ([#497](https://github.com/mattogodoy/nametag/issues/497)) ([3736678](https://github.com/mattogodoy/nametag/commit/3736678af5fd31800590a085e1d4d148ae1cb792))
+
+
+### Bug Fixes
+
+* **docker:** run on Node 24 LTS to patch CVE-2026-111497 ([#501](https://github.com/mattogodoy/nametag/issues/501)) ([be26032](https://github.com/mattogodoy/nametag/commit/be26032993af64275fb58fe443372f91d63a9888))
+
+## [0.66.0](https://github.com/mattogodoy/nametag/compare/v0.65.0...v0.66.0) (2026-10-21)
+
+
+### Features
+
+* **api:** delta sync for native clients ([#495](https://github.com/mattogodoy/nametag/issues/495)) ([8a9297b](https://github.com/mattogodoy/nametag/commit/8a9297bb194adb536bb6d3687add801836cd0fb5))
+
+## [0.65.0](https://github.com/mattogodoy/nametag/compare/v0.64.1...v0.65.0) (2026-10-20)
+
+
+### Features
+
+* add Polish (pl-PL) translation ([#492](https://github.com/mattogodoy/nametag/issues/492)) ([4c9aa52](https://github.com/mattogodoy/nametag/commit/4c9aa52a7ac5a2eb64556b785ac74288f2013c12))
+* **api:** add server info endpoint for native clients ([#486](https://github.com/mattogodoy/nametag/issues/486)) ([4b53405](https://github.com/mattogodoy/nametag/commit/4b53405c9af06663b6a989c2710636bcab1e5d74))
+* **api:** machine-readable error codes on every API error ([#493](https://github.com/mattogodoy/nametag/issues/493)) ([f239b99](https://github.com/mattogodoy/nametag/commit/f239b99d51eaa48728675a2d3d40991f5a0c35e6))
+* **auth:** native app sessions and signed-in devices ([#488](https://github.com/mattogodoy/nametag/issues/488)) ([c138307](https://github.com/mattogodoy/nametag/commit/c138307cff8c7d22e649330422bd4fa588893483))
+* **auth:** single sign-on for native apps ([#489](https://github.com/mattogodoy/nametag/issues/489)) ([12e93d9](https://github.com/mattogodoy/nametag/commit/12e93d976af844ed8cc7725b4097941486306eea))
+
+
+### Bug Fixes
+
+* **graph:** translate the "You" label on the user node ([#491](https://github.com/mattogodoy/nametag/issues/491)) ([f61f300](https://github.com/mattogodoy/nametag/commit/f61f3005bad0c0c618188e4d72604f2ae486e0c5))
+* **trash:** stop Relationships and Important Dates tabs from crashing ([#490](https://github.com/mattogodoy/nametag/issues/490)) ([9f23cf0](https://github.com/mattogodoy/nametag/commit/9f23cf0de9777712fc015a32261b6d9425780983))
+
 ## [0.64.1](https://github.com/mattogodoy/nametag/compare/v0.64.0...v0.64.1) (2026-10-16)
 
 

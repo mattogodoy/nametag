@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { withDeadlockRetry } from '@/lib/db/deadlock';
 import { updateJournalEntrySchema, validateRequest } from '@/lib/validations';
 import { apiResponse, handleApiError, parseRequestBody, withAuth } from '@/lib/api-utils';
 import { apiError } from '@/lib/api-errors';
@@ -86,7 +87,8 @@ export const PUT = withAuth(async (request, session, context) => {
       : new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
 
     // Remove existing people associations and recreate atomically
-    const entry = await prisma.$transaction(async (tx) => {
+    // Retried as a whole on a sync deadlock (lib/db/deadlock.ts).
+    const entry = await withDeadlockRetry(() => prisma.$transaction(async (tx) => {
       await tx.journalEntryPerson.deleteMany({
         where: { journalEntryId: id },
       });
@@ -123,7 +125,7 @@ export const PUT = withAuth(async (request, session, context) => {
           },
         },
       });
-    });
+    }));
 
     // Update lastContact for tagged people if requested
     if (updateLastContact && personIds && personIds.length > 0) {

@@ -43,6 +43,7 @@ const mocks = vi.hoisted(() => {
   const autoUpdatePerson = vi.fn();
 
   const mockTxClient = {
+    $queryRaw: vi.fn(),
     person: { update: personUpdate },
     cardDavMapping: { deleteMany: cardDavMappingDeleteMany, findUnique: vi.fn() },
     personGroup: { deleteMany: personGroupDeleteMany, createMany: personGroupCreateMany },

@@ -74,6 +74,47 @@ Returns `{ "sessions": [...] }` with each device's `id`, `name`, `platform`, `ap
 
 These endpoints accept a browser session or a device token, not a personal API token.
 
+## Sign in with single sign-on
+
+When [`/api/server-info`](/api/overview/#server-info) reports `auth.oidc.enabled` or `auth.google`, the app can sign in through the server's identity provider. Self-hosters don't need to configure anything new: the app uses the same OIDC client as the web.
+
+1. Generate a random `state` (16 to 128 characters), a `code_verifier` (43 to 128 characters, see RFC 7636) and `code_challenge = BASE64URL(SHA256(code_verifier))`.
+2. Open this URL in a private browser sheet (on iOS, `ASWebAuthenticationSession` with `prefersEphemeralWebBrowserSession`):
+
+```
+https://your-instance.example.com/api/auth/native/browser/start
+  ?provider=oidc
+  &state=…
+  &code_challenge=…
+  &code_challenge_method=S256
+  &device_name=Matto%27s%20iPhone
+  &platform=IOS
+  &app_version=1.0.0
+```
+
+3. When sign-in finishes, the sheet is redirected to `nametag://auth/callback?code=ntc_…&state=…`. Check that `state` matches what you sent.
+4. Exchange the code within 60 seconds:
+
+```bash
+curl -X POST https://your-instance.example.com/api/auth/native/browser/exchange \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "ntc_…", "codeVerifier": "…" }'
+```
+
+The response has the same shape as password sign-in. A code works once; a wrong verifier also uses it up.
+
+If sign-in doesn't succeed, the sheet is redirected to `nametag://auth/callback?error=…&state=…`:
+
+| Error | Meaning |
+|---|---|
+| `invalid_request` | A parameter on the start URL is missing or invalid. |
+| `provider_unavailable` | That sign-in method isn't enabled on this server. |
+| `email_not_verified` | The identity provider hasn't verified the email address. |
+| `account_linked_elsewhere` | The account signs in with a different provider. |
+| `sign_in_failed` | Sign-in was cancelled or failed. |
+
+The redirect address is always `nametag://auth/callback`; the server never redirects anywhere a request asks it to.
+
 ## Error codes
 
 Error bodies have an English `error` message and a stable `code`. The one exception is a request with no credentials at all, which gets the plain `{ "error": "Unauthorized" }` that every endpoint returns; treat a 401 without a `code` as "sign in".
@@ -82,6 +123,7 @@ Error bodies have an English `error` message and a stable `code`. The one except
 |---|---|---|
 | 400 | `validation_failed` | The request body is invalid. `details` lists the fields. |
 | 400 | `not_a_device_session` | Logout was called without a device access token. |
+| 401 | `invalid_code` | The single sign-on code is unknown, expired, already used, or the verifier doesn't match. |
 | 401 | `invalid_credentials` | Wrong email or password. |
 | 401 | `access_token_expired` | Refresh and retry. |
 | 401 | `invalid_token` | The bearer token is unknown or revoked. |

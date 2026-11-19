@@ -64,7 +64,8 @@
     },
     "journal": "ジャーナル",
     "createJournal": "新しいエントリー",
-    "map": "マップ"
+    "map": "マップ",
+    "calendar": "カレンダー"
   },
   "notifications": {
     "push": {
@@ -152,7 +153,9 @@
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
         "nlNL": "Nederlands (Dutch)",
-        "frFR": "Français (French)"
+        "frFR": "Français (French)",
+        "plPL": "Polski (Polish)",
+        "ptBR": "Português (ブラジルポルトガル語)"
       }
     },
     "notifications": {
@@ -1636,6 +1639,12 @@
     "oneMember": "1人のメンバー",
     "membersCount": "{count}人のメンバー"
   },
+  "calendar": {
+    "previousMonth": "前の月",
+    "nextMonth": "次の月",
+    "today": "今日",
+    "noEvents": "今月の予定はありません"
+  },
   "map": {
     "title": "マップ",
     "loading": "マップを読み込んでいます...",
@@ -1845,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "メールアドレスまたはパスワードが無効です",
+      "signInFailed": "ログインできませんでした。もう一度お試しください。",
       "emailNotVerified": "ログインする前にメールアドレスを確認してください",
       "accountLocked": "ログインに複数回失敗したためアカウントがロックされました。サポートにお問い合わせください。",
       "sessionExpired": "セッションの期限が切れました。再度ログインしてください。",
@@ -2178,6 +2188,12 @@
       "iosStep3": "「追加」をタップします",
       "dismiss": "後で",
       "unsupported": "ブラウザのメニューからインストールできる場合があります。「ホーム画面に追加」「インストール」「Dock に追加」を探してください。"
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "ログインリンクの有効期限が切れました",
+      "body": "このログインリンクは有効期限が切れています。アプリに戻って、もう一度お試しください。"
     }
   }
 }

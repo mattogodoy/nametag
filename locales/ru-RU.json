@@ -64,7 +64,8 @@
     },
     "journal": "Журнал",
     "createJournal": "Новая запись",
-    "map": "Карта"
+    "map": "Карта",
+    "calendar": "Календарь"
   },
   "notifications": {
     "push": {
@@ -152,7 +153,9 @@
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
         "nlNL": "Nederlands (Dutch)",
-        "frFR": "Français (French)"
+        "frFR": "Français (French)",
+        "plPL": "Polski (Polish)",
+        "ptBR": "Português (Бразильский португальский)"
       }
     },
     "notifications": {
@@ -1636,6 +1639,12 @@
     "oneMember": "1 участник",
     "membersCount": "Участников: {count}"
   },
+  "calendar": {
+    "previousMonth": "Предыдущий месяц",
+    "nextMonth": "Следующий месяц",
+    "today": "Сегодня",
+    "noEvents": "В этом месяце ничего не запланировано"
+  },
   "map": {
     "title": "Карта",
     "loading": "Загрузка карты...",
@@ -1845,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Неверный email или пароль",
+      "signInFailed": "Не удалось войти. Попробуйте ещё раз.",
       "emailNotVerified": "Пожалуйста, подтвердите email перед входом",
       "accountLocked": "Аккаунт заблокирован из-за нескольких неудачных попыток входа. Свяжитесь с поддержкой.",
       "sessionExpired": "Сессия истекла. Пожалуйста, войдите снова.",
@@ -2178,6 +2188,12 @@
       "iosStep3": "Нажмите «Добавить»",
       "dismiss": "Не сейчас",
       "unsupported": "Ваш браузер может позволить установку через собственное меню. Найдите «На экран Домой», «Установить» или «Добавить в Dock»."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Ссылка для входа устарела",
+      "body": "Срок действия этой ссылки для входа истёк. Вернитесь в приложение и попробуйте ещё раз."
     }
   }
 }

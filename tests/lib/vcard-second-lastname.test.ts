@@ -10,6 +10,7 @@ import type { PersonWithRelations } from '@/lib/carddav/types';
 describe('vCard Second Last Name Handling', () => {
   const createTestPerson = (overrides = {}): PersonWithRelations => ({
     id: 'test-1',
+    syncVersion: BigInt(0),
     userId: 'user-1',
     name: 'Mauro',
     surname: 'Belluco',

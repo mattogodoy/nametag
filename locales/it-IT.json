@@ -64,7 +64,8 @@
     },
     "journal": "Diario",
     "createJournal": "Nuova voce",
-    "map": "Mappa"
+    "map": "Mappa",
+    "calendar": "Calendario"
   },
   "notifications": {
     "push": {
@@ -152,7 +153,9 @@
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
         "nlNL": "Nederlands (Dutch)",
-        "frFR": "Français (French)"
+        "frFR": "Français (French)",
+        "plPL": "Polski (Polish)",
+        "ptBR": "Português (Portoghese brasiliano)"
       }
     },
     "notifications": {
@@ -1636,6 +1639,12 @@
     "oneMember": "1 membro",
     "membersCount": "{count} membri"
   },
+  "calendar": {
+    "previousMonth": "Mese precedente",
+    "nextMonth": "Mese successivo",
+    "today": "Oggi",
+    "noEvents": "Niente in programma questo mese"
+  },
   "map": {
     "title": "Mappa",
     "loading": "Caricamento della mappa...",
@@ -1845,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Email o password non validi",
+      "signInFailed": "Accesso non riuscito. Riprova.",
       "emailNotVerified": "Verifica la tua email prima di accedere",
       "accountLocked": "Account bloccato a causa di troppi tentativi di accesso falliti. Contatta il supporto.",
       "sessionExpired": "La tua sessione è scaduta. Accedi di nuovo.",
@@ -2178,6 +2188,12 @@
       "iosStep3": "Tocca «Aggiungi»",
       "dismiss": "Non ora",
       "unsupported": "Il tuo browser potrebbe consentire l'installazione dal suo menu. Cerca «Aggiungi a Home», «Installa» o «Aggiungi al Dock»."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Link di accesso scaduto",
+      "body": "Questo link di accesso è scaduto. Torna all'app e riprova."
     }
   }
 }

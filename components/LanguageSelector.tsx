@@ -4,20 +4,10 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import 'flag-icons/css/flag-icons.min.css';
+import type { SupportedLocale } from '@/lib/locale';
 
 interface LanguageSelectorProps {
-  currentLanguage:
-    | 'en'
-    | 'es-ES'
-    | 'ja-JP'
-    | 'nb-NO'
-    | 'de-DE'
-    | 'zh-CN'
-    | 'it-IT'
-    | 'ru-RU'
-    | 'nl-NL'
-    | 'fr-FR'
-    | 'pt-BR';
+  currentLanguage: SupportedLocale;
 }
 
 const LANGUAGES = [
@@ -31,10 +21,11 @@ const LANGUAGES = [
   { code: 'ru-RU' as const, name: 'Русский', flag: 'ru' },
   { code: 'nl-NL' as const, name: 'Nederlands (Dutch)', flag: 'nl' },
   { code: 'fr-FR' as const, name: 'Français (France)', flag: 'fr' },
+  { code: 'pl-PL' as const, name: 'Polski', flag: 'pl' },
   { code: 'pt-BR' as const, name: 'Português (Brasil)', flag: 'br' },
 ];
 
-const labelMap = {
+const labelMap: Record<SupportedLocale, string> = {
   en: 'en',
   'es-ES': 'esES',
   'ja-JP': 'jaJP',
@@ -45,7 +36,9 @@ const labelMap = {
   'ru-RU': 'ruRU',
   'nl-NL': 'nlNL',
   'fr-FR': 'frFR',
-} as const;
+  'pl-PL': 'plPL',
+  'pt-BR': 'ptBR',
+};
 
 /** How long to wait for an active worker before giving up on the refresh. */
 const RECACHE_TIMEOUT_MS = 1000;
@@ -99,7 +92,7 @@ export default function LanguageSelector({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLanguageChange = async (
-    newLanguage: 'en' | 'es-ES' | 'ja-JP' | 'nb-NO' | 'de-DE' | 'zh-CN' | 'it-IT' | 'ru-RU' | 'nl-NL' | 'fr-FR',
+    newLanguage: SupportedLocale,
   ) => {
     if (isLoading || newLanguage === selectedLanguage) return;
 

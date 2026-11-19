@@ -8,8 +8,11 @@ import { hasValidBearerSecret } from '@/lib/shared-secret';
 import { logger, securityLogger } from '@/lib/logger';
 import { deletePersonPhotos } from '@/lib/photo-storage';
 import { deleteIdleDeviceSessions } from '@/lib/native-auth/sessions';
+import { deleteExpiredNativeAuthCodes } from '@/lib/native-auth/codes';
+import { purgeTombstones } from '@/lib/sync/tombstones';
 
 const RETENTION_DAYS = 30;
+const TOMBSTONE_RETENTION_DAYS = 90;
 
 // GET /api/cron/purge-deleted - Permanently delete records older than retention period
 // This endpoint should be called by a cron job daily
@@ -48,6 +51,8 @@ export const GET = withLogging(async function GET(request: Request) {
       relationshipTypes: 0,
       people: 0,
       deviceSessions: 0,
+      nativeAuthCodes: 0,
+      syncTombstones: 0,
     };
 
     // 1. Purge ImportantDates that are soft-deleted past retention
@@ -174,6 +179,14 @@ export const GET = withLogging(async function GET(request: Request) {
     // 10. Delete native app sessions idle past their window
     const deviceSessionsResult = await deleteIdleDeviceSessions(new Date());
     purged.deviceSessions = deviceSessionsResult;
+
+    // 11. Delete expired single-use native sign-in codes
+    purged.nativeAuthCodes = await deleteExpiredNativeAuthCodes(new Date());
+
+    // 12. Forget sync tombstones past their retention and raise each user's floor
+    const tombstoneCutoff = new Date();
+    tombstoneCutoff.setDate(tombstoneCutoff.getDate() - TOMBSTONE_RETENTION_DAYS);
+    purged.syncTombstones = await purgeTombstones(prismaIncludingDeleted, tombstoneCutoff);
 
     const result = {
       success: true,

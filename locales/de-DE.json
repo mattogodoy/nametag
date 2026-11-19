@@ -64,7 +64,8 @@
     },
     "journal": "Tagebuch",
     "createJournal": "Neuer Eintrag",
-    "map": "Karte"
+    "map": "Karte",
+    "calendar": "Kalender"
   },
   "notifications": {
     "push": {
@@ -152,7 +153,9 @@
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
         "nlNL": "Nederlands (Dutch)",
-        "frFR": "Français (French)"
+        "frFR": "Français (French)",
+        "plPL": "Polski (Polish)",
+        "ptBR": "Português (Brasilianisches Portugiesisch)"
       }
     },
     "notifications": {
@@ -1636,6 +1639,12 @@
     "oneMember": "1 Mitglied",
     "membersCount": "{count} Mitglieder"
   },
+  "calendar": {
+    "previousMonth": "Vorheriger Monat",
+    "nextMonth": "Nächster Monat",
+    "today": "Heute",
+    "noEvents": "Diesen Monat steht nichts an"
+  },
   "map": {
     "title": "Karte",
     "loading": "Karte wird geladen...",
@@ -1845,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Ungültige E-Mail oder Passwort",
+      "signInFailed": "Die Anmeldung hat nicht funktioniert. Bitte versuche es erneut.",
       "emailNotVerified": "Bitte verifiziere deine E-Mail, bevor du dich anmeldest",
       "accountLocked": "Konto wegen mehrerer fehlgeschlagener Anmeldeversuche gesperrt. Bitte kontaktiere den Support.",
       "sessionExpired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
@@ -2178,6 +2188,12 @@
       "iosStep3": "Tippe auf «Hinzufügen»",
       "dismiss": "Jetzt nicht",
       "unsupported": "Dein Browser kann die App möglicherweise über sein eigenes Menü installieren. Suche nach «Zum Home-Bildschirm», «Installieren» oder «Zum Dock hinzufügen»."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Anmeldelink abgelaufen",
+      "body": "Dieser Anmeldelink ist abgelaufen. Gehe zurück zur App und versuche es erneut."
     }
   }
 }

@@ -64,7 +64,8 @@
     },
     "journal": "Diario",
     "createJournal": "Nueva entrada",
-    "map": "Mapa"
+    "map": "Mapa",
+    "calendar": "Calendario"
   },
   "notifications": {
     "push": {
@@ -152,7 +153,9 @@
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
         "nlNL": "Nederlands (Dutch)",
-        "frFR": "Français (French)"
+        "frFR": "Français (French)",
+        "plPL": "Polski (Polish)",
+        "ptBR": "Português (Portugués de Brasil)"
       }
     },
     "notifications": {
@@ -1636,6 +1639,12 @@
     "oneMember": "1 miembro",
     "membersCount": "{count} miembros"
   },
+  "calendar": {
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "today": "Hoy",
+    "noEvents": "No hay nada previsto este mes"
+  },
   "map": {
     "title": "Mapa",
     "loading": "Cargando mapa...",
@@ -1845,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Correo electrónico o contraseña inválidos",
+      "signInFailed": "No se pudo iniciar sesión. Inténtalo de nuevo.",
       "emailNotVerified": "Por favor, verifica tu correo electrónico antes de iniciar sesión",
       "accountLocked": "Cuenta bloqueada debido a múltiples intentos fallidos de inicio de sesión. Por favor, contacta al soporte.",
       "sessionExpired": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.",
@@ -2178,6 +2188,12 @@
       "iosStep3": "Toca Añadir",
       "dismiss": "Ahora no",
       "unsupported": "Tu navegador puede permitir instalarla desde su propio menú. Busca Añadir a pantalla de inicio, Instalar o Añadir al Dock."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Enlace de inicio de sesión caducado",
+      "body": "Este enlace de inicio de sesión ha caducado. Vuelve a la app e inténtalo de nuevo."
     }
   }
 }

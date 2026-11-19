@@ -64,7 +64,8 @@
     },
     "journal": "Journal",
     "createJournal": "New entry",
-    "map": "Map"
+    "map": "Map",
+    "calendar": "Calendar"
   },
   "notifications": {
     "push": {
@@ -152,7 +153,9 @@
         "itIT": "Italiano (Italian)",
         "ruRU": "Русский (Russian)",
         "nlNL": "Nederlands (Dutch)",
-        "frFR": "Français (French)"
+        "frFR": "Français (French)",
+        "plPL": "Polski (Polish)",
+        "ptBR": "Português (Brazilian Portuguese)"
       }
     },
     "notifications": {
@@ -1636,6 +1639,12 @@
     "oneMember": "1 member",
     "membersCount": "{count} members"
   },
+  "calendar": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "today": "Today",
+    "noEvents": "Nothing planned this month"
+  },
   "map": {
     "title": "Map",
     "loading": "Loading map...",
@@ -1845,6 +1854,7 @@
   "errors": {
     "auth": {
       "invalidCredentials": "Invalid email or password",
+      "signInFailed": "Sign-in didn't work. Please try again.",
       "emailNotVerified": "Please verify your email before logging in",
       "accountLocked": "Account locked due to multiple failed login attempts. Please contact support.",
       "sessionExpired": "Your session has expired. Please log in again.",
@@ -2178,6 +2188,12 @@
       "iosStep3": "Tap Add",
       "dismiss": "Not now",
       "unsupported": "Your browser may be able to install this from its own menu. Look for Add to Home Screen, Install, or Add to Dock."
+    }
+  },
+  "nativeAuth": {
+    "expired": {
+      "title": "Sign-in link expired",
+      "body": "This sign-in link has expired. Go back to the app and try again."
     }
   }
 }
