@@ -20,7 +20,7 @@ vi.mock('@/lib/locale', () => ({
 
 const SUPPORTED_LOCALES = [
   'en', 'es-ES', 'ja-JP', 'nb-NO', 'de-DE', 'zh-CN', 'it-IT', 'ru-RU', 'nl-NL',
-  'fr-FR', 'pl-PL',
+  'fr-FR', 'pl-PL', 'pt-BR',
 ] as const;
 
 describe('app/manifest.ts', () => {

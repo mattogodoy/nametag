@@ -105,7 +105,7 @@ describe('renderShortForm', () => {
 
   it('resolves every push string in every locale, with no fallback and no stray placeholder', async () => {
     const locales = [
-      'en', 'es-ES', 'de-DE', 'fr-FR', 'it-IT', 'nl-NL', 'nb-NO', 'ru-RU', 'ja-JP', 'zh-CN', 'pl-PL',
+      'en', 'es-ES', 'de-DE', 'fr-FR', 'it-IT', 'nl-NL', 'nb-NO', 'ru-RU', 'ja-JP', 'zh-CN', 'pl-PL', 'pt-BR',
     ] as const;
 
     // Every key under notifications.push. getTranslationsForLocale returns the
