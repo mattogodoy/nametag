@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.69.0](https://github.com/mattogodoy/nametag/compare/v0.68.0...v0.69.0) (2026-11-24)
+
+
+### Features
+
+* add pt-BR translation ([#470](https://github.com/mattogodoy/nametag/issues/470)) ([0f8c574](https://github.com/mattogodoy/nametag/commit/0f8c574477acb1946489a2b31313f9d32fe51e23))
+* **people:** show "Create and add another" next to Create ([#519](https://github.com/mattogodoy/nametag/issues/519)) ([405a709](https://github.com/mattogodoy/nametag/commit/405a709cdb95d295121398ab9eb96d2fc8b6a593))
+
+
+### Bug Fixes
+
+* **reminders:** match email wording to the kind of date ([#518](https://github.com/mattogodoy/nametag/issues/518)) ([7651c49](https://github.com/mattogodoy/nametag/commit/7651c4978158e072521097e8627e2c7e9eff4ad7))
+
 ## [0.68.0](https://github.com/mattogodoy/nametag/compare/v0.67.0...v0.68.0) (2026-11-18)
 
 
