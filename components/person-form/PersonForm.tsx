@@ -30,6 +30,8 @@ import { isHeicFile, convertHeicToJpeg } from '@/lib/photo-client';
 type ReminderIntervalUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
 
 // These must be defined OUTSIDE the component to prevent re-renders
+const ADD_ANOTHER_INTENT = 'addAnother';
+
 const SectionHeader = ({ children }: { children: React.ReactNode }) => (
   <h3 className="text-lg font-semibold text-foreground mb-4">{children}</h3>
 );
@@ -183,7 +185,6 @@ export default function PersonForm({
     setShowPhotoSourceModal,
     setKnownThrough,
     setInheritGroups,
-    setShowDropdown,
     setFormData,
     setImportantDates,
     setPhoneNumbers,
@@ -212,7 +213,6 @@ export default function PersonForm({
     knownThroughId,
     knownThroughName,
     inheritGroups,
-    showDropdown,
     formData,
     importantDates,
     phoneNumbers,
@@ -358,11 +358,12 @@ export default function PersonForm({
     ...availablePeople,
   ];
 
-  const handleSubmit = async (
-    e: FormEvent<HTMLFormElement>,
-    addAnother = false
-  ) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const addAnother =
+      submitter instanceof HTMLButtonElement &&
+      submitter.value === ADD_ANOTHER_INTENT;
     setError('');
 
     if (formData.lastContact) {
@@ -664,80 +665,30 @@ export default function PersonForm({
         </Section>
       )}
 
-      <div className="flex justify-end space-x-4 pt-4">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 sm:gap-4 pt-4">
         <Link
           href="/people"
           data-no-unsaved-guard
-          className="px-6 py-2 border border-border text-muted rounded-lg font-medium hover:bg-surface-elevated transition-colors"
+          className="px-6 py-2 text-center border border-border text-muted rounded-lg font-medium hover:bg-surface-elevated transition-colors"
         >
           {t('cancel')}
         </Link>
 
         {mode === 'create' ? (
-          <div className="relative">
-            <div className="flex">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="px-6 py-2 bg-primary text-on-primary rounded-l-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? t('saving') : t('create')}
-              </button>
-              <button
-                type="button"
-                disabled={isLoading}
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="px-2 py-2 bg-primary text-on-primary border-l border-primary rounded-r-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-surface border border-border z-10">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    setShowDropdown(false);
-                    const form = e.currentTarget.closest('form');
-                    if (form) {
-                      if (form.checkValidity()) {
-                        const submitEvent = new Event('submit', {
-                          bubbles: true,
-                          cancelable: true,
-                        });
-                        Object.defineProperty(submitEvent, 'target', {
-                          value: form,
-                          enumerable: true,
-                        });
-                        handleSubmit(
-                          submitEvent as unknown as FormEvent<HTMLFormElement>,
-                          true
-                        );
-                      } else {
-                        form.reportValidity();
-                      }
-                    }
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-muted hover:bg-surface-elevated rounded-lg transition-colors"
-                >
-                  {t('createAndAddAnother')}
-                </button>
-              </div>
-            )}
-          </div>
+          <>
+            <button
+              type="submit"
+              name="intent"
+              value={ADD_ANOTHER_INTENT}
+              disabled={isLoading}
+              className="px-6 py-2 border border-primary text-primary rounded-lg font-semibold hover:bg-surface-elevated transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {t('createAndAddAnother')}
+            </button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? t('saving') : t('create')}
+            </Button>
+          </>
         ) : (
           <Button type="submit" disabled={isLoading}>
             {isLoading ? t('saving') : t('save')}

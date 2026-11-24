@@ -78,7 +78,6 @@ export interface PersonFormState {
   knownThroughId: string;
   knownThroughName: string;
   inheritGroups: boolean;
-  showDropdown: boolean;
   formData: FormData;
   importantDates: ImportantDateItem[];
   phoneNumbers: PhoneNumberItem[];
@@ -100,7 +99,6 @@ type PersonFormAction =
   | { type: 'SET_KNOWN_THROUGH_NAME'; payload: string }
   | { type: 'SET_KNOWN_THROUGH'; payload: { id: string; name: string } }
   | { type: 'SET_INHERIT_GROUPS'; payload: boolean }
-  | { type: 'SET_SHOW_DROPDOWN'; payload: boolean }
   | { type: 'SET_FORM_DATA'; payload: Partial<FormData> }
   | { type: 'SET_IMPORTANT_DATES'; payload: ImportantDateItem[] }
   | { type: 'SET_PHONE_NUMBERS'; payload: PhoneNumberItem[] }
@@ -134,8 +132,6 @@ function reducer(state: PersonFormState, action: PersonFormAction): PersonFormSt
       return { ...state, knownThroughId: action.payload.id, knownThroughName: action.payload.name };
     case 'SET_INHERIT_GROUPS':
       return { ...state, inheritGroups: action.payload };
-    case 'SET_SHOW_DROPDOWN':
-      return { ...state, showDropdown: action.payload };
     case 'SET_FORM_DATA':
       return { ...state, formData: { ...state.formData, ...action.payload } };
     case 'SET_IMPORTANT_DATES':
@@ -267,7 +263,6 @@ function buildInitialState(params: {
     knownThroughId: initialKnownThrough || 'user',
     knownThroughName,
     inheritGroups: false,
-    showDropdown: false,
     formData: {
       name: person?.name || initialName || '',
       surname: person?.surname || '',
@@ -413,10 +408,6 @@ export function usePersonForm(params: {
     (val: boolean) => dispatch({ type: 'SET_INHERIT_GROUPS', payload: val }),
     []
   );
-  const setShowDropdown = useCallback(
-    (val: boolean) => dispatch({ type: 'SET_SHOW_DROPDOWN', payload: val }),
-    []
-  );
   const setFormData = useCallback(
     (val: Partial<FormData>) =>
       dispatch({ type: 'SET_FORM_DATA', payload: val }),
@@ -469,7 +460,6 @@ export function usePersonForm(params: {
     setKnownThroughName,
     setKnownThrough,
     setInheritGroups,
-    setShowDropdown,
     setFormData,
     setImportantDates,
     setPhoneNumbers,
