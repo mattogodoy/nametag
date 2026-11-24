@@ -2000,7 +2000,13 @@
       "subject": "Recordatorio: Hoy es el {eventType} de {personName}",
       "heading": "Recordatorio de Evento",
       "infoBox": "El {eventType} de {personName} es el {date}.",
-      "body": "¡No olvides comunicarte y hacer que su día sea especial!",
+      "body": {
+        "birthday": "¡No olvides comunicarte y hacer que su día sea especial!",
+        "anniversary": "¡No olvides comunicarte y hacer que su día sea especial!",
+        "nameday": "¡No olvides comunicarte y hacer que su día sea especial!",
+        "memorial": "Tómate un momento para recordar a esta persona y, quizá, para saber cómo están quienes la querían.",
+        "other": "Un buen momento para comunicarte y hacerle saber que piensas en esa persona."
+      },
       "button": "Abrir Nametag",
       "unsubscribe": "Desactivar este recordatorio"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Ya se acerca",
       "infoBox": "El {eventType} de {personName} es el {date}, dentro de {daysUntil} días.",
       "infoBoxOneDay": "El {eventType} de {personName} es mañana, el {date}.",
-      "body": "Un pequeño aviso para que tengas tiempo de planear algo.",
+      "body": {
+        "birthday": "Un pequeño aviso para que tengas tiempo de planear algo.",
+        "anniversary": "Un pequeño aviso para que tengas tiempo de planear algo.",
+        "nameday": "Un pequeño aviso para que tengas tiempo de planear algo.",
+        "memorial": "Un pequeño aviso para que puedas reservar un momento para recordar a esta persona.",
+        "other": "Un pequeño aviso para que tengas tiempo de prepararte."
+      },
       "button": "Abrir Nametag",
       "unsubscribe": "Desactivar este recordatorio"
     },

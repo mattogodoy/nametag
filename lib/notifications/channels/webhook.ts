@@ -49,6 +49,7 @@ function payloadData(notification: ReminderNotification): Record<string, unknown
         formattedDate: notification.formattedDate,
         date: notification.date,
         daysUntil: notification.daysUntil,
+        dateType: notification.dateType,
       };
     case 'contact':
       return {

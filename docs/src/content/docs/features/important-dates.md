@@ -47,6 +47,8 @@ The [Calendar](/features/calendar/) tab shows all your important dates by month,
 
 If you'd like to actually be notified when a reminder is due, rather than only seeing it on the dashboard, turn on a delivery channel in Settings under Notifications: email (needs Resend or SMTP configured on your instance) or browser push (needs VAPID keys configured). See [Notifications](/features/notifications/) for how to set either one up. Without any channel configured, reminders still work: they show up on the dashboard, they're just not delivered anywhere else.
 
+Reminder emails adapt their wording to the kind of date. Birthdays, anniversaries, and name days get a celebratory nudge, a date of death gets a gentle note to remember the person, and custom date types get neutral wording. The date shown in a day-of email is the occurrence being reminded about (this year), not the year it was first recorded.
+
 Reminders are sent daily by a background job. See [Contact Reminders](/features/contact-reminders/) for details on how that job runs, since important date reminders and contact reminders share the same delivery mechanism.
 
 ## Tier limits

@@ -2000,7 +2000,13 @@
       "subject": "Lembrete: Hoje é {eventType} de {personName}",
       "heading": "Lembrete de Evento",
       "infoBox": "O evento {eventType} de {personName} é em {date}.",
-      "body": "Não se esqueça de entrar em contato e tornar esse dia especial!",
+      "body": {
+        "birthday": "Não se esqueça de entrar em contato e tornar esse dia especial!",
+        "anniversary": "Não se esqueça de entrar em contato e tornar esse dia especial!",
+        "nameday": "Não se esqueça de entrar em contato e tornar esse dia especial!",
+        "memorial": "Reserve um momento para se lembrar dessa pessoa e, quem sabe, falar com quem a amava.",
+        "other": "Um bom momento para entrar em contato e mostrar que você pensa nessa pessoa."
+      },
       "button": "Abrir Nametag",
       "unsubscribe": "Desativar este lembrete"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Em breve",
       "infoBox": "O evento {eventType} de {personName} é em {date}, daqui a {daysUntil} dias.",
       "infoBoxOneDay": "O evento {eventType} de {personName} é amanhã, {date}.",
-      "body": "Um aviso prévio para que você tenha tempo de planejar algo.",
+      "body": {
+        "birthday": "Um aviso prévio para que você tenha tempo de planejar algo.",
+        "anniversary": "Um aviso prévio para que você tenha tempo de planejar algo.",
+        "nameday": "Um aviso prévio para que você tenha tempo de planejar algo.",
+        "memorial": "Um aviso prévio para que você possa reservar um momento para se lembrar dessa pessoa.",
+        "other": "Um aviso prévio para que você tenha tempo de se preparar."
+      },
       "button": "Abrir Nametag",
       "unsubscribe": "Desativar este lembrete"
     },

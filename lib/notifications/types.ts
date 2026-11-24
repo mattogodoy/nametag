@@ -44,6 +44,8 @@ export type ReminderNotification =
        */
       date: string;
       daysUntil: number;
+      /** Predefined key ("birthday", "anniversary", "nameday", "memorial") or null for custom dates. */
+      dateType: string | null;
     }
   | {
       kind: 'contact';

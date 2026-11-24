@@ -65,6 +65,30 @@ describe('sendWebhook', () => {
     });
   });
 
+  it('includes dateType on lead reminders, matching the day-of payload', async () => {
+    await sendWebhook(
+      endpoint,
+      {
+        ...envelope,
+        notification: {
+          kind: 'important_date_lead',
+          personId: 'person-1',
+          personName: 'Ana Torres',
+          dateTitle: 'Date of Death',
+          formattedDate: 'August 26, 2026',
+          date: '2026-08-26',
+          daysUntil: 3,
+          dateType: 'memorial',
+        },
+        stamp: { model: 'importantDate', id: 'date-1', field: 'lastLeadReminderSent' },
+      },
+      now
+    );
+
+    const [, body] = mocks.postJson.mock.calls[0];
+    expect(JSON.parse(body as string).data.dateType).toBe('memorial');
+  });
+
   it('never leaks the unsubscribe token, which is an email-only credential', async () => {
     await sendWebhook(endpoint, envelope, now);
 

@@ -103,6 +103,7 @@ describe('ntfyTagFor', () => {
         formattedDate: 'D',
         date: '2026-08-26',
         daysUntil: 3,
+        dateType: 'birthday',
       })
     ).toBe('alarm_clock');
     expect(ntfyTagFor({ kind: 'weekly_digest', rows: [], overflowCount: 0 })).toBe('spiral_calendar');

@@ -2000,7 +2000,13 @@
       "subject": "リマインダー: 今日は{personName}の{eventType}です",
       "heading": "イベントリマインダー",
       "infoBox": "{personName}の {eventType}は {date}です。",
-      "body": "忘れずに連絡して、その日を特別なものにしましょう！",
+      "body": {
+        "birthday": "忘れずに連絡して、その日を特別なものにしましょう！",
+        "anniversary": "忘れずに連絡して、その日を特別なものにしましょう！",
+        "nameday": "忘れずに連絡して、その日を特別なものにしましょう！",
+        "memorial": "少し時間をとって故人をしのび、大切に思っていた人たちにも声をかけてみましょう。",
+        "other": "連絡を取って、気にかけていることを伝える良い機会です。"
+      },
       "button": "Nametagを開く",
       "unsubscribe": "このリマインダーを無効にする"
     },
@@ -2010,7 +2016,13 @@
       "heading": "もうすぐです",
       "infoBox": "{personName}の {eventType}は {date}、あと{daysUntil}日です。",
       "infoBoxOneDay": "{personName}の {eventType}は明日、{date}です。",
-      "body": "余裕を持って準備できるよう、早めにお知らせしています。",
+      "body": {
+        "birthday": "余裕を持って準備できるよう、早めにお知らせしています。",
+        "anniversary": "余裕を持って準備できるよう、早めにお知らせしています。",
+        "nameday": "余裕を持って準備できるよう、早めにお知らせしています。",
+        "memorial": "故人をしのぶ時間をとれるよう、早めにお知らせしています。",
+        "other": "余裕を持って準備できるよう、早めにお知らせしています。"
+      },
       "button": "Nametagを開く",
       "unsubscribe": "このリマインダーを無効にする"
     },

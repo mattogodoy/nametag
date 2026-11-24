@@ -88,7 +88,7 @@ Each reminder is a single `POST` with a JSON body:
 - `url` is a link back into your Nametag instance. For `important_date`, `important_date_lead`, and `contact`, it's the person's page; for `weekly_digest` it points at the dashboard instead, since a digest is not about one person.
 - `data` varies by `event`:
   - `important_date` carries `personId`, `personName`, `dateTitle`, `dateType` (one of `birthday`, `anniversary`, `nameday`, `memorial`, or `null` for a custom date type), `formattedDate` (locale-formatted, for display only), and `date`.
-  - `important_date_lead` carries the same fields except `dateType`, replaced with `daysUntil` (a number).
+  - `important_date_lead` carries the same fields plus `daysUntil` (a number).
   - `contact` carries `personId`, `personName`, `lastContact` (a locale-formatted string, or `null` if no contact has ever been logged for that person), and `interval`.
   - `weekly_digest` carries `events` (a list, each with `personName`, `eventTitle`, `formattedDate`, `date`, and `daysUntil`) and `overflowCount` (a number, `0` when nothing was left out: the digest caps how many events it lists, and this is how many more there were beyond that cap for the week).
 - `date` (on `important_date`, `important_date_lead`, and each `weekly_digest` event) is a raw ISO calendar date (`YYYY-MM-DD`) so a receiver doesn't have to guess a date format from your locale. It is always the day of the **occurrence being reminded about**, today's date for a day-of reminder or the projected date for an advance notice, never the date the record was originally entered. That means a recurring birthday's `date` never carries the year it was born in, only the year the occurrence falls in.

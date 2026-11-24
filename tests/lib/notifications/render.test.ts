@@ -46,6 +46,7 @@ describe('renderShortForm', () => {
         formattedDate: 'September 2, 2026',
         date: '2026-09-02',
         daysUntil: 7,
+        dateType: 'birthday',
       })
     );
 
@@ -136,6 +137,7 @@ describe('renderShortForm', () => {
           formattedDate: 'September 2, 2026',
           date: '2026-09-02',
           daysUntil: 7,
+          dateType: 'birthday',
         },
       },
       {

@@ -2000,7 +2000,13 @@
       "subject": "Erinnerung: Heute ist {personName}s {eventType}",
       "heading": "Termin-Erinnerung",
       "infoBox": "{personName}s {eventType} ist am {date}.",
-      "body": "Vergiss nicht, dich zu melden und den Tag besonders zu machen!",
+      "body": {
+        "birthday": "Vergiss nicht, dich zu melden und den Tag besonders zu machen!",
+        "anniversary": "Vergiss nicht, dich zu melden und den Tag besonders zu machen!",
+        "nameday": "Vergiss nicht, dich zu melden und den Tag besonders zu machen!",
+        "memorial": "Nimm dir einen Moment, um an diese Person zu denken, und melde dich vielleicht bei denen, die ihr nahestanden.",
+        "other": "Ein guter Moment, dich zu melden und zu zeigen, dass du an diese Person denkst."
+      },
       "button": "Nametag öffnen",
       "unsubscribe": "Diese Erinnerung deaktivieren"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Bald ist es soweit",
       "infoBox": "{personName}s {eventType} ist am {date}, in {daysUntil} Tagen.",
       "infoBoxOneDay": "{personName}s {eventType} ist morgen, am {date}.",
-      "body": "Ein kleiner Hinweis, damit du Zeit hast, dir etwas zu überlegen.",
+      "body": {
+        "birthday": "Ein kleiner Hinweis, damit du Zeit hast, dir etwas zu überlegen.",
+        "anniversary": "Ein kleiner Hinweis, damit du Zeit hast, dir etwas zu überlegen.",
+        "nameday": "Ein kleiner Hinweis, damit du Zeit hast, dir etwas zu überlegen.",
+        "memorial": "Ein kleiner Hinweis, damit du dir einen Moment nehmen kannst, um an diese Person zu denken.",
+        "other": "Ein kleiner Hinweis, damit du Zeit hast, dich vorzubereiten."
+      },
       "button": "Nametag öffnen",
       "unsubscribe": "Diese Erinnerung deaktivieren"
     },

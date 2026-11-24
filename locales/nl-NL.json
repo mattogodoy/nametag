@@ -2000,7 +2000,13 @@
       "subject": "Herinnering: Vandaag is {personName}'s {eventType}",
       "heading": "Gebeurtenisherinnering",
       "infoBox": "{personName}'s {eventType} is op {date}.",
-      "body": "Vergeet niet contact op te nemen en maak hun dag speciaal!",
+      "body": {
+        "birthday": "Vergeet niet contact op te nemen en maak hun dag speciaal!",
+        "anniversary": "Vergeet niet contact op te nemen en maak hun dag speciaal!",
+        "nameday": "Vergeet niet contact op te nemen en maak hun dag speciaal!",
+        "memorial": "Neem even de tijd om aan hen te denken, en informeer misschien hoe het gaat met wie van hen hield.",
+        "other": "Een goed moment om contact op te nemen en te laten weten dat je aan hen denkt."
+      },
       "button": "Nametag openen",
       "unsubscribe": "Deze herinnering uitschakelen"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Bijna zover",
       "infoBox": "{personName}'s {eventType} is op {date}, over {daysUntil} dagen.",
       "infoBoxOneDay": "{personName}'s {eventType} is morgen, op {date}.",
-      "body": "Een klein berichtje zodat je tijd hebt om iets te plannen.",
+      "body": {
+        "birthday": "Een klein berichtje zodat je tijd hebt om iets te plannen.",
+        "anniversary": "Een klein berichtje zodat je tijd hebt om iets te plannen.",
+        "nameday": "Een klein berichtje zodat je tijd hebt om iets te plannen.",
+        "memorial": "Een klein berichtje zodat je even de tijd kunt nemen om aan hen te denken.",
+        "other": "Een klein berichtje zodat je tijd hebt om je voor te bereiden."
+      },
       "button": "Nametag openen",
       "unsubscribe": "Deze herinnering uitschakelen"
     },
