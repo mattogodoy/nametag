@@ -20,7 +20,8 @@ export async function renderEmail(envelope: NotificationEnvelope): Promise<SendB
         notification.dateTitle,
         notification.formattedDate,
         unsubscribeUrl,
-        locale
+        locale,
+        notification.dateType
       );
       return { to: userEmail, subject: template.subject, html: template.html, text: template.text, from: 'reminders' };
     }
@@ -32,7 +33,8 @@ export async function renderEmail(envelope: NotificationEnvelope): Promise<SendB
         notification.formattedDate,
         notification.daysUntil,
         unsubscribeUrl,
-        locale
+        locale,
+        notification.dateType
       );
       return { to: userEmail, subject: template.subject, html: template.html, text: template.text, from: 'reminders' };
     }

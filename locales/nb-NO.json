@@ -2000,7 +2000,13 @@
       "subject": "Påminnelse: I dag er {personName}s {eventType}",
       "heading": "Hendelsespåminnelse",
       "infoBox": "{personName}s {eventType} er {date}.",
-      "body": "Ikke glem å ta kontakt og gjøre dagen deres spesiell!",
+      "body": {
+        "birthday": "Ikke glem å ta kontakt og gjøre dagen deres spesiell!",
+        "anniversary": "Ikke glem å ta kontakt og gjøre dagen deres spesiell!",
+        "nameday": "Ikke glem å ta kontakt og gjøre dagen deres spesiell!",
+        "memorial": "Ta deg et øyeblikk til å minnes dem, og kanskje høre hvordan det går med dem som var glade i dem.",
+        "other": "En fin anledning til å ta kontakt og vise at du tenker på dem."
+      },
       "button": "Åpne Nametag",
       "unsubscribe": "Deaktiver denne påminnelsen"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Kommer snart",
       "infoBox": "{personName}s {eventType} er {date}, om {daysUntil} dager.",
       "infoBoxOneDay": "{personName}s {eventType} er i morgen, {date}.",
-      "body": "Et lite varsel så du har tid til å planlegge noe.",
+      "body": {
+        "birthday": "Et lite varsel så du har tid til å planlegge noe.",
+        "anniversary": "Et lite varsel så du har tid til å planlegge noe.",
+        "nameday": "Et lite varsel så du har tid til å planlegge noe.",
+        "memorial": "Et lite varsel så du kan sette av et øyeblikk til å minnes dem.",
+        "other": "Et lite varsel så du har tid til å forberede deg."
+      },
       "button": "Åpne Nametag",
       "unsubscribe": "Deaktiver denne påminnelsen"
     },

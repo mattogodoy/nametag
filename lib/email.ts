@@ -726,6 +726,23 @@ function russianEventsWord(count: number): string {
   return 'событий';
 }
 
+/**
+ * Picks the closing line for an important-date email. A death anniversary must
+ * never get the celebratory copy meant for birthdays, and a custom date type
+ * gets neutral wording because we cannot know what it commemorates.
+ */
+function reminderBodyKey(dateType: string | null): string {
+  switch (dateType) {
+    case 'birthday':
+    case 'anniversary':
+    case 'nameday':
+    case 'memorial':
+      return `body.${dateType}`;
+    default:
+      return 'body.other';
+  }
+}
+
 // Email template helpers for common use cases
 export const emailTemplates = {
   accountVerification: async (verificationUrl: string, locale: SupportedLocale = 'en') => {
@@ -742,18 +759,26 @@ export const emailTemplates = {
     };
   },
 
-  importantDateReminder: async (personName: string, eventType: string, date: string, unsubscribeUrl: string, locale: SupportedLocale = 'en') => {
+  importantDateReminder: async (
+    personName: string,
+    eventType: string,
+    date: string,
+    unsubscribeUrl: string,
+    locale: SupportedLocale = 'en',
+    dateType: string | null = null
+  ) => {
     const t = await getTranslationsForLocale(locale, 'emails.importantDateReminder');
+    const body = t(reminderBodyKey(dateType));
     return {
       subject: t('subject', { personName, eventType }),
       html: await wrapInTemplate(`
         ${emailHeading(t('heading'))}
         ${emailInfoBox(t('infoBox', { personName: `<strong>${escapeHtml(personName)}</strong>`, eventType: escapeHtml(eventType), date: `<strong>${escapeHtml(date)}</strong>` }), 'info')}
-        ${emailParagraph(t('body'))}
+        ${emailParagraph(body)}
         ${emailButton(`${APP_URL}/dashboard`, t('button'))}
         ${await emailUnsubscribeFooter(unsubscribeUrl, locale)}
       `, locale),
-      text: `${t('subject', { personName, eventType })} ${t('infoBox', { personName, eventType, date })} ${t('body')}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
+      text: `${t('subject', { personName, eventType })} ${t('infoBox', { personName, eventType, date })} ${body}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
     };
   },
 
@@ -763,9 +788,11 @@ export const emailTemplates = {
     date: string,
     daysUntil: number,
     unsubscribeUrl: string,
-    locale: SupportedLocale = 'en'
+    locale: SupportedLocale = 'en',
+    dateType: string | null = null
   ) => {
     const t = await getTranslationsForLocale(locale, 'emails.importantDateLeadReminder');
+    const body = t(reminderBodyKey(dateType));
     const isTomorrow = daysUntil === 1;
     const daysWord = russianDaysWord(daysUntil);
     const subject = isTomorrow
@@ -793,11 +820,11 @@ export const emailTemplates = {
       html: await wrapInTemplate(`
         ${emailHeading(t('heading'))}
         ${emailInfoBox(infoHtml, 'info')}
-        ${emailParagraph(t('body'))}
+        ${emailParagraph(body)}
         ${emailButton(`${APP_URL}/dashboard`, t('button'))}
         ${await emailUnsubscribeFooter(unsubscribeUrl, locale)}
       `, locale),
-      text: `${subject} ${infoPlain} ${t('body')}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
+      text: `${subject} ${infoPlain} ${body}\n\n${t('unsubscribe')}: ${unsubscribeUrl}`,
     };
   },
 

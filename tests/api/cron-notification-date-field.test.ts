@@ -228,4 +228,23 @@ describe('the notification envelope date field for an important-date lead remind
     expect(envelope?.notification.date).toBe(getLocalDateString(occurrence));
     expect(envelope?.notification.date).not.toContain(String(birthYear));
   });
+
+  it('carries the date type on the lead envelope so channels can pick fitting copy', async () => {
+    setProcessTimezone('UTC');
+    const day = today();
+    const occurrence = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 5);
+    const storedDate = storedCalendarDate(new Date(2018, occurrence.getMonth(), occurrence.getDate()));
+
+    mocks.importantDateFindMany.mockResolvedValue([
+      { ...leadBirthdayRecord(storedDate, 7), title: null, type: 'memorial' },
+    ]);
+
+    await GET(request());
+
+    const envelopes = mocks.dispatchAll.mock.calls[0][0] as Array<{
+      notification: { kind: string; dateType?: string | null };
+    }>;
+    const envelope = envelopes.find((e) => e.notification.kind === 'important_date_lead');
+    expect(envelope?.notification.dateType).toBe('memorial');
+  });
 });

@@ -53,6 +53,7 @@ describe('renderEmail', () => {
           formattedDate: 'September 2, 2026',
           date: '2026-09-02',
           daysUntil: 7,
+          dateType: 'birthday',
         },
         { model: 'importantDate', id: 'date-1', field: 'lastLeadReminderSent' }
       )
@@ -128,5 +129,90 @@ describe('renderEmail', () => {
     });
 
     expect(es.subject).not.toBe(en.subject);
+  });
+
+  describe('closing line per date type', () => {
+    const dayOf = (dateType: string | null) =>
+      renderEmail(
+        envelope(
+          {
+            kind: 'important_date',
+            personId: 'person-1',
+            personName: 'Ana Torres',
+            dateTitle: dateType === 'memorial' ? 'Date of Death' : 'Something',
+            formattedDate: 'November 24, 2026',
+            date: '2026-11-24',
+            dateType,
+          },
+          { model: 'importantDate', id: 'date-1', field: 'lastReminderSent' }
+        )
+      );
+    const lead = (dateType: string | null) =>
+      renderEmail(
+        envelope(
+          {
+            kind: 'important_date_lead',
+            personId: 'person-1',
+            personName: 'Ana Torres',
+            dateTitle: 'Date of Death',
+            formattedDate: 'November 24, 2026',
+            date: '2026-11-24',
+            daysUntil: 7,
+            dateType,
+          },
+          { model: 'importantDate', id: 'date-1', field: 'lastLeadReminderSent' }
+        )
+      );
+
+    it('never wishes a special day on a death anniversary', async () => {
+      const item = await dayOf('memorial');
+      expect(item.text).not.toContain('make their day special');
+      expect(item.html).not.toContain('make their day special');
+      expect(item.text).toContain('remember them');
+    });
+
+    it('keeps the celebratory line for birthdays', async () => {
+      const item = await dayOf('birthday');
+      expect(item.text).toContain('make their day special');
+    });
+
+    it('uses neutral wording for custom date types', async () => {
+      const item = await dayOf(null);
+      expect(item.text).not.toContain('make their day special');
+      expect(item.text).toContain("thinking of them");
+    });
+
+    it('does not suggest planning something ahead of a death anniversary', async () => {
+      const memorial = await lead('memorial');
+      expect(memorial.text).not.toContain('plan something');
+      expect(memorial.text).toContain('remember them');
+      const birthday = await lead('birthday');
+      expect(birthday.text).toContain('plan something');
+    });
+
+    it('resolves a real sentence in every locale, never a raw key', async () => {
+      const { readdirSync } = await import('fs');
+      const locales = readdirSync('locales').map((f) => f.replace(/\.json$/, ''));
+      for (const locale of locales) {
+        for (const type of ['birthday', 'anniversary', 'nameday', 'memorial', null]) {
+          const item = await renderEmail({
+            ...envelope(
+              {
+                kind: 'important_date',
+                personId: 'person-1',
+                personName: 'Ana',
+                dateTitle: 'X',
+                formattedDate: 'Y',
+                date: '2026-11-24',
+                dateType: type,
+              },
+              { model: 'importantDate', id: 'date-1', field: 'lastReminderSent' }
+            ),
+            locale: locale as NotificationEnvelope['locale'],
+          });
+          expect(item.text, `${locale}/${type}`).not.toMatch(/body\.(birthday|anniversary|nameday|memorial|other)/);
+        }
+      }
+    });
   });
 });

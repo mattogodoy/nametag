@@ -2000,7 +2000,13 @@
       "subject": "Przypomnienie: dzisiaj - {eventType} ({personName})",
       "heading": "Przypomnienie o wydarzeniu",
       "infoBox": "{eventType} ({personName}): {date}.",
-      "body": "Nie zapomnij się odezwać i sprawić, by ten dzień był wyjątkowy!",
+      "body": {
+        "birthday": "Nie zapomnij się odezwać i sprawić, by ten dzień był wyjątkowy!",
+        "anniversary": "Nie zapomnij się odezwać i sprawić, by ten dzień był wyjątkowy!",
+        "nameday": "Nie zapomnij się odezwać i sprawić, by ten dzień był wyjątkowy!",
+        "memorial": "Znajdź chwilę, by wspomnieć tę osobę, i może odezwij się do jej bliskich.",
+        "other": "Dobra okazja, by się odezwać i pokazać, że o tej osobie pamiętasz."
+      },
       "button": "Otwórz Nametag",
       "unsubscribe": "Wyłącz to przypomnienie"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Już wkrótce",
       "infoBox": "{eventType} ({personName}): {date}, czyli za {daysUntil} dni.",
       "infoBoxOneDay": "{eventType} ({personName}) jest jutro, {date}.",
-      "body": "Dajemy znać z wyprzedzeniem, aby zostawić czas na zaplanowanie czegoś.",
+      "body": {
+        "birthday": "Dajemy znać z wyprzedzeniem, aby zostawić czas na zaplanowanie czegoś.",
+        "anniversary": "Dajemy znać z wyprzedzeniem, aby zostawić czas na zaplanowanie czegoś.",
+        "nameday": "Dajemy znać z wyprzedzeniem, aby zostawić czas na zaplanowanie czegoś.",
+        "memorial": "Dajemy znać z wyprzedzeniem, abyś mógł znaleźć chwilę na wspomnienie tej osoby.",
+        "other": "Dajemy znać z wyprzedzeniem, aby zostawić czas na przygotowanie się."
+      },
       "button": "Otwórz Nametag",
       "unsubscribe": "Wyłącz to przypomnienie"
     },

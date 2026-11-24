@@ -2000,7 +2000,13 @@
       "subject": "提醒：今天是 {personName} 的 {eventType}",
       "heading": "事件提醒",
       "infoBox": "{personName} 的 {eventType} 在 {date}。",
-      "body": "不要忘记伸出援手，让他们的一天变得特别！",
+      "body": {
+        "birthday": "不要忘记伸出援手，让他们的一天变得特别！",
+        "anniversary": "不要忘记伸出援手，让他们的一天变得特别！",
+        "nameday": "不要忘记伸出援手，让他们的一天变得特别！",
+        "memorial": "花点时间缅怀这位故人，也可以问候一下那些深爱着他们的人。",
+        "other": "这是一个联系对方、让他们知道你在挂念他们的好时机。"
+      },
       "button": "打开 Nametag",
       "unsubscribe": "禁用此提醒"
     },
@@ -2010,7 +2016,13 @@
       "heading": "快到了",
       "infoBox": "{personName} 的 {eventType} 在 {date}，还有 {daysUntil} 天。",
       "infoBoxOneDay": "{personName} 的 {eventType} 是明天，{date}。",
-      "body": "提前通知一下，让你有时间准备。",
+      "body": {
+        "birthday": "提前通知一下，让你有时间准备。",
+        "anniversary": "提前通知一下，让你有时间准备。",
+        "nameday": "提前通知一下，让你有时间准备。",
+        "memorial": "提前通知一下，让你可以留出时间缅怀这位故人。",
+        "other": "提前通知一下，让你有时间准备。"
+      },
       "button": "打开 Nametag",
       "unsubscribe": "禁用此提醒"
     },

@@ -2000,7 +2000,13 @@
       "subject": "Promemoria: oggi è il/la {eventType} di {personName}",
       "heading": "Promemoria evento",
       "infoBox": "Il/la {eventType} di {personName} è il {date}.",
-      "body": "Non dimenticare di contattarlo/a per rendergli la giornata speciale!",
+      "body": {
+        "birthday": "Non dimenticare di contattarlo/a per rendergli la giornata speciale!",
+        "anniversary": "Non dimenticare di contattarlo/a per rendergli la giornata speciale!",
+        "nameday": "Non dimenticare di contattarlo/a per rendergli la giornata speciale!",
+        "memorial": "Prenditi un momento per ricordare questa persona e, magari, per sentire chi le voleva bene.",
+        "other": "Un buon momento per farti sentire e dimostrare che pensi a questa persona."
+      },
       "button": "Apri Nametag",
       "unsubscribe": "Disabilita questo promemoria"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Tra poco",
       "infoBox": "Il/la {eventType} di {personName} è il {date}, tra {daysUntil} giorni.",
       "infoBoxOneDay": "Il/la {eventType} di {personName} è domani, il {date}.",
-      "body": "Un piccolo preavviso per darti il tempo di organizzare qualcosa.",
+      "body": {
+        "birthday": "Un piccolo preavviso per darti il tempo di organizzare qualcosa.",
+        "anniversary": "Un piccolo preavviso per darti il tempo di organizzare qualcosa.",
+        "nameday": "Un piccolo preavviso per darti il tempo di organizzare qualcosa.",
+        "memorial": "Un piccolo preavviso per permetterti di dedicare un momento al ricordo di questa persona.",
+        "other": "Un piccolo preavviso per darti il tempo di prepararti."
+      },
       "button": "Apri Nametag",
       "unsubscribe": "Disabilita questo promemoria"
     },

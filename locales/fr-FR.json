@@ -2000,7 +2000,13 @@
       "subject": "Rappel : aujourd'hui c'est le {eventType} de {personName}",
       "heading": "Rappel d'événement",
       "infoBox": "Le {eventType} de {personName} a lieu le {date}.",
-      "body": "N'oubliez pas de prendre contact pour lui faire plaisir.",
+      "body": {
+        "birthday": "N'oubliez pas de prendre contact pour lui faire plaisir.",
+        "anniversary": "N'oubliez pas de prendre contact pour lui faire plaisir.",
+        "nameday": "N'oubliez pas de prendre contact pour lui faire plaisir.",
+        "memorial": "Prenez un moment pour vous souvenir de cette personne, et peut-être pour prendre des nouvelles de ses proches.",
+        "other": "Un bon moment pour prendre contact et lui montrer que vous pensez à elle."
+      },
       "button": "Ouvrir Nametag",
       "unsubscribe": "Désactiver ce rappel"
     },
@@ -2010,7 +2016,13 @@
       "heading": "C'est pour bientôt",
       "infoBox": "Le {eventType} de {personName} a lieu le {date}, dans {daysUntil} jours.",
       "infoBoxOneDay": "Le {eventType} de {personName} est demain, le {date}.",
-      "body": "On vous prévient un peu à l'avance, le temps d'organiser quelque chose.",
+      "body": {
+        "birthday": "On vous prévient un peu à l'avance, le temps d'organiser quelque chose.",
+        "anniversary": "On vous prévient un peu à l'avance, le temps d'organiser quelque chose.",
+        "nameday": "On vous prévient un peu à l'avance, le temps d'organiser quelque chose.",
+        "memorial": "On vous prévient un peu à l'avance, pour que vous puissiez prendre un moment pour vous souvenir de cette personne.",
+        "other": "On vous prévient un peu à l'avance, le temps de vous préparer."
+      },
       "button": "Ouvrir Nametag",
       "unsubscribe": "Désactiver ce rappel"
     },

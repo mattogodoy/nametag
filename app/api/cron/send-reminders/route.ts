@@ -98,8 +98,13 @@ export const GET = withLogging(async function GET(request: Request) {
         const userEmail = person.user.email;
         const userLanguage = (person.user.language as SupportedLocale) || 'en';
         const personName = formatGraphName(person, person.user.nameOrder, person.user.nameDisplayFormat);
-        const formattedDate = formatDateForEmail(
-          importantDate.date,
+        // Show today's occurrence, not the stored date: "is on 2018-11-24"
+        // reads as wrong for any recurring date, and the lead reminder already
+        // reports the projected occurrence. The year-unknown flag can only be
+        // read from the stored value.
+        const formattedDate = formatCalendarDayForEmail(
+          today,
+          parseCalendarDate(importantDate.date).getFullYear() <= YEAR_UNKNOWN_SENTINEL,
           person.user.dateFormat,
           userLanguage
         );
@@ -221,6 +226,7 @@ export const GET = withLogging(async function GET(request: Request) {
               formattedDate,
               date: getLocalDateString(nextOccurrence),
               daysUntil,
+              dateType: importantDate.type,
             },
             unsubscribeUrl: `${getAppUrl()}/unsubscribe?token=${unsubscribeToken}`,
             deepLink: `${getAppUrl()}/people/${person.id}`,

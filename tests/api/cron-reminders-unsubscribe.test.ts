@@ -254,7 +254,8 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         'Birthday',
         expect.any(String),
         'https://nametag.test/unsubscribe?token=token-abc123',
-        'en'
+        'en',
+        undefined
       );
     });
 
@@ -397,7 +398,8 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         expect.any(String),
         expect.any(String),
         expect.any(String),
-        'es-ES'
+        'es-ES',
+        undefined
       );
     });
   });
@@ -938,11 +940,12 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         'Birthday',
         expected,
         expect.any(String),
-        'en'
+        'en',
+        undefined
       );
     });
 
-    it.each(TIMEZONES)('prints known-year dates on the stored day with their year in %s', async (tz) => {
+    it.each(TIMEZONES)('prints known-year dates as the occurrence in this year in %s', async (tz) => {
       setProcessTimezone(tz);
       const today = new Date();
       const stored = new Date(Date.UTC(1990, today.getMonth(), today.getDate()));
@@ -951,13 +954,15 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
 
       await runCron();
 
-      const expected = `${today.toLocaleDateString('en-US', { month: 'long' })} ${today.getDate()}, 1990`;
+      // The occurrence being reminded about, not the year it was first recorded.
+      const expected = `${today.toLocaleDateString('en-US', { month: 'long' })} ${today.getDate()}, ${today.getFullYear()}`;
       expect(mocks.importantDateReminderTemplate).toHaveBeenCalledWith(
         'John Doe',
         'Birthday',
         expected,
         expect.any(String),
-        'en'
+        'en',
+        undefined
       );
     });
 
@@ -1011,7 +1016,8 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         'Birthday',
         expected,
         expect.any(String),
-        'en'
+        'en',
+        undefined
       );
     });
 
@@ -1057,7 +1063,8 @@ describe('Cron Job - Unsubscribe Token Generation', () => {
         expect.any(String),
         expected,
         expect.any(String),
-        'es-ES'
+        'es-ES',
+        undefined
       );
     });
   });

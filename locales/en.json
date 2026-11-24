@@ -2000,7 +2000,13 @@
       "subject": "Reminder: Today is {personName}'s {eventType}",
       "heading": "Event Reminder",
       "infoBox": "{personName}'s {eventType} is on {date}.",
-      "body": "Don't forget to reach out and make their day special!",
+      "body": {
+        "birthday": "Don't forget to reach out and make their day special!",
+        "anniversary": "Don't forget to reach out and make their day special!",
+        "nameday": "Don't forget to reach out and make their day special!",
+        "memorial": "Take a moment to remember them, and perhaps check in on the people who loved them.",
+        "other": "A good moment to reach out and let them know you're thinking of them."
+      },
       "button": "Open Nametag",
       "unsubscribe": "Disable this reminder"
     },
@@ -2010,7 +2016,13 @@
       "heading": "Coming up soon",
       "infoBox": "{personName}'s {eventType} is on {date}, {daysUntil} days from now.",
       "infoBoxOneDay": "{personName}'s {eventType} is tomorrow, {date}.",
-      "body": "A little notice so you have time to plan something.",
+      "body": {
+        "birthday": "A little notice so you have time to plan something.",
+        "anniversary": "A little notice so you have time to plan something.",
+        "nameday": "A little notice so you have time to plan something.",
+        "memorial": "A little notice so you can set aside a moment to remember them.",
+        "other": "A little notice so you have time to prepare."
+      },
       "button": "Open Nametag",
       "unsubscribe": "Disable this reminder"
     },
