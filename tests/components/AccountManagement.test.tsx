@@ -177,6 +177,11 @@ describe('AccountManagement - Export Data', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith('/api/user/export');
       });
+
+      // Let the export finish so its state update does not land after teardown.
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /export json/i })).not.toBeDisabled();
+      });
     });
 
     it('should disable button while exporting', async () => {
@@ -202,6 +207,11 @@ describe('AccountManagement - Export Data', () => {
       await user.click(exportJsonButton);
 
       expect(screen.getByRole('button', { name: /exporting\.\.\./i })).toBeDisabled();
+
+      // Let the export finish so its state update does not land after teardown.
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /export json/i })).not.toBeDisabled();
+      });
     });
 
     it('should not call export API when no data exists', async () => {
