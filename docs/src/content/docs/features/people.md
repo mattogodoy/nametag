@@ -11,6 +11,8 @@ People are the heart of Nametag. Everything else, groups, relationships, the net
 
 The only required field is a full name. Everything else is optional, so you can jot down a name in a few seconds and come back to fill in the rest whenever you have time (or never, if you don't need to).
 
+When you are adding several people in a row, use **Create and add another** at the bottom of the form. It saves the contact and opens a fresh, empty form straight away, instead of taking you to the new person's page.
+
 ### Name fields
 
 Nametag's name handling is flexible enough for real-world naming conventions, not just "first name, last name":
